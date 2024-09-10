@@ -1,0 +1,21 @@
+.{
+    .name = "SHDrv-server",
+
+    .version = "0.0.0",
+
+    .dependencies = .{
+        .@"zig-webui" = .{
+            .url = "https://github.com/webui-dev/zig-webui/archive/main.tar.gz",
+            .hash = "1220ecd4fd7d9240965aa1bb28822ebeb7c3f6188adeea04da1781fbce9ebe3de050",
+        },
+        .drivercon = .{
+            .url = "https://github.com/pmotionf/drivercon/archive/main.tar.gz",
+            .hash = "12201954213be69028a7ac9c0c8e5bbd18702ac0d4d0dc697bbe881b803a80576bdd",
+        },
+    },
+    .paths = .{
+        "build.zig",
+        "build.zig.zon",
+        "src",
+    },
+}
