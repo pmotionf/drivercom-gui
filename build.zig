@@ -27,6 +27,12 @@ pub fn build(b: *std.Build) void {
     });
     exe.root_module.addImport("drivercon", drivercon.module("drivercon"));
 
+    const yaml = b.dependency("yaml", .{
+        .target = target,
+        .optimize = optimize,
+    });
+    exe.root_module.addImport("yaml", yaml.module("yaml"));
+
     // add module
     exe.root_module.addImport("webui", zig_webui.module("webui"));
 
