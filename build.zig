@@ -19,6 +19,8 @@ pub fn build(b: *std.Build) void {
         .enable_tls = false, // whether enable tls support
         .is_static = true, // whether static link
     });
+    // add module
+    exe.root_module.addImport("webui", zig_webui.module("webui"));
 
     const drivercon = b.dependency("drivercon", .{
         .target = target,
@@ -33,8 +35,11 @@ pub fn build(b: *std.Build) void {
     });
     exe.root_module.addImport("yaml", yaml.module("yaml"));
 
-    // add module
-    exe.root_module.addImport("webui", zig_webui.module("webui"));
+    const zig_js = b.dependency("zig-js", .{
+        .target = target,
+        .optimize = optimize,
+    });
+    exe.root_module.addImport("zig-js", zig_js.module("zig-js"));
 
     const run_cmd = b.addRunArtifact(exe);
 

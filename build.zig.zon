@@ -9,12 +9,16 @@
             .hash = "1220ecd4fd7d9240965aa1bb28822ebeb7c3f6188adeea04da1781fbce9ebe3de050",
         },
         .drivercon = .{
-            .url = "https://github.com/pmotionf/drivercon/archive/main.tar.gz",
-            .hash = "12201954213be69028a7ac9c0c8e5bbd18702ac0d4d0dc697bbe881b803a80576bdd",
+            .url = "https://github.com/pmotionf/drivercon/archive/a200a254547e3f120d22fe9f19b69f650dd55d71.tar.gz",
+            .hash = "12202c05065819934d4cb543801937f3fb7f39b85e95d880fd7cafa15c51e46279e3",
         },
         .yaml = .{
             .url = "https://github.com/kubkon/zig-yaml/archive/main.tar.gz",
             .hash = "12208398e1393f83a39d03f3ef4893607650b6227dc7f1eee3db4d163fbc2c0c37ca",
+        },
+        .@"zig-js" = .{
+            .url = "https://github.com/mitchellh/zig-js/archive/main.tar.gz",
+            .hash = "12205a66d423259567764fa0fc60c82be35365c21aeb76c5a7dc99698401f4f6fefc",
         },
     },
     .paths = .{
