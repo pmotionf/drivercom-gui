@@ -4,18 +4,14 @@ const js = @import("zig-js");
 const drivercon = @import("drivercon");
 const yaml = @import("yaml");
 
-const html = @embedFile("config.html");
-//const html = @embedFile("index.html");
+//const html = @embedFile("config.html");
+const html = @embedFile("Index.html");
+const start_html = @embedFile("start.html");
 
 var config: drivercon.Config = undefined;
 
-pub fn main() !void {
-    //yaml 파일 열기
-    var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
-    defer arena.deinit();
-    const allocator = arena.allocator();
-
-    var file = try std.fs.cwd().openFile("config.yml", .{});
+fn fileOpen(allocator: std.mem.Allocator, file_name: []const u8) !void {
+    var file = try std.fs.cwd().openFile(file_name, .{});
     defer file.close();
 
     const file_text = try file.readToEndAlloc(allocator, 1_024_000_000);
@@ -26,14 +22,48 @@ pub fn main() !void {
     );
     defer untyped.deinit();
     config = try untyped.parse(drivercon.Config);
+}
+
+pub fn main() !void {
+    var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
+    defer arena.deinit();
+    const allocator = arena.allocator();
+
+    //yaml 파일 열기
+    try fileOpen(allocator, "config.yml");
+
     std.log.info("{}", .{config.station_id});
+    const info = @typeInfo(drivercon.Config).@"struct".fields;
+
+    inline for (info, 0..) |con, i| {
+        const value = @field(config, info[i].name);
+
+        std.debug.print("{s} : {any} \n", .{ con.name, value });
+    }
+
+    //디렉토리 읽어오기
+    const cwd = std.fs.cwd();
+    var dir = try cwd.openDir(".", .{ .iterate = true });
+    defer dir.close();
+    var iterate = dir.iterate();
+
+    var file_names = std.ArrayList([]const u8).init(allocator);
+    defer file_names.deinit();
+
+    while (try iterate.next()) |next_entry| {
+        if (std.mem.endsWith(u8, next_entry.name, ".yml")) {
+            try file_names.append(next_entry.name);
+            std.debug.print("\nname : {s}", .{next_entry.name});
+        }
+    }
+    std.debug.print("\nfiles : {s}", .{file_names.items});
 
     const win = webui.newWindow();
 
     _ = win.bind("showValue", showValue);
     _ = win.bind("saveValue", saveValue);
 
-    _ = win.show(html);
+    _ = win.show(start_html);
 
     webui.wait();
     webui.clean();
