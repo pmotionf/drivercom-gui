@@ -1,0 +1,128 @@
+id: 1
+station_id: 1
+flags: 
+    home_sensor: 0
+    has_neighbor: 
+        backward: 0
+        forward: 1
+    uses_axis: 
+        axis2: 1
+        axis3: 1
+    calibration_completed: 1
+    rockwell_magnet: 1
+magnet: 
+    pitch: 0.04799997806549072
+    length: 0.28599995374679565
+vehicle_mass: 12.899999618530273
+mechanical_angle_offset: 0.9993516206741333
+axis_length: 0.3359999656677246
+motor_length: 0.20249998569488525
+calibrated_home_position: 0.042990777641534805
+total_axes: 21
+warmup_voltage_reference: 10
+calibration_magnet_length: 
+    backward: -0.26799994707107544
+    forward: 0.26799994707107544
+vdc: 
+    target: 120
+    limit: 
+        lower: 118
+        upper: 128
+axes: 
+    - max_current: 10
+      continuous_current: 7
+      current_gain: 
+          p: 23.155000686645508
+          i: 6559.2685546875
+          denominator: 109
+      velocity_gain: 
+          p: 0.203000009059906
+          i: 6.98900032043457
+          denominator: 5
+          denominator_pi: 5
+      position_gain: 
+          p: 17.21500015258789
+          denominator: 10
+      in_position_threshold: 0.0004999637603759766
+      base_position: 0.04797041043639183
+      back_sensor_off: 
+          position: 1
+          section_count: 43
+      front_sensor_off: 
+          position: -1
+          section_count: -42
+      rs: 7.619999885559082
+      ls: 0.026899993419647217
+      kf: 83.35999298095703
+      kbm: 27.969999313354492
+    - max_current: 10
+      continuous_current: 7
+      current_gain: 
+          p: 23.155000686645508
+          i: 6559.2685546875
+          denominator: 109
+      velocity_gain: 
+          p: 0.203000009059906
+          i: 6.98900032043457
+          denominator: 5
+          denominator_pi: 5
+      position_gain: 
+          p: 17.21500015258789
+          denominator: 10
+      in_position_threshold: 0.0004999637603759766
+      base_position: 0.38397037982940674
+      back_sensor_off: 
+          position: 8
+          section_count: 43
+      front_sensor_off: 
+          position: 6
+          section_count: -42
+      rs: 7.619999885559082
+      ls: 0.026899993419647217
+      kf: 83.35999298095703
+      kbm: 27.969999313354492
+    - max_current: 10
+      continuous_current: 7
+      current_gain: 
+          p: 23.155000686645508
+          i: 6559.2685546875
+          denominator: 109
+      velocity_gain: 
+          p: 0.203000009059906
+          i: 6.98900032043457
+          denominator: 5
+          denominator_pi: 5
+      position_gain: 
+          p: 17.21500015258789
+          denominator: 10
+      in_position_threshold: 0.0004999637603759766
+      base_position: 0.7199703454971313
+      back_sensor_off: 
+          position: 15
+          section_count: 43
+      front_sensor_off: 
+          position: 13
+          section_count: -42
+      rs: 7.619999885559082
+      ls: 0.026899993419647217
+      kf: 83.35999298095703
+      kbm: 27.969999313354492
+hall_sensors: 
+    - calibrated_magnet_length: 
+          backward: -0.26799994707107544
+          forward: 0.26799994707107544
+    - calibrated_magnet_length: 
+          backward: -0.26799994707107544
+          forward: 0.26799994707107544
+    - calibrated_magnet_length: 
+          backward: -0.272713840007782
+          forward: 0.27269673347473145
+    - calibrated_magnet_length: 
+          backward: -0.26974359154701233
+          forward: 0.27035602927207947
+    - calibrated_magnet_length: 
+          backward: -0.27563750743865967
+          forward: 0.27480006217956543
+    - calibrated_magnet_length: 
+          backward: -0.2711923122406006
+          forward: 0.2709081470966339
