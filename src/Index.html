@@ -73,17 +73,6 @@
     <input type="file" id="avatar" name="avatar" accept=" .yml "/>
     <script src="https://cdn.jsdelivr.net/npm/js-yaml@4.1.0/dist/js-yaml.min.js"></script>
     <script>
-        function openrFile() {
-            var input = document.getElementById('avatar');
-            var file = input.files[0]; // 선택한 파일 객체
-            if (file) {
-                console.log(readYAMLFile(file));
-                return file.name;
-            } else {
-                return null;
-            }
-        }
-
         function showConfig() {
             var input = document.getElementById('avatar');
             var file = input.files[0]; // 선택한 파일 객체
@@ -222,13 +211,12 @@
  
 
 
-    <!-- <div class="save-button"></div> -->
     <button type="button" onclick="getValue();">save</button>
-    <!-- </div> -->
-
     <label for="avatar">.csv 파일을 선택해 주세요.</label>
     <input type="file" id="loadCvs" name="avatar" accept=" .csv "/>
 
+    <!-- chart -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.0/dist/chart.min.js"></script>
     <script>
         function showCsv(){
             var input = document.getElementById('loadCvs');
@@ -236,7 +224,8 @@
             if (file) {
                 const promise = readCsvFile(file);
                 promise.then(result => {
-                    console.log(result[0]); //
+                    console.log(result); //
+                    showChart(result)
                 })
             } 
 
@@ -246,10 +235,28 @@
         return new Promise((resolve, reject) => {
             const reader = new FileReader();
             reader.onload = function(e) {
-                const content = e.target.result;
+                const csvData = e.target.result;
                 try {
-                    const csv_object = content.split('\r\n');  
-                    resolve(csv_object);
+                    // CSV 데이터 행과 해더 생성
+                    const rows = csvData.split('\n').map(row => row.trim()).filter(row => row);
+                    const headers = rows[0].split(',').map(header => header.trim());
+
+                    // 나머지 데이터를 배열로 변환
+                    const columns = headers.map(() => []);
+                    // 데이터 행을 열별로 분리
+                    rows.slice(1).forEach(row => {
+                        const values = row.split(',').map(value => value.trim());
+                        values.forEach((value, index) => {
+                            columns[index].push(Number(value));  // 값을 숫자로 변환
+                        });
+                    });
+ 
+                    // 최종 출력 형태로 변환
+                    const result = {
+                        label: headers,
+                        data: columns
+                    };
+                    resolve(result);
             
                 } catch (err) {
                     reject('csv 파싱 오류: ' + err.message);  // 오류 발생 시
@@ -260,6 +267,46 @@
             };
             reader.readAsText(file);  // 파일을 텍스트 형식으로 읽음  
             });
+        }
+
+        function showChart(data){
+            var ctx = document.getElementById('myChart').getContext('2d');
+            var labels_value = Array.from({length:data["data"][0].length},(_, index) => index );
+            var chart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels_value,
+                datasets: [{
+                    label:data["label"][0],
+                    data: data["data"][0],
+                    borderColor:'rgba(255, 0, 0, 1)',
+                      
+                    borderWidth: 1
+                },
+                {
+                    label: data["label"][1],
+                    data: data["data"][1],
+                    borderColor:'rgba(0, 255, 0, 1)',
+                      
+                    borderWidth: 1
+                },
+                {
+                    label: data["label"][2],
+                    data: data["data"][2],
+                    borderColor:'rgba(0, 0, 255, 1)',
+                      
+                    borderWidth: 1
+                }]
+            },
+            
+            options: {
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
         }
 
         document.getElementById('loadCvs').addEventListener("change", showCsv );
@@ -696,38 +743,7 @@
     <div id="chart"></div>
         <canvas id="myChart" width="400" height="300"></canvas>
     </div>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.0/dist/chart.min.js"></script>
+   
     
-    <script>
-        var ctx = document.getElementById('myChart').getContext('2d');
-        var chart = new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: ['값1', '값2', '값3'],
-                datasets: [{
-                    label: '차트1',
-                    data: [10, 20, 30],
-                    borderColor:'rgba(255, 99, 132, 1)',
-                      
-                    borderWidth: 1
-                },
-                {
-                    label: '차트2',
-                    data: [118.02,112.03,115.05],
-                    borderColor:'rgba(255, 99, 132, 1)',
-                      
-                    borderWidth: 1
-                }]
-            },
-            
-            options: {
-                scales: {
-                    y: {
-                        beginAtZero: true
-                    }
-                }
-            }
-        });
-    </script>
 </body>
 </html>
