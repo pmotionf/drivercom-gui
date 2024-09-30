@@ -11,6 +11,7 @@
             align-items: center; /* 중앙 정렬 */
             padding: 20px;
             font-family: Arial, sans-serif;
+            height: 100vh; /* 전체 높이를 viewport 높이로 설정 */
         }
         
         #container {
@@ -18,24 +19,28 @@
             justify-content: space-between; /* 양쪽 끝에 배치 */
             width: 100%; /* 전체 너비 */
             margin-top: 20px; /* 버튼과의 여백 */
+            flex-grow: 1; /* 남은 공간을 차지하도록 설정 */
         }
         
         #table {
+            display: none;
             width: 30%; /* 표 영역의 너비 */
         }
         
         #chart {
+            display: none;
             width: 60%; /* 그래프 영역의 너비 */
+            max-height: calc(100vh - 100px); /* 차트 최대 높이 설정 */
             
         }
         
         canvas {
-            width: 70; /* 차트의 너비를 100%로 설정 */
-            height: 100%;
+            width: 100%; 
+            height: 100%; /* 차트의 높이를 부모 요소의 높이에 맞춤 */
         }
         
         table {
-            width: 100%; /* Slightly smaller width */
+            width: 100%; 
             border-collapse: collapse;
             margin: auto;
         }
@@ -64,18 +69,20 @@
             box-sizing: border-box;
             padding: 3px;
         }
+
+       
     </style>
     <title>값 변경하기</title>
 </head>
 <body>
     <div class="section-header">SHDrv-server</div>
-    <label for="avatar">config 파일을 선택해 주세요.</label>
+    <label for="avatar">config 파일을 선택해 주세요.</label>v 
     <input type="file" id="avatar" name="avatar" accept=" .yml "/>
     <script src="https://cdn.jsdelivr.net/npm/js-yaml@4.1.0/dist/js-yaml.min.js"></script>
     <script>
         function showConfig() {
             var input = document.getElementById('avatar');
-            var file = input.files[0]; // 선택한 파일 객체
+            var file = input.files[0]; // 선택한 파일 객체4
             if (file) {
                 const promise  = readYAMLFile(file);
                 promise.then(result => {
@@ -103,6 +110,17 @@
                 })
                 
             } 
+            const myTable = document.getElementById("table"); 
+            myTable.style.display = 'table';
+
+            var ctx = document.getElementById('myChart').getContext('2d');
+            // 기존 차트가 있는지 확인
+            const existingChart = Object.values(Chart.instances).find(chart => chart.canvas.id === 'myChart');
+
+            if (existingChart) {
+                existingChart.destroy(); // 기존 차트를 파괴합니다.
+            }
+
         }
 
         function readYAMLFile(file) {
@@ -208,9 +226,6 @@
     document.getElementById('avatar').addEventListener("change", showConfig );
     </script>
 
- 
-
-
     <button type="button" onclick="getValue();">save</button>
     <label for="avatar">.csv 파일을 선택해 주세요.</label>
     <input type="file" id="loadCvs" name="avatar" accept=" .csv "/>
@@ -228,7 +243,11 @@
                     showChart(result)
                 })
             } 
+            const myTable = document.getElementById("table");
+            myTable.style.display = 'none';
 
+            const myChart = document.getElementById("chart");
+            myChart.style.display = 'block';
         }
 
         function readCsvFile(file) {
@@ -271,477 +290,115 @@
 
         function showChart(data){
             var ctx = document.getElementById('myChart').getContext('2d');
+            // 기존 차트가 있는지 확인
+            const existingChart = Object.values(Chart.instances).find(chart => chart.canvas.id === 'myChart');
+
+            if (existingChart) {
+                existingChart.destroy(); // 기존 차트를 파괴합니다.
+            }
             var labels_value = Array.from({length:data["data"][0].length},(_, index) => index );
-            var chart = new Chart(ctx, {
+            var data_sets = [];
+            for (let i = 0; i < data["label"].length; i++) {
+                const data_set = {
+                    label:data["label"][i],
+                    data: data["data"][i],
+                    borderColor: getRandomColor(),
+                    borderWidth: 3
+                }
+                data_sets.push(data_set);
+            }
+
+            const chart = new Chart(ctx, {
             type: 'line',
             data: {
                 labels: labels_value,
-                datasets: [{
-                    label:data["label"][0],
-                    data: data["data"][0],
-                    borderColor:'rgba(255, 0, 0, 1)',
-                      
-                    borderWidth: 1
-                },
-                {
-                    label: data["label"][1],
-                    data: data["data"][1],
-                    borderColor:'rgba(0, 255, 0, 1)',
-                      
-                    borderWidth: 1
-                },
-                {
-                    label: data["label"][2],
-                    data: data["data"][2],
-                    borderColor:'rgba(0, 0, 255, 1)',
-                      
-                    borderWidth: 1
-                }]
+                datasets: data_sets,
             },
             
             options: {
-                scales: {
-                    y: {
-                        beginAtZero: true
-                    }
-                }
-            }
+                scales: {y: {stacked: true, min: 0}},
+                
+            },
         });
+        }
+
+        function getRandomColor() {
+            const letters = '0123456789ABCDEF';
+            let color = '#';
+            for (let i = 0; i < 6; i++) {
+                color += letters[Math.floor(Math.random() * 16)];
+            }
+            return color;
         }
 
         document.getElementById('loadCvs').addEventListener("change", showCsv );
     </script>
+    <script>
+
+        function ready() {
+            if (typeof webui !== 'undefined') {
+                webui.setEventCallback((e) => {
+                    if (e == webui.event.CONNECTED) {
+                        webui.call('sendJson').then((response) => {
+                            const dict = JSON.parse(response);
+                            console.log(dict);
+                            appendTable(dict);
+                        });
+                    }
+                });
+
+            }
+                
+        }
+        
+
+        function appendTable(dict, keys = ""){
+            const t_body = document.getElementById("table");
+            for(let key in dict){
+                if(typeof dict[key] == 'object'){
+                    const k = keys + "_"+key;
+                    const row = document.createElement("tr");
+                    const header = document.createElement("th");
+                    header.colSpan = "2";
+                    header.className = "section-header";
+                    header.textContent = key;
+                    row.appendChild(header);
+                    t_body.appendChild(row);
+                    appendTable(dict[key], k);
+                    
+                }
+                else{
+                    const row = document.createElement("tr");
+                    const nameCell = document.createElement("td");
+                    const inputCell = document.createElement("td");
+                    const inputField = document.createElement("input");
+
+                    nameCell.textContent = key; // 이름(키) 추가
+                    inputField.type = "text"; // 입력 타입 설정
+                    inputField.name = key;
+                    inputField.id = keys+ "_"+key;
+
+                    inputField.style.width = "200px";
+                    
+                    inputField.style.padding = "3px";
+
+                    inputCell.appendChild(inputField); // 입력 필드 추가
+
+                    row.appendChild(nameCell);
+                    row.appendChild(inputCell);
+                    t_body.appendChild(row);
+                }
+            }
+        }
+        document.addEventListener("DOMContentLoaded", ready);
+        </script>
 
     <div id="container">
     <table id = "table">
-        <tr>
-            <th colspan="2" class="section-header">id</th>
-        </tr>
-        <tr>
-            <td>id</td>
-            <td><input type="number" name="id" id="id"></td>
-        </tr>
-        <tr>
-            <td>station_id</td>
-            <td><input type="text" name="station_id" id="station_id"></td>
-        </tr>
-        <tr></tr>
-            <th colspan="2" class="section-header">flags</th>
-        </tr>
-        <tr>
-            <td>home_sensor</td>
-            <td><input type="text" name="home_sensor" id="home_sensor"></td>
-        </tr>
-        <tr>
-            <td>has_neighbor_backward</td>
-            <td><input type="text" name="has_neighbor_backward" id="has_neighbor_backward"></td>
-        </tr>
-        <tr>
-            <td>has_neighbor_forward</td>
-            <td><input type="text" name="has_neighbor_forward" id="has_neighbor_forward"></td>
-        </tr>
-        <tr>
-            <td>uses_axis2</td>
-            <td><input type="text" name="uses_axis2" id="uses_axis2"></td>
-        </tr>
-        <tr>
-            <td>uses_axis3</td>
-            <td><input type="text" name="uses_axis3" id="uses_axis3"></td>
-        </tr>
-        <tr>
-            <td>calibration_completed</td>
-            <td><input type="text" name="calibration_completed" id="calibration_completed"></td>
-        </tr>
-        <tr>
-            <td>rockwell_magnet</td>
-            <td><input type="text" name="rockwell_magnet" id="rockwell_magnet"></td>
-        </tr>
-        <tr>
-            <th colspan="2" class="section-header">magnet</th>
-        </tr>
-        <tr>
-            <td>pitch</td>
-            <td><input type="text" name="pitch" id="pitch"></td>
-        </tr>
-        <tr>
-            <td>length</td>
-            <td><input type="text" name="length" id="length"></td>
-        </tr>
-        <tr>
-            <th colspan="2" class="section-header">Mechanical</th>
-        </tr>
-        <tr>
-            <td>vehicle_mass</td>
-            <td><input type="text" name="vehicle_mass" id="vehicle_mass"></td>
-        </tr>
-        <tr>
-            <td>mechanical_angle_offset</td>
-            <td><input type="text" name="mechanical_angle_offset" id="mechanical_angle_offset"></td>
-        </tr>
-        <tr>
-            <td>axis_length</td>
-            <td><input type="text" name="axis_length" id="axis_length"></td>
-        </tr>
-        <tr>
-            <td>motor_length</td>
-            <td><input type="text" name="motor_length" id="motor_length"></td>
-        </tr>
-        <tr>
-            <td>calibrated_home_position</td>
-            <td><input type="text" name="calibrated_home_position" id="calibrated_home_position"></td>
-        </tr>
-        <tr>
-            <td>total_axes</td>
-            <td><input type="text" name="total_axes" id="total_axes"></td>
-        </tr>
-        <tr></tr>
-            <th colspan="2" class="section-header">Electrical</th>
-        </tr>
-        <tr>
-            <td>warmup_voltage_reference</td>
-            <td><input type="text" name="warmup_voltage_reference" id="warmup_voltage_reference"></td>
-        </tr>
-        <tr>
-            <td>backward</td>
-            <td><input type="text" name="backward" id="backward"></td>
-        </tr>
-        <tr>
-            <td>forward</td>
-            <td><input type="text" name="forward" id="forward"></td>
-        </tr>
-        <tr>
-            <td>target</td>
-            <td><input type="text" name="target" id="target"></td>
-        </tr>
-        <tr>
-            <td>limit_lower</td>
-            <td><input type="text" name="limit_lower" id="limit_lower"></td>
-        </tr>
-        <tr>
-            <td>limit_upper</td>
-            <td><input type="text" name="limit_upper" id="limit_upper"></td>
-        </tr>
-    
-        <!-- axes1 section -->
-        <tr>
-            <th colspan="2" class="section-header">axes1</th>
-        </tr>
-        <tr>
-            <td>max_current_axes1</td>
-            <td><input type="text" name="max_current_axes1" id="max_current_axes1"></td>
-        </tr>
-        <tr>
-            <td>continuous_current_axes1</td>
-            <td><input type="text" name="continuous_current_axes1" id="continuous_current_axes1"></td>
-        </tr>
-        <tr>
-            <td>current_gain_p_axes1</td>
-            <td><input type="text" name="current_gain_p_axes1" id="current_gain_p_axes1"></td>
-        </tr>
-        <tr>
-            <td>current_gain_i_axes1</td>
-            <td><input type="text" name="current_gain_i_axes1" id="current_gain_i_axes1"></td>
-        </tr>
-        <tr>
-            <td>current_gain_denominator_axes1</td>
-            <td><input type="text" name="current_gain_i_axes1" id="current_gain_current_gain_denominator_axes1_axes1"></td>
-        </tr>
-        <tr>
-            <td>velocity_gain_p_axes1</td>
-            <td><input type="text" name="velocity_gain_p_axes1" id="velocity_gain_p_axes1"></td>
-        </tr>
-        <tr>
-            <td>velocity_gain_i_axes1</td>
-            <td><input type="text" name="velocity_gain_i_axes1" id="velocity_gain_i_axes1"></td>
-        </tr>
-        <tr>
-            <td>velocity_gain_denominator_axes1</td>
-            <td><input type="text" name="velocity_gain_denominator_axes1" id="velocity_gain_denominator_axes1"></td>
-        </tr>
-        <tr>
-            <td>velocity_gain_denominator_pi_axes1</td>
-            <td><input type="text" name="velocity_gain_denominator_pi_axes1" id="velocity_gain_denominator_pi_axes1"></td>
-        </tr>
-        <tr>
-            <td>position_gain_p_axes1</td>
-            <td><input type="text" name="position_gain_p_axes1" id="position_gain_p_axes1"></td>
-        </tr>
-        <tr>
-            <td>position_gain_denominator_axes1</td>
-            <td><input type="text" name="position_gain_denominator_axes1" id="position_gain_denominator_axes1"></td>
-        </tr>
-        <tr>
-            <td>in_position_threshold_axes1</td>
-            <td><input type="text" name="in_position_threshold_axes1" id="in_position_threshold_axes1"></td>
-        </tr>
-        <tr>
-            <td>base_position_axes1</td>
-            <td><input type="text" name="base_position_axes1" id="base_position_axes1"></td>
-        </tr>
-        <tr>
-            <td>back_sensor_off_position_axes1</td>
-            <td><input type="text" name="back_sensor_off_position_axes1" id="back_sensor_off_position_axes1"></td>
-        </tr>
-        <tr>
-            <td>back_sensor_off_section_count_axes1</td>
-            <td><input type="text" name="back_sensor_off_section_count_axes1" id="back_sensor_off_section_count_axes1"></td>
-        </tr>
-        <tr>
-            <td>front_sensor_off_position_axes1</td>
-            <td><input type="text" name="front_sensor_off_position_axes1" id="front_sensor_off_position_axes1"></td>
-        </tr>
-        <tr>
-            <td>front_sensor_off_section_count_axes1</td>
-            <td><input type="text" name="front_sensor_off_section_count_axes1" id="front_sensor_off_section_count_axes1"></td>
-        </tr>
-        <tr>
-            <td>rs_axes1</td>
-            <td><input type="text" name="rs_axes1" id="rs_axes1"></td>
-        </tr>
-        <tr>
-            <td>ls_axes1</td>
-            <td><input type="text" name="ls_axes1" id="ls_axes1"></td>
-        </tr>
-        <tr>
-            <td>kf_axes1</td>
-            <td><input type="text" name="kf_axes1" id="kf_axes1"></td>
-        </tr>
-        <tr>
-            <td>kbm_axes1</td>
-            <td><input type="text" name="kbm_axes1" id="kbm_axes1"></td>
-        </tr>
-    
-        <!-- axes2 section -->
-        <tr>
-            <th colspan="2" class="section-header">axes2</th>
-        </tr>
-        <tr>
-            <td>max_current_axes2</td>
-            <td><input type="text" name="max_current_axes2" id="max_current_axes2"></td>
-        </tr>
-        <tr>
-            <td>continuous_current_axes2</td>
-            <td><input type="text" name="continuous_current_axes2" id="continuous_current_axes2"></td>
-        </tr>
-        <tr>
-            <td>current_gain_p_axes2</td>
-            <td><input type="text" name="current_gain_p_axes2" id="current_gain_p_axes2"></td>
-        </tr>
-        <tr>
-            <td>current_gain_i_axes2</td>
-            <td><input type="text" name="current_gain_i_axes2" id="current_gain_i_axes2"></td>
-        </tr>
-        <tr></tr>
-            <td>current_gain_denominator_axes2</td>
-            <td><input type="text" name="current_gain_i_axes2" id="current_gain_current_gain_denominator_axes2"></td>
-        </tr>
-        <tr>
-            <td>velocity_gain_p_axes2</td>
-            <td><input type="text" name="velocity_gain_p_axes2" id="velocity_gain_p_axes2"></td>
-        </tr>
-        <tr>
-            <td>velocity_gain_i_axes2</td>
-            <td><input type="text" name="velocity_gain_i_axes2" id="velocity_gain_i_axes2"></td>
-        </tr>
-        <tr>
-            <td>velocity_gain_denominator_axes2</td>
-            <td><input type="text" name="velocity_gain_denominator_axes2" id="velocity_gain_denominator_axes2"></td>
-        </tr>
-        <tr>
-            <td>velocity_gain_denominator_pi_axes2</td>
-            <td><input type="text" name="velocity_gain_denominator_pi_axes2" id="velocity_gain_denominator_pi_axes2"></td>
-        </tr>
-        <tr>
-            <td>position_gain_p_axes2</td>
-            <td><input type="text" name="position_gain_p_axes2" id="position_gain_p_axes2"></td>
-        </tr>
-        <tr>
-            <td>position_gain_denominator_axes2</td>
-            <td><input type="text" name="position_gain_denominator_axes2" id="position_gain_denominator_axes2"></td>
-        </tr>
-        <tr>
-            <td>in_position_threshold_axes2</td>
-            <td><input type="text" name="in_position_threshold_axes2" id="in_position_threshold_axes2"></td>
-        </tr>
-        <tr>
-            <td>base_position_axes2</td>
-            <td><input type="text" name="base_position_axes2" id="base_position_axes2"></td>
-        </tr>
-        <tr>
-            <td>back_sensor_off_position_axes2</td>
-            <td><input type="text" name="back_sensor_off_position_axes2" id="back_sensor_off_position_axes2"></td>
-        </tr>
-        <tr>
-            <td>back_sensor_off_section_count_axes2</td>
-            <td><input type="text" name="back_sensor_off_section_count_axes2" id="back_sensor_off_section_count_axes2"></td>
-        </tr>
-        <tr>
-            <td>front_sensor_off_position_axes2</td>
-            <td><input type="text" name="front_sensor_off_position_axes2" id="front_sensor_off_position_axes2"></td>
-        </tr>
-        <tr>
-            <td>front_sensor_off_section_count_axes2</td>
-            <td><input type="text" name="front_sensor_off_section_count_axes2" id="front_sensor_off_section_count_axes2"></td>
-        </tr>
-        <tr>
-            <td>rs_axes2</td>
-            <td><input type="text" name="rs_axes2" id="rs_axes2"></td>
-        </tr>
-        <tr>
-            <td>ls_axes2</td>
-            <td><input type="text" name="ls_axes2" id="ls_axes2"></td>
-        </tr>
-        <tr>
-            <td>kf_axes2</td>
-            <td><input type="text" name="kf_axes2" id="kf_axes2"></td>
-        </tr>
-        <tr>
-            <td>kbm_axes2</td>
-            <td><input type="text" name="kbm_axes2" id="kbm_axes2"></td>
-        </tr>
-    
-        <!-- axes3 section -->
-        <tr>
-            <th colspan="2" class="section-header">axes3</th>
-        </tr>
-        <tr>
-            <td>max_current_axes3</td>
-            <td><input type="text" name="max_current_axes3" id="max_current_axes3"></td>
-        </tr>
-        <tr>
-            <td>continuous_current_axes3</td>
-            <td><input type="text" name="continuous_current_axes3" id="continuous_current_axes3"></td>
-        </tr>
-        <tr>
-            <td>current_gain_p_axes3</td>
-            <td><input type="text" name="current_gain_p_axes3" id="current_gain_p_axes3"></td>
-        </tr>
-        <tr>
-            <td>current_gain_i_axes3</td>
-            <td><input type="text" name="current_gain_i_axes3" id="current_gain_i_axes3"></td>
-        </tr>
-        <tr></tr>
-            <td>current_gain_denominator_axes1</td>
-            <td><input type="text" name="current_gain_i_axes3" id="current_gain_current_gain_denominator_axes1_axes3"></td>
-        </tr>
-        <tr>
-            <td>velocity_gain_p_axes3</td>
-            <td><input type="text" name="velocity_gain_p_axes3" id="velocity_gain_p_axes3"></td>
-        </tr>
-        <tr>
-            <td>velocity_gain_i_axes3</td>
-            <td><input type="text" name="velocity_gain_i_axes3" id="velocity_gain_i_axes3"></td>
-        </tr>
-        <tr>
-            <td>velocity_gain_denominator_axes3</td>
-            <td><input type="text" name="velocity_gain_denominator_axes3" id="velocity_gain_denominator_axes3"></td>
-        </tr>
-        <tr>
-            <td>velocity_gain_denominator_pi_axes3</td>
-            <td><input type="text" name="velocity_gain_denominator_pi_axes3" id="velocity_gain_denominator_pi_axes3"></td>
-        </tr>
-        <tr>
-            <td>position_gain_p_axes3</td>
-            <td><input type="text" name="position_gain_p_axes3" id="position_gain_p_axes3"></td>
-        </tr>
-        <tr>
-            <td>position_gain_denominator_axes3</td>
-            <td><input type="text" name="position_gain_denominator_axes3" id="position_gain_denominator_axes3"></td>
-        </tr>
-        <tr>
-            <td>in_position_threshold_axes3</td>
-            <td><input type="text" name="in_position_threshold_axes3" id="in_position_threshold_axes3"></td>
-        </tr>
-        <tr>
-            <td>base_position_axes3</td>
-            <td><input type="text" name="base_position_axes3" id="base_position_axes3"></td>
-        </tr>
-        <tr>
-            <td>back_sensor_off_position_axes3</td>
-            <td><input type="text" name="back_sensor_off_position_axes3" id="back_sensor_off_position_axes3"></td>
-        </tr>
-        <tr>
-            <td>back_sensor_off_section_count_axes3</td>
-            <td><input type="text" name="back_sensor_off_section_count_axes3" id="back_sensor_off_section_count_axes3"></td>
-        </tr>
-        <tr>
-            <td>front_sensor_off_position_axes3</td>
-            <td><input type="text" name="front_sensor_off_position_axes3" id="front_sensor_off_position_axes3"></td>
-        </tr>
-        <tr>
-            <td>front_sensor_off_section_count_axes3</td>
-            <td><input type="text" name="front_sensor_off_section_count_axes3" id="front_sensor_off_section_count_axes3"></td>
-        </tr>
-        <tr>
-            <td>rs_axes3</td>
-            <td><input type="text" name="rs_axes3" id="rs_axes3"></td>
-        </tr>
-        <tr>
-            <td>ls_axes3</td>
-            <td><input type="text" name="ls_axes3" id="ls_axes3"></td>
-        </tr>
-        <tr>
-            <td>kf_axes3</td>
-            <td><input type="text" name="kf_axes3" id="kf_axes3"></td>
-        </tr>
-        <tr>
-            <td>kbm_axes3</td>
-            <td><input type="text" name="kbm_axes3" id="kbm_axes3"></td>
-        </tr>
-        <tr>
-            <th colspan="2" class="section-header">hall_sensors</th>
-        </tr>
-        <tr>
-            <td>calibrated_magnet_length_backward</td>
-            <td><input type="text" name="calibrated_magnet_length_backward" id = "hall_back_1"></td>
-        </tr>
-        <tr>
-            <td>calibrated_magnet_length_forward</td>
-            <td><input type="text" name="calibrated_magnet_length_forward" id = "hall_for_1"></td>
-        </tr>
-        <tr>
-            <td>calibrated_magnet_length_backward</td>
-            <td><input type="text" name="calibrated_magnet_length_backward" id = "hall_back_2"></td>
-        </tr>
-        <tr>
-            <td>calibrated_magnet_length_forward</td>
-            <td><input type="text" name="calibrated_magnet_length_forward" id = "hall_for_2"></td>
-        </tr>
-        <tr>
-            <td>calibrated_magnet_length_backward</td>
-            <td><input type="text" name="calibrated_magnet_length_backward" id = "hall_back_3"></td>
-        </tr>
-        <tr>
-            <td>calibrated_magnet_length_forward</td>
-            <td><input type="text" name="calibrated_magnet_length_forward" id = "hall_for_3"></td>
-        </tr>
-        <tr>
-            <td>calibrated_magnet_length_backward</td>
-            <td><input type="text" name="calibrated_magnet_length_backward" id = "hall_back_4"></td>
-        </tr>
-        <tr>
-            <td>calibrated_magnet_length_forward</td>
-            <td><input type="text" name="calibrated_magnet_length_forward" id = "hall_for_4"></td>
-        </tr>
-        <tr>
-            <td>calibrated_magnet_length_backward</td>
-            <td><input type="text" name="calibrated_magnet_length_backward" id = "hall_back_5"></td>
-        </tr>
-        <tr>
-            <td>calibrated_magnet_length_forward</td>
-            <td><input type="text" name="calibrated_magnet_length_forward" id = "hall_for_5"></td>
-        </tr>
-        <tr>
-            <td>calibrated_magnet_length_backward</td>
-            <td><input type="text" name="calibrated_magnet_length_backward" id = "hall_back_6"></td>
-        </tr>
-        <tr>
-            <td>calibrated_magnet_length_forward</td>
-            <td><input type="text" name="calibrated_magnet_length_forward" id = "hall_for_6"></td>
-        </tr>
+      
     </table>
     <div id="chart"></div>
-        <canvas id="myChart" width="400" height="300"></canvas>
+        <canvas id="myChart" width="400" height="200"></canvas>
     </div>
    
     
