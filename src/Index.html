@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <script src="/webui.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+         body {
+            display: flex;
+            flex-direction: column; /* 세로 방향으로 배치 */
+            align-items: center; /* 중앙 정렬 */
+            padding: 20px;
+            font-family: Arial, sans-serif;
+            height: 100vh; /* 전체 높이를 viewport 높이로 설정 */
+        }
+        
+        #container {
+            display: flex; /* 가로 방향으로 배치 */
+            justify-content: space-between; /* 양쪽 끝에 배치 */
+            width: 100%; /* 전체 너비 */
+            margin-top: 20px; /* 버튼과의 여백 */
+            flex-grow: 1; /* 남은 공간을 차지하도록 설정 */
+        }
+        
+        #table {
+            display: none;
+            width: 30%; /* 표 영역의 너비 */
+        }
+        
+        #chart {
+            display: none;
+            width: 60%; /* 그래프 영역의 너비 */
+            max-height: calc(100vh - 100px); /* 차트 최대 높이 설정 */
+            
+        }
+        
+        canvas {
+            width: 100%; 
+            height: 100%; /* 차트의 높이를 부모 요소의 높이에 맞춤 */
+        }
+        
+        table {
+            width: 100%; 
+            border-collapse: collapse;
+            margin: auto;
+        }
+        
+        table, th, td {
+            border: 1px solid black;
+        }
+        
+        th, td {
+            padding: 6px;
+            text-align: left;
+        }
+        
+        th {
+            background-color: #f2f2f2;
+        }
+        
+        .section-header {
+            font-weight: bold;
+            text-align: center;
+            background-color: #d9d9d9;
+        }
+        
+        input[type="text"] {
+            width: 90%;
+            box-sizing: border-box;
+            padding: 3px;
+        }
+
+       
+    </style>
+    <title>값 변경하기</title>
+</head>
+<body>
+    <div class="section-header">SHDrv-server</div>
+    <label for="avatar">config 파일을 선택해 주세요.</label>v 
+    <input type="file" id="avatar" name="avatar" accept=" .yml "/>
+    <script src="https://cdn.jsdelivr.net/npm/js-yaml@4.1.0/dist/js-yaml.min.js"></script>
+    <script>
+        function showConfig() {
+            var input = document.getElementById('avatar');
+            var file = input.files[0]; // 선택한 파일 객체4
+            if (file) {
+                const promise  = readYAMLFile(file);
+                promise.then(result => {
+                    const dict = result;
+                    console.log("file:", dict);
+
+                    //모든 value 저장
+                    const all_value = extractValues(dict);
+                    console.log(all_value);
+
+
+                    //html의 모든 ids 저장
+                    const allElements = document.querySelectorAll('input[type="text"], input[type="number"],  input[type="checkbox"]');
+                    const ids = [];
+                    allElements.forEach(element => {
+                        ids.push(element.id);   
+                    });
+                    console.log(ids);
+
+                    //값을 변환
+                    for(let i=0; i < ids.length; i++) {
+                        var v = document.getElementById(ids[i]);
+                        v.value = all_value[i];
+                        if (v.id.includes("flags")){
+                            v.checked = (all_value[i] == 1);
+                        }
+                    }
+                })
+                
+            } 
+            const myTable = document.getElementById("table"); 
+            myTable.style.display = 'table';
+
+            var ctx = document.getElementById('myChart').getContext('2d');
+            // 기존 차트가 있는지 확인
+            const existingChart = Object.values(Chart.instances).find(chart => chart.canvas.id === 'myChart');
+
+            if (existingChart) {
+                existingChart.destroy(); // 기존 차트를 파괴합니다.
+            }
+
+        }
+
+        function readYAMLFile(file) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const content = e.target.result;
+                try {
+                    const yamlObject = jsyaml.load(content);  // YAML을 파싱하여 JavaScript 객체로 변환
+                    if (typeof yamlObject === 'object' && yamlObject !== null) {
+                        resolve(yamlObject);  // 파싱된 객체를 반환
+                    } else {
+                         reject('YAML 파일이 유효한 딕셔너리 형식이 아닙니다.');
+                    }
+                } catch (err) {
+                    reject('YAML 파싱 오류: ' + err.message);  // 오류 발생 시
+                }
+            };
+            reader.onerror = function() {
+                reject('파일 읽기 오류');
+            };
+            reader.readAsText(file);  // 파일을 텍스트 형식으로 읽음  
+            });
+        }
+
+        function getValue(){
+            webui.call('saveValue').then((response) => {
+                const dict = JSON.parse(response);
+
+                //html의 모든 value 저장
+                const allElements = document.querySelectorAll('input[type="text"], input[type="number"]');
+                const values = [];//
+                allElements.forEach(element => {
+                    if(element.value == ""){
+                        values.push(0);
+                    }else{
+                        values.push(element.value);
+                    }
+                });
+                
+                let index = 0;
+                extractKey(dict, values, index);
+                console.log(dict);
+
+
+                //vkdlf wjwkd
+                const blob = new Blob([JSON.stringify(dict)], { type: 'text/yaml' });
+                const url = URL.createObjectURL(blob);
+
+                // 다운로드 링크 생성
+                const a = document.createElement('a');
+                a.href = url;
+
+                // 현재 날짜와 시간을 가져오기
+                const currentDate = new Date();
+
+                // 날짜와 시간을 문자열로 포맷팅
+                const formattedDate = `${currentDate.getFullYear()}-${currentDate.getMonth() + 1}-${currentDate.getDate()} ${currentDate.getHours()}:${currentDate.getMinutes()}:${currentDate.getSeconds()}`;
+
+                // 포맷팅된 날짜와 시간을 출력
+                a.download = formattedDate +'config.yml'; // 다운로드할 파일 이름
+
+                // 링크 클릭하여 다운로드
+                document.body.appendChild(a);
+                a.click();
+
+                // 링크 제거
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url); // Blob URL 해제
+
+            });
+
+            
+        }
+        
+        function extractKey(dict, values, index) {
+            for(let key in dict){
+                if(typeof dict[key] == 'object'){
+                    extractKey(dict[key],values, index);
+                }
+                else{
+                    dict[key] = values[index++];
+                }
+            }
+        }
+        function extractValues(dict) {
+            const result = [];
+            for (const key in dict){
+                const value = dict[key];
+
+                if(typeof value == "number"){
+                    result.push(value);
+                }
+                else{
+                    const in_value = extractValues(value);
+                    result.push(...in_value);
+                }
+            }
+            return result;
+        }
+      
+
+    document.getElementById('avatar').addEventListener("change", showConfig );
+    </script>
+
+    <button type="button" onclick="getValue();">save</button>
+    <label for="avatar">.csv 파일을 선택해 주세요.</label>
+    <input type="file" id="loadCsv" name="avatar" accept=" .csv "/>
+
+
+    <!-- 차트 생성 -->
+    <script src="path/to/chartjs/dist/chart.min.js"></script>
+    <!-- chart -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.0/dist/chart.min.js"></script>
+    <!-- 줌 플러그인 -->
+    <script src="path/to/chartjs-plugin-zoom/dist/chartjs-plugin-zoom.min.js"></script> 
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@1.2.1/dist/chartjs-plugin-zoom.min.js"></script>
+    <script>
+        function showCsv(){
+            var input = document.getElementById('loadCsv');
+            var file = input.files[0]; // 선택한 파일 객체
+            if (file) {
+                const promise = readCsvFile(file);
+                promise.then(result => {
+                    console.log(result); //
+                    showChart(result);
+                })
+            } 
+            const myTable = document.getElementById("table");
+            myTable.style.display = 'none';
+
+            const myChart = document.getElementById("chart");
+            myChart.style.display = 'block';
+        }
+
+        function readCsvFile(file) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const csvData = e.target.result;
+                try {
+                    // CSV 데이터 행과 해더 생성
+                    const rows = csvData.split('\n').map(row => row.trim()).filter(row => row);
+                    const headers = rows[0].split(',').map(header => header.trim());
+
+                    // 나머지 데이터를 배열로 변환
+                    const columns = headers.map(() => []);
+                    // 데이터 행을 열별로 분리
+                    rows.slice(1).forEach(row => {
+                        const values = row.split(',').map(value => value.trim());
+                        values.forEach((value, index) => {
+                            columns[index].push(Number(value));  // 값을 숫자로 변환
+                        });
+                    });
+ 
+                    // 최종 출력 형태로 변환
+                    const result = {
+                        label: headers,
+                        data: columns
+                    };
+                    resolve(result);
+            
+                } catch (err) {
+                    reject('csv 파싱 오류: ' + err.message);  // 오류 발생 시
+                } 
+            };
+            reader.onerror = function() {
+                reject('파일 읽기 오류');
+            };
+            reader.readAsText(file);  // 파일을 텍스트 형식으로 읽음  
+            });
+        }
+
+        function showChart(data){
+            var ctx = document.getElementById('myChart').getContext('2d');
+            // 기존 차트가 있는지 확인
+            const existingChart = Object.values(Chart.instances).find(chart => chart.canvas.id === 'myChart');
+
+            if (existingChart) {
+                existingChart.destroy(); // 기존 차트를 파괴합니다.
+            }
+
+            var labels_value = Array.from({length:data["data"][0].length},(_, index) => index );
+            var data_sets = [];
+            for (let i = 0; i < data["label"].length; i++) {
+                const data_set = {
+                    label:data["label"][i],
+                    data: data["data"][i],
+                    borderColor: getRandomColor(),
+                    borderWidth: 3
+                }
+                data_sets.push(data_set);
+            }
+
+            const chart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels_value,
+                datasets: data_sets,
+            },            
+            options: {
+                scales: {y: {stacked: true}},
+                plugins: {
+                    zoom: {
+                        pan: {
+                            enabled: true,
+                            mode: 'x', // x축만 패닝 가능 (원하는 경우 'xy'로 설정해 x축과 y축 모두 패닝 가능)
+                            threshold: 10 // 드래그 감도를 설정 (10px 이상 드래그해야 패닝 시작)
+                        },
+                        zoom: {
+                            wheel : {
+                                enabled: true,
+                            },
+                            pinch : {
+                                enabled: true
+                            },
+                            drag: {
+                                enabled: true, // 드래그하여 줌 가능
+                                threshold: 5 // 드래그 줌의 최소 감도 설정
+                            },
+                            mode:'x',
+                        }
+                       
+                    }
+                }
+            }
+        });
+        }
+
+        function getRandomColor() {
+            const letters = '0123456789ABCDEF';
+            let color = '#';
+            for (let i = 0; i < 6; i++) {
+                color += letters[Math.floor(Math.random() * 16)];
+            }
+            return color;
+        }
+
+        document.getElementById('loadCsv').addEventListener("change", showCsv );
+    </script>
+
+    <!-- 표 생성하기 -->
+    <script>
+
+        function ready() {
+            if (typeof webui !== 'undefined') {
+                webui.setEventCallback((e) => {
+                    if (e == webui.event.CONNECTED) {
+                        webui.call('sendJson').then((response) => {
+                            const dict = JSON.parse(response);
+                            console.log(dict);
+                            appendTable(dict);
+                        });
+                    }
+                });
+            }
+        }
+        
+
+        function appendTable(dict, keys = ""){
+            const t_body = document.getElementById("table");
+            for(let key in dict){
+                if(typeof dict[key] == 'object'){
+                    const k = keys + "_"+key;
+                    const row = document.createElement("tr");
+                    const header = document.createElement("th");
+                    header.colSpan = "2";
+                    header.className = "section-header";
+                    header.textContent = key;
+                    row.appendChild(header);
+                    t_body.appendChild(row);
+                    appendTable(dict[key], k);
+                    
+                }
+                else{
+                    const row = document.createElement("tr");
+                    const nameCell = document.createElement("td");
+                    const inputCell = document.createElement("td");
+                    const inputField = document.createElement("input");
+
+                    nameCell.textContent = key; // 이름(키) 추가
+                    if(keys.includes("flags") || key == "flags"){
+                        inputField.type = "checkbox"; // 입력 타입 설정
+                    }
+                    else{
+                        inputField.type = "number"; // 입력 타입 설정
+                    }
+                    
+                    inputField.name = key;
+                    inputField.id = keys+ "_"+key;
+
+                    inputField.style.width = "200px";
+                    
+                    inputField.style.padding = "3px";
+
+                    inputCell.appendChild(inputField); // 입력 필드 추가
+
+                    row.appendChild(nameCell);
+                    row.appendChild(inputCell);
+                    t_body.appendChild(row);
+                }
+            }
+        }
+        document.addEventListener("DOMContentLoaded", ready);
+        </script>
+
+    <div id="container">
+    <table id = "table">
+      
+    </table>
+    <div id="chart"></div>
+        <canvas id="myChart" width="400" height="200"></canvas>
+    </div>
+   
+    
+</body>
+</html>
