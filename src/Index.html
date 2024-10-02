@@ -94,8 +94,8 @@
                     console.log(all_value);
 
 
-                    //html의 모든 id 저장
-                    const allElements = document.querySelectorAll('input[type="text"], input[type="number"]');
+                    //html의 모든 ids 저장
+                    const allElements = document.querySelectorAll('input[type="text"], input[type="number"],  input[type="checkbox"]');
                     const ids = [];
                     allElements.forEach(element => {
                         ids.push(element.id);   
@@ -106,6 +106,9 @@
                     for(let i=0; i < ids.length; i++) {
                         var v = document.getElementById(ids[i]);
                         v.value = all_value[i];
+                        if (v.id.includes("flags")){
+                            v.checked = (all_value[i] == 1);
+                        }
                     }
                 })
                 
@@ -228,13 +231,16 @@
 
     <button type="button" onclick="getValue();">save</button>
     <label for="avatar">.csv 파일을 선택해 주세요.</label>
-    <input type="file" id="loadCvs" name="avatar" accept=" .csv "/>
+    <input type="file" id="loadCsv" name="avatar" accept=" .csv "/>
 
+    <script src="path/to/chartjs/dist/chart.min.js"></script>
     <!-- chart -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.0/dist/chart.min.js"></script>
+    <!-- 줌 플러그인 -->
+    <script src="path/to/chartjs-plugin-zoom/dist/chartjs-plugin-zoom.min.js"></script> 
     <script>
         function showCsv(){
-            var input = document.getElementById('loadCvs');
+            var input = document.getElementById('loadCsv');
             var file = input.files[0]; // 선택한 파일 객체
             if (file) {
                 const promise = readCsvFile(file);
@@ -279,7 +285,7 @@
             
                 } catch (err) {
                     reject('csv 파싱 오류: ' + err.message);  // 오류 발생 시
-                }
+                } 
             };
             reader.onerror = function() {
                 reject('파일 읽기 오류');
@@ -313,8 +319,7 @@
             data: {
                 labels: labels_value,
                 datasets: data_sets,
-            },
-            
+            },            
             options: {
                 scales: {y: {stacked: true, min: 0}},
                 
@@ -331,8 +336,10 @@
             return color;
         }
 
-        document.getElementById('loadCvs').addEventListener("change", showCsv );
+        document.getElementById('loadCsv').addEventListener("change", showCsv );
     </script>
+
+    <!-- 표 생성하기 -->
     <script>
 
         function ready() {
@@ -346,9 +353,7 @@
                         });
                     }
                 });
-
             }
-                
         }
         
 
@@ -374,7 +379,13 @@
                     const inputField = document.createElement("input");
 
                     nameCell.textContent = key; // 이름(키) 추가
-                    inputField.type = "text"; // 입력 타입 설정
+                    if(keys.includes("flags") || key == "flags"){
+                        inputField.type = "checkbox"; // 입력 타입 설정
+                    }
+                    else{
+                        inputField.type = "number"; // 입력 타입 설정
+                    }
+                    
                     inputField.name = key;
                     inputField.id = keys+ "_"+key;
 
