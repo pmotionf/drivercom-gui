@@ -76,7 +76,7 @@
 </head>
 <body>
     <div class="section-header">SHDrv-server</div>
-    <label for="avatar">config 파일을 선택해 주세요.</label>v 
+    <label for="avatar">config 파일을 선택해 주세요.</label> 
     <input type="file" id="avatar" name="avatar" accept=" .yml "/>
     <script src="https://cdn.jsdelivr.net/npm/js-yaml@4.1.0/dist/js-yaml.min.js"></script>
     <script>
@@ -232,16 +232,17 @@
     <button type="button" onclick="getValue();">save</button>
     <label for="avatar">.csv 파일을 선택해 주세요.</label>
     <input type="file" id="loadCsv" name="avatar" accept=" .csv "/>
+    <button type="button" id = "resetZoomBtn">차트 리셋</button>
 
 
-    <!-- 차트 생성 -->
-    <script src="path/to/chartjs/dist/chart.min.js"></script>
-    <!-- chart -->
+    
     <script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.0/dist/chart.min.js"></script>
-    <!-- 줌 플러그인 -->
     <script src="path/to/chartjs-plugin-zoom/dist/chartjs-plugin-zoom.min.js"></script> 
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@1.2.1/dist/chartjs-plugin-zoom.min.js"></script>
     <script>
+        //차트 관련 코드    
+
+        //csv파일 열기(file 사용)
         function showCsv(){
             var input = document.getElementById('loadCsv');
             var file = input.files[0]; // 선택한 파일 객체
@@ -259,6 +260,7 @@
             myChart.style.display = 'block';
         }
 
+        //csv파일의 내용을 읽어와 배열과 딕셔너리 형태로 변환
         function readCsvFile(file) {
         return new Promise((resolve, reject) => {
             const reader = new FileReader();
@@ -278,7 +280,7 @@
                             columns[index].push(Number(value));  // 값을 숫자로 변환
                         });
                     });
- 
+
                     // 최종 출력 형태로 변환
                     const result = {
                         label: headers,
@@ -297,6 +299,7 @@
             });
         }
 
+        //차트 표시하기
         function showChart(data){
             var ctx = document.getElementById('myChart').getContext('2d');
             // 기존 차트가 있는지 확인
@@ -346,13 +349,14 @@
                             },
                             mode:'x',
                         }
-                       
+                    
                     }
                 }
             }
         });
         }
 
+        //랜덤 색상 지정
         function getRandomColor() {
             const letters = '0123456789ABCDEF';
             let color = '#';
@@ -362,7 +366,16 @@
             return color;
         }
 
+        //csv파일이 바뀔때 마다 함수를 실행
         document.getElementById('loadCsv').addEventListener("change", showCsv );
+        // 줌 리셋 버튼 클릭 시 줌 초기화
+        document.getElementById('resetZoomBtn').addEventListener('click', function() {
+            const myChart = Object.values(Chart.instances).find(chart => chart.canvas.id === 'myChart');
+            if (myChart){
+                myChart.resetZoom();
+            }
+            
+        });
     </script>
 
     <!-- 표 생성하기 -->
