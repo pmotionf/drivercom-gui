@@ -8,9 +8,9 @@
             .url = "https://github.com/webui-dev/zig-webui/archive/main.tar.gz",
             .hash = "1220ecd4fd7d9240965aa1bb28822ebeb7c3f6188adeea04da1781fbce9ebe3de050",
         },
-        .drivercon = .{
-            .url = "https://github.com/pmotionf/drivercon/archive/a200a254547e3f120d22fe9f19b69f650dd55d71.tar.gz",
-            .hash = "12202c05065819934d4cb543801937f3fb7f39b85e95d880fd7cafa15c51e46279e3",
+        .drivercom = .{
+            .url = "https://github.com/pmotionf/drivercom/archive/324b291589cacaf6899b34c4b3524f008a38b73e.tar.gz",
+            .hash = "12201c017b9fa9661c625fb34d768217f0027b5655598c00a4e171e417135c8931f5",
         },
         .yaml = .{
             .url = "https://github.com/kubkon/zig-yaml/archive/main.tar.gz",

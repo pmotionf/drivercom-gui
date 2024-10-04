@@ -1,14 +1,14 @@
 const std = @import("std");
 const webui = @import("webui");
 const js = @import("zig-js");
-const drivercon = @import("drivercon");
+const drivercom = @import("drivercom");
 const yaml = @import("yaml");
 
 //const html = @embedFile("config.html");
 const html = @embedFile("Index.html");
 const start_html = @embedFile("start.html");
 
-var config: drivercon.Config = undefined;
+var config: drivercom.Config = undefined;
 var json: []u8 = undefined;
 
 var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);

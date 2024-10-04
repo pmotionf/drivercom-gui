@@ -22,12 +22,12 @@ pub fn build(b: *std.Build) void {
     // add module
     exe.root_module.addImport("webui", zig_webui.module("webui"));
 
-    const drivercon = b.dependency("drivercon", .{
+    const drivercom = b.dependency("drivercom", .{
         .target = target,
         .optimize = optimize,
         .cli = false,
     });
-    exe.root_module.addImport("drivercon", drivercon.module("drivercon"));
+    exe.root_module.addImport("drivercom", drivercom.module("drivercom"));
 
     const yaml = b.dependency("yaml", .{
         .target = target,
