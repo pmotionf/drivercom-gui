@@ -78,7 +78,6 @@
     <div class="section-header">SHDrv-server</div>
     <label for="avatar">config 파일을 선택해 주세요.</label> 
     <input type="file" id="avatar" name="avatar" accept=" .json "/>
-    <script src="https://cdn.jsdelivr.net/npm/js-yaml@4.1.0/dist/js-yaml.min.js"></script>
     <script>
         function showConfig() {
             var input = document.getElementById('avatar');
@@ -107,7 +106,7 @@
                         var v = document.getElementById(ids[i]);
                         v.value = all_value[i];
                         if (v.id.includes("flags")){
-                            v.checked = (all_value[i] == 1);
+                            v.checked = all_value[i];
                         }
                     }
                 })
@@ -133,11 +132,7 @@
                 const content = e.target.result;
                 try {
                     const json_object = JSON.parse(content);  // object 형식으로
-                    if (typeof json_object === 'object' && json_object !== null) {
                         resolve(json_object);  // 파싱된 객체를 반환
-                    } else {
-                         reject('YAML 파일이 유효한 딕셔너리 형식이 아닙니다.');
-                    }
                 } catch (err) {
                     reject('JSON 파싱 오류: ' + err.message);  // 오류 발생 시
                 }
@@ -182,12 +177,19 @@
                 const dict = JSON.parse(response);
 
                 //html의 모든 value 저장
-                const allElements = document.querySelectorAll('input[type="text"], input[type="number"]');
+                const allElements = document.querySelectorAll('input[type="text"], input[type="number"], input[type="checkbox"]');
                 const values = [];//
+                
                 allElements.forEach(element => {
-                    if(element.value == ""){
+                    
+                    if(element.value == "" ){
                         values.push(0);
-                    }else{
+                    }
+                    else if(element.id.includes("flags")){
+                        values.push(element.checked);
+                    }
+                    else{
+                        console.log(element.value);
                         values.push(element.value);
                     }
                 });
@@ -198,7 +200,7 @@
 
 
                 //파일 저장
-                const blob = new Blob([JSON.stringify(dict)], { type: 'text/json' });
+                const blob = new Blob([JSON.stringify(dict,null,'  ')], { type: 'text/json' });
                 const url = URL.createObjectURL(blob);
 
                 // 다운로드 링크 생성
@@ -262,22 +264,20 @@
     <input type="file" id="loadCsv" name="avatar" accept=" .csv "/>
     <button type="button" id = "resetZoomBtn">차트 리셋</button>
 
+    <script src="https://unpkg.com/dygraphs@2.1.0/dist/dygraph.min.js"></script>
 
-    
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.0/dist/chart.min.js"></script>
-    <script src="path/to/chartjs-plugin-zoom/dist/chartjs-plugin-zoom.min.js"></script> 
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@1.2.1/dist/chartjs-plugin-zoom.min.js"></script>
     <script>
-
         //csv파일 열기(file 사용)
         function showCsv(){
             var input = document.getElementById('loadCsv');
             var file = input.files[0]; // 선택한 파일 객체
             if (file) {
-                const promise = readCsvFile(file);
+                //const promise = readCsvFile(file);
+                const promise= readCsvFileTest(file);
                 promise.then(result => {
                     console.log(result); //
-                    showChart(result);
+                    //showChart(result);
+                    showTestChart(result);
                 })
             } 
             const myTable = document.getElementById("table");
@@ -343,7 +343,9 @@
                     label:data["label"][i],
                     data: data["data"][i],
                     borderColor: getRandomColor(),
-                    borderWidth: 3
+                    borderWidth: 3,
+                    normalized: true,
+                    
                 }
                 data_sets.push(data_set);
             }
@@ -356,13 +358,16 @@
             },            
             options: {
                 scales: {y: {stacked: true}},
+                elements: {line:{tension :0}},
+                Animation : false,
                 plugins: {
+                    decimation:{
+                        enabled: true,
+                        algorithm: 'min-max', // 'min-max' 또는 'lttb' 사용 가능
+                        samples: 0.0001 ,// 표시할 최대 샘플 수 설정
+                        threshold: 1000 //
+                    },
                     zoom: {
-                        pan: {
-                            enabled: true,
-                            mode: 'x', // x축만 패닝 가능 (원하는 경우 'xy'로 설정해 x축과 y축 모두 패닝 가능)
-                            threshold: 10 // 드래그 감도를 설정 (10px 이상 드래그해야 패닝 시작)
-                        },
                         zoom: {
                             wheel : {
                                 enabled: true,
@@ -403,6 +408,48 @@
             }
             
         });
+      
+        //dygraphs test
+        function showTestChart(csv){
+           //CSV 파일에서 데이터 로드
+                new Dygraph(
+                    document.getElementById("graphdiv"), // 차트를 표시할 div
+                    csv, // CSV 파일의 데이터
+                    {
+                        title: 'CSV Data Chart',
+                        ylabel: 'Value',
+                        xlabel: 'Date',
+                        showRoller: true, // 스크롤 옵션 추가
+                        legend: 'always', // 범례 항상 표시
+                        showRangeSelector: true, // 범위 선택기 추가
+                        showRoller: true,
+                        rollPeriod: 14,
+                    }
+                    
+                );
+        }
+
+         //dygraphs test
+         //csv파일의 내용을 읽어와 배열과 딕셔너리 형태로 변환
+        function readCsvFileTest(file) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const csvData = e.target.result;
+                try {
+                   
+                    resolve(csvData);
+            
+                } catch (err) {
+                    reject('csv 파싱 오류: ' + err.message);  // 오류 발생 시
+                } 
+            };
+            reader.onerror = function() {
+                reject('파일 읽기 오류');
+            };
+            reader.readAsText(file);  // 파일을 텍스트 형식으로 읽음  
+            });
+        }
     </script>
 
     <!-- 표 생성하기 -->
@@ -417,6 +464,19 @@
                             console.log(dict);
                             appendTable(dict);
                         });
+                        webui.call('sendChartjs').then((response) => {
+                            var chartjs = document.createElement("script");
+                            chartjs.innerHTML = response;
+                            var target = document.getElementsByTagName("head")[0];
+                            target.appendChild(chartjs);
+                            webui.call('sendChartjsPlugin').then((response) => {
+                                var chartjs_plugin = document.createElement("script");
+                                chartjs_plugin.innerHTML = response;
+                                var target = document.getElementsByTagName("head")[0];
+                                target.appendChild(chartjs_plugin);
+                            });
+                        });
+                       
                     }
                 });
             }
@@ -477,7 +537,11 @@
     <div id="chart"></div>
         <canvas id="myChart" width="400" height="200"></canvas>
     </div>
-   
+
+  
+    <div id="graphdiv" style="width: 1200px; height: 1200px;"></div>
+
+
     
 </body>
 </html>

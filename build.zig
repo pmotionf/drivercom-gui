@@ -5,7 +5,7 @@ pub fn build(b: *std.Build) void {
     const optimize = b.standardOptimizeOption(.{});
 
     const exe = b.addExecutable(.{
-        .name = "SHDrv-server",
+        .name = "drivercom-gui",
         .root_source_file = b.path("src/main.zig"),
         .target = target,
         .optimize = optimize,
@@ -21,6 +21,9 @@ pub fn build(b: *std.Build) void {
     });
     // add module
     exe.root_module.addImport("webui", zig_webui.module("webui"));
+    if (target.result.os.tag == .windows) {
+        exe.subsystem = .Windows;
+    }
 
     const drivercom = b.dependency("drivercom", .{
         .target = target,

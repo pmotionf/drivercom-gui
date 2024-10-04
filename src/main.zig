@@ -8,6 +8,9 @@ const yaml = @import("yaml");
 const html = @embedFile("Index.html");
 const start_html = @embedFile("start.html");
 
+const chartjs = @embedFile("chart.js");
+const chartjs_plugin = @embedFile("chartjs-plugin-zoom.min.js");
+
 var config: drivercom.Config = undefined;
 var json: []u8 = undefined;
 
@@ -28,16 +31,20 @@ pub fn main() !void {
     const win = webui.newWindow();
 
     _ = win.bind("sendJson", sendJson);
+    _ = win.bind("sendChartjs", sendChartjs);
+    _ = win.bind("sendChartjsPlugin", sendChartjsPlugin);
     _ = win.show(html);
 
     webui.wait();
     webui.clean();
 }
 
-fn saveValue(e: webui.Event) void {
-    const value = json[0 .. json.len - 1 :0];
-    std.debug.print("download file\n", .{});
-    e.returnString(value);
+fn sendChartjs(e: webui.Event) void {
+    e.returnString(chartjs);
+}
+
+fn sendChartjsPlugin(e: webui.Event) void {
+    e.returnString(chartjs_plugin);
 }
 
 fn sendJson(e: webui.Event) void {
