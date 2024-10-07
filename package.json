@@ -1,0 +1,8 @@
+{
+  "name": "drivercom-gui",
+  "version": "0.0.1",
+  "description": "`drivercom` graphical user interface utility.",
+  "devDependencies": {
+    "prettier": "3.3.3"
+  }
+}

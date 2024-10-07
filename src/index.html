@@ -1,451 +1,452 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ko">
-<head>
-    <meta charset="UTF-8">
+  <head>
+    <meta charset="UTF-8" />
     <script src="/webui.js"></script>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <style>
-         body {
-            display: flex;
-            flex-direction: column; /* 세로 방향으로 배치 */
-            align-items: center; /* 중앙 정렬 */
-            padding: 20px;
-            font-family: Arial, sans-serif;
-            height: 100vh; /* 전체 높이를 viewport 높이로 설정 */
-        }
-        
-        #container {
-            display: flex; /* 가로 방향으로 배치 */
-            justify-content: space-between; /* 양쪽 끝에 배치 */
-            width: 100%; /* 전체 너비 */
-            margin-top: 20px; /* 버튼과의 여백 */
-            flex-grow: 1; /* 남은 공간을 차지하도록 설정 */
-        }
-        
-        #table {
-            display: none;
-            width: 30%; /* 표 영역의 너비 */
-        }
-        
-        #chart {
-            display: none;
-            width: 60%; /* 그래프 영역의 너비 */
-            max-height: calc(100vh - 100px); /* 차트 최대 높이 설정 */
-            
-        }
-        
-        canvas {
-            width: 100%; 
-            height: 100%; /* 차트의 높이를 부모 요소의 높이에 맞춤 */
-        }
-        
-        table {
-            width: 100%; 
-            border-collapse: collapse;
-            margin: auto;
-        }
-        
-        table, th, td {
-            border: 1px solid black;
-        }
-        
-        th, td {
-            padding: 6px;
-            text-align: left;
-        }
-        
-        th {
-            background-color: #f2f2f2;
-        }
-        
-        .section-header {
-            font-weight: bold;
-            text-align: center;
-            background-color: #d9d9d9;
-        }
+      body {
+        display: flex;
+        flex-direction: column; /* 세로 방향으로 배치 */
+        align-items: center; /* 중앙 정렬 */
+        padding: 20px;
+        font-family: Arial, sans-serif;
+        height: 100vh; /* 전체 높이를 viewport 높이로 설정 */
+      }
 
-        .dygraph-legend {
-            position: absolute;
-            top: 0; /* 위쪽에 표시 */
-            left: 50px;
-            z-index: 10;
-            background-color: rgba(255, 255, 255, 0.7);
-            overflow: hidden;
-        }
-        
+      #container {
+        display: flex; /* 가로 방향으로 배치 */
+        justify-content: space-between; /* 양쪽 끝에 배치 */
+        width: 100%; /* 전체 너비 */
+        margin-top: 20px; /* 버튼과의 여백 */
+        flex-grow: 1; /* 남은 공간을 차지하도록 설정 */
+      }
 
-       
+      #table {
+        display: none;
+        width: 30%; /* 표 영역의 너비 */
+      }
+
+      #chart {
+        display: none;
+        width: 60%; /* 그래프 영역의 너비 */
+        max-height: calc(100vh - 100px); /* 차트 최대 높이 설정 */
+      }
+
+      canvas {
+        width: 100%;
+        height: 100%; /* 차트의 높이를 부모 요소의 높이에 맞춤 */
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: auto;
+      }
+
+      table,
+      th,
+      td {
+        border: 1px solid black;
+      }
+
+      th,
+      td {
+        padding: 6px;
+        text-align: left;
+      }
+
+      th {
+        background-color: #f2f2f2;
+      }
+
+      .section-header {
+        font-weight: bold;
+        text-align: center;
+        background-color: #d9d9d9;
+      }
+
+      .dygraph-legend {
+        position: absolute;
+        top: 0; /* 위쪽에 표시 */
+        left: 50px;
+        z-index: 10;
+        background-color: rgba(255, 255, 255, 0.7);
+        overflow: hidden;
+      }
     </style>
     <title>값 변경하기</title>
-</head>
-<body>
+  </head>
+  <body>
     <div class="section-header">drivercom-gui</div>
-    <label for="avatar">config 파일을 선택해 주세요.</label> 
-    <input type="file" id="avatar" name="avatar" accept=" .json "/>
+    <label for="avatar">config 파일을 선택해 주세요.</label>
+    <input type="file" id="avatar" name="avatar" accept=" .json " />
     <script>
-        function showConfig() {
-            var input = document.getElementById('avatar');
-            var file = input.files[0]; // 선택한 파일 객체4
-            if (file) {
-                const promise  = readJSONFile(file);
-                promise.then(result => {
-                    const dict = result;
-                    console.log("file:", dict);
+          function showConfig() {
+              var input = document.getElementById('avatar');
+              var file = input.files[0]; // 선택한 파일 객체4
+              if (file) {
+                  const promise  = readJSONFile(file);
+                  promise.then(result => {
+                      const dict = result;
+                      console.log("file:", dict);
 
-                    //모든 value 저장
-                    const all_value = extractValues(dict);
-                    console.log(all_value);
-
-
-                    //html의 모든 ids 저장
-                    const allElements = document.querySelectorAll('input[type="text"], input[type="number"],  input[type="checkbox"]');
-                    const ids = [];
-                    allElements.forEach(element => {
-                        ids.push(element.id);   
-                    });
-                    console.log(ids);
-
-                    //값을 변환
-                    for(let i=0; i < ids.length; i++) {
-                        var v = document.getElementById(ids[i]);
-                        v.value = all_value[i];
-                        if (v.id.includes("flags")){
-                            v.checked = all_value[i];
-                        }
-                    }
-                })
-                
-            } 
-            const myTable = document.getElementById("table"); 
-            myTable.style.display = 'table';
-
-            var ctx = document.getElementById('myChart').getContext('2d');
-            // 기존 차트가 있는지 확인
-            const existingChart = Object.values(Chart.instances).find(chart => chart.canvas.id === 'myChart');
-
-            if (existingChart) {
-                existingChart.destroy(); // 기존 차트를 파괴합니다.
-            }
-
-        function readJSONFile(file) {
-        return new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                const content = e.target.result;
-                try {
-                    const json_object = JSON.parse(content);  // object 형식으로
-                        resolve(json_object);  // 파싱된 객체를 반환
-                } catch (err) {
-                    reject('JSON 파싱 오류: ' + err.message);  // 오류 발생 시
-                }
-            };
-            reader.onerror = function() {
-                reject('파일 읽기 오류');
-            };
-            reader.readAsText(file);  // 파일을 텍스트 형식으로 읽음  
-            });
-        }
-
-        function newValue(){
-            //html의 모든 ids 저장
-            const allElements = document.querySelectorAll('input[type="text"], input[type="number"],  input[type="checkbox"]');
-                    const ids = [];
-                    allElements.forEach(element => {
-                        ids.push(element.id);   
-                    });
-                    console.log(ids);
-
-                    //값을 변환
-                    for(let i=0; i < ids.length; i++) {
-                        var v = document.getElementById(ids[i]);
-                        v.value = 0;
-                        if (v.id.includes("flags")){
-                            v.checked = false;
-                        }
-                    }
-                    const myTable = document.getElementById("table"); 
-            myTable.style.display = 'table';
-
-            var ctx = document.getElementById('myChart').getContext('2d');
-            // 기존 차트가 있는지 확인
-            const existingChart = Object.values(Chart.instances).find(chart => chart.canvas.id === 'myChart');
-
-            if (existingChart) {
-                existingChart.destroy(); // 기존 차트를 파괴합니다.
-            }
-        }
-
-        function saveFile(){
-            webui.call('sendJson').then((response) => {
-                const dict = JSON.parse(response);
-
-                //html의 모든 value 저장
-                const allElements = document.querySelectorAll('input[type="text"], input[type="number"], input[type="checkbox"]');
-                const values = [];//
-                allElements.forEach(element => {
-
-                    if(element.value == "" ){
-                        values.push(0);
-                    }
-                    else if(element.id.includes("flags")){
-                        values.push(element.checked);
-                    }
-                    else{
-                        values.push(element.value);
-                    }
-                });
-                
-                extractKey(dict, values);
-                console.log("dict 출력");
-                console.log(dict);
+                      //모든 value 저장
+                      const all_value = extractValues(dict);
+                      console.log(all_value);
 
 
-                //파일 저장
-                const blob = new Blob([JSON.stringify(dict,null,'  ')], { type: 'text/json' });
-                const url = URL.createObjectURL(blob);
+                      //html의 모든 ids 저장
+                      const allElements = document.querySelectorAll('input[type="text"], input[type="number"],  input[type="checkbox"]');
+                      const ids = [];
+                      allElements.forEach(element => {
+                          ids.push(element.id);
+                      });
+                      console.log(ids);
 
-                // 다운로드 링크 생성
-                const a = document.createElement('a');
-                a.href = url;
+                      //값을 변환
+                      for(let i=0; i < ids.length; i++) {
+                          var v = document.getElementById(ids[i]);
+                          v.value = all_value[i];
+                          if (v.id.includes("flags")){
+                              v.checked = all_value[i];
+                          }
+                      }
+                  })
 
-                // 현재 날짜와 시간을 가져오기
-                const currentDate = new Date();
+              }
+              const myTable = document.getElementById("table");
+              myTable.style.display = 'table';
 
-                // 날짜와 시간을 문자열로 포맷팅
-                const formattedDate = `${currentDate.getFullYear()}-${currentDate.getMonth() + 1}-${currentDate.getDate()} ${currentDate.getHours()}:${currentDate.getMinutes()}:${currentDate.getSeconds()}`;
+              var ctx = document.getElementById('myChart').getContext('2d');
+              // 기존 차트가 있는지 확인
+              const existingChart = Object.values(Chart.instances).find(chart => chart.canvas.id === 'myChart');
 
-                // 포맷팅된 날짜와 시간을 출력
-                a.download = formattedDate +'config.json'; // 다운로드할 파일 이름
+              if (existingChart) {
+                  existingChart.destroy(); // 기존 차트를 파괴합니다.
+              }
 
-                // 링크 클릭하여 다운로드
-                document.body.appendChild(a);
-                a.click();
+          function readJSONFile(file) {
+          return new Promise((resolve, reject) => {
+              const reader = new FileReader();
+              reader.onload = function(e) {
+                  const content = e.target.result;
+                  try {
+                      const json_object = JSON.parse(content);  // object 형식으로
+                          resolve(json_object);  // 파싱된 객체를 반환
+                  } catch (err) {
+                      reject('JSON 파싱 오류: ' + err.message);  // 오류 발생 시
+                  }
+              };
+              reader.onerror = function() {
+                  reject('파일 읽기 오류');
+              };
+              reader.readAsText(file);  // 파일을 텍스트 형식으로 읽음
+              });
+          }
 
-                // 링크 제거
-                document.body.removeChild(a);
-                URL.revokeObjectURL(url); // Blob URL 해제
-            });
-        }
-        
-        function extractKey(dict, values) {
-            let index = 0;
-            function traverseDict(obj){
-                for(let key in obj){
-                    if(typeof obj[key] == 'object'){
-                        traverseDict(obj[key]);
-                    }
-                    else{
-                        obj[key] = values[index];
-                        index ++;
-                    }
-                }
-            }
-            traverseDict(dict); 
-        }
+          function newValue(){
+              //html의 모든 ids 저장
+              const allElements = document.querySelectorAll('input[type="text"], input[type="number"],  input[type="checkbox"]');
+                      const ids = [];
+                      allElements.forEach(element => {
+                          ids.push(element.id);
+                      });
+                      console.log(ids);
 
-        function extractValues(dict) {
-            const result = [];
-            for (const key in dict){
-                const value = dict[key];
+                      //값을 변환
+                      for(let i=0; i < ids.length; i++) {
+                          var v = document.getElementById(ids[i]);
+                          v.value = 0;
+                          if (v.id.includes("flags")){
+                              v.checked = false;
+                          }
+                      }
+                      const myTable = document.getElementById("table");
+              myTable.style.display = 'table';
 
-                if(typeof value != "object"){
-                    result.push(value);
-                }
-                else{
-                    const in_value = extractValues(value);
-                    result.push(...in_value);
-                }
-            }
-            return result;
-        }
-      
+              var ctx = document.getElementById('myChart').getContext('2d');
+              // 기존 차트가 있는지 확인
+              const existingChart = Object.values(Chart.instances).find(chart => chart.canvas.id === 'myChart');
 
-    document.getElementById('avatar').addEventListener("change", showConfig );
+              if (existingChart) {
+                  existingChart.destroy(); // 기존 차트를 파괴합니다.
+              }
+          }
+
+          function saveFile(){
+              webui.call('sendJson').then((response) => {
+                  const dict = JSON.parse(response);
+
+                  //html의 모든 value 저장
+                  const allElements = document.querySelectorAll('input[type="text"], input[type="number"], input[type="checkbox"]');
+                  const values = [];//
+                  allElements.forEach(element => {
+
+                      if(element.value == "" ){
+                          values.push(0);
+                      }
+                      else if(element.id.includes("flags")){
+                          values.push(element.checked);
+                      }
+                      else{
+                          values.push(element.value);
+                      }
+                  });
+
+                  extractKey(dict, values);
+                  console.log("dict 출력");
+                  console.log(dict);
+
+
+                  //파일 저장
+                  const blob = new Blob([JSON.stringify(dict,null,'  ')], { type: 'text/json' });
+                  const url = URL.createObjectURL(blob);
+
+                  // 다운로드 링크 생성
+                  const a = document.createElement('a');
+                  a.href = url;
+
+                  // 현재 날짜와 시간을 가져오기
+                  const currentDate = new Date();
+
+                  // 날짜와 시간을 문자열로 포맷팅
+                  const formattedDate = `${currentDate.getFullYear()}-${currentDate.getMonth() + 1}-${currentDate.getDate()} ${currentDate.getHours()}:${currentDate.getMinutes()}:${currentDate.getSeconds()}`;
+
+                  // 포맷팅된 날짜와 시간을 출력
+                  a.download = formattedDate +'config.json'; // 다운로드할 파일 이름
+
+                  // 링크 클릭하여 다운로드
+                  document.body.appendChild(a);
+                  a.click();
+
+                  // 링크 제거
+                  document.body.removeChild(a);
+                  URL.revokeObjectURL(url); // Blob URL 해제
+              });
+          }
+
+          function extractKey(dict, values) {
+              let index = 0;
+              function traverseDict(obj){
+                  for(let key in obj){
+                      if(typeof obj[key] == 'object'){
+                          traverseDict(obj[key]);
+                      }
+                      else{
+                          obj[key] = values[index];
+                          index ++;
+                      }
+                  }
+              }
+              traverseDict(dict);
+          }
+
+          function extractValues(dict) {
+              const result = [];
+              for (const key in dict){
+                  const value = dict[key];
+
+                  if(typeof value != "object"){
+                      result.push(value);
+                  }
+                  else{
+                      const in_value = extractValues(value);
+                      result.push(...in_value);
+                  }
+              }
+              return result;
+          }
+
+
+      document.getElementById('avatar').addEventListener("change", showConfig );
     </script>
-    <button type="button" onclick="newValue();", id = newBtn>new</button>
+    <button type="button" onclick="newValue();" , id="newBtn">new</button>
     <button type="button" onclick="saveFile();">save</button>
     <label for="avatar">.csv 파일을 선택해 주세요.</label>
-    <input type="file" id="loadCsv" name="avatar" accept=" .csv "/>
-    <button type="button" id = "resetZoomBtn">차트 리셋</button>
+    <input type="file" id="loadCsv" name="avatar" accept=" .csv " />
+    <button type="button" id="resetZoomBtn">차트 리셋</button>
 
     <script>
-        //csv파일 열기(file 사용)
-        function showCsv(){
-            var input = document.getElementById('loadCsv');
-            var file = input.files[0]; // 선택한 파일 객체
-            if (file) {
-                const promise= readCsvFileTest(file);
-                promise.then(result => {
-                    console.log(result);
-                    showTestChart(result);
-                })
-            } 
-            const myTable = document.getElementById("table");
-            myTable.style.display = 'none';
+      //csv파일 열기(file 사용)
+      function showCsv() {
+        var input = document.getElementById("loadCsv");
+        var file = input.files[0]; // 선택한 파일 객체
+        if (file) {
+          const promise = readCsvFileTest(file);
+          promise.then((result) => {
+            console.log(result);
+            showTestChart(result);
+          });
         }
-        //csv파일이 바뀔때 마다 함수를 실행
-        document.getElementById('loadCsv').addEventListener("change", showCsv );
-        
-        //dygraphs test
-        function showTestChart(csv){
-            //CSV 파일에서 데이터 로드
-            var header = csv.split('\n')[0].split(',');
-            var seriesCount = header.length - 1; // 첫 번째 열 = 번호
-            var visibilityArray = Array(seriesCount).fill(true);
+        const myTable = document.getElementById("table");
+        myTable.style.display = "none";
+      }
+      //csv파일이 바뀔때 마다 함수를 실행
+      document.getElementById("loadCsv").addEventListener("change", showCsv);
 
-            var chart = new Dygraph(
-                document.getElementById("graphdiv"), // 차트를 표시할 div
-                csv, // CSV 파일의 데이터
-                {
-                    title: 'CSV Data Chart', //타이틀
-                    ylabel: 'Value', //y
-                    showRoller: true,       // 롤러 활성화
-                    legend: 'always', // 범례 항상 표시
-                    visibility: visibilityArray,
-                } 
-            );
+      //dygraphs test
+      function showTestChart(csv) {
+        //CSV 파일에서 데이터 로드
+        var header = csv.split("\n")[0].split(",");
+        var seriesCount = header.length - 1; // 첫 번째 열 = 번호
+        var visibilityArray = Array(seriesCount).fill(true);
 
-            document.getElementById('resetZoomBtn').addEventListener('click', function() {
-                chart.resetZoom();
+        var chart = new Dygraph(
+          document.getElementById("graphdiv"), // 차트를 표시할 div
+          csv, // CSV 파일의 데이터
+          {
+            title: "CSV Data Chart", //타이틀
+            ylabel: "Value", //y
+            showRoller: true, // 롤러 활성화
+            legend: "always", // 범례 항상 표시
+            visibility: visibilityArray,
+          },
+        );
+
+        document
+          .getElementById("resetZoomBtn")
+          .addEventListener("click", function () {
+            chart.resetZoom();
+          });
+
+        document
+          .getElementById("graphdiv")
+          .addEventListener("wheel", function (event) {
+            // 기본 스크롤 동작 방지
+            event.preventDefault();
+
+            // 휠 이벤트의 deltaY 값에 따라 줌 처리
+            const zoomFactor = event.deltaY > 0 ? 1.3 : 0.7; // 휠 방향에 따라 줌 인/아웃
+            const range = chart.xAxisRange(); // 현재 x축 범위
+            const midPoint = (range[0] + range[1]) / 2; // 중간 지점 계산
+
+            const newMin = midPoint + (range[0] - midPoint) * zoomFactor; // 새로운 최소값 계산
+            const newMax = midPoint + (range[1] - midPoint) * zoomFactor; // 새로운 최대값 계산
+
+            if (newMin < 0) {
+              newMin = 0;
+            }
+
+            // 새로운 범위로 업데이트
+            chart.updateOptions({
+              dateWindow: [newMin, newMax],
             });
+          });
+      }
 
-            document.getElementById("graphdiv").addEventListener("wheel", function(event) {
-                // 기본 스크롤 동작 방지
-                event.preventDefault();
-                
-                // 휠 이벤트의 deltaY 값에 따라 줌 처리
-                const zoomFactor = event.deltaY > 0 ? 1.3 : 0.7; // 휠 방향에 따라 줌 인/아웃
-                const range = chart.xAxisRange(); // 현재 x축 범위
-                const midPoint = (range[0] + range[1]) / 2; // 중간 지점 계산
-
-                const newMin = midPoint + (range[0] - midPoint) * zoomFactor; // 새로운 최소값 계산
-                const newMax = midPoint + (range[1] - midPoint) * zoomFactor; // 새로운 최대값 계산
-
-                if (newMin < 0) {
-                    newMin = 0;
-                }
-                
-                // 새로운 범위로 업데이트
-                chart.updateOptions({
-                    dateWindow: [newMin, newMax]
-                });
-            });
-        }
-
-         //dygraphs test
-         //csv파일의 내용을 읽어와 배열과 딕셔너리 형태로 변환
-        function readCsvFileTest(file) {
+      //dygraphs test
+      //csv파일의 내용을 읽어와 배열과 딕셔너리 형태로 변환
+      function readCsvFileTest(file) {
         return new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                const csvData = e.target.result;
-                try {
-                    let rows = csvData.split('\n');
-                    let header = rows[0];
-                    let newCsv = ['num, ' + header]; // '번호' 추가
-                    rows.slice(1).forEach((row, index) => {
-                        if (row.trim()) { // 데이터가 존재하는 행만 처리
-                            newCsv.push(`${index + 1}, ${row}`);
-                        }
-                    });
-                    let resultCsv = newCsv.join('\n');
-                    resolve(resultCsv);
-                } catch (err) {
-                    reject('csv 파싱 오류: ' + err.message);  // 오류 발생 시
-                } 
-            };
-            reader.onerror = function() {
-                reject('파일 읽기 오류');
-            };
-            reader.readAsText(file);  // 파일을 텍스트 형식으로 읽음  
-            });
-        }
+          const reader = new FileReader();
+          reader.onload = function (e) {
+            const csvData = e.target.result;
+            try {
+              let rows = csvData.split("\n");
+              let header = rows[0];
+              let newCsv = ["num, " + header]; // '번호' 추가
+              rows.slice(1).forEach((row, index) => {
+                if (row.trim()) {
+                  // 데이터가 존재하는 행만 처리
+                  newCsv.push(`${index + 1}, ${row}`);
+                }
+              });
+              let resultCsv = newCsv.join("\n");
+              resolve(resultCsv);
+            } catch (err) {
+              reject("csv 파싱 오류: " + err.message); // 오류 발생 시
+            }
+          };
+          reader.onerror = function () {
+            reject("파일 읽기 오류");
+          };
+          reader.readAsText(file); // 파일을 텍스트 형식으로 읽음
+        });
+      }
     </script>
 
     <!-- 표 생성하기 -->
     <script>
-        function ready() {
-            if (typeof webui !== 'undefined') {
-                webui.setEventCallback((e) => {
-                    if (e == webui.event.CONNECTED) {
-                        webui.call('sendJson').then((response) => {
-                            const dict = JSON.parse(response);
-                            console.log(dict);
-                            appendTable(dict);
-                        });
-                        webui.call('sendChartjs').then((response) => {
-                            var chartjs = document.createElement("script");
-                            chartjs.innerHTML = response;
-                            var target = document.getElementsByTagName("head")[0];
-                            target.appendChild(chartjs);
-                            webui.call('sendChartjsPlugin').then((response) => {
-                                var chartjs_plugin = document.createElement("script");
-                                chartjs_plugin.innerHTML = response;
-                                var target = document.getElementsByTagName("head")[0];
-                                target.appendChild(chartjs_plugin);
-                            });
-                        });
-                        webui.call('sendDygraph').then((response) => {
-                            var dygraph = document.createElement("script");
-                            dygraph.innerHTML = response;
-                            var target = document.getElementsByTagName("head")[0];
-                            target.appendChild(dygraph);
-                        });
-                    }
+      function ready() {
+        if (typeof webui !== "undefined") {
+          webui.setEventCallback((e) => {
+            if (e == webui.event.CONNECTED) {
+              webui.call("sendJson").then((response) => {
+                const dict = JSON.parse(response);
+                console.log(dict);
+                appendTable(dict);
+              });
+              webui.call("sendChartjs").then((response) => {
+                var chartjs = document.createElement("script");
+                chartjs.innerHTML = response;
+                var target = document.getElementsByTagName("head")[0];
+                target.appendChild(chartjs);
+                webui.call("sendChartjsPlugin").then((response) => {
+                  var chartjs_plugin = document.createElement("script");
+                  chartjs_plugin.innerHTML = response;
+                  var target = document.getElementsByTagName("head")[0];
+                  target.appendChild(chartjs_plugin);
                 });
+              });
+              webui.call("sendDygraph").then((response) => {
+                var dygraph = document.createElement("script");
+                dygraph.innerHTML = response;
+                var target = document.getElementsByTagName("head")[0];
+                target.appendChild(dygraph);
+              });
             }
+          });
         }
-        
+      }
 
-        function appendTable(dict, keys = ""){
-            const t_body = document.getElementById("table");
-            for(let key in dict){
-                if(typeof dict[key] == 'object'){
-                    const k = keys + "_"+key;
-                    const row = document.createElement("tr");
-                    const header = document.createElement("th");
-                    header.colSpan = "2";
-                    header.className = "section-header";
-                    header.textContent = key;
-                    row.appendChild(header);
-                    t_body.appendChild(row);
-                    appendTable(dict[key], k);
-                }
-                else{
-                    const row = document.createElement("tr");
-                    const nameCell = document.createElement("td");
-                    const inputCell = document.createElement("td");
-                    const inputField = document.createElement("input");
+      function appendTable(dict, keys = "") {
+        const t_body = document.getElementById("table");
+        for (let key in dict) {
+          if (typeof dict[key] == "object") {
+            const k = keys + "_" + key;
+            const row = document.createElement("tr");
+            const header = document.createElement("th");
+            header.colSpan = "2";
+            header.className = "section-header";
+            header.textContent = key;
+            row.appendChild(header);
+            t_body.appendChild(row);
+            appendTable(dict[key], k);
+          } else {
+            const row = document.createElement("tr");
+            const nameCell = document.createElement("td");
+            const inputCell = document.createElement("td");
+            const inputField = document.createElement("input");
 
-                    nameCell.textContent = key; // 이름(키) 추가
-                    if(keys.includes("flags") || key == "flags"){
-                        inputField.type = "checkbox"; // 입력 타입 설정
-                    }
-                    else{
-                        inputField.type = "number"; // 입력 타입 설정
-                    }
-                    
-                    inputField.name = key;
-                    inputField.id = keys+ "_"+key;
-
-                    inputField.style.width = "200px";
-                    
-                    inputField.style.padding = "3px";
-
-                    inputCell.appendChild(inputField); // 입력 필드 추가
-
-                    row.appendChild(nameCell);
-                    row.appendChild(inputCell);
-                    t_body.appendChild(row);
-                }
+            nameCell.textContent = key; // 이름(키) 추가
+            if (keys.includes("flags") || key == "flags") {
+              inputField.type = "checkbox"; // 입력 타입 설정
+            } else {
+              inputField.type = "number"; // 입력 타입 설정
             }
+
+            inputField.name = key;
+            inputField.id = keys + "_" + key;
+
+            inputField.style.width = "200px";
+
+            inputField.style.padding = "3px";
+
+            inputCell.appendChild(inputField); // 입력 필드 추가
+
+            row.appendChild(nameCell);
+            row.appendChild(inputCell);
+            t_body.appendChild(row);
+          }
         }
-        document.addEventListener("DOMContentLoaded", ready);
-        </script>
+      }
+      document.addEventListener("DOMContentLoaded", ready);
+    </script>
 
     <div id="container">
-    <table id = "table">
-    </table>
-    <div id="graphdiv" style="width: 1200px; height: 1200px;"></div>
-</body>
+      <table id="table"></table>
+      <div id="graphdiv" style="width: 1200px; height: 1200px"></div>
+    </div>
+  </body>
 </html>
