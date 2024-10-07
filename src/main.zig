@@ -1,14 +1,16 @@
 const std = @import("std");
 const webui = @import("webui");
 const js = @import("zig-js");
-const drivercon = @import("drivercon");
+const drivercom = @import("drivercom");
 const yaml = @import("yaml");
 
 //const html = @embedFile("config.html");
 const html = @embedFile("Index.html");
 const start_html = @embedFile("start.html");
 
-var config: drivercon.Config = undefined;
+const dygraph = @embedFile("dygraph.min.js");
+
+var config: drivercom.Config = undefined;
 var json: []u8 = undefined;
 
 var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
@@ -28,16 +30,15 @@ pub fn main() !void {
     const win = webui.newWindow();
 
     _ = win.bind("sendJson", sendJson);
+    _ = win.bind("sendDygraph", sendDygraph);
     _ = win.show(html);
 
     webui.wait();
     webui.clean();
 }
 
-fn saveValue(e: webui.Event) void {
-    const value = json[0 .. json.len - 1 :0];
-    std.debug.print("download file\n", .{});
-    e.returnString(value);
+fn sendDygraph(e: webui.Event) void {
+    e.returnString(dygraph);
 }
 
 fn sendJson(e: webui.Event) void {
