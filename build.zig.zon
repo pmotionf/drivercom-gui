@@ -12,10 +12,6 @@
             .url = "https://github.com/pmotionf/drivercom/archive/324b291589cacaf6899b34c4b3524f008a38b73e.tar.gz",
             .hash = "12201c017b9fa9661c625fb34d768217f0027b5655598c00a4e171e417135c8931f5",
         },
-        .@"zig-js" = .{
-            .url = "https://github.com/mitchellh/zig-js/archive/main.tar.gz",
-            .hash = "12205a66d423259567764fa0fc60c82be35365c21aeb76c5a7dc99698401f4f6fefc",
-        },
     },
     .paths = .{
         "build.zig",

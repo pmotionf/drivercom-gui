@@ -1,12 +1,9 @@
 const std = @import("std");
 const webui = @import("webui");
-const js = @import("zig-js");
 const drivercom = @import("drivercom");
-const yaml = @import("yaml");
 
 //const html = @embedFile("config.html");
-const html = @embedFile("Index.html");
-const start_html = @embedFile("start.html");
+const html = @embedFile("index.html");
 
 const dygraph = @embedFile("dygraph.min.js");
 
