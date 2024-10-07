@@ -5,16 +5,12 @@
 
     .dependencies = .{
         .@"zig-webui" = .{
-            .url = "https://github.com/webui-dev/zig-webui/archive/main.tar.gz",
-            .hash = "1220ecd4fd7d9240965aa1bb28822ebeb7c3f6188adeea04da1781fbce9ebe3de050",
+            .url = "https://github.com/webui-dev/zig-webui/archive/7c1f82c99a687538bc98808116f9a560e7c0809d.tar.gz",
+            .hash = "12209172a77b86400af916b27b72c0a666f46619ccdd7a89698d27b01dd17b7f12f5",
         },
         .drivercom = .{
             .url = "https://github.com/pmotionf/drivercom/archive/324b291589cacaf6899b34c4b3524f008a38b73e.tar.gz",
             .hash = "12201c017b9fa9661c625fb34d768217f0027b5655598c00a4e171e417135c8931f5",
-        },
-        .yaml = .{
-            .url = "https://github.com/kubkon/zig-yaml/archive/main.tar.gz",
-            .hash = "12208398e1393f83a39d03f3ef4893607650b6227dc7f1eee3db4d163fbc2c0c37ca",
         },
         .@"zig-js" = .{
             .url = "https://github.com/mitchellh/zig-js/archive/main.tar.gz",

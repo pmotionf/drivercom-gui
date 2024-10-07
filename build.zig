@@ -32,12 +32,6 @@ pub fn build(b: *std.Build) void {
     });
     exe.root_module.addImport("drivercom", drivercom.module("drivercom"));
 
-    const yaml = b.dependency("yaml", .{
-        .target = target,
-        .optimize = optimize,
-    });
-    exe.root_module.addImport("yaml", yaml.module("yaml"));
-
     const zig_js = b.dependency("zig-js", .{
         .target = target,
         .optimize = optimize,
