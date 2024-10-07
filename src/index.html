@@ -127,8 +127,6 @@
                 existingChart.destroy(); // 기존 차트를 파괴합니다.
             }
 
-        }
-
         function readJSONFile(file) {
         return new Promise((resolve, reject) => {
             const reader = new FileReader();
@@ -147,6 +145,7 @@
             reader.readAsText(file);  // 파일을 텍스트 형식으로 읽음  
             });
         }
+
         function newValue(){
             //html의 모든 ids 저장
             const allElements = document.querySelectorAll('input[type="text"], input[type="number"],  input[type="checkbox"]');
@@ -174,8 +173,8 @@
             if (existingChart) {
                 existingChart.destroy(); // 기존 차트를 파괴합니다.
             }
-
         }
+
         function saveFile(){
             webui.call('sendJson').then((response) => {
                 const dict = JSON.parse(response);
@@ -225,10 +224,7 @@
                 // 링크 제거
                 document.body.removeChild(a);
                 URL.revokeObjectURL(url); // Blob URL 해제
-
             });
-
-            
         }
         
         function extractKey(dict, values) {
@@ -286,29 +282,28 @@
             } 
             const myTable = document.getElementById("table");
             myTable.style.display = 'none';
-
         }
         //csv파일이 바뀔때 마다 함수를 실행
         document.getElementById('loadCsv').addEventListener("change", showCsv );
         
         //dygraphs test
         function showTestChart(csv){
-           //CSV 파일에서 데이터 로드
-           var header = csv.split('\n')[0].split(',');
-           var seriesCount = header.length - 1; // 첫 번째 열 = 번호
-           var visibilityArray = Array(seriesCount).fill(true);
+            //CSV 파일에서 데이터 로드
+            var header = csv.split('\n')[0].split(',');
+            var seriesCount = header.length - 1; // 첫 번째 열 = 번호
+            var visibilityArray = Array(seriesCount).fill(true);
 
-                var chart = new Dygraph(
-                    document.getElementById("graphdiv"), // 차트를 표시할 div
-                    csv, // CSV 파일의 데이터
-                    {
-                        title: 'CSV Data Chart', //타이틀
-                        ylabel: 'Value', //y
-                        showRoller: true,       // 롤러 활성화
-                        legend: 'always', // 범례 항상 표시
-                        visibility: visibilityArray,
-                    } 
-                );
+            var chart = new Dygraph(
+                document.getElementById("graphdiv"), // 차트를 표시할 div
+                csv, // CSV 파일의 데이터
+                {
+                    title: 'CSV Data Chart', //타이틀
+                    ylabel: 'Value', //y
+                    showRoller: true,       // 롤러 활성화
+                    legend: 'always', // 범례 항상 표시
+                    visibility: visibilityArray,
+                } 
+            );
 
             document.getElementById('resetZoomBtn').addEventListener('click', function() {
                 chart.resetZoom();
@@ -369,7 +364,6 @@
 
     <!-- 표 생성하기 -->
     <script>
-
         function ready() {
             if (typeof webui !== 'undefined') {
                 webui.setEventCallback((e) => {
@@ -397,7 +391,6 @@
                             var target = document.getElementsByTagName("head")[0];
                             target.appendChild(dygraph);
                         });
-
                     }
                 });
             }
@@ -417,7 +410,6 @@
                     row.appendChild(header);
                     t_body.appendChild(row);
                     appendTable(dict[key], k);
-                    
                 }
                 else{
                     const row = document.createElement("tr");
@@ -453,17 +445,7 @@
 
     <div id="container">
     <table id = "table">
-      
     </table>
-    <!-- <div id="chart"></div> -->
-        <!-- <canvas id="myChart" width="400" height="200"></canvas> -->
-        <!-- <canvas id="graphdiv" width="400" height="200"></canvas> -->
-    <!-- </div> -->
-
-  
     <div id="graphdiv" style="width: 1200px; height: 1200px;"></div>
-
-
-    
 </body>
 </html>

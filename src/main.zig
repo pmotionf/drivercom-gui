@@ -5,7 +5,7 @@ const drivercom = @import("drivercom");
 //const html = @embedFile("config.html");
 const html = @embedFile("index.html");
 
-const dygraph = @embedFile("dygraph.min.js");
+const dygraph = @embedFile("vendor/dygraph.min.js");
 
 var config: drivercom.Config = undefined;
 var json: []u8 = undefined;
