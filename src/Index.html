@@ -172,16 +172,15 @@
             }
 
         }
-        function getValue(){
+        function saveFile(){
             webui.call('sendJson').then((response) => {
                 const dict = JSON.parse(response);
 
                 //html의 모든 value 저장
                 const allElements = document.querySelectorAll('input[type="text"], input[type="number"], input[type="checkbox"]');
                 const values = [];//
-                
                 allElements.forEach(element => {
-                    
+
                     if(element.value == "" ){
                         values.push(0);
                     }
@@ -189,13 +188,12 @@
                         values.push(element.checked);
                     }
                     else{
-                        console.log(element.value);
                         values.push(element.value);
                     }
                 });
                 
-                let index = 0;
-                extractKey(dict, values, index);
+                extractKey(dict, values);
+                console.log("dict 출력");
                 console.log(dict);
 
 
@@ -229,16 +227,22 @@
             
         }
         
-        function extractKey(dict, values, index) {
-            for(let key in dict){
-                if(typeof dict[key] == 'object'){
-                    extractKey(dict[key],values, index);
-                }
-                else{
-                    dict[key] = values[index++];
+        function extractKey(dict, values) {
+            let index = 0;
+            function traverseDict(obj){
+                for(let key in obj){
+                    if(typeof obj[key] == 'object'){
+                        traverseDict(obj[key]);
+                    }
+                    else{
+                        obj[key] = values[index];
+                        index ++;
+                    }
                 }
             }
+            traverseDict(dict); 
         }
+
         function extractValues(dict) {
             const result = [];
             for (const key in dict){
@@ -259,7 +263,7 @@
     document.getElementById('avatar').addEventListener("change", showConfig );
     </script>
     <button type="button" onclick="newValue();", id = newBtn>new</button>
-    <button type="button" onclick="getValue();">save</button>
+    <button type="button" onclick="saveFile();">save</button>
     <label for="avatar">.csv 파일을 선택해 주세요.</label>
     <input type="file" id="loadCsv" name="avatar" accept=" .csv "/>
     <button type="button" id = "resetZoomBtn">차트 리셋</button>
@@ -272,130 +276,15 @@
             var input = document.getElementById('loadCsv');
             var file = input.files[0]; // 선택한 파일 객체
             if (file) {
-                //const promise = readCsvFile(file);
                 const promise= readCsvFileTest(file);
                 promise.then(result => {
-                    console.log(result); //
-                    //showChart(result);
+                    console.log(result);
                     showTestChart(result);
                 })
             } 
             const myTable = document.getElementById("table");
             myTable.style.display = 'none';
 
-            const myChart = document.getElementById("chart");
-            myChart.style.display = 'block';
-        }
-
-        //csv파일의 내용을 읽어와 배열과 딕셔너리 형태로 변환
-        function readCsvFile(file) {
-        return new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                const csvData = e.target.result;
-                try {
-                    // CSV 데이터 행과 해더 생성
-                    const rows = csvData.split('\n').map(row => row.trim()).filter(row => row);
-                    const headers = rows[0].split(',').map(header => header.trim());
-
-                    // 나머지 데이터를 배열로 변환
-                    const columns = headers.map(() => []);
-                    // 데이터 행을 열별로 분리
-                    rows.slice(1).forEach(row => {
-                        const values = row.split(',').map(value => value.trim());
-                        values.forEach((value, index) => {
-                            columns[index].push(Number(value));  // 값을 숫자로 변환
-                        });
-                    });
-
-                    // 최종 출력 형태로 변환
-                    const result = {
-                        label: headers,
-                        data: columns
-                    };
-                    resolve(result);
-            
-                } catch (err) {
-                    reject('csv 파싱 오류: ' + err.message);  // 오류 발생 시
-                } 
-            };
-            reader.onerror = function() {
-                reject('파일 읽기 오류');
-            };
-            reader.readAsText(file);  // 파일을 텍스트 형식으로 읽음  
-            });
-        }
-
-        //차트 표시하기
-        function showChart(data){
-            var ctx = document.getElementById('myChart').getContext('2d');
-            // 기존 차트가 있는지 확인
-            const existingChart = Object.values(Chart.instances).find(chart => chart.canvas.id === 'myChart');
-
-            if (existingChart) {
-                existingChart.destroy(); // 기존 차트를 파괴합니다.
-            }
-
-            var labels_value = Array.from({length:data["data"][0].length},(_, index) => index );
-            var data_sets = [];
-            for (let i = 0; i < data["label"].length; i++) {
-                const data_set = {
-                    label:data["label"][i],
-                    data: data["data"][i],
-                    borderColor: getRandomColor(),
-                    borderWidth: 3,
-                    normalized: true,
-                    
-                }
-                data_sets.push(data_set);
-            }
-
-            const chart = new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: labels_value,
-                datasets: data_sets,
-            },            
-            options: {
-                scales: {y: {stacked: true}},
-                elements: {line:{tension :0}},
-                Animation : false,
-                plugins: {
-                    decimation:{
-                        enabled: true,
-                        algorithm: 'min-max', // 'min-max' 또는 'lttb' 사용 가능
-                        samples: 0.0001 ,// 표시할 최대 샘플 수 설정
-                        threshold: 1000 //
-                    },
-                    zoom: {
-                        zoom: {
-                            wheel : {
-                                enabled: true,
-                            },
-                            pinch : {
-                                enabled: true
-                            },
-                            drag: {
-                                enabled: true, // 드래그하여 줌 가능
-                                threshold: 5 // 드래그 줌의 최소 감도 설정
-                            },
-                            mode:'x',
-                        }
-                    
-                    }
-                }
-            }
-        });
-        }
-
-        //랜덤 색상 지정
-        function getRandomColor() {
-            const letters = '0123456789ABCDEF';
-            let color = '#';
-            for (let i = 0; i < 6; i++) {
-                color += letters[Math.floor(Math.random() * 16)];
-            }
-            return color;
         }
 
         //csv파일이 바뀔때 마다 함수를 실행
@@ -418,12 +307,10 @@
                     {
                         title: 'CSV Data Chart',
                         ylabel: 'Value',
-                        xlabel: 'Date',
-                        showRoller: true, // 스크롤 옵션 추가
-                        legend: 'always', // 범례 항상 표시
-                        showRangeSelector: true, // 범위 선택기 추가
+                        //showRangeSelector: true, // 범위 선택기 추가
                         showRoller: true,
                         rollPeriod: 14,
+                        legend: 'always', // 범례 항상 표시
                     }
                     
                 );
@@ -437,9 +324,16 @@
             reader.onload = function(e) {
                 const csvData = e.target.result;
                 try {
-                   
-                    resolve(csvData);
-            
+                    let rows = csvData.split('\n');
+                    let header = rows[0];
+                    let newCsv = ['num, ' + header]; // '번호' 추가
+                    rows.slice(1).forEach((row, index) => {
+                        if (row.trim()) { // 데이터가 존재하는 행만 처리
+                            newCsv.push(`${index + 1}, ${row}`);
+                        }
+                    });
+                    let resultCsv = newCsv.join('\n');
+                    resolve(resultCsv);
                 } catch (err) {
                     reject('csv 파싱 오류: ' + err.message);  // 오류 발생 시
                 } 
@@ -534,9 +428,10 @@
     <table id = "table">
       
     </table>
-    <div id="chart"></div>
-        <canvas id="myChart" width="400" height="200"></canvas>
-    </div>
+    <!-- <div id="chart"></div> -->
+        <!-- <canvas id="myChart" width="400" height="200"></canvas> -->
+        <!-- <canvas id="graphdiv" width="400" height="200"></canvas> -->
+    <!-- </div> -->
 
   
     <div id="graphdiv" style="width: 1200px; height: 1200px;"></div>
