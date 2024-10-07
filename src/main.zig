@@ -8,8 +8,7 @@ const yaml = @import("yaml");
 const html = @embedFile("Index.html");
 const start_html = @embedFile("start.html");
 
-const chartjs = @embedFile("chart.js");
-const chartjs_plugin = @embedFile("chartjs-plugin-zoom.min.js");
+const dygraph = @embedFile("dygraph.min.js");
 
 var config: drivercom.Config = undefined;
 var json: []u8 = undefined;
@@ -31,20 +30,15 @@ pub fn main() !void {
     const win = webui.newWindow();
 
     _ = win.bind("sendJson", sendJson);
-    _ = win.bind("sendChartjs", sendChartjs);
-    _ = win.bind("sendChartjsPlugin", sendChartjsPlugin);
+    _ = win.bind("sendDygraph", sendDygraph);
     _ = win.show(html);
 
     webui.wait();
     webui.clean();
 }
 
-fn sendChartjs(e: webui.Event) void {
-    e.returnString(chartjs);
-}
-
-fn sendChartjsPlugin(e: webui.Event) void {
-    e.returnString(chartjs_plugin);
+fn sendDygraph(e: webui.Event) void {
+    e.returnString(dygraph);
 }
 
 fn sendJson(e: webui.Event) void {

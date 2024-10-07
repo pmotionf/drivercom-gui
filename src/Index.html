@@ -63,19 +63,23 @@
             text-align: center;
             background-color: #d9d9d9;
         }
-        
-        input[type="text"] {
-            width: 90%;
-            box-sizing: border-box;
-            padding: 3px;
+
+        .dygraph-legend {
+            position: absolute;
+            top: 0; /* 위쪽에 표시 */
+            left: 50px;
+            z-index: 10;
+            background-color: rgba(255, 255, 255, 0.7);
+            overflow: hidden;
         }
+        
 
        
     </style>
     <title>값 변경하기</title>
 </head>
 <body>
-    <div class="section-header">SHDrv-server</div>
+    <div class="section-header">Drivercom -gui</div>
     <label for="avatar">config 파일을 선택해 주세요.</label> 
     <input type="file" id="avatar" name="avatar" accept=" .json "/>
     <script>
@@ -268,8 +272,6 @@
     <input type="file" id="loadCsv" name="avatar" accept=" .csv "/>
     <button type="button" id = "resetZoomBtn">차트 리셋</button>
 
-    <script src="https://unpkg.com/dygraphs@2.1.0/dist/dygraph.min.js"></script>
-
     <script>
         //csv파일 열기(file 사용)
         function showCsv(){
@@ -286,34 +288,53 @@
             myTable.style.display = 'none';
 
         }
-
         //csv파일이 바뀔때 마다 함수를 실행
         document.getElementById('loadCsv').addEventListener("change", showCsv );
-        // 줌 리셋 버튼 클릭 시 줌 초기화
-        document.getElementById('resetZoomBtn').addEventListener('click', function() {
-            const myChart = Object.values(Chart.instances).find(chart => chart.canvas.id === 'myChart');
-            if (myChart){
-                myChart.resetZoom();
-            }
-            
-        });
-      
+        
         //dygraphs test
         function showTestChart(csv){
            //CSV 파일에서 데이터 로드
-                new Dygraph(
+           var header = csv.split('\n')[0].split(',');
+           var seriesCount = header.length - 1; // 첫 번째 열 = 번호
+           var visibilityArray = Array(seriesCount).fill(true);
+
+                var chart = new Dygraph(
                     document.getElementById("graphdiv"), // 차트를 표시할 div
                     csv, // CSV 파일의 데이터
                     {
-                        title: 'CSV Data Chart',
-                        ylabel: 'Value',
-                        //showRangeSelector: true, // 범위 선택기 추가
-                        showRoller: true,
-                        rollPeriod: 14,
+                        title: 'CSV Data Chart', //타이틀
+                        ylabel: 'Value', //y
+                        showRoller: true,       // 롤러 활성화
                         legend: 'always', // 범례 항상 표시
-                    }
-                    
+                        visibility: visibilityArray,
+                    } 
                 );
+
+            document.getElementById('resetZoomBtn').addEventListener('click', function() {
+                chart.resetZoom();
+            });
+
+            document.getElementById("graphdiv").addEventListener("wheel", function(event) {
+                // 기본 스크롤 동작 방지
+                event.preventDefault();
+                
+                // 휠 이벤트의 deltaY 값에 따라 줌 처리
+                const zoomFactor = event.deltaY > 0 ? 1.3 : 0.7; // 휠 방향에 따라 줌 인/아웃
+                const range = chart.xAxisRange(); // 현재 x축 범위
+                const midPoint = (range[0] + range[1]) / 2; // 중간 지점 계산
+
+                const newMin = midPoint + (range[0] - midPoint) * zoomFactor; // 새로운 최소값 계산
+                const newMax = midPoint + (range[1] - midPoint) * zoomFactor; // 새로운 최대값 계산
+
+                if (newMin < 0) {
+                    newMin = 0;
+                }
+                
+                // 새로운 범위로 업데이트
+                chart.updateOptions({
+                    dateWindow: [newMin, newMax]
+                });
+            });
         }
 
          //dygraphs test
@@ -370,7 +391,13 @@
                                 target.appendChild(chartjs_plugin);
                             });
                         });
-                       
+                        webui.call('sendDygraph').then((response) => {
+                            var dygraph = document.createElement("script");
+                            dygraph.innerHTML = response;
+                            var target = document.getElementsByTagName("head")[0];
+                            target.appendChild(dygraph);
+                        });
+
                     }
                 });
             }
