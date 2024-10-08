@@ -75,7 +75,7 @@
         overflow: hidden;
       }
 
-      ::-webkit-scrollbar{
+      ::-webkit-scrollbar {
         display: none;
       }
     </style>
@@ -83,200 +83,206 @@
   </head>
   <body>
     <div class="section-header">drivercom-gui</div>
-    <label for="avatar" id = configTitle>config 파일을 선택해 주세요.</label>
+    <label for="avatar" id="configTitle">config 파일을 선택해 주세요.</label>
     <input type="file" id="avatar" name="avatar" accept=" .json " />
     <script>
-          function showConfig() {
-              var input = document.getElementById('avatar');
-              var file = input.files[0]; // 선택한 파일 객체4
-              if (file) {
-                  const promise  = readJSONFile(file);
-                  promise.then(result => {
-                      const dict = result;
-                      console.log("file:", dict);
+      function showConfig() {
+        var input = document.getElementById("avatar");
+        var file = input.files[0]; // 선택한 파일 객체4
+        if (file) {
+          const promise = readJSONFile(file);
+          promise.then((result) => {
+            const dict = result;
+            console.log("file:", dict);
 
-                      //모든 value 저장
-                      const all_value = extractValues(dict);
-                      console.log(all_value);
+            //모든 value 저장
+            const all_value = extractValues(dict);
+            console.log(all_value);
 
+            //html의 모든 ids 저장
+            const allElements = document.querySelectorAll(
+              'input[type="text"], input[type="number"],  input[type="checkbox"]',
+            );
+            const ids = [];
+            allElements.forEach((element) => {
+              ids.push(element.id);
+            });
+            console.log(ids);
 
-                      //html의 모든 ids 저장
-                      const allElements = document.querySelectorAll('input[type="text"], input[type="number"],  input[type="checkbox"]');
-                      const ids = [];
-                      allElements.forEach(element => {
-                          ids.push(element.id);
-                      });
-                      console.log(ids);
-
-                      //값을 변환
-                      for(let i=0; i < ids.length; i++) {
-                          var v = document.getElementById(ids[i]);
-                          v.value = all_value[i];
-                          if (v.id.includes("flags")){
-                              v.checked = all_value[i];
-                          }
-                      }
-                  })
-
+            //값을 변환
+            for (let i = 0; i < ids.length; i++) {
+              var v = document.getElementById(ids[i]);
+              v.value = all_value[i];
+              if (v.id.includes("flags")) {
+                v.checked = all_value[i];
               }
-              const myTable = document.getElementById("table");
-              myTable.style.display = 'table';
+            }
+          });
+        }
+        const myTable = document.getElementById("table");
+        myTable.style.display = "table";
 
-              var ctx = document.getElementById('myChart').getContext('2d');
-              // 기존 차트가 있는지 확인
-              const existingChart = Object.values(Chart.instances).find(chart => chart.canvas.id === 'myChart');
+        var ctx = document.getElementById("myChart").getContext("2d");
+        // 기존 차트가 있는지 확인
+        const existingChart = Object.values(Chart.instances).find(
+          (chart) => chart.canvas.id === "myChart",
+        );
 
-              if (existingChart) {
-                  existingChart.destroy(); // 기존 차트를 파괴합니다.
-              }
+        if (existingChart) {
+          existingChart.destroy(); // 기존 차트를 파괴합니다.
+        }
+      }
+
+      function readJSONFile(file) {
+        return new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = function (e) {
+            const content = e.target.result;
+            try {
+              const json_object = JSON.parse(content); // object 형식으로
+              resolve(json_object); // 파싱된 객체를 반환
+
+              //config 타이틀 및 로깅 타이틀 버튼 숨기기
+              hideConfigTitle();
+            } catch (err) {
+              reject("JSON 파싱 오류: " + err.message); // 오류 발생 시
+            }
+          };
+          reader.onerror = function () {
+            reject("파일 읽기 오류");
+          };
+          reader.readAsText(file); // 파일을 텍스트 형식으로 읽음
+        });
+      }
+
+      function newValue() {
+        //html의 모든 ids 저장
+        const allElements = document.querySelectorAll(
+          'input[type="text"], input[type="number"],  input[type="checkbox"]',
+        );
+        const ids = [];
+        allElements.forEach((element) => {
+          ids.push(element.id);
+        });
+        console.log(ids);
+
+        //값을 변환
+        for (let i = 0; i < ids.length; i++) {
+          var v = document.getElementById(ids[i]);
+          v.value = 0;
+          if (v.id.includes("flags")) {
+            v.checked = false;
           }
+        }
+        const myTable = document.getElementById("table");
+        myTable.style.display = "table";
 
-          function readJSONFile(file) {
-          return new Promise((resolve, reject) => {
-              const reader = new FileReader();
-              reader.onload = function(e) {
-                  const content = e.target.result;
-                  try {
-                      const json_object = JSON.parse(content);  // object 형식으로
-                          resolve(json_object);  // 파싱된 객체를 반환
+        var ctx = document.getElementById("myChart").getContext("2d");
+        // 기존 차트가 있는지 확인
+        const existingChart = Object.values(Chart.instances).find(
+          (chart) => chart.canvas.id === "myChart",
+        );
 
-                      //config 타이틀 및 로깅 타이틀 버튼 숨기기
-                      hideConfigTitle();
-                  } catch (err) {
-                      reject('JSON 파싱 오류: ' + err.message);  // 오류 발생 시
-                  }
-              };
-              reader.onerror = function() {
-                  reject('파일 읽기 오류');
-              };
-              reader.readAsText(file);  // 파일을 텍스트 형식으로 읽음
-              });
+        if (existingChart) {
+          existingChart.destroy(); // 기존 차트를 파괴합니다.
+          showConfigTitle(); // 숨겨진 타이틀 보이게 됩니다됩니다
+        }
+      }
+
+      function saveFile() {
+        webui.call("sendJson").then((response) => {
+          const dict = JSON.parse(response);
+
+          //html의 모든 value 저장
+          const allElements = document.querySelectorAll(
+            'input[type="text"], input[type="number"], input[type="checkbox"]',
+          );
+          const values = []; //
+          allElements.forEach((element) => {
+            if (element.value == "") {
+              values.push(0);
+            } else if (element.id.includes("flags")) {
+              values.push(element.checked);
+            } else {
+              values.push(element.value);
+            }
+          });
+
+          extractKey(dict, values);
+          console.log("dict 출력");
+          console.log(dict);
+
+          //파일 저장
+          const blob = new Blob([JSON.stringify(dict, null, "  ")], {
+            type: "text/json",
+          });
+          const url = URL.createObjectURL(blob);
+
+          // 다운로드 링크 생성
+          const a = document.createElement("a");
+          a.href = url;
+
+          // 현재 날짜와 시간을 가져오기
+          const currentDate = new Date();
+
+          // 날짜와 시간을 문자열로 포맷팅
+          const formattedDate = `${currentDate.getFullYear()}-${currentDate.getMonth() + 1}-${currentDate.getDate()} ${currentDate.getHours()}:${currentDate.getMinutes()}:${currentDate.getSeconds()}`;
+
+          // 포맷팅된 날짜와 시간을 출력
+          a.download = formattedDate + "config.json"; // 다운로드할 파일 이름
+
+          // 링크 클릭하여 다운로드
+          document.body.appendChild(a);
+          a.click();
+
+          // 링크 제거
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url); // Blob URL 해제
+        });
+      }
+
+      function extractKey(dict, values) {
+        let index = 0;
+        function traverseDict(obj) {
+          for (let key in obj) {
+            if (typeof obj[key] == "object") {
+              traverseDict(obj[key]);
+            } else {
+              obj[key] = values[index];
+              index++;
+            }
           }
+        }
+        traverseDict(dict);
+      }
 
-          function newValue(){
-              //html의 모든 ids 저장
-              const allElements = document.querySelectorAll('input[type="text"], input[type="number"],  input[type="checkbox"]');
-                      const ids = [];
-                      allElements.forEach(element => {
-                          ids.push(element.id);
-                      });
-                      console.log(ids);
+      function extractValues(dict) {
+        const result = [];
+        for (const key in dict) {
+          const value = dict[key];
 
-                      //값을 변환
-                      for(let i=0; i < ids.length; i++) {
-                          var v = document.getElementById(ids[i]);
-                          v.value = 0;
-                          if (v.id.includes("flags")){
-                              v.checked = false;
-                          }
-                      }
-                      const myTable = document.getElementById("table");
-              myTable.style.display = 'table';
-
-              var ctx = document.getElementById('myChart').getContext('2d');
-              // 기존 차트가 있는지 확인
-              const existingChart = Object.values(Chart.instances).find(chart => chart.canvas.id === 'myChart');
-
-              if (existingChart) {
-                  existingChart.destroy(); // 기존 차트를 파괴합니다.
-                  showConfigTitle(); // 숨겨진 타이틀 보이게 됩니다됩니다
-              }
+          if (typeof value != "object") {
+            result.push(value);
+          } else {
+            const in_value = extractValues(value);
+            result.push(...in_value);
           }
+        }
+        return result;
+      }
 
-          function saveFile(){
-              webui.call('sendJson').then((response) => {
-                  const dict = JSON.parse(response);
-
-                  //html의 모든 value 저장
-                  const allElements = document.querySelectorAll('input[type="text"], input[type="number"], input[type="checkbox"]');
-                  const values = [];//
-                  allElements.forEach(element => {
-
-                      if(element.value == "" ){
-                          values.push(0);
-                      }
-                      else if(element.id.includes("flags")){
-                          values.push(element.checked);
-                      }
-                      else{
-                          values.push(element.value);
-                      }
-                  });
-
-                  extractKey(dict, values);
-                  console.log("dict 출력");
-                  console.log(dict);
-
-
-                  //파일 저장
-                  const blob = new Blob([JSON.stringify(dict,null,'  ')], { type: 'text/json' });
-                  const url = URL.createObjectURL(blob);
-
-                  // 다운로드 링크 생성
-                  const a = document.createElement('a');
-                  a.href = url;
-
-                  // 현재 날짜와 시간을 가져오기
-                  const currentDate = new Date();
-
-                  // 날짜와 시간을 문자열로 포맷팅
-                  const formattedDate = `${currentDate.getFullYear()}-${currentDate.getMonth() + 1}-${currentDate.getDate()} ${currentDate.getHours()}:${currentDate.getMinutes()}:${currentDate.getSeconds()}`;
-
-                  // 포맷팅된 날짜와 시간을 출력
-                  a.download = formattedDate +'config.json'; // 다운로드할 파일 이름
-
-                  // 링크 클릭하여 다운로드
-                  document.body.appendChild(a);
-                  a.click();
-
-                  // 링크 제거
-                  document.body.removeChild(a);
-                  URL.revokeObjectURL(url); // Blob URL 해제
-              });
-          }
-
-          function extractKey(dict, values) {
-              let index = 0;
-              function traverseDict(obj){
-                  for(let key in obj){
-                      if(typeof obj[key] == 'object'){
-                          traverseDict(obj[key]);
-                      }
-                      else{
-                          obj[key] = values[index];
-                          index ++;
-                      }
-                  }
-              }
-              traverseDict(dict);
-          }
-
-          function extractValues(dict) {
-              const result = [];
-              for (const key in dict){
-                  const value = dict[key];
-
-                  if(typeof value != "object"){
-                      result.push(value);
-                  }
-                  else{
-                      const in_value = extractValues(value);
-                      result.push(...in_value);
-                  }
-              }
-              return result;
-          }
-
-
-      document.getElementById('avatar').addEventListener("change", showConfig );
-
+      document.getElementById("avatar").addEventListener("change", showConfig);
     </script>
 
-    <button type="button" onclick="newValue();"  id="newBtn">new</button>
-    <button type="button" onclick="saveFile(); showConfigTitle();" id = "saveBtn">save</button>
-    <label for="avatar" id = "csvTitle">.csv 파일을 선택해 주세요.</label>
+    <button type="button" onclick="newValue();" id="newBtn">new</button>
+    <button type="button" onclick="saveFile(); showConfigTitle();" id="saveBtn">
+      save
+    </button>
+    <label for="avatar" id="csvTitle">.csv 파일을 선택해 주세요.</label>
     <input type="file" id="loadCsv" name="avatar" accept=" .csv " />
-    <button type="button" onclick = "showLoggingTitle();" id="resetZoomBtn">차트 리셋</button>
+    <button type="button" onclick="showLoggingTitle();" id="resetZoomBtn">
+      차트 리셋
+    </button>
 
     <script>
       //csv파일 열기(file 사용)
@@ -368,7 +374,6 @@
 
               //logging 타이틀 및 config 타이틀/버튼 숨기기
               hideLoggingTitle();
-
             } catch (err) {
               reject("csv 파싱 오류: " + err.message); // 오류 발생 시
             }
@@ -457,8 +462,6 @@
         }
       }
       document.addEventListener("DOMContentLoaded", ready);
-
-      
     </script>
 
     <div id="container">
@@ -468,18 +471,18 @@
 
     <script>
       //config 버튼 및 타이틀 아이디 가져오기
-      const configTitle = document.getElementById('configTitle');
-      const configLoadBtn = document.getElementById('avatar');
-      const configNewBtn = document.getElementById('newBtn');
-      const configSaveBtn = document.getElementById('saveBtn');
-      
+      const configTitle = document.getElementById("configTitle");
+      const configLoadBtn = document.getElementById("avatar");
+      const configNewBtn = document.getElementById("newBtn");
+      const configSaveBtn = document.getElementById("saveBtn");
+
       //csv 버튼 및 타이틀 아이디 가져오기
-      const csvTitle = document.getElementById('csvTitle');
-      const csvLoadBtn = document.getElementById('loadCsv');
-      const csvResetBtn = document.getElementById('resetZoomBtn');
-      
+      const csvTitle = document.getElementById("csvTitle");
+      const csvLoadBtn = document.getElementById("loadCsv");
+      const csvResetBtn = document.getElementById("resetZoomBtn");
+
       //config 타이틀 logging 버튼/타이틀 전부 숨기기
-      function hideConfigTitle(){
+      function hideConfigTitle() {
         configTitle.style.opacity = 0;
         configLoadBtn.style.opacity = 0;
         csvTitle.style.opacity = 0;
@@ -488,7 +491,7 @@
       }
 
       //숨긴 config 타이틀 logging 버튼/타이틀 보이기
-      function showConfigTitle(){
+      function showConfigTitle() {
         configTitle.style.opacity = 100;
         configLoadBtn.style.opacity = 100;
         csvTitle.style.opacity = 100;
@@ -496,9 +499,8 @@
         csvResetBtn.style.opacity = 100;
       }
 
-
       //logging 타이틀 및 config 버튼/타이틀 전부 숨기기
-      function hideLoggingTitle(){
+      function hideLoggingTitle() {
         configTitle.style.opacity = 0;
         configLoadBtn.style.opacity = 0;
         configNewBtn.style.opacity = 0;
@@ -508,15 +510,14 @@
       }
 
       // 숨긴 logging 타이틀 및 config 버튼/타이틀 보기
-      function showLoggingTitle(){
+      function showLoggingTitle() {
         configTitle.style.opacity = 100;
         configLoadBtn.style.opacity = 100;
         configNewBtn.style.opacity = 100;
         configSaveBtn.style.opacity = 100;
         csvTitle.style.opacity = 100;
         csvLoadBtn.style.opacity = 100;
-      }      
+      }
     </script>
-
   </body>
 </html>
