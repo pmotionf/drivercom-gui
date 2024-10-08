@@ -36,17 +36,17 @@ pub fn main() !void {
     webui.clean();
 }
 
-fn sendDygraph(e: webui.Event) void {
+fn sendDygraph(e: *webui.Event) void {
     e.returnString(dygraph);
 }
 
-fn sendJson(e: webui.Event) void {
+fn sendJson(e: *webui.Event) void {
     const value = json[0 .. json.len - 1 :0];
     std.debug.print("download file\n", .{});
     e.returnString(value);
 }
 
-fn exit(_: webui.Event) void {
+fn exit(_: *webui.Event) void {
     // Close all opened windows
     webui.exit();
 }
