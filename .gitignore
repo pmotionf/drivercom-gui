@@ -11,7 +11,6 @@
 !.github/**
 !*.html
 !*.js
-
 !*.zig
 
 !package.json
