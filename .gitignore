@@ -14,10 +14,15 @@
 
 !*.zig
 
+!package.json
+!.prettierrc
+!.prettierignore
+
 # Blacklist (overrides Whitelist)
 **/zig-out/**
 **/zig-cache/**
 **/.zig-cache/**
-config.json
+
+node_modules/**
 
 vendor/**
