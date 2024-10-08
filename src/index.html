@@ -74,6 +74,10 @@
         background-color: rgba(255, 255, 255, 0.7);
         overflow: hidden;
       }
+
+      ::-webkit-scrollbar{
+        display: none;
+      }
     </style>
     <title>값 변경하기</title>
   </head>
@@ -125,6 +129,7 @@
               if (existingChart) {
                   existingChart.destroy(); // 기존 차트를 파괴합니다.
               }
+          }
 
           function readJSONFile(file) {
           return new Promise((resolve, reject) => {
@@ -442,6 +447,8 @@
         }
       }
       document.addEventListener("DOMContentLoaded", ready);
+
+      
     </script>
 
     <div id="container">
