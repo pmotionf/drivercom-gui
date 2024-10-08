@@ -21,7 +21,9 @@
         margin-top: 20px; /* 버튼과의 여백 */
         flex-grow: 1; /* 남은 공간을 차지하도록 설정 */
       }
-
+      #legendData {
+        display: flex; /* 가로 방향으로 배치 */
+      }
       #table {
         display: none;
         width: 30%; /* 표 영역의 너비 */
@@ -74,6 +76,11 @@
         background-color: rgba(255, 255, 255, 0.7);
         overflow: hidden;
       }
+
+      .legendData label {
+        width: 100px; /* 라벨의 너비 */
+        margin-right: 80px;
+      }
     </style>
     <title>값 변경하기</title>
   </head>
@@ -84,7 +91,7 @@
     <script>
       function showConfig() {
         var input = document.getElementById("avatar");
-        var file = input.files[0]; // 선택한 파일 객체4
+        var file = input.files[0]; // 선택한 파일 객체
         if (file) {
           const promise = readJSONFile(file);
           promise.then((result) => {
@@ -253,55 +260,6 @@
       //csv파일이 바뀔때 마다 함수를 실행
       document.getElementById("loadCsv").addEventListener("change", showCsv);
 
-      function showTestChart(csv) {
-        //CSV 파일에서 데이터 로드
-        var header = csv.split("\n")[0].split(",");
-        var seriesCount = header.length - 1; // 첫 번째 열 = 번호
-        var visibilityArray = Array(seriesCount).fill(true);
-
-        var chart = new Dygraph(
-          document.getElementById("graphdiv"), // 차트를 표시할 div
-          csv, // CSV 파일의 데이터
-          {
-            title: "CSV Data Chart", //타이틀
-            ylabel: "Value", //y
-            showRoller: true, // 롤러 활성화
-            legend: "always", // 범례 항상 표시
-            visibility: visibilityArray,
-          },
-        );
-
-        document
-          .getElementById("resetZoomBtn")
-          .addEventListener("click", function () {
-            chart.resetZoom();
-          });
-
-        document
-          .getElementById("graphdiv")
-          .addEventListener("wheel", function (event) {
-            // 기본 스크롤 동작 방지
-            event.preventDefault();
-
-            // 휠 이벤트의 deltaY 값에 따라 줌 처리
-            const zoomFactor = event.deltaY > 0 ? 1.3 : 0.7; // 휠 방향에 따라 줌 인/아웃
-            const range = chart.xAxisRange(); // 현재 x축 범위
-            const midPoint = (range[0] + range[1]) / 2; // 중간 지점 계산
-
-            const newMin = midPoint + (range[0] - midPoint) * zoomFactor; // 새로운 최소값 계산
-            const newMax = midPoint + (range[1] - midPoint) * zoomFactor; // 새로운 최대값 계산
-
-            if (newMin < 0) {
-              newMin = 0;
-            }
-
-            // 새로운 범위로 업데이트
-            chart.updateOptions({
-              dateWindow: [newMin, newMax],
-            });
-          });
-      }
-
       //csv파일의 내용을 읽어와 배열과 딕셔너리 형태로 변환
       function readCsvFileTest(file) {
         return new Promise((resolve, reject) => {
@@ -336,7 +294,6 @@
       //csv파일이 바뀔때 마다 함수를 실행
       document.getElementById("loadCsv").addEventListener("change", showCsv);
 
-      //dygraphs test
       function showTestChart(csv) {
         //CSV 파일에서 데이터 로드
         var header = csv.split("\n")[0].split(",");
@@ -353,13 +310,28 @@
             visibility: visibilityArray,
           },
         );
+        //범례 표시(체크박스)
+        const legends = chart.getLabels().slice(1);
+        const legend_div = document.getElementById("legendData");
+        legend_div.replaceChildren();
+        legends.forEach((legend) => {
+          const label = document.createElement("label");
+          label.textContent = legend;
 
+          const input = document.createElement("input");
+          input.type = "checkbox";
+          input.id = legend;
+          input.checked = true;
+          label.appendChild(input);
+          legend_div.appendChild(label);
+        });
+        //리셋 줌 버튼
         document
           .getElementById("resetZoomBtn")
           .addEventListener("click", function () {
             chart.resetZoom();
           });
-
+        //휠로 줌 설정
         document
           .getElementById("graphdiv")
           .addEventListener("wheel", function (event) {
@@ -378,13 +350,25 @@
               newMin = 0;
             }
 
-            // 새로운 범위로 업데이트
             chart.updateOptions({
               dateWindow: [newMin, newMax],
             });
           });
 
-        console.log(chart.getLabels());
+        //체크박스를 클릭해 데이터 지우고 보이기
+        document
+          .getElementById("legendData")
+          .addEventListener("change", function () {
+            const check_inputs = Array.from(
+              document.querySelectorAll('#legendData input[type="checkbox"]'),
+            );
+            console.log(check_inputs);
+            const check_statues = check_inputs.map((input) => input.checked);
+
+            chart.updateOptions({
+              visibility: check_statues,
+            });
+          });
       }
 
       //csv파일의 내용을 읽어와 배열과 딕셔너리 형태로 변환
@@ -482,7 +466,8 @@
 
     <div id="container">
       <table id="table"></table>
-      <div id="graphdiv" style="width: 1200px; height: 1200px"></div>
+      <div id="legendData"></div>
     </div>
+    <div id="graphdiv" style="width: 1200px; height: 1200px"></div>
   </body>
 </html>
