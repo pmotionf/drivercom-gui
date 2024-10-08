@@ -27,7 +27,9 @@ pub fn main() !void {
     const win = webui.newWindow();
 
     _ = win.bind("sendJson", sendJson);
+
     _ = win.bind("sendDygraph", sendDygraph);
+
     _ = win.show(html);
 
     webui.wait();
