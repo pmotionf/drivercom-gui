@@ -1,12 +1,11 @@
 .{
-    .name = "SHDrv-server",
-
-    .version = "0.0.0",
+    .name = "drivercom-gui",
+    .version = "0.1.0",
 
     .dependencies = .{
         .@"zig-webui" = .{
-            .url = "https://github.com/webui-dev/zig-webui/archive/7c1f82c99a687538bc98808116f9a560e7c0809d.tar.gz",
-            .hash = "12209172a77b86400af916b27b72c0a666f46619ccdd7a89698d27b01dd17b7f12f5",
+            .url = "https://github.com/webui-dev/zig-webui/archive/c45c326109be268c3873670efb8a5a38a3babf38.tar.gz",
+            .hash = "1220f7cb9608ca0b5946bee76bb9fe3867aa5cab47990d9cf02339d89dc7ae1d9a32",
         },
         .drivercom = .{
             .url = "https://github.com/pmotionf/drivercom/archive/324b291589cacaf6899b34c4b3524f008a38b73e.tar.gz",
