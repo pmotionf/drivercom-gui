@@ -6,7 +6,7 @@ module.exports = async ({ github, context }) => {
 
   // Parse `build.zig.zon` for version
   var version;
-  const raw = await fs.readFile("build.zig.zon");
+  const raw = await fs.readFile("./build.zig.zon");
   const lines = raw.split("\n");
   lines.forEach((line) => {
     line = line.trim();
@@ -41,7 +41,7 @@ module.exports = async ({ github, context }) => {
       owner: org,
       repo: name,
       release_id: version,
-      data: await fs.readFile("zig-out/bin/" + name),
+      data: await fs.readFile("./zig-out/bin/" + name),
       headers: {
         "X-GitHub-Api-Version": "2022-11-28",
       },
@@ -53,7 +53,7 @@ module.exports = async ({ github, context }) => {
       owner: org,
       repo: name,
       release_id: version,
-      data: await fs.readFile("zig-out/bin/" + name + ".exe"),
+      data: await fs.readFile("./zig-out/bin/" + name + ".exe"),
       headers: {
         "X-GitHub-Api-Version": "2022-11-28",
       },

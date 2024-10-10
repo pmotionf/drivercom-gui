@@ -32,5 +32,5 @@ jobs:
           SHA: '${{env.parentSHA}}'
         with:
           script: |
-            const script = require('publish.js');
+            const script = require('./publish.js');
             await script({github, context});
