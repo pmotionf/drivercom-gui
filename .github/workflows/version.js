@@ -26,8 +26,8 @@ module.exports = async ({ github, context }) => {
     repo: name,
     ref: "tags/" + version,
   });
-  if (releases.length > 0) {
-    context.core.setFailed("Release " + version + " already exists");
+  if (releases.data.length > 0) {
+    return "";
   }
 
   return version;

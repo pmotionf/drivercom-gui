@@ -34,12 +34,15 @@ jobs:
           result-encoding: string
 
       - name: Build Windows
+        if: ${{ steps.parse-version.outputs.result != '' }}
         run: zig build -Doptimize=ReleaseSafe -Dtarget=x86_64-windows-gnu
 
       - name: Build Linux
+        if: ${{ steps.parse-version.outputs.result != '' }}
         run: zig build -Doptimize=ReleaseSafe -Dtarget=x86_64-linux-gnu
 
       - name: Create release
+        if: ${{ steps.parse-version.outputs.result != '' }}
         run: |
           gh release create --generate-notes \
             "${{steps.parse-version.outputs.result}}" \
