@@ -15,7 +15,7 @@
         align-items: center; /* 중앙 정렬 */
         padding: 20px;
         font-family: Arial, sans-serif;
-        height: 100vh; /* 전체 높이를 viewport 높이로 설정 */
+        height: 100%; /* 전체 높이를 viewport 높이로 설정 */
         background: #f5f5f5;
 
       }
@@ -24,7 +24,7 @@
         display: flex; /* 가로 방향으로 배치 */
         justify-content: space-between; /* 양쪽 끝에 배치 */
         width: 100%; /* 전체 너비 */
-        margin-top: 20px; /* 버튼과의 여백 */
+        margin-left: 240px;
         flex-grow: 1; /* 남은 공간을 차지하도록 설정 */
       }
       
@@ -33,15 +33,13 @@
       }
 
     /* 네비게이션 바 */
-    #sidebar {
+      #sidebar {
           position: fixed;
           top: 0;
           left: 0;
           width: 240px;
           height: 100%;
           background: #fff;
-          z-index: 1000;
-          box-shadow: 3px 0px 10px rgb(209, 209, 209);
       }
       #sidebar .brand {
           font-size: 24px;
@@ -130,6 +128,7 @@
       }
 
       canvas {
+        margin-top: 10px;
         width: 100%;
         height: 100%; /* 차트의 높이를 부모 요소의 높이에 맞춤 */
       }
@@ -195,7 +194,7 @@
           </a>
         </li>
         <li>
-          <a href="#" onclick="loadPage('page2')">
+          <a href="#" onclick="loadPage('page3')">
             <i class='bx bx-menu'></i>
             <span class="text">Logging</span>
           </a>
@@ -211,18 +210,37 @@
         <label for="avatar" id="configTitle">config 파일을 선택해 주세요</label>
         <div class = "rectangle">
           <input type="file" id="avatar" name="avatar" accept=" .json " />
-          <button type="button" onclick="newValue();" id="newBtn">new</button>
-          <button type="button" onclick="saveFile(); showConfigTitle();" id="saveBtn">save</button>
         </div>
       </section>
 
-      <section id="page2">
+      <section id = "page2">
+        <h1>Config</h1>
+        <div>
+          <h2>결과값이 도출되었습니다</h2>
+          <button type="button" onclick="newValue();" id="newBtn">new</button>
+          <button type="button" onclick="saveFile();" id="saveBtn">save</button>
+        </div>
+        <div id="container">
+          <table id="table"></table>
+          <div id="legendData"></div>
+        </div>
+      </section>
+
+      <section id= "page3">
         <h1>Logging</h1>
         <label for="avatar" id="csvTitle">.csv 파일을 선택해 주세요.</label>
         <div class="rectangle">
           <input type="file" id="loadCsv" name="avatar" accept=" .csv " />
-          <button type="button" onclick="showLoggingTitle();" id="resetZoomBtn">차트 리셋</button>
         </div>       
+      </section>
+
+      <section id= "page4">
+        <h1>Logging</h1>
+        <div>
+          <h2>결과값이 도출되었습니다</h2>
+          <button type="button" onclick="loadPage('page3');" id="resetZoomBtn">차트 리셋</button>
+        </div>
+        <div id="graphdiv" style="width: 1200px; height: 1200px"></div>
       </section>
     </div>
     <!--컨탠트-->
@@ -263,6 +281,8 @@
         }
         const myTable = document.getElementById("table");
         myTable.style.display = "table";
+        //새로운 페이지 로딩
+        loadPage('page2');
 
         var ctx = document.getElementById("myChart").getContext("2d");
         // 기존 차트가 있는지 확인
@@ -427,6 +447,10 @@
             console.log(result);
             showTestChart(result);
           });
+
+          //페이지 로딩
+          loadPage('page4');
+
         }
         const myTable = document.getElementById("table");
         myTable.style.display = "none";
@@ -455,6 +479,7 @@
               });
               let resultCsv = newCsv.join("\n");
               resolve(resultCsv);
+
             } catch (err) {
               reject("csv 파싱 오류: " + err.message); // 오류 발생 시
             }
@@ -707,19 +732,13 @@
       document.addEventListener("DOMContentLoaded", ready);
     </script>
 
-    <div id="container">
-      <table id="table"></table>
-      <div id="legendData"></div>
-    </div>
-    <div id="graphdiv" style="width: 1200px; height: 1200px"></div>
-
     <!--네비게이션 바 이동-->
     <script>
       function loadPage(pageId){
         $('#content > section').hide();
         $('#'+pageId).show();
 
-        if(pageId ==='page1'){
+        if(pageId ==='page1'|| pageId === 'page3'){
           $('body').css('overflow', 'hidden');
         } else {
           $('body').css('overflow', 'auto');
