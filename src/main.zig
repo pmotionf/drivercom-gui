@@ -53,11 +53,9 @@ pub fn main() !void {
 
     const win = webui.newWindow();
     defer webui.clean();
+    win.setFileHandler(my_files_handler);
 
     _ = win.bind("sendJson", sendJson);
-
-    _ = win.bind("sendDygraph", sendDygraph);
-    _ = win.bind("sendSynchronizer", sendSynchronizer);
 
     show_window: switch (browser) {
         .Webview => {
@@ -88,18 +86,15 @@ pub fn main() !void {
     webui.wait();
 }
 
-fn sendDygraph(e: *webui.Event) void {
-    e.returnString(dygraph);
-}
-
-fn sendSynchronizer(e: *webui.Event) void {
-    e.returnString(synchronizer);
-}
-
 fn sendJson(e: *webui.Event) void {
     const value = json[0 .. json.len - 1 :0];
     std.debug.print("download file\n", .{});
     e.returnString(value);
+}
+
+fn my_files_handler(filename: []const u8) ?[]u8 {
+    std.debug.print("File: {s}\n", .{filename});
+    return null;
 }
 
 fn exit(_: *webui.Event) void {
