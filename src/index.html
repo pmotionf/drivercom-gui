@@ -25,12 +25,15 @@
 
       #container {
         display: flex; /* 가로 방향으로 배치 */
+        flex-direction: column; /* 세로 방향으로 배치 */
         justify-content: space-between; /* 양쪽 끝에 배치 */
         width: 100%; /* 전체 너비 */
         flex-grow: 1; /* 남은 공간을 차지하도록 설정 */
       }
-      
-      #legendData {
+      #numLegend {
+        display: flex; /* 가로 방향으로 배치 */
+      }
+      #boolLegend {
         display: flex; /* 가로 방향으로 배치 */
       }
 
@@ -190,16 +193,15 @@
         width: 30%; /* 표 영역의 너비 */
       }
 
-      #chart {
-        display: none;
-        width: 60%; /* 그래프 영역의 너비 */
-        max-height: calc(100vh - 100px); /* 차트 최대 높이 설정 */
+      .chart {
+        position: relative;
+        width: 80%;
+        flex: auto;
       }
 
-      canvas {
-        margin-top: 10px;
-        width: 100%;
-        height: 100%; /* 차트의 높이를 부모 요소의 높이에 맞춤 */
+      .dygraph-chart {
+        position: absolute;
+        inset: 1px 1px 1px 1px;
       }
 
       table {
@@ -239,12 +241,17 @@
         overflow: hidden;
       }
 
-      .legendData label {
+      .numLegend label {
+        width: 100px; /* 라벨의 너비 */
+        margin-right: 80px;
+      }
+      .boolLegend label {
         width: 100px; /* 라벨의 너비 */
         margin-right: 80px;
       }
 
     </style>
+    <title>drivercom</title>
   </head>
 
   <body>
@@ -584,9 +591,13 @@
                 num_datas.push(n_col.join(","));
               });
 
+              let bool_csv = [];
+              let num_csv = [];
               //열 번호 추가
-              let bool_csv = ["num, " + bool_datas[0]];
-              let num_csv = ["num, " + num_datas[0]];
+              if (bool_datas[1].length > 0) {
+                bool_csv = ["num, " + bool_datas[0]];
+              }
+              num_csv = ["num, " + num_datas[0]];
 
               //데이터 추가
               bool_datas.slice(1).forEach((data, index) => {
@@ -603,7 +614,12 @@
               bool_csv = bool_csv.join("\n");
               num_csv = num_csv.join("\n");
 
-              resolve(bool_csv);
+              const result = {
+                bool_csv: bool_csv,
+                num_csv: num_csv,
+              };
+              console.log(result);
+              resolve(result);
             } catch (err) {
               reject("csv 파싱 오류: " + err.message); // 오류 발생 시
             }
@@ -617,20 +633,63 @@
       //csv파일이 바뀔때 마다 함수를 실행
       document.getElementById("loadCsv").addEventListener("change", showCsv);
 
-      //dygraphs test
-      function showTestChart(csv) {
+      function showTestChart(data) {
         //CSV 파일에서 데이터 로드
-        var header = csv.split("\n")[0].split(",");
+        var header = data["num_csv"].split("\n")[0].split(",");
         var seriesCount = header.length - 1; // 첫 번째 열 = 번호
         var visibilityArray = Array(seriesCount).fill(true);
 
+        //bool  차트 그리기
+        if (data["bool_csv"].length > 0) {
+          var bool_chart = new Dygraph(
+            document.getElementById("boolChart"), // 차트를 표시할 div
+            data["bool_csv"], // CSV 파일의 데이터
+            {
+              title: "Bool Data Chart", //타이틀
+              strokeWidth: 2, //선의 두께
+              legend: "always", // 범례 항상 표시
+              stepPlot: true, //계단형식 그리기
+              visibility: visibilityArray,
+            },
+          );
+
+          //범례 표시(체크박스)
+          const legends = bool_chart.getLabels().slice(1);
+          const legend_div = document.getElementById("boolLegend");
+          legend_div.replaceChildren();
+          legends.forEach((legend) => {
+            const label = document.createElement("label");
+            label.textContent = legend;
+
+            const input = document.createElement("input");
+            input.type = "checkbox";
+            input.id = legend;
+            input.checked = true;
+            label.appendChild(input);
+            legend_div.appendChild(label);
+          });
+        }
+        document
+          .getElementById("boolLegend")
+          .addEventListener("change", function () {
+            const check_inputs = Array.from(
+              document.querySelectorAll('#boolLegend input[type="checkbox"]'),
+            );
+            console.log(check_inputs);
+            const check_statues = check_inputs.map((input) => input.checked);
+
+            bool_chart.updateOptions({
+              visibility: check_statues,
+            });
+          });
+
+        //숫자 차트 그리기
         var chart = new Dygraph(
-          document.getElementById("graphdiv"), // 차트를 표시할 div
-          csv, // CSV 파일의 데이터
+          document.getElementById("numberChart"), // 차트를 표시할 div
+          data["num_csv"], // CSV 파일의 데이터
           {
             title: "CSV Data Chart", //타이틀
-            ylabel: "Value", //y
-            showRoller: true, // 롤러 활성화
+            strokeWidth: 2, //선의 두께
             legend: "always", // 범례 항상 표시
             visibility: visibilityArray,
           },
@@ -667,27 +726,70 @@
           });
       }
 
-      function showTestChart(csv) {
+      function showTestChart(data) {
         //CSV 파일에서 데이터 로드
-        var header = csv.split("\n")[0].split(",");
+        var header = data["num_csv"].split("\n")[0].split(",");
         var seriesCount = header.length - 1; // 첫 번째 열 = 번호
         var visibilityArray = Array(seriesCount).fill(true);
 
+        //bool  차트 그리기
+        if (data["bool_csv"].length > 0) {
+          var bool_chart = new Dygraph(
+            document.getElementById("boolChart"), // 차트를 표시할 div
+            data["bool_csv"], // CSV 파일의 데이터
+            {
+              title: "Bool Data Chart", //타이틀
+              strokeWidth: 2, //선의 두께
+              legend: "always", // 범례 항상 표시
+              stepPlot: true, //계단형식 그리기
+              visibility: visibilityArray,
+            },
+          );
+
+          //범례 표시(체크박스)
+          const legends = bool_chart.getLabels().slice(1);
+          const legend_div = document.getElementById("boolLegend");
+          legend_div.replaceChildren();
+          legends.forEach((legend) => {
+            const label = document.createElement("label");
+            label.textContent = legend;
+
+            const input = document.createElement("input");
+            input.type = "checkbox";
+            input.id = legend;
+            input.checked = true;
+            label.appendChild(input);
+            legend_div.appendChild(label);
+          });
+        }
+        document
+          .getElementById("boolLegend")
+          .addEventListener("change", function () {
+            const check_inputs = Array.from(
+              document.querySelectorAll('#boolLegend input[type="checkbox"]'),
+            );
+            console.log(check_inputs);
+            const check_statues = check_inputs.map((input) => input.checked);
+
+            bool_chart.updateOptions({
+              visibility: check_statues,
+            });
+          });
+
         //숫자 차트 그리기
         var chart = new Dygraph(
-          document.getElementById("graphdiv"), // 차트를 표시할 div
-          csv, // CSV 파일의 데이터
+          document.getElementById("numberChart"), // 차트를 표시할 div
+          data["num_csv"], // CSV 파일의 데이터
           {
             title: "CSV Data Chart", //타이틀
-            ylabel: "Value", //y
-            showRoller: true, // 롤러 활성화
+            strokeWidth: 2, //선의 두께
             legend: "always", // 범례 항상 표시
             visibility: visibilityArray,
           },
         );
         //범례 표시(체크박스)
         const legends = chart.getLabels().slice(1);
-        const legend_div = document.getElementById("legendData");
+        const legend_div = document.getElementById("numLegend");
         legend_div.replaceChildren();
         legends.forEach((legend) => {
           const label = document.createElement("label");
@@ -700,15 +802,17 @@
           label.appendChild(input);
           legend_div.appendChild(label);
         });
+
         //리셋 줌 버튼
         document
           .getElementById("resetZoomBtn")
           .addEventListener("click", function () {
             chart.resetZoom();
+            bool_chart.resetZoom();
           });
         //휠로 줌 설정
         document
-          .getElementById("graphdiv")
+          .getElementById("numberChart")
           .addEventListener("wheel", function (event) {
             // 기본 스크롤 동작 방지
             event.preventDefault();
@@ -728,14 +832,17 @@
             chart.updateOptions({
               dateWindow: [newMin, newMax],
             });
+            bool_chart.updateOptions({
+              dateWindow: [newMin, newMax],
+            });
           });
 
         //체크박스를 클릭해 데이터 지우고 보이기
         document
-          .getElementById("legendData")
+          .getElementById("numLegend")
           .addEventListener("change", function () {
             const check_inputs = Array.from(
-              document.querySelectorAll('#legendData input[type="checkbox"]'),
+              document.querySelectorAll('#numLegend input[type="checkbox"]'),
             );
             console.log(check_inputs);
             const check_statues = check_inputs.map((input) => input.checked);
@@ -744,6 +851,12 @@
               visibility: check_statues,
             });
           });
+
+        Dygraph.synchronize(chart, bool_chart, {
+          zoom: true, // 줌 동기화
+          selection: true, // 선택 포인트 강조 동기화
+          range: false, // Y축 범위 동기화 (비활성화)
+        });
       }
     </script>
 
@@ -775,6 +888,13 @@
                 dygraph.innerHTML = response;
                 var target = document.getElementsByTagName("head")[0];
                 target.appendChild(dygraph);
+
+                webui.call("sendSynchronizer").then((response) => {
+                  var synchronizer = document.createElement("script");
+                  synchronizer.innerHTML = response;
+                  var target = document.getElementsByTagName("head")[0];
+                  target.appendChild(synchronizer);
+                });
               });
             }
           });
@@ -825,8 +945,21 @@
       document.addEventListener("DOMContentLoaded", ready);
     </script>
 
-    <!--네비게이션 바 이동-->
-    <script>
+    <div id="container">
+      <table id="table"></table>
+      <div id="numLegend"></div>
+      <br />
+      <div id="boolLegend"></div>
+    </div>
+    <div class="chart">
+      <div id="numberChart" class="dygraph-chart"></div>
+    </div>
+    <div class="chart">
+      <div id="boolChart" class="dygraph-chart"></div>
+    </div>
+
+     <!--네비게이션 바 이동-->
+     <script>
       function loadPage(pageId){
         $('#content > section').hide();
         $('#'+pageId).show();

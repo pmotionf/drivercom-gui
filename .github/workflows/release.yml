@@ -37,7 +37,7 @@ jobs:
         if: ${{ steps.parse-version.outputs.result != '' }}
         run: |
           zig build -Doptimize=ReleaseSafe -Dtarget=x86_64-windows-gnu
-          zip "windows-${{env.name}}-${{steps.parse-version.outputs.result}}" \
+          zip -j "windows-${{env.name}}-${{steps.parse-version.outputs.result}}.zip" \
             "./zig-out/bin/drivercom-gui.exe" \
             "./zig-out/bin/drivercom-gui.pdb"
             
@@ -46,7 +46,7 @@ jobs:
         if: ${{ steps.parse-version.outputs.result != '' }}
         run: |
           zig build -Doptimize=ReleaseSafe -Dtarget=x86_64-linux-gnu
-          zip "linux-${{env.name}}-${{steps.parse-version.outputs.result}}" \
+          zip -j "linux-${{env.name}}-${{steps.parse-version.outputs.result}}.zip" \
             "./zig-out/bin/drivercom-gui"
 
       - name: Create release
@@ -55,4 +55,4 @@ jobs:
           gh release create --generate-notes \
             "${{steps.parse-version.outputs.result}}" \
             windows-${{env.name}}-${{steps.parse-version.outputs.result}}.zip \
-            linux -${{env.name}}-${{steps.parse-version.outputs.result}}.zip
+            linux-${{env.name}}-${{steps.parse-version.outputs.result}}.zip

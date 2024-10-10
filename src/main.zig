@@ -1,20 +1,47 @@
+const builtin = @import("builtin");
 const std = @import("std");
-const webui = @import("webui");
-const drivercom = @import("drivercom");
 
-//const html = @embedFile("config.html");
+const args = @import("args");
+const drivercom = @import("drivercom");
+const webui = @import("webui");
+
 const html = @embedFile("index.html");
 
 const dygraph = @embedFile("vendor/dygraph.min.js");
+const synchronizer = @embedFile("vendor/synchronizer.js");
 
 var config: drivercom.Config = undefined;
 var json: []u8 = undefined;
+var browser: webui.Browser = .Webview;
 
-var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
-const allocator = arena.allocator();
+pub const Options = struct {
+    browser: webui.Browser = .Webview,
+
+    pub const meta = .{
+        .full_text = "PMF Smart Driver connection graphical utility.",
+        .usage_summary = "[--browser]",
+
+        .option_docs = .{
+            .browser = "choose GUI browser, defaults to Webview",
+        },
+    };
+};
 
 pub fn main() !void {
+    var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
     defer arena.deinit();
+    const allocator = arena.allocator();
+
+    const options = try args.parseForCurrentProcess(
+        Options,
+        allocator,
+        .print,
+    );
+    inline for (std.meta.fields(@TypeOf(options.options))) |fld| {
+        if (comptime std.mem.eql(u8, "browser", fld.name)) {
+            browser = @field(options.options, fld.name);
+        }
+    }
 
     //config 파일을  json 형식으로 html에 전달
     const j = try std.json.stringifyAlloc(allocator, config, .{});
@@ -25,19 +52,48 @@ pub fn main() !void {
     json[j.len] = 0;
 
     const win = webui.newWindow();
+    defer webui.clean();
 
     _ = win.bind("sendJson", sendJson);
 
     _ = win.bind("sendDygraph", sendDygraph);
+    _ = win.bind("sendSynchronizer", sendSynchronizer);
 
-    _ = win.show(html);
+    show_window: switch (browser) {
+        .Webview => {
+            if (comptime builtin.target.os.tag == .windows) {
+                // WebView not supported on Windows until
+                // https://github.com/webui-dev/webui/issues/496
+                continue :show_window .ChromiumBased;
+            } else if (!win.showWv(html)) {
+                continue :show_window .ChromiumBased;
+            }
+        },
+        else => |b| {
+            if (!win.showBrowser(html, b)) {
+                switch (b) {
+                    .ChromiumBased => {
+                        continue :show_window .Firefox;
+                    },
+                    else => {
+                        if (!win.showBrowser(html, b)) {
+                            return error.BrowserConnectionFailed;
+                        }
+                    },
+                }
+            }
+        },
+    }
 
     webui.wait();
-    webui.clean();
 }
 
 fn sendDygraph(e: *webui.Event) void {
     e.returnString(dygraph);
+}
+
+fn sendSynchronizer(e: *webui.Event) void {
+    e.returnString(synchronizer);
 }
 
 fn sendJson(e: *webui.Event) void {
