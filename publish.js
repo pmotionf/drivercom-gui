@@ -26,39 +26,9 @@ module.exports = async ({ github, context }) => {
     repo: name,
     ref: "tags/" + version,
   });
-  if (releases.length > 0) return;
+  if (releases.length > 0) {
+    context.core.setFailed("Release " + version + " already exists");
+  }
 
-  // Create release
-  await github.rest.repos.createRelease({
-    owner: org,
-    repo: name,
-    name: version,
-    tag_name: version,
-    generate_release_notes: true,
-  });
-
-  github.request(
-    "POST /repos/{owner}/{repo}/releases/{release_id}/assets{?name,label}",
-    {
-      owner: org,
-      repo: name,
-      release_id: version,
-      data: await fs.readFile("./zig-out/bin/" + name),
-      headers: {
-        "X-GitHub-Api-Version": "2022-11-28",
-      },
-    },
-  );
-  github.request(
-    "POST /repos/{owner}/{repo}/releases/{release_id}/assets{?name,label}",
-    {
-      owner: org,
-      repo: name,
-      release_id: version,
-      data: await fs.readFile("./zig-out/bin/" + name + ".exe"),
-      headers: {
-        "X-GitHub-Api-Version": "2022-11-28",
-      },
-    },
-  );
+  return version;
 };
