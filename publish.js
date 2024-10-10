@@ -13,7 +13,9 @@ module.exports = async ({ github, context }) => {
     if (line.startsWith(".version")) {
       const parts = line.split("=");
       const version_raw = parts[1];
-      const version_cleaned = version_raw.replace('"', "").replace(",", "");
+      const version_cleaned = version_raw
+        .replaceAll('"', "")
+        .replaceAll(",", "");
       version = version_cleaned.trim();
     }
   });
