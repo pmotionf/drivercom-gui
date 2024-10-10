@@ -33,15 +33,15 @@
         width: 30%; /* 표 영역의 너비 */
       }
 
-      #chart {
-        display: none;
-        width: 60%; /* 그래프 영역의 너비 */
-        max-height: calc(100vh - 100px); /* 차트 최대 높이 설정 */
+      .chart {
+        position: relative;
+        width: 80%;
+        flex: auto;
       }
 
-      canvas {
-        width: 100%;
-        height: 100%; /* 차트의 높이를 부모 요소의 높이에 맞춤 */
+      .dygraph-chart {
+        position: absolute;
+        inset: 1px 1px 1px 1px;
       }
 
       table {
@@ -370,8 +370,6 @@
         var header = data["num_csv"].split("\n")[0].split(",");
         var seriesCount = header.length - 1; // 첫 번째 열 = 번호
         var visibilityArray = Array(seriesCount).fill(true);
-        document.getElementById("boolChart").innerHTML = "";
-        document.getElementById("numberChart").innerHTML = "";
 
         //bool  차트 그리기
         if (data["bool_csv"].length > 0) {
@@ -381,7 +379,6 @@
             {
               title: "Bool Data Chart", //타이틀
               strokeWidth: 2, //선의 두께
-              ylabel: "Value", //y
               legend: "always", // 범례 항상 표시
               stepPlot: true, //계단형식 그리기
               visibility: visibilityArray,
@@ -425,7 +422,6 @@
           {
             title: "CSV Data Chart", //타이틀
             strokeWidth: 2, //선의 두께
-            ylabel: "Value", //y
             legend: "always", // 범례 항상 표시
             visibility: visibilityArray,
           },
@@ -578,8 +574,11 @@
       <br />
       <div id="boolLegend"></div>
     </div>
-    <div id="numberChart" style="width: 1200px; height: 1200px"></div>
-
-    <div id="boolChart" style="width: 1200px; height: 400px"></div>
+    <div class="chart">
+      <div id="numberChart" class="dygraph-chart"></div>
+    </div>
+    <div class="chart">
+      <div id="boolChart" class="dygraph-chart"></div>
+    </div>
   </body>
 </html>
