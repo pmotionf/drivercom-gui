@@ -7,7 +7,7 @@ module.exports = async ({ github, context }) => {
   // Parse `build.zig.zon` for version
   var version;
   const raw = await fs.readFile("./build.zig.zon");
-  const lines = raw.split("\n");
+  const lines = raw.toString().split("\n");
   lines.forEach((line) => {
     line = line.trim();
     if (line.startsWith(".version")) {
