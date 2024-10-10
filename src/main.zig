@@ -67,11 +67,11 @@ fn sendDygraph(e: *webui.Event) void {
     e.returnString(dygraph);
 }
 
-fn sendSynchronizer(e: webui.Event) void {
+fn sendSynchronizer(e: *webui.Event) void {
     e.returnString(synchronizer);
 }
 
-fn sendJson(e: webui.Event) void {
+fn sendJson(e: *webui.Event) void {
     const value = json[0 .. json.len - 1 :0];
     std.debug.print("download file\n", .{});
     e.returnString(value);
