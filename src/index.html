@@ -15,16 +15,14 @@
         align-items: center; /* 중앙 정렬 */
         padding: 20px;
         font-family: Arial, sans-serif;
-        height: 100%; /* 전체 높이를 viewport 높이로 설정 */
+        height: 100vh; /* 전체 높이를 viewport 높이로 설정 */
         background: #f5f5f5;
-
       }
 
       #container {
         display: flex; /* 가로 방향으로 배치 */
         justify-content: space-between; /* 양쪽 끝에 배치 */
         width: 100%; /* 전체 너비 */
-        margin-left: 240px;
         flex-grow: 1; /* 남은 공간을 차지하도록 설정 */
       }
       
@@ -33,13 +31,16 @@
       }
 
     /* 네비게이션 바 */
+
       #sidebar {
           position: fixed;
           top: 0;
           left: 0;
+          bottom: 0;
           width: 240px;
           height: 100%;
           background: #fff;
+          overflow: hidden;
       }
       #sidebar .brand {
           font-size: 24px;
@@ -48,7 +49,7 @@
           margin-left: 20px;
           margin-bottom: 40px;
           display: block;
-          color: #3DD298;
+          color: #233461;
       }
       #sidebar .side-menu {
           width: 100%;
@@ -65,13 +66,14 @@
       #sidebar .side-menu li a {
           width: 100%;
           height: 100%;
-          background: #3DD298;
+          background: #233461;
           display: flex;
           align-items: center;
           border-radius: 12px;
           color: white; /* 텍스트 색상 */
           text-decoration: none; /* 밑줄 제거 */
       }
+
       #sidebar .side-menu li a .bx {
           min-width: calc(60px - (4px + 6px) * 2);
           display: flex;
@@ -82,9 +84,12 @@
 
       /*컨탠츠*/
       .content{
+        width: calc(100% - 240px);
         padding: 20px;
         margin-left: 240px;
         align-items: center; /* 중앙 정렬 */
+        margin-bottom: 40px;
+        min-width: 240px;
       }
       
       section{
@@ -95,6 +100,7 @@
 
       /*도형*/
       .rectangle{
+        margin-top: 10px;
         padding: 20px;
         background-color: #fff;
         border-radius: 5px;
@@ -220,9 +226,11 @@
           <button type="button" onclick="newValue();" id="newBtn">new</button>
           <button type="button" onclick="saveFile();" id="saveBtn">save</button>
         </div>
-        <div id="container">
-          <table id="table"></table>
-          <div id="legendData"></div>
+        <div class = "rectangle">
+          <div id="container">
+            <table id="table"></table>
+            <div id="legendData"></div>
+          </div>
         </div>
       </section>
 
@@ -240,7 +248,9 @@
           <h2>결과값이 도출되었습니다</h2>
           <button type="button" onclick="loadPage('page3');" id="resetZoomBtn">차트 리셋</button>
         </div>
-        <div id="graphdiv" style="width: 1200px; height: 1200px"></div>
+        <div class = "rectangle">
+          <div id="graphdiv" style="width: 1200px; height: 1200px"></div>
+        </div>
       </section>
     </div>
     <!--컨탠트-->
