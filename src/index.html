@@ -8,6 +8,9 @@
     <!--jQuery CDN-->
     <script src = "https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
+    <!--BoxIcons-->
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+
     <style>
       body {
         display: flex;
@@ -103,16 +106,20 @@
       /*컨탠츠*/
 
       /*도형*/
+      .fileUploadRectangle{
+        margin-top: 10px;
+        padding: 20px;
+        background-color: #fff;
+        border-radius: 5px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        width: 240px;
+      }
       .rectangle{
         margin-top: 10px;
         padding: 20px;
         background-color: #fff;
         border-radius: 5px;
         box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-      }
-
-      .i {
-        font-size: 24px;
       }
       /*도형*/
 
@@ -190,7 +197,6 @@
       }
 
     </style>
-    <title>값 변경하기</title>
   </head>
 
   <body>
@@ -201,7 +207,7 @@
           <span class = "text">driver.com</span>
       </a>
       <ul class="side-menu">
-        <li class="menu-item">
+        <li class="menu-item menu-active">
           <a href="#" onClick = "loadPage('page1')">
             <i class='bx bx-menu'></i>
             <span class="text">Config</span>
@@ -222,7 +228,7 @@
       <section id ="page1">
         <h1>Config</h1>
         <label for="avatar" id="configTitle">config 파일을 선택해 주세요</label>
-        <div class = "rectangle">
+        <div class = "fileUploadRectangle">
           <input type="file" id="avatar" name="avatar" accept=" .json " />
         </div>
       </section>
@@ -245,7 +251,7 @@
       <section id= "page3">
         <h1>Logging</h1>
         <label for="avatar" id="csvTitle">.csv 파일을 선택해 주세요.</label>
-        <div class="rectangle">
+        <div class="fileUploadRectangle">
           <input type="file" id="loadCsv" name="avatar" accept=" .csv " />
         </div>       
       </section>
