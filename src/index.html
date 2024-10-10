@@ -476,20 +476,73 @@
             const csvData = e.target.result;
             try {
               let rows = csvData.split("\n");
-              let header = rows[0];
-              let newCsv = ["num, " + header]; // '번호' 추가
-              rows.slice(1).forEach((row, index) => {
-                if (row.trim()) {
-                  // 데이터가 존재하는 행만 처리
-                  var re_value = row.replace(/true/g, "1");
-                  re_value = re_value.replace(/false/g, "0");
 
-                  newCsv.push(`${index + 1}, ${re_value}`);
+              //테스트
+              let headers = rows[0].split(",").map((col) => col.trim());
+              const bool_headers = [[], []];
+              const num_headers = [[], []];
+              const bool_datas = [];
+              const num_datas = [];
+
+              //자료형에 따른 헤더 분리
+              rows[1].split(",").forEach((data, index) => {
+                const d = data.trim().toLowerCase();
+                if (d == "true" || d == "false") {
+                  bool_headers[0].push(headers[index]);
+                  bool_headers[1].push(index);
+                } else {
+                  num_headers[0].push(headers[index]);
+                  num_headers[1].push(index);
                 }
               });
-              let resultCsv = newCsv.join("\n");
-              resolve(resultCsv);
+              bool_datas.push(bool_headers[0]);
+              num_datas.push(num_headers[0]);
 
+              //자료형에 따른 데이터 분리(bool, number)
+              rows.slice(1).forEach((row) => {
+                const columns = row.split(",").map((col) => col.trim());
+                const b_col = [];
+                const n_col = [];
+
+                bool_headers[1].forEach((index) => {
+                  const boolValue = columns[index];
+                  if (boolValue) {
+                    var re_value = boolValue.replace(
+                      /true/g,
+                      `${b_col.length + 1}`,
+                    );
+                    re_value = re_value.replace(/false/g, "0");
+                    b_col.push(re_value);
+                  }
+                });
+                num_headers[1].forEach((index) => {
+                  const numericRow = columns[index];
+                  n_col.push(numericRow);
+                });
+                bool_datas.push(b_col.join(",")); //,로 연결된 문자열로 저장
+                num_datas.push(n_col.join(","));
+              });
+
+              //열 번호 추가
+              let bool_csv = ["num, " + bool_datas[0]];
+              let num_csv = ["num, " + num_datas[0]];
+
+              //데이터 추가
+              bool_datas.slice(1).forEach((data, index) => {
+                if (data.trim()) {
+                  bool_csv.push(`${index + 1}, ${data}`);
+                }
+              });
+              num_datas.slice(1).forEach((data, index) => {
+                if (data.trim()) {
+                  num_csv.push(`${index + 1}, ${data}`);
+                }
+              });
+
+              bool_csv = bool_csv.join("\n");
+              num_csv = num_csv.join("\n");
+
+              resolve(bool_csv);
             } catch (err) {
               reject("csv 파싱 오류: " + err.message); // 오류 발생 시
             }
@@ -558,6 +611,8 @@
         var header = csv.split("\n")[0].split(",");
         var seriesCount = header.length - 1; // 첫 번째 열 = 번호
         var visibilityArray = Array(seriesCount).fill(true);
+
+        //숫자 차트 그리기
         var chart = new Dygraph(
           document.getElementById("graphdiv"), // 차트를 표시할 div
           csv, // CSV 파일의 데이터
@@ -628,39 +683,6 @@
               visibility: check_statues,
             });
           });
-      }
-
-      //dygraphs test
-      //csv파일의 내용을 읽어와 배열과 딕셔너리 형태로 변환
-      function readCsvFileTest(file) {
-        return new Promise((resolve, reject) => {
-          const reader = new FileReader();
-          reader.onload = function (e) {
-            const csvData = e.target.result;
-            try {
-              let rows = csvData.split("\n");
-              let header = rows[0];
-              let newCsv = ["num, " + header]; // '번호' 추가
-              rows.slice(1).forEach((row, index) => {
-                if (row.trim()) {
-                  // 데이터가 존재하는 행만 처리
-                  newCsv.push(`${index + 1}, ${row}`);
-                }
-              });
-              let resultCsv = newCsv.join("\n");
-              resolve(resultCsv);
-
-              //logging 타이틀 및 config 타이틀/버튼 숨기기
-              hideLoggingTitle();
-            } catch (err) {
-              reject("csv 파싱 오류: " + err.message); // 오류 발생 시
-            }
-          };
-          reader.onerror = function () {
-            reject("파일 읽기 오류");
-          };
-          reader.readAsText(file); // 파일을 텍스트 형식으로 읽음
-        });
       }
     </script>
 
