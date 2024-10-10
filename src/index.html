@@ -256,9 +256,8 @@
           <h2>결과값이 도출되었습니다</h2>
           <button type="button" onclick="loadPage('page3');" id="resetZoomBtn">차트 리셋</button>
         </div>
-        <div class = "rectangle">
-          <div id="graphdiv" style="width: 1200px; height: 1200px"></div>
-        </div>
+        <div id="graphdiv" style="width: 1200px; height: 1200px"></div>
+
       </section>
     </div>
     <!--컨탠트-->
@@ -792,12 +791,10 @@
 
       menuItems.forEach(item => {
       item.addEventListener('click', function(e) {
-        e.preventDefault(); // 기본 링크 동작 방지
+        e.preventDefault(); 
 
-        // 이전에 활성화된 항목의 스타일 제거
         menuItems.forEach(i => i.classList.remove('menu-active'));
         
-        // 클릭된 항목에 스타일 추가
         this.classList.add('menu-active');
         });
       })
