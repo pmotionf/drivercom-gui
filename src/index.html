@@ -82,6 +82,10 @@
           justify-content: center;
       }
 
+      .menu-active {
+      background-color: #e0e0e0; /* 클릭 시 변경될 배경색 */
+      }
+
       /* 네비게이션 바 */
 
       /*컨탠츠*/
@@ -197,13 +201,13 @@
           <span class = "text">driver.com</span>
       </a>
       <ul class="side-menu">
-        <li class="navBtn">
+        <li class="menu-item">
           <a href="#" onClick = "loadPage('page1')">
             <i class='bx bx-menu'></i>
             <span class="text">Config</span>
           </a>
         </li>
-        <li class="navBtn">
+        <li class="menu-item">
           <a href="#" onclick="loadPage('page3')" class="navBtn">
             <i class='bx bx-menu'></i>
             <span class="text">Logging</span>
@@ -784,7 +788,20 @@
         loadPage('page1');
       });
 
-      
+      const menuItems = document.querySelectorAll('.menu-item');
+
+      menuItems.forEach(item => {
+      item.addEventListener('click', function(e) {
+        e.preventDefault(); // 기본 링크 동작 방지
+
+        // 이전에 활성화된 항목의 스타일 제거
+        menuItems.forEach(i => i.classList.remove('menu-active'));
+        
+        // 클릭된 항목에 스타일 추가
+        this.classList.add('menu-active');
+        });
+      })
+
     </script>
   </body>
 </html>
