@@ -85,7 +85,7 @@
         width: 100px; /* 라벨의 너비 */
         margin-right: 80px;
       }
-      .boolLegend label{
+      .boolLegend label {
         width: 100px; /* 라벨의 너비 */
         margin-right: 80px;
       }
@@ -323,14 +323,12 @@
                 num_datas.push(n_col.join(","));
               });
 
-              
-
-              let bool_csv=[];
-              let num_csv =[];
+              let bool_csv = [];
+              let num_csv = [];
               //열 번호 추가
-              if(bool_datas[1].length>0){
+              if (bool_datas[1].length > 0) {
                 bool_csv = ["num, " + bool_datas[0]];
-              };   
+              }
               num_csv = ["num, " + num_datas[0]];
 
               //데이터 추가
@@ -344,18 +342,16 @@
                   num_csv.push(`${index + 1}, ${data}`);
                 }
               });
-             
 
               bool_csv = bool_csv.join("\n");
               num_csv = num_csv.join("\n");
 
-              const result ={
-                "bool_csv": bool_csv,
-                "num_csv" : num_csv
+              const result = {
+                bool_csv: bool_csv,
+                num_csv: num_csv,
               };
               console.log(result);
               resolve(result);
-             
             } catch (err) {
               reject("csv 파싱 오류: " + err.message); // 오류 발생 시
             }
@@ -374,11 +370,11 @@
         var header = data["num_csv"].split("\n")[0].split(",");
         var seriesCount = header.length - 1; // 첫 번째 열 = 번호
         var visibilityArray = Array(seriesCount).fill(true);
-        document.getElementById("boolChart").innerHTML = ''
-         document.getElementById("numberChart").innerHTML = ''
+        document.getElementById("boolChart").innerHTML = "";
+        document.getElementById("numberChart").innerHTML = "";
 
         //bool  차트 그리기
-        if(data["bool_csv"].length >0){
+        if (data["bool_csv"].length > 0) {
           var bool_chart = new Dygraph(
             document.getElementById("boolChart"), // 차트를 표시할 div
             data["bool_csv"], // CSV 파일의 데이터
@@ -499,14 +495,13 @@
             });
           });
 
-          Dygraph.synchronize(chart, bool_chart, {
-            zoom: true,           // 줌 동기화
-            selection: true,      // 선택 포인트 강조 동기화
-            range: false          // Y축 범위 동기화 (비활성화)
-          });
+        Dygraph.synchronize(chart, bool_chart, {
+          zoom: true, // 줌 동기화
+          selection: true, // 선택 포인트 강조 동기화
+          range: false, // Y축 범위 동기화 (비활성화)
+        });
       }
     </script>
-
 
     <!-- 표 생성하기 -->
     <script>
@@ -531,7 +526,6 @@
                   target.appendChild(synchronizer);
                 });
               });
-            
             }
           });
         }
@@ -581,11 +575,11 @@
     <div id="container">
       <table id="table"></table>
       <div id="numLegend"></div>
-      <br>
+      <br />
       <div id="boolLegend"></div>
     </div>
     <div id="numberChart" style="width: 1200px; height: 1200px"></div>
-    
+
     <div id="boolChart" style="width: 1200px; height: 400px"></div>
   </body>
 </html>
