@@ -13,6 +13,7 @@
 !*.js
 !*.zig
 
+!publish.js
 !package.json
 !.prettierrc
 !.prettierignore
