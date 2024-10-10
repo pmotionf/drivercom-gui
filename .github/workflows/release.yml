@@ -29,24 +29,30 @@ jobs:
           SHA: '${{env.parentSHA}}'
         with:
           script: |
-            const script = require('./.github/workflows/version.js');
-            return await script({github, context});
+            const script = require('./.github/workflows/zig-version.js');
+            return await script({github, context, core});
           result-encoding: string
 
       - name: Build Windows
         if: ${{ steps.parse-version.outputs.result != '' }}
-        run: zig build -Doptimize=ReleaseSafe -Dtarget=x86_64-windows-gnu
+        run: |
+          zig build -Doptimize=ReleaseSafe -Dtarget=x86_64-windows-gnu
+          zip "windows-${{env.name}}-${{steps.parse-version.outputs.result}}" \
+            "./zig-out/bin/drivercom-gui.exe" \
+            "./zig-out/bin/drivercom-gui.pdb"
+            
 
       - name: Build Linux
         if: ${{ steps.parse-version.outputs.result != '' }}
-        run: zig build -Doptimize=ReleaseSafe -Dtarget=x86_64-linux-gnu
+        run: |
+          zig build -Doptimize=ReleaseSafe -Dtarget=x86_64-linux-gnu
+          zip "linux-${{env.name}}-${{steps.parse-version.outputs.result}}" \
+            "./zig-out/bin/drivercom-gui"
 
       - name: Create release
         if: ${{ steps.parse-version.outputs.result != '' }}
         run: |
           gh release create --generate-notes \
             "${{steps.parse-version.outputs.result}}" \
-            "./zig-out/bin/drivercom-gui" \
-            "./zig-out/bin/drivercom-gui.exe" \
-            "./zig-out/bin/drivercom-gui.pdb"
-
+            windows-${{env.name}}-${{steps.parse-version.outputs.result}}.zip \
+            linux -${{env.name}}-${{steps.parse-version.outputs.result}}.zip
