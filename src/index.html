@@ -45,6 +45,8 @@
         height: 100%;
         background: #fff;
         overflow: hidden;
+        transition: .3s ease;
+        overflow-x: hidden;
       }
       #sidebar.hide {
         width:60px;
@@ -79,9 +81,6 @@
         position: relative;
         font-weight: 600;
       }
-      #sidebar .side-menu li.active a {
-        color:#233461;
-      }
       #sidebar .side-menu li.active::before {
         content: '';
         position: absolute;
@@ -114,22 +113,34 @@
           color: black; /* 텍스트 색상 */
           text-decoration: none; /* 밑줄 제거 */
           font-size: 16px;
+          white-space: nowrap;
+          overflow-x: hidden;
+      }
+      #sidebar .side-menu li.active a {
+        color:#233461;       
+      }
+      #sidebar.hide .side-menu li a{
+        width: calc(48px - (4px * 2));
       }
       #sidebar .side-menu li a:hover {
         background-color: #233461;
         color: #fff;
       }
-
       #sidebar .side-menu li a .bx {
           min-width: calc(60px - ((4px + 6px) * 2));
           display: flex;
           justify-content: center;
       }
+      #sidebar.hide ~ #content {
+        width: calc(100% - 60px);
+        margin-left: 60px;
+        transition: 0.3s ease;
+      }
 
       /* 네비게이션 바 */
 
       /*컨탠츠*/
-      .content{
+      #content{
         width: calc(100% - 240px);
         margin-left: 240px;
         align-items: center; /* 중앙 정렬 */
@@ -246,13 +257,13 @@
       <ul class="side-menu">
         <li class="menu-item active">
           <a href="#" onClick = "loadPage('page1')">
-            <i class='bx bx-menu'></i>
+            <i class='bx bx-list-ul'></i>
             <span class="text">Config</span>
           </a>
         </li>
         <li class="menu-item">
           <a href="#" onclick="loadPage('page3')" class="navBtn">
-            <i class='bx bx-menu'></i>
+            <i class='bx bx-line-chart'></i>
             <span class="text">Logging</span>
           </a>
         </li>
