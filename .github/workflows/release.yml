@@ -29,8 +29,8 @@ jobs:
           SHA: '${{env.parentSHA}}'
         with:
           script: |
-            const script = require('./publish.js');
-            await script({github, context});
+            const script = require('./.github/workflows/version.js');
+            return await script({github, context});
           result-encoding: string
 
       - name: Build Windows
