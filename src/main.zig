@@ -7,6 +7,7 @@ const webui = @import("webui");
 const html = @embedFile("index.html");
 
 const dygraph = @embedFile("vendor/dygraph.min.js");
+const synchronizer = @embedFile("vendor/synchronizer.js");
 
 var config: drivercom.Config = undefined;
 var json: []u8 = undefined;
@@ -55,6 +56,7 @@ pub fn main() !void {
     _ = win.bind("sendJson", sendJson);
 
     _ = win.bind("sendDygraph", sendDygraph);
+    _ = win.bind("sendSynchronizer", sendSynchronizer);
 
     _ = win.showBrowser(html, browser);
 
@@ -63,6 +65,10 @@ pub fn main() !void {
 
 fn sendDygraph(e: *webui.Event) void {
     e.returnString(dygraph);
+}
+
+fn sendSynchronizer(e: *webui.Event) void {
+    e.returnString(synchronizer);
 }
 
 fn sendJson(e: *webui.Event) void {
