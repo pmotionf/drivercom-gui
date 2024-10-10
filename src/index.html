@@ -200,7 +200,7 @@
       }
 
       .dygraph-chart {
-        position: absolute;
+        position: flex;
         inset: 1px 1px 1px 1px;
       }
 
@@ -298,7 +298,9 @@
         <div class = "rectangle">
           <div id="container">
             <table id="table"></table>
-            <div id="legendData"></div>
+            <div id="numLegend"></div>
+            <br />
+            <div id="boolLegend"></div>
           </div>
         </div>
       </section>
@@ -317,8 +319,12 @@
           <h2>결과값이 도출되었습니다</h2>
           <button type="button" onclick="loadPage('page3');" id="resetZoomBtn">차트 리셋</button>
         </div>
-        <div id="graphdiv" style="width: 1200px; height: 1200px"></div>
-
+        <div class="chart">
+          <div id="numberChart" class="dygraph-chart"></div>
+        </div>
+        <div class="chart">
+          <div id="boolChart" class="dygraph-chart"></div>
+        </div>
       </section>
     </div>
     <!--컨탠트-->
@@ -945,18 +951,7 @@
       document.addEventListener("DOMContentLoaded", ready);
     </script>
 
-    <div id="container">
-      <table id="table"></table>
-      <div id="numLegend"></div>
-      <br />
-      <div id="boolLegend"></div>
-    </div>
-    <div class="chart">
-      <div id="numberChart" class="dygraph-chart"></div>
-    </div>
-    <div class="chart">
-      <div id="boolChart" class="dygraph-chart"></div>
-    </div>
+    
 
      <!--네비게이션 바 이동-->
      <script>
