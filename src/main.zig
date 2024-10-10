@@ -1,3 +1,4 @@
+const builtin = @import("builtin");
 const std = @import("std");
 
 const args = @import("args");
@@ -58,7 +59,31 @@ pub fn main() !void {
     _ = win.bind("sendDygraph", sendDygraph);
     _ = win.bind("sendSynchronizer", sendSynchronizer);
 
-    _ = win.showBrowser(html, browser);
+    show_window: switch (browser) {
+        .Webview => {
+            if (comptime builtin.target.os.tag == .windows) {
+                // WebView not supported on Windows until
+                // https://github.com/webui-dev/webui/issues/496
+                continue :show_window .ChromiumBased;
+            } else if (!win.showWv(html)) {
+                continue :show_window .ChromiumBased;
+            }
+        },
+        else => |b| {
+            if (!win.showBrowser(html, b)) {
+                switch (b) {
+                    .ChromiumBased => {
+                        continue :show_window .Firefox;
+                    },
+                    else => {
+                        if (!win.showBrowser(html, b)) {
+                            return error.BrowserConnectionFailed;
+                        }
+                    },
+                }
+            }
+        },
+    }
 
     webui.wait();
 }
