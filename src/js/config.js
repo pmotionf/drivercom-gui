@@ -1,3 +1,5 @@
+src = "/navigation.js";
+
 //config 파일 표시
 function showConfig() {
   var input = document.getElementById("avatar");
@@ -32,6 +34,9 @@ function showConfig() {
   }
   const myTable = document.getElementById("table");
   myTable.style.display = "table";
+
+  //새로운 페이지 로딩
+  loadPage("page2");
 }
 
 //json 파일 읽기
