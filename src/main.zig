@@ -5,9 +5,9 @@ const args = @import("args");
 const drivercom = @import("drivercom");
 const webui = @import("webui");
 
-const html = @embedFile("index.html");
-const dygraph = @embedFile("vendor/dygraph.min.js");
-const synchronizer = @embedFile("vendor/synchronizer.js");
+const index = @embedFile("index.html");
+const vendor = @import("vendor.zig");
+const js = @import("js.zig");
 
 var config: drivercom.Config = undefined;
 var json: []u8 = undefined;
@@ -52,7 +52,7 @@ pub fn main() !void {
 
     const win = webui.newWindow();
     defer webui.clean();
-    win.setFileHandler(my_files_handler);
+    win.setFileHandler(file_handler);
 
     _ = win.bind("sendJson", sendJson);
 
@@ -62,18 +62,18 @@ pub fn main() !void {
                 // WebView not supported on Windows until
                 // https://github.com/webui-dev/webui/issues/496
                 continue :show_window .ChromiumBased;
-            } else if (!win.showWv(html)) {
+            } else if (!win.showWv(index)) {
                 continue :show_window .ChromiumBased;
             }
         },
         else => |b| {
-            if (!win.showBrowser(html, b)) {
+            if (!win.showBrowser(index, b)) {
                 switch (b) {
                     .ChromiumBased => {
                         continue :show_window .Firefox;
                     },
                     else => {
-                        if (!win.showBrowser(html, b)) {
+                        if (!win.showBrowser(index, b)) {
                             return error.BrowserConnectionFailed;
                         }
                     },
@@ -87,35 +87,41 @@ pub fn main() !void {
 
 fn sendJson(e: *webui.Event) void {
     const value = json[0 .. json.len - 1 :0];
-    std.debug.print("download file\n", .{});
     e.returnString(value);
 }
 //파일 추가
-fn my_files_handler(filename: []const u8) ?[]const u8 {
-    const st = "HTTP/1.1 200 OK\nContent-Type: text/html\nContent-Length: {}\n\n{s}";
-    if (std.mem.eql(u8, filename, "/script.js")) {
-        const script = @embedFile("js/script.js");
-        const response = std.fmt.comptimePrint(st, .{ script.len, script });
+fn file_handler(filename: []const u8) ?[]const u8 {
+    const header_templ =
+        "HTTP/1.1 200 OK\nContent-Type: text/html\nContent-Length: {}\n\n{s}";
+    if (std.mem.eql(u8, filename, "/js/chart.js")) {
+        const response = std.fmt.comptimePrint(
+            header_templ,
+            .{ js.chart.len, js.chart },
+        );
         return response;
-    } else if (std.mem.eql(u8, filename, "/chart.js")) {
-        const script = @embedFile("js/chart.js");
-        const response = std.fmt.comptimePrint(st, .{ script.len, script });
+    } else if (std.mem.eql(u8, filename, "/js/config.js")) {
+        const response = std.fmt.comptimePrint(
+            header_templ,
+            .{ js.config.len, js.config },
+        );
         return response;
-    } else if (std.mem.eql(u8, filename, "/config.js")) {
-        const script = @embedFile("js/config.js");
-        const response = std.fmt.comptimePrint(st, .{ script.len, script });
+    } else if (std.mem.eql(u8, filename, "/js/new_config.js")) {
+        const response = std.fmt.comptimePrint(
+            header_templ,
+            .{ js.new_config.len, js.new_config },
+        );
         return response;
-    } else if (std.mem.eql(u8, filename, "/newConfig.js")) {
-        const script = @embedFile("js/newConfig.js");
-        const response = std.fmt.comptimePrint(st, .{ script.len, script });
+    } else if (std.mem.eql(u8, filename, "/vendor/dygraph.min.js")) {
+        const response = std.fmt.comptimePrint(
+            header_templ,
+            .{ vendor.dygraph.len, vendor.dygraph },
+        );
         return response;
-    } else if (std.mem.eql(u8, filename, "/dygraph.min.js")) {
-        const script = @embedFile("vendor/dygraph.min.js");
-        const response = std.fmt.comptimePrint(st, .{ script.len, script });
-        return response;
-    } else if (std.mem.eql(u8, filename, "/synchronizer.js")) {
-        const script = @embedFile("vendor/synchronizer.js");
-        const response = std.fmt.comptimePrint(st, .{ script.len, script });
+    } else if (std.mem.eql(u8, filename, "/vendor/synchronizer.js")) {
+        const response = std.fmt.comptimePrint(
+            header_templ,
+            .{ vendor.synchronizer.len, vendor.synchronizer },
+        );
         return response;
     }
 
