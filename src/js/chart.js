@@ -205,7 +205,7 @@ function showTestChart(data) {
       chart.resetZoom();
       bool_chart.resetZoom();
     });
-  //휠로 줌 설정
+    //휠로 줌 설정
   document.getElementById("numberChart").addEventListener("wheel", wheel_zoom);
 
   document.getElementById("boolChart").addEventListener("wheel", wheel_zoom);
