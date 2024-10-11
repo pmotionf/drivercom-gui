@@ -29,13 +29,8 @@ jobs:
           SHA: '${{env.parentSHA}}'
         with:
           script: |
-<<<<<<< HEAD
-            const script = require('./publish.js');
-            await script({github, context});
-=======
             const script = require('./.github/workflows/zig-version.js');
             return await script({github, context, core});
->>>>>>> dc1dc11 (scm: Release with zips)
           result-encoding: string
 
       - name: Build Windows
