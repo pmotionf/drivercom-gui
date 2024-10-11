@@ -4,12 +4,13 @@
     <meta charset="UTF-8" />
     <script src="/webui.js"></script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <script src="src/js/config.js"></script>
-    <script src="src/js/newConfig.js"></script>
-    <script src="src/js/chart.js"></script>
+    <script src="/script.js"></script>
+    <script src="/config.js"></script>
+    <script src="/newConfig.js"></script>
+    <script src="/chart.js"></script>
 
-    <script src="src/vendor/dygraph.min.js"></script>
-    <script src="src/vendor/synchronizer.js"></script>
+    <script src="/dygraph.min.js"></script>
+    <script src="/synchronizer.js"></script>
 
     <style>
       body {
@@ -26,8 +27,6 @@
         flex-direction: column; /* 세로 방향으로 배치 */
         justify-content: space-between; /* 양쪽 끝에 배치 */
         width: 100%; /* 전체 너비 */
-        margin-top: 20px; /* 버튼과의 여백 */
-        flex-grow: 1; /* 남은 공간을 차지하도록 설정 */
       }
       #numLegend {
         display: flex; /* 가로 방향으로 배치 */
@@ -112,7 +111,6 @@
     <div id="container">
       <table id="table"></table>
       <div id="numLegend"></div>
-      <br />
       <div id="boolLegend"></div>
     </div>
     <div class="chart">

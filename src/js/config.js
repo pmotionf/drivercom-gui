@@ -147,7 +147,6 @@ function extractValues(dict) {
   }
   return result;
 }
-document.addEventListener("DOMContentLoaded", function() {
-    document.getElementById("avatar").addEventListener("change", showConfig);
+document.addEventListener("DOMContentLoaded", function () {
+  document.getElementById("avatar").addEventListener("change", showConfig);
 });
-

@@ -6,7 +6,6 @@ const drivercom = @import("drivercom");
 const webui = @import("webui");
 
 const html = @embedFile("index.html");
-
 const dygraph = @embedFile("vendor/dygraph.min.js");
 const synchronizer = @embedFile("vendor/synchronizer.js");
 
@@ -91,9 +90,35 @@ fn sendJson(e: *webui.Event) void {
     std.debug.print("download file\n", .{});
     e.returnString(value);
 }
+//파일 추가
+fn my_files_handler(filename: []const u8) ?[]const u8 {
+    const st = "HTTP/1.1 200 OK\nContent-Type: text/html\nContent-Length: {}\n\n{s}";
+    if (std.mem.eql(u8, filename, "/script.js")) {
+        const script = @embedFile("js/script.js");
+        const response = std.fmt.comptimePrint(st, .{ script.len, script });
+        return response;
+    } else if (std.mem.eql(u8, filename, "/chart.js")) {
+        const script = @embedFile("js/chart.js");
+        const response = std.fmt.comptimePrint(st, .{ script.len, script });
+        return response;
+    } else if (std.mem.eql(u8, filename, "/config.js")) {
+        const script = @embedFile("js/config.js");
+        const response = std.fmt.comptimePrint(st, .{ script.len, script });
+        return response;
+    } else if (std.mem.eql(u8, filename, "/newConfig.js")) {
+        const script = @embedFile("js/newConfig.js");
+        const response = std.fmt.comptimePrint(st, .{ script.len, script });
+        return response;
+    } else if (std.mem.eql(u8, filename, "/dygraph.min.js")) {
+        const script = @embedFile("vendor/dygraph.min.js");
+        const response = std.fmt.comptimePrint(st, .{ script.len, script });
+        return response;
+    } else if (std.mem.eql(u8, filename, "/synchronizer.js")) {
+        const script = @embedFile("vendor/synchronizer.js");
+        const response = std.fmt.comptimePrint(st, .{ script.len, script });
+        return response;
+    }
 
-fn my_files_handler(filename: []const u8) ?[]u8 {
-    std.debug.print("File: {s}\n", .{filename});
     return null;
 }
 
