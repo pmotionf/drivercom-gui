@@ -2,7 +2,7 @@ function loadPage(pageId){
     $('#content > section').hide();
     $('#'+pageId).show();
 
-    if(pageId ==='page1'|| pageId === 'page3'){
+    if(pageId ==='page1'|| pageId === 'page3'|| pageId === 'page4'){
       $('body').css('overflow', 'hidden');
     } else {
       $('body').css('overflow', 'auto');

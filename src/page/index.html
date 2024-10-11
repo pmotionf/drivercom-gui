@@ -158,6 +158,8 @@
 
       section{
         display: none;
+        height: 100%;
+        width: 100%;
       }
 
       /*컨탠츠*/
@@ -206,9 +208,16 @@
         width: 30%; /* 표 영역의 너비 */
       }
 
+      #chart{
+        width: 100%;
+        height: 100%;
+      }
+
+
       .chart {
+        width: 95%;
+        height: 65%;
         position: relative;
-        width: 80%;
       }
 
       .dygraph-chart {
@@ -308,8 +317,6 @@
         <div class = "rectangle">
           <div id="container">
             <table id="table"></table>
-            <div id="numLegend"></div>
-            <div id="boolLegend"></div>
           </div>
         </div>
       </section>
@@ -329,12 +336,18 @@
           <button type="button" onclick="loadPage('page3');" id="resetZoomBtn">차트 리셋</button>
         </div>
         <label id="loading_state"></label>
-        <div class="chart">
-          <div id="numberChart" class="dygraph-chart"></div>
+        <div class="container">
+          <div id="numLegend"></div>
+          <div id="boolLegend"></div>
         </div>
-        <div class="chart">
-          <div id="boolChart" class="dygraph-chart"></div>
-        </div>
+        <div id = "chart">
+          <div class="chart">
+            <div id="numberChart" class="dygraph-chart"></div>
+          </div>
+          <div class="chart">
+            <div id="boolChart" class="dygraph-chart"></div>
+          </div>
+        </div>       
       </section>
     </div>
     
