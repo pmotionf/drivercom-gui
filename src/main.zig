@@ -5,8 +5,9 @@ const args = @import("args");
 const drivercom = @import("drivercom");
 const webui = @import("webui");
 
-const index = @embedFile("index.html");
 const js = @import("js.zig");
+const page = @import("page.zig");
+const style = @import("style.zig");
 const vendor = @import("vendor.zig");
 
 var config: drivercom.Config = undefined;
@@ -62,18 +63,18 @@ pub fn main() !void {
                 // WebView not supported on Windows until
                 // https://github.com/webui-dev/webui/issues/496
                 continue :show_window .ChromiumBased;
-            } else if (!win.showWv(index)) {
+            } else if (!win.showWv(page.@"index.html")) {
                 continue :show_window .ChromiumBased;
             }
         },
         else => |b| {
-            if (!win.showBrowser(index, b)) {
+            if (!win.showBrowser(page.@"index.html", b)) {
                 switch (b) {
                     .ChromiumBased => {
                         continue :show_window .Firefox;
                     },
                     else => {
-                        if (!win.showBrowser(index, b)) {
+                        if (!win.showBrowser(page.@"index.html", b)) {
                             return error.BrowserConnectionFailed;
                         }
                     },
@@ -93,29 +94,19 @@ fn sendJson(e: *webui.Event) void {
 fn file_handler(filename: []const u8) ?[]const u8 {
     const header_templ =
         "HTTP/1.1 200 OK\nContent-Type: text/{s}\nContent-Length: {}\n\n{s}";
+    if (matchLink(js, filename)) |result| return result;
+    if (matchLink(page, filename)) |result| return result;
+    if (matchLink(style, filename)) |result| return result;
+    if (matchLink(vendor, filename)) |result| return result;
 
-    const js_ti = @typeInfo(js).@"struct";
-    inline for (js_ti.decls) |decl| {
-        if (std.mem.eql(u8, "/js/" ++ decl.name, filename)) {
-            const response = std.fmt.comptimePrint(header_templ, .{
-                "javascript",
-                @field(js, decl.name).len,
-                @field(js, decl.name),
-            });
-            return response;
-        }
-    }
-
-    const vendor_ti = @typeInfo(vendor).@"struct";
-    inline for (vendor_ti.decls) |decl| {
-        if (std.mem.eql(u8, "/vendor/" ++ decl.name, filename)) {
-            const response = std.fmt.comptimePrint(header_templ, .{
-                "javascript",
-                @field(vendor, decl.name).len,
-                @field(vendor, decl.name),
-            });
-            return response;
-        }
+    // Special handling for index.
+    if (filename.len == 0 or (filename.len == 1 and filename[0] == '/')) {
+        const response = std.fmt.comptimePrint(header_templ, .{
+            "html",
+            page.@"index.html".len,
+            page.@"index.html",
+        });
+        return response;
     }
 
     return null;
@@ -124,4 +115,63 @@ fn file_handler(filename: []const u8) ?[]const u8 {
 fn exit(_: *webui.Event) void {
     // Close all opened windows
     webui.exit();
+}
+
+fn matchLink(comptime T: type, link: []const u8) ?[]const u8 {
+    const header_templ =
+        "HTTP/1.1 200 OK\nContent-Type: text/{s}\nContent-Length: {}\n\n{s}";
+    const ti = @typeInfo(T).@"struct";
+    var path_components = std.mem.splitScalar(u8, link, '/');
+    while (path_components.next()) |component| {
+        if (component.len == 0) continue;
+        inline for (ti.decls) |decl| {
+            if (std.mem.eql(u8, decl.name, component)) {
+                const decl_val = @field(T, decl.name);
+                const decl_type = @TypeOf(decl_val);
+                const decl_ti = @typeInfo(decl_type);
+                switch (decl_ti) {
+                    .@"struct" => {
+                        return matchLink(decl_type, path_components.rest());
+                    },
+                    .pointer => {
+                        const response = std.fmt.comptimePrint(header_templ, .{
+                            comptime filetype(decl.name),
+                            decl_val.len,
+                            decl_val,
+                        });
+                        return response;
+                    },
+                    else => return null,
+                }
+            }
+        }
+    }
+    return null;
+}
+
+fn filetype(comptime name: []const u8) []const u8 {
+    const ext = comptime extension(name);
+    return extensionToFileType(ext);
+}
+
+fn extension(comptime name: []const u8) []const u8 {
+    var parts = std.mem.splitScalar(u8, name, '.');
+    var result: []const u8 = "";
+    while (parts.next()) |part| {
+        if (part.len == 0) continue;
+        result = part;
+    }
+    return result;
+}
+
+fn extensionToFileType(comptime ext: []const u8) []const u8 {
+    if (std.mem.eql(u8, ext, "html") or
+        std.mem.eql(u8, ext, "css"))
+    {
+        return ext;
+    }
+    if (std.mem.eql(u8, ext, "js")) {
+        return "javascript";
+    }
+    unreachable;
 }

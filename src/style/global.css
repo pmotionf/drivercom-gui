@@ -1,0 +1,8 @@
+body {
+  display: flex;
+  flex-direction: column; /* 세로 방향으로 배치 */
+  align-items: center; /* 중앙 정렬 */
+  padding: 20px;
+  font-family: Arial, sans-serif;
+  height: 100vh; /* 전체 높이를 viewport 높이로 설정 */
+}
