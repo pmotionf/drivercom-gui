@@ -13,7 +13,6 @@ function showCsv() {
       showTestChart(result);
     });
     input.value = null;
-
     //페이지 이동
     loadPage("page4");
   } else {
@@ -32,11 +31,9 @@ function readCsvFileTest(file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = function (e) {
-      const csvData = e.target.result;
+      const csvData = parseCSV(e.target.result);
       try {
         let rows = csvData.split("\n");
-
-        //테스트
         let headers = rows[0].split(",").map((col) => col.trim());
         const bool_headers = [[], []];
         const num_headers = [[], []];
@@ -109,6 +106,8 @@ function readCsvFileTest(file) {
         console.log(result);
         resolve(result);
       } catch (err) {
+        const state_label = document.getElementById("loading_state");
+        state_label.innerHTML = "....Loading Failed....";
         reject("csv 파싱 오류: " + err.message); // 오류 발생 시
       }
     };
@@ -207,31 +206,34 @@ function showTestChart(data) {
       bool_chart.resetZoom();
     });
   //휠로 줌 설정
-  document
-    .getElementById("numberChart")
-    .addEventListener("wheel", function (event) {
-      // 기본 스크롤 동작 방지
-      event.preventDefault();
+  document.getElementById("numberChart").addEventListener("wheel", wheel_zoom);
 
-      // 휠 이벤트의 deltaY 값에 따라 줌 처리
-      const zoomFactor = event.deltaY > 0 ? 1.5 : 0.5; // 휠 방향에 따라 줌 인/아웃
-      const range = chart.xAxisRange(); // 현재 x축 범위
-      const midPoint = (range[0] + range[1]) / 2; // 중간 지점 계산
+  document.getElementById("boolChart").addEventListener("wheel", wheel_zoom);
 
-      const newMin = midPoint + (range[0] - midPoint) * zoomFactor; // 새로운 최소값 계산
-      const newMax = midPoint + (range[1] - midPoint) * zoomFactor; // 새로운 최대값 계산
+  //휠 이벤트 분리
+  function wheel_zoom(event) {
+    // 기본 스크롤 동작 방지
+    event.preventDefault();
 
-      if (newMin <= 0) {
-        newMin = 0;
-      }
+    // 휠 이벤트의 deltaY 값에 따라 줌 처리
+    const zoomFactor = event.deltaY > 0 ? 1.5 : 0.5; // 휠 방향에 따라 줌 인/아웃
+    const range = chart.xAxisRange(); // 현재 x축 범위
+    const midPoint = (range[0] + range[1]) / 2; // 중간 지점 계산
 
-      chart.updateOptions({
-        dateWindow: [newMin, newMax],
-      });
-      bool_chart.updateOptions({
-        dateWindow: [newMin, newMax],
-      });
+    const newMin = midPoint + (range[0] - midPoint) * zoomFactor; // 새로운 최소값 계산
+    const newMax = midPoint + (range[1] - midPoint) * zoomFactor; // 새로운 최대값 계산
+
+    if (newMin <= 0) {
+      newMin = 0;
+    }
+
+    chart.updateOptions({
+      dateWindow: [newMin, newMax],
     });
+    bool_chart.updateOptions({
+      dateWindow: [newMin, newMax],
+    });
+  }
 
   //체크박스를 클릭해 데이터 지우고 보이기
   document.getElementById("numLegend").addEventListener("change", function () {
@@ -251,4 +253,25 @@ function showTestChart(data) {
     selection: true, // 선택 포인트 강조 동기화
     range: false, // Y축 범위 동기화 (비활성화)
   });
+}
+
+// 마지막에 있는 ,제거하기
+function parseCSV(csvData) {
+  // 각 행을 줄바꿈(\n)으로 분리
+  let rows = csvData.split("\n");
+  let header = rows[0].split(",");
+
+  // 각 행을 쉼표로 분리하고, 마지막 빈 항목이 있을 경우 제거
+  if (header[header.length - 1] == "") {
+    let result = rows.map((row) => {
+      let columns = row.split(",");
+      // 마지막 값이 빈 문자열이면 제거
+      if (columns[columns.length - 1] == "") {
+        columns.pop();
+      }
+      return columns.join(",");
+    });
+    return result.join("\n");
+  }
+  return csvData;
 }
