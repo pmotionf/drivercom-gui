@@ -7,6 +7,7 @@ const webui = @import("webui");
 
 const js = @import("js.zig");
 const page = @import("page.zig");
+const style = @import("style.zig");
 const vendor = @import("vendor.zig");
 
 var config: drivercom.Config = undefined;
@@ -94,6 +95,18 @@ fn file_handler(filename: []const u8) ?[]const u8 {
     const header_templ =
         "HTTP/1.1 200 OK\nContent-Type: text/{s}\nContent-Length: {}\n\n{s}";
 
+    const style_ti = @typeInfo(style).@"struct";
+    inline for (style_ti.decls) |decl| {
+        if (std.mem.eql(u8, "/style/" ++ decl.name, filename)) {
+            const response = std.fmt.comptimePrint(header_templ, .{
+                comptime filetype(decl.name),
+                @field(style, decl.name).len,
+                @field(style, decl.name),
+            });
+            return response;
+        }
+    }
+
     const js_ti = @typeInfo(js).@"struct";
     inline for (js_ti.decls) |decl| {
         if (std.mem.eql(u8, "/js/" ++ decl.name, filename)) {
@@ -166,7 +179,9 @@ fn extension(comptime name: []const u8) []const u8 {
 }
 
 fn extensionToFileType(comptime ext: []const u8) []const u8 {
-    if (std.mem.eql(u8, ext, "html")) {
+    if (std.mem.eql(u8, ext, "html") or
+        std.mem.eql(u8, ext, "css"))
+    {
         return ext;
     }
     if (std.mem.eql(u8, ext, "js")) {
