@@ -35,22 +35,32 @@
         overflow: hidden;
         transition: .3s ease;
         overflow-x: hidden;
+        scrollbar-width: none;
       }
       #sidebar.hide {
         width:60px;
       }
+      #sidebar::--webkit-scrollbar{
+        display: none;
+      }
       #sidebar .brand {
         font-size: 24px;
         font-weight: 700;
-        margin-top: 20px;
-        margin-left: 20px;
-        margin-bottom: 12px;
-        display: block;
+        height: 56px;
+        align-items: center;
+        top: 0;
+        left: 0;
+        display: flex;
         color: #233461;
         text-decoration: none;
         opacity: 0.5 ease;
+        position: sticky;
+        box-sizing: content-box;
+        z-index: 500;
       }
       #sidebar .brand .bx {
+        min-width: 60px;
+        display: flex;
         justify-content: center;
       }
       #sidebar .side-menu {
@@ -139,6 +149,7 @@
       /*컨탠츠*/
       #content{
         width: calc(100% - 240px);
+        height: 100%;
         margin-left: 240px;
         align-items: center; /* 중앙 정렬 */
         margin-bottom: 40px;
@@ -189,12 +200,7 @@
         justify-content: space-between; /* 양쪽 끝에 배치 */
         width: 100%; /* 전체 너비 */
       }
-      #numLegend {
-        display: flex; /* 가로 방향으로 배치 */
-      }
-      #boolLegend {
-        display: flex; /* 가로 방향으로 배치 */
-      }
+
       #table {
         display: none;
         width: 30%; /* 표 영역의 너비 */
@@ -203,11 +209,10 @@
       .chart {
         position: relative;
         width: 80%;
-        flex: auto;
       }
 
       .dygraph-chart {
-        position: flex;
+        position: absolute;
         inset: 1px 1px 1px 1px;
       }
 
@@ -269,7 +274,7 @@
       <ul class="side-menu">
         <li class="menu-item active">
           <a href="#" onClick = "loadPage('page1')">
-            <i class='bx bx-list-ul'></i>
+            <i class='bx bx-file-blank' ></i>
             <span class="text">Config</span>
           </a>
         </li>

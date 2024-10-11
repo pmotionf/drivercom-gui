@@ -33,8 +33,9 @@ const bx = brand.getElementsByClassName('bx')[0];
 
 menuBar.addEventListener('click', function(){
     sidebar.classList.toggle('hide');
-    title.classList.toggle('invisible');
 });
+
+
 
 
 
