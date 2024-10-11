@@ -94,56 +94,10 @@ fn sendJson(e: *webui.Event) void {
 fn file_handler(filename: []const u8) ?[]const u8 {
     const header_templ =
         "HTTP/1.1 200 OK\nContent-Type: text/{s}\nContent-Length: {}\n\n{s}";
-
-    const style_ti = @typeInfo(style).@"struct";
-    inline for (style_ti.decls) |decl| {
-        if (std.mem.eql(u8, "/style/" ++ decl.name, filename)) {
-            const response = std.fmt.comptimePrint(header_templ, .{
-                comptime filetype(decl.name),
-                @field(style, decl.name).len,
-                @field(style, decl.name),
-            });
-            return response;
-        }
-    }
-
-    const js_ti = @typeInfo(js).@"struct";
-    inline for (js_ti.decls) |decl| {
-        if (std.mem.eql(u8, "/js/" ++ decl.name, filename)) {
-            const response = std.fmt.comptimePrint(header_templ, .{
-                comptime filetype(decl.name),
-                @field(js, decl.name).len,
-                @field(js, decl.name),
-            });
-            return response;
-        }
-    }
-
-    const vendor_ti = @typeInfo(vendor).@"struct";
-    inline for (vendor_ti.decls) |decl| {
-        if (std.mem.eql(u8, "/vendor/" ++ decl.name, filename)) {
-            const response = std.fmt.comptimePrint(header_templ, .{
-                comptime filetype(decl.name),
-                @field(vendor, decl.name).len,
-                @field(vendor, decl.name),
-            });
-            return response;
-        }
-    }
-
-    // The page handler must always be at the end so that more precise URLs
-    // are handled first.
-    const page_ti = @typeInfo(page).@"struct";
-    inline for (page_ti.decls) |decl| {
-        if (std.mem.eql(u8, "/" ++ decl.name, filename)) {
-            const response = std.fmt.comptimePrint(header_templ, .{
-                comptime filetype(decl.name),
-                @field(page, decl.name).len,
-                @field(page, decl.name),
-            });
-            return response;
-        }
-    }
+    if (matchLink(js, filename)) |result| return result;
+    if (matchLink(page, filename)) |result| return result;
+    if (matchLink(style, filename)) |result| return result;
+    if (matchLink(vendor, filename)) |result| return result;
 
     // Special handling for index.
     if (filename.len == 0 or (filename.len == 1 and filename[0] == '/')) {
@@ -161,6 +115,38 @@ fn file_handler(filename: []const u8) ?[]const u8 {
 fn exit(_: *webui.Event) void {
     // Close all opened windows
     webui.exit();
+}
+
+fn matchLink(comptime T: type, link: []const u8) ?[]const u8 {
+    const header_templ =
+        "HTTP/1.1 200 OK\nContent-Type: text/{s}\nContent-Length: {}\n\n{s}";
+    const ti = @typeInfo(T).@"struct";
+    var path_components = std.mem.splitScalar(u8, link, '/');
+    while (path_components.next()) |component| {
+        if (component.len == 0) continue;
+        inline for (ti.decls) |decl| {
+            if (std.mem.eql(u8, decl.name, component)) {
+                const decl_val = @field(T, decl.name);
+                const decl_type = @TypeOf(decl_val);
+                const decl_ti = @typeInfo(decl_type);
+                switch (decl_ti) {
+                    .@"struct" => {
+                        return matchLink(decl_type, path_components.rest());
+                    },
+                    .pointer => {
+                        const response = std.fmt.comptimePrint(header_templ, .{
+                            comptime filetype(decl.name),
+                            decl_val.len,
+                            decl_val,
+                        });
+                        return response;
+                    },
+                    else => return null,
+                }
+            }
+        }
+    }
+    return null;
 }
 
 fn filetype(comptime name: []const u8) []const u8 {
