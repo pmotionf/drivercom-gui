@@ -1,4 +1,4 @@
-src="/navigation.js"
+src = "/navigation.js";
 
 //config 파일 표시
 function showConfig() {
@@ -36,7 +36,7 @@ function showConfig() {
   myTable.style.display = "table";
 
   //새로운 페이지 로딩
-  loadPage('page2');
+  loadPage("page2");
 }
 
 //json 파일 읽기
