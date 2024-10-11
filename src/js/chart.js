@@ -2,11 +2,17 @@
 function showCsv() {
   var input = document.getElementById("loadCsv");
   var file = input.files[0]; // 선택한 파일 객체
+  const state_label = document.getElementById("loading_state");
+  state_label.innerHTML = "....loading....";
   if (file) {
     const promise = readCsvFileTest(file);
     promise.then((result) => {
+      state_label.innerHTML = "complete!";
       showTestChart(result);
     });
+    input.value = null;
+  } else {
+    state_label.innerHTML = "....Loading Failed....";
   }
   const myTable = document.getElementById("table");
   myTable.style.display = "none";

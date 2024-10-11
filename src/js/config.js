@@ -28,6 +28,7 @@ function showConfig() {
         }
       }
     });
+    input.value = null;
   }
   const myTable = document.getElementById("table");
   myTable.style.display = "table";
