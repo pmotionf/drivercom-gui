@@ -7,13 +7,182 @@
     <script src="/js/config.js"></script>
     <script src="/js/new_config.js"></script>
     <script src="/js/chart.js"></script>
+    <script src="/js/navigation.js" defer></script>
 
     <script src="/vendor/dygraph.min.js"></script>
     <script src="/vendor/synchronizer.js"></script>
 
     <link rel="stylesheet" href="/style/global.css" />
+    
+
+    <!--jQuery CDN-->
+    <script src = "https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+    <!--BoxIcons-->
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
 
     <style>
+       /* 네비게이션 바 */
+
+       #sidebar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        width: 240px;
+        height: 100%;
+        background: #fff;
+        overflow: hidden;
+        transition: .3s ease;
+        overflow-x: hidden;
+      }
+      #sidebar.hide {
+        width:60px;
+      }
+      #sidebar .brand {
+        font-size: 24px;
+        font-weight: 700;
+        margin-top: 20px;
+        margin-left: 20px;
+        margin-bottom: 12px;
+        display: block;
+        color: #233461;
+        text-decoration: none;
+        opacity: 0.5 ease;
+      }
+      #sidebar .brand .bx {
+        justify-content: center;
+      }
+      #sidebar .side-menu {
+          width: 100%;
+          list-style-type: none; /* 기본 리스트 스타일 제거 */
+          padding: 0; /* 기본 패딩 제거 */
+          transition: 0.3s ease;
+      }
+      #sidebar .side-menu li {
+          height: 48px;
+          background-color: transparent;
+          border-radius: 48px 0 0 48px;
+          margin-left: 6px;
+          padding: 4px
+      }
+      #sidebar .side-menu li.active {
+        background: #f5f5f5;
+        position: relative;
+        font-weight: 600;
+      }
+      #sidebar .side-menu li.active::before {
+        content: '';
+        position: absolute;
+        width: 40px;
+        height:40px;
+        border-radius: 50%;
+        top: -40px;
+        box-shadow: 20px 20px 0 #f5f5f5;
+        right: 0;
+        z-index: -1;
+      }
+      #sidebar .side-menu li.active::after {
+        content: '';
+        position: absolute;
+        width: 40px;
+        height:40px;
+        border-radius: 50%;
+        bottom: -40px;
+        box-shadow: 20px -20px 0 #f5f5f5;
+        right: 0;
+        z-index: -1;
+      }
+      #sidebar .side-menu li a {
+          width: 100%;
+          height: 100%;
+          background: #fff;
+          display: flex;
+          align-items: center;
+          border-radius: 48px;
+          color: black; /* 텍스트 색상 */
+          text-decoration: none; /* 밑줄 제거 */
+          font-size: 16px;
+          white-space: nowrap;
+          overflow-x: hidden;
+      }
+      #sidebar.hide .brand{
+        width: calc(48px - (4px * 2));
+      }
+      #sidebar .side-menu li.active a {
+        color:#233461;       
+      }
+      #sidebar.hide .side-menu li a{
+        width: calc(48px - (4px * 2));
+      }
+      #sidebar .side-menu li a:hover {
+        background-color: #233461;
+        color: #fff;
+      }
+      #sidebar .side-menu li a .bx {
+          min-width: calc(60px - ((4px + 6px) * 2));
+          display: flex;
+          justify-content: center;
+      }
+      #sidebar.hide ~ #content {
+        width: calc(100% - 60px);
+        margin-left: 60px;
+        transition: 0.3s ease;
+      }
+      .invisible {
+        display: none;
+        transition: 0.3s ease;
+      }
+
+      /* 네비게이션 바 */
+
+      /*컨탠츠*/
+      #content{
+        width: calc(100% - 240px);
+        margin-left: 240px;
+        align-items: center; /* 중앙 정렬 */
+        margin-bottom: 40px;
+        transition: 0.3s ease;
+      }
+
+      section{
+        display: none;
+      }
+
+      /*컨탠츠*/
+
+      /*도형*/
+      .fileUploadRectangle{
+        margin-top: 10px;
+        padding: 20px;
+        background-color: #fff;
+        border-radius: 5px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        width: 240px;
+      }
+      .rectangle{
+        margin-top: 10px;
+        padding: 20px;
+        background-color: #fff;
+        border-radius: 5px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      }
+      /*도형*/
+
+      /*폰트*/
+      h1{
+        font-size: 24px;
+        color: #000;
+      }
+
+      h2{
+        font-size: 12px;
+        color:#000;
+        font-weight: lighter;
+      }
+
+      /*폰트*/
+
       #container {
         display: flex; /* 가로 방향으로 배치 */
         flex-direction: column; /* 세로 방향으로 배치 */
@@ -38,7 +207,7 @@
       }
 
       .dygraph-chart {
-        position: absolute;
+        position: flex;
         inset: 1px 1px 1px 1px;
       }
 
@@ -88,29 +257,81 @@
         margin-right: 80px;
       }
     </style>
-    <title>drivercom-gui</title>
+    <title>drivercom</title>
   </head>
   <body>
-    <div class="section-header">drivercom-gui</div>
-    <label for="avatar">config 파일을 선택해 주세요.</label>
-    <input type="file" id="avatar" name="avatar" accept=" .json " />
+    <!--네비게이션 사이드바 -->
+    <div id = "sidebar">
+      <a href = "#" class = "brand">
+          <i class='bx bx-menu' id="menuBar"></i>
+          <span class = "text" id="drivercomText">Drivercom</span>
+      </a>
+      <ul class="side-menu">
+        <li class="menu-item active">
+          <a href="#" onClick = "loadPage('page1')">
+            <i class='bx bx-list-ul'></i>
+            <span class="text">Config</span>
+          </a>
+        </li>
+        <li class="menu-item">
+          <a href="#" onclick="loadPage('page3')" class="navBtn">
+            <i class='bx bx-line-chart'></i>
+            <span class="text">Logging</span>
+          </a>
+        </li>
+      </ul>
+    </div>
+    <!--네비게이션 사이드바 -->
 
-    <button type="button" onclick="newValue();" , id="newBtn">new</button>
-    <button type="button" onclick="saveFile();">save</button>
-    <label for="avatar">.csv 파일을 선택해 주세요.</label>
-    <input type="file" id="loadCsv" name="avatar" accept=" .csv " />
-    <button type="button" id="resetZoomBtn">차트 리셋</button>
-    <div id="container">
-      <table id="table"></table>
-      <div id="numLegend"></div>
-      <div id="boolLegend"></div>
+    <!--컨탠트-->
+    <div class="content" id="content">
+      <section id ="page1">
+        <h1>Config</h1>
+        <label for="avatar" id="configTitle">config 파일을 선택해 주세요</label>
+        <div class = "fileUploadRectangle">
+          <input type="file" id="avatar" name="avatar" accept=" .json " />
+        </div>
+      </section>
+
+      <section id = "page2">
+        <h1>Config</h1>
+        <div>
+          <h2>결과값이 도출되었습니다</h2>
+          <button type="button" onclick="newValue();" id="newBtn">new</button>
+          <button type="button" onclick="saveFile();" id="saveBtn">save</button>
+        </div>
+        <div class = "rectangle">
+          <div id="container">
+            <table id="table"></table>
+            <div id="numLegend"></div>
+            <div id="boolLegend"></div>
+          </div>
+        </div>
+      </section>
+
+      <section id= "page3">
+        <h1>Logging</h1>
+        <label for="avatar" id="csvTitle">.csv 파일을 선택해 주세요.</label>
+        <div class="fileUploadRectangle">
+          <input type="file" id="loadCsv" name="avatar" accept=" .csv " />
+        </div>       
+      </section>
+
+      <section id= "page4">
+        <h1>Logging</h1>
+        <div>
+          <h2>결과값이 도출되었습니다</h2>
+          <button type="button" onclick="loadPage('page3');" id="resetZoomBtn">차트 리셋</button>
+        </div>
+        <label id="loading_state"></label>
+        <div class="chart">
+          <div id="numberChart" class="dygraph-chart"></div>
+        </div>
+        <div class="chart">
+          <div id="boolChart" class="dygraph-chart"></div>
+        </div>
+      </section>
     </div>
-    <label id="loading_state"></label>
-    <div class="chart">
-      <div id="numberChart" class="dygraph-chart"></div>
-    </div>
-    <div class="chart">
-      <div id="boolChart" class="dygraph-chart"></div>
-    </div>
+    
   </body>
 </html>

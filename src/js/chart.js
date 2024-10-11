@@ -1,4 +1,6 @@
 //csv파일 열기(file 사용)
+src="/navigation.js"
+
 function showCsv() {
   var input = document.getElementById("loadCsv");
   var file = input.files[0]; // 선택한 파일 객체
@@ -11,6 +13,9 @@ function showCsv() {
       showTestChart(result);
     });
     input.value = null;
+
+    //페이지 이동
+    loadPage('page4')
   } else {
     state_label.innerHTML = "....Loading Failed....";
   }
