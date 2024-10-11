@@ -15,6 +15,10 @@ pub fn build(b: *std.Build) void {
         .optimize = optimize,
         .cli = false,
     });
+    const args = b.dependency("args", .{
+        .target = target,
+        .optimize = optimize,
+    });
 
     const exe = b.addExecutable(.{
         .name = "drivercom-gui",
@@ -27,6 +31,7 @@ pub fn build(b: *std.Build) void {
         exe.subsystem = .Windows;
     }
     exe.root_module.addImport("drivercom", drivercom.module("drivercom"));
+    exe.root_module.addImport("args", args.module("args"));
 
     b.installArtifact(exe);
 
@@ -34,8 +39,8 @@ pub fn build(b: *std.Build) void {
 
     run_cmd.step.dependOn(b.getInstallStep());
 
-    if (b.args) |args| {
-        run_cmd.addArgs(args);
+    if (b.args) |_args| {
+        run_cmd.addArgs(_args);
     }
 
     const run_step = b.step("run", "Run the app");
