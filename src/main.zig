@@ -65,6 +65,8 @@ pub fn main() !void {
                 continue :show_window .ChromiumBased;
             } else if (!win.showWv(page.@"index.html")) {
                 continue :show_window .ChromiumBased;
+            } else {
+                _ = win.showWv(page.@"index.html");
             }
         },
         else => |b| {
@@ -76,9 +78,13 @@ pub fn main() !void {
                     else => {
                         if (!win.showBrowser(page.@"index.html", b)) {
                             return error.BrowserConnectionFailed;
+                        } else {
+                            _ = win.showBrowser(page.@"index.html", b);
                         }
                     },
                 }
+            } else {
+                _ = win.showBrowser(page.@"index.html", b);
             }
         },
     }
