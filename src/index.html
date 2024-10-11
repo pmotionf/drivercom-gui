@@ -8,36 +8,89 @@
     <!--jQuery CDN-->
     <script src = "https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
+<<<<<<< HEAD
+=======
     <!--BoxIcons-->
     <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
 
+>>>>>>> 7934258324f3d04422c48ed04ae5f65866460b02
     <style>
       body {
         display: flex;
         flex-direction: column; /* 세로 방향으로 배치 */
         align-items: center; /* 중앙 정렬 */
         font-family: Arial, sans-serif;
+<<<<<<< HEAD
+<<<<<<< HEAD
+        height: 100%; /* 전체 높이를 viewport 높이로 설정 */
+=======
+        padding-left: 20px;
+        padding-right: 20px;
+        height: 100vh; /* 전체 높이를 viewport 높이로 설정 */
+>>>>>>> b627ca2 (수정: 상단여백제거)
+        background: #f5f5f5;
+
+=======
         padding-left: 20px;
         padding-right: 20px;
         height: 100vh; /* 전체 높이를 viewport 높이로 설정 */
         background: #f5f5f5;
+>>>>>>> 7934258324f3d04422c48ed04ae5f65866460b02
       }
 
       #container {
         display: flex; /* 가로 방향으로 배치 */
         flex-direction: column; /* 세로 방향으로 배치 */
+        flex-direction: column; /* 세로 방향으로 배치 */
         justify-content: space-between; /* 양쪽 끝에 배치 */
         width: 100%; /* 전체 너비 */
+<<<<<<< HEAD
+        margin-left: 240px;
         flex-grow: 1; /* 남은 공간을 차지하도록 설정 */
       }
+<<<<<<< HEAD
+      
+      #legendData {
+=======
+=======
+        flex-grow: 1; /* 남은 공간을 차지하도록 설정 */
+      }
+>>>>>>> 7934258324f3d04422c48ed04ae5f65866460b02
       #numLegend {
         display: flex; /* 가로 방향으로 배치 */
       }
       #boolLegend {
+<<<<<<< HEAD
+>>>>>>> 5473ea1 (추가: 데이터  타입별 그래프 동기화)
+=======
+>>>>>>> 7934258324f3d04422c48ed04ae5f65866460b02
         display: flex; /* 가로 방향으로 배치 */
       }
 
     /* 네비게이션 바 */
+<<<<<<< HEAD
+      #sidebar {
+          position: fixed;
+          top: 0;
+          left: 0;
+          width: 240px;
+          height: 100%;
+          background: #fff;
+      }
+      #sidebar .brand {
+          font-size: 24px;
+          font-weight: 700;
+          margin-top: 20px;
+          margin-left: 20px;
+          margin-bottom: 12px;
+          display: block;
+<<<<<<< HEAD
+          color: #3DD298;
+=======
+          color: #233461;
+          text-decoration: none;
+>>>>>>> b627ca2 (수정: 상단여백제거)
+=======
 
       #sidebar {
         position: fixed;
@@ -66,11 +119,44 @@
       }
       #sidebar .brand .bx {
         justify-content: center;
+>>>>>>> 7934258324f3d04422c48ed04ae5f65866460b02
       }
       #sidebar .side-menu {
           width: 100%;
           list-style-type: none; /* 기본 리스트 스타일 제거 */
           padding: 0; /* 기본 패딩 제거 */
+<<<<<<< HEAD
+          
+      }
+      #sidebar .side-menu li {
+          height: 48px;
+          border-radius: 12px;
+          padding: 4px 20px 4px 20px;
+      }
+
+      #sidebar .side-menu li a {
+          width: 100%;
+          height: 100%;
+<<<<<<< HEAD
+          background: #3DD298;
+=======
+          background: #fff;
+>>>>>>> b627ca2 (수정: 상단여백제거)
+          display: flex;
+          align-items: center;
+          border-radius: 12px;
+          color: black; /* 텍스트 색상 */
+          text-decoration: none; /* 밑줄 제거 */
+      }
+      #sidebar .side-menu li a .bx {
+          min-width: calc(60px - (4px + 6px) * 2);
+          display: flex;
+          justify-content: center;
+      }
+
+      .menu-active {
+      background-color: #e0e0e0; /* 클릭 시 변경될 배경색 */
+=======
       }
       #sidebar .side-menu li {
           height: 48px;
@@ -138,16 +224,30 @@
         width: calc(100% - 60px);
         margin-left: 60px;
         transition: 0.3s ease;
+>>>>>>> 7934258324f3d04422c48ed04ae5f65866460b02
       }
 
       /* 네비게이션 바 */
 
       /*컨탠츠*/
+<<<<<<< HEAD
+      .content{
+<<<<<<< HEAD
+        padding: 20px;
+        margin-left: 240px;
+        align-items: center; /* 중앙 정렬 */
+=======
+=======
       #content{
+>>>>>>> 7934258324f3d04422c48ed04ae5f65866460b02
         width: calc(100% - 240px);
         margin-left: 240px;
         align-items: center; /* 중앙 정렬 */
         margin-bottom: 40px;
+<<<<<<< HEAD
+>>>>>>> b627ca2 (수정: 상단여백제거)
+=======
+>>>>>>> 7934258324f3d04422c48ed04ae5f65866460b02
       }
       
       section{
@@ -157,12 +257,22 @@
       /*컨탠츠*/
 
       /*도형*/
+<<<<<<< HEAD
+      .rectangle{
+=======
       .fileUploadRectangle{
         margin-top: 10px;
+>>>>>>> 7934258324f3d04422c48ed04ae5f65866460b02
         padding: 20px;
         background-color: #fff;
         border-radius: 5px;
         box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+<<<<<<< HEAD
+      }
+
+      .i {
+        font-size: 24px;
+=======
         width: 240px;
       }
       .rectangle{
@@ -171,6 +281,7 @@
         background-color: #fff;
         border-radius: 5px;
         box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+>>>>>>> 7934258324f3d04422c48ed04ae5f65866460b02
       }
       /*도형*/
 
@@ -197,11 +308,28 @@
         position: relative;
         width: 80%;
         flex: auto;
+      .chart {
+        position: relative;
+        width: 80%;
+        flex: auto;
       }
 
+<<<<<<< HEAD
+<<<<<<< HEAD
+      canvas {
+        margin-top: 10px;
+        width: 100%;
+        height: 100%; /* 차트의 높이를 부모 요소의 높이에 맞춤 */
+=======
       .dygraph-chart {
-        position: absolute;
+        position: flex;
         inset: 1px 1px 1px 1px;
+>>>>>>> b5c5082 (feat: Graphs fill window size)
+=======
+      .dygraph-chart {
+        position: flex;
+        inset: 1px 1px 1px 1px;
+>>>>>>> 7934258324f3d04422c48ed04ae5f65866460b02
       }
 
       table {
@@ -244,20 +372,42 @@
       .numLegend label {
         width: 100px; /* 라벨의 너비 */
         margin-right: 80px;
+<<<<<<< HEAD
+      }
+      .boolLegend label {
+        width: 100px; /* 라벨의 너비 */
+        margin-right: 80px;
+=======
+>>>>>>> 7934258324f3d04422c48ed04ae5f65866460b02
       }
       .boolLegend label {
         width: 100px; /* 라벨의 너비 */
         margin-right: 80px;
       }
 
+
     </style>
+<<<<<<< HEAD
+    <title>drivercom-gui</title>
+=======
     <title>drivercom</title>
+>>>>>>> 7934258324f3d04422c48ed04ae5f65866460b02
   </head>
+
 
   <body>
     <!--네비게이션 사이드바 -->
     <div id = "sidebar">
       <a href = "#" class = "brand">
+<<<<<<< HEAD
+          <i class='bx bx-menu'></i>
+          <span class = "text">driver.com</span>
+      </a>
+      <ul class="side-menu">
+        <li class="menu-item">
+          <a href="#" onClick = "loadPage('page1')">
+            <i class='bx bx-menu'></i>
+=======
           <i class='bx bx-menu' id="menuBar"></i>
           <span class = "text">Driver.com</span>
       </a>
@@ -265,12 +415,17 @@
         <li class="menu-item active">
           <a href="#" onClick = "loadPage('page1')">
             <i class='bx bx-list-ul'></i>
+>>>>>>> 7934258324f3d04422c48ed04ae5f65866460b02
             <span class="text">Config</span>
           </a>
         </li>
         <li class="menu-item">
           <a href="#" onclick="loadPage('page3')" class="navBtn">
+<<<<<<< HEAD
+            <i class='bx bx-menu'></i>
+=======
             <i class='bx bx-line-chart'></i>
+>>>>>>> 7934258324f3d04422c48ed04ae5f65866460b02
             <span class="text">Logging</span>
           </a>
         </li>
@@ -283,7 +438,11 @@
       <section id ="page1">
         <h1>Config</h1>
         <label for="avatar" id="configTitle">config 파일을 선택해 주세요</label>
+<<<<<<< HEAD
+        <div class = "rectangle">
+=======
         <div class = "fileUploadRectangle">
+>>>>>>> 7934258324f3d04422c48ed04ae5f65866460b02
           <input type="file" id="avatar" name="avatar" accept=" .json " />
         </div>
       </section>
@@ -295,18 +454,36 @@
           <button type="button" onclick="newValue();" id="newBtn">new</button>
           <button type="button" onclick="saveFile();" id="saveBtn">save</button>
         </div>
+<<<<<<< HEAD
+<<<<<<< HEAD
+        <div id="container">
+          <table id="table"></table>
+          <div id="legendData"></div>
+=======
+=======
+>>>>>>> 7934258324f3d04422c48ed04ae5f65866460b02
         <div class = "rectangle">
           <div id="container">
             <table id="table"></table>
-            <div id="legendData"></div>
+            <div id="numLegend"></div>
+            <br />
+            <div id="boolLegend"></div>
           </div>
+<<<<<<< HEAD
+>>>>>>> 7934258 (수정:차트페이지 표 겹쳐지는 오류 수정)
+=======
+>>>>>>> 7934258324f3d04422c48ed04ae5f65866460b02
         </div>
       </section>
 
       <section id= "page3">
         <h1>Logging</h1>
         <label for="avatar" id="csvTitle">.csv 파일을 선택해 주세요.</label>
+<<<<<<< HEAD
+        <div class="rectangle">
+=======
         <div class="fileUploadRectangle">
+>>>>>>> 7934258324f3d04422c48ed04ae5f65866460b02
           <input type="file" id="loadCsv" name="avatar" accept=" .csv " />
         </div>       
       </section>
@@ -317,8 +494,22 @@
           <h2>결과값이 도출되었습니다</h2>
           <button type="button" onclick="loadPage('page3');" id="resetZoomBtn">차트 리셋</button>
         </div>
+<<<<<<< HEAD
+<<<<<<< HEAD
         <div id="graphdiv" style="width: 1200px; height: 1200px"></div>
-
+=======
+=======
+>>>>>>> 7934258324f3d04422c48ed04ae5f65866460b02
+        <div class="chart">
+          <div id="numberChart" class="dygraph-chart"></div>
+        </div>
+        <div class="chart">
+          <div id="boolChart" class="dygraph-chart"></div>
+        </div>
+<<<<<<< HEAD
+>>>>>>> 7934258 (수정:차트페이지 표 겹쳐지는 오류 수정)
+=======
+>>>>>>> 7934258324f3d04422c48ed04ae5f65866460b02
       </section>
     </div>
     <!--컨탠트-->
@@ -331,11 +522,17 @@
           const promise = readJSONFile(file);
           promise.then((result) => {
             const dict = result;
+<<<<<<< HEAD
+
+            //모든 value 저장
+            const all_value = extractValues(dict);
+=======
             console.log("file:", dict);
 
             //모든 value 저장
             const all_value = extractValues(dict);
             console.log(all_value);
+>>>>>>> 7934258324f3d04422c48ed04ae5f65866460b02
 
             //html의 모든 ids 저장
             const allElements = document.querySelectorAll(
@@ -345,8 +542,25 @@
             allElements.forEach((element) => {
               ids.push(element.id);
             });
+<<<<<<< HEAD
+=======
             console.log(ids);
+>>>>>>> 7934258324f3d04422c48ed04ae5f65866460b02
 
+            //값을 변환
+            for (let i = 0; i < ids.length; i++) {
+              var v = document.getElementById(ids[i]);
+              v.value = all_value[i];
+              if (v.id.includes("flags")) {
+                v.checked = all_value[i];
+              }
+            }
+          });
+        }
+        const myTable = document.getElementById("table");
+        myTable.style.display = "table";
+        //새로운 페이지 로딩
+        loadPage('page2');
             //값을 변환
             for (let i = 0; i < ids.length; i++) {
               var v = document.getElementById(ids[i]);
@@ -367,7 +581,16 @@
         const existingChart = Object.values(Chart.instances).find(
           (chart) => chart.canvas.id === "myChart",
         );
+        var ctx = document.getElementById("myChart").getContext("2d");
+        // 기존 차트가 있는지 확인
+        const existingChart = Object.values(Chart.instances).find(
+          (chart) => chart.canvas.id === "myChart",
+        );
 
+        if (existingChart) {
+          existingChart.destroy(); // 기존 차트를 파괴합니다.
+        }
+      }
         if (existingChart) {
           existingChart.destroy(); // 기존 차트를 파괴합니다.
         }
@@ -381,9 +604,12 @@
             try {
               const json_object = JSON.parse(content); // object 형식으로
               resolve(json_object); // 파싱된 객체를 반환
+<<<<<<< HEAD
+=======
 
               //config 타이틀 및 로깅 타이틀 버튼 숨기기
               hideConfigTitle();
+>>>>>>> 7934258324f3d04422c48ed04ae5f65866460b02
             } catch (err) {
               reject("JSON 파싱 오류: " + err.message); // 오류 발생 시
             }
@@ -404,7 +630,10 @@
         allElements.forEach((element) => {
           ids.push(element.id);
         });
+<<<<<<< HEAD
+=======
         console.log(ids);
+>>>>>>> 7934258324f3d04422c48ed04ae5f65866460b02
 
         //값을 변환
         for (let i = 0; i < ids.length; i++) {
@@ -416,6 +645,13 @@
         }
         const myTable = document.getElementById("table");
         myTable.style.display = "table";
+<<<<<<< HEAD
+      }
+
+      function saveFile() {
+        webui.call("sendJson").then((response) => {
+          const dict = JSON.parse(response);
+=======
 
         var ctx = document.getElementById("myChart").getContext("2d");
         // 기존 차트가 있는지 확인
@@ -428,11 +664,20 @@
           showConfigTitle(); // 숨겨진 타이틀 보이게 됩니다됩니다
         }
       }
+        if (existingChart) {
+          existingChart.destroy(); // 기존 차트를 파괴합니다.
+          showConfigTitle(); // 숨겨진 타이틀 보이게 됩니다됩니다
+        }
+      }
 
       function saveFile() {
         webui.call("sendJson").then((response) => {
           const dict = JSON.parse(response);
+      function saveFile() {
+        webui.call("sendJson").then((response) => {
+          const dict = JSON.parse(response);
 
+>>>>>>> 7934258324f3d04422c48ed04ae5f65866460b02
           //html의 모든 value 저장
           const allElements = document.querySelectorAll(
             'input[type="text"], input[type="number"], input[type="checkbox"]',
@@ -447,34 +692,65 @@
               values.push(element.value);
             }
           });
+<<<<<<< HEAD
+          extractKey(dict, values);
+=======
 
           extractKey(dict, values);
           console.log("dict 출력");
           console.log(dict);
+>>>>>>> 7934258324f3d04422c48ed04ae5f65866460b02
 
           //파일 저장
           const blob = new Blob([JSON.stringify(dict, null, "  ")], {
             type: "text/json",
           });
           const url = URL.createObjectURL(blob);
+<<<<<<< HEAD
+          // 다운로드 링크 생성
+          const a = document.createElement("a");
+          a.href = url;
+          // 현재 날짜와 시간을 가져오기
+          const currentDate = new Date();
+          // 날짜와 시간을 문자열로 포맷팅
+          const formattedDate = `${currentDate.getFullYear()}-${currentDate.getMonth() + 1}-${currentDate.getDate()} ${currentDate.getHours()}:${currentDate.getMinutes()}:${currentDate.getSeconds()}`;
+          // 포맷팅된 날짜와 시간을 출력
+          a.download = formattedDate + "config.json"; // 다운로드할 파일 이름
+          // 링크 클릭하여 다운로드
+          document.body.appendChild(a);
+          a.click();
+=======
 
+          // 다운로드 링크 생성
+          const a = document.createElement("a");
+          a.href = url;
           // 다운로드 링크 생성
           const a = document.createElement("a");
           a.href = url;
 
           // 현재 날짜와 시간을 가져오기
           const currentDate = new Date();
+          // 현재 날짜와 시간을 가져오기
+          const currentDate = new Date();
 
           // 날짜와 시간을 문자열로 포맷팅
           const formattedDate = `${currentDate.getFullYear()}-${currentDate.getMonth() + 1}-${currentDate.getDate()} ${currentDate.getHours()}:${currentDate.getMinutes()}:${currentDate.getSeconds()}`;
+          // 날짜와 시간을 문자열로 포맷팅
+          const formattedDate = `${currentDate.getFullYear()}-${currentDate.getMonth() + 1}-${currentDate.getDate()} ${currentDate.getHours()}:${currentDate.getMinutes()}:${currentDate.getSeconds()}`;
 
+          // 포맷팅된 날짜와 시간을 출력
+          a.download = formattedDate + "config.json"; // 다운로드할 파일 이름
           // 포맷팅된 날짜와 시간을 출력
           a.download = formattedDate + "config.json"; // 다운로드할 파일 이름
 
           // 링크 클릭하여 다운로드
           document.body.appendChild(a);
           a.click();
+          // 링크 클릭하여 다운로드
+          document.body.appendChild(a);
+          a.click();
 
+>>>>>>> 7934258324f3d04422c48ed04ae5f65866460b02
           // 링크 제거
           document.body.removeChild(a);
           URL.revokeObjectURL(url); // Blob URL 해제
@@ -495,12 +771,29 @@
         }
         traverseDict(dict);
       }
+      function extractKey(dict, values) {
+        let index = 0;
+        function traverseDict(obj) {
+          for (let key in obj) {
+            if (typeof obj[key] == "object") {
+              traverseDict(obj[key]);
+            } else {
+              obj[key] = values[index];
+              index++;
+            }
+          }
+        }
+        traverseDict(dict);
+      }
 
       function extractValues(dict) {
         const result = [];
         for (const key in dict) {
           const value = dict[key];
+<<<<<<< HEAD
+=======
 
+>>>>>>> 7934258324f3d04422c48ed04ae5f65866460b02
           if (typeof value != "object") {
             result.push(value);
           } else {
@@ -511,7 +804,8 @@
         return result;
       }
 
-      document.getElementById("avatar").addEventListener("change", showConfig);
+      document.getElementById("avatar").addEventListener("change");
+      document.getElementById("avatar").addEventListener("change");
     </script>
 
     <script>
@@ -522,9 +816,12 @@
         if (file) {
           const promise = readCsvFileTest(file);
           promise.then((result) => {
-            console.log(result);
             showTestChart(result);
           });
+
+          //페이지 로딩
+          loadPage('page4');
+
 
           //페이지 로딩
           loadPage('page4');
@@ -622,6 +919,8 @@
               resolve(result);
             } catch (err) {
               reject("csv 파싱 오류: " + err.message); // 오류 발생 시
+<<<<<<< HEAD
+=======
             }
           };
           reader.onerror = function () {
@@ -632,6 +931,148 @@
       }
       //csv파일이 바뀔때 마다 함수를 실행
       document.getElementById("loadCsv").addEventListener("change", showCsv);
+
+      function showTestChart(data) {
+        //CSV 파일에서 데이터 로드
+        var header = data["num_csv"].split("\n")[0].split(",");
+        var header = data["num_csv"].split("\n")[0].split(",");
+        var seriesCount = header.length - 1; // 첫 번째 열 = 번호
+        var visibilityArray = Array(seriesCount).fill(true);
+
+        //bool  차트 그리기
+        if (data["bool_csv"].length > 0) {
+          var bool_chart = new Dygraph(
+            document.getElementById("boolChart"), // 차트를 표시할 div
+            data["bool_csv"], // CSV 파일의 데이터
+            {
+              title: "Bool Data Chart", //타이틀
+              strokeWidth: 2, //선의 두께
+              legend: "always", // 범례 항상 표시
+              stepPlot: true, //계단형식 그리기
+              visibility: visibilityArray,
+            },
+          );
+
+          //범례 표시(체크박스)
+          const legends = bool_chart.getLabels().slice(1);
+          const legend_div = document.getElementById("boolLegend");
+          legend_div.replaceChildren();
+          legends.forEach((legend) => {
+            const label = document.createElement("label");
+            label.textContent = legend;
+
+            const input = document.createElement("input");
+            input.type = "checkbox";
+            input.id = legend;
+            input.checked = true;
+            label.appendChild(input);
+            legend_div.appendChild(label);
+          });
+        }
+        document
+          .getElementById("boolLegend")
+          .addEventListener("change", function () {
+            const check_inputs = Array.from(
+              document.querySelectorAll('#boolLegend input[type="checkbox"]'),
+            );
+            console.log(check_inputs);
+            const check_statues = check_inputs.map((input) => input.checked);
+
+            bool_chart.updateOptions({
+              visibility: check_statues,
+            });
+          });
+
+        //숫자 차트 그리기
+        //bool  차트 그리기
+        if (data["bool_csv"].length > 0) {
+          var bool_chart = new Dygraph(
+            document.getElementById("boolChart"), // 차트를 표시할 div
+            data["bool_csv"], // CSV 파일의 데이터
+            {
+              title: "Bool Data Chart", //타이틀
+              strokeWidth: 2, //선의 두께
+              legend: "always", // 범례 항상 표시
+              stepPlot: true, //계단형식 그리기
+              visibility: visibilityArray,
+            },
+          );
+
+          //범례 표시(체크박스)
+          const legends = bool_chart.getLabels().slice(1);
+          const legend_div = document.getElementById("boolLegend");
+          legend_div.replaceChildren();
+          legends.forEach((legend) => {
+            const label = document.createElement("label");
+            label.textContent = legend;
+
+            const input = document.createElement("input");
+            input.type = "checkbox";
+            input.id = legend;
+            input.checked = true;
+            label.appendChild(input);
+            legend_div.appendChild(label);
+          });
+        }
+        document
+          .getElementById("boolLegend")
+          .addEventListener("change", function () {
+            const check_inputs = Array.from(
+              document.querySelectorAll('#boolLegend input[type="checkbox"]'),
+            );
+            console.log(check_inputs);
+            const check_statues = check_inputs.map((input) => input.checked);
+
+            bool_chart.updateOptions({
+              visibility: check_statues,
+            });
+          });
+
+        //숫자 차트 그리기
+        var chart = new Dygraph(
+          document.getElementById("numberChart"), // 차트를 표시할 div
+          data["num_csv"], // CSV 파일의 데이터
+          document.getElementById("numberChart"), // 차트를 표시할 div
+          data["num_csv"], // CSV 파일의 데이터
+          {
+            title: "CSV Data Chart", //타이틀
+            strokeWidth: 2, //선의 두께
+            strokeWidth: 2, //선의 두께
+            legend: "always", // 범례 항상 표시
+            visibility: visibilityArray,
+          },
+        );
+
+        document
+          .getElementById("resetZoomBtn")
+          .addEventListener("click", function () {
+            chart.resetZoom();
+          });
+
+        document
+          .getElementById("graphdiv")
+          .addEventListener("wheel", function (event) {
+            // 기본 스크롤 동작 방지
+            event.preventDefault();
+
+            // 휠 이벤트의 deltaY 값에 따라 줌 처리
+            const zoomFactor = event.deltaY > 0 ? 1.3 : 0.7; // 휠 방향에 따라 줌 인/아웃
+            const range = chart.xAxisRange(); // 현재 x축 범위
+            const midPoint = (range[0] + range[1]) / 2; // 중간 지점 계산
+
+            const newMin = midPoint + (range[0] - midPoint) * zoomFactor; // 새로운 최소값 계산
+            const newMax = midPoint + (range[1] - midPoint) * zoomFactor; // 새로운 최대값 계산
+
+            if (newMin < 0) {
+              newMin = 0;
+            }
+
+            // 새로운 범위로 업데이트
+            chart.updateOptions({
+              dateWindow: [newMin, newMax],
+            });
+          });
+      }
 
       function showTestChart(data) {
         //CSV 파일에서 데이터 로드
@@ -694,37 +1135,80 @@
             visibility: visibilityArray,
           },
         );
+        //범례 표시(체크박스)
+        const legends = chart.getLabels().slice(1);
+        const legend_div = document.getElementById("numLegend");
+        legend_div.replaceChildren();
+        legends.forEach((legend) => {
+          const label = document.createElement("label");
+          label.textContent = legend;
 
+          const input = document.createElement("input");
+          input.type = "checkbox";
+          input.id = legend;
+          input.checked = true;
+          label.appendChild(input);
+          legend_div.appendChild(label);
+        });
+
+        //리셋 줌 버튼
         document
           .getElementById("resetZoomBtn")
           .addEventListener("click", function () {
             chart.resetZoom();
+            bool_chart.resetZoom();
           });
-
+        //휠로 줌 설정
         document
-          .getElementById("graphdiv")
+          .getElementById("numberChart")
           .addEventListener("wheel", function (event) {
             // 기본 스크롤 동작 방지
             event.preventDefault();
 
             // 휠 이벤트의 deltaY 값에 따라 줌 처리
-            const zoomFactor = event.deltaY > 0 ? 1.3 : 0.7; // 휠 방향에 따라 줌 인/아웃
+            const zoomFactor = event.deltaY > 0 ? 1.5 : 0.5; // 휠 방향에 따라 줌 인/아웃
             const range = chart.xAxisRange(); // 현재 x축 범위
             const midPoint = (range[0] + range[1]) / 2; // 중간 지점 계산
 
             const newMin = midPoint + (range[0] - midPoint) * zoomFactor; // 새로운 최소값 계산
             const newMax = midPoint + (range[1] - midPoint) * zoomFactor; // 새로운 최대값 계산
 
-            if (newMin < 0) {
+            if (newMin <= 0) {
               newMin = 0;
+>>>>>>> 7934258324f3d04422c48ed04ae5f65866460b02
             }
 
-            // 새로운 범위로 업데이트
             chart.updateOptions({
               dateWindow: [newMin, newMax],
             });
+            bool_chart.updateOptions({
+              dateWindow: [newMin, newMax],
+            });
           });
+
+        //체크박스를 클릭해 데이터 지우고 보이기
+        document
+          .getElementById("numLegend")
+          .addEventListener("change", function () {
+            const check_inputs = Array.from(
+              document.querySelectorAll('#numLegend input[type="checkbox"]'),
+            );
+            console.log(check_inputs);
+            const check_statues = check_inputs.map((input) => input.checked);
+
+            chart.updateOptions({
+              visibility: check_statues,
+            });
+          });
+
+        Dygraph.synchronize(chart, bool_chart, {
+          zoom: true, // 줌 동기화
+          selection: true, // 선택 포인트 강조 동기화
+          range: false, // Y축 범위 동기화 (비활성화)
+        });
       }
+      //csv파일이 바뀔때 마다 함수를 실행
+      document.getElementById("loadCsv").addEventListener("change", showCsv);
 
       function showTestChart(data) {
         //CSV 파일에서 데이터 로드
@@ -868,26 +1352,20 @@
             if (e == webui.event.CONNECTED) {
               webui.call("sendJson").then((response) => {
                 const dict = JSON.parse(response);
-                console.log(dict);
                 appendTable(dict);
-              });
-              webui.call("sendChartjs").then((response) => {
-                var chartjs = document.createElement("script");
-                chartjs.innerHTML = response;
-                var target = document.getElementsByTagName("head")[0];
-                target.appendChild(chartjs);
-                webui.call("sendChartjsPlugin").then((response) => {
-                  var chartjs_plugin = document.createElement("script");
-                  chartjs_plugin.innerHTML = response;
-                  var target = document.getElementsByTagName("head")[0];
-                  target.appendChild(chartjs_plugin);
-                });
               });
               webui.call("sendDygraph").then((response) => {
                 var dygraph = document.createElement("script");
                 dygraph.innerHTML = response;
                 var target = document.getElementsByTagName("head")[0];
                 target.appendChild(dygraph);
+
+                webui.call("sendSynchronizer").then((response) => {
+                  var synchronizer = document.createElement("script");
+                  synchronizer.innerHTML = response;
+                  var target = document.getElementsByTagName("head")[0];
+                  target.appendChild(synchronizer);
+                });
 
                 webui.call("sendSynchronizer").then((response) => {
                   var synchronizer = document.createElement("script");
@@ -929,11 +1407,8 @@
 
             inputField.name = key;
             inputField.id = keys + "_" + key;
-
             inputField.style.width = "200px";
-
             inputField.style.padding = "3px";
-
             inputCell.appendChild(inputField); // 입력 필드 추가
 
             row.appendChild(nameCell);
@@ -945,21 +1420,22 @@
       document.addEventListener("DOMContentLoaded", ready);
     </script>
 
-    <div id="container">
-      <table id="table"></table>
-      <div id="numLegend"></div>
-      <br />
-      <div id="boolLegend"></div>
-    </div>
-    <div class="chart">
-      <div id="numberChart" class="dygraph-chart"></div>
-    </div>
-    <div class="chart">
-      <div id="boolChart" class="dygraph-chart"></div>
-    </div>
+<<<<<<< HEAD
+<<<<<<< HEAD
+<<<<<<< HEAD
+    <!--네비게이션 바 이동-->
+    <script>
+=======
+=======
+>>>>>>> 7934258324f3d04422c48ed04ae5f65866460b02
+    
 
      <!--네비게이션 바 이동-->
      <script>
+<<<<<<< HEAD
+>>>>>>> 7934258 (수정:차트페이지 표 겹쳐지는 오류 수정)
+=======
+>>>>>>> 7934258324f3d04422c48ed04ae5f65866460b02
       function loadPage(pageId){
         $('#content > section').hide();
         $('#'+pageId).show();
@@ -978,6 +1454,39 @@
 
       menuItems.forEach(item => {
       item.addEventListener('click', function(e) {
+<<<<<<< HEAD
+        e.preventDefault(); // 기본 링크 동작 방지
+
+        // 이전에 활성화된 항목의 스타일 제거
+        menuItems.forEach(i => i.classList.remove('menu-active'));
+        
+        // 클릭된 항목에 스타일 추가
+        this.classList.add('menu-active');
+        });
+      })
+
+    </script>
+=======
+    <div id="container">
+      <table id="table"></table>
+      <div id="numLegend"></div>
+      <br />
+      <div id="boolLegend"></div>
+    </div>
+<<<<<<< HEAD
+    <div id="numberChart" style="width: 1200px; height: 1200px"></div>
+
+    <div id="boolChart" style="width: 1200px; height: 400px"></div>
+>>>>>>> 5473ea1 (추가: 데이터  타입별 그래프 동기화)
+=======
+    <div class="chart">
+      <div id="numberChart" class="dygraph-chart"></div>
+    </div>
+    <div class="chart">
+      <div id="boolChart" class="dygraph-chart"></div>
+    </div>
+>>>>>>> b5c5082 (feat: Graphs fill window size)
+=======
         e.preventDefault(); 
 
         menuItems.forEach(i => i.classList.remove('active'));
@@ -994,5 +1503,6 @@
       })
 
     </script>
+>>>>>>> 7934258324f3d04422c48ed04ae5f65866460b02
   </body>
 </html>
