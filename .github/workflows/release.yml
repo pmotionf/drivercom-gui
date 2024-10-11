@@ -1,0 +1,58 @@
+name: Release
+
+on:
+  workflow_run:
+    workflows: ['Test']
+    types: [completed]
+    branches: 
+      - main
+  workflow_dispatch:
+
+permissions: write-all
+
+jobs:
+  release:
+    strategy:
+      matrix:
+        os: [self-hosted]
+    runs-on: ${{ matrix.os }}
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    steps:
+      - name: Log masks
+        run: echo "::add-mask::$NAME_MASK"
+
+      - uses: actions/checkout@v4
+
+      - uses: actions/github-script@v7
+        id: parse-version
+        env:
+          SHA: '${{env.parentSHA}}'
+        with:
+          script: |
+            const script = require('./.github/workflows/zig-version.js');
+            return await script({github, context, core});
+          result-encoding: string
+
+      - name: Build Windows
+        if: ${{ steps.parse-version.outputs.result != '' }}
+        run: |
+          zig build -Doptimize=ReleaseSafe -Dtarget=x86_64-windows-gnu
+          zip -j "windows-${{env.name}}-${{steps.parse-version.outputs.result}}.zip" \
+            "./zig-out/bin/drivercom-gui.exe" \
+            "./zig-out/bin/drivercom-gui.pdb"
+            
+
+      - name: Build Linux
+        if: ${{ steps.parse-version.outputs.result != '' }}
+        run: |
+          zig build -Doptimize=ReleaseSafe -Dtarget=x86_64-linux-gnu
+          zip -j "linux-${{env.name}}-${{steps.parse-version.outputs.result}}.zip" \
+            "./zig-out/bin/drivercom-gui"
+
+      - name: Create release
+        if: ${{ steps.parse-version.outputs.result != '' }}
+        run: |
+          gh release create --generate-notes \
+            "${{steps.parse-version.outputs.result}}" \
+            windows-${{env.name}}-${{steps.parse-version.outputs.result}}.zip \
+            linux-${{env.name}}-${{steps.parse-version.outputs.result}}.zip
