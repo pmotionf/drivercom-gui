@@ -6,8 +6,8 @@ const drivercom = @import("drivercom");
 const webui = @import("webui");
 
 const index = @embedFile("index.html");
-const vendor = @import("vendor.zig");
 const js = @import("js.zig");
+const vendor = @import("vendor.zig");
 
 var config: drivercom.Config = undefined;
 var json: []u8 = undefined;
@@ -89,40 +89,33 @@ fn sendJson(e: *webui.Event) void {
     const value = json[0 .. json.len - 1 :0];
     e.returnString(value);
 }
-//파일 추가
+
 fn file_handler(filename: []const u8) ?[]const u8 {
     const header_templ =
-        "HTTP/1.1 200 OK\nContent-Type: text/html\nContent-Length: {}\n\n{s}";
-    if (std.mem.eql(u8, filename, "/js/chart.js")) {
-        const response = std.fmt.comptimePrint(
-            header_templ,
-            .{ js.chart.len, js.chart },
-        );
-        return response;
-    } else if (std.mem.eql(u8, filename, "/js/config.js")) {
-        const response = std.fmt.comptimePrint(
-            header_templ,
-            .{ js.config.len, js.config },
-        );
-        return response;
-    } else if (std.mem.eql(u8, filename, "/js/new_config.js")) {
-        const response = std.fmt.comptimePrint(
-            header_templ,
-            .{ js.new_config.len, js.new_config },
-        );
-        return response;
-    } else if (std.mem.eql(u8, filename, "/vendor/dygraph.min.js")) {
-        const response = std.fmt.comptimePrint(
-            header_templ,
-            .{ vendor.dygraph.len, vendor.dygraph },
-        );
-        return response;
-    } else if (std.mem.eql(u8, filename, "/vendor/synchronizer.js")) {
-        const response = std.fmt.comptimePrint(
-            header_templ,
-            .{ vendor.synchronizer.len, vendor.synchronizer },
-        );
-        return response;
+        "HTTP/1.1 200 OK\nContent-Type: text/{s}\nContent-Length: {}\n\n{s}";
+
+    const js_ti = @typeInfo(js).@"struct";
+    inline for (js_ti.decls) |decl| {
+        if (std.mem.eql(u8, "/js/" ++ decl.name, filename)) {
+            const response = std.fmt.comptimePrint(header_templ, .{
+                "javascript",
+                @field(js, decl.name).len,
+                @field(js, decl.name),
+            });
+            return response;
+        }
+    }
+
+    const vendor_ti = @typeInfo(vendor).@"struct";
+    inline for (vendor_ti.decls) |decl| {
+        if (std.mem.eql(u8, "/vendor/" ++ decl.name, filename)) {
+            const response = std.fmt.comptimePrint(header_templ, .{
+                "javascript",
+                @field(vendor, decl.name).len,
+                @field(vendor, decl.name),
+            });
+            return response;
+        }
     }
 
     return null;

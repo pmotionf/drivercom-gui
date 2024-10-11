@@ -1,2 +1,2 @@
-pub const dygraph = @embedFile("vendor/dygraph.min.js");
-pub const synchronizer = @embedFile("vendor/synchronizer.js");
+pub const @"dygraph.min.js" = @embedFile("vendor/dygraph.min.js");
+pub const @"synchronizer.js" = @embedFile("vendor/synchronizer.js");
