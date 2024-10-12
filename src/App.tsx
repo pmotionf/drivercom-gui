@@ -12,9 +12,14 @@ function App() {
   const [greetMsg, setGreetMsg] = createSignal("");
   const [name, setName] = createSignal("");
 
+  // Necessary for light/dark mode detection
   onMount(() => {
-      const prefersDarkScheme = window.matchMedia('(prefers-color-scheme: dark)').matches;
-      document.documentElement.dataset.theme = prefersDarkScheme  ? 'dark' : 'light';
+    const prefersDarkScheme = window.matchMedia(
+      "(prefers-color-scheme: dark)",
+    ).matches;
+    document.documentElement.dataset.theme = prefersDarkScheme
+      ? "dark"
+      : "light";
   });
 
   async function greet() {
@@ -23,12 +28,14 @@ function App() {
   }
 
   return (
-    <Drawer.Root variant='left'>
+    <Drawer.Root variant="left">
       <Drawer.Trigger
-        asChild={(triggerProps) => <Button {...triggerProps()}>Open Drawer</Button>}
+        asChild={(triggerProps) => (
+          <Button {...triggerProps()}>Open Drawer</Button>
+        )}
       />
       <Drawer.Backdrop />
-      <Drawer.Positioner>
+      <Drawer.Positioner style={{ width: "30%", "max-width": "18em" }}>
         <Drawer.Content>
           <Drawer.Header>
             <Drawer.Title>PMF Drivercom</Drawer.Title>
@@ -36,16 +43,15 @@ function App() {
               asChild={(closeProps) => (
                 <Button
                   {...closeProps()}
-                  variant='ghost'
-                  style={{ position: 'absolute', top: '3px', right: '4px' }}
+                  variant="ghost"
+                  style={{ position: "absolute", top: "3px", right: "4px" }}
                 >
                   X
                 </Button>
               )}
             />
           </Drawer.Header>
-          <Drawer.Body>
-          </Drawer.Body>
+          <Drawer.Body></Drawer.Body>
           <Drawer.Footer>
             <i>Copyright (c) 2024 PMF, Inc.</i>
           </Drawer.Footer>

@@ -5,12 +5,16 @@ export default defineConfig({
   // Whether to use css reset
   preflight: true,
 
-  presets: ['@pandacss/preset-base', createPreset({
-    accentColor: 'indigo',
-    grayColor: 'slate',
-    borderRadius: 'md',
-  })],
+  presets: [
+    "@pandacss/preset-base",
+    createPreset({
+      accentColor: "indigo",
+      grayColor: "slate",
+      borderRadius: "md",
+    }),
+  ],
 
+  // Necessary for light/dark mode detection
   conditions: {
     extend: {
       dark: '.dark &, [data-theme="dark"] &',
@@ -24,7 +28,7 @@ export default defineConfig({
   // Files to exclude
   exclude: [],
 
-  jsxFramework: 'solid',
+  jsxFramework: "solid",
 
   // Useful for theme customization
   theme: {
