@@ -1,17 +1,13 @@
-import "./index.css";
-
 import "./App.css";
-import { createSignal, onMount } from "solid-js";
-import logo from "./assets/logo.svg";
-import { invoke } from "@tauri-apps/api/core";
+
+import { Index, createSignal, onMount } from "solid-js";
+import { A, useNavigate } from "@solidjs/router";
 
 import { Button } from "~/components/ui/button";
 import { Drawer } from "~/components/ui/drawer";
+import { SegmentGroup } from "~/components/ui/segment-group";
 
-function App() {
-  const [greetMsg, setGreetMsg] = createSignal("");
-  const [name, setName] = createSignal("");
-
+function App(props) {
   // Necessary for light/dark mode detection
   onMount(() => {
     const prefersDarkScheme = window.matchMedia(
@@ -22,42 +18,72 @@ function App() {
       : "light";
   });
 
-  async function greet() {
-    // Learn more about Tauri commands at https://tauri.app/v1/guides/features/command
-    setGreetMsg(await invoke("greet", { name: name() }));
-  }
+  const navigate = useNavigate();
+  const pages = ["Configuration", "Logging"];
+  const [page, setPage] = createSignal("");
 
   return (
-    <Drawer.Root variant="left">
-      <Drawer.Trigger
-        asChild={(triggerProps) => (
-          <Button {...triggerProps()}>Open Drawer</Button>
-        )}
-      />
-      <Drawer.Backdrop />
-      <Drawer.Positioner style={{ width: "30%", "max-width": "18em" }}>
-        <Drawer.Content>
-          <Drawer.Header>
-            <Drawer.Title>PMF Drivercom</Drawer.Title>
-            <Drawer.CloseTrigger
-              asChild={(closeProps) => (
-                <Button
-                  {...closeProps()}
-                  variant="ghost"
-                  style={{ position: "absolute", top: "3px", right: "4px" }}
-                >
-                  X
-                </Button>
-              )}
-            />
-          </Drawer.Header>
-          <Drawer.Body></Drawer.Body>
-          <Drawer.Footer>
-            <i>Copyright (c) 2024 PMF, Inc.</i>
-          </Drawer.Footer>
-        </Drawer.Content>
-      </Drawer.Positioner>
-    </Drawer.Root>
+    <>
+      <Drawer.Root variant="left">
+        <Drawer.Trigger
+          asChild={(triggerProps) => (
+            <Button {...triggerProps()}>Open Drawer</Button>
+          )}
+        />
+        <Drawer.Backdrop />
+        <Drawer.Positioner style={{ width: "30%", "max-width": "18em" }}>
+          <Drawer.Content>
+            <Drawer.Header>
+              <Drawer.Title>PMF Drivercom</Drawer.Title>
+              <Drawer.CloseTrigger
+                asChild={(closeProps) => (
+                  <Button
+                    {...closeProps()}
+                    variant="ghost"
+                    style={{ position: "absolute", top: "3px", right: "4px" }}
+                  >
+                    X
+                  </Button>
+                )}
+              />
+            </Drawer.Header>
+            <Drawer.Body
+              style={{
+                width: "100%",
+                "padding-top": "0.5em",
+                "padding-left": "0.5em",
+                "padding-right": "0px",
+                "padding-bottom": "0px",
+              }}
+            >
+              <SegmentGroup.Root
+                value={page()}
+                onValueChange={(e) => {
+                  setPage(e.value);
+                  navigate("/" + e.value.toLowerCase(), { replace: true });
+                }}
+                style={{ width: "98%" }}
+              >
+                <Index each={pages}>
+                  {(val) => (
+                    <SegmentGroup.Item value={val()} style={{ width: "100%" }}>
+                      <SegmentGroup.ItemText>{val()}</SegmentGroup.ItemText>
+                      <SegmentGroup.ItemControl />
+                      <SegmentGroup.ItemHiddenInput />
+                    </SegmentGroup.Item>
+                  )}
+                </Index>
+                <SegmentGroup.Indicator />
+              </SegmentGroup.Root>
+            </Drawer.Body>
+            <Drawer.Footer>
+              <i>Copyright (c) 2024 PMF, Inc.</i>
+            </Drawer.Footer>
+          </Drawer.Content>
+        </Drawer.Positioner>
+      </Drawer.Root>
+      {props.children}
+    </>
   );
 }
 
