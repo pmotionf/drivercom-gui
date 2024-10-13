@@ -3,9 +3,12 @@ import "./App.css";
 import { Index, createSignal, onMount } from "solid-js";
 import { A, useNavigate } from "@solidjs/router";
 
+import { IconMenu, IconChevronLeftPipe } from "@tabler/icons-solidjs";
+
 import { Button } from "~/components/ui/button";
 import { Drawer } from "~/components/ui/drawer";
 import { SegmentGroup } from "~/components/ui/segment-group";
+import { Text } from "~/components/ui/text";
 
 function App(props) {
   // Necessary for light/dark mode detection
@@ -27,22 +30,31 @@ function App(props) {
       <Drawer.Root variant="left">
         <Drawer.Trigger
           asChild={(triggerProps) => (
-            <Button {...triggerProps()}>Open Drawer</Button>
+            <Button {...triggerProps()}>
+              <IconMenu />
+            </Button>
           )}
         />
         <Drawer.Backdrop />
         <Drawer.Positioner style={{ width: "30%", "max-width": "18em" }}>
           <Drawer.Content>
             <Drawer.Header>
-              <Drawer.Title>PMF Drivercom</Drawer.Title>
+              <Drawer.Title style={{ "padding-top": "0px" }}>
+                Drivercom
+              </Drawer.Title>
               <Drawer.CloseTrigger
                 asChild={(closeProps) => (
                   <Button
                     {...closeProps()}
                     variant="ghost"
-                    style={{ position: "absolute", top: "3px", right: "4px" }}
+                    style={{
+                      position: "absolute",
+                      top: "0px",
+                      right: "0px",
+                      padding: "0px",
+                    }}
                   >
-                    X
+                    <IconChevronLeftPipe />
                   </Button>
                 )}
               />
@@ -77,7 +89,14 @@ function App(props) {
               </SegmentGroup.Root>
             </Drawer.Body>
             <Drawer.Footer>
-              <i>Copyright (c) 2024 PMF, Inc.</i>
+              <Text
+                as="span"
+                size="s"
+                fontWeight="light"
+                color="{colors.gray.a8}"
+              >
+                <i>Copyright © 2024 PMF, Inc.</i>
+              </Text>
             </Drawer.Footer>
           </Drawer.Content>
         </Drawer.Positioner>
