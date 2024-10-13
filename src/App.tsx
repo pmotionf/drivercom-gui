@@ -39,9 +39,18 @@ function App(props) {
   };
   const [page, setPage] = createSignal("");
 
+  const sidebar_collapsed_width = "3em";
+  const sidebar_expanded_width = "18em";
+
   return (
     <>
-      <div style={{ width: "3em", height: "100%", position: "fixed" }}>
+      <div
+        style={{
+          width: sidebar_collapsed_width,
+          height: "100%",
+          position: "fixed",
+        }}
+      >
         <Drawer.Root variant="left">
           <Drawer.Trigger
             asChild={(triggerProps) => (
@@ -59,7 +68,9 @@ function App(props) {
             )}
           />
           <Drawer.Backdrop />
-          <Drawer.Positioner style={{ width: "30%", "max-width": "18em" }}>
+          <Drawer.Positioner
+            style={{ width: "30%", "max-width": sidebar_expanded_width }}
+          >
             <Drawer.Content>
               <Drawer.Header>
                 <Drawer.Title style={{ "padding-top": "0px" }}>
@@ -142,7 +153,11 @@ function App(props) {
             setPage(e.value);
             navigate("/" + e.value.toLowerCase(), { replace: true });
           }}
-          style={{ position: "fixed", height: "100%", width: "3em" }}
+          style={{
+            position: "fixed",
+            height: "100%",
+            width: sidebar_collapsed_width,
+          }}
           background="{colors.gray.3}"
         >
           <Index each={Object.keys(pages)}>
@@ -159,7 +174,12 @@ function App(props) {
           <SegmentGroup.Indicator />
         </SegmentGroup.Root>
       </div>
-      <div style={{ width: "calc(100% - 3em)", "margin-left": "3em" }}>
+      <div
+        style={{
+          width: "calc(100% - {sidebar_collapsed_width})",
+          "margin-left": sidebar_collapsed_width,
+        }}
+      >
         {props.children}
       </div>
     </>
