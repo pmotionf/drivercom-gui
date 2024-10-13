@@ -1,6 +1,7 @@
 import "./App.css";
 
 import { Index, createSignal, onMount } from "solid-js";
+import { Portal } from "solid-js/web";
 import { A, useNavigate } from "@solidjs/router";
 
 import {
@@ -47,7 +48,7 @@ function App(props) {
       <div
         style={{
           width: sidebar_collapsed_width,
-          height: "100%",
+          height: "100vh",
           position: "fixed",
         }}
       >
@@ -67,85 +68,90 @@ function App(props) {
               </Button>
             )}
           />
-          <Drawer.Backdrop />
-          <Drawer.Positioner
-            style={{ width: "30%", "max-width": sidebar_expanded_width }}
-          >
-            <Drawer.Content>
-              <Drawer.Header>
-                <Drawer.Title style={{ "padding-top": "0px" }}>
-                  Drivercom
-                </Drawer.Title>
-                <Drawer.CloseTrigger
-                  asChild={(closeProps) => (
-                    <Button
-                      {...closeProps()}
-                      variant="ghost"
-                      style={{
-                        position: "absolute",
-                        top: "0px",
-                        right: "0px",
-                        padding: "0px",
-                      }}
-                    >
-                      <IconChevronLeftPipe />
-                    </Button>
-                  )}
-                />
-              </Drawer.Header>
-              <Drawer.Body
-                style={{
-                  width: "100%",
-                  "padding-top": "0.5em",
-                  "padding-left": "0.5em",
-                  "padding-right": "0px",
-                  "padding-bottom": "0px",
-                }}
-              >
-                <SegmentGroup.Root
-                  value={page()}
-                  onValueChange={(e) => {
-                    setPage(e.value);
-                    navigate("/" + e.value.toLowerCase(), { replace: true });
-                  }}
-                  style={{ width: "98%" }}
-                >
-                  <Index each={Object.keys(pages)}>
-                    {(val) => (
-                      <SegmentGroup.Item
-                        value={val()}
-                        style={{ width: "100%" }}
+          <Portal>
+            <Drawer.Backdrop />
+            <Drawer.Positioner
+              style={{ width: "30%", "max-width": sidebar_expanded_width }}
+            >
+              <Drawer.Content>
+                <Drawer.Header>
+                  <Drawer.Title style={{ "padding-top": "0px" }}>
+                    Drivercom
+                  </Drawer.Title>
+                  <Drawer.CloseTrigger
+                    asChild={(closeProps) => (
+                      <Button
+                        {...closeProps()}
+                        variant="ghost"
+                        style={{
+                          position: "absolute",
+                          top: "0px",
+                          right: "0px",
+                          padding: "0px",
+                        }}
                       >
-                        <SegmentGroup.ItemText>
-                          <span
-                            style={{ float: "left", "padding-right": "0.2em" }}
-                          >
-                            {pages[val()].icon}
-                          </span>
-                          <span style={{ float: "left" }}>
-                            {pages[val()].label}
-                          </span>
-                        </SegmentGroup.ItemText>
-                        <SegmentGroup.ItemControl />
-                        <SegmentGroup.ItemHiddenInput />
-                      </SegmentGroup.Item>
+                        <IconChevronLeftPipe />
+                      </Button>
                     )}
-                  </Index>
-                  <SegmentGroup.Indicator />
-                </SegmentGroup.Root>
-              </Drawer.Body>
-              <Drawer.Footer>
-                <Text
-                  as="span"
-                  size="s"
-                  fontWeight="light"
-                  color="{colors.gray.a8}"
+                  />
+                </Drawer.Header>
+                <Drawer.Body
+                  style={{
+                    width: "100%",
+                    "padding-top": "0.5em",
+                    "padding-left": "0.5em",
+                    "padding-right": "0px",
+                    "padding-bottom": "0px",
+                  }}
                 >
-                  <i>Copyright © 2024 PMF, Inc.</i>
-                </Text>
-              </Drawer.Footer>
-            </Drawer.Content>
-          </Drawer.Positioner>
+                  <SegmentGroup.Root
+                    value={page()}
+                    onValueChange={(e) => {
+                      setPage(e.value);
+                      navigate("/" + e.value.toLowerCase(), { replace: true });
+                    }}
+                    style={{ width: "98%" }}
+                  >
+                    <Index each={Object.keys(pages)}>
+                      {(val) => (
+                        <SegmentGroup.Item
+                          value={val()}
+                          style={{ width: "100%" }}
+                        >
+                          <SegmentGroup.ItemText>
+                            <span
+                              style={{
+                                float: "left",
+                                "padding-right": "0.2em",
+                              }}
+                            >
+                              {pages[val()].icon}
+                            </span>
+                            <span style={{ float: "left" }}>
+                              {pages[val()].label}
+                            </span>
+                          </SegmentGroup.ItemText>
+                          <SegmentGroup.ItemControl />
+                          <SegmentGroup.ItemHiddenInput />
+                        </SegmentGroup.Item>
+                      )}
+                    </Index>
+                    <SegmentGroup.Indicator />
+                  </SegmentGroup.Root>
+                </Drawer.Body>
+                <Drawer.Footer>
+                  <Text
+                    as="span"
+                    size="s"
+                    fontWeight="light"
+                    color="{colors.gray.a8}"
+                  >
+                    <i>Copyright © 2024 PMF, Inc.</i>
+                  </Text>
+                </Drawer.Footer>
+              </Drawer.Content>
+            </Drawer.Positioner>
+          </Portal>
         </Drawer.Root>
         <SegmentGroup.Root
           value={page()}
@@ -155,7 +161,7 @@ function App(props) {
           }}
           style={{
             position: "fixed",
-            height: "100%",
+            height: "100vh",
             width: sidebar_collapsed_width,
           }}
           background="{colors.gray.3}"
@@ -176,7 +182,8 @@ function App(props) {
       </div>
       <div
         style={{
-          width: "calc(100% - {sidebar_collapsed_width})",
+          height: "100vh",
+          width: "calc(100vw - {sidebar_collapsed_width})",
           "margin-left": sidebar_collapsed_width,
         }}
       >
