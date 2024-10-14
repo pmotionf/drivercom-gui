@@ -10,6 +10,8 @@ import { Spinner } from "~/components/ui/spinner";
 import { Text } from "~/components/ui/text";
 import { Toast } from "~/components/ui/toast";
 
+import { Graph, type GraphSeries } from "~/components/Graph";
+
 function Logging() {
   const toaster = Toast.createToaster({
     placement: "top-end",
@@ -20,8 +22,7 @@ function Logging() {
 
   const [logStatus, setLogStatus] = createSignal("");
   const [logName, setLogName] = createSignal("");
-  const [header, setHeader] = createSignal([] as string[]);
-  const [data, setData] = createSignal([] as string[][]);
+  const [series, setSeries] = createSignal([] as GraphSeries[]);
 
   function loadLog(details: FileUploadFileAcceptDetails) {
     if (details.files.length == 0) return;
@@ -45,21 +46,43 @@ function Logging() {
         return;
       }
 
-      setHeader(rows[0].replace(/,\s*$/, "").split(","));
-      setData(
-        rows
+      const headers = rows[0].replace(/,\s*$/, "").split(",");
+      const data = rows
           .slice(1)
           .map((row: string) =>
             row
               .replace(/,\s*$/, "")
               .replaceAll("true", "1")
               .replaceAll("false", "0")
-              .split(","),
-          ),
-      );
+              .split(",")
+              .map((val) => Number(val)),
+          );
 
-      console.log(header());
-      console.log(data());
+      var local_series = headers.map((name) => ({
+        name: name,
+        type: "line",
+        symbol: 'none',
+        data: []
+      }) as GraphSeries);
+
+      for (var row = 0; row < data.length; row++) {
+        if (data[row].length != headers.length) {
+          setLogStatus("failed");
+          toaster.create({
+            title: "Invalid Log File",
+            description: `Row ${row + 1} has ${data[row].length} values, header has ${headers.length} labels.`,
+            type: "error",
+          });
+          return;
+        }
+        for (var col = 0; col < headers.length; col++) {
+          local_series[col].data.push(Number(data[row][col]));
+        }
+      }
+
+      console.log(local_series[0]);
+
+      setSeries(local_series);
     };
 
     reader.onerror = () => {
@@ -155,6 +178,17 @@ function Logging() {
           </Toast.Root>
         )}
       </Toast.Toaster>
+      <Show when={series().length > 0}>
+        <Graph 
+          id={logName()} 
+          name={logName()} 
+          series={series()} 
+          style={{
+            width: "100%",
+            height: "100vh",
+          }}
+        />
+      </Show>
     </>
   );
 }
