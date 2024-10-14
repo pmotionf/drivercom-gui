@@ -12,7 +12,7 @@ import { Spinner } from "~/components/ui/spinner";
 import { Text } from "~/components/ui/text";
 import { Toast } from "~/components/ui/toast";
 
-import { Graph, type GraphSeries } from "~/components/Graph";
+import { Plot } from "~/components/Plot";
 
 function Logging() {
   const toaster = Toast.createToaster({
@@ -24,7 +24,8 @@ function Logging() {
 
   const [logStatus, setLogStatus] = createSignal("");
   const [logName, setLogName] = createSignal("");
-  const [series, setSeries] = createSignal([] as GraphSeries[]);
+  const [header, setHeader] = createSignal([] as string[]);
+  const [series, setSeries] = createSignal([] as number[][]);
 
   function loadLog(details: FileUploadFileAcceptDetails) {
     if (details.files.length == 0) return;
@@ -52,33 +53,26 @@ function Logging() {
       let schema = inferSchema(csv_str);
       let parser = initParser(schema);
 
-      const headers = rows[0].replace(/,\s*$/, "").split(",");
+      const local_header = rows[0].replace(/,\s*$/, "").split(",");
 
-      var local_series = headers.map(
-        (name) =>
-          ({
-            name: name,
-            type: "line",
-            symbol: "none",
-            data: [],
-          }) as GraphSeries,
+      const data = parser.typedCols(csv_str).map((row) =>
+        row.map((val) => {
+          if (typeof val === "boolean") return val ? 1 : 0;
+          return val;
+        }),
       );
-
-      const data = parser.typedCols(csv_str);
-      if (data.length < headers.length) {
+      if (data.length < local_header.length) {
         setLogStatus("failed");
         toaster.create({
           title: "Invalid Log File",
-          description: `Data has ${data.length} columns, while header has ${headers.length} labels.`,
+          description: `Data has ${data.length} columns, while header has ${local_header.length} labels.`,
           type: "error",
         });
         return;
       }
-      for (var col = 0; col < headers.length; col++) {
-        local_series[col].data = data[col];
-      }
 
-      setSeries(local_series);
+      setHeader(local_header);
+      setSeries(data.slice(0, local_header.length));
       setFileSelectOpen(false);
     };
 
@@ -175,15 +169,12 @@ function Logging() {
         )}
       </Toast.Toaster>
       <Show when={series().length > 0}>
-        <Graph
+        <Plot
           id={logName()}
           name={logName()}
+          header={header()}
           series={series()}
-          style={{
-            width: "100%",
-            height: "100vh",
-            padding: "0px",
-          }}
+          style={{ width: "100%", height: "100%" }}
         />
       </Show>
     </>
