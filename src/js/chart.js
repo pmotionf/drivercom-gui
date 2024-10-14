@@ -1,16 +1,17 @@
 //csv파일 열기(file 사용)
 src = "/navigation.js";
 
-function showCsv() {
+//차트 보여주기
+function showChart() {
   var input = document.getElementById("loadCsv");
   var file = input.files[0]; // 선택한 파일 객체
   const state_label = document.getElementById("loading_state");
   state_label.innerHTML = "....loading....";
   if (file) {
-    const promise = readCsvFileTest(file);
+    const promise = readCsvFile(file);
     promise.then((result) => {
       state_label.innerHTML = "complete!";
-      showTestChart(result);
+      createChart(result);
     });
     input.value = null;
     //페이지 이동
@@ -23,11 +24,11 @@ function showCsv() {
 }
 //csv파일이 바뀔때 마다 함수를 실행
 document.addEventListener("DOMContentLoaded", function () {
-  document.getElementById("loadCsv").addEventListener("change", showCsv);
+  document.getElementById("loadCsv").addEventListener("change", showChart);
 });
 
 //csv파일의 내용을 읽어와 배열과 딕셔너리 형태로 변환
-function readCsvFileTest(file) {
+function readCsvFile(file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = function (e) {
@@ -83,7 +84,6 @@ function readCsvFileTest(file) {
           bool_csv = ["num, " + bool_datas[0]];
         }
         num_csv = ["num, " + num_datas[0]];
-
         //데이터 추가
         bool_datas.slice(1).forEach((data, index) => {
           if (data.trim()) {
@@ -95,7 +95,6 @@ function readCsvFileTest(file) {
             num_csv.push(`${index + 1}, ${data}`);
           }
         });
-
         bool_csv = bool_csv.join("\n");
         num_csv = num_csv.join("\n");
 
@@ -103,7 +102,6 @@ function readCsvFileTest(file) {
           bool_csv: bool_csv,
           num_csv: num_csv,
         };
-        console.log(result);
         resolve(result);
       } catch (err) {
         const state_label = document.getElementById("loading_state");
@@ -118,12 +116,15 @@ function readCsvFileTest(file) {
   });
 }
 //csv파일이 바뀔때 마다 함수를 실행
-
 document.addEventListener("DOMContentLoaded", function () {
   document.getElementById("loadCsv").addEventListener("change", showCsv);
 });
 
-function showTestChart(data) {
+function createChart(data) {
+  //차트 리셋
+  document.getElementById("boolChart").innerHTML = "";
+  document.getElementById("numberChart").innerHTML = "";
+
   //CSV 파일에서 데이터 로드
   var header = data["num_csv"].split("\n")[0].split(",");
   var seriesCount = header.length - 1; // 첫 번째 열 = 번호
@@ -142,7 +143,6 @@ function showTestChart(data) {
         visibility: visibilityArray,
       },
     );
-
     //범례 표시(체크박스)
     const legends = bool_chart.getLabels().slice(1);
     const legend_div = document.getElementById("boolLegend");
@@ -159,13 +159,12 @@ function showTestChart(data) {
       legend_div.appendChild(label);
     });
   }
+  //체크박스를 클릭해 데이터 지우고 보이기
   document.getElementById("boolLegend").addEventListener("change", function () {
     const check_inputs = Array.from(
       document.querySelectorAll('#boolLegend input[type="checkbox"]'),
     );
-    console.log(check_inputs);
     const check_statues = check_inputs.map((input) => input.checked);
-
     bool_chart.updateOptions({
       visibility: check_statues,
     });
@@ -197,36 +196,38 @@ function showTestChart(data) {
     label.appendChild(input);
     legend_div.appendChild(label);
   });
+  //체크박스를 클릭해 데이터 지우고 보이기
+  document.getElementById("numLegend").addEventListener("change", function () {
+    const check_inputs = Array.from(
+      document.querySelectorAll('#numLegend input[type="checkbox"]'),
+    );
+    const check_statues = check_inputs.map((input) => input.checked);
 
-  //리셋 줌 버튼
-  document
-    .getElementById("resetZoomBtn")
-    .addEventListener("click", function () {
-      chart.resetZoom();
-      bool_chart.resetZoom();
+    chart.updateOptions({
+      visibility: check_statues,
     });
+  });
+
   //휠로 줌 설정
   document.getElementById("numberChart").addEventListener("wheel", wheel_zoom);
-
   document.getElementById("boolChart").addEventListener("wheel", wheel_zoom);
 
   //휠 이벤트 분리
   function wheel_zoom(event) {
     // 기본 스크롤 동작 방지
     event.preventDefault();
-
     // 휠 이벤트의 deltaY 값에 따라 줌 처리
     const zoomFactor = event.deltaY > 0 ? 1.5 : 0.5; // 휠 방향에 따라 줌 인/아웃
     const range = chart.xAxisRange(); // 현재 x축 범위
     const midPoint = (range[0] + range[1]) / 2; // 중간 지점 계산
 
-    const newMin = midPoint + (range[0] - midPoint) * zoomFactor; // 새로운 최소값 계산
-    const newMax = midPoint + (range[1] - midPoint) * zoomFactor; // 새로운 최대값 계산
+    let newMin = midPoint + (range[0] - midPoint) * zoomFactor; // 새로운 최소값 계산
+    let newMax = midPoint + (range[1] - midPoint) * zoomFactor; // 새로운 최대값 계산
 
-    if (newMin <= 0) {
-      newMin = 0;
+    if (newMin < 1) {
+      newMin = 1;
+      newMax = midPoint + (range[1] - midPoint);
     }
-
     chart.updateOptions({
       dateWindow: [newMin, newMax],
     });
@@ -234,19 +235,6 @@ function showTestChart(data) {
       dateWindow: [newMin, newMax],
     });
   }
-
-  //체크박스를 클릭해 데이터 지우고 보이기
-  document.getElementById("numLegend").addEventListener("change", function () {
-    const check_inputs = Array.from(
-      document.querySelectorAll('#numLegend input[type="checkbox"]'),
-    );
-    console.log(check_inputs);
-    const check_statues = check_inputs.map((input) => input.checked);
-
-    chart.updateOptions({
-      visibility: check_statues,
-    });
-  });
 
   Dygraph.synchronize(chart, bool_chart, {
     zoom: true, // 줌 동기화
