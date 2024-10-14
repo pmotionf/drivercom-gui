@@ -19,7 +19,9 @@
     "@tauri-apps/api": ">=2.0.0",
     "@tauri-apps/plugin-shell": ">=2.0.0",
     "echarts": "^5.5.1",
-    "solid-js": "^1.7.8"
+    "solid-js": "^1.7.8",
+    "udsv": "^0.5.3",
+    "uplot": "^1.6.31"
   },
   "devDependencies": {
     "@pandacss/dev": "^0.46.1",

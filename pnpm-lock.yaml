@@ -29,6 +29,12 @@ importers:
       solid-js:
         specifier: ^1.7.8
         version: 1.9.2
+      udsv:
+        specifier: ^0.5.3
+        version: 0.5.3
+      uplot:
+        specifier: ^1.6.31
+        version: 1.6.31
     devDependencies:
       '@pandacss/dev':
         specifier: ^0.46.1
@@ -1824,6 +1830,9 @@ packages:
     engines: {node: '>=14.17'}
     hasBin: true
 
+  udsv@0.5.3:
+    resolution: {integrity: sha512-A4WSOXDgyu3ZlQnMZu9lVtuAhke9X5XG9RZFGbO3urSiCjwYKfy96XV/+BWnm1Y1lKKaBInU0e98Moy6TOiVYA==}
+
   ufo@1.5.4:
     resolution: {integrity: sha512-UsUk3byDzKd04EyoZ7U4DOlxQaD14JUKQl6/P7wiX4FNvUfm3XL246n9W5AmqwW5RSFJ27NAuM0iLscAOYUiGQ==}
 
@@ -1836,6 +1845,9 @@ packages:
     hasBin: true
     peerDependencies:
       browserslist: '>= 4.21.0'
+
+  uplot@1.6.31:
+    resolution: {integrity: sha512-sQZqSwVCbJGnFB4IQjQYopzj5CoTZJ4Br1fG/xdONimqgHmsacvCjNesdGDypNKFbrhLGIeshYhy89FxPF+H+w==}
 
   uqr@0.1.2:
     resolution: {integrity: sha512-MJu7ypHq6QasgF5YRTjqscSzQp/W11zoUk6kvmlH+fmWEs63Y0Eib13hYFwAzagRJcVY8WVnlV+eBDUGMJ5IbA==}
@@ -4273,6 +4285,8 @@ snapshots:
 
   typescript@5.6.3: {}
 
+  udsv@0.5.3: {}
+
   ufo@1.5.4: {}
 
   universalify@2.0.1: {}
@@ -4288,6 +4302,8 @@ snapshots:
       browserslist: 4.24.0
       escalade: 3.2.0
       picocolors: 1.1.0
+
+  uplot@1.6.31: {}
 
   uqr@0.1.2: {}
 

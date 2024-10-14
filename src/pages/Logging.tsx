@@ -1,5 +1,7 @@
 import { Show, createSignal } from "solid-js";
+import { Portal } from "solid-js/web";
 
+import { inferSchema, initParser } from "udsv";
 import { IconX, IconChevronsDown, IconChevronsUp } from "@tabler/icons-solidjs";
 
 import { Button } from "~/components/ui/button";
@@ -35,6 +37,10 @@ function Logging() {
     reader.onload = () => {
       setLogStatus("");
       const csv_str: string = reader.result! as string;
+      let schema = inferSchema(csv_str);
+      let parser = initParser(schema);
+      console.log(parser.typedCols(csv_str));
+
       const rows = csv_str.trim().split("\n");
       if (rows.length < 2) {
         setLogStatus("failed");
@@ -47,23 +53,24 @@ function Logging() {
       }
 
       const headers = rows[0].replace(/,\s*$/, "").split(",");
-      const data = rows
-          .slice(1)
-          .map((row: string) =>
-            row
-              .replace(/,\s*$/, "")
-              .replaceAll("true", "1")
-              .replaceAll("false", "0")
-              .split(",")
-              .map((val) => Number(val)),
-          );
+      const data = rows.slice(1).map((row: string) =>
+        row
+          .replace(/,\s*$/, "")
+          .replaceAll("true", "1")
+          .replaceAll("false", "0")
+          .split(",")
+          .map((val) => Number(val)),
+      );
 
-      var local_series = headers.map((name) => ({
-        name: name,
-        type: "line",
-        symbol: 'none',
-        data: []
-      }) as GraphSeries);
+      var local_series = headers.map(
+        (name) =>
+          ({
+            name: name,
+            type: "line",
+            symbol: "none",
+            data: [],
+          }) as GraphSeries,
+      );
 
       for (var row = 0; row < data.length; row++) {
         if (data[row].length != headers.length) {
@@ -83,6 +90,7 @@ function Logging() {
       console.log(local_series[0]);
 
       setSeries(local_series);
+      setFileSelectOpen(false);
     };
 
     reader.onerror = () => {
@@ -99,37 +107,36 @@ function Logging() {
 
   return (
     <>
-      <Collapsible.Root
-        defaultOpen
-        onOpenChange={() => setFileSelectOpen(true)}
-        onExitComplete={() => setFileSelectOpen(false)}
-      >
-        <Collapsible.Trigger>
-          <Button
-            variant="ghost"
-            style={{
-              position: "fixed",
-              "padding-right": "0.8em",
-              "padding-left": "0.5em",
-              "text-align": "right",
-              top: "0px",
-              right: "0px",
-            }}
-          >
-            <Show when={logStatus() === "loading"}>
-              <Spinner size="sm" />
-            </Show>
-            <Show when={logStatus() === "failed"}>
-              <IconX color="red" />
-            </Show>
-            <Show when={logName() !== ""}>
-              <Text>{logName()}</Text>
-            </Show>
-            <Show when={fileSelectOpen()} fallback={<IconChevronsDown />}>
-              <IconChevronsUp />
-            </Show>
-          </Button>
-        </Collapsible.Trigger>
+      <Portal>
+        <Button
+          variant="ghost"
+          style={{
+            position: "fixed",
+            "padding-right": "0.8em",
+            "padding-left": "0.5em",
+            "text-align": "right",
+            top: "0px",
+            right: "0px",
+          }}
+          onClick={() => {
+            setFileSelectOpen((prev) => !prev);
+          }}
+        >
+          <Show when={logStatus() === "loading"}>
+            <Spinner size="sm" />
+          </Show>
+          <Show when={logStatus() === "failed"}>
+            <IconX color="red" />
+          </Show>
+          <Show when={logName() !== ""}>
+            <Text>{logName()}</Text>
+          </Show>
+          <Show when={fileSelectOpen()} fallback={<IconChevronsDown />}>
+            <IconChevronsUp />
+          </Show>
+        </Button>
+      </Portal>
+      <Collapsible.Root open={fileSelectOpen()} lazyMount unmountOnExit>
         <Collapsible.Content>
           <FileUpload.Root
             accept="text/csv"
@@ -179,13 +186,14 @@ function Logging() {
         )}
       </Toast.Toaster>
       <Show when={series().length > 0}>
-        <Graph 
-          id={logName()} 
-          name={logName()} 
-          series={series()} 
+        <Graph
+          id={logName()}
+          name={logName()}
+          series={series()}
           style={{
             width: "100%",
             height: "100vh",
+            padding: "0px",
           }}
         />
       </Show>
