@@ -10,7 +10,7 @@ function showCsv() {
     const promise = readCsvFileTest(file);
     promise.then((result) => {
       state_label.innerHTML = "complete!";
-      showTestChart(result);
+      showChart(result);
     });
     input.value = null;
     //페이지 이동
@@ -103,7 +103,6 @@ function readCsvFileTest(file) {
           bool_csv: bool_csv,
           num_csv: num_csv,
         };
-        console.log(result);
         resolve(result);
       } catch (err) {
         const state_label = document.getElementById("loading_state");
@@ -123,7 +122,10 @@ document.addEventListener("DOMContentLoaded", function () {
   document.getElementById("loadCsv").addEventListener("change", showCsv);
 });
 
-function showTestChart(data) {
+function showChart(data) {
+  //차트 리셋
+  document.getElementById("boolChart").innerHTML = "";
+  document.getElementById("numberChart").innerHTML = "";
   //CSV 파일에서 데이터 로드
   var header = data["num_csv"].split("\n")[0].split(",");
   var seriesCount = header.length - 1; // 첫 번째 열 = 번호
@@ -163,7 +165,6 @@ function showTestChart(data) {
     const check_inputs = Array.from(
       document.querySelectorAll('#boolLegend input[type="checkbox"]'),
     );
-    console.log(check_inputs);
     const check_statues = check_inputs.map((input) => input.checked);
 
     bool_chart.updateOptions({
@@ -198,13 +199,6 @@ function showTestChart(data) {
     legend_div.appendChild(label);
   });
 
-  //리셋 줌 버튼
-  document
-    .getElementById("resetZoomBtn")
-    .addEventListener("click", function () {
-      chart.resetZoom();
-      bool_chart.resetZoom();
-    });
   //휠로 줌 설정
   document.getElementById("numberChart").addEventListener("wheel", wheel_zoom);
 
@@ -214,19 +208,18 @@ function showTestChart(data) {
   function wheel_zoom(event) {
     // 기본 스크롤 동작 방지
     event.preventDefault();
-
     // 휠 이벤트의 deltaY 값에 따라 줌 처리
     const zoomFactor = event.deltaY > 0 ? 1.5 : 0.5; // 휠 방향에 따라 줌 인/아웃
     const range = chart.xAxisRange(); // 현재 x축 범위
     const midPoint = (range[0] + range[1]) / 2; // 중간 지점 계산
 
-    const newMin = midPoint + (range[0] - midPoint) * zoomFactor; // 새로운 최소값 계산
-    const newMax = midPoint + (range[1] - midPoint) * zoomFactor; // 새로운 최대값 계산
+    let newMin = midPoint + (range[0] - midPoint) * zoomFactor; // 새로운 최소값 계산
+    let newMax = midPoint + (range[1] - midPoint) * zoomFactor; // 새로운 최대값 계산
 
-    if (newMin <= 0) {
-      newMin = 0;
+    if (newMin < 1) {
+      newMin = 1;
+      newMax = midPoint + (range[1] - midPoint);
     }
-
     chart.updateOptions({
       dateWindow: [newMin, newMax],
     });
@@ -240,7 +233,6 @@ function showTestChart(data) {
     const check_inputs = Array.from(
       document.querySelectorAll('#numLegend input[type="checkbox"]'),
     );
-    console.log(check_inputs);
     const check_statues = check_inputs.map((input) => input.checked);
 
     chart.updateOptions({
