@@ -13,6 +13,11 @@
 !*.js
 !*.zig
 !*.css
+!*.eot
+!*.svg
+!*.ttf
+!*.woff
+!*.woff2
 
 !publish.js
 !package.json
