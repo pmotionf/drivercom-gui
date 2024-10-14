@@ -4,8 +4,9 @@ import { IconX, IconChevronsDown, IconChevronsUp } from "@tabler/icons-solidjs";
 
 import { Button } from "~/components/ui/button";
 import { Collapsible } from "~/components/ui/collapsible";
+import type { FileUploadFileAcceptDetails } from "@ark-ui/solid";
 import { FileUpload } from "~/components/ui/file-upload";
-import { Spinner, type SpinnerProps } from "~/components/ui/spinner";
+import { Spinner } from "~/components/ui/spinner";
 import { Text } from "~/components/ui/text";
 import { Toast } from "~/components/ui/toast";
 
@@ -19,10 +20,10 @@ function Logging() {
 
   const [logStatus, setLogStatus] = createSignal("");
   const [logName, setLogName] = createSignal("");
-  const [header, setHeader] = createSignal([]);
-  const [data, setData] = createSignal([]);
+  const [header, setHeader] = createSignal([] as string[]);
+  const [data, setData] = createSignal([] as string[][]);
 
-  function loadLog(details) {
+  function loadLog(details: FileUploadFileAcceptDetails) {
     if (details.files.length == 0) return;
     const file = details.files[0];
     setLogName(file.name);
@@ -32,7 +33,7 @@ function Logging() {
 
     reader.onload = () => {
       setLogStatus("");
-      const csv_str = reader.result;
+      const csv_str: string = reader.result! as string;
       const rows = csv_str.trim().split("\n");
       if (rows.length < 2) {
         setLogStatus("failed");
@@ -48,7 +49,7 @@ function Logging() {
       setData(
         rows
           .slice(1)
-          .map((row) =>
+          .map((row: string) =>
             row
               .replace(/,\s*$/, "")
               .replaceAll("true", "1")
@@ -65,7 +66,7 @@ function Logging() {
       setLogStatus("failed");
       toaster.create({
         title: "Log File Loading Failed",
-        description: reader.error,
+        description: `${reader.error!.name}: ${reader.error!.message}`,
         type: "error",
       });
     };
@@ -98,7 +99,7 @@ function Logging() {
             <Show when={logStatus() === "failed"}>
               <IconX color="red" />
             </Show>
-            <Show when={logName !== ""}>
+            <Show when={logName() !== ""}>
               <Text>{logName()}</Text>
             </Show>
             <Show when={fileSelectOpen()} fallback={<IconChevronsDown />}>

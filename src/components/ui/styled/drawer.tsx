@@ -10,7 +10,7 @@ export type RootProviderProps = ComponentProps<typeof RootProvider>
 export const RootProvider = withRootProvider<Dialog.RootProviderProps>(Dialog.RootProvider)
 
 export type RootProps = ComponentProps<typeof Root>
-export const Root = withRootProvider<Dialog.RootProps>(Dialog.Root)
+export const Root = withRootProvider<Dialog.RootProps & { variant: string}>(Dialog.Root)
 
 export type BackdropProps = ComponentProps<typeof Backdrop>
 export const Backdrop = withContext<Assign<HTMLStyledProps<'div'>, Dialog.BackdropProps>>(

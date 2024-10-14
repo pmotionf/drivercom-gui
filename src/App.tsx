@@ -1,8 +1,10 @@
 import "./App.css";
 
+import type { JSX } from "solid-js";
 import { Index, createSignal, onMount } from "solid-js";
 import { Portal } from "solid-js/web";
-import { A, useNavigate } from "@solidjs/router";
+import type { RouteSectionProps } from "@solidjs/router";
+import { useNavigate } from "@solidjs/router";
 
 import {
   IconChevronLeftPipe,
@@ -16,7 +18,12 @@ import { Drawer } from "~/components/ui/drawer";
 import { SegmentGroup } from "~/components/ui/segment-group";
 import { Text } from "~/components/ui/text";
 
-function App(props) {
+type PageMeta = {
+  icon: () => JSX.Element;
+  label: string;
+};
+
+function App(props: RouteSectionProps) {
   // Necessary for light/dark mode detection
   onMount(() => {
     const prefersDarkScheme = window.matchMedia(
@@ -28,7 +35,7 @@ function App(props) {
   });
 
   const navigate = useNavigate();
-  const pages = {
+  const pages: { [url: string]: PageMeta } = {
     configuration: {
       icon: () => <IconFileSettings />,
       label: "Configuration",
@@ -125,7 +132,7 @@ function App(props) {
                                 "padding-right": "0.2em",
                               }}
                             >
-                              {pages[val()].icon}
+                              {pages[val()].icon()}
                             </span>
                             <span style={{ float: "left" }}>
                               {pages[val()].label}
@@ -142,7 +149,7 @@ function App(props) {
                 <Drawer.Footer>
                   <Text
                     as="span"
-                    size="s"
+                    size="sm"
                     fontWeight="light"
                     color="{colors.gray.a8}"
                   >
@@ -170,7 +177,7 @@ function App(props) {
             {(val) => (
               <SegmentGroup.Item value={val()}>
                 <SegmentGroup.ItemText>
-                  {pages[val()].icon}
+                  {pages[val()].icon()}
                 </SegmentGroup.ItemText>
                 <SegmentGroup.ItemControl />
                 <SegmentGroup.ItemHiddenInput />
