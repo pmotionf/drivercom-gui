@@ -1,8 +1,34 @@
 {
   "name": "drivercom-gui",
-  "version": "0.0.1",
-  "description": "`drivercom` graphical user interface utility.",
+  "version": "0.1.0",
+  "description": "",
+  "type": "module",
+  "scripts": {
+    "prepare": "panda codegen",
+    "start": "vite",
+    "dev": "vite",
+    "build": "vite build",
+    "serve": "vite preview",
+    "tauri": "tauri"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "@ark-ui/solid": "^4.2.1",
+    "@solidjs/router": "^0.14.8",
+    "@tabler/icons-solidjs": "^3.19.0",
+    "@tauri-apps/api": ">=2.0.0",
+    "@tauri-apps/plugin-shell": ">=2.0.0",
+    "echarts": "^5.5.1",
+    "solid-js": "^1.7.8"
+  },
   "devDependencies": {
-    "prettier": "3.3.3"
+    "@pandacss/dev": "^0.46.1",
+    "@park-ui/panda-preset": "^0.42.0",
+    "@tauri-apps/cli": ">=2.0.0",
+    "prettier": "^3.3.3",
+    "typescript": "^5.2.2",
+    "vite": "^5.3.1",
+    "vite-plugin-solid": "^2.8.0",
+    "vite-tsconfig-paths": "^5.0.1"
   }
 }

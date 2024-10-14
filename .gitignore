@@ -1,34 +1,5 @@
-# This sets the `.gitignore` to be a *whitelist* by default.
-**/**
-!*/
-
-
-# Whitelist
-!*.md
-!.gitignore
-!build.zig
-!build.zig.zon
-!.github/**
-!*.html
-!*.js
-!*.zig
-!*.css
-!*.eot
-!*.svg
-!*.ttf
-!*.woff
-!*.woff2
-
-!publish.js
-!package.json
-!.prettierrc
-!.prettierignore
-
-# Blacklist (overrides Whitelist)
-**/zig-out/**
-**/zig-cache/**
-**/.zig-cache/**
-
-node_modules/**
-
-vendor/**
+node_modules
+dist
+## Panda
+styled-system
+styled-system-studio
