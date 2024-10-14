@@ -36,12 +36,9 @@ function Logging() {
 
     reader.onload = () => {
       setLogStatus("");
-      const csv_str: string = reader.result! as string;
-      let schema = inferSchema(csv_str);
-      let parser = initParser(schema);
-      console.log(parser.typedCols(csv_str));
+      const csv_str: string = (reader.result! as string).trim();
 
-      const rows = csv_str.trim().split("\n");
+      const rows = csv_str.split("\n");
       if (rows.length < 2) {
         setLogStatus("failed");
         toaster.create({
@@ -52,15 +49,10 @@ function Logging() {
         return;
       }
 
+      let schema = inferSchema(csv_str);
+      let parser = initParser(schema);
+
       const headers = rows[0].replace(/,\s*$/, "").split(",");
-      const data = rows.slice(1).map((row: string) =>
-        row
-          .replace(/,\s*$/, "")
-          .replaceAll("true", "1")
-          .replaceAll("false", "0")
-          .split(",")
-          .map((val) => Number(val)),
-      );
 
       var local_series = headers.map(
         (name) =>
@@ -72,22 +64,19 @@ function Logging() {
           }) as GraphSeries,
       );
 
-      for (var row = 0; row < data.length; row++) {
-        if (data[row].length != headers.length) {
-          setLogStatus("failed");
-          toaster.create({
-            title: "Invalid Log File",
-            description: `Row ${row + 1} has ${data[row].length} values, header has ${headers.length} labels.`,
-            type: "error",
-          });
-          return;
-        }
-        for (var col = 0; col < headers.length; col++) {
-          local_series[col].data.push(Number(data[row][col]));
-        }
+      const data = parser.typedCols(csv_str);
+      if (data.length < headers.length) {
+        setLogStatus("failed");
+        toaster.create({
+          title: "Invalid Log File",
+          description: `Data has ${data.length} columns, while header has ${headers.length} labels.`,
+          type: "error",
+        });
+        return;
       }
-
-      console.log(local_series[0]);
+      for (var col = 0; col < headers.length; col++) {
+        local_series[col].data = data[col];
+      }
 
       setSeries(local_series);
       setFileSelectOpen(false);
