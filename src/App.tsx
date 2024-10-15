@@ -11,6 +11,7 @@ import {
   IconFileSettings,
   IconGraph,
   IconMenu,
+  IconPlugConnected,
 } from "@tabler/icons-solidjs";
 
 import { Button } from "~/components/ui/button";
@@ -43,6 +44,10 @@ function App(props: RouteSectionProps) {
     logging: {
       icon: () => <IconGraph />,
       label: "Logging",
+    },
+    connect: {
+      icon: () => <IconPlugConnected />,
+      label: "Connect",
     },
   };
   const [page, setPage] = createSignal("");
