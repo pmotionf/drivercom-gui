@@ -3,3 +3,26 @@ body {
     background-color 0.3s ease,
     color 0.3s ease;
 }
+
+styled-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.styled-table td {
+  border: 1px solid #ddd;
+  padding: 8px;
+}
+
+.styled-table tr:nth-child(even) {
+  background-color: #f2f2f2;
+}
+
+.styled-table tr:hover {
+  background-color: #ddd;
+}
+
+.styled-table input {
+  width: 100%;
+  box-sizing: border-box;
+}
