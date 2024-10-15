@@ -131,6 +131,8 @@ export function Plot(props: PlotProps) {
           style={{
             float: "left",
             "margin-top": "2rem",
+            "margin-bottom": "2rem",
+            height: "calc(100% - 4rem - 2rem)",
             width: "15em",
             overflow: "auto",
           }}
