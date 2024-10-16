@@ -12,6 +12,7 @@ import {
   IconFileSettings,
   IconGraph,
   IconMenu,
+  IconPlugConnected,
 } from "@tabler/icons-solidjs";
 
 import { Button } from "~/components/ui/button";
@@ -22,6 +23,7 @@ import { Text } from "~/components/ui/text";
 type PageMeta = {
   icon: () => JSX.Element;
   label: string;
+  disabled: boolean;
 };
 
 function App(props: RouteSectionProps) {
@@ -45,10 +47,17 @@ function App(props: RouteSectionProps) {
     configuration: {
       icon: () => <IconFileSettings />,
       label: "Configuration",
+      disabled: false,
     },
     logging: {
       icon: () => <IconGraph />,
       label: "Logging",
+      disabled: false,
+    },
+    connect: {
+      icon: () => <IconPlugConnected />,
+      label: "Connect",
+      disabled: true,
     },
   };
   const [page, setPage] = createSignal("");
@@ -130,6 +139,7 @@ function App(props: RouteSectionProps) {
                         <SegmentGroup.Item
                           value={val()}
                           style={{ width: "100%" }}
+                          disabled={pages[val()].disabled}
                         >
                           <SegmentGroup.ItemText>
                             <span
@@ -237,7 +247,7 @@ function App(props: RouteSectionProps) {
         >
           <Index each={Object.keys(pages)}>
             {(val) => (
-              <SegmentGroup.Item value={val()}>
+              <SegmentGroup.Item value={val()} disabled={pages[val()].disabled}>
                 <SegmentGroup.ItemText>
                   {pages[val()].icon()}
                 </SegmentGroup.ItemText>
