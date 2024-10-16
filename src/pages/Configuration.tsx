@@ -115,11 +115,15 @@ function Configuration() {
       }
     }
     traverse(dict);
-    return <table>{content}</table>;
+    return <table class="styled-table">{content}</table>;
   }
 
   //저장 버튼
-  const btn = <button onClick={saveToFile}>Save File</button>;
+  const btn = (
+    <button onClick={saveToFile} class="save-button">
+      Save File
+    </button>
+  );
   return (
     <div>
       <FileUpload.Root
@@ -147,8 +151,47 @@ function Configuration() {
         <FileUpload.HiddenInput />
       </FileUpload.Root>
       <div>
-        {setTable(jsonData())}
+        <style>
+          {`
+          .styled-table {
+            width: 50%;
+            border-collapse: collapse;
+          }
+
+          .styled-table th, .styled-table td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            background-color: white; /* 셀과 헤더의 배경을 흰색으로 */
+          }
+
+          .section-header {
+            background-color: white; /* 헤더의 배경을 흰색으로 설정 */
+          }
+
+          .save-button {
+            background-color: #4CAF50; /* 초록색 배경 */
+            border: none;
+            color: white;
+            padding: 10px 20px;
+            text-align: center;
+            font-size: 16px;
+            cursor: pointer;
+            border-radius: 5px;
+            transition: background-color 0.3s ease;
+            margin-top: 10px; /* 위쪽 여백 추가 */
+          }
+
+          .save-button:hover {
+            background-color: #45a049; /* 호버 시 더 어두운 초록색 */
+          }
+
+          .save-button:focus {
+            outline: none; /* 포커스 시 외곽선 제거 */
+          }
+        `}
+        </style>
         {btn}
+        {setTable(jsonData())}
       </div>
     </div>
   );
