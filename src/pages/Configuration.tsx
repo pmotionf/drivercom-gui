@@ -1,5 +1,5 @@
 //import {onMount} from "solid-js";
-import { createSignal, Show } from "solid-js";
+import { createSignal, JSX, Show } from "solid-js";
 import type { FileUploadFileAcceptDetails } from "@ark-ui/solid";
 import { FileUpload } from "~/components/ui/file-upload";
 import { Button } from "~/components/ui/button";
@@ -8,10 +8,9 @@ type NestedDict = {
   [key: string]: any | NestedDict; // 중첩 딕셔너리 타입 정의
 };
 
-function showConfig() {
-  const [jsonData, setJsonData] = createSignal<Record<string, any>>({});
-  const [jsonValues, setJsonValues] = createSignal(Array(0).fill("0"));
-
+function Configuration() {
+  const [jsonData, setJsonData] = createSignal<Record<string, any>>({}); //json 파일
+  const [newJsonData, setNewJsonData] = createSignal<Record<string, any>>({}); //변경되는 json 파일(save를 누르기 전 까지 적용)
   //json 파일 값 불러오기
   function loadLog(details: FileUploadFileAcceptDetails) {
     if (details.files.length == 0) return;
@@ -21,12 +20,8 @@ function showConfig() {
       reader.onload = (e) => {
         try {
           const data = JSON.parse(e.target?.result as string); // JSON 파싱
-          setJsonData(data);
-          const  values  = dictFormalization(data);
-          setJsonValues([...values]);
-
-          console.log(jsonData());
-
+          setJsonData({ ...data });
+          setNewJsonData({ ...data });
         } catch (error) {
           console.error("JSON 파싱 에러:", error);
         }
@@ -35,29 +30,30 @@ function showConfig() {
     }
   }
 
-//화면에서 변경된 값 반영하기
-const inputChange = (index: number, event: Event) => {
-  const target = event.target as HTMLInputElement;
-  console.log(typeof target.value);
-  setJsonValues((prevValues) => {
-    const newValues = [...prevValues]; // 이전 값 복사
-    for(let key in newValues[index]){
-      if(target.value == "on"){
-        newValues[index][key] = target.checked;
+  //변경된 값 반영
+  const inputChange = (keyPath: string, event: Event) => {
+    const target = event.target as HTMLInputElement;
+    const keys = keyPath.split("/");
+    setNewJsonData((prevValues) => {
+      const newValues: NestedDict = { ...prevValues }; // 이전 값 복사
+      let lastKey = String(keys.pop());
+      let targetObject: NestedDict = newValues;
+      for (let key of keys) {
+        targetObject = targetObject[key];
       }
-      else{
-        newValues[index][key] = target.value;
+      if (target.value == "on") {
+        targetObject[lastKey] = target.checked;
+      } else {
+        targetObject[lastKey] = target.value;
       }
-    }
-    return newValues; // 새로운 값 반환
-  });
-};
+      return newValues; // 새로운 값 반환
+    });
+  };
 
   //파일 저장하기
   const saveToFile = () => {
-    const data = jsonValues()
-      .map((value) => `${Object.keys(value)}: ${Object.values(value)}`)
-      .join("\n");
+    setJsonData(newJsonData());
+    const data = JSON.stringify(jsonData(), null, "  ");
     const blob = new Blob([data], { type: "application/json" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -67,28 +63,63 @@ const inputChange = (index: number, event: Event) => {
     URL.revokeObjectURL(url);
   };
 
-  //배열로 딕셔너리 저장하기
-  function dictFormalization(
-    dict: NestedDict,
-    values: any = [],
-  ) {
-    function traverseDict(obj: NestedDict) {
+  //테이블 표시하기
+  function setTable(dict: NestedDict) {
+    const content: JSX.Element[] = [];
+    function traverse(obj: NestedDict, keys: string = "") {
       for (let key in obj) {
         if (typeof obj[key] == "object") {
-          traverseDict(obj[key]);
+          let obj_k = "";
+          if (keys != "") {
+            obj_k = keys + "/" + key;
+          } else {
+            obj_k = key;
+          }
+          content.push(
+            <tr>
+              <th colspan="2" class="section-header">
+                {" "}
+                {key}{" "}
+              </th>
+            </tr>,
+          );
+          traverse(obj[key], obj_k);
         } else {
-          let dit:NestedDict = {};
-          dit[key] = obj[key];
-          values.push(dit);
+          let val_key = "";
+          if (keys != "") {
+            val_key = keys + "/" + key;
+          } else {
+            val_key = key;
+          }
+          content.push(
+            <tr>
+              <td>{key}</td>
+              <td>
+                {typeof obj[key] == typeof true ? (
+                  <input
+                    type="checkbox"
+                    checked={obj[key]}
+                    onInput={(e) => inputChange(val_key, e)}
+                  />
+                ) : (
+                  <input
+                    type="number"
+                    value={obj[key]}
+                    onInput={(e) => inputChange(val_key, e)}
+                  />
+                )}
+              </td>
+            </tr>,
+          );
         }
       }
     }
-    traverseDict(dict);
-    return values;
+    traverse(dict);
+    return <table>{content}</table>;
   }
-  //버튼 만들기
-  const btn = <button onClick={saveToFile}>Save File</button>;
 
+  //저장 버튼
+  const btn = <button onClick={saveToFile}>Save File</button>;
   return (
     <div>
       <FileUpload.Root
@@ -115,34 +146,12 @@ const inputChange = (index: number, event: Event) => {
         </FileUpload.Dropzone>
         <FileUpload.HiddenInput />
       </FileUpload.Root>
-      {jsonValues() && (
-        <table class="styled-table">
-          {jsonValues()
-            .map((value, index) => (
-              <tr>
-                <td>{Object.keys(value)}</td>
-                <td>
-                  {typeof  Object.values(value)[0] == typeof true ? (
-                    <input
-                      type="checkbox"
-                      checked={Object.values(value)[0] as boolean}
-                      onInput={(e) => inputChange(index, e)}
-                    />
-                  ) : (
-                    <input
-                      type="number"
-                      value={Object.values(value)[0] as number}
-                      onInput={(e) => inputChange(index, e)}
-                    />
-                  )}
-                </td>
-              </tr>
-            ))}
-        </table>
-      )}
-      {btn}
+      <div>
+        {setTable(jsonData())}
+        {btn}
+      </div>
     </div>
   );
 }
 
-export default showConfig;
+export default Configuration;
