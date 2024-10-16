@@ -1,7 +1,6 @@
 {
   "$schema": "https://schema.tauri.app/config/2.0.0",
   "productName": "drivercom-gui",
-  "version": "0.1.0",
   "identifier": "com.pmotionf.drivercom-gui",
   "build": {
     "beforeDevCommand": "pnpm dev",
