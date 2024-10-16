@@ -1,3 +1,5 @@
+import "./Logging.css";
+
 import { Show, createSignal } from "solid-js";
 import { Portal } from "solid-js/web";
 

@@ -6,6 +6,7 @@ import { Index, createSignal, onMount } from "solid-js";
 import { Portal } from "solid-js/web";
 import type { RouteSectionProps } from "@solidjs/router";
 import { useNavigate } from "@solidjs/router";
+import { Switch } from "~/components/ui/switch";
 
 import {
   IconChevronLeftPipe,
@@ -35,6 +36,9 @@ function App(props: RouteSectionProps) {
     document.documentElement.dataset.theme = prefersDarkScheme
       ? "dark"
       : "light";
+    //윈도우 다크모드 감지에 따른 스위치 모드 전환
+    const newMode = isDarkMode() ? "light" : "dark";
+    if (prefersDarkScheme === true) setIsDarkMode(newMode === "dark");
   });
 
   const [version, setVersion] = createSignal("0.0.0");
@@ -64,6 +68,21 @@ function App(props: RouteSectionProps) {
 
   const sidebar_collapsed_width = "3em";
   const sidebar_expanded_width = "18em";
+
+  //Dark Mode Theme
+  const [isDarkMode, setIsDarkMode] = createSignal(false);
+
+  const applyTheme = (mode: "light" | "dark") => {
+    const themeValue = mode === "dark" ? "dark" : "light";
+    document.documentElement.dataset.theme = mode;
+    localStorage.setItem("theme", mode);
+  };
+
+  const toggleTheme = () => {
+    const newMode = isDarkMode() ? "light" : "dark";
+    setIsDarkMode(newMode === "dark");
+    applyTheme(newMode);
+  };
 
   return (
     <>
@@ -161,6 +180,17 @@ function App(props: RouteSectionProps) {
                     </Index>
                     <SegmentGroup.Indicator />
                   </SegmentGroup.Root>
+                  <div style={{ height: "100%", position: "relative" }}>
+                    <Switch
+                      style={{ position: "absolute", bottom: "2vh" }}
+                      checked={isDarkMode()}
+                      onChange={toggleTheme}
+                    >
+                      <i style={{ "font-weight": "bold" }}>
+                        {isDarkMode() ? "Dark Mode" : "Light Mode"}
+                      </i>
+                    </Switch>
+                  </div>
                 </Drawer.Body>
                 <Drawer.Footer display={"block"} padding={"0.5rem"}>
                   <div
