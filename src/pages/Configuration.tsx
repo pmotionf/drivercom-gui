@@ -1,17 +1,16 @@
+//import {onMount} from "solid-js";
 import { createSignal, Show } from "solid-js";
 import type { FileUploadFileAcceptDetails } from "@ark-ui/solid";
 import { FileUpload } from "~/components/ui/file-upload";
-
 import { Button } from "~/components/ui/button";
 
 type NestedDict = {
-  [key: string]: string | NestedDict; // 중첩 딕셔너리 타입 정의
+  [key: string]: any | NestedDict; // 중첩 딕셔너리 타입 정의
 };
 
 function showConfig() {
-  const [jsonKeys, setJsonKeys] = createSignal(Array(0).fill("0"));
+  const [jsonData, setJsonData] = createSignal<Record<string, any>>({});
   const [jsonValues, setJsonValues] = createSignal(Array(0).fill("0"));
-  //const[arr, setArr] = createSignal(Array(0).fill("0"));
 
   //json 파일 값 불러오기
   function loadLog(details: FileUploadFileAcceptDetails) {
@@ -22,9 +21,12 @@ function showConfig() {
       reader.onload = (e) => {
         try {
           const data = JSON.parse(e.target?.result as string); // JSON 파싱
-          const { keys, values } = dictFormalization(data);
-          setJsonKeys([...keys]);
+          setJsonData(data);
+          const  values  = dictFormalization(data);
           setJsonValues([...values]);
+
+          console.log(jsonData());
+
         } catch (error) {
           console.error("JSON 파싱 에러:", error);
         }
@@ -33,18 +35,28 @@ function showConfig() {
     }
   }
 
-  //입력값이 변경되면 저장하기
-  const inputChange = (index: number, event: Event) => {
-    const target = event.target as HTMLInputElement;
-    const newValues = [...jsonValues()];
-    newValues[index] = target.value; // 값 업데이트
-    setJsonValues(newValues);
-  };
+//화면에서 변경된 값 반영하기
+const inputChange = (index: number, event: Event) => {
+  const target = event.target as HTMLInputElement;
+  console.log(typeof target.value);
+  setJsonValues((prevValues) => {
+    const newValues = [...prevValues]; // 이전 값 복사
+    for(let key in newValues[index]){
+      if(target.value == "on"){
+        newValues[index][key] = target.checked;
+      }
+      else{
+        newValues[index][key] = target.value;
+      }
+    }
+    return newValues; // 새로운 값 반환
+  });
+};
 
   //파일 저장하기
   const saveToFile = () => {
     const data = jsonValues()
-      .map((value, index) => `${jsonKeys()[index]}: ${value}`)
+      .map((value) => `${Object.keys(value)}: ${Object.values(value)}`)
       .join("\n");
     const blob = new Blob([data], { type: "application/json" });
     const url = URL.createObjectURL(blob);
@@ -55,10 +67,9 @@ function showConfig() {
     URL.revokeObjectURL(url);
   };
 
-  //딕셔너리 키,  value 저장하기
+  //배열로 딕셔너리 저장하기
   function dictFormalization(
     dict: NestedDict,
-    keys: string[] = [],
     values: any = [],
   ) {
     function traverseDict(obj: NestedDict) {
@@ -66,13 +77,14 @@ function showConfig() {
         if (typeof obj[key] == "object") {
           traverseDict(obj[key]);
         } else {
-          keys.push(key);
-          values.push(obj[key]);
+          let dit:NestedDict = {};
+          dit[key] = obj[key];
+          values.push(dit);
         }
       }
     }
     traverseDict(dict);
-    return { keys, values };
+    return values;
   }
   //버튼 만들기
   const btn = <button onClick={saveToFile}>Save File</button>;
@@ -105,22 +117,21 @@ function showConfig() {
       </FileUpload.Root>
       {jsonValues() && (
         <table class="styled-table">
-          {Array(jsonValues().length)
-            .fill("0")
-            .map((_, index) => (
+          {jsonValues()
+            .map((value, index) => (
               <tr>
-                <td>{jsonKeys()[index]}</td>
+                <td>{Object.keys(value)}</td>
                 <td>
-                  {typeof jsonValues()[index] == typeof true ? (
+                  {typeof  Object.values(value)[0] == typeof true ? (
                     <input
                       type="checkbox"
-                      checked={jsonValues()[index]}
+                      checked={Object.values(value)[0] as boolean}
                       onInput={(e) => inputChange(index, e)}
                     />
                   ) : (
                     <input
                       type="number"
-                      value={jsonValues()[index]}
+                      value={Object.values(value)[0] as number}
                       onInput={(e) => inputChange(index, e)}
                     />
                   )}
