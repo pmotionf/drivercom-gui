@@ -58,7 +58,10 @@ function Configuration() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = "data.json"; // 저장할 파일명
+    //파일 이름을 시간과 날짜로 설정
+    const currentDate = new Date();
+    const formattedDate = `${currentDate.getFullYear()}-${currentDate.getMonth() + 1}-${currentDate.getDate()} ${currentDate.getHours()}:${currentDate.getMinutes()}:${currentDate.getSeconds()}`;
+    a.download = formattedDate + "config.json";
     a.click();
     URL.revokeObjectURL(url);
   };
