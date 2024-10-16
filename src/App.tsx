@@ -1,5 +1,6 @@
 import "./App.css";
 
+import { invoke } from "@tauri-apps/api/core";
 import type { JSX } from "solid-js";
 import { Index, createSignal, onMount } from "solid-js";
 import { Portal } from "solid-js/web";
@@ -33,6 +34,11 @@ function App(props: RouteSectionProps) {
       ? "dark"
       : "light";
   });
+
+  const [version, setVersion] = createSignal("0.0.0");
+  invoke("version").then((ver) => setVersion(ver as string));
+
+  const [cliVersion, setCliVersion] = createSignal("0.0.0");
 
   const navigate = useNavigate();
   const pages: { [url: string]: PageMeta } = {
@@ -146,12 +152,68 @@ function App(props: RouteSectionProps) {
                     <SegmentGroup.Indicator />
                   </SegmentGroup.Root>
                 </Drawer.Body>
-                <Drawer.Footer>
+                <Drawer.Footer display={"block"} padding={"0.5rem"}>
+                  <div
+                    id="versions-footer"
+                    style={{
+                      display: "grid",
+                      "grid-template-columns": "6rem auto",
+                    }}
+                  >
+                    <Text
+                      size="sm"
+                      fontWeight="light"
+                      color="{colors.gray.a10}"
+                      style={{
+                        "padding-left": "0.5rem",
+                        "grid-row": 1,
+                        "grid-column": 1,
+                      }}
+                    >
+                      <i>GUI Version:</i>
+                    </Text>
+                    <Text
+                      size="sm"
+                      fontWeight="light"
+                      color="{colors.gray.a10}"
+                      style={{
+                        "grid-row": 1,
+                        "grid-column": 2,
+                      }}
+                    >
+                      {version()}
+                    </Text>
+                    <Text
+                      size="sm"
+                      fontWeight="light"
+                      color="{colors.gray.a10}"
+                      style={{
+                        "padding-left": "0.5rem",
+                        "grid-row": 2,
+                        "grid-column": 1,
+                      }}
+                    >
+                      <i>CLI Version:</i>
+                    </Text>
+                    <Text
+                      size="sm"
+                      fontWeight="light"
+                      color="{colors.gray.a10}"
+                      style={{
+                        "grid-row": 2,
+                        "grid-column": 2,
+                      }}
+                    >
+                      {cliVersion()}
+                    </Text>
+                  </div>
                   <Text
-                    as="span"
+                    as="div"
                     size="sm"
                     fontWeight="light"
-                    color="{colors.gray.a8}"
+                    color="{colors.gray.a10}"
+                    textAlign={"center"}
+                    marginTop={"0.5rem"}
                   >
                     <i>Copyright © 2024 PMF, Inc.</i>
                   </Text>
