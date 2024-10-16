@@ -1,9 +1,10 @@
 import { Button } from "~/components/ui/button";
-import { Collapsible } from "@ark-ui/solid";
 import { Spinner } from "~/components/ui/spinner";
 import { IconChevronDown } from "@tabler/icons-solidjs";
 import { Accordion } from "~/components/ui/accordion";
 import { createSignal } from "solid-js";
+import { Text } from "~/components/ui/text";
+import { Box } from "styled-system/jsx";
 
 function Connect() {
   //Items Dummy data
@@ -19,7 +20,7 @@ function Connect() {
   );
 
   //버튼클릭 기능
-  const handleClick = (index: number) => {
+  const HandleClick = (index: number) => {
     setStatuses((prevStatuses) => {
       const newStatuses = [...prevStatuses];
       newStatuses[index] = "연결취소";
@@ -60,49 +61,50 @@ function Connect() {
   };
 
   //아이템에 있는 리스트 갯수에 따라 박스와 버튼 생성
-  const createList = () => {
+  const ConnectionList = () => {
     return (
-      <div>
-        <Accordion.Root multiple={true}>
-          {items.map((item, index) => (
-            <Accordion.Item value={item} ml={"16px"}>
-              <Accordion.ItemTrigger>
-                {item}
-                <Accordion.ItemIndicator>
-                  <IconChevronDown />
-                </Accordion.ItemIndicator>
-              </Accordion.ItemTrigger>
-              <Accordion.ItemContent>
-                {connecting()[index]}
-                {loading()[index] && <Spinner marginLeft={"8px"} />}
-                <Button
-                  ml={"10"}
-                  onClick={() => handleClick(index)}
-                  disabled={statuses()[index] === "완료"}
-                >
-                  {statuses()[index]}
-                </Button>
-              </Accordion.ItemContent>
-            </Accordion.Item>
-          ))}
-        </Accordion.Root>
-      </div>
+      <Accordion.Root multiple={true}>
+        {items.map((item, index) => (
+          <Accordion.Item value={item} ml={"16px"}>
+            <Accordion.ItemTrigger>
+              {item}
+              <Accordion.ItemIndicator>
+                <IconChevronDown />
+              </Accordion.ItemIndicator>
+            </Accordion.ItemTrigger>
+            <Accordion.ItemContent>
+              {connecting()[index]}
+              {loading()[index] && <Spinner marginLeft={"8px"} />}
+              <Button
+                ml={"10"}
+                onClick={() => HandleClick(index)}
+                disabled={statuses()[index] === "완료"}
+              >
+                {statuses()[index]}
+              </Button>
+            </Accordion.ItemContent>
+          </Accordion.Item>
+        ))}
+      </Accordion.Root>
     );
   };
 
   return (
-    <div>
-      <section style={{ padding: "20px", width: "400px" }}>
-        <Collapsible.Root defaultOpen={false}>
-          <Collapsible.Trigger>
-            <Button variant="outline"> connect</Button>
-          </Collapsible.Trigger>
-          <Collapsible.Content>
-            <div id="container">{createList()}</div>
-          </Collapsible.Content>
-        </Collapsible.Root>
-      </section>
-    </div>
+    <>
+      <Text size="3xl" fontWeight="bold" margin={"20px"}>
+        Connect
+      </Text>
+      <Box
+        bg="accent.a2"
+        p="4"
+        borderRadius="l3"
+        mt="6"
+        height="100%"
+        overflowY="auto"
+      >
+        <div id="container">{ConnectionList()}</div>
+      </Box>
+    </>
   );
 }
 
