@@ -1,8 +1,8 @@
 import "./App.css";
 
 import { invoke } from "@tauri-apps/api/core";
-import { Index, Show, createSignal, onMount, type JSX } from "solid-js";
-import { Portal } from "solid-js/web";
+import { Index, Show, ValidComponent, createSignal, onMount } from "solid-js";
+import { Dynamic, Portal } from "solid-js/web";
 import type { RouteSectionProps } from "@solidjs/router";
 import { useNavigate } from "@solidjs/router";
 
@@ -24,7 +24,7 @@ import { SegmentGroup } from "~/components/ui/segment-group";
 import { Text } from "~/components/ui/text";
 
 type PageMeta = {
-  icon: () => JSX.Element;
+  icon: ValidComponent;
   label: string;
   disabled: boolean;
 };
@@ -48,25 +48,25 @@ function App(props: RouteSectionProps) {
   const navigate = useNavigate();
   const pages: { [url: string]: PageMeta } = {
     configuration: {
-      icon: () => <IconFileSettings />,
+      icon: IconFileSettings,
       label: "Configuration",
       disabled: false,
     },
     logging: {
-      icon: () => <IconGraph />,
+      icon: IconGraph,
       label: "Logging",
       disabled: false,
     },
     connect: {
-      icon: () => <IconPlugConnected />,
+      icon: IconPlugConnected,
       label: "Connect",
       disabled: true,
     },
   };
   const [page, setPage] = createSignal("");
 
-  const sidebar_collapsed_width = "3em";
-  const sidebar_expanded_width = "18em";
+  const sidebar_collapsed_width = "3rem";
+  const sidebar_expanded_width = "18rem";
 
   const applyTheme = (mode: "light" | "dark") => {
     document.documentElement.dataset.theme = mode;
@@ -93,7 +93,7 @@ function App(props: RouteSectionProps) {
                 {...triggerProps()}
                 style={{
                   "border-radius": "0px",
-                  margin: "0px",
+                  height: sidebar_collapsed_width,
                   width: "100%",
                   padding: "0px",
                 }}
@@ -190,7 +190,7 @@ function App(props: RouteSectionProps) {
                                 "padding-right": "0.2em",
                               }}
                             >
-                              {pages[val()].icon()}
+                              <Dynamic component={pages[val()].icon} />
                             </span>
                             <span style={{ float: "left" }}>
                               {pages[val()].label}
@@ -281,6 +281,7 @@ function App(props: RouteSectionProps) {
             navigate("/" + e.value.toLowerCase(), { replace: true });
           }}
           style={{
+            "padding-top": "0.5rem",
             position: "fixed",
             height: "100vh",
             width: sidebar_collapsed_width,
@@ -289,10 +290,25 @@ function App(props: RouteSectionProps) {
         >
           <Index each={Object.keys(pages)}>
             {(val) => (
-              <SegmentGroup.Item value={val()} disabled={pages[val()].disabled}>
-                <SegmentGroup.ItemText>
-                  {pages[val()].icon()}
-                </SegmentGroup.ItemText>
+              <SegmentGroup.Item
+                value={val()}
+                disabled={pages[val()].disabled}
+                style={{
+                  height: sidebar_collapsed_width,
+                  width: "100%",
+                  padding: "0px",
+                  display: "flex",
+                  "align-items": "center",
+                }}
+              >
+                <Dynamic
+                  component={pages[val()].icon}
+                  size={30}
+                  style={{
+                    display: "block",
+                    margin: "auto",
+                  }}
+                />
                 <SegmentGroup.ItemControl />
                 <SegmentGroup.ItemHiddenInput />
               </SegmentGroup.Item>
