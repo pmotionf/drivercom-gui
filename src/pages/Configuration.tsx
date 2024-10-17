@@ -4,10 +4,10 @@ import { FileUpload } from "~/components/ui/file-upload";
 import { Button } from "~/components/ui/button";
 
 import { Collapsible } from "~/components/ui/collapsible";
-import { IconX, IconChevronsDown, IconChevronsUp } from "@tabler/icons-solidjs";
-import { Spinner } from "~/components/ui/spinner";
+import { IconChevronsDown, IconChevronsUp } from "@tabler/icons-solidjs";
 import { Portal } from "solid-js/web";
-import { Text } from "~/components/ui/text";
+import { token } from "styled-system/tokens";
+//import { Table } from "~/components/ui/table";
 
 type NestedDict = {
   [key: string]: any | NestedDict; // 중첩 딕셔너리 타입 정의
@@ -16,9 +16,6 @@ type NestedDict = {
 function Configuration() {
   const [jsonData, setJsonData] = createSignal<Record<string, any>>({}); //json 파일
   const [newJsonData, setNewJsonData] = createSignal<Record<string, any>>({}); //변경되는 json 파일(save를 누르기 전 까지 적용)
-
-  const [logStatus, setLogStatus] = createSignal("");
-  const [logName, setLogName] = createSignal("");
   const [fileSelectOpen, setFileSelectOpen] = createSignal(true);
 
   //json 파일 값 불러오기
@@ -26,9 +23,6 @@ function Configuration() {
     if (details.files.length == 0) return;
 
     const file = details.files[0];
-    setLogName(file.name);
-    setLogStatus("loading");
-
     if (file) {
       const reader = new FileReader();
       reader.onload = (e) => {
@@ -36,11 +30,7 @@ function Configuration() {
           const data = JSON.parse(e.target?.result as string); // JSON 파싱
           setJsonData({ ...data });
           setNewJsonData({ ...data });
-          setLogStatus("loading");
-          setLogStatus("");
-        } catch (error) {
-          setLogStatus(`JSON 파싱 에러: {error}`);
-        }
+        } catch (error) {}
         setFileSelectOpen(false);
       };
       reader.readAsText(file); // 파일 내용을 텍스트로 읽기
@@ -97,7 +87,14 @@ function Configuration() {
           }
           content.push(
             <tr>
-              <th colspan="2" class="section-header">
+              <th
+                colspan="2"
+                style={{
+                  border: "1px",
+                  padding: "8px",
+                  "background-color": "gray",
+                }}
+              >
                 {" "}
                 {key}{" "}
               </th>
@@ -113,7 +110,15 @@ function Configuration() {
           }
           content.push(
             <tr>
-              <td>{key}</td>
+              <td
+                style={{
+                  border: "1px",
+                  padding: "8px",
+                  "background-color": "white",
+                }}
+              >
+                {key}
+              </td>
               <td>
                 {typeof obj[key] == typeof true ? (
                   <input
@@ -135,17 +140,20 @@ function Configuration() {
       }
     }
     traverse(dict);
-    return <table class="styled-table">{content}</table>;
-  }
 
-  //저장 버튼
-  const btn = (
-    <button onClick={saveToFile} class="save-button">
-      Save File
-    </button>
-  );
+    return (
+      <table
+        style={{
+          width: "50%",
+          "border-collapse": "collapse",
+        }}
+      >
+        {content}
+      </table>
+    );
+  }
   return (
-    <div>
+    <>
       <Portal>
         <Button
           variant="ghost"
@@ -161,15 +169,6 @@ function Configuration() {
             setFileSelectOpen((prev) => !prev);
           }}
         >
-          <Show when={logStatus() === "loading"}>
-            <Spinner size="sm" />
-          </Show>
-          <Show when={logStatus() === "failed"}>
-            <IconX color="red" />
-          </Show>
-          <Show when={logName() !== ""}>
-            <Text>{logName()}</Text>
-          </Show>
           <Show when={fileSelectOpen()} fallback={<IconChevronsDown />}>
             <IconChevronsUp />
           </Show>
@@ -197,9 +196,7 @@ function Configuration() {
               <FileUpload.Trigger
                 asChild={(triggerProps) => (
                   <Button size="sm" {...triggerProps()} variant="outline">
-                    <Show when={logName() === ""} fallback="Change">
-                      Select
-                    </Show>
+                    Select
                   </Button>
                 )}
               />
@@ -208,50 +205,19 @@ function Configuration() {
           </FileUpload.Root>
         </Collapsible.Content>
       </Collapsible.Root>
-      <div>
-        <style>
-          {`
-          .styled-table {
-            width: 50%;
-            border-collapse: collapse;
-          }
-
-          .styled-table th, .styled-table td {
-            border: 1px solid #ddd;
-            padding: 8px;
-            background-color: white; /* 셀과 헤더의 배경을 흰색으로 */
-          }
-
-          .section-header {
-            background-color: white; /* 헤더의 배경을 흰색으로 설정 */
-          }
-
-          .save-button {
-            background-color: #4CAF50; /* 초록색 배경 */
-            border: none;
-            color: white;
-            padding: 10px 20px;
-            text-align: center;
-            font-size: 16px;
-            cursor: pointer;
-            border-radius: 5px;
-            transition: background-color 0.3s ease;
-            margin-top: 10px; /* 위쪽 여백 추가 */
-          }
-
-          .save-button:hover {
-            background-color: #45a049; /* 호버 시 더 어두운 초록색 */
-          }
-
-          .save-button:focus {
-            outline: none; /* 포커스 시 외곽선 제거 */
-          }
-        `}
-        </style>
-        {btn}
-        {setTable(jsonData())}
-      </div>
-    </div>
+      <Button
+        variant="ghost"
+        style={{
+          "background-color": token("colors.accent.4"),
+          color: token("colors.fg.default"),
+          "margin-top": "10px",
+        }}
+        onClick={saveToFile}
+      >
+        Svae File
+      </Button>
+      {setTable(jsonData())}
+    </>
   );
 }
 
