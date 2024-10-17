@@ -1,8 +1,13 @@
-//import {onMount} from "solid-js";
 import { createSignal, JSX, Show } from "solid-js";
 import type { FileUploadFileAcceptDetails } from "@ark-ui/solid";
 import { FileUpload } from "~/components/ui/file-upload";
 import { Button } from "~/components/ui/button";
+
+import { Collapsible } from "~/components/ui/collapsible";
+import { IconX, IconChevronsDown, IconChevronsUp } from "@tabler/icons-solidjs";
+import { Spinner } from "~/components/ui/spinner";
+import { Portal } from "solid-js/web";
+import { Text } from "~/components/ui/text";
 
 type NestedDict = {
   [key: string]: any | NestedDict; // 중첩 딕셔너리 타입 정의
@@ -11,10 +16,19 @@ type NestedDict = {
 function Configuration() {
   const [jsonData, setJsonData] = createSignal<Record<string, any>>({}); //json 파일
   const [newJsonData, setNewJsonData] = createSignal<Record<string, any>>({}); //변경되는 json 파일(save를 누르기 전 까지 적용)
+
+  const [logStatus, setLogStatus] = createSignal("");
+  const [logName, setLogName] = createSignal("");
+  const [fileSelectOpen, setFileSelectOpen] = createSignal(true);
+
   //json 파일 값 불러오기
   function loadLog(details: FileUploadFileAcceptDetails) {
     if (details.files.length == 0) return;
+
     const file = details.files[0];
+    setLogName(file.name);
+    setLogStatus("loading");
+
     if (file) {
       const reader = new FileReader();
       reader.onload = (e) => {
@@ -22,9 +36,12 @@ function Configuration() {
           const data = JSON.parse(e.target?.result as string); // JSON 파싱
           setJsonData({ ...data });
           setNewJsonData({ ...data });
+          setLogStatus("loading");
+          setLogStatus("");
         } catch (error) {
-          console.error("JSON 파싱 에러:", error);
+          setLogStatus(`JSON 파싱 에러: {error}`);
         }
+        setFileSelectOpen(false);
       };
       reader.readAsText(file); // 파일 내용을 텍스트로 읽기
     }
@@ -129,30 +146,68 @@ function Configuration() {
   );
   return (
     <div>
-      <FileUpload.Root
-        accept="application/json" // JSON 파일만 허용
-        minFileSize={3}
-        onFileAccept={loadLog}
-        onFileReject={(details) => {
-          if (details.files.length === 0) return;
-          let description = "The provided log file is invalid:\n";
-          description += details.files[0]; // 파일 이름 추가
-        }}
-      >
-        <FileUpload.Dropzone>
-          <FileUpload.Label>Drop Log File (Json)</FileUpload.Label>
-          <FileUpload.Trigger
-            asChild={(triggerProps) => (
-              <Button size="sm" {...triggerProps()} variant="outline">
-                <Show when={true} fallback="Change">
-                  Select
-                </Show>
-              </Button>
-            )}
-          />
-        </FileUpload.Dropzone>
-        <FileUpload.HiddenInput />
-      </FileUpload.Root>
+      <Portal>
+        <Button
+          variant="ghost"
+          style={{
+            position: "fixed",
+            "padding-right": "0.8em",
+            "padding-left": "0.5em",
+            "text-align": "right",
+            top: "0px",
+            right: "0px",
+          }}
+          onClick={() => {
+            setFileSelectOpen((prev) => !prev);
+          }}
+        >
+          <Show when={logStatus() === "loading"}>
+            <Spinner size="sm" />
+          </Show>
+          <Show when={logStatus() === "failed"}>
+            <IconX color="red" />
+          </Show>
+          <Show when={logName() !== ""}>
+            <Text>{logName()}</Text>
+          </Show>
+          <Show when={fileSelectOpen()} fallback={<IconChevronsDown />}>
+            <IconChevronsUp />
+          </Show>
+        </Button>
+      </Portal>
+      <Collapsible.Root open={fileSelectOpen()} lazyMount unmountOnExit>
+        <Collapsible.Content>
+          <FileUpload.Root
+            accept="application/json"
+            minFileSize={3}
+            onFileAccept={loadLog}
+            onFileReject={(details) => {
+              if (details.files.length == 0) return;
+              var description = "The provided log file is invalid:\n";
+              for (var i = 0; i < details.files[0].errors.length; i++) {
+                if (description.slice(-1) !== "\n") {
+                  description += ", ";
+                }
+                description += details.files[0].errors[i];
+              }
+            }}
+          >
+            <FileUpload.Dropzone>
+              <FileUpload.Label>Drop Config File (Json)</FileUpload.Label>
+              <FileUpload.Trigger
+                asChild={(triggerProps) => (
+                  <Button size="sm" {...triggerProps()} variant="outline">
+                    <Show when={logName() === ""} fallback="Change">
+                      Select
+                    </Show>
+                  </Button>
+                )}
+              />
+            </FileUpload.Dropzone>
+            <FileUpload.HiddenInput />
+          </FileUpload.Root>
+        </Collapsible.Content>
+      </Collapsible.Root>
       <div>
         <style>
           {`
