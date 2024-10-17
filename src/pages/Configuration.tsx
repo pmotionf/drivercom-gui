@@ -1,27 +1,30 @@
-import { createSignal, JSX, Show } from "solid-js";
+import { createSignal, JSX, Show, createEffect } from "solid-js";
 import type { FileUploadFileAcceptDetails } from "@ark-ui/solid";
 import { FileUpload } from "~/components/ui/file-upload";
 import { Button } from "~/components/ui/button";
-
 import { Collapsible } from "~/components/ui/collapsible";
 import { IconChevronsDown, IconChevronsUp } from "@tabler/icons-solidjs";
 import { Portal } from "solid-js/web";
 import { token } from "styled-system/tokens";
-//import { Table } from "~/components/ui/table";
+import { Table } from "~/components/ui/table";
+import { Dynamic } from "solid-js/web";
 
 type NestedDict = {
   [key: string]: any | NestedDict; // 중첩 딕셔너리 타입 정의
 };
 
+type ConfigProps = JSX.HTMLAttributes<HTMLTableElement> & {
+  dict: object;
+};
+
 function Configuration() {
-  const [jsonData, setJsonData] = createSignal<Record<string, any>>({}); //json 파일
+  const [jsonData, setJsonData] = createSignal({}); //json 파일
   const [newJsonData, setNewJsonData] = createSignal<Record<string, any>>({}); //변경되는 json 파일(save를 누르기 전 까지 적용)
   const [fileSelectOpen, setFileSelectOpen] = createSignal(true);
 
   //json 파일 값 불러오기
-  function loadLog(details: FileUploadFileAcceptDetails) {
+  function loadConfig(details: FileUploadFileAcceptDetails) {
     if (details.files.length == 0) return;
-
     const file = details.files[0];
     if (file) {
       const reader = new FileReader();
@@ -74,8 +77,15 @@ function Configuration() {
   };
 
   //테이블 표시하기
-  function setTable(dict: NestedDict) {
-    const content: JSX.Element[] = [];
+  function ConfigTable(props: ConfigProps) {
+    const [data, setData] = createSignal(props.dict);
+    const [content, setContent] = createSignal<JSX.Element[]>([]);
+
+    createEffect(() => {
+      setData(props.dict);
+      traverse(data());
+    });
+
     function traverse(obj: NestedDict, keys: string = "") {
       for (let key in obj) {
         if (typeof obj[key] == "object") {
@@ -85,21 +95,19 @@ function Configuration() {
           } else {
             obj_k = key;
           }
-          content.push(
-            <tr>
-              <th
-                colspan="2"
-                style={{
-                  border: "1px",
-                  padding: "8px",
-                  "background-color": "gray",
-                }}
-              >
-                {" "}
-                {key}{" "}
-              </th>
-            </tr>,
-          );
+          setContent((prev) => [
+            ...prev,
+            <Table.Row
+              style={{
+                border: "ActiveBorder",
+                "font-weight": "bold",
+                "text-align": "center",
+                "background-color": token("colors.accent.4"),
+              }}
+            >
+              <Table.Cell>{key}</Table.Cell>
+            </Table.Row>,
+          ]);
           traverse(obj[key], obj_k);
         } else {
           let val_key = "";
@@ -108,18 +116,11 @@ function Configuration() {
           } else {
             val_key = key;
           }
-          content.push(
-            <tr>
-              <td
-                style={{
-                  border: "1px",
-                  padding: "8px",
-                  "background-color": "white",
-                }}
-              >
-                {key}
-              </td>
-              <td>
+          setContent((prev) => [
+            ...prev,
+            <Table.Row>
+              <Table.Cell>{key}</Table.Cell>
+              <Table.Cell>
                 {typeof obj[key] == typeof true ? (
                   <input
                     type="checkbox"
@@ -133,25 +134,19 @@ function Configuration() {
                     onInput={(e) => inputChange(val_key, e)}
                   />
                 )}
-              </td>
-            </tr>,
-          );
+              </Table.Cell>
+            </Table.Row>,
+          ]);
         }
       }
     }
-    traverse(dict);
-
     return (
-      <table
-        style={{
-          width: "50%",
-          "border-collapse": "collapse",
-        }}
-      >
-        {content}
-      </table>
+      <Table.Root style={{ width: "50%" }}>
+        <Table.Body>{content()}</Table.Body>
+      </Table.Root>
     );
   }
+
   return (
     <>
       <Portal>
@@ -179,16 +174,9 @@ function Configuration() {
           <FileUpload.Root
             accept="application/json"
             minFileSize={3}
-            onFileAccept={loadLog}
+            onFileAccept={loadConfig}
             onFileReject={(details) => {
               if (details.files.length == 0) return;
-              var description = "The provided log file is invalid:\n";
-              for (var i = 0; i < details.files[0].errors.length; i++) {
-                if (description.slice(-1) !== "\n") {
-                  description += ", ";
-                }
-                description += details.files[0].errors[i];
-              }
             }}
           >
             <FileUpload.Dropzone>
@@ -208,17 +196,18 @@ function Configuration() {
       <Button
         variant="ghost"
         style={{
-          "background-color": token("colors.accent.4"),
-          color: token("colors.fg.default"),
+          "background-color": token("colors.accent.10"),
+          color: token("colors.accent.1"),
           "margin-top": "10px",
         }}
         onClick={saveToFile}
       >
         Svae File
       </Button>
-      {setTable(jsonData())}
+      <Show when={jsonData()}>
+        <Dynamic component={ConfigTable} dict={jsonData()} />
+      </Show>
     </>
   );
 }
-
 export default Configuration;
