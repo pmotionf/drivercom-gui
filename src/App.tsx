@@ -16,7 +16,12 @@ import {
   IconMoonFilled,
 } from "@tabler/icons-solidjs";
 
-import { globalState, setGlobalState, GlobalStateContext } from "./GlobalState";
+import {
+  globalState,
+  setGlobalState,
+  GlobalStateContext,
+  Theme,
+} from "./GlobalState";
 
 import { Button } from "~/components/ui/button";
 import { Drawer } from "~/components/ui/drawer";
@@ -35,7 +40,12 @@ function App(props: RouteSectionProps) {
     const prefers_dark = window.matchMedia(
       "(prefers-color-scheme: dark)",
     ).matches;
-    const theme_str = prefers_dark ? "dark" : "light";
+    var theme_str: Theme = prefers_dark ? "dark" : "light";
+
+    if (typeof localStorage !== "undefined" && localStorage.getItem("theme")) {
+      theme_str = localStorage.getItem("theme")! as Theme;
+    }
+
     document.documentElement.dataset.theme = theme_str;
     setGlobalState("theme", theme_str);
   });
@@ -68,9 +78,10 @@ function App(props: RouteSectionProps) {
   const sidebar_collapsed_width = "3rem";
   const sidebar_expanded_width = "18rem";
 
-  const applyTheme = (mode: "light" | "dark") => {
-    document.documentElement.dataset.theme = mode;
-    setGlobalState("theme", mode);
+  const applyTheme = (theme: "light" | "dark") => {
+    document.documentElement.dataset.theme = theme;
+    setGlobalState("theme", theme);
+    localStorage.setItem("theme", theme);
   };
 
   const toggleTheme = () => {
