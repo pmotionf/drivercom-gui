@@ -1,0 +1,38 @@
+name: Release
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions: write-all
+
+jobs:
+  release:
+    strategy:
+      matrix:
+        os: [self-hosted]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Log masks
+        run: echo "::add-mask::$NAME_MASK"
+
+      - uses: actions/checkout@v4
+
+      - name: Parse version
+        id: parse-version
+        run: |
+          echo "VERSION=$(cd "src-tauri" && cargo get package.version && cd ..)" >> $GITHUB_OUTPUT
+
+      - uses: mukunku/tag-exists-action@v1.6.0
+        id: check-tag
+        with: 
+          tag: '${{ steps.parse-version.outputs.VERSION }}'
+          repo: 'pmotionf/drivercom-gui'
+
+      - name: Create release
+        if: ${{ steps.check-tag.outputs.exists != 'true' }}
+        run: |
+          gh release create --generate-notes \
+            "${{ steps.parse-version.outputs.VERSION }}"
