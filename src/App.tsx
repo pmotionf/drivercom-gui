@@ -1,8 +1,7 @@
 import "./App.css";
 
 import { invoke } from "@tauri-apps/api/core";
-import type { JSX } from "solid-js";
-import { Index, createSignal, onMount } from "solid-js";
+import { Index, Show, createSignal, onMount, type JSX } from "solid-js";
 import { Portal } from "solid-js/web";
 import type { RouteSectionProps } from "@solidjs/router";
 import { useNavigate } from "@solidjs/router";
@@ -13,7 +12,11 @@ import {
   IconGraph,
   IconMenu,
   IconPlugConnected,
+  IconSunFilled,
+  IconMoonFilled,
 } from "@tabler/icons-solidjs";
+
+import { globalState, setGlobalState, GlobalStateContext } from "./GlobalState";
 
 import { Button } from "~/components/ui/button";
 import { Drawer } from "~/components/ui/drawer";
@@ -29,18 +32,18 @@ type PageMeta = {
 function App(props: RouteSectionProps) {
   // Necessary for light/dark mode detection
   onMount(() => {
-    const prefersDarkScheme = window.matchMedia(
+    const prefers_dark = window.matchMedia(
       "(prefers-color-scheme: dark)",
     ).matches;
-    document.documentElement.dataset.theme = prefersDarkScheme
-      ? "dark"
-      : "light";
+    const theme_str = prefers_dark ? "dark" : "light";
+    document.documentElement.dataset.theme = theme_str;
+    setGlobalState("theme", theme_str);
   });
 
   const [version, setVersion] = createSignal("0.0.0");
   invoke("version").then((ver) => setVersion(ver as string));
 
-  const [cliVersion, setCliVersion] = createSignal("0.0.0");
+  const [cliVersion, _] = createSignal("0.0.0");
 
   const navigate = useNavigate();
   const pages: { [url: string]: PageMeta } = {
@@ -65,8 +68,17 @@ function App(props: RouteSectionProps) {
   const sidebar_collapsed_width = "3em";
   const sidebar_expanded_width = "18em";
 
+  const applyTheme = (mode: "light" | "dark") => {
+    document.documentElement.dataset.theme = mode;
+    setGlobalState("theme", mode);
+  };
+
+  const toggleTheme = () => {
+    applyTheme(globalState.theme === "light" ? "dark" : "light");
+  };
+
   return (
-    <>
+    <GlobalStateContext.Provider value={{ globalState, setGlobalState }}>
       <div
         style={{
           width: sidebar_collapsed_width,
@@ -93,13 +105,43 @@ function App(props: RouteSectionProps) {
           <Portal>
             <Drawer.Backdrop />
             <Drawer.Positioner
-              style={{ width: "30%", "max-width": sidebar_expanded_width }}
+              style={{
+                width: "30%",
+                "max-width": sidebar_expanded_width,
+                "min-width": "12rem",
+              }}
             >
               <Drawer.Content>
-                <Drawer.Header>
-                  <Drawer.Title style={{ "padding-top": "0px" }}>
-                    Drivercom
-                  </Drawer.Title>
+                <Drawer.Header position={"relative"}>
+                  <div
+                    style={{
+                      display: "flex",
+                      "align-items": "center",
+                      "justify-content": "space-between",
+                    }}
+                  >
+                    <Drawer.Title style={{ "padding-top": "0px" }}>
+                      Drivercom
+                    </Drawer.Title>
+                    <Button
+                      variant="ghost"
+                      size={"sm"}
+                      style={{
+                        position: "absolute",
+                        bottom: "0px",
+                        right: "0px",
+                        padding: "0px",
+                      }}
+                      onclick={toggleTheme}
+                    >
+                      <Show
+                        when={globalState.theme === "dark"}
+                        fallback={<IconSunFilled />}
+                      >
+                        <IconMoonFilled />
+                      </Show>
+                    </Button>
+                  </div>
                   <Drawer.CloseTrigger
                     asChild={(closeProps) => (
                       <Button
@@ -268,7 +310,7 @@ function App(props: RouteSectionProps) {
       >
         {props.children}
       </div>
-    </>
+    </GlobalStateContext.Provider>
   );
 }
 

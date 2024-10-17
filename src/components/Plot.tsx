@@ -1,8 +1,9 @@
-import { JSX, createEffect, splitProps } from "solid-js";
+import { JSX, createEffect, onMount, splitProps, useContext } from "solid-js";
 
 import uPlot, { AlignedData } from "uplot";
 import "uplot/dist/uPlot.min.css";
 
+import { GlobalStateContext } from "~/GlobalState";
 import { Heading } from "~/components/ui/heading";
 
 export type PlotProps = JSX.HTMLAttributes<HTMLDivElement> & {
@@ -14,36 +15,59 @@ export type PlotProps = JSX.HTMLAttributes<HTMLDivElement> & {
 
 export function Plot(props: PlotProps) {
   const [, rest] = splitProps(props, ["name", "header", "series", "id"]);
+  var fg_default = getComputedCSSVariableValue("--colors-fg-default");
+  var bg_muted = getComputedCSSVariableValue("--colors-bg-muted");
+  const { globalState } = useContext(GlobalStateContext)!;
+  var theme = globalState.theme;
+  var uplot: uPlot | null = null;
 
-  createEffect(() => {
+  function createPlot() {
     var plot_element = document.getElementById(props.id)!;
     var legend_element = document.getElementById(props.id + "-legend")!;
     plot_element.replaceChildren();
     legend_element.replaceChildren();
-    let u = new uPlot(
+
+    var series: uPlot.Series[] = [
       {
-        scales: {
-          x: {
-            time: false,
-          },
-        },
+        label: "Cycle",
+      },
+      ...props.header.map((label, index, _) => ({
+        label: label,
+        stroke: kelly_colors_hex[index % kelly_colors_hex.length],
+      })),
+    ];
+    var scales: uPlot.Scales = {
+      x: {
+        time: false,
+      },
+    };
+
+    // Save and restore existing plot state.
+    if (uplot) {
+      series = uplot.series;
+      scales = uplot.scales;
+    }
+
+    uplot = new uPlot(
+      {
+        scales: scales,
         axes: [
           {
-            stroke: getComputedCSSVariableValue("--colors-fg-default"),
+            stroke: fg_default,
             grid: {
-              stroke: getComputedCSSVariableValue("--colors-bg-muted"),
+              stroke: bg_muted,
             },
             ticks: {
-              stroke: getComputedCSSVariableValue("--colors-bg-muted"),
+              stroke: bg_muted,
             },
           },
           {
-            stroke: getComputedCSSVariableValue("--colors-fg-default"),
+            stroke: fg_default,
             grid: {
-              stroke: getComputedCSSVariableValue("--colors-bg-muted"),
+              stroke: bg_muted,
             },
             ticks: {
-              stroke: getComputedCSSVariableValue("--colors-bg-muted"),
+              stroke: bg_muted,
             },
           },
         ],
@@ -54,15 +78,7 @@ export function Plot(props: PlotProps) {
         },
         width: plot_element.clientWidth,
         height: plot_element.clientHeight,
-        series: [
-          {
-            label: "Cycle",
-          },
-          ...props.header.map((label, index, _) => ({
-            label: label,
-            stroke: kelly_colors_hex[index % kelly_colors_hex.length],
-          })),
-        ],
+        series: series,
       },
       [
         [...Array(props.series[0].length).keys()],
@@ -70,25 +86,40 @@ export function Plot(props: PlotProps) {
       ] as AlignedData,
       plot_element,
     );
+  }
 
-    var resize = new ResizeObserver((entries) => {
-      if (entries.length == 0) return;
-      const entry = entries[0];
-      setTimeout(
-        () =>
-          u.setSize({
-            width: entry.contentRect.width,
-            height: entry.contentRect.height,
-          }),
-        200,
-      );
+  onMount(() => {
+    // Wrap in create effect to handle ID changing.
+    createEffect(() => {
+      var resize = new ResizeObserver((entries) => {
+        if (entries.length == 0) return;
+        const entry = entries[0];
+        setTimeout(() => {
+          if (uplot) {
+            uplot.setSize({
+              width: entry.contentRect.width,
+              height: entry.contentRect.height,
+            });
+          }
+        }, 200);
+      });
+      resize.observe(document.getElementById(props.id)!);
     });
-    resize.observe(plot_element);
   });
+
+  createEffect(() => {
+    if (globalState.theme !== theme) {
+      theme = globalState.theme;
+      fg_default = getComputedCSSVariableValue("--colors-fg-default");
+      bg_muted = getComputedCSSVariableValue("--colors-bg-muted");
+      createPlot();
+    }
+  });
+  createEffect(createPlot);
 
   const selection_css = `
     .u-select {
-      background: ${getComputedCSSVariableValue("--colors-fg-subtle")};
+      background: var(--colors-fg-subtle);
       opacity: 0.1;
     }
   `;
@@ -106,7 +137,7 @@ export function Plot(props: PlotProps) {
   `;
   return (
     <>
-      <div {...rest}>
+      <div {...rest} id={props.id + "-wrapper"}>
         <Heading
           size="lg"
           style={{
