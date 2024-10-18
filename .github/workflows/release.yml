@@ -27,9 +27,9 @@ jobs:
 
       - uses: mukunku/tag-exists-action@v1.6.0
         id: check-tag
-        with: 
-          tag: '${{ steps.parse-version.outputs.VERSION }}'
-          repo: 'pmotionf/drivercom-gui'
+        with:
+          tag: "${{ steps.parse-version.outputs.VERSION }}"
+          repo: "pmotionf/drivercom-gui"
 
       - name: Create release
         if: ${{ steps.check-tag.outputs.exists != 'true' }}
