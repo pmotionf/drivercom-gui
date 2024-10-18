@@ -7,7 +7,6 @@ import { IconChevronsDown, IconChevronsUp } from "@tabler/icons-solidjs";
 import { Portal } from "solid-js/web";
 import { token } from "styled-system/tokens";
 import { Table } from "~/components/ui/table";
-import { Dynamic } from "solid-js/web";
 
 type NestedDict = {
   [key: string]: any | NestedDict; // 중첩 딕셔너리 타입 정의
@@ -19,7 +18,7 @@ type ConfigProps = JSX.HTMLAttributes<HTMLTableElement> & {
 
 function Configuration() {
   const [jsonData, setJsonData] = createSignal({}); //json 파일
-  const [newJsonData, setNewJsonData] = createSignal<Record<string, any>>({}); //변경되는 json 파일(save를 누르기 전 까지 적용)
+  const [editJsonData, setEditJsonData] = createSignal<Record<string, any>>({}); //변경되는 json 파일(save를 누르기 전 까지 적용)
   const [fileSelectOpen, setFileSelectOpen] = createSignal(true);
 
   //json 파일 값 불러오기
@@ -32,7 +31,7 @@ function Configuration() {
         try {
           const data = JSON.parse(e.target?.result as string); // JSON 파싱
           setJsonData({ ...data });
-          setNewJsonData({ ...data });
+          setEditJsonData({ ...data });
         } catch (error) {}
         setFileSelectOpen(false);
       };
@@ -44,7 +43,7 @@ function Configuration() {
   const inputChange = (keyPath: string, event: Event) => {
     const target = event.target as HTMLInputElement;
     const keys = keyPath.split("/");
-    setNewJsonData((prevValues) => {
+    setEditJsonData((prevValues) => {
       const newValues: NestedDict = { ...prevValues }; // 이전 값 복사
       let lastKey = String(keys.pop());
       let targetObject: NestedDict = newValues;
@@ -62,7 +61,7 @@ function Configuration() {
 
   //파일 저장하기
   const saveToFile = () => {
-    setJsonData(newJsonData());
+    setJsonData(editJsonData());
     const data = JSON.stringify(jsonData(), null, "  ");
     const blob = new Blob([data], { type: "application/json" });
     const url = URL.createObjectURL(blob);
@@ -202,10 +201,10 @@ function Configuration() {
         }}
         onClick={saveToFile}
       >
-        Svae File
+        Save File
       </Button>
       <Show when={jsonData()}>
-        <Dynamic component={ConfigTable} dict={jsonData()} />
+        <ConfigTable dict={jsonData()} />
       </Show>
     </>
   );
