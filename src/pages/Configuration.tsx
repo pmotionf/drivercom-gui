@@ -7,12 +7,14 @@ import { IconChevronsDown, IconChevronsUp } from "@tabler/icons-solidjs";
 import { Portal } from "solid-js/web";
 import { token } from "styled-system/tokens";
 import { Table } from "~/components/ui/table";
+import { save } from "@tauri-apps/plugin-dialog";
+import { writeTextFile } from "@tauri-apps/plugin-fs";
 
 type NestedDict = {
   [key: string]: any | NestedDict; // 중첩 딕셔너리 타입 정의
 };
 
-type ConfigProps = JSX.HTMLAttributes<HTMLTableElement> & {
+type ConfigProps = Table.RootProps & {
   dict: object;
 };
 
@@ -60,19 +62,28 @@ function Configuration() {
   };
 
   //파일 저장하기
-  const saveToFile = () => {
+  const saveToFile = async () => {
     setJsonData(editJsonData());
     const data = JSON.stringify(jsonData(), null, "  ");
-    const blob = new Blob([data], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    //파일 이름을 시간과 날짜로 설정
-    const currentDate = new Date();
-    const formattedDate = `${currentDate.getFullYear()}-${currentDate.getMonth() + 1}-${currentDate.getDate()} ${currentDate.getHours()}:${currentDate.getMinutes()}:${currentDate.getSeconds()}`;
-    a.download = formattedDate + "config.json";
-    a.click();
-    URL.revokeObjectURL(url);
+    const path = await save({
+      filters: [
+        {
+          name: "JSON",
+          extensions: ["json"],
+        },
+      ],
+    });
+    if (!path) {
+      // TODO: Show error toast
+      return;
+    }
+    const extension = path.split(".").pop();
+    if (extension != "json") {
+      // TODO: Show error toast
+      return;
+    }
+    // TODO: Handle write promise error with toast
+    await writeTextFile(path, data);
   };
 
   //테이블 표시하기
@@ -204,7 +215,9 @@ function Configuration() {
         Save File
       </Button>
       <Show when={jsonData()}>
-        <ConfigTable dict={jsonData()} />
+        <div style={{ display: "flex", "justify-content": "center" }}>
+          <ConfigTable dict={jsonData()} />
+        </div>
       </Show>
     </>
   );
