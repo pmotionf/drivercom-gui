@@ -526,22 +526,17 @@ function wheelZoomPlugin(opts: any) {
   };
 }
 
-function addOptionButton(uplotId: string, uplot: PlotContainer, index: number) {
+function addOptionButton(
+  uplotId: string,
+  uplot: PlotContainer,
+  index: number,
+){
   const div = document.getElementById(uplotId + "-wrapper");
   if (div) {
     const legend_elements = div.querySelectorAll(`.u-series`);
     var row = legend_elements.item(index) as HTMLTableRowElement;
     var new_cell = row.insertCell(0);
-    new_cell.style.height = "1.5em";
-    new_cell.style.width = "1.5em";
-    new_cell.style.padding = "0px";
-    new_cell.style.margin = "0px";
-    new_cell.style.verticalAlign = "middle";
-    new_cell.className = "";
     const container = document.createElement("div");
-    container.style.height = "1.5em";
-    container.style.width = "1.5em";
-    container.style.verticalAlign = "top";
     new_cell.appendChild(container);
     render(
       () => <SettingButton uplotId={uplotId} uplot={uplot} index={index} />,
