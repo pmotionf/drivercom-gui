@@ -1,8 +1,5 @@
 import { createSignal, Show } from "solid-js";
 import { Portal } from "solid-js/web";
-import { save } from "@tauri-apps/plugin-dialog";
-import { writeTextFile } from "@tauri-apps/plugin-fs";
-import { token } from "styled-system/tokens";
 
 import { Button } from "~/components/ui/button";
 import { Collapsible } from "~/components/ui/collapsible";
@@ -15,7 +12,6 @@ import { IconChevronsDown, IconChevronsUp } from "@tabler/icons-solidjs";
 
 function Configuration() {
   const [jsonData, setJsonData] = createSignal({}); //json 파일
-  const [editJsonData, setEditJsonData] = createSignal<Record<string, any>>({}); //변경되는 json 파일(save를 누르기 전 까지 적용)
   const [fileName, setFileName] = createSignal("");
   const [fileSelectOpen, setFileSelectOpen] = createSignal(true);
 
@@ -29,7 +25,6 @@ function Configuration() {
         try {
           const data = JSON.parse(e.target?.result as string); // JSON 파싱
           setJsonData({ ...data });
-          setEditJsonData({ ...data });
           setFileName(file.name);
         } catch (error) {}
         setFileSelectOpen(false);
@@ -37,31 +32,6 @@ function Configuration() {
       reader.readAsText(file); // 파일 내용을 텍스트로 읽기
     }
   }
-
-  //파일 저장하기
-  const saveToFile = async () => {
-    setJsonData(editJsonData());
-    const data = JSON.stringify(jsonData(), null, "  ");
-    const path = await save({
-      filters: [
-        {
-          name: "JSON",
-          extensions: ["json"],
-        },
-      ],
-    });
-    if (!path) {
-      // TODO: Show error toast
-      return;
-    }
-    const extension = path.split(".").pop();
-    if (extension != "json") {
-      // TODO: Show error toast
-      return;
-    }
-    // TODO: Handle write promise error with toast
-    await writeTextFile(path, data);
-  };
 
   return (
     <>
@@ -109,18 +79,7 @@ function Configuration() {
           </FileUpload.Root>
         </Collapsible.Content>
       </Collapsible.Root>
-      <Button
-        variant="ghost"
-        style={{
-          "background-color": token("colors.accent.10"),
-          color: token("colors.accent.1"),
-          "margin-top": "10px",
-        }}
-        onClick={saveToFile}
-      >
-        Save File
-      </Button>
-      <Show when={jsonData()}>
+      <Show when={Object.keys(jsonData()).length > 0}>
         <div style={{ display: "flex", "justify-content": "center" }}>
           <ConfigForm label={fileName()} config={jsonData()} />
         </div>
