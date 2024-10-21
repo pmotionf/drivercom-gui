@@ -1,4 +1,4 @@
-import { Show, createSignal } from "solid-js";
+import { Show, createSignal, createEffect, For } from "solid-js";
 import { Portal } from "solid-js/web";
 
 import { inferSchema, initParser } from "udsv";
@@ -13,6 +13,7 @@ import { Text } from "~/components/ui/text";
 import { Toast } from "~/components/ui/toast";
 
 import { Plot } from "~/components/Plot";
+import { token } from "styled-system/tokens";
 
 function Logging() {
   const toaster = Toast.createToaster({
@@ -26,6 +27,9 @@ function Logging() {
   const [logName, setLogName] = createSignal("");
   const [header, setHeader] = createSignal([] as string[]);
   const [series, setSeries] = createSignal([] as number[][]);
+
+  const [splitHteader, setSplitHteader] = createSignal([] as string[][]);
+  const [splitSeries, setSplitSeries] = createSignal([] as number[][][]);
 
   function loadLog(details: FileUploadFileAcceptDetails) {
     if (details.files.length == 0) return;
@@ -74,6 +78,9 @@ function Logging() {
       setHeader(local_header);
       setSeries(data.slice(0, local_header.length));
       setFileSelectOpen(false);
+
+      setSplitHteader([header()]);
+      setSplitSeries([series()]);
     };
 
     reader.onerror = () => {
@@ -87,6 +94,47 @@ function Logging() {
 
     reader.readAsText(file);
   }
+
+  //선택한 범례 가지고 오기
+  function getLegendInfo(id: string) {
+    const legendElements = document.querySelectorAll(`.u-series`);
+    const visible = Array.from(legendElements)
+      .filter((el) => !el.classList.contains("u-off"))
+      .map((el) => el.querySelector(".u-label")?.textContent || "")
+      .filter((label) => label !== "");
+    const hidden = Array.from(legendElements)
+      .filter((el) => el.classList.contains("u-off"))
+      .map((el) => el.querySelector(".u-label")?.textContent || "")
+      .filter((label) => label !== "");
+
+    const h1 = [];
+    const s1 = [];
+    const h2 = [];
+    const s2 = [];
+    for (let vis of visible) {
+      let index = visible.indexOf(vis);
+      h1.push(header()[index]);
+      s1.push(series()[index]);
+    }
+
+    for (let hid of hidden) {
+      let index = hidden.indexOf(hid);
+      h2.push(header()[index]);
+      s2.push(series()[index]);
+    }
+
+    setSplitHteader([h1, h2]);
+    setSplitSeries([s1, s2]);
+
+    console.log("Visible legends:", visible.slice(1));
+    console.log("Hidden legends:", hidden);
+    console.log(id);
+    console.log(splitHteader());
+    console.log(splitSeries());
+  }
+
+  // Plot이 렌더링된 후 범례 정보를 가져오기
+  createEffect(() => {});
 
   return (
     <>
@@ -168,14 +216,35 @@ function Logging() {
           </Toast.Root>
         )}
       </Toast.Toaster>
+
       <Show when={series().length > 0}>
-        <Plot
-          id={logName()}
-          name={logName()}
-          header={header()}
-          series={series()}
-          style={{ width: "100%", height: "100%" }}
-        />
+        <For each={splitSeries()}>
+          {(items, index) => (
+            <>
+              <Button
+                variant="ghost"
+                style={{
+                  "background-color": token("colors.accent.10"),
+                  color: token("colors.accent.1"),
+                  "margin-top": "10px",
+                }}
+                onclick={() => getLegendInfo(logName() + index() + "-wrapper")}
+              >
+                Split table
+              </Button>
+              <Plot
+                id={logName() + index()}
+                name={logName() + "(" + index() + ")"}
+                header={splitHteader()[0]}
+                series={items}
+                style={{
+                  width: "100%",
+                  height: `${100 / splitSeries().length}%`,
+                }}
+              />
+            </>
+          )}
+        </For>
       </Show>
     </>
   );
