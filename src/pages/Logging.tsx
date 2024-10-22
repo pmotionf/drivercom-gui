@@ -101,39 +101,37 @@ function Logging() {
 
   // 선택한 범례 정보 가져오기
   function getLegendInfo(id: string, index: number) {
-    const div = document.getElementById(id);
-    if (div) {
-      const legend_elements = div?.querySelectorAll(`.u-series`);
-      // 보여지는 범례
-      const visible = Array.from(legend_elements)
-        .filter((el) => !el.classList.contains("u-off"))
-        .map((el) => el.querySelector(".u-label")?.textContent || "")
-        .filter((label) => label !== "");
-      // 숨은 범례
-      const hidden = Array.from(legend_elements)
-        .filter((el) => el.classList.contains("u-off"))
-        .map((el) => el.querySelector(".u-label")?.textContent || "")
-        .filter((label) => label !== "");
+    const div = document.getElementById(id)!;
+    const legend_elements = div?.querySelectorAll(`.u-series`);
+    // 보여지는 범례
+    const visible = Array.from(legend_elements)
+      .filter((el) => !el.classList.contains("u-off"))
+      .map((el) => el.querySelector(".u-label")?.textContent || "")
+      .filter((label) => label !== "");
+    // 숨은 범례
+    const hidden = Array.from(legend_elements)
+      .filter((el) => el.classList.contains("u-off"))
+      .map((el) => el.querySelector(".u-label")?.textContent || "")
+      .filter((label) => label !== "");
 
-      const visibles: number[] = [];
-      const hiddens: number[] = [];
-      // 보이는 범례 데이터 처리
-      for (let vis of visible.slice(1)) {
-        let index = header().indexOf(vis);
-        visibles.push(index);
-      }
-      // 숨겨진 범례 데이터 처리
-      for (let hid of hidden) {
-        let index = header().indexOf(hid);
-        hiddens.push(index);
-      }
-      // 분할된 헤더와 시리즈 업데이트
-      setSplitIndex((prev) => {
-        const updated = [...prev];
-        updated.splice(index, 1, visibles, hiddens);
-        return updated;
-      });
+    const visibles: number[] = [];
+    const hiddens: number[] = [];
+    // 보이는 범례 데이터 처리
+    for (let vis of visible.slice(1)) {
+      let index = header().indexOf(vis);
+      visibles.push(index);
     }
+    // 숨겨진 범례 데이터 처리
+    for (let hid of hidden) {
+      let index = header().indexOf(hid);
+      hiddens.push(index);
+    }
+    // 분할된 헤더와 시리즈 업데이트
+    setSplitIndex((prev) => {
+      const updated = [...prev];
+      updated.splice(index, 1, visibles, hiddens);
+      return updated;
+    });
   }
 
   // 상태에 따른 나누기 버튼 색상 설정
@@ -251,26 +249,25 @@ function Logging() {
           {(item, index) => {
             const currentHeader = () => item.map((i) => header()[i]);
             const currentItems = () => item.map((i) => series()[i]);
+            const currentID = logName() + index();
             return (
               <>
                 <Button
                   variant="ghost"
                   style={getButtonStyles(currentHeader().length)}
-                  onClick={() =>
-                    getLegendInfo(logName() + index() + "-wrapper", index())
-                  }
+                  onClick={() => getLegendInfo(currentID + "-wrapper", index())}
                   disabled={currentHeader().length <= 1}
                 >
                   Split table
                 </Button>
                 <Plot
-                  id={logName() + index()}
+                  id={currentID}
                   name={logName() + "(" + index() + ")"}
                   header={currentHeader()}
                   series={currentItems()}
                   style={{
                     width: "100%",
-                    height: `calc(${100 - splitIndex().filter((arr) => arr.length > 0).length * 5}% / ${splitIndex().filter((arr) => arr.length > 0).length})`,
+                    height: `calc(${100 - splitIndex().filter((arr) => arr.length > 0).length * 6}% / ${splitIndex().filter((arr) => arr.length > 0).length})`,
                     "min-height": "12rem",
                   }}
                 />
