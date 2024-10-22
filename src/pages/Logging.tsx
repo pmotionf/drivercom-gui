@@ -1,4 +1,3 @@
-// 필요한 모듈과 컴포넌트 import
 import { Show, createSignal, For } from "solid-js";
 import { Portal } from "solid-js/web";
 import { inferSchema, initParser } from "udsv";
@@ -14,25 +13,20 @@ import { Plot } from "~/components/Plot";
 import { token } from "styled-system/tokens";
 
 function Logging() {
-  // 토스트 메시지 생성기 초기화
   const toaster = Toast.createToaster({
     placement: "top-end",
     gap: 24,
   });
 
-  // 파일 선택 UI 상태 관리
   const [fileSelectOpen, setFileSelectOpen] = createSignal(true);
 
-  // 로그 관련 상태 관리
   const [logStatus, setLogStatus] = createSignal("");
   const [logName, setLogName] = createSignal("");
   const [header, setHeader] = createSignal([] as string[]);
   const [series, setSeries] = createSignal([] as number[][]);
 
-  // 분할된 차트 데이터 상태 관리
   const [splitIndex, setSplitIndex] = createSignal([] as number[][]);
 
-  // 로그 파일 로드 함수
   function loadLog(details: FileUploadFileAcceptDetails) {
     if (details.files.length == 0) return;
     const file = details.files[0];
@@ -84,7 +78,6 @@ function Logging() {
         (_, index) => index,
       );
       setSplitIndex([indexArray]);
-      console.log(splitIndex());
     };
 
     reader.onerror = () => {
@@ -98,7 +91,7 @@ function Logging() {
     reader.readAsText(file);
   }
 
-  function restChart() {
+  function resetChart() {
     const indexArray = Array.from(
       { length: header().length },
       (_, index) => index,
@@ -116,7 +109,7 @@ function Logging() {
         .filter((el) => !el.classList.contains("u-off"))
         .map((el) => el.querySelector(".u-label")?.textContent || "")
         .filter((label) => label !== "");
-      // 안보이는 범례
+      // 숨은 범례
       const hidden = Array.from(legend_elements)
         .filter((el) => el.classList.contains("u-off"))
         .map((el) => el.querySelector(".u-label")?.textContent || "")
@@ -140,8 +133,6 @@ function Logging() {
         updated.splice(index, 1, visibles, hiddens);
         return updated;
       });
-    } else {
-      console.error("오류: div가 생성되지 않았습니다.");
     }
   }
 
@@ -252,7 +243,7 @@ function Logging() {
             color: token("colors.accent.1"),
             "margin-top": "10px",
           }}
-          onclick={restChart}
+          onclick={resetChart}
         >
           Reset
         </Button>
@@ -279,7 +270,8 @@ function Logging() {
                   series={currentItems()}
                   style={{
                     width: "100%",
-                    height: `max(15rem, ${100 / splitIndex().filter((arr) => arr.length > 0).length}%)`,
+                    height: `calc(${100 - splitIndex().filter((arr) => arr.length > 0).length * 5}% / ${splitIndex().filter((arr) => arr.length > 0).length})`,
+                    "min-height": "12rem",
                   }}
                 />
               </>
