@@ -153,7 +153,7 @@ export function Plot(props: PlotProps) {
           style={{
             float: "left",
             width: "calc(100% - 15em)",
-            height: "calc(100% - 2rem)",
+            height: "calc(100% - 0.5rem)",
           }}
         ></div>
         <style>{legend_css}</style>
@@ -161,9 +161,9 @@ export function Plot(props: PlotProps) {
           id={props.id + "-legend"}
           style={{
             float: "left",
-            "margin-top": "2rem",
-            "margin-bottom": "2rem",
-            height: "calc(100% - 4rem - 2rem)",
+            "margin-top": "1rem",
+            "margin-bottom": "1rem",
+            height: "calc(100% - 2rem - 0.5rem)",
             width: "15em",
             overflow: "auto",
           }}
