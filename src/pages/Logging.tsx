@@ -1,9 +1,8 @@
-import { Show, createSignal, createEffect, For } from "solid-js";
+// 필요한 모듈과 컴포넌트 import
+import { Show, createSignal, For } from "solid-js";
 import { Portal } from "solid-js/web";
-
 import { inferSchema, initParser } from "udsv";
 import { IconX, IconChevronsDown, IconChevronsUp } from "@tabler/icons-solidjs";
-
 import { Button } from "~/components/ui/button";
 import { Collapsible } from "~/components/ui/collapsible";
 import type { FileUploadFileAcceptDetails } from "@ark-ui/solid";
@@ -11,38 +10,39 @@ import { FileUpload } from "~/components/ui/file-upload";
 import { Spinner } from "~/components/ui/spinner";
 import { Text } from "~/components/ui/text";
 import { Toast } from "~/components/ui/toast";
-
 import { Plot } from "~/components/Plot";
 import { token } from "styled-system/tokens";
 
 function Logging() {
+  // 토스트 메시지 생성기 초기화
   const toaster = Toast.createToaster({
     placement: "top-end",
     gap: 24,
   });
 
+  // 파일 선택 UI 상태 관리
   const [fileSelectOpen, setFileSelectOpen] = createSignal(true);
 
+  // 로그 관련 상태 관리
   const [logStatus, setLogStatus] = createSignal("");
   const [logName, setLogName] = createSignal("");
   const [header, setHeader] = createSignal([] as string[]);
   const [series, setSeries] = createSignal([] as number[][]);
 
-  const [splitHteader, setSplitHteader] = createSignal([] as string[][]);
-  const [splitSeries, setSplitSeries] = createSignal([] as number[][][]);
+  // 분할된 차트 데이터 상태 관리
+  const [splitIndex, setSplitIndex] = createSignal([] as number[][]);
 
+  // 로그 파일 로드 함수
   function loadLog(details: FileUploadFileAcceptDetails) {
     if (details.files.length == 0) return;
     const file = details.files[0];
     setLogName(file.name);
     setLogStatus("loading");
-
     var reader = new FileReader();
 
     reader.onload = () => {
       setLogStatus("");
       const csv_str: string = (reader.result! as string).trim();
-
       const rows = csv_str.split("\n");
       if (rows.length < 2) {
         setLogStatus("failed");
@@ -54,11 +54,10 @@ function Logging() {
         return;
       }
 
+      // CSV 파싱 및 데이터 처리
       let schema = inferSchema(csv_str);
       let parser = initParser(schema);
-
       const local_header = rows[0].replace(/,\s*$/, "").split(",");
-
       const data = parser.typedCols(csv_str).map((row) =>
         row.map((val) => {
           if (typeof val === "boolean") return val ? 1 : 0;
@@ -75,12 +74,17 @@ function Logging() {
         return;
       }
 
+      // 데이터 상태 업데이트
       setHeader(local_header);
       setSeries(data.slice(0, local_header.length));
       setFileSelectOpen(false);
 
-      setSplitHteader([header()]);
-      setSplitSeries([series()]);
+      const indexArray = Array.from(
+        { length: header().length },
+        (_, index) => index,
+      );
+      setSplitIndex([indexArray]);
+      console.log(splitIndex());
     };
 
     reader.onerror = () => {
@@ -91,51 +95,74 @@ function Logging() {
         type: "error",
       });
     };
-
     reader.readAsText(file);
   }
 
-  //선택한 범례 가지고 오기
-  function getLegendInfo(id: string) {
-    const legendElements = document.querySelectorAll(`.u-series`);
-    const visible = Array.from(legendElements)
-      .filter((el) => !el.classList.contains("u-off"))
-      .map((el) => el.querySelector(".u-label")?.textContent || "")
-      .filter((label) => label !== "");
-    const hidden = Array.from(legendElements)
-      .filter((el) => el.classList.contains("u-off"))
-      .map((el) => el.querySelector(".u-label")?.textContent || "")
-      .filter((label) => label !== "");
-
-    const h1 = [];
-    const s1 = [];
-    const h2 = [];
-    const s2 = [];
-    for (let vis of visible) {
-      let index = visible.indexOf(vis);
-      h1.push(header()[index]);
-      s1.push(series()[index]);
-    }
-
-    for (let hid of hidden) {
-      let index = hidden.indexOf(hid);
-      h2.push(header()[index]);
-      s2.push(series()[index]);
-    }
-
-    setSplitHteader([h1, h2]);
-    setSplitSeries([s1, s2]);
-
-    console.log("Visible legends:", visible.slice(1));
-    console.log("Hidden legends:", hidden);
-    console.log(id);
-    console.log(splitHteader());
-    console.log(splitSeries());
+  function restChart() {
+    const indexArray = Array.from(
+      { length: header().length },
+      (_, index) => index,
+    );
+    setSplitIndex([indexArray]);
   }
 
-  // Plot이 렌더링된 후 범례 정보를 가져오기
-  createEffect(() => {});
+  // 선택한 범례 정보 가져오기
+  function getLegendInfo(id: string, index: number) {
+    const div = document.getElementById(id);
+    if (div) {
+      const legend_elements = div?.querySelectorAll(`.u-series`);
+      // 보여지는 범례
+      const visible = Array.from(legend_elements)
+        .filter((el) => !el.classList.contains("u-off"))
+        .map((el) => el.querySelector(".u-label")?.textContent || "")
+        .filter((label) => label !== "");
+      // 안보이는 범례
+      const hidden = Array.from(legend_elements)
+        .filter((el) => el.classList.contains("u-off"))
+        .map((el) => el.querySelector(".u-label")?.textContent || "")
+        .filter((label) => label !== "");
 
+      const visibles: number[] = [];
+      const hiddens: number[] = [];
+      // 보이는 범례 데이터 처리
+      for (let vis of visible.slice(1)) {
+        let index = header().indexOf(vis);
+        visibles.push(index);
+      }
+      // 숨겨진 범례 데이터 처리
+      for (let hid of hidden) {
+        let index = header().indexOf(hid);
+        hiddens.push(index);
+      }
+      // 분할된 헤더와 시리즈 업데이트
+      setSplitIndex((prev) => {
+        const updated = [...prev];
+        updated.splice(index, 1, visibles, hiddens);
+        return updated;
+      });
+    } else {
+      console.error("오류: div가 생성되지 않았습니다.");
+    }
+  }
+
+  // 상태에 따른 나누기 버튼 색상 설정
+  const getButtonStyles = (len: number) => {
+    if (len <= 1) {
+      return {
+        "background-color": token("colors.accent.5"),
+        color: token("colors.accent.1"),
+        "margin-top": "10px",
+      };
+    } else {
+      return {
+        "background-color": token("colors.accent.10"),
+        color: token("colors.accent.1"),
+        "margin-top": "10px",
+      };
+    }
+  };
+
+  // UI 렌더링
   return (
     <>
       <Portal>
@@ -218,32 +245,48 @@ function Logging() {
       </Toast.Toaster>
 
       <Show when={series().length > 0}>
-        <For each={splitSeries()}>
-          {(items, index) => (
-            <>
-              <Button
-                variant="ghost"
-                style={{
-                  "background-color": token("colors.accent.10"),
-                  color: token("colors.accent.1"),
-                  "margin-top": "10px",
-                }}
-                onclick={() => getLegendInfo(logName() + index() + "-wrapper")}
-              >
-                Split table
-              </Button>
-              <Plot
-                id={logName() + index()}
-                name={logName() + "(" + index() + ")"}
-                header={splitHteader()[0]}
-                series={items}
-                style={{
-                  width: "100%",
-                  height: `${100 / splitSeries().length}%`,
-                }}
-              />
-            </>
-          )}
+        <Button
+          variant="ghost"
+          style={{
+            "background-color": token("colors.accent.12"),
+            color: token("colors.accent.1"),
+            "margin-top": "10px",
+          }}
+          onclick={restChart}
+        >
+          Reset
+        </Button>
+        <For each={splitIndex()}>
+          {(_, index) => {
+            const currentHeader = () =>
+              splitIndex()[index()].map((i) => header()[i]);
+            const currentItems = () =>
+              splitIndex()[index()].map((i) => series()[i]);
+            return (
+              <>
+                <Button
+                  variant="ghost"
+                  style={getButtonStyles(currentHeader().length)}
+                  onClick={() =>
+                    getLegendInfo(logName() + index() + "-wrapper", index())
+                  }
+                  disabled={currentHeader().length <= 1}
+                >
+                  Split table
+                </Button>
+                <Plot
+                  id={logName() + index()}
+                  name={logName() + "(" + index() + ")"}
+                  header={currentHeader()}
+                  series={currentItems()}
+                  style={{
+                    width: "100%",
+                    height: `max(15rem, ${100 / splitIndex().length}%)`,
+                  }}
+                />
+              </>
+            );
+          }}
         </For>
       </Show>
     </>
