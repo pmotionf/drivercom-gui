@@ -10,7 +10,6 @@ import { Spinner } from "~/components/ui/spinner";
 import { Text } from "~/components/ui/text";
 import { Toast } from "~/components/ui/toast";
 import { Plot } from "~/components/Plot";
-import { token } from "styled-system/tokens";
 
 function Logging() {
   const toaster = Toast.createToaster({
@@ -114,6 +113,8 @@ function Logging() {
       .map((el) => el.querySelector(".u-label")?.textContent || "")
       .filter((label) => label !== "");
 
+    if (hidden.length == 0) return;
+
     const visibles: number[] = [];
     const hiddens: number[] = [];
     // 보이는 범례 데이터 처리
@@ -133,23 +134,6 @@ function Logging() {
       return updated;
     });
   }
-
-  // 상태에 따른 나누기 버튼 색상 설정
-  const getButtonStyles = (len: number) => {
-    if (len <= 1) {
-      return {
-        "background-color": token("colors.accent.5"),
-        color: token("colors.accent.1"),
-        "margin-top": "10px",
-      };
-    } else {
-      return {
-        "background-color": token("colors.accent.10"),
-        color: token("colors.accent.1"),
-        "margin-top": "10px",
-      };
-    }
-  };
 
   // UI 렌더링
   return (
@@ -236,39 +220,42 @@ function Logging() {
       <Show when={series().length > 0}>
         <Button
           variant="ghost"
-          style={{
-            "background-color": token("colors.accent.12"),
-            color: token("colors.accent.1"),
-            "margin-top": "10px",
-          }}
+          disabled={splitIndex().length <= 1}
           onclick={resetChart}
+          style={{
+            "margin-top": "0.5rem",
+            "margin-left": "1rem",
+          }}
         >
           Reset
         </Button>
         <For each={splitIndex().filter((arr) => arr.length > 0)}>
           {(item, index) => {
-            const currentHeader = () => item.map((i) => header()[i]);
-            const currentItems = () => item.map((i) => series()[i]);
+            const currentHeader = item.map((i) => header()[i]);
+            const currentItems = item.map((i) => series()[i]);
             const currentID = logName() + index();
+
             return (
               <>
                 <Button
-                  variant="ghost"
-                  style={getButtonStyles(currentHeader().length)}
                   onClick={() => getLegendInfo(currentID + "-wrapper", index())}
-                  disabled={currentHeader().length <= 1}
+                  disabled={currentHeader.length <= 1}
+                  style={{
+                    "margin-left": "1rem",
+                    "margin-top": `${index() == 0 ? "0.5rem" : "0px"}`,
+                  }}
                 >
-                  Split table
+                  Split Plot
                 </Button>
                 <Plot
                   id={currentID}
-                  name={logName() + "(" + index() + ")"}
-                  header={currentHeader()}
-                  series={currentItems()}
+                  name=""
+                  header={currentHeader}
+                  series={currentItems}
                   style={{
                     width: "100%",
-                    height: `calc(${100 - splitIndex().filter((arr) => arr.length > 0).length * 6}% / ${splitIndex().filter((arr) => arr.length > 0).length})`,
-                    "min-height": "12rem",
+                    height: `calc(100% / ${splitIndex().length} - 3rem`,
+                    "min-height": "18rem",
                   }}
                 />
               </>
