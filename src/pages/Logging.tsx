@@ -256,12 +256,10 @@ function Logging() {
         >
           Reset
         </Button>
-        <For each={splitIndex()}>
-          {(_, index) => {
-            const currentHeader = () =>
-              splitIndex()[index()].map((i) => header()[i]);
-            const currentItems = () =>
-              splitIndex()[index()].map((i) => series()[i]);
+        <For each={splitIndex().filter((arr) => arr.length > 0)}>
+          {(item, index) => {
+            const currentHeader = () => item.map((i) => header()[i]);
+            const currentItems = () => item.map((i) => series()[i]);
             return (
               <>
                 <Button
@@ -281,7 +279,7 @@ function Logging() {
                   series={currentItems()}
                   style={{
                     width: "100%",
-                    height: `max(15rem, ${100 / splitIndex().length}%)`,
+                    height: `max(15rem, ${100 / splitIndex().filter((arr) => arr.length > 0).length}%)`,
                   }}
                 />
               </>
