@@ -98,35 +98,27 @@ function Logging() {
     setSplitIndex([indexArray]);
   }
 
-  // 선택한 범례 정보 가져오기
-  function getLegendInfo(id: string, index: number) {
+  function splitPlot(id: string, index: number) {
     const div = document.getElementById(id)!;
-    const legend_elements = div?.querySelectorAll(`.u-series`);
+    const legend_elements = Array.from(div.querySelectorAll(`.u-series`));
     // 보여지는 범례
-    const visible = Array.from(legend_elements)
+    const visible = legend_elements
       .filter((el) => !el.classList.contains("u-off"))
       .map((el) => el.querySelector(".u-label")?.textContent || "")
       .filter((label) => label !== "");
     // 숨은 범례
-    const hidden = Array.from(legend_elements)
+    const hidden = legend_elements
       .filter((el) => el.classList.contains("u-off"))
       .map((el) => el.querySelector(".u-label")?.textContent || "")
       .filter((label) => label !== "");
 
     if (hidden.length == 0) return;
 
-    const visibles: number[] = [];
-    const hiddens: number[] = [];
-    // 보이는 범례 데이터 처리
-    for (let vis of visible.slice(1)) {
-      let index = header().indexOf(vis);
-      visibles.push(index);
-    }
-    // 숨겨진 범례 데이터 처리
-    for (let hid of hidden) {
-      let index = header().indexOf(hid);
-      hiddens.push(index);
-    }
+    const visibles: number[] = visible
+      .slice(1)
+      .map((el) => header().indexOf(el));
+    const hiddens: number[] = hidden.map((el) => header().indexOf(el));
+
     // 분할된 헤더와 시리즈 업데이트
     setSplitIndex((prev) => {
       const updated = [...prev];
@@ -229,16 +221,21 @@ function Logging() {
         >
           Reset
         </Button>
-        <For each={splitIndex().filter((arr) => arr.length > 0)}>
+        <For each={splitIndex()}>
           {(item, index) => {
+            // Header and items need not be derived state, as they will not
+            // change within a plot.
             const currentHeader = item.map((i) => header()[i]);
             const currentItems = item.map((i) => series()[i]);
-            const currentID = logName() + index();
+
+            // Current ID must be derived state as index can change based on
+            // added/merged plots.
+            const currentID = () => logName() + index();
 
             return (
               <>
                 <Button
-                  onClick={() => getLegendInfo(currentID + "-wrapper", index())}
+                  onClick={() => splitPlot(currentID() + "-wrapper", index())}
                   disabled={currentHeader.length <= 1}
                   style={{
                     "margin-left": "1rem",
@@ -248,7 +245,7 @@ function Logging() {
                   Split Plot
                 </Button>
                 <Plot
-                  id={currentID}
+                  id={currentID()}
                   name=""
                   header={currentHeader}
                   series={currentItems}
