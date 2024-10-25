@@ -72,6 +72,11 @@ function App(props: RouteSectionProps) {
       label: "Connect",
       disabled: true,
     },
+    driver: {
+      icon: IconPlugConnected,
+      label: "Driver",
+      disabled: false,
+    },
   };
   const [page, setPage] = createSignal("");
 
