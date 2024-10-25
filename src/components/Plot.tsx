@@ -79,6 +79,15 @@ export function Plot(props: PlotProps) {
         width: plot_element.clientWidth,
         height: plot_element.clientHeight,
         series: series,
+        cursor: {
+          lock: true,
+          focus: {
+            prox: 16,
+          },
+          sync: {
+            key: "chartSync",
+          },
+        },
       },
       [
         [...Array(props.series[0].length).keys()],
