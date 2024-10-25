@@ -1,14 +1,24 @@
+import { createSignal, Show } from "solid-js";
 import { Button } from "~/components/ui/button";
 import { Command } from "@tauri-apps/plugin-shell";
 
-const drivercom = Command.sidecar("binaries/drivercom");
-const output = await drivercom.execute();
-
 function Connect() {
-  function portList() {
-    console.log("result2: " + output.stdout);
+  const [portList, setPortList] = createSignal("");
+  const [porttErr, setPortErr] = createSignal("");
+  async function connectPort() {
+    const drivercom = Command.sidecar("binaries/drivercom", ["port.list"]);
+    const output = await drivercom.execute();
+    setPortList(output.stdout);
+    setPortErr(output.stderr);
   }
-  return <Button onclick={portList}>connect</Button>;
+  return (
+    <>
+      <Button onclick={connectPort}>connect</Button>
+      <Show when={portList() != "" && porttErr() == ""}>
+        <Button>{portList()}</Button>
+      </Show>
+    </>
+  );
 }
 
 export default Connect;
