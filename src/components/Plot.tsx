@@ -81,9 +81,6 @@ export function Plot(props: PlotProps) {
         series: series,
         cursor: {
           lock: true,
-          focus: {
-            prox: 16,
-          },
           sync: {
             key: "chartSync",
           },
