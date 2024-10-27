@@ -1,7 +1,9 @@
 name: Release
 
 on:
-  push:
+  workflow_run:
+    workflows: ['Test']
+    types: [completed]
     branches:
       - main
   workflow_dispatch:
@@ -31,8 +33,17 @@ jobs:
           tag: "${{ steps.parse-version.outputs.VERSION }}"
           repo: "pmotionf/drivercom-gui"
 
+      - name: Install dependencies
+        if: ${{ steps.check-tag.outputs.exists != 'true' }}
+        run: pnpm i
+
+      - name: Build Linux
+        if: ${{ steps.parse-version.outputs.result != 'true' }}
+        run: pnpm tauri build
+
       - name: Create release
         if: ${{ steps.check-tag.outputs.exists != 'true' }}
         run: |
           gh release create --generate-notes \
-            "${{ steps.parse-version.outputs.VERSION }}"
+            "${{ steps.parse-version.outputs.VERSION }}" \
+            "./src-tauri/target/release/bundle/rpm/*.rpm"
