@@ -4,6 +4,9 @@
   "description": "Capability for the main window",
   "windows": ["main"],
   "permissions": [
+    "core:webview:allow-internal-toggle-devtools",
+    "core:webview:default",
+
     "core:path:default",
     "core:event:default",
     "core:window:default",
@@ -15,7 +18,11 @@
       "identifier": "shell:allow-execute",
       "allow": [
         {
-          "args": ["port.list"],
+          "args": [
+            {
+              "validator": "*"
+            }
+          ],
           "name": "binaries/drivercom",
           "sidecar": true
         }
