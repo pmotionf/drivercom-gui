@@ -18,11 +18,7 @@
       "identifier": "shell:allow-execute",
       "allow": [
         {
-          "args": [
-            {
-              "validator": "*"
-            }
-          ],
+          "args": true,
           "name": "binaries/drivercom",
           "sidecar": true
         }
