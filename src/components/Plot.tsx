@@ -1,4 +1,11 @@
-import { JSX, createEffect, onMount, splitProps, useContext } from "solid-js";
+import {
+  JSX,
+  createEffect,
+  createSignal,
+  onMount,
+  splitProps,
+  useContext,
+} from "solid-js";
 
 import uPlot, { AlignedData } from "uplot";
 import "uplot/dist/uPlot.min.css";
@@ -17,7 +24,6 @@ import { IconSettings } from "@tabler/icons-solidjs";
 import { Portal, render } from "solid-js/web";
 import { Dialog } from "~/components/ui/dialog";
 import { parseColor } from "@ark-ui/solid";
-import { createStore } from "solid-js/store";
 import { Stack } from "styled-system/jsx";
 
 export type PlotProps = JSX.HTMLAttributes<HTMLDivElement> & {
@@ -119,8 +125,6 @@ export function Plot(props: PlotProps) {
     for (var i = 0; i < props.header.length; i++) {
       addOptionsButton(props.id, uplot, i + 1);
     }
-
-    addStrokeColorList(props.series.length);
   }
 
   onMount(() => {
@@ -189,7 +193,7 @@ export function Plot(props: PlotProps) {
           style={{
             float: "left",
             width: "calc(100% - 15em)",
-            height: "calc(100% - 2rem)",
+            height: "calc(100% - 0.5rem)",
           }}
         ></div>
         <style>{legend_css}</style>
@@ -197,9 +201,9 @@ export function Plot(props: PlotProps) {
           id={props.id + "-legend"}
           style={{
             float: "left",
-            "margin-top": "2rem",
-            "margin-bottom": "2rem",
-            height: "calc(100% - 4rem - 2rem)",
+            "margin-top": "1rem",
+            "margin-bottom": "1rem",
+            height: "calc(100% - 2rem - 0.5rem)",
             width: "15em",
             overflow: "auto",
           }}
@@ -215,21 +219,22 @@ type SettingButtonProps = {
   index: number;
 };
 
-var strokeColorList = ["#ffffff"];
-const [colorList, setColorList] = createStore(strokeColorList);
-
 function SettingButton(props: SettingButtonProps) {
-  const lastColor = colorList[props.index];
+  const [color, setColor] = createSignal("");
+  const div = document.getElementById(props.uplotId + "-wrapper");
+  const markers = div!.querySelectorAll(`.u-marker`);
+  const marker = markers.item(props.index) as HTMLElement;
+  const prevStrokeColor = getComputedStyle(marker).borderColor;
+  setColor(prevStrokeColor);
 
   const changeColor = (index: number) => {
     if (props.uplot.plot) {
       var series = props.uplot.plot!.series[index];
       props.uplot.plot.delSeries(index);
       props.uplot.plot.addSeries(
-        { stroke: colorList[index], label: series.label! },
+        { stroke: color(), label: series.label! },
         index,
       );
-      setColorList(index, colorList[index]);
       props.uplot.plot.redraw();
       addOptionsButton(props.uplotId, props.uplot, index);
     }
@@ -248,13 +253,9 @@ function SettingButton(props: SettingButtonProps) {
           <Dialog.Content>
             <Stack gap="8" p="6">
               <ColorPicker.Root
-                value={parseColor(colorList[props.index])}
-                onValueChange={(e) =>
-                  setColorList(props.index, e.valueAsString)
-                }
-                onValueChangeEnd={(e) =>
-                  setColorList(props.index, e.valueAsString)
-                }
+                value={parseColor(color())}
+                onValueChange={(e) => setColor(e.valueAsString)}
+                onValueChangeEnd={(e) => setColor(e.valueAsString)}
                 open={true}
               >
                 <ColorPicker.Label>
@@ -265,17 +266,9 @@ function SettingButton(props: SettingButtonProps) {
                     channel="hex"
                     asChild={(inputProps) => <Input {...inputProps()} />}
                   />
-                  <ColorPicker.Trigger
-                    asChild={(triggerProps) => (
-                      <IconButton
-                        variant="outline"
-                        {...triggerProps()}
-                        isActive={true}
-                      >
-                        <ColorPicker.ValueSwatch />
-                      </IconButton>
-                    )}
-                  />
+                  <IconButton variant="outline">
+                    <ColorPicker.ValueSwatch />
+                  </IconButton>
                 </ColorPicker.Control>
                 <ColorPicker.Area>
                   <ColorPicker.AreaBackground />
@@ -309,21 +302,19 @@ function SettingButton(props: SettingButtonProps) {
               <Dialog.CloseTrigger>
                 <Stack direction="row" width="full">
                   <Button
+                    variant={"outline"}
+                    width={"full"}
+                    onClick={()=>setColor(prevStrokeColor)}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
                     width={"full"}
                     onClick={() => {
                       changeColor(props.index);
                     }}
                   >
                     Save
-                  </Button>
-                  <Button
-                    variant={"outline"}
-                    width={"full"}
-                    onClick={() => {
-                      setColorList(props.index, lastColor);
-                    }}
-                  >
-                    Cancel
                   </Button>
                 </Stack>
               </Dialog.CloseTrigger>
@@ -368,18 +359,6 @@ function getComputedCSSVariableValue(variable: string) {
   }
 
   return value.trim();
-}
-
-function addStrokeColorList(index: number) {
-  if (index <= kelly_colors_hex.length) {
-    strokeColorList.push(...kelly_colors_hex.slice(0, index));
-  } else {
-    let i = 0;
-    while (i < index) {
-      strokeColorList.push(kelly_colors_hex[i % kelly_colors_hex.length]);
-      i++;
-    }
-  }
 }
 
 const kelly_colors_hex = [
