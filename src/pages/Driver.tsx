@@ -1,6 +1,8 @@
 import { createSignal, Show, For } from "solid-js";
 import { Button } from "~/components/ui/button";
 import { Text } from "~/components/ui/text";
+import { Input } from "~/components/ui/input";
+
 import { Command } from "@tauri-apps/plugin-shell";
 import { ConfigForm } from "~/components/ConfigForm";
 
@@ -10,6 +12,8 @@ function Connect() {
   const [buttonList, setButtonList] = createSignal<string[]>([]);
   const [buttonClicked, setButtonClicked] = createSignal<boolean[]>([]);
   const [help, setHelp] = createSignal("");
+  const [inputValue, setInputValue] = createSignal("");
+  const [savedValue, setSavedValue] = createSignal("");
 
   const [jsonData, setJsonData] = createSignal({}); //json 파일
   const commands = ["version", "firmware", "config", "log"];
@@ -83,13 +87,26 @@ function Connect() {
           "config.get",
         ]);
         const config_output = await config.execute();
-        let jsonObject = JSON.parse(config_output.stdout);
+        const jsonObject = JSON.parse(config_output.stdout);
         setJsonData(jsonObject);
         break;
       case "log":
         log_status = true;
         console.log(log_status);
     }
+  }
+
+  async function inputCommnad(port: string) {
+    const commnd = Command.sidecar("binaries/drivercom", [
+      "--port",
+      port,
+      inputValue(),
+    ]);
+    const commnd_output = await commnd.execute();
+    console.log("out: " + commnd_output.stdout);
+    console.log("err: " + commnd_output.stderr);
+    setSavedValue(commnd_output.stdout);
+    setInputValue("");
   }
 
   return (
@@ -131,6 +148,24 @@ function Connect() {
                   {" "}
                   stop
                 </Button>
+                <br />
+                <Input
+                  style={{
+                    "margin-left": "1em",
+                    "min-width": "8em",
+                    "max-width": "12em",
+                  }}
+                  type="text"
+                  value={inputValue()}
+                  onInput={(e) => setInputValue(e.currentTarget.value)}
+                  placeholder="명령어를 입력하세요."
+                ></Input>
+                <Button onclick={() => inputCommnad(name.slice(1, -1))}>
+                  run
+                </Button>
+                <Show when={savedValue()}>
+                  <Text>입력 명령: {savedValue()}</Text>
+                </Show>
               </Show>
             </>
           )}
