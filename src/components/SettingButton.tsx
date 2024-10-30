@@ -1,5 +1,5 @@
 import { ColorPicker } from "~/components/ui/color-picker";
-import { For } from "solid-js";
+import { For, Show } from "solid-js";
 import { IconButton } from "~/components/ui/icon-button";
 import { Button } from "~/components/ui/button";
 import { Text } from "~/components/ui/text";
@@ -16,8 +16,9 @@ import { parseColor } from "@ark-ui/solid";
 import { Stack } from "styled-system/jsx";
 import { JSX, createSignal } from "solid-js";
 import { ToggleGroup } from "~/components/ui/toggle-group";
+import { savedColorList, setSavedColorList } from "~/GlobalState";
 
-export type SettingButtonListProps = JSX.HTMLAttributes<HTMLElement> & {
+export type SettingButtonProps = JSX.HTMLAttributes<HTMLElement> & {
   uplotId: string;
   uplot: PlotContainer;
   index: number;
@@ -27,17 +28,17 @@ type PlotContainer = {
   plot: uPlot | null;
 };
 
-export function SettingButton(props: SettingButtonListProps) {
-  const [color, setColor] = createSignal("");
-  const [style, setStyle] = createSignal("");
-  const [strokeWidth, setStrokeWidth] = createSignal(
-    props.uplot.plot!.series[props.index].width,
-  );
+export function SettingButton(props: SettingButtonProps) {
   const div = document.getElementById(props.uplotId + "-wrapper");
   const markers = div!.querySelectorAll(`.u-marker`);
   const marker = markers.item(props.index) as HTMLElement;
   const prevStrokeColor = getComputedStyle(marker).borderColor;
-  setColor(prevStrokeColor);
+
+  const [color, setColor] = createSignal(prevStrokeColor);
+  const [style, setStyle] = createSignal("");
+  const [strokeWidth, setStrokeWidth] = createSignal(
+    props.uplot.plot!.series[props.index].width,
+  );
 
   var dash = props.uplot.plot!.series[props.index].dash;
   if (dash === undefined) setStyle("line") && dash === undefined;
@@ -87,8 +88,21 @@ export function SettingButton(props: SettingButtonListProps) {
     setStrokeWidth(parseInt(event.currentTarget.value));
   };
 
+  const addColor = (newColor: string) => {
+    if (newColor === prevStrokeColor) {
+      setSavedColorList(savedColorList());
+    } else {
+      setSavedColorList((prevColor) => {
+        var updatedColors = [newColor, ...prevColor];
+        if (updatedColors.length >= 8)
+          updatedColors = updatedColors.slice(0, 7);
+        return updatedColors;
+      });
+    }
+  };
+
   return (
-    <Dialog.Root>
+    <Dialog.Root closeOnInteractOutside={false}>
       <Dialog.Trigger
         asChild={(triggerProps) => (
           <IconButton
@@ -170,6 +184,24 @@ export function SettingButton(props: SettingButtonListProps) {
                   )}
                 </For>
               </ColorPicker.SwatchGroup>
+              <Show when={savedColorList().length >= 1}>
+                <Text
+                  size="xs"
+                  fontWeight="bold"
+                  style={{ "margin-top": "0.2rem" }}
+                >
+                  Saved Color
+                </Text>
+                <ColorPicker.SwatchGroup>
+                  <For each={savedColorList()}>
+                    {(color) => (
+                      <ColorPicker.SwatchTrigger value={color}>
+                        <ColorPicker.Swatch value={color} />
+                      </ColorPicker.SwatchTrigger>
+                    )}
+                  </For>
+                </ColorPicker.SwatchGroup>
+              </Show>
             </ColorPicker.Root>
             <Stack>
               <Stack direction="row" mt="2" width="full">
@@ -229,7 +261,10 @@ export function SettingButton(props: SettingButtonListProps) {
                   </Button>
                   <Button
                     width={"full"}
-                    onClick={() => changeStyle(props.index)}
+                    onClick={() => {
+                      changeStyle(props.index);
+                      addColor(color());
+                    }}
                   >
                     Save
                   </Button>
