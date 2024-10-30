@@ -10,10 +10,18 @@ import { ConfigForm } from "~/components/ConfigForm";
 
 import { IconChevronsDown, IconChevronsUp } from "@tabler/icons-solidjs";
 
+import { useLocation } from "@solidjs/router";
+
 function Configuration() {
   const [jsonData, setJsonData] = createSignal({}); //json 파일
   const [fileName, setFileName] = createSignal("");
   const [fileSelectOpen, setFileSelectOpen] = createSignal(true);
+
+  const location = useLocation();
+  const params = new URLSearchParams(location.search);
+  const json = params.get("data");
+  const data = JSON.parse(json as string); // JSON 파싱
+  console.log("전달 받은 값: " + data);
 
   //json 파일 값 불러오기
   function loadConfig(details: FileUploadFileAcceptDetails) {

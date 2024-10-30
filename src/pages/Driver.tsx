@@ -1,10 +1,14 @@
-import { createSignal, Show, For } from "solid-js";
+import { createSignal } from "solid-js";
 import { Button } from "~/components/ui/button";
 import { Text } from "~/components/ui/text";
-import { Input } from "~/components/ui/input";
 
 import { Command } from "@tauri-apps/plugin-shell";
-import { ConfigForm } from "~/components/ConfigForm";
+
+import { IconChevronDown } from "@tabler/icons-solidjs";
+import { Accordion } from "~/components/ui/accordion";
+import { Box } from "styled-system/jsx";
+
+import { useNavigate } from "@solidjs/router";
 
 function Connect() {
   const [portList, setPortList] = createSignal("");
@@ -14,9 +18,12 @@ function Connect() {
   const [help, setHelp] = createSignal("");
   const [inputValue, setInputValue] = createSignal("");
   const [savedValue, setSavedValue] = createSignal("");
+  const [version, setVersion] = createSignal("");
 
   const [jsonData, setJsonData] = createSignal({}); //json 파일
-  const commands = ["version", "firmware", "config", "log"];
+  const commands = ["firmware", "config", "log"];
+
+  const navigate = useNavigate();
 
   let log_status = false;
 
@@ -28,6 +35,10 @@ function Connect() {
     setPortList(output.stdout);
     setstdtErr(output.stderr);
     setButtonClicked(btn_list.map(() => false));
+
+    const version = Command.sidecar("binaries/drivercom", ["version"]);
+    const version_output = await version.execute();
+    setVersion(version_output.stdout);
   }
 
   function portClick(index: number) {
@@ -109,68 +120,60 @@ function Connect() {
     setInputValue("");
   }
 
+  function CreateCommandButton(port: string) {
+    return (
+      <div id="btn">
+        <Button>{"firmware"}</Button>
+        <Button onclick={() => SwitchConfigPage(port)}>{"config"}</Button>
+        <Button>{"log"}</Button>
+      </div>
+    );
+  }
+
+  async function SwitchConfigPage(port: string) {
+    const config = Command.sidecar("binaries/drivercom", [
+      "--port",
+      port,
+      "config.get",
+    ]);
+    const config_output = await config.execute();
+    const dataString = encodeURIComponent(JSON.stringify(config_output.stdout));
+    navigate(`/Configuration?data=${dataString}`);
+  }
+
   return (
     <>
+      <Text size="xl" fontWeight="bold">
+        Controller connection
+      </Text>
       <Button onclick={connectPort}>connect</Button>
-      <Show when={portList() != "" && stdErr() == ""}>
-        <Text>{buttonList()}</Text>
-        <For each={buttonList()}>
-          {(name, index) => (
-            <>
-              <Button onclick={() => portClick(index())}>
-                {name.slice(1, -1)}
-              </Button>{" "}
-              <br />
-              <Show when={buttonClicked()[index()]}>
-                <For each={commands}>
-                  {(item, index) => (
-                    <>
-                      <Button
-                        onclick={() => commandClick(index(), name.slice(1, -1))}
-                      >
-                        {item}
-                      </Button>
-                    </>
-                  )}
-                </For>
-                <Text>{help()}</Text>
-                <Show when={Object.keys(jsonData()).length > 0}>
-                  <div style={{ display: "flex", "justify-content": "center" }}>
-                    <ConfigForm label={"config.get"} config={jsonData()} />
-                  </div>
-                </Show>
-
-                <Button onclick={() => logStart(name.slice(1, -1))}>
-                  {" "}
-                  start
-                </Button>
-                <Button onclick={() => logStop(name.slice(1, -1))}>
-                  {" "}
-                  stop
-                </Button>
-                <br />
-                <Input
-                  style={{
-                    "margin-left": "1em",
-                    "min-width": "8em",
-                    "max-width": "12em",
-                  }}
-                  type="text"
-                  value={inputValue()}
-                  onInput={(e) => setInputValue(e.currentTarget.value)}
-                  placeholder="명령어를 입력하세요."
-                ></Input>
-                <Button onclick={() => inputCommnad(name.slice(1, -1))}>
-                  run
-                </Button>
-                <Show when={savedValue()}>
-                  <Text>입력 명령: {savedValue()}</Text>
-                </Show>
-              </Show>
-            </>
-          )}
-        </For>
-      </Show>
+      <Box
+        bg="accent.a2"
+        p="4"
+        borderRadius="l3"
+        mt="6"
+        height="100%"
+        overflowY="auto"
+      >
+        <div id="container">
+          <Accordion.Root multiple={true}>
+            {buttonList().map((item) => (
+              <Accordion.Item value={item} ml={"16px"}>
+                <Accordion.ItemTrigger>
+                  {item.slice(1, -1)}
+                  <Accordion.ItemIndicator>
+                    <IconChevronDown />
+                  </Accordion.ItemIndicator>
+                </Accordion.ItemTrigger>
+                <Accordion.ItemContent>
+                  <Text>{"drivercom version : " + version()}</Text>
+                  {CreateCommandButton(item.slice(1, -1))}
+                </Accordion.ItemContent>
+              </Accordion.Item>
+            ))}
+          </Accordion.Root>
+        </div>
+      </Box>
     </>
   );
 }
