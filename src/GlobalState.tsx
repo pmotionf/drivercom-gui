@@ -1,4 +1,4 @@
-import { createContext, createSignal } from "solid-js";
+import { createContext } from "solid-js";
 import { createStore, SetStoreFunction } from "solid-js/store";
 
 const [globalState, setGlobalState] = createStore({
@@ -16,6 +16,3 @@ export const GlobalStateContext = createContext<{
   globalState: GlobalState;
   setGlobalState: SetStoreFunction<GlobalState>;
 }>();
-
-//Setting Button State
-export const [savedColorList, setSavedColorList] = createSignal<string[]>([]);
