@@ -99,11 +99,22 @@ function Logging() {
       (_, index) => index,
     );
     setSplitIndex([indexArray]);
+    // 체크박스 초기화
+    setSelectPlot([]);
   }
 
-  function splitPlot(id: string, index: number) {
-    const div = document.getElementById(id)!;
+  function splitPlot(index: number) {
+    console.log(logName() + index + "-legend", index);
+    const div = document.getElementById(logName() + index + "-legend")!;
+    if (!div) {
+      console.error("차트 요소를 찾을 수 없습니다.");
+      return;
+    }
     const legend_elements = Array.from(div.querySelectorAll(`.u-series`));
+    if (legend_elements.length === 0) {
+      console.error("레전드 요소를 찾을 수 없습니다.");
+      return;
+    }
 
     console.log(div, legend_elements);
     // 보여지는 범례
@@ -130,6 +141,8 @@ function Logging() {
       updated.splice(index, 1, visibles, hiddens);
       return updated;
     });
+    // 체크박스 초기화
+    setSelectPlot([]);
   }
 
   const checkboxChange = (id: string, checked: boolean) => {
@@ -155,9 +168,10 @@ function Logging() {
 
       // 병합된 데이터를 첫 번째 선택된 위치에 추가
       newSplitIndex.splice(parseInt(inedxs[0]), 0, merged);
-
       return newSplitIndex;
     });
+    // 체크박스 초기화
+    setSelectPlot([]);
   }
 
   // UI 렌더링
@@ -257,12 +271,7 @@ function Logging() {
         <br />
 
         <Button
-          onClick={() =>
-            splitPlot(
-              logName() + selectPlot() + "-legend",
-              Number(selectPlot()),
-            )
-          }
+          onClick={() => splitPlot(Number(selectPlot()))}
           //disabled={splitIndex().length <= 1}
           style={{
             "margin-left": "1rem",
