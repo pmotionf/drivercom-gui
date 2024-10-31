@@ -15,12 +15,14 @@ function Configuration() {
   const [jsonData, setJsonData] = createSignal({}); //json 파일
   const [fileName, setFileName] = createSignal("");
   const [fileSelectOpen, setFileSelectOpen] = createSignal(true);
+  const [port, setPort] = createSignal("");
 
   //Driver 페이지에서 전달되는 값 저장
   const location = useLocation();
   createEffect(() => {
     console.log("데이터를 한번만 가져옵니다:", location.pathname);
     const params = new URLSearchParams(location.search);
+    const port = params.get("port") as string;
     const driver_json = JSON.parse(params.get("data") as string); // JSON 파싱
     console.log(driver_json);
     if (driver_json) {
@@ -28,6 +30,7 @@ function Configuration() {
         const driver_data = JSON.parse(driver_json);
         setJsonData({ ...driver_data });
         setFileName("Driver Config");
+        setPort(port);
         setFileSelectOpen(false);
       } catch (error) {
         console.error("JSON 파싱 에러:", error);
@@ -101,7 +104,7 @@ function Configuration() {
       </Collapsible.Root>
       <Show when={Object.keys(jsonData()).length > 0}>
         <div style={{ display: "flex", "justify-content": "center" }}>
-          <ConfigForm label={fileName()} config={jsonData()} />
+          <ConfigForm label={fileName()} config={jsonData()} port={port()} />
         </div>
       </Show>
     </>

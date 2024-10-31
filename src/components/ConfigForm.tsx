@@ -10,10 +10,12 @@ import { FormLabel } from "~/components/ui/form-label";
 import { Input } from "~/components/ui/input";
 
 import { IconChevronDown } from "@tabler/icons-solidjs";
+import { Command } from "@tauri-apps/plugin-shell";
 
 export type ConfigFormProps = JSX.HTMLAttributes<HTMLFormElement> & {
   label: string;
   config: object;
+  port: string;
 };
 
 export function ConfigForm(props: ConfigFormProps) {
@@ -23,6 +25,23 @@ export function ConfigForm(props: ConfigFormProps) {
   createEffect(() => {
     setConfig(props.config);
   });
+
+  async function sendConfig(port: string) {
+    console.log(port);
+    if (port) {
+      const data = JSON.stringify(config);
+      const drivercom = Command.sidecar("binaries/drivercom", [
+        "--port",
+        port,
+        "config.set",
+        "-f",
+        data,
+      ]); //drivercom.cli 수정 필요(file이 아닌 string 전달)
+      const output = await drivercom.execute();
+      console.log("결과: " + output.stdout);
+      console.log("에러: " + output.stderr);
+    }
+  }
 
   return (
     <form {...rest}>
@@ -67,6 +86,18 @@ export function ConfigForm(props: ConfigFormProps) {
           }}
         >
           Save
+        </Button>
+
+        <Button
+          type="button"
+          style={{
+            float: "right",
+            "margin-top": "1em",
+          }}
+          disabled={props.port == ""}
+          onclick={() => sendConfig(props.port)}
+        >
+          Send_Driver
         </Button>
       </fieldset>
     </form>
