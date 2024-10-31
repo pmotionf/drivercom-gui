@@ -1,4 +1,4 @@
-import { For, JSX, splitProps } from "solid-js";
+import { For, JSX, splitProps, createEffect } from "solid-js";
 import { createStore } from "solid-js/store";
 import { save } from "@tauri-apps/plugin-dialog";
 import { writeTextFile } from "@tauri-apps/plugin-fs";
@@ -19,7 +19,10 @@ export type ConfigFormProps = JSX.HTMLAttributes<HTMLFormElement> & {
 export function ConfigForm(props: ConfigFormProps) {
   const [, rest] = splitProps(props, ["config"]);
 
-  const [config] = createStore(props.config);
+  const [config, setConfig] = createStore(props.config);
+  createEffect(() => {
+    setConfig(props.config);
+  });
 
   return (
     <form {...rest}>

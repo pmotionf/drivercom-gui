@@ -20,22 +20,20 @@ function Configuration() {
   const location = useLocation();
   createEffect(() => {
     console.log("데이터를 한번만 가져옵니다:", location.pathname);
-      const params = new URLSearchParams(location.search);
-      const driver_json = JSON.parse(params.get("data") as string); // JSON 파싱
-      console.log(driver_json);
-      if (driver_json) {
-        try {
-          const driver_data = JSON.parse(driver_json);
-          setJsonData({...driver_data});
-          setFileName("Driver Config");
-          setFileSelectOpen(false);
-        } catch (error) {
-          console.error("JSON 파싱 에러:", error);
-        }
+    const params = new URLSearchParams(location.search);
+    const driver_json = JSON.parse(params.get("data") as string); // JSON 파싱
+    console.log(driver_json);
+    if (driver_json) {
+      try {
+        const driver_data = JSON.parse(driver_json);
+        setJsonData({ ...driver_data });
+        setFileName("Driver Config");
+        setFileSelectOpen(false);
+      } catch (error) {
+        console.error("JSON 파싱 에러:", error);
       }
+    }
   });
-
-  
 
   //json 파일 값 불러오기
   function loadConfig(details: FileUploadFileAcceptDetails) {
