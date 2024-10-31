@@ -17,6 +17,32 @@ function Connect() {
   const [buttonClicked, setButtonClicked] = createSignal<boolean[]>([]);
   const [version, setVersion] = createSignal("");
 
+  const configure_type = [
+    ".driver_cycle",
+    ".driver_cycle_time",
+    " .sensor_angle",
+    ".sensor_average_angle",
+    ".sensor_unwrapped_angle",
+    ".sensor_distance",
+    ".sensor_velocity",
+    ".axis_current_d",
+    ".axis_current_q",
+    ".axis_reference_current_d",
+    ".axis_reference_current_q",
+    ".axis_vehicle_id",
+    ".axis_vehicle_position",
+    ".axis_average_angle_diff",
+    ".driver_com_bwd_sent",
+    ".driver_com_bwd_arrived",
+    ".driver_com_fwd_sent",
+    ".driver_com_fwd_arrived",
+    ".driver_com_bwd_sent_cycles",
+    ".driver_com_fwd_sent_cycles",
+    ".sensor_alarm",
+    ".sensor_valid",
+    ".sensor_active",
+  ]; //위 설정대로 파일 생성
+
   //json value 전달하기
   const navigate = useNavigate();
 
