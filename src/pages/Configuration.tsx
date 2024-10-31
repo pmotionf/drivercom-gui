@@ -1,4 +1,4 @@
-import { createSignal, Show } from "solid-js";
+import { createSignal, Show, createEffect } from "solid-js";
 import { Portal } from "solid-js/web";
 
 import { Button } from "~/components/ui/button";
@@ -7,7 +7,6 @@ import { FileUpload } from "~/components/ui/file-upload";
 import type { FileUploadFileAcceptDetails } from "@ark-ui/solid";
 
 import { ConfigForm } from "~/components/ConfigForm";
-
 import { IconChevronsDown, IconChevronsUp } from "@tabler/icons-solidjs";
 
 import { useLocation } from "@solidjs/router";
@@ -17,11 +16,26 @@ function Configuration() {
   const [fileName, setFileName] = createSignal("");
   const [fileSelectOpen, setFileSelectOpen] = createSignal(true);
 
+  //Driver 페이지에서 전달되는 값 저장
   const location = useLocation();
-  const params = new URLSearchParams(location.search);
-  const json = params.get("data");
-  const data = JSON.parse(json as string); // JSON 파싱
-  console.log("전달 받은 값: " + data);
+  createEffect(() => {
+    console.log("데이터를 한번만 가져옵니다:", location.pathname);
+      const params = new URLSearchParams(location.search);
+      const driver_json = JSON.parse(params.get("data") as string); // JSON 파싱
+      console.log(driver_json);
+      if (driver_json) {
+        try {
+          const driver_data = JSON.parse(driver_json);
+          setJsonData({...driver_data});
+          setFileName("Driver Config");
+          setFileSelectOpen(false);
+        } catch (error) {
+          console.error("JSON 파싱 에러:", error);
+        }
+      }
+  });
+
+  
 
   //json 파일 값 불러오기
   function loadConfig(details: FileUploadFileAcceptDetails) {

@@ -141,7 +141,7 @@ function ConfigObject(props: ConfigObjectProps) {
               </FormLabel>
             );
           }
-          if (typeof value === "number") {
+          if (typeof value === "number" || typeof value === "string") {
             return (
               <FormLabel
                 style={{
