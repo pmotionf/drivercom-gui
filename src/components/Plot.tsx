@@ -96,6 +96,7 @@ export function Plot(props: PlotProps) {
             key: "chartSync",
           },
         },
+        plugins: [wheelZoomPlugin(syncUplotArray, { factor: 0.75 })],
       },
       [
         [...Array(props.series[0].length).keys()],
@@ -103,6 +104,7 @@ export function Plot(props: PlotProps) {
       ] as AlignedData,
       plot_element,
     );
+    syncUplotArray.push(uplot.plot!);
 
     for (var i = 0; i < props.header.length; i++) {
       addOptionButton(props.id, uplot, i + 1);
@@ -210,6 +212,118 @@ function getComputedCSSVariableValue(variable: string) {
   return value.trim();
 }
 
+function wheelZoomPlugin(syncUplot: any, opts: any) {
+  let factor = opts.factor || 0.75;
+
+  let xMin: any, xMax: any, yMin: any, yMax: any, xRange: any, yRange: any;
+
+  function clamp(
+    nRange: any,
+    nMin: any,
+    nMax: any,
+    fRange: any,
+    fMin: any,
+    fMax: any,
+  ) {
+    if (nRange > fRange) {
+      nMin = fMin;
+      nMax = fMax;
+    } else if (nMin < fMin) {
+      nMin = fMin;
+      nMax = fMin + nRange;
+    } else if (nMax > fMax) {
+      nMax = fMax;
+      nMin = fMax - nRange;
+    }
+
+    return [nMin, nMax];
+  }
+
+  return {
+    hooks: {
+      ready: (u: any) => {
+        xMin = u.scales.x.min;
+        xMax = u.scales.x.max;
+        yMin = u.scales.y.min;
+        yMax = u.scales.y.max;
+
+        xRange = xMax - xMin;
+        yRange = yMax - yMin;
+
+        let over = u.over;
+        let rect = over.getBoundingClientRect();
+
+        // wheel drag pan
+        over.addEventListener("mousedown", (e: any) => {
+          if (e.button == 1) {
+            e.preventDefault();
+
+            let left0 = e.clientX;
+
+            let scXMin0 = u.scales.x.min;
+            let scXMax0 = u.scales.x.max;
+
+            let xUnitsPerPx = u.posToVal(1, "x") - u.posToVal(0, "x");
+
+            function onmove(e: any) {
+              e.preventDefault();
+
+              let left1 = e.clientX;
+
+              let dx = xUnitsPerPx * (left1 - left0);
+
+              u.setScale("x", {
+                min: scXMin0 - dx,
+                max: scXMax0 - dx,
+              });
+            }
+
+            function onup() {
+              document.removeEventListener("mousemove", onmove);
+              document.removeEventListener("mouseup", onup);
+            }
+
+            document.addEventListener("mousemove", onmove);
+            document.addEventListener("mouseup", onup);
+          }
+        });
+
+        // wheel scroll zoom
+        over.addEventListener("wheel", (e: any) => {
+          e.preventDefault();
+
+          let { left, top } = u.cursor;
+
+          let leftPct = left / rect.width;
+          let btmPct = 1 - top / rect.height;
+          let xVal = u.posToVal(left, "x");
+          let yVal = u.posToVal(top, "y");
+          let oxRange = u.scales.x.max - u.scales.x.min;
+          let oyRange = u.scales.y.max - u.scales.y.min;
+
+          let nxRange = e.deltaY < 0 ? oxRange * factor : oxRange / factor;
+          let nxMin = xVal - leftPct * nxRange;
+          let nxMax = nxMin + nxRange;
+          [nxMin, nxMax] = clamp(nxRange, nxMin, nxMax, xRange, xMin, xMax);
+
+          let nyRange = e.deltaY < 0 ? oyRange * factor : oyRange / factor;
+          let nyMin = yVal - btmPct * nyRange;
+          let nyMax = nyMin + nyRange;
+          [nyMin, nyMax] = clamp(nyRange, nyMin, nyMax, yRange, yMin, yMax);
+
+          syncUplot.forEach((uplot: any) => {
+            uplot.batch(() => {
+              uplot.setScale("x", { min: nxMin, max: nxMax });
+
+              uplot.setScale("y", { min: nyMin, max: nyMax });
+            });
+          });
+        });
+      },
+    },
+  };
+}
+
 function addOptionButton(uplotId: string, uplot: PlotContainer, index: number) {
   const div = document.getElementById(uplotId + "-wrapper");
   if (div) {
@@ -249,3 +363,5 @@ const kelly_colors_hex = [
   "#F13A13", // Vivid Reddish Orange
   "#232C16", // Dark Olive Green
 ];
+
+const syncUplotArray: uPlot[] = [];
