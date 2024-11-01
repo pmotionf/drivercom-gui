@@ -1,10 +1,4 @@
-import {
-  JSX,
-  createEffect,
-  onMount,
-  splitProps,
-  useContext,
-} from "solid-js";
+import { JSX, createEffect, onMount, splitProps, useContext } from "solid-js";
 
 import uPlot, { AlignedData } from "uplot";
 import "uplot/dist/uPlot.min.css";
@@ -216,22 +210,18 @@ function getComputedCSSVariableValue(variable: string) {
   return value.trim();
 }
 
-function addOptionButton(
-  uplotId: string,
-  uplot: PlotContainer,
-  index: number,
-){
+function addOptionButton(uplotId: string, uplot: PlotContainer, index: number) {
   const div = document.getElementById(uplotId + "-wrapper");
   if (div) {
-      const legend_elements = div.querySelectorAll(`.u-series`);
-      var row = legend_elements.item(index) as HTMLTableRowElement;
-      var new_cell = row.insertCell(0);
-      const container = document.createElement("div");
-      new_cell.appendChild(container);
-      render(
-          () => <SettingButton uplotId={uplotId} uplot={uplot} index={index} />,
-          container
-      )
+    const legend_elements = div.querySelectorAll(`.u-series`);
+    var row = legend_elements.item(index) as HTMLTableRowElement;
+    var new_cell = row.insertCell(0);
+    const container = document.createElement("div");
+    new_cell.appendChild(container);
+    render(
+      () => <SettingButton uplotId={uplotId} uplot={uplot} index={index} />,
+      container,
+    );
   }
 }
 
@@ -259,4 +249,3 @@ const kelly_colors_hex = [
   "#F13A13", // Vivid Reddish Orange
   "#232C16", // Dark Olive Green
 ];
-
