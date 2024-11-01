@@ -20,11 +20,9 @@ function Configuration() {
   //Driver 페이지에서 전달되는 값 저장
   const location = useLocation();
   createEffect(() => {
-    console.log("데이터를 한번만 가져옵니다:", location.pathname);
     const params = new URLSearchParams(location.search);
     const port = params.get("port") as string;
     const driver_json = JSON.parse(params.get("data") as string); // JSON 파싱
-    console.log(driver_json);
     if (driver_json) {
       try {
         const driver_data = JSON.parse(driver_json);
@@ -33,7 +31,7 @@ function Configuration() {
         setPort(port);
         setFileSelectOpen(false);
       } catch (error) {
-        console.error("JSON 파싱 에러:", error);
+        //TODO: 에러 출력?
       }
     }
   });
