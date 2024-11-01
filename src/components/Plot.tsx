@@ -265,16 +265,56 @@ function wheelZoomPlugin(syncUplot: any, opts: any) {
 
             let xUnitsPerPx = u.posToVal(1, "x") - u.posToVal(0, "x");
 
+            let top0 = e.clientY;
+
+            let scYMin0 = u.scales.y.min;
+            let scYMax0 = u.scales.y.max;
+
+            let yUnitsPerPx = u.posToVal(1, "y") - u.posToVal(0, "y");
+
             function onmove(e: any) {
               e.preventDefault();
 
               let left1 = e.clientX;
+              const dx = xUnitsPerPx * (left1 - left0);
 
-              let dx = xUnitsPerPx * (left1 - left0);
+              let minXBoundary = scXMin0 - dx;
+              let maxXBoundary = scXMax0 - dx;
 
-              u.setScale("x", {
-                min: scXMin0 - dx,
-                max: scXMax0 - dx,
+              var scaleXMin = minXBoundary;
+              var scaleXMax = maxXBoundary;
+
+              if (xMin >= minXBoundary)
+                (scaleXMin = xMin), (scaleXMax = scXMax0);
+              else if (xMax <= maxXBoundary)
+                (scaleXMin = scXMin0), (scaleXMax = xMax);
+              else (scaleXMin = scaleXMin), (scaleXMax = scaleXMax);
+
+              let top1 = e.clientY;
+              const yDx = yUnitsPerPx * (top1 - top0);
+
+              let minYBoundary = scYMin0 - yDx;
+              let maxYBoundary = scYMax0 - yDx;
+
+              var scaleYMin = minYBoundary;
+              var scaleYMax = maxYBoundary;
+
+              if (yMin >= minYBoundary)
+                (scaleYMin = yMin), (scaleYMax = scYMax0);
+              else if (yMax <= maxYBoundary)
+                (scaleYMin = scYMin0), (scaleYMax = yMax);
+              else (scaleYMin = scaleYMin), (scaleYMax = scaleYMax);
+
+              syncUplot.forEach((uplot: uPlot) => {
+                uplot.setScale("x", {
+                  min: scaleXMin,
+                  max: scaleXMax,
+                });
+              });
+
+              u.setScale("y", {
+                min: scaleYMin,
+                max: scaleYMax,
               });
             }
 
@@ -311,13 +351,11 @@ function wheelZoomPlugin(syncUplot: any, opts: any) {
           let nyMax = nyMin + nyRange;
           [nyMin, nyMax] = clamp(nyRange, nyMin, nyMax, yRange, yMin, yMax);
 
-          syncUplot.forEach((uplot: any) => {
-            uplot.batch(() => {
-              uplot.setScale("x", { min: nxMin, max: nxMax });
-
-              uplot.setScale("y", { min: nyMin, max: nyMax });
-            });
+          syncUplot.forEach((uplot: uPlot) => {
+            uplot.setScale("x", { min: nxMin, max: nxMax });
           });
+
+          u.setScale("y", { min: nyMin, max: nyMax });
         });
       },
     },
