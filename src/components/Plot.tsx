@@ -5,6 +5,8 @@ import "uplot/dist/uPlot.min.css";
 
 import { GlobalStateContext } from "~/GlobalState";
 import { Heading } from "~/components/ui/heading";
+import { SettingButton } from "./SettingButton";
+import { render } from "solid-js/web";
 
 export type PlotProps = JSX.HTMLAttributes<HTMLDivElement> & {
   id: string;
@@ -13,13 +15,17 @@ export type PlotProps = JSX.HTMLAttributes<HTMLDivElement> & {
   series: number[][];
 };
 
+type PlotContainer = {
+  plot: uPlot | null;
+};
+
 export function Plot(props: PlotProps) {
   const [, rest] = splitProps(props, ["name", "header", "series", "id"]);
   var fg_default = getComputedCSSVariableValue("--colors-fg-default");
   var bg_muted = getComputedCSSVariableValue("--colors-bg-muted");
   const { globalState } = useContext(GlobalStateContext)!;
   var theme = globalState.theme;
-  var uplot: uPlot | null = null;
+  var uplot: PlotContainer = { plot: null };
 
   function createPlot() {
     var plot_element = document.getElementById(props.id)!;
@@ -43,12 +49,12 @@ export function Plot(props: PlotProps) {
     };
 
     // Save and restore existing plot state.
-    if (uplot) {
-      series = uplot.series;
-      scales = uplot.scales;
+    if (uplot.plot) {
+      series = uplot.plot.series;
+      scales = uplot.plot.scales;
     }
 
-    uplot = new uPlot(
+    uplot.plot = new uPlot(
       {
         scales: scales,
         axes: [
@@ -75,6 +81,11 @@ export function Plot(props: PlotProps) {
           mount: (_, el) => {
             legend_element.appendChild(el);
           },
+          markers: {
+            show: true,
+            width: 3,
+          },
+          values: [],
         },
         width: plot_element.clientWidth,
         height: plot_element.clientHeight,
@@ -92,6 +103,10 @@ export function Plot(props: PlotProps) {
       ] as AlignedData,
       plot_element,
     );
+
+    for (var i = 0; i < props.header.length; i++) {
+      addOptionButton(props.id, uplot, i + 1);
+    }
   }
 
   onMount(() => {
@@ -101,8 +116,8 @@ export function Plot(props: PlotProps) {
         if (entries.length == 0) return;
         const entry = entries[0];
         setTimeout(() => {
-          if (uplot) {
-            uplot.setSize({
+          if (uplot.plot) {
+            uplot.plot.setSize({
               width: entry.contentRect.width,
               height: entry.contentRect.height,
             });
@@ -141,6 +156,7 @@ export function Plot(props: PlotProps) {
       display: inline-block;
     }
   `;
+
   return (
     <>
       <div {...rest} id={props.id + "-wrapper"}>
@@ -178,7 +194,6 @@ export function Plot(props: PlotProps) {
     </>
   );
 }
-
 function getComputedCSSVariableValue(variable: string) {
   let value = getComputedStyle(document.documentElement).getPropertyValue(
     variable,
@@ -193,6 +208,21 @@ function getComputedCSSVariableValue(variable: string) {
   }
 
   return value.trim();
+}
+
+function addOptionButton(uplotId: string, uplot: PlotContainer, index: number) {
+  const div = document.getElementById(uplotId + "-wrapper");
+  if (div) {
+    const legend_elements = div.querySelectorAll(`.u-series`);
+    var row = legend_elements.item(index) as HTMLTableRowElement;
+    var new_cell = row.insertCell(0);
+    const container = document.createElement("div");
+    new_cell.appendChild(container);
+    render(
+      () => <SettingButton uplotId={uplotId} uplot={uplot} index={index} />,
+      container,
+    );
+  }
 }
 
 const kelly_colors_hex = [
