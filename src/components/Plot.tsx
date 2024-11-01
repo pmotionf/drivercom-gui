@@ -215,7 +215,7 @@ function getComputedCSSVariableValue(variable: string) {
 function wheelZoomPlugin(syncUplot: any, opts: any) {
   let factor = opts.factor || 0.75;
 
-  let xMin: any, xMax: any, yMin: any, yMax: any, xRange: any, yRange: any;
+  let xMin: any, xMax: any, yMin: any, yMax: any, xRange: any;
 
   function clamp(
     nRange: any,
@@ -248,7 +248,6 @@ function wheelZoomPlugin(syncUplot: any, opts: any) {
         yMax = u.scales.y.max;
 
         xRange = xMax - xMin;
-        yRange = yMax - yMin;
 
         let over = u.over;
         let rect = over.getBoundingClientRect();
@@ -332,30 +331,20 @@ function wheelZoomPlugin(syncUplot: any, opts: any) {
         over.addEventListener("wheel", (e: any) => {
           e.preventDefault();
 
-          let { left, top } = u.cursor;
+          let { left } = u.cursor;
 
           let leftPct = left / rect.width;
-          let btmPct = 1 - top / rect.height;
           let xVal = u.posToVal(left, "x");
-          let yVal = u.posToVal(top, "y");
           let oxRange = u.scales.x.max - u.scales.x.min;
-          let oyRange = u.scales.y.max - u.scales.y.min;
 
           let nxRange = e.deltaY < 0 ? oxRange * factor : oxRange / factor;
           let nxMin = xVal - leftPct * nxRange;
           let nxMax = nxMin + nxRange;
           [nxMin, nxMax] = clamp(nxRange, nxMin, nxMax, xRange, xMin, xMax);
 
-          let nyRange = e.deltaY < 0 ? oyRange * factor : oyRange / factor;
-          let nyMin = yVal - btmPct * nyRange;
-          let nyMax = nyMin + nyRange;
-          [nyMin, nyMax] = clamp(nyRange, nyMin, nyMax, yRange, yMin, yMax);
-
           syncUplot.forEach((uplot: uPlot) => {
             uplot.setScale("x", { min: nxMin, max: nxMax });
           });
-
-          u.setScale("y", { min: nyMin, max: nyMax });
         });
       },
     },
