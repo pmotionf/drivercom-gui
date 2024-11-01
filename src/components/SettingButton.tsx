@@ -40,15 +40,16 @@ export function SettingButton(props: SettingButtonProps) {
   const [color, setColor] = createSignal(prevStrokeColor);
   const [style, setStyle] = createSignal("");
   const [strokeWidth, setStrokeWidth] = createSignal(
-    props.uplot.plot!.series[props.index].width
+    props.uplot.plot!.series[props.index].width,
   );
-  
-  const [edittable, setEdittable] = createSignal(false) 
+
+  const [edittable, setEdittable] = createSignal(false);
 
   var dash = props.uplot.plot!.series[props.index].dash;
-  if (dash === undefined) setStyle("line") 
+  if (dash === undefined) setStyle("line");
   else if (JSON.stringify(dash) === JSON.stringify([0, 5])) setStyle("dot");
-  else if (JSON.stringify(dash) === JSON.stringify([20, 5])) setStyle("dottedLine");
+  else if (JSON.stringify(dash) === JSON.stringify([20, 5]))
+    setStyle("dottedLine");
 
   const changeStyle = (index: number) => {
     if (props.uplot.plot) {
@@ -136,7 +137,7 @@ export function SettingButton(props: SettingButtonProps) {
       />
       <Portal>
         <Dialog.Backdrop />
-        <Dialog.Positioner >
+        <Dialog.Positioner>
           <Dialog.Content p="6" width={"26rem"}>
             <ColorPicker.Root
               value={parseColor(color())}
@@ -179,60 +180,71 @@ export function SettingButton(props: SettingButtonProps) {
                   fontWeight="bold"
                   style={{ "margin-top": "0.4rem" }}
                 >
-                  <Show 
-                    when = {edittable() ===true}
-                    fallback = "Color Palette">
+                  <Show when={edittable() === true} fallback="Color Palette">
                     Edit Color Palette
                   </Show>
                 </Text>
-                <Button variant={"ghost"} width={"1rem"} size={"xs"} style={{padding: 0} } onClick = {() => setEdittable(!edittable())}>
+                <Button
+                  variant={"ghost"}
+                  width={"1rem"}
+                  size={"xs"}
+                  style={{ padding: 0 }}
+                  onClick={() => setEdittable(!edittable())}
+                >
                   <Show
                     when={edittable() === true}
-                    fallback={<IconAdjustmentsHorizontal style={{padding: "0"}}/>}
-                    >
-                    <IconCircleCheckFilled style={{padding: "0"}} />
+                    fallback={
+                      <IconAdjustmentsHorizontal style={{ padding: "0" }} />
+                    }
+                  >
+                    <IconCircleCheckFilled style={{ padding: "0" }} />
                   </Show>
                 </Button>
-                <Show when = {edittable() === true}>
-                  <IconButton 
-                    variant = "ghost" 
-                    size = "xs" 
-                    width={"1rem"} 
-                    style={{padding: 0, margin: 0}}
-                    onClick={()=>setCustomColorPalette(presets)}>
-                    <IconRefresh/>
+                <Show when={edittable() === true}>
+                  <IconButton
+                    variant="ghost"
+                    size="xs"
+                    width={"1rem"}
+                    style={{ padding: 0, margin: 0 }}
+                    onClick={() => setCustomColorPalette(presets)}
+                  >
+                    <IconRefresh />
                   </IconButton>
                 </Show>
               </Stack>
               <div
-                  style={{
-                    display: "grid",
-                    "grid-template-rows": "repeat(1, 1fr)",
-                    "grid-template-columns": "repeat(7 ,1fr)",
-                    gap : "0.3rem",
-                  }}
-                >
+                style={{
+                  display: "grid",
+                  "grid-template-rows": "repeat(1, 1fr)",
+                  "grid-template-columns": "repeat(7 ,1fr)",
+                  gap: "0.3rem",
+                }}
+              >
                 <For each={customColorPalette()}>
                   {(colors, i) => (
-                    <Show 
-                      when = {edittable() === false}
+                    <Show
+                      when={edittable() === false}
                       fallback={
                         <CustomColorPaletteButton color={colors} index={i()} />
                       }
                     >
-                    <ColorPicker.SwatchTrigger value={colors} style={{margin : "3.2px"}}>
-                      <ColorPicker.Swatch value={colors} />
-                    </ColorPicker.SwatchTrigger>
+                      <ColorPicker.SwatchTrigger
+                        value={colors}
+                        style={{ margin: "3.2px" }}
+                      >
+                        <ColorPicker.Swatch value={colors} />
+                      </ColorPicker.SwatchTrigger>
                     </Show>
                   )}
                 </For>
-                <Show when = {customColorPalette().length <= 13}>
-                  <IconButton 
-                    variant={"outline"} 
-                    onClick={()=> addCustomColorPalette(color())}
-                    style={{padding: 0, width: "1rem"}}
-                    size={"xs"}> 
-                    <IconPlus style = {{padding: "0"}}/>
+                <Show when={customColorPalette().length <= 13}>
+                  <IconButton
+                    variant={"outline"}
+                    onClick={() => addCustomColorPalette(color())}
+                    style={{ padding: 0, width: "1rem" }}
+                    size={"xs"}
+                  >
+                    <IconPlus style={{ padding: "0" }} />
                   </IconButton>
                 </Show>
               </div>
@@ -249,7 +261,7 @@ export function SettingButton(props: SettingButtonProps) {
                     display: "grid",
                     "grid-template-rows": "repeat(1, 1fr)",
                     "grid-template-columns": "repeat(7 ,1fr)",
-                    gap : "0.3rem"
+                    gap: "0.3rem",
                   }}
                 >
                   <For each={savedColorList()}>
@@ -258,7 +270,7 @@ export function SettingButton(props: SettingButtonProps) {
                         <ColorPicker.Swatch value={color} />
                       </ColorPicker.SwatchTrigger>
                     )}
-                    </For>
+                  </For>
                 </div>
               </Show>
             </ColorPicker.Root>
@@ -310,7 +322,7 @@ export function SettingButton(props: SettingButtonProps) {
               <Dialog.CloseTrigger>
                 <Stack direction="row-reverse" width="full" mt="1">
                   <Button
-                    style={{"margin-right" : "0"}}
+                    style={{ "margin-right": "0" }}
                     onClick={() => {
                       changeStyle(props.index);
                       addColor(color());
@@ -320,7 +332,6 @@ export function SettingButton(props: SettingButtonProps) {
                   </Button>
                   <Button
                     variant={"outline"}
-                    
                     onClick={() => {
                       setColor(prevStrokeColor);
                     }}
@@ -334,104 +345,115 @@ export function SettingButton(props: SettingButtonProps) {
         </Dialog.Positioner>
       </Portal>
     </Dialog.Root>
-
-
   );
 }
 
 type CustomColorPaletteButtonProps = {
   color: string;
   index: number;
-}
+};
 
-function CustomColorPaletteButton(props : CustomColorPaletteButtonProps ){
-  const [newColor, setNewColor] = createSignal(props.color)
-  
-  return(   
-    <ColorPicker.Root 
-      value={parseColor(props.color)} 
+function CustomColorPaletteButton(props: CustomColorPaletteButtonProps) {
+  const [newColor, setNewColor] = createSignal(props.color);
+
+  return (
+    <ColorPicker.Root
+      value={parseColor(props.color)}
       onValueChange={(e) => setNewColor(e.valueAsString)}
-      >
+    >
       <ColorPicker.Control>
         <ColorPicker.Trigger>
-            <IconButton variant={"ghost"} size={"xs"} style={{ padding: "0", width: "1rem"}}>
-            <ColorPicker.Swatch value = {props.color}/>
-            </IconButton>
+          <IconButton
+            variant={"ghost"}
+            size={"xs"}
+            style={{ padding: "0", width: "1rem" }}
+          >
+            <ColorPicker.Swatch value={props.color} />
+          </IconButton>
         </ColorPicker.Trigger>
       </ColorPicker.Control>
       <ColorPicker.Positioner>
         <ColorPicker.Content>
-        <Stack gap={"3"}>
-          <ColorPicker.Area width={"15rem"}>
-            <ColorPicker.AreaBackground/>
-            <ColorPicker.AreaThumb/>
-          </ColorPicker.Area>
-          <Stack gap = "2" direction={"row"}>
-            <IconButton variant={"outline"} size={"sm"} style = {{padding: 0, "margin-top":"1rem"}}>
-              <ColorPicker.ValueSwatch/>
-            </IconButton>
-            <Stack>
-            <ColorPicker.ChannelSlider channel="hue" width={"12rem"} mt = "2">
-              <ColorPicker.ChannelSliderTrack />
-              <ColorPicker.ChannelSliderThumb />
-            </ColorPicker.ChannelSlider>
-            <ColorPicker.ChannelInput
-              channel="hex"
-              asChild={(inputProps) => <Input {...inputProps()}
-              size={"xs"} />}
-            />
+          <Stack gap={"3"}>
+            <ColorPicker.Area width={"15rem"}>
+              <ColorPicker.AreaBackground />
+              <ColorPicker.AreaThumb />
+            </ColorPicker.Area>
+            <Stack gap="2" direction={"row"}>
+              <IconButton
+                variant={"outline"}
+                size={"sm"}
+                style={{ padding: 0, "margin-top": "1rem" }}
+              >
+                <ColorPicker.ValueSwatch />
+              </IconButton>
+              <Stack>
+                <ColorPicker.ChannelSlider channel="hue" width={"12rem"} mt="2">
+                  <ColorPicker.ChannelSliderTrack />
+                  <ColorPicker.ChannelSliderThumb />
+                </ColorPicker.ChannelSlider>
+                <ColorPicker.ChannelInput
+                  channel="hex"
+                  asChild={(inputProps) => (
+                    <Input {...inputProps()} size={"xs"} />
+                  )}
+                />
+              </Stack>
             </Stack>
           </Stack>
-        </Stack>
-        <Show when={savedColorList().length > 0}>
-          <Text size={"xs"} fontWeight={"bold"} style={{"margin-top": "0.5rem"}}>
-            Saved Color
-          </Text>
-          <div
-            style={{
-              display: "grid",
-              "grid-template-columns": "repeat(7 ,1fr)",
-              gap : "0.1rem",
-              padding: "0.2rem",
-              "margin-top" : "0.2rem"
-            }}
+          <Show when={savedColorList().length > 0}>
+            <Text
+              size={"xs"}
+              fontWeight={"bold"}
+              style={{ "margin-top": "0.5rem" }}
+            >
+              Saved Color
+            </Text>
+            <div
+              style={{
+                display: "grid",
+                "grid-template-columns": "repeat(7 ,1fr)",
+                gap: "0.1rem",
+                padding: "0.2rem",
+                "margin-top": "0.2rem",
+              }}
+            >
+              <For each={savedColorList()}>
+                {(color) => (
+                  <ColorPicker.SwatchTrigger value={color}>
+                    <ColorPicker.Swatch value={color} />
+                  </ColorPicker.SwatchTrigger>
+                )}
+              </For>
+            </div>
+          </Show>
+          <Stack
+            direction="row-reverse"
+            width="full"
+            style={{ "margin-top": "1rem", padding: "0.5rem" }}
           >
-            <For each={savedColorList()}>
-              {(color) => (
-                <ColorPicker.SwatchTrigger value={color}>
-                  <ColorPicker.Swatch value={color} />
-                </ColorPicker.SwatchTrigger>
-              )}
-            </For>
-          </div>
-        </Show>
-        <Stack 
-          direction="row-reverse"  
-          width="full" 
-          style={{"margin-top": "1rem", padding : "0.5rem"}}>
-        <Button
-          size={"xs"}
-          onClick={() => {
-            saveColor(newColor(), props.index);
-          }}
-        >
-          Save
-        </Button>
-        <Button
-          variant={"outline"}
-          size={"xs"}
-          onClick={() => {
-            removeColor(props.index);
-          }}
-        >
-          Delete
-        </Button>
-        </Stack>
+            <Button
+              size={"xs"}
+              onClick={() => {
+                saveColor(newColor(), props.index);
+              }}
+            >
+              Save
+            </Button>
+            <Button
+              variant={"outline"}
+              size={"xs"}
+              onClick={() => {
+                removeColor(props.index);
+              }}
+            >
+              Delete
+            </Button>
+          </Stack>
         </ColorPicker.Content>
       </ColorPicker.Positioner>
     </ColorPicker.Root>
-          
-  )
+  );
 }
 
 function addOptionButton(uplotId: string, uplot: PlotContainer, index: number) {
@@ -449,32 +471,32 @@ function addOptionButton(uplotId: string, uplot: PlotContainer, index: number) {
   }
 }
 
-function saveColor (newColor : any, index : number) {
+function saveColor(newColor: any, index: number) {
   setCustomColorPalette((prevColor) => {
-    var updatedColor = [...prevColor]
-    if (prevColor[index] !== newColor){
-      updatedColor[index] = newColor 
-      return updatedColor
+    var updatedColor = [...prevColor];
+    if (prevColor[index] !== newColor) {
+      updatedColor[index] = newColor;
+      return updatedColor;
     }
-    return updatedColor
-  })
+    return updatedColor;
+  });
 }
 
-function addCustomColorPalette(newColor : any) {
-  if(customColorPalette().length <= 13 ){
+function addCustomColorPalette(newColor: any) {
+  if (customColorPalette().length <= 13) {
     setCustomColorPalette((prevColor) => {
-      const updatedColor = [...prevColor, newColor]
-      return updatedColor
-    })
+      const updatedColor = [...prevColor, newColor];
+      return updatedColor;
+    });
   }
 }
 
 function removeColor(index: number) {
   setCustomColorPalette((prevColor) => {
-    var updatedColor = [...prevColor]
-    updatedColor.splice(index, 1)
-    return updatedColor
-  })
+    var updatedColor = [...prevColor];
+    updatedColor.splice(index, 1);
+    return updatedColor;
+  });
 }
 
 const presets = [
@@ -497,18 +519,18 @@ const presets = [
 const [savedColorList, setSavedColorList] = createSignal<string[]>([]);
 
 const [customColorPalette, setCustomColorPalette] = createSignal<string[]>([
-  "#820D37", 
-  "#B32357", 
-  "#CE2E68", 
-  "#E65A00", 
-  "#FD8305", 
-  "#FFC107", 
-  "#FFEC07", 
-  "#78B398", 
-  "#009E73", 
-  "#14C7BA", 
-  "#449AE4", 
-  "#3B3EDE", 
-  "#2C2E9C", 
+  "#820D37",
+  "#B32357",
+  "#CE2E68",
+  "#E65A00",
+  "#FD8305",
+  "#FFC107",
+  "#FFEC07",
+  "#78B398",
+  "#009E73",
+  "#14C7BA",
+  "#449AE4",
+  "#3B3EDE",
+  "#2C2E9C",
   "#6300AB",
-])
+]);
