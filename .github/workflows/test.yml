@@ -1,0 +1,34 @@
+name: Test
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [self-hosted]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Log masks
+        run: echo "::add-mask::$NAME_MASK"
+
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: pnpm i
+
+      - name: Run `prettier`
+        if: matrix.os == 'self-hosted'
+        run: pnpm exec prettier --check .
+
+      - name: Run `tsc`
+        if: matrix.os == 'self-hosted'
+        run: pnpm exec tsc
