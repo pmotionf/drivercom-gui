@@ -91,12 +91,96 @@ export function Plot(props: PlotProps) {
         height: plot_element.clientHeight,
         series: series,
         cursor: {
-          lock: true,
           sync: {
-            key: "chartSync",
+            key: "plotSync",
+          },
+          bind: {
+            mousedown: (u, _targ, handler) => {
+              return (e) => {
+                if (e.button == 0) {
+                  // Always release cursor lock if not control-clicking.
+                  if (!e.ctrlKey) {
+                    // @ts-ignore
+                    if (u.cursor._lock) {
+                      // @ts-ignore
+                      u.cursor._lock = false;
+                    }
+                  }
+
+                  // Only select/zoom when not panning or locking.
+                  if (!e.shiftKey && !e.ctrlKey) {
+                    handler(e);
+                  } else if (e.ctrlKey) {
+                    // Lock cursor in plot only when control-clicking.
+                    // @ts-ignore
+                    u.cursor._lock = !u.cursor._lock;
+                  } else if (e.shiftKey) {
+                    let xMin = 0;
+                    let xMax = u.data[0].length;
+
+                    let left0 = e.clientX;
+
+                    let scXMin0 = u.scales.x.min!;
+                    let scXMax0 = u.scales.x.max!;
+
+                    let xUnitsPerPx = u.posToVal(1, "x") - u.posToVal(0, "x");
+
+                    function onmove(e: any) {
+                      e.preventDefault();
+
+                      let left1 = e.clientX;
+                      const dx = xUnitsPerPx * (left1 - left0);
+
+                      let minXBoundary = scXMin0 - dx;
+                      let maxXBoundary = scXMax0 - dx;
+
+                      var scaleXMin = minXBoundary;
+                      var scaleXMax = maxXBoundary;
+
+                      if (xMin >= minXBoundary)
+                        (scaleXMin = xMin), (scaleXMax = scXMax0);
+                      else if (xMax <= maxXBoundary)
+                        (scaleXMin = scXMin0), (scaleXMax = xMax);
+                      else (scaleXMin = scaleXMin), (scaleXMax = scaleXMax);
+
+                      uPlot.sync("plotSync").plots.forEach((up) => {
+                        up.setScale("x", {
+                          min: scaleXMin,
+                          max: scaleXMax,
+                        });
+                      });
+                    }
+
+                    function onup() {
+                      document.removeEventListener("mousemove", onmove);
+                      document.removeEventListener("mouseup", onup);
+                    }
+
+                    document.addEventListener("mousemove", onmove);
+                    document.addEventListener("mouseup", onup);
+                  }
+                }
+
+                return null;
+              };
+            },
+            mouseup: (u, _targ, handler) => {
+              return (e) => {
+                if (e.button == 0) {
+                  // Prevent accidental micro-drags.
+                  if (u.select.width >= 10) {
+                    handler(e);
+                  } else {
+                    u.select.width = 0;
+                    handler(e);
+                  }
+                }
+                return null;
+              };
+            },
           },
         },
-        plugins: [wheelZoomPlugin(syncUplotArray, { factor: 0.75 })],
+        plugins: [wheelZoomPlugin({ factor: 0.75 })],
       },
       [
         [...Array(props.series[0].length).keys()],
@@ -212,18 +296,18 @@ function getComputedCSSVariableValue(variable: string) {
   return value.trim();
 }
 
-function wheelZoomPlugin(syncUplot: any, opts: any) {
+function wheelZoomPlugin(opts: any) {
   let factor = opts.factor || 0.75;
 
-  let xMin: any, xMax: any, yMin: any, yMax: any, xRange: any;
+  let xMin: number, xMax: number, xRange: number;
 
   function clamp(
-    nRange: any,
-    nMin: any,
-    nMax: any,
-    fRange: any,
-    fMin: any,
-    fMax: any,
+    nRange: number,
+    nMin: number,
+    nMax: number,
+    fRange: number,
+    fMin: number,
+    fMax: number,
   ) {
     if (nRange > fRange) {
       nMin = fMin;
@@ -241,91 +325,14 @@ function wheelZoomPlugin(syncUplot: any, opts: any) {
 
   return {
     hooks: {
-      ready: (u: any) => {
-        xMin = u.scales.x.min;
-        xMax = u.scales.x.max;
-        yMin = u.scales.y.min;
-        yMax = u.scales.y.max;
+      ready: (u: uPlot) => {
+        xMin = u.scales.x.min!;
+        xMax = u.scales.x.max!;
 
         xRange = xMax - xMin;
 
         let over = u.over;
         let rect = over.getBoundingClientRect();
-
-        // wheel drag pan
-        over.addEventListener("mousedown", (e: any) => {
-          if (e.button == 1) {
-            e.preventDefault();
-
-            let left0 = e.clientX;
-
-            let scXMin0 = u.scales.x.min;
-            let scXMax0 = u.scales.x.max;
-
-            let xUnitsPerPx = u.posToVal(1, "x") - u.posToVal(0, "x");
-
-            let top0 = e.clientY;
-
-            let scYMin0 = u.scales.y.min;
-            let scYMax0 = u.scales.y.max;
-
-            let yUnitsPerPx = u.posToVal(1, "y") - u.posToVal(0, "y");
-
-            function onmove(e: any) {
-              e.preventDefault();
-
-              let left1 = e.clientX;
-              const dx = xUnitsPerPx * (left1 - left0);
-
-              let minXBoundary = scXMin0 - dx;
-              let maxXBoundary = scXMax0 - dx;
-
-              var scaleXMin = minXBoundary;
-              var scaleXMax = maxXBoundary;
-
-              if (xMin >= minXBoundary)
-                (scaleXMin = xMin), (scaleXMax = scXMax0);
-              else if (xMax <= maxXBoundary)
-                (scaleXMin = scXMin0), (scaleXMax = xMax);
-              else (scaleXMin = scaleXMin), (scaleXMax = scaleXMax);
-
-              let top1 = e.clientY;
-              const yDx = yUnitsPerPx * (top1 - top0);
-
-              let minYBoundary = scYMin0 - yDx;
-              let maxYBoundary = scYMax0 - yDx;
-
-              var scaleYMin = minYBoundary;
-              var scaleYMax = maxYBoundary;
-
-              if (yMin >= minYBoundary)
-                (scaleYMin = yMin), (scaleYMax = scYMax0);
-              else if (yMax <= maxYBoundary)
-                (scaleYMin = scYMin0), (scaleYMax = yMax);
-              else (scaleYMin = scaleYMin), (scaleYMax = scaleYMax);
-
-              syncUplot.forEach((uplot: uPlot) => {
-                uplot.setScale("x", {
-                  min: scaleXMin,
-                  max: scaleXMax,
-                });
-              });
-
-              u.setScale("y", {
-                min: scaleYMin,
-                max: scaleYMax,
-              });
-            }
-
-            function onup() {
-              document.removeEventListener("mousemove", onmove);
-              document.removeEventListener("mouseup", onup);
-            }
-
-            document.addEventListener("mousemove", onmove);
-            document.addEventListener("mouseup", onup);
-          }
-        });
 
         // wheel scroll zoom
         over.addEventListener("wheel", (e: any) => {
@@ -333,17 +340,17 @@ function wheelZoomPlugin(syncUplot: any, opts: any) {
 
           let { left } = u.cursor;
 
-          let leftPct = left / rect.width;
-          let xVal = u.posToVal(left, "x");
-          let oxRange = u.scales.x.max - u.scales.x.min;
+          let leftPct = left! / rect.width;
+          let xVal = u.posToVal(left!, "x");
+          let oxRange = u.scales.x.max! - u.scales.x.min!;
 
           let nxRange = e.deltaY < 0 ? oxRange * factor : oxRange / factor;
           let nxMin = xVal - leftPct * nxRange;
           let nxMax = nxMin + nxRange;
           [nxMin, nxMax] = clamp(nxRange, nxMin, nxMax, xRange, xMin, xMax);
 
-          syncUplot.forEach((uplot: uPlot) => {
-            uplot.setScale("x", { min: nxMin, max: nxMax });
+          uPlot.sync("plotSync").plots.forEach((up: uPlot) => {
+            up.setScale("x", { min: nxMin, max: nxMax });
           });
         });
       },
