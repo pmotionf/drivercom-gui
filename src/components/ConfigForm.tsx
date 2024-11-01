@@ -35,7 +35,6 @@ export function ConfigForm(props: ConfigFormProps) {
         </legend>
         <ConfigObject object={config} id_prefix={props.label} />
         <Button
-          type="button"
           style={{
             float: "right",
             "margin-top": "1em",
@@ -81,7 +80,7 @@ function ConfigObject(props: ConfigObjectProps) {
   const [object, setObject] = createStore(props.object);
 
   return (
-    <div {...rest}>
+    <div {...rest} id = {props.id_prefix}>
       <For each={Object.entries(object)}>
         {(entry) => {
           const key = entry[0];
@@ -104,6 +103,8 @@ function ConfigObject(props: ConfigObjectProps) {
                   "padding-top": "0.2em",
                   "margin-bottom": "0.2em",
                 }}
+                id="fieldset"
+                class = "fieldset"
               >
                 <legend>
                   <FormLabel>{key}</FormLabel>
@@ -142,7 +143,7 @@ function ConfigObject(props: ConfigObjectProps) {
             );
           }
           if (typeof value === "number") {
-            return (
+            return ( 
               <FormLabel
                 style={{
                   display: "flex",
