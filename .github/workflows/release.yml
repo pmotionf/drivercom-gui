@@ -47,4 +47,5 @@ jobs:
         run: |
           gh release create --generate-notes \
             "${{ steps.parse-version.outputs.VERSION }}" \
+            src-tauri/target/release/bundle/deb/*.deb \
             src-tauri/target/release/bundle/rpm/*.rpm
