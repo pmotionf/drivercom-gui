@@ -14,7 +14,7 @@
   "dependencies": {
     "@ark-ui/solid": "^4.2.1",
     "@solidjs/router": "^0.14.10",
-    "@tabler/icons-solidjs": "^3.20.0",
+    "@tabler/icons-solidjs": "^3.21.0",
     "@tauri-apps/api": "^2.0.3",
     "@tauri-apps/plugin-dialog": "~2.0.1",
     "@tauri-apps/plugin-fs": "~2.0.1",

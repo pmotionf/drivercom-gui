@@ -15,8 +15,8 @@ importers:
         specifier: ^0.14.10
         version: 0.14.10(solid-js@1.9.3)
       '@tabler/icons-solidjs':
-        specifier: ^3.20.0
-        version: 3.20.0(solid-js@1.9.3)
+        specifier: ^3.21.0
+        version: 3.21.0(solid-js@1.9.3)
       '@tauri-apps/api':
         specifier: ^2.0.3
         version: 2.0.3
@@ -662,13 +662,13 @@ packages:
   '@swc/helpers@0.5.13':
     resolution: {integrity: sha512-UoKGxQ3r5kYI9dALKJapMmuK+1zWM/H17Z1+iwnNmzcJRnfFuevZs375TA5rW31pu4BS4NoSy1fRsexDXfWn5w==}
 
-  '@tabler/icons-solidjs@3.20.0':
-    resolution: {integrity: sha512-c6bA2iZvDZuuloMs4ou87SAusRWjmD/axBsUvGes7m+C1UfZhc7ySDMzpZORq9n2DKrviISaM8SbFtxCj5DEeQ==}
+  '@tabler/icons-solidjs@3.21.0':
+    resolution: {integrity: sha512-g0qk8bzO6KrhQbJjFvyRGfT0ZKtaYk7MBxye6/FukqVoBWcTHOQKwEePXLy69oXm//xUyWkrfA+7WeHRxEf03w==}
     peerDependencies:
       solid-js: ^1.4.7
 
-  '@tabler/icons@3.20.0':
-    resolution: {integrity: sha512-nXSeUzsCOxX/Of+kdUVQfxL9bG+ck8XCWNf9dGSpE+nhVexRwk/4HiDQDxFDysfT7vfgSut6GXnrZsU5M5dSlA==}
+  '@tabler/icons@3.21.0':
+    resolution: {integrity: sha512-5+GkkmWCr1wgMor5cOF1/YYflTQdc15y10FUikJ3HW8hDiFjfbuoAHJi17FT1vwsr1sA78rkJMn+fDoOOjnnPA==}
 
   '@tauri-apps/api@2.0.3':
     resolution: {integrity: sha512-840qk6n8rbXBXMA5/aAgTYsg5JAubKO0nXw5wf7IzGnUuYKGbB4oFBIZtXOIWy+E0kNTDI3qhq5iqsoMJfwp8g==}
@@ -2599,12 +2599,12 @@ snapshots:
     dependencies:
       tslib: 2.8.0
 
-  '@tabler/icons-solidjs@3.20.0(solid-js@1.9.3)':
+  '@tabler/icons-solidjs@3.21.0(solid-js@1.9.3)':
     dependencies:
-      '@tabler/icons': 3.20.0
+      '@tabler/icons': 3.21.0
       solid-js: 1.9.3
 
-  '@tabler/icons@3.20.0': {}
+  '@tabler/icons@3.21.0': {}
 
   '@tauri-apps/api@2.0.3': {}
 
