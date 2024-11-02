@@ -39,7 +39,7 @@ jobs:
         run: pnpm i
 
       - name: Build Linux
-        if: ${{ steps.parse-version.outputs.result != 'true' }}
+        if: ${{ steps.check-tag.outputs.exists != 'true' }}
         run: pnpm tauri build
 
       - name: Create release
