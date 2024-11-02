@@ -45,11 +45,32 @@ export function SettingButton(props: SettingButtonListProps) {
 
   return (
     <Dialog.Root>
-      <Dialog.Trigger>
-        <IconButton variant="ghost" size="sm" style={{ padding: "0px" }}>
-          <IconSettings style={{ padding: "0px" }} />
-        </IconButton>
-      </Dialog.Trigger>
+      <Dialog.Trigger
+        asChild={(triggerProps) => (
+          <IconButton
+            variant="link"
+            style={{
+              height: "1.5em",
+              "min-width": "1.5em",
+              width: "1.5em",
+              padding: "0px",
+              margin: "0px",
+              "vertical-align": "top",
+            }}
+            {...triggerProps()}
+          >
+            <IconSettings
+              style={{
+                width: "1.2em",
+                height: "1.2em",
+                padding: "0px",
+                margin: "0px",
+                "vertical-align": "middle",
+              }}
+            />
+          </IconButton>
+        )}
+      />
       <Portal>
         <Dialog.Backdrop />
         <Dialog.Positioner>
