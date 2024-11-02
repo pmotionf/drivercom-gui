@@ -1,12 +1,29 @@
-import { JSX, createEffect, onMount, splitProps, useContext } from "solid-js";
+import {
+  JSX,
+  createEffect,
+  createSignal,
+  onCleanup,
+  onMount,
+  splitProps,
+  useContext,
+} from "solid-js";
+import { render } from "solid-js/web";
 
 import uPlot, { AlignedData } from "uplot";
 import "uplot/dist/uPlot.min.css";
 
 import { GlobalStateContext } from "~/GlobalState";
 import { Heading } from "~/components/ui/heading";
+import { ToggleGroup } from "~/components/ui/toggle-group";
 import { SettingButton } from "./SettingButton";
-import { render } from "solid-js/web";
+import {
+  IconArrowsMove,
+  IconCrosshair,
+  IconZoomInArea,
+  IconZoomReset,
+} from "@tabler/icons-solidjs";
+import { Stack } from "styled-system/jsx";
+import { IconButton } from "./ui/icon-button";
 
 export type PlotProps = JSX.HTMLAttributes<HTMLDivElement> & {
   id: string;
@@ -19,6 +36,13 @@ type PlotContainer = {
   plot: uPlot | null;
 };
 
+enum CursorMode {
+  None,
+  Pan,
+  Zoom,
+  Lock,
+}
+
 export function Plot(props: PlotProps) {
   const [, rest] = splitProps(props, ["name", "header", "series", "id"]);
   var fg_default = getComputedCSSVariableValue("--colors-fg-default");
@@ -26,6 +50,59 @@ export function Plot(props: PlotProps) {
   const { globalState } = useContext(GlobalStateContext)!;
   var theme = globalState.theme;
   var uplot: PlotContainer = { plot: null };
+
+  // Store whether zoom reset button should be disabled.
+  const [zoomReset, setZoomReset] = createSignal(true);
+
+  // Current cursor mode; changes dynamically with keypresses.
+  const [cursorMode, setCursorMode] = createSignal(CursorMode.Pan);
+  // Last manually set cursor mode, changes only in toggle group.
+  const [lastCursorMode, setLastCursorMode] = createSignal(CursorMode.Pan);
+
+  const cursorModeActivate = (event: KeyboardEvent) => {
+    if (event.key === "Control") {
+      setCursorMode(CursorMode.Lock);
+    } else if (event.key === "Shift") {
+      setCursorMode(CursorMode.Zoom);
+    } else if (event.key === "Alt") {
+    }
+  };
+  const cursorModeRelease = (event: KeyboardEvent) => {
+    if (event.key === "Control" && cursorMode() === CursorMode.Lock) {
+      setCursorMode(lastCursorMode());
+    } else if (event.key === "Shift" && cursorMode() === CursorMode.Zoom) {
+      setCursorMode(lastCursorMode());
+    } else if (event.key === "Alt" && cursorMode() === CursorMode.None) {
+    }
+  };
+
+  const checkZoomLevel = async () => {
+    setTimeout(() => {
+      setZoomReset(
+        !uplot.plot ||
+          !uplot.plot.scales.x.min ||
+          !uplot.plot.scales.x.max ||
+          !(
+            uplot.plot.scales.x.min > 0 ||
+            uplot.plot.scales.x.max < uplot.plot.data[0].length - 1
+          ),
+      );
+    }, 10);
+  };
+
+  onMount(() => {
+    document.addEventListener("keydown", cursorModeActivate);
+    document.addEventListener("keyup", cursorModeRelease);
+    document.addEventListener("mouseup", checkZoomLevel);
+    document.addEventListener("wheel", checkZoomLevel);
+  });
+
+  onCleanup(() => {
+    document.removeEventListener("keydown", cursorModeActivate);
+    document.removeEventListener("keyup", cursorModeRelease);
+    document.removeEventListener("mouseup", checkZoomLevel);
+    document.removeEventListener("wheel", checkZoomLevel);
+  });
 
   function createPlot() {
     var plot_element = document.getElementById(props.id)!;
@@ -99,7 +176,7 @@ export function Plot(props: PlotProps) {
               return (e) => {
                 if (e.button == 0) {
                   // Always release cursor lock if not control-clicking.
-                  if (!e.ctrlKey) {
+                  if (cursorMode() !== CursorMode.Lock) {
                     // @ts-ignore
                     if (u.cursor._lock) {
                       // @ts-ignore
@@ -112,10 +189,9 @@ export function Plot(props: PlotProps) {
                     return null;
                   }
 
-                  // Only select/zoom when not panning or locking.
-                  if (e.shiftKey && !e.altKey) {
+                  if (cursorMode() === CursorMode.Zoom) {
                     handler(e);
-                  } else if (!e.shiftKey && !e.altKey) {
+                  } else if (cursorMode() === CursorMode.Pan) {
                     let xMin = 0;
                     let xMax = u.data[0].length;
 
@@ -187,7 +263,6 @@ export function Plot(props: PlotProps) {
       ] as AlignedData,
       plot_element,
     );
-    syncUplotArray.push(uplot.plot!);
 
     for (var i = 0; i < props.header.length; i++) {
       addOptionButton(props.id, uplot, i + 1);
@@ -263,14 +338,97 @@ export function Plot(props: PlotProps) {
             height: "calc(100% - 0.5rem)",
           }}
         ></div>
+        <Stack
+          direction={"row"}
+          style={{
+            float: "left",
+            height: "2.5rem",
+            "margin-top": "0.5rem",
+          }}
+        >
+          <IconButton
+            variant={"outline"}
+            disabled={zoomReset()}
+            onclick={() => {
+              uPlot.sync("plotSync").plots.forEach((up: uPlot) => {
+                up.setScale("x", { min: 0, max: up.data[0].length - 1 });
+              });
+            }}
+          >
+            <IconZoomReset />
+          </IconButton>
+          <ToggleGroup.Root
+            value={[CursorMode[lastCursorMode()]]}
+            onValueChange={(details) => {
+              if (details.value.length > 0) {
+                setCursorMode(
+                  CursorMode[details.value[0] as keyof typeof CursorMode],
+                );
+                setLastCursorMode(cursorMode());
+              } else {
+                setCursorMode(CursorMode.None);
+                setCursorMode(lastCursorMode());
+              }
+            }}
+          >
+            <ToggleGroup.Item
+              value={CursorMode[CursorMode.Pan]}
+              aria-label="Toggle Pan"
+              color={
+                cursorMode() === CursorMode.Pan ? "fg.default" : "fg.muted"
+              }
+              bgColor={
+                cursorMode() === CursorMode.Pan
+                  ? "bg.emphasized"
+                  : lastCursorMode() === CursorMode.Pan
+                    ? "bg.subtle"
+                    : "bg.default"
+              }
+            >
+              <IconArrowsMove />
+            </ToggleGroup.Item>
+            <ToggleGroup.Item
+              value={CursorMode[CursorMode.Zoom]}
+              aria-label="Toggle Selection Zoom"
+              color={
+                cursorMode() === CursorMode.Zoom ? "fg.default" : "fg.muted"
+              }
+              bgColor={
+                cursorMode() === CursorMode.Zoom
+                  ? "bg.emphasized"
+                  : lastCursorMode() === CursorMode.Zoom
+                    ? "bg.subtle"
+                    : "bg.default"
+              }
+            >
+              <IconZoomInArea />
+            </ToggleGroup.Item>
+            <ToggleGroup.Item
+              value={CursorMode[CursorMode.Lock]}
+              aria-label="Toggle Cursor Lock"
+              color={
+                cursorMode() === CursorMode.Lock ? "fg.default" : "fg.muted"
+              }
+              bgColor={
+                cursorMode() === CursorMode.Lock
+                  ? "bg.emphasized"
+                  : lastCursorMode() === CursorMode.Lock
+                    ? "bg.subtle"
+                    : "bg.default"
+              }
+            >
+              <IconCrosshair />
+            </ToggleGroup.Item>
+          </ToggleGroup.Root>
+        </Stack>
         <style>{legend_css}</style>
         <div
           id={props.id + "-legend"}
           style={{
             float: "left",
-            "margin-top": "1rem",
+            "margin-top": "0.5rem",
             "margin-bottom": "1rem",
-            height: "calc(100% - 2rem - 0.5rem)",
+            height: "calc(100% - 1.5rem - 3rem - 0.5rem)",
             width: "15em",
             overflow: "auto",
           }}
@@ -396,5 +554,3 @@ const kelly_colors_hex = [
   "#F13A13", // Vivid Reddish Orange
   "#232C16", // Dark Olive Green
 ];
-
-const syncUplotArray: uPlot[] = [];
