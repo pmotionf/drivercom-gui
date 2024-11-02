@@ -179,13 +179,19 @@ export function Plot(props: PlotProps) {
                   if (cursorMode() !== CursorMode.Lock) {
                     // @ts-ignore
                     if (u.cursor._lock) {
-                      // @ts-ignore
-                      u.cursor._lock = false;
+                      uPlot.sync("plotSync").plots.forEach((up) => {
+                        // @ts-ignore
+                        up.cursor._lock = false;
+                      });
                     }
                   } else {
-                    // Lock cursor in plot only when control-clicking.
                     // @ts-ignore
-                    u.cursor._lock = !u.cursor._lock;
+                    const new_lock = !u.cursor._lock;
+                    // Lock cursor in plot only when control-clicking.
+                    uPlot.sync("plotSync").plots.forEach((up) => {
+                      // @ts-ignore
+                      up.cursor._lock = new_lock;
+                    });
                     return null;
                   }
 
