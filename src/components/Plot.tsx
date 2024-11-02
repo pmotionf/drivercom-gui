@@ -105,16 +105,17 @@ export function Plot(props: PlotProps) {
                       // @ts-ignore
                       u.cursor._lock = false;
                     }
-                  }
-
-                  // Only select/zoom when not panning or locking.
-                  if (!e.shiftKey && !e.ctrlKey) {
-                    handler(e);
-                  } else if (e.ctrlKey) {
+                  } else {
                     // Lock cursor in plot only when control-clicking.
                     // @ts-ignore
                     u.cursor._lock = !u.cursor._lock;
-                  } else if (e.shiftKey) {
+                    return null;
+                  }
+
+                  // Only select/zoom when not panning or locking.
+                  if (e.shiftKey && !e.altKey) {
+                    handler(e);
+                  } else if (!e.shiftKey && !e.altKey) {
                     let xMin = 0;
                     let xMax = u.data[0].length;
 
@@ -168,12 +169,10 @@ export function Plot(props: PlotProps) {
               return (e) => {
                 if (e.button == 0) {
                   // Prevent accidental micro-drags.
-                  if (u.select.width >= 10) {
-                    handler(e);
-                  } else {
+                  if (u.select.width < 10) {
                     u.select.width = 0;
-                    handler(e);
                   }
+                  handler(e);
                 }
                 return null;
               };
