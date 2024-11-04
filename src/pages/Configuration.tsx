@@ -31,7 +31,7 @@ function Configuration() {
         setPort(port);
         setFileSelectOpen(false);
       } catch (error) {
-        //TODO: 에러 출력?
+        //TODO: 에러 출력
       }
     }
   });

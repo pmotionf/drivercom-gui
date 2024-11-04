@@ -1,4 +1,4 @@
-import { For, JSX, splitProps, createEffect } from "solid-js";
+import { For, JSX, splitProps, createEffect, Show } from "solid-js";
 import { createStore } from "solid-js/store";
 import { save } from "@tauri-apps/plugin-dialog";
 import { writeTextFile } from "@tauri-apps/plugin-fs";
@@ -10,7 +10,8 @@ import { FormLabel } from "~/components/ui/form-label";
 import { Input } from "~/components/ui/input";
 
 import { IconChevronDown } from "@tabler/icons-solidjs";
-import { Command } from "@tauri-apps/plugin-shell";
+
+import { useNavigate } from "@solidjs/router";
 
 export type ConfigFormProps = JSX.HTMLAttributes<HTMLFormElement> & {
   label: string;
@@ -26,25 +27,35 @@ export function ConfigForm(props: ConfigFormProps) {
     setConfig(props.config);
   });
 
-  async function sendConfig(port: string) {
-    console.log(port);
-    if (port) {
-      const data = JSON.stringify(config);
-      const drivercom = Command.sidecar("binaries/drivercom", [
-        "--port",
-        port,
-        "config.set",
-        "-f",
-        data,
-      ]); //drivercom.cli 수정 필요(file이 아닌 string 전달)
-      const output = await drivercom.execute();
-      console.log("결과: " + output.stdout);
-      console.log("에러: " + output.stderr);
+  const navigate = useNavigate();
+  async function sendConfig() {
+    const dataString = encodeURIComponent(JSON.stringify(props.config));
+    if (dataString) {
+      navigate(`/Driver?&data=${dataString}&port=${props.port}`);
+    }
+  }
+
+  function SwitchConfigPage() {
+    const dataString = encodeURIComponent(JSON.stringify(props.config));
+    if (dataString) {
+      navigate(`/Driver?`);
     }
   }
 
   return (
     <form {...rest}>
+      <Show when={props.port !== ""}>
+        <Button
+          type="button"
+          style={{
+            float: "right",
+            "margin-top": "1em",
+          }}
+          onclick={SwitchConfigPage}
+        >
+          {"<- 뒤로"}
+        </Button>
+      </Show>
       <fieldset
         style={{
           "border-width": "1px",
@@ -95,7 +106,7 @@ export function ConfigForm(props: ConfigFormProps) {
             "margin-top": "1em",
           }}
           disabled={props.port == ""}
-          onclick={() => sendConfig(props.port)}
+          onclick={sendConfig}
         >
           Send_Driver
         </Button>

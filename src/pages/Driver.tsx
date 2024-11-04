@@ -1,4 +1,4 @@
-import { createSignal } from "solid-js";
+import { createSignal, createEffect } from "solid-js";
 import { Button } from "~/components/ui/button";
 import { Text } from "~/components/ui/text";
 import { Checkbox } from "~/components/ui/checkbox";
@@ -11,6 +11,7 @@ import { Accordion } from "~/components/ui/accordion";
 import { Box } from "styled-system/jsx";
 
 import { useNavigate } from "@solidjs/router";
+import { useLocation } from "@solidjs/router";
 
 function Connect() {
   const [buttonList, setButtonList] = createSignal<string[]>([]);
@@ -146,6 +147,24 @@ function Connect() {
     });
     console.log(checkedConfig());
   };
+
+  const location = useLocation();
+  createEffect(async () => {
+    const params = new URLSearchParams(location.search);
+    const port = params.get("port") as string;
+    const json_string = params.get("data") as string; // JSON 파싱
+    if (json_string) {
+      const config = Command.sidecar("binaries/drivercom", [
+        "--port",
+        port,
+        "config.set",
+        json_string, //drivercom.cli 수정 필요
+      ]);
+      const config_output = await config.execute();
+      console.log(config_output.stdout);
+      console.log(config_output.stderr);
+    }
+  });
 
   return (
     <>
