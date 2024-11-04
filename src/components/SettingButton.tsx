@@ -53,8 +53,9 @@ export function SettingButton(props: SettingButtonProps) {
 
   var dash = props.uplot.plot!.series[props.index].dash;
   if (dash === undefined) setStyle(StyleMode.Line);
-  else if (JSON.stringify(dash) === JSON.stringify([0, 5])) setStyle(StyleMode.Dot);
-  else setStyle(StyleMode.DottedLine)
+  else if (JSON.stringify(dash) === JSON.stringify([0, 5]))
+    setStyle(StyleMode.Dot);
+  else setStyle(StyleMode.DottedLine);
 
   const changeStyle = (index: number) => {
     if (props.uplot.plot) {
@@ -100,14 +101,13 @@ export function SettingButton(props: SettingButtonProps) {
   };
 
   const addSavedColor = (newColor: string) => {
-    if (newColor.substring(18, 22) === ", 1)"){
-      newColor = newColor.replaceAll('a', '').slice(0, -4) + ")"
+    if (newColor.substring(18, 22) === ", 1)") {
+      newColor = newColor.replaceAll("a", "").slice(0, -4) + ")";
     }
     setSavedColorList((prevColor) => {
       var updatedColors = [newColor, ...prevColor];
-      updatedColors = [...new Set(updatedColors)]
-      if (updatedColors.length >= 8)
-        updatedColors = updatedColors.slice(0, 7);
+      updatedColors = [...new Set(updatedColors)];
+      if (updatedColors.length >= 8) updatedColors = updatedColors.slice(0, 7);
       return updatedColors;
     });
   };
@@ -303,25 +303,22 @@ export function SettingButton(props: SettingButtonProps) {
                   min={1}
                   onInput={(e) => inputHandler(e)}
                 />
-                <ToggleGroup.Root value={[StyleMode[style()]]} width={"12rem"}
+                <ToggleGroup.Root
+                  value={[StyleMode[style()]]}
+                  width={"12rem"}
                   onValueChange={(details) => {
                     setStyle(
                       StyleMode[details.value[0] as keyof typeof StyleMode],
                     );
-                  }}>
-                  <ToggleGroup.Item
-                    value={StyleMode[StyleMode.Line]}
-                  >
+                  }}
+                >
+                  <ToggleGroup.Item value={StyleMode[StyleMode.Line]}>
                     <IconLine />
                   </ToggleGroup.Item>
-                  <ToggleGroup.Item
-                    value={StyleMode[StyleMode.Dot]}
-                  >
+                  <ToggleGroup.Item value={StyleMode[StyleMode.Dot]}>
                     <IconPoint />
                   </ToggleGroup.Item>
-                  <ToggleGroup.Item
-                    value={StyleMode[StyleMode.DottedLine]}
-                  >
+                  <ToggleGroup.Item value={StyleMode[StyleMode.DottedLine]}>
                     <IconLineDashed />
                   </ToggleGroup.Item>
                 </ToggleGroup.Root>
@@ -469,7 +466,16 @@ function addOptionButton(uplotId: string, uplot: PlotContainer, index: number) {
     const legend_elements = div.querySelectorAll(`.u-series`);
     var row = legend_elements.item(index) as HTMLTableRowElement;
     var new_cell = row.insertCell(0);
+    new_cell.style.height = "1.5em";
+    new_cell.style.width = "1.5em";
+    new_cell.style.padding = "0px";
+    new_cell.style.margin = "0px";
+    new_cell.style.verticalAlign = "middle";
+    new_cell.className = "";
     const container = document.createElement("div");
+    container.style.height = "1.5em";
+    container.style.width = "1.5em";
+    container.style.verticalAlign = "top";
     new_cell.appendChild(container);
     render(
       () => <SettingButton uplotId={uplotId} uplot={uplot} index={index} />,
