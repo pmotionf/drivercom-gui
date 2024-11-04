@@ -26,7 +26,6 @@ function Configuration() {
           const data = JSON.parse(e.target?.result as string); // JSON 파싱
           setJsonData({ ...data });
           setFileName(file.name);
-          getFileName()
         } catch (error) {}
         setFileSelectOpen(false);
       };
@@ -34,44 +33,8 @@ function Configuration() {
     }
   }
 
-  // Drag Spilt? doesnt work well 
-  const [dragItemData, setDragItemData] = createSignal<string | null>(null);
-
-  function getFileName(){
-    // config spilt 
-    const div = document.getElementById(fileName())!
-    const draggableItems = div.querySelectorAll("fieldset")
-    draggableItems.forEach((item) => {
-      item.draggable = true;
-      item.ondragstart = (e : DragEvent) => drag(e)
-    })
-  }
-
-  const dragEnter = (e: DragEvent) => {
-    e.preventDefault()
-  }
-
-  const drag = (e:DragEvent) => {
-     const targetId = e.target instanceof HTMLElement ? e.target.id : null;
-     setDragItemData(targetId);
-  }
-  
-  const drop = (e:DragEvent) => {
-    e.preventDefault();
-    const data = dragItemData()
-    if(data) {
-      const draggedElement = document.getElementById(data);
-      if (draggedElement && e.target instanceof HTMLElement) {
-        e.target.appendChild(draggedElement);
-      }
-    }
-  }
-
-  console.log(dragItemData)
-
   return (
     <>
- 
       <Portal>
         <Button
           variant="ghost"
@@ -117,16 +80,10 @@ function Configuration() {
         </Collapsible.Content>
       </Collapsible.Root>
       <Show when={Object.keys(jsonData()).length > 0}>
-        <div ondrop = {(e) => drop(e)} ondragover={(e) => dragEnter(e)} style={{ float: "left", width: "50%"}}>
+        <div style={{ float: "left", width: "100%" }}>
           <ConfigForm label={fileName()} config={jsonData()} />
-          
-        </div>
-        <div ondrop = {(e) => drop(e)} ondragover={(e) => dragEnter(e)} style={{ float: "left", width: "50%"}}>
-          <Button draggable onDrag={(e) => drag(e)}>drop here</Button>
-          {dragItemData()}
         </div>
       </Show>
- 
     </>
   );
 }

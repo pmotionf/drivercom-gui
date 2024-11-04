@@ -2,6 +2,7 @@ import { For, JSX, splitProps } from "solid-js";
 import { createStore } from "solid-js/store";
 import { save } from "@tauri-apps/plugin-dialog";
 import { writeTextFile } from "@tauri-apps/plugin-fs";
+import { createSignal } from "solid-js";
 
 import { Accordion } from "~/components/ui/accordion";
 import { Button } from "~/components/ui/button";
@@ -9,7 +10,9 @@ import { Checkbox } from "~/components/ui/checkbox";
 import { FormLabel } from "~/components/ui/form-label";
 import { Input } from "~/components/ui/input";
 
-import { IconChevronDown } from "@tabler/icons-solidjs";
+import { IconChevronDown, IconCircle, IconEdit } from "@tabler/icons-solidjs";
+import { Show } from "solid-js";
+
 
 export type ConfigFormProps = JSX.HTMLAttributes<HTMLFormElement> & {
   label: string;
@@ -22,18 +25,23 @@ export function ConfigForm(props: ConfigFormProps) {
   const [config] = createStore(props.config);
 
   return (
+    <div>
     <form {...rest}>
       <fieldset
         style={{
           "border-width": "1px",
           padding: "0.5em",
           "padding-top": "0.2em",
+          "float" : "left",
+          "width" : "45%"
         }}
       >
         <legend>
           <FormLabel>{props.label}</FormLabel>
         </legend>
-        <ConfigObject object={config} id_prefix={props.label} />
+        <ConfigObject 
+          object={config} 
+          id_prefix={props.label} />
         <Button
           style={{
             float: "right",
@@ -66,6 +74,53 @@ export function ConfigForm(props: ConfigFormProps) {
         </Button>
       </fieldset>
     </form>
+    <form>
+    <fieldset
+      style={{
+        "border-width": "1px",
+        padding: "0.5em",
+        "padding-top": "0.2em",
+      }}
+    >
+      <legend>
+        <FormLabel>{props.label}</FormLabel>
+      </legend>
+      <ConfigObject 
+        object={[otherConfigList, otherConfigObject]} 
+        id_prefix={props.label} />
+      <Button
+        style={{
+          float: "right",
+          "margin-top": "1em",
+        }}
+        onClick={async () => {
+          const json_str = JSON.stringify([otherConfigList, otherConfigObject]);
+          const path = await save({
+            filters: [
+              {
+                name: "JSON",
+                extensions: ["json"],
+              },
+            ],
+          });
+          if (!path) {
+            // TODO: Show error toast
+            return;
+          }
+          const extension = path.split(".").pop();
+          if (extension != "json") {
+            // TODO: Show error toast
+            return;
+          }
+          // TODO: Handle write promise error with toast
+          await writeTextFile(path, json_str);
+        }}
+      >
+        Save
+      </Button>
+    </fieldset>
+    </form>
+    </div>
   );
 }
 
@@ -78,6 +133,37 @@ function ConfigObject(props: ConfigObjectProps) {
   const [, rest] = splitProps(props, ["id_prefix", "object"]);
 
   const [object, setObject] = createStore(props.object);
+
+  const [selectedItem, setSelectedItem] = createSignal<object | null >(null);
+  const [label, setLabel] = createSignal<string>("")
+  const [contextMenuPosition, setContextMenuPosition] = createSignal<{x: number; y: number;} | null>(null)
+
+  const handleContextMenuRight = (event: MouseEvent, item: object, label: string) => {
+    event.preventDefault();
+    setSelectedItem(item);
+    setLabel(label)
+    setContextMenuPosition({x: event.pageX, y: event.pageY})
+    document.addEventListener("click", handleCloseMenu)
+  };
+
+  const handleMoveRight = () => {
+    const itemToMove = selectedItem()
+    if(itemToMove){
+      setOtherConfigObject((prevConfig) => {
+        return [...prevConfig, { label: label(), objects: [itemToMove] }];
+      });
+      setLabel("")
+      setSelectedItem(null)
+      setContextMenuPosition(null)
+    }
+  
+  }
+
+  const handleCloseMenu = () => {
+    setContextMenuPosition(null)
+
+    document.removeEventListener("click", handleCloseMenu)
+  }
 
   return (
     <div {...rest} id = {props.id_prefix}>
@@ -103,8 +189,7 @@ function ConfigObject(props: ConfigObjectProps) {
                   "padding-top": "0.2em",
                   "margin-bottom": "0.2em",
                 }}
-                id="fieldset"
-                class = "fieldset"
+                onContextMenu={(event) => {handleContextMenuRight(event, entry, key)}}
               >
                 <legend>
                   <FormLabel>{key}</FormLabel>
@@ -126,6 +211,7 @@ function ConfigObject(props: ConfigObjectProps) {
                   "line-height": "1.75em",
                   "justify-content": "space-between",
                 }}
+                onContextMenu={(event) => handleContextMenuRight(event, entry, key)}
               >
                 {key}
                 <Checkbox
@@ -168,12 +254,28 @@ function ConfigObject(props: ConfigObjectProps) {
                     "min-width": "8em",
                     "max-width": "12em",
                   }}
-                />
+                />``
               </FormLabel>
             );
           }
         }}
       </For>
+      <Show when={contextMenuPosition()}>
+      <div
+        style={{
+          position: "absolute",
+          top: `${contextMenuPosition()!.y}px`,
+          left: `${contextMenuPosition()!.x}px`,
+          background: "white",
+          border: "1px solid #ccc",
+          "z-index": 1000,
+          padding: "10px",
+        }}
+        onClick={handleCloseMenu}
+      >
+        <button onClick={handleMoveRight}>split</button>
+      </div>
+    </Show>
     </div>
   );
 }
@@ -186,17 +288,49 @@ type ConfigListProps = Accordion.RootProps & {
 
 function ConfigList(props: ConfigListProps) {
   const [, rest] = splitProps(props, ["list"]);
-
+  
   const [list] = createStore(props.list);
 
+  const [selectedItem, setSelectedItem] = createSignal<object | null >(null);
+  const [label, setLabel] = createSignal<string>("")
+  const [contextMenuPosition, setContextMenuPosition] = createSignal<{x: number; y: number;} | null>(null)
+
+  const handleContextMenuRight = (event: MouseEvent, item: object, label: string) => {
+    event.preventDefault();
+    setSelectedItem(item);
+    setLabel(label)
+    setContextMenuPosition({x: event.pageX, y: event.pageY})
+    document.addEventListener("click", handleCloseMenu)
+  };
+  
+  
+  const handleMoveRight = () => {
+    const itemToMove = selectedItem()
+    if(itemToMove){
+      setOtherConfigList(label(), itemToMove)
+      setLabel("")
+      setSelectedItem(null)
+      setContextMenuPosition(null)
+    }
+  }
+
+  const handleCloseMenu = () => {
+    setContextMenuPosition(null)
+
+    document.removeEventListener("click", handleCloseMenu)
+  }
+
   return (
+    <div>
     <Accordion.Root multiple {...rest}>
       <For each={list}>
         {(item, index) => {
           const title = props.label + " " + (index() + 1).toString();
           return (
             <Accordion.Item value={props.id_prefix + title}>
-              <Accordion.ItemTrigger>
+              <Accordion.ItemTrigger onContextMenu={(event) => {
+                  handleContextMenuRight(event, item, title)
+              }}>
                 {title}
                 <Accordion.ItemIndicator>
                   <IconChevronDown />
@@ -213,5 +347,45 @@ function ConfigList(props: ConfigListProps) {
         }}
       </For>
     </Accordion.Root>
-  );
+    <Show when={contextMenuPosition()}>
+      <div
+        style={{
+          position: "absolute",
+          top: `${contextMenuPosition()!.y}px`,
+          left: `${contextMenuPosition()!.x}px`,
+          background: "white",
+          border: "1px solid #ccc",
+          "z-index": 1000,
+          padding: "10px",
+        }}
+        onClick={handleCloseMenu}
+      >
+        <button onClick={handleMoveRight}>split</button>
+      </div>
+    </Show>
+   </div>
+  )
+   
+
+};
+
+const [otherConfigList, setOtherConfigList] = createStore<Record<string, object>>({});
+const [otherConfigObject, setOtherConfigObject] = createStore<{ label: string; objects: object[] }[]>([]);
+
+
+function otherConfigData() {
+  const [,rest] = splitProps(otherConfigList, ["objects"]) 
+  
+  return (
+    <>
+    <For each = {[otherConfigList, otherConfigObject]}>
+      {(object) => (
+        <ConfigObject
+        object={object}
+        id_prefix={JSON.stringify(object)}
+      />
+      )}
+    </For>
+    </>
+  )
 }
