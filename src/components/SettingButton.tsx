@@ -99,17 +99,17 @@ export function SettingButton(props: SettingButtonProps) {
     setStrokeWidth(parseInt(event.currentTarget.value));
   };
 
-  const addColor = (newColor: string) => {
-    if (newColor === prevStrokeColor) {
-      setSavedColorList(savedColorList());
-    } else {
-      setSavedColorList((prevColor) => {
-        var updatedColors = [newColor, ...prevColor];
-        if (updatedColors.length >= 8)
-          updatedColors = updatedColors.slice(0, 7);
-        return updatedColors;
-      });
+  const addSavedColor = (newColor: string) => {
+    if (newColor.substring(18, 22) === ", 1)"){
+      newColor = newColor.replaceAll('a', '').slice(0, -4) + ")"
     }
+    setSavedColorList((prevColor) => {
+      var updatedColors = [newColor, ...prevColor];
+      updatedColors = [...new Set(updatedColors)]
+      if (updatedColors.length >= 8)
+        updatedColors = updatedColors.slice(0, 7);
+      return updatedColors;
+    });
   };
 
   return (
@@ -245,7 +245,7 @@ export function SettingButton(props: SettingButtonProps) {
                 <Show when={customColorPalette().length <= 13}>
                   <IconButton
                     variant={"outline"}
-                    onClick={() => addCustomColorPalette(color())}
+                    onClick={() => addNewCustomColorPalette(color())}
                     style={{ padding: 0, width: "1rem" }}
                     size={"xs"}
                   >
@@ -332,7 +332,7 @@ export function SettingButton(props: SettingButtonProps) {
                     style={{ "margin-right": "0" }}
                     onClick={() => {
                       changeStyle(props.index);
-                      addColor(color());
+                      addSavedColor(color());
                     }}
                   >
                     Save
@@ -442,7 +442,7 @@ function CustomColorPaletteButton(props: CustomColorPaletteButtonProps) {
             <Button
               size={"xs"}
               onClick={() => {
-                saveColor(newColor(), props.index);
+                changeColor(newColor(), props.index);
               }}
             >
               Save
@@ -451,7 +451,7 @@ function CustomColorPaletteButton(props: CustomColorPaletteButtonProps) {
               variant={"outline"}
               size={"xs"}
               onClick={() => {
-                removeColor(props.index);
+                removeCustomColorPalette(props.index);
               }}
             >
               Delete
@@ -478,7 +478,7 @@ function addOptionButton(uplotId: string, uplot: PlotContainer, index: number) {
   }
 }
 
-function saveColor(newColor: any, index: number) {
+function changeColor(newColor: any, index: number) {
   setCustomColorPalette((prevColor) => {
     var updatedColor = [...prevColor];
     if (prevColor[index] !== newColor) {
@@ -489,7 +489,7 @@ function saveColor(newColor: any, index: number) {
   });
 }
 
-function addCustomColorPalette(newColor: any) {
+function addNewCustomColorPalette(newColor: any) {
   if (customColorPalette().length <= 13) {
     setCustomColorPalette((prevColor) => {
       const updatedColor = [...prevColor, newColor];
@@ -498,7 +498,7 @@ function addCustomColorPalette(newColor: any) {
   }
 }
 
-function removeColor(index: number) {
+function removeCustomColorPalette(index: number) {
   setCustomColorPalette((prevColor) => {
     var updatedColor = [...prevColor];
     updatedColor.splice(index, 1);
