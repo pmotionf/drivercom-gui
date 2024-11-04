@@ -31,6 +31,12 @@ type PlotContainer = {
   plot: uPlot | null;
 };
 
+enum StyleMode {
+  Line,
+  Dot,
+  DottedLine,
+}
+
 export function SettingButton(props: SettingButtonProps) {
   const div = document.getElementById(props.uplotId + "-wrapper");
   const markers = div!.querySelectorAll(`.u-marker`);
@@ -38,7 +44,7 @@ export function SettingButton(props: SettingButtonProps) {
   const prevStrokeColor = getComputedStyle(marker).borderColor;
 
   const [color, setColor] = createSignal(prevStrokeColor);
-  const [style, setStyle] = createSignal("");
+  const [style, setStyle] = createSignal(StyleMode.Line);
   const [strokeWidth, setStrokeWidth] = createSignal(
     props.uplot.plot!.series[props.index].width,
   );
@@ -46,16 +52,15 @@ export function SettingButton(props: SettingButtonProps) {
   const [edittable, setEdittable] = createSignal(false);
 
   var dash = props.uplot.plot!.series[props.index].dash;
-  if (dash === undefined) setStyle("line");
-  else if (JSON.stringify(dash) === JSON.stringify([0, 5])) setStyle("dot");
-  else if (JSON.stringify(dash) === JSON.stringify([20, 5]))
-    setStyle("dottedLine");
+  if (dash === undefined) setStyle(StyleMode.Line);
+  else if (JSON.stringify(dash) === JSON.stringify([0, 5])) setStyle(StyleMode.Dot);
+  else setStyle(StyleMode.DottedLine)
 
   const changeStyle = (index: number) => {
     if (props.uplot.plot) {
       var series = props.uplot.plot!.series[index];
       props.uplot.plot.delSeries(index);
-      if (style() === "line") {
+      if (style() === StyleMode.Line) {
         props.uplot.plot.addSeries(
           {
             stroke: color(),
@@ -64,7 +69,7 @@ export function SettingButton(props: SettingButtonProps) {
           },
           index,
         );
-      } else if (style() === "dot") {
+      } else if (style() === StyleMode.Dot) {
         props.uplot.plot.addSeries(
           {
             stroke: color(),
@@ -74,7 +79,7 @@ export function SettingButton(props: SettingButtonProps) {
           },
           index,
         );
-      } else if (style() === "dottedLine") {
+      } else if (style() === StyleMode.DottedLine) {
         props.uplot.plot.addSeries(
           {
             stroke: color(),
@@ -298,22 +303,24 @@ export function SettingButton(props: SettingButtonProps) {
                   min={1}
                   onInput={(e) => inputHandler(e)}
                 />
-                <ToggleGroup.Root value={[style()]} width={"12rem"}>
+                <ToggleGroup.Root value={[StyleMode[style()]]} width={"12rem"}
+                  onValueChange={(details) => {
+                    setStyle(
+                      StyleMode[details.value[0] as keyof typeof StyleMode],
+                    );
+                  }}>
                   <ToggleGroup.Item
-                    value={"line"}
-                    onClick={() => setStyle("line")}
+                    value={StyleMode[StyleMode.Line]}
                   >
                     <IconLine />
                   </ToggleGroup.Item>
                   <ToggleGroup.Item
-                    value={"dot"}
-                    onClick={() => setStyle("dot")}
+                    value={StyleMode[StyleMode.Dot]}
                   >
                     <IconPoint />
                   </ToggleGroup.Item>
                   <ToggleGroup.Item
-                    value={"dottedLine"}
-                    onClick={() => setStyle("dottedLine")}
+                    value={StyleMode[StyleMode.DottedLine]}
                   >
                     <IconLineDashed />
                   </ToggleGroup.Item>
