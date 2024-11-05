@@ -104,19 +104,15 @@ function Logging() {
   }
 
   function splitPlot(index: number) {
-    console.log(logName() + index + "-legend", index);
     const div = document.getElementById(logName() + index + "-legend")!;
     if (!div) {
-      console.error("차트 요소를 찾을 수 없습니다.");
       return;
     }
     const legend_elements = Array.from(div.querySelectorAll(`.u-series`));
-    if (legend_elements.length === 0) {
-      console.error("레전드 요소를 찾을 수 없습니다.");
+    if (legend_elements.length == 0) {
       return;
     }
 
-    console.log(div, legend_elements);
     // 보여지는 범례
     const visible = legend_elements
       .filter((el) => !el.classList.contains("u-off"))
@@ -128,6 +124,7 @@ function Logging() {
       .map((el) => el.querySelector(".u-label")?.textContent || "")
       .filter((label) => label !== "");
 
+    if (visible.length <= 1) return;
     if (hidden.length == 0) return;
 
     const visibles: number[] = visible
@@ -257,41 +254,45 @@ function Logging() {
       </Toast.Toaster>
 
       <Show when={series().length > 0}>
-        <Button
-          variant="ghost"
-          disabled={splitIndex().length <= 1}
-          onclick={resetChart}
-          style={{
-            "margin-top": "0.5rem",
-            "margin-left": "1rem",
-          }}
-        >
-          resetCart
-        </Button>
-        <br />
+        <Show when={splitIndex().length > 1}>
+          <Button
+            variant="ghost"
+            onclick={resetChart}
+            style={{
+              "margin-top": "1rem",
+              "margin-left": "1rem",
+            }}
+          >
+            resetCart
+          </Button>
+          <br />
+        </Show>
 
-        <Button
-          onClick={() => splitPlot(Number(selectPlot()))}
-          //disabled={splitIndex().length <= 1}
-          style={{
-            "margin-left": "1rem",
-            "margin-top": "1rem",
-          }}
-        >
-          Split Plot
-        </Button>
+        <Show when={selectPlot().length >= 1}>
+          <Button
+            onClick={() => splitPlot(Number(selectPlot()))}
+            style={{
+              "margin-left": "1rem",
+              "margin-top": "1rem",
+            }}
+          >
+            Split Plot
+          </Button>
+        </Show>
 
-        <Button
-          variant="ghost"
-          onclick={() => mergePlot(selectPlot())}
-          disabled={splitIndex().length <= 1}
-          style={{
-            "margin-top": "0.5rem",
-            "margin-left": "1rem",
-          }}
-        >
-          mergeCharts
-        </Button>
+        <Show when={selectPlot().length >= 2}>
+          <Button
+            variant="ghost"
+            onclick={() => mergePlot(selectPlot())}
+            style={{
+              "margin-top": "1rem",
+              "margin-left": "1rem",
+            }}
+          >
+            mergeCharts
+          </Button>
+        </Show>
+
         <For each={splitIndex()}>
           {(item, index) => {
             // Header and items need not be derived state, as they will not
