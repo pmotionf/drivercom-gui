@@ -1,5 +1,5 @@
 import { ColorPicker } from "~/components/ui/color-picker";
-import { For, Show } from "solid-js";
+import { createEffect, For, Show } from "solid-js";
 import { IconButton } from "~/components/ui/icon-button";
 import { Button } from "~/components/ui/button";
 import { Text } from "~/components/ui/text";
@@ -20,6 +20,8 @@ import { parseColor } from "@ark-ui/solid";
 import { Stack } from "styled-system/jsx";
 import { JSX, createSignal } from "solid-js";
 import { ToggleGroup } from "~/components/ui/toggle-group";
+import uPlot from "uplot";
+// import { xMax, xMin } from "~/GlobalState";
 
 export type SettingButtonProps = JSX.HTMLAttributes<HTMLElement> & {
   uplotId: string;
@@ -37,6 +39,8 @@ enum StyleMode {
   DottedLine,
 }
 
+// const [xMax1, setXMax1] = createSignal<number>(0)
+
 export function SettingButton(props: SettingButtonProps) {
   const div = document.getElementById(props.uplotId + "-wrapper");
   const markers = div!.querySelectorAll(`.u-marker`);
@@ -48,6 +52,164 @@ export function SettingButton(props: SettingButtonProps) {
   const [strokeWidth, setStrokeWidth] = createSignal(
     props.uplot.plot!.series[props.index].width,
   );
+
+  const [dotFilter, setDotFilter] = createSignal<number[]>([])
+  const [filter, setFilter] = createSignal<number>(0)
+  const [checkButton, setCheckButton] = createSignal<number>(0)
+
+  /*zoomInDot(props.uplot.plot!)
+  function zoomInDot(u : uPlot) {
+
+  }*/
+  // need to use global state
+  /*const xMax0 = Math.floor(props.uplot.plot!.scales.x.max!)
+  setXMax1((prevNumber) => {
+    if (prevNumber >= xMax0) {return prevNumber }
+    else{return xMax0}
+  })
+
+  createEffect(() => {
+    let xRange = Math.floor(xMax()! - xMin()!)
+    // setScale(xRange)
+    let length = JSON.stringify(xRange).length 
+    let filter : number = 0
+    var previousFilter = 0
+
+    if (xRange <= 150){filter = 0} //filter 없애기
+    else if (xRange <= 300){filter = 2}
+    else if (xRange <= 1000){filter = 10}
+    else if (xRange <= 3000){filter = 20}
+    else if (xRange <= 5000){filter = 40}
+    else if (xRange <= 10000){filter = 150}
+    else if (xRange <= 50000){filter = 250}
+ 
+    setFilter(filter)
+  })
+
+  createEffect(() => {
+    let array = []
+    if (filter() !== 0){
+      let i = 0
+      while(i <= xMax1()){
+        if(i % filter() === 0){
+          array.push(i)
+        }
+        i++
+      
+        setDotFilter((prevDotFilter) => {
+          if (prevDotFilter !== array){
+            return array 
+          }
+          else return prevDotFilter
+        })
+      }
+    }
+  })
+
+  createEffect(() => {
+    const seriesList = dotline();
+    const plot = props.uplot.plot!
+  
+    if (plot && seriesList.length >= 1) {
+      console.log("test2")
+      for (let i = 0; i < seriesList.length; i++) {
+        const seriesIndex = seriesList[i];
+        const series = plot.series[seriesIndex];
+
+        const newSeriesConfig = {
+          stroke: series.stroke,
+          label: series.label!,
+          dash: [0, 20],
+          width: series.width!,
+          points: {
+            show: true,
+            size: 5,
+            ...(filter() !== 0 && { filter: dotFilter() }),
+          },
+        };
+
+        plot.delSeries(seriesIndex);
+        plot.addSeries(newSeriesConfig, seriesIndex);
+        setTimeout(() => {
+          console.log("test")
+          addOptionButton(props.uplotId, props.uplot, seriesIndex)
+        }, 1000)
+      }
+      plot.redraw();
+    }
+
+  });*/
+
+
+  /*if (dotline().length > 0) {
+    for(let i = 0; i < dotline().length; i++ ){
+      const seriesIndex = dotline()[i]
+      addOptionButton(props.uplotId, props.uplot!, seriesIndex)
+    }
+  }*/
+
+  /*let i = 0
+  while (i < 100000) {
+    if(i % 250 === 0) {
+      setDotFilter((prevDotFilter) => {
+        return [...prevDotFilter, i]
+      })
+      i++
+    } 
+    i++
+  }*/
+
+  /*const [scale, setScale] = createSignal()
+
+  let scales = props.uplot.plot!.scales.x 
+  let xMin , xMax
+  setScale(scales)
+  if(scale()){
+    xMin = Object.keys(scales)
+    .filter((key) => key ==='min')
+    .map((key) => scales[key])
+
+    xMax = Object.keys(scales)
+    .filter((key) => key === 'max')
+    .map((key) => scales[key])
+
+    xMin = parseInt(JSON.stringify(xMin).replaceAll("[","").replaceAll("]", ""))
+    xMax = parseInt(JSON.stringify(xMax).replaceAll("[","").replaceAll("]", ""))
+  }
+
+  const range = (xMin : number, xMax : number) => {
+    let xRange : number = xMax - xMin
+    let spaceBetweenDot = Math.floor(xRange / 5)
+    
+    let i = xMin
+    while(i < xMax){
+      if(i % spaceBetweenDot === 0) {
+        setDotFilter((prevDotFilter)=> {
+          return [...prevDotFilter, i]
+        })
+        i+=1
+      } else {
+        i+=1
+      }
+    }
+  }
+  createEffect(() => {
+    range(xMin!, xMax!)
+  })*/
+  
+  /*createEffect(() => {
+    let i = xMin()!
+    while(i < xMax()!){
+      if(i % 5 === 0) {
+        setDotFilter((prevDotFilter)=> {
+          return [...prevDotFilter, i]
+        })
+        i+=1
+      } else {
+        i+=1
+      }
+    }
+  })*/
 
   const [edittable, setEdittable] = createSignal(false);
 
@@ -70,6 +232,9 @@ export function SettingButton(props: SettingButtonProps) {
           },
           index,
         );
+        setDotLine((prevDotLine) => {
+          return prevDotLine.filter((e) => (e !== index))
+        })
       } else if (style() === StyleMode.Dot) {
         props.uplot.plot.addSeries(
           {
@@ -77,9 +242,13 @@ export function SettingButton(props: SettingButtonProps) {
             label: series.label!,
             dash: [0, 5],
             width: strokeWidth(),
+            points : {show : true, fill: color(), size : 5, space : 2000, filter : dotFilter(), stroke: color() }
           },
           index,
         );
+        setDotLine((prevDotLine) => {
+          return [...prevDotLine, index]
+        })
       } else if (style() === StyleMode.DottedLine) {
         props.uplot.plot.addSeries(
           {
@@ -90,6 +259,9 @@ export function SettingButton(props: SettingButtonProps) {
           },
           index,
         );
+        setDotLine((prevDotLine) => {
+          return prevDotLine.filter((e) => (e !== index))
+        })
       }
       props.uplot.plot.redraw();
       addOptionButton(props.uplotId, props.uplot, index);
@@ -299,7 +471,7 @@ export function SettingButton(props: SettingButtonProps) {
                   width="full"
                   placeholder="width"
                   type="number"
-                  max={10}
+                  max={100}
                   min={1}
                   onInput={(e) => inputHandler(e)}
                 />
@@ -547,3 +719,5 @@ const [customColorPalette, setCustomColorPalette] = createSignal<string[]>([
   "#2C2E9C",
   "#6300AB",
 ]);
+
+//const [dotline, setDotLine] = createSignal<number[]>([])
