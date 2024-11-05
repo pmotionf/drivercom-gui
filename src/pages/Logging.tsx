@@ -10,6 +10,7 @@ import { Spinner } from "~/components/ui/spinner";
 import { Text } from "~/components/ui/text";
 import { Toast } from "~/components/ui/toast";
 import { Plot } from "~/components/Plot";
+import { Checkbox } from "~/components/ui/checkbox";
 
 function Logging() {
   const toaster = Toast.createToaster({
@@ -25,6 +26,8 @@ function Logging() {
   const [series, setSeries] = createSignal([] as number[][]);
 
   const [splitIndex, setSplitIndex] = createSignal([] as number[][]);
+
+  const [selectPlot, setSelectPlot] = createSignal<string[]>([]);
 
   function loadLog(details: FileUploadFileAcceptDetails) {
     if (details.files.length == 0) return;
@@ -96,11 +99,20 @@ function Logging() {
       (_, index) => index,
     );
     setSplitIndex([indexArray]);
+    // 체크박스 초기화
+    setSelectPlot([]);
   }
 
-  function splitPlot(id: string, index: number) {
-    const div = document.getElementById(id)!;
+  function splitPlot(index: number) {
+    const div = document.getElementById(logName() + index + "-legend")!;
+    if (!div) {
+      return;
+    }
     const legend_elements = Array.from(div.querySelectorAll(`.u-series`));
+    if (legend_elements.length == 0) {
+      return;
+    }
+
     // 보여지는 범례
     const visible = legend_elements
       .filter((el) => !el.classList.contains("u-off"))
@@ -112,6 +124,7 @@ function Logging() {
       .map((el) => el.querySelector(".u-label")?.textContent || "")
       .filter((label) => label !== "");
 
+    if (visible.length <= 1) return;
     if (hidden.length == 0) return;
 
     const visibles: number[] = visible
@@ -125,6 +138,37 @@ function Logging() {
       updated.splice(index, 1, visibles, hiddens);
       return updated;
     });
+    // 체크박스 초기화
+    setSelectPlot([]);
+  }
+
+  const checkboxChange = (id: string, checked: boolean) => {
+    if (checked) {
+      setSelectPlot([...selectPlot(), id]);
+    } else {
+      setSelectPlot(selectPlot().filter((item) => item !== id));
+    }
+  };
+
+  function mergePlot(inedxs: string[]) {
+    setSplitIndex((prev) => {
+      const updated = [...prev];
+      // 선택된 모든 인덱스의 데이터를 하나로 병합
+      const merged = inedxs.reduce((acc, index) => {
+        return acc.concat(updated[parseInt(index)]);
+      }, [] as number[]);
+
+      // 선택된 인덱스들을 제외한 새로운 배열 생성
+      const newSplitIndex = updated.filter(
+        (_, index) => !inedxs.includes(index.toString()),
+      );
+
+      // 병합된 데이터를 첫 번째 선택된 위치에 추가
+      newSplitIndex.splice(parseInt(inedxs[0]), 0, merged);
+      return newSplitIndex;
+    });
+    // 체크박스 초기화
+    setSelectPlot([]);
   }
 
   // UI 렌더링
@@ -210,17 +254,45 @@ function Logging() {
       </Toast.Toaster>
 
       <Show when={series().length > 0}>
-        <Button
-          variant="ghost"
-          disabled={splitIndex().length <= 1}
-          onclick={resetChart}
-          style={{
-            "margin-top": "0.5rem",
-            "margin-left": "1rem",
-          }}
-        >
-          Reset
-        </Button>
+        <Show when={splitIndex().length > 1}>
+          <Button
+            variant="ghost"
+            onclick={resetChart}
+            style={{
+              "margin-top": "1rem",
+              "margin-left": "1rem",
+            }}
+          >
+            resetCart
+          </Button>
+          <br />
+        </Show>
+
+        <Show when={selectPlot().length >= 1}>
+          <Button
+            onClick={() => splitPlot(Number(selectPlot()))}
+            style={{
+              "margin-left": "1rem",
+              "margin-top": "1rem",
+            }}
+          >
+            Split Plot
+          </Button>
+        </Show>
+
+        <Show when={selectPlot().length >= 2}>
+          <Button
+            variant="ghost"
+            onclick={() => mergePlot(selectPlot())}
+            style={{
+              "margin-top": "1rem",
+              "margin-left": "1rem",
+            }}
+          >
+            mergeCharts
+          </Button>
+        </Show>
+
         <For each={splitIndex()}>
           {(item, index) => {
             // Header and items need not be derived state, as they will not
@@ -234,16 +306,14 @@ function Logging() {
 
             return (
               <>
-                <Button
-                  onClick={() => splitPlot(currentID() + "-wrapper", index())}
-                  disabled={currentHeader.length <= 1}
-                  style={{
-                    "margin-left": "1rem",
-                    "margin-top": `${index() == 0 ? "0.5rem" : "0px"}`,
-                  }}
-                >
-                  Split Plot
-                </Button>
+                <Checkbox
+                  id={`${index()}`}
+                  checked={selectPlot().includes(`${index()}`)}
+                  onCheckedChange={(check) =>
+                    checkboxChange(`${index()}`, check.checked as boolean)
+                  }
+                ></Checkbox>
+
                 <Plot
                   id={currentID()}
                   name=""
