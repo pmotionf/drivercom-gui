@@ -14,16 +14,17 @@ import { useNavigate } from "@solidjs/router";
 import { useLocation } from "@solidjs/router";
 
 function Connect() {
-  const [buttonList, setButtonList] = createSignal<string[]>([]);
-  const [version, setVersion] = createSignal("");
-  const [checkedConfig, setCheckedConfig] = createSignal<string[]>([]);
-  const [showCheckboxes, setShowCheckboxes] = createSignal(false);
-  const [configError, setConfigError] = createSignal(false);
+  const [buttonList, setButtonList] = createSignal<string[]>([]); //
+  const [version, setVersion] = createSignal(""); //버전 저장
+  const [checkedConfig, setCheckedConfig] = createSignal<string[]>([]); //log.configure 내용 저장
+  const [showCheckboxes, setShowCheckboxes] = createSignal(false); //log 선택 상태 표시
+  const [configError, setConfigError] = createSignal(false); //config(json) 상태 확인
 
   const toggleCheckboxes = () => {
     setShowCheckboxes(!showCheckboxes());
   };
 
+  //log.conigure 설정에 필요한 데이터
   const configure_type = {
     dirver: [
       "driver_cycle",
@@ -60,6 +61,7 @@ function Connect() {
   //json value 전달하기
   const navigate = useNavigate();
 
+  //연결된 포트 확인
   async function connectPort() {
     const drivercom = Command.sidecar("binaries/drivercom", ["port.list"]);
     const output = await drivercom.execute();
@@ -71,6 +73,7 @@ function Connect() {
     setVersion(version_output.stdout);
   }
 
+  //configure 선택창 생성
   function SelectCOnfigure() {
     if (showCheckboxes()) {
       return (
@@ -112,6 +115,7 @@ function Connect() {
     return;
   }
 
+  //기본 보튼 생성(firmware,config.log)
   function CreateCommandButton(port: string) {
     return (
       <div id="btn">
@@ -127,7 +131,9 @@ function Connect() {
     );
   }
 
+  //제어기의 config 값을 Config 페이지에서 표시
   async function SwitchConfigPage(port: string) {
+    setShowCheckboxes(false);
     const config = Command.sidecar("binaries/drivercom", [
       "--port",
       port,
@@ -148,6 +154,7 @@ function Connect() {
     }, 500);
   }
 
+  //체크박스(log.configure) 변화를 감지(저장)
   const checkboxChange = (value: string) => {
     setCheckedConfig((prev) => {
       if (prev.includes(value)) {
@@ -156,9 +163,9 @@ function Connect() {
         return [...prev, value];
       }
     });
-    console.log(checkedConfig());
   };
 
+  //Config 페이지에서 받아온 파일 적용
   const location = useLocation();
   createEffect(async () => {
     const params = new URLSearchParams(location.search);
@@ -176,6 +183,29 @@ function Connect() {
       console.log(config_output.stderr);
     }
   });
+
+  //로그 시작(configure 설정 후 시작 가능)
+  async function logStart(port: string) {
+    const log_configure = Command.sidecar("binaries/drivercom", [
+      "--port",
+      port,
+      "log.configure",
+      checkedConfig().join(","), //drivercom.cli 수정 필요
+    ]);
+    const log_output = await log_configure.execute();
+
+    const log_start = Command.sidecar("binaries/drivercom", [
+      "--port",
+      port,
+      "log.start",
+    ]);
+    const start_output = await log_start.execute();
+
+    console.log(log_output.stdout);
+    console.log(log_output.stderr);
+    console.log(start_output.stdout);
+    console.log(start_output.stderr);
+  }
 
   return (
     <>
@@ -206,6 +236,11 @@ function Connect() {
                   {CreateCommandButton(item.slice(1, -1))}
                   {SelectCOnfigure()}
                 </Accordion.ItemContent>
+                <Show when={checkedConfig().length > 0}>
+                  <Button onclick={() => logStart(item.slice(1, -1))}>
+                    log Start
+                  </Button>
+                </Show>
               </Accordion.Item>
             ))}
           </Accordion.Root>
