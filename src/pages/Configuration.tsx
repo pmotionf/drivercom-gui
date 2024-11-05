@@ -23,6 +23,7 @@ function Configuration() {
     const params = new URLSearchParams(location.search);
     const port = params.get("port") as string;
     const driver_json = JSON.parse(params.get("data") as string); // JSON 파싱
+
     if (driver_json) {
       try {
         const driver_data = JSON.parse(driver_json);
@@ -30,9 +31,7 @@ function Configuration() {
         setFileName("Driver Config");
         setPort(port);
         setFileSelectOpen(false);
-      } catch (error) {
-        //TODO: 에러 출력
-      }
+      } catch (error) {}
     }
   });
 

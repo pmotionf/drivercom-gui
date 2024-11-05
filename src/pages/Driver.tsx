@@ -1,4 +1,4 @@
-import { createSignal, createEffect } from "solid-js";
+import { createSignal, createEffect, Show } from "solid-js";
 import { Button } from "~/components/ui/button";
 import { Text } from "~/components/ui/text";
 import { Checkbox } from "~/components/ui/checkbox";
@@ -18,6 +18,7 @@ function Connect() {
   const [version, setVersion] = createSignal("");
   const [checkedConfig, setCheckedConfig] = createSignal<string[]>([]);
   const [showCheckboxes, setShowCheckboxes] = createSignal(false);
+  const [configError, setConfigError] = createSignal(false);
 
   const toggleCheckboxes = () => {
     setShowCheckboxes(!showCheckboxes());
@@ -117,6 +118,11 @@ function Connect() {
         <Button>{"firmware"}</Button>
         <Button onclick={() => SwitchConfigPage(port)}>{"config"}</Button>
         <Button onclick={toggleCheckboxes}>{"log"}</Button>
+        <Show when={configError()}>
+          <Text>
+            {"전달된 config 데이터가 없습니다. 제어기를 확인 해주세요."}
+          </Text>
+        </Show>
       </div>
     );
   }
@@ -131,7 +137,12 @@ function Connect() {
 
     const dataString = encodeURIComponent(JSON.stringify(config_output.stdout));
     setTimeout(() => {
+      if (config_output.stdout == "") {
+        setConfigError(true);
+        return;
+      }
       if (dataString) {
+        setConfigError(false);
         navigate(`/Configuration?&data=${dataString}&port=${port}`);
       }
     }, 500);

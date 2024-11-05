@@ -70,7 +70,7 @@ function App(props: RouteSectionProps) {
     connect: {
       icon: IconPlugConnected,
       label: "Connect",
-      disabled: false,
+      disabled: true,
     },
     driver: {
       icon: IconPlugConnected,
