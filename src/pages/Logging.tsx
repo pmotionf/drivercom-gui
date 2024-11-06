@@ -1,4 +1,4 @@
-import { Show, createSignal, For } from "solid-js";
+import { Show, createSignal, For, createEffect } from "solid-js";
 import { Portal } from "solid-js/web";
 import { createStore } from "solid-js/store";
 import { trackStore } from "@solid-primitives/deep";
@@ -106,7 +106,7 @@ function Logging() {
     const hiddens = plots[plot_index].visible.reduce(
       (filtered: number[], visible, index) => {
         if (!visible) {
-          filtered.push(index);
+          filtered.push(splitIndex()[plot_index][index]);
         }
         return filtered;
       },
@@ -115,14 +115,13 @@ function Logging() {
     const visibles = plots[plot_index].visible.reduce(
       (filtered: number[], visible, index) => {
         if (visible) {
-          filtered.push(index);
+          filtered.push(splitIndex()[plot_index][index]);
         }
         return filtered;
       },
       [],
     );
 
-    // 분할된 헤더와 시리즈 업데이트
     setSplitIndex((prev) => {
       const updated = [...prev];
       updated.splice(plot_index, 1, visibles, hiddens);
@@ -132,7 +131,11 @@ function Logging() {
 
   const allVisible = (index: number) => {
     trackStore(plots);
-    return !plots[index].visible.every((b) => b);
+    return plots[index].visible.every((b) => b);
+  };
+  const allInvisible = (index: number) => {
+    trackStore(plots);
+    return plots[index].visible.every((b) => !b);
   };
 
   // UI 렌더링
@@ -243,7 +246,9 @@ function Logging() {
             // Re-render plot contexts every time `splitIndex` is changed.
             // TODO: Do not always initialize as empty, figure out how to save
             // existing state and update for index changes.
-            setPlots(index(), {} as PlotContext);
+            createEffect(() => {
+              setPlots(index(), {} as PlotContext);
+            });
 
             return (
               <>
@@ -253,7 +258,8 @@ function Logging() {
                     currentHeader.length <= 1 ||
                     !plots[index()] ||
                     !plots[index()].visible ||
-                    !allVisible(index())
+                    allVisible(index()) ||
+                    allInvisible(index())
                   }
                   style={{
                     "margin-left": "1rem",

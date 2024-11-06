@@ -9,6 +9,7 @@ import {
   splitProps,
   useContext,
 } from "solid-js";
+import { createStore } from "solid-js/store";
 
 import uPlot, { AlignedData } from "uplot";
 import "uplot/dist/uPlot.min.css";
@@ -16,6 +17,7 @@ import "uplot/dist/uPlot.min.css";
 import { GlobalStateContext } from "~/GlobalState";
 import { Heading } from "~/components/ui/heading";
 import { ToggleGroup } from "~/components/ui/toggle-group";
+import { IconButton } from "~/components/ui/icon-button";
 import {
   IconArrowsMove,
   IconCrosshair,
@@ -23,9 +25,7 @@ import {
   IconZoomReset,
 } from "@tabler/icons-solidjs";
 import { Stack } from "styled-system/jsx";
-import { IconButton } from "./ui/icon-button";
 import { Legend } from "./Plot/Legend";
-import { createStore } from "solid-js/store";
 
 export type PlotProps = JSX.HTMLAttributes<HTMLDivElement> & {
   id: string;
@@ -61,13 +61,38 @@ export function Plot(props: PlotProps) {
 
   const group = () => props.group ?? props.id;
 
-  const [context, setContext] = createStore(
+  const [ctx, setCtx] = createStore(
     props.context != null ? props.context : ({} as PlotContext),
   );
 
-  if (!context.palette || context.palette.length == 0) {
-    setContext("palette", kelly_colors_hex);
-  }
+  const [getContext, setGetContext] = createSignal(ctx);
+  const [setContext, setSetContext] = createSignal(setCtx);
+
+  // Reset context when context prop changes.
+  createEffect(() => {
+    const [ctx, setCtx] = createStore(
+      props.context != null ? props.context : ({} as PlotContext),
+    );
+
+    setGetContext(ctx);
+    setSetContext((_) => setCtx);
+
+    if (!getContext().palette || getContext().palette.length == 0) {
+      setContext()("palette", kelly_colors_hex);
+    }
+
+    setContext()(
+      "color",
+      props.header.map(
+        (_, index) => kelly_colors_hex[index % kelly_colors_hex.length],
+      ),
+    );
+
+    setContext()(
+      "visible",
+      props.header.map(() => true),
+    );
+  });
 
   // Store whether zoom reset button should be disabled.
   const [zoomReset, setZoomReset] = createSignal(true);
@@ -125,20 +150,13 @@ export function Plot(props: PlotProps) {
     var plot_element = document.getElementById(props.id)!;
     plot_element.replaceChildren();
 
-    setContext(
-      "color",
-      props.header.map(
-        (_, index) => kelly_colors_hex[index % kelly_colors_hex.length],
-      ),
-    );
-
     var series: uPlot.Series[] = [
       {
         label: "Cycle",
       },
       ...props.header.map((_, index) => ({
         label: props.header[index],
-        stroke: () => context.color[index],
+        stroke: () => getContext().color[index],
       })),
     ];
     var scales: uPlot.Scales = {
@@ -285,8 +303,7 @@ export function Plot(props: PlotProps) {
       plot_element,
     );
     setRender(true);
-    console.log(props.header);
-    setContext(
+    setContext()(
       "visible",
       props.header.map(() => true),
     );
@@ -455,20 +472,20 @@ export function Plot(props: PlotProps) {
                 <Legend
                   plot={plot!}
                   series={header}
-                  visible={context.visible[index()]}
+                  visible={getContext().visible[index()]}
                   onVisibleChange={(new_visible) => {
-                    setContext("visible", index(), new_visible);
+                    setContext()("visible", index(), new_visible);
                     // Index must add 1 to account for X-axis "Cycle" series
                     plot.setSeries(index() + 1, {
                       show: new_visible,
                     });
                   }}
-                  color={context.color[index()]}
+                  color={getContext().color[index()]}
                   onColorChange={(new_color) => {
-                    setContext("color", index(), new_color);
+                    setContext()("color", index(), new_color);
                     plot.redraw();
                   }}
-                  palette={context.palette}
+                  palette={getContext().palette}
                   width={"min-content"}
                 />
               )}
