@@ -25,7 +25,7 @@ import {
   IconZoomReset,
 } from "@tabler/icons-solidjs";
 import { Stack } from "styled-system/jsx";
-import { Legend } from "./Plot/Legend";
+import { Legend, LegendStroke } from "./Plot/Legend";
 
 export type PlotProps = JSX.HTMLAttributes<HTMLDivElement> & {
   id: string;
@@ -40,6 +40,7 @@ export type PlotContext = {
   visible: boolean[];
   color: string[];
   palette: string[];
+  style: LegendStroke[];
 };
 
 enum CursorMode {
@@ -86,6 +87,11 @@ export function Plot(props: PlotProps) {
       props.header.map(
         (_, index) => kelly_colors_hex[index % kelly_colors_hex.length],
       ),
+    );
+
+    setContext()(
+      "style",
+      props.header.map(() => LegendStroke.Line),
     );
 
     setContext()(
@@ -487,6 +493,32 @@ export function Plot(props: PlotProps) {
                   }}
                   palette={getContext().palette}
                   width={"min-content"}
+                  strokeStyle={getContext().style[index()]}
+                  onStrokeStyleChange={(new_style) => {
+                    setContext()("style", index(), new_style);
+                    plot.delSeries(index() + 1);
+                    if (getContext().style[index()] === LegendStroke.Line) {
+                      plot.addSeries(
+                        {
+                          stroke: getContext().color[index()],
+                          label: header,
+                        },
+                        index() + 1,
+                      );
+                    } else if (
+                      getContext().style[index()] === LegendStroke.Dash
+                    ) {
+                      plot.addSeries(
+                        {
+                          stroke: getContext().color[index()],
+                          label: header,
+                          dash: [10, 5],
+                        },
+                        index() + 1,
+                      );
+                    }
+                    plot.redraw();
+                  }}
                 />
               )}
             </For>

@@ -38,6 +38,8 @@ export type LegendProps = StackProps & {
   onColorChange?: (new_color: string) => void;
   palette?: string[];
   onPaletteChange?: (new_palette: string[]) => void;
+  strokeStyle?: LegendStroke;
+  onStrokeStyleChange?: (new_style: LegendStroke) => void;
   readonly?: boolean;
 };
 
@@ -55,6 +57,8 @@ export function Legend(props: LegendProps) {
     "onVisibleChange",
     "color",
     "onColorChange",
+    "strokeStyle",
+    "onStrokeStyleChange",
     "readonly",
   ]);
 
@@ -90,6 +94,12 @@ export function Legend(props: LegendProps) {
     }
     props.onColorChange?.(new_color);
     setColor(new_color);
+  }
+
+  if (props.strokeStyle == null && LegendStroke) {
+    var new_style = stroke();
+    props.onStrokeStyleChange?.(new_style);
+    _setStroke(new_style);
   }
 
   const updateValue = () => {
@@ -196,10 +206,13 @@ export function Legend(props: LegendProps) {
                 <SeriesConfiguration
                   series={props.series}
                   color={color()}
+                  strokeStyle={stroke()}
                   palette={props.palette}
-                  onSave={(new_color) => {
+                  onSave={(new_color, new_style) => {
                     props.onColorChange?.(new_color);
+                    props.onStrokeStyleChange?.(new_style);
                     setColor(new_color);
+                    _setStroke(new_style);
                     setConfigOpen(false);
                   }}
                   onCancel={() => setConfigOpen(false)}

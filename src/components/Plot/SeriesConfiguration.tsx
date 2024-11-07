@@ -7,13 +7,17 @@ import { IconButton } from "~/components/ui/icon-button";
 import { Input } from "~/components/ui/input";
 import { Button } from "~/components/ui/button";
 import { Card } from "../ui/card";
-import { IconX } from "@tabler/icons-solidjs";
+import { IconX, IconLine, IconLineDashed } from "@tabler/icons-solidjs";
+import { ToggleGroup } from "~/components/ui/toggle-group";
+import { LegendStroke } from "./Legend";
 
 export type SeriesConfigurationProps = ColorPicker.RootProps & {
   series: string;
   palette?: string[];
   color?: string;
-  onSave?: (new_color: string) => void;
+  //style
+  strokeStyle?: LegendStroke;
+  onSave?: (new_color: string, new_style: LegendStroke) => void;
   onCancel?: () => void;
 };
 
@@ -22,6 +26,7 @@ export function SeriesConfiguration(props: SeriesConfigurationProps) {
     "series",
     "palette",
     "color",
+    "strokeStyle",
     "onSave",
     "onCancel",
   ]);
@@ -29,6 +34,8 @@ export function SeriesConfiguration(props: SeriesConfigurationProps) {
   const [selectedColor, setSelectedColor] = createSignal(
     parseColor(props.color ?? "#fff"),
   );
+
+  const [style, setStyle] = createSignal(props.strokeStyle);
 
   return (
     <Card.Root>
@@ -89,10 +96,32 @@ export function SeriesConfiguration(props: SeriesConfigurationProps) {
             </For>
           </ColorPicker.SwatchGroup>
         </ColorPicker.Root>
+        <Heading as="h6" size="xs" style={{ "margin-top": "0.6rem" }}>
+          Style
+        </Heading>
+        <ToggleGroup.Root
+          value={[LegendStroke[style()!]]}
+          onValueChange={(details) => {
+            setStyle(
+              LegendStroke[details.value[0] as keyof typeof LegendStroke],
+            );
+          }}
+          width={"5rem"}
+          style={{ "margin-top": "0.4rem" }}
+        >
+          <ToggleGroup.Item value={LegendStroke[LegendStroke.Line]}>
+            <IconLine />
+          </ToggleGroup.Item>
+          <ToggleGroup.Item value={LegendStroke[LegendStroke.Dash]}>
+            <IconLineDashed />
+          </ToggleGroup.Item>
+        </ToggleGroup.Root>
       </Card.Body>
       <Card.Footer>
         <Button
-          onClick={() => props.onSave?.(selectedColor().toString("rgba"))}
+          onClick={() => {
+            props.onSave?.(selectedColor().toString("rgba"), style()!);
+          }}
         >
           Save
         </Button>
