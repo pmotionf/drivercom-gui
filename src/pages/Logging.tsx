@@ -130,11 +130,11 @@ function Logging() {
   }
 
   const allVisible = (index: number) => {
-    trackStore(plots);
+    trackStore(plots[index].visible);
     return plots[index].visible.every((b) => b);
   };
   const allInvisible = (index: number) => {
-    trackStore(plots);
+    trackStore(plots[index].visible);
     return plots[index].visible.every((b) => !b);
   };
 
