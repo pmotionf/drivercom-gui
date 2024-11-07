@@ -74,9 +74,7 @@ export function Legend(props: LegendProps) {
   const [visible, setVisible] = createSignal(
     props.visible != null ? props.visible : true,
   );
-  const [color, setColor] = createSignal(
-    props.color != null ? props.color : "",
-  );
+  const [color, setColor] = createSignal(props.color ?? "");
 
   const [stroke, _setStroke] = createSignal(LegendStroke.Line);
 
@@ -90,12 +88,8 @@ export function Legend(props: LegendProps) {
     } else if (typeof props.plot.series[seriesIndex].stroke === "function") {
       new_color = (props.plot.series[seriesIndex].stroke as Function)();
     }
-    if (props.onColorChange != null) {
-      props.onColorChange(new_color);
-      setColor(new_color);
-    } else {
-      setColor(new_color);
-    }
+    props.onColorChange?.(new_color);
+    setColor(new_color);
   }
 
   const updateValue = () => {
@@ -204,12 +198,8 @@ export function Legend(props: LegendProps) {
                   color={color()}
                   palette={props.palette}
                   onSave={(new_color) => {
-                    if (props.onColorChange != null) {
-                      props.onColorChange(new_color);
-                      setColor(new_color);
-                    } else {
-                      setColor(new_color);
-                    }
+                    props.onColorChange?.(new_color);
+                    setColor(new_color);
                     setConfigOpen(false);
                   }}
                   onCancel={() => setConfigOpen(false)}
@@ -234,18 +224,12 @@ export function Legend(props: LegendProps) {
         <Button
           variant="link"
           style={{ "justify-content": "left" }}
-          onclick={
-            props.onVisibleChange != null
-              ? () => {
-                  props.onVisibleChange!(
-                    props.visible != null ? !props.visible : !visible(),
-                  );
-                  setVisible((prev) => !prev);
-                }
-              : () => {
-                  setVisible((prev) => !prev);
-                }
-          }
+          onclick={() => {
+            props.onVisibleChange?.(
+              props.visible != null ? !props.visible : !visible(),
+            );
+            setVisible((prev) => !prev);
+          }}
         >
           {props.series}:
         </Button>
