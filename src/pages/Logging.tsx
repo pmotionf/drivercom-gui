@@ -1,7 +1,11 @@
-import { Show, createSignal, For } from "solid-js";
+import { Show, createSignal, For, createEffect } from "solid-js";
 import { Portal } from "solid-js/web";
+import { createStore } from "solid-js/store";
+import { trackStore } from "@solid-primitives/deep";
+
 import { inferSchema, initParser } from "udsv";
 import { IconX, IconChevronsDown, IconChevronsUp } from "@tabler/icons-solidjs";
+
 import { Button } from "~/components/ui/button";
 import { Collapsible } from "~/components/ui/collapsible";
 import type { FileUploadFileAcceptDetails } from "@ark-ui/solid";
@@ -9,7 +13,7 @@ import { FileUpload } from "~/components/ui/file-upload";
 import { Spinner } from "~/components/ui/spinner";
 import { Text } from "~/components/ui/text";
 import { Toast } from "~/components/ui/toast";
-import { Plot } from "~/components/Plot";
+import { Plot, type PlotContext } from "~/components/Plot";
 
 function Logging() {
   const toaster = Toast.createToaster({
@@ -23,6 +27,7 @@ function Logging() {
   const [logName, setLogName] = createSignal("");
   const [header, setHeader] = createSignal([] as string[]);
   const [series, setSeries] = createSignal([] as number[][]);
+  const [plots, setPlots] = createStore([] as PlotContext[]);
 
   const [splitIndex, setSplitIndex] = createSignal([] as number[][]);
 
@@ -47,7 +52,6 @@ function Logging() {
         return;
       }
 
-      // CSV 파싱 및 데이터 처리
       let schema = inferSchema(csv_str);
       let parser = initParser(schema);
       const local_header = rows[0].replace(/,\s*$/, "").split(",");
@@ -67,7 +71,6 @@ function Logging() {
         return;
       }
 
-      // 데이터 상태 업데이트
       setHeader(local_header);
       setSeries(data.slice(0, local_header.length));
       setFileSelectOpen(false);
@@ -87,6 +90,7 @@ function Logging() {
         type: "error",
       });
     };
+
     reader.readAsText(file);
   }
 
@@ -98,34 +102,41 @@ function Logging() {
     setSplitIndex([indexArray]);
   }
 
-  function splitPlot(id: string, index: number) {
-    const div = document.getElementById(id)!;
-    const legend_elements = Array.from(div.querySelectorAll(`.u-series`));
-    // 보여지는 범례
-    const visible = legend_elements
-      .filter((el) => !el.classList.contains("u-off"))
-      .map((el) => el.querySelector(".u-label")?.textContent || "")
-      .filter((label) => label !== "");
-    // 숨은 범례
-    const hidden = legend_elements
-      .filter((el) => el.classList.contains("u-off"))
-      .map((el) => el.querySelector(".u-label")?.textContent || "")
-      .filter((label) => label !== "");
+  function splitPlot(plot_index: number) {
+    const hiddens = plots[plot_index].visible.reduce(
+      (filtered: number[], visible, index) => {
+        if (!visible) {
+          filtered.push(splitIndex()[plot_index][index]);
+        }
+        return filtered;
+      },
+      [],
+    );
+    const visibles = plots[plot_index].visible.reduce(
+      (filtered: number[], visible, index) => {
+        if (visible) {
+          filtered.push(splitIndex()[plot_index][index]);
+        }
+        return filtered;
+      },
+      [],
+    );
 
-    if (hidden.length == 0) return;
-
-    const visibles: number[] = visible
-      .slice(1)
-      .map((el) => header().indexOf(el));
-    const hiddens: number[] = hidden.map((el) => header().indexOf(el));
-
-    // 분할된 헤더와 시리즈 업데이트
     setSplitIndex((prev) => {
       const updated = [...prev];
-      updated.splice(index, 1, visibles, hiddens);
+      updated.splice(plot_index, 1, visibles, hiddens);
       return updated;
     });
   }
+
+  const allVisible = (index: number) => {
+    trackStore(plots[index].visible);
+    return plots[index].visible.every((b) => b);
+  };
+  const allInvisible = (index: number) => {
+    trackStore(plots[index].visible);
+    return plots[index].visible.every((b) => !b);
+  };
 
   // UI 렌더링
   return (
@@ -232,11 +243,24 @@ function Logging() {
             // added/merged plots.
             const currentID = () => logName() + index();
 
+            // Re-render plot contexts every time `splitIndex` is changed.
+            // TODO: Do not always initialize as empty, figure out how to save
+            // existing state and update for index changes.
+            createEffect(() => {
+              setPlots(index(), {} as PlotContext);
+            });
+
             return (
               <>
                 <Button
-                  onClick={() => splitPlot(currentID() + "-wrapper", index())}
-                  disabled={currentHeader.length <= 1}
+                  onClick={() => splitPlot(index())}
+                  disabled={
+                    currentHeader.length <= 1 ||
+                    !plots[index()] ||
+                    !plots[index()].visible ||
+                    allVisible(index()) ||
+                    allInvisible(index())
+                  }
                   style={{
                     "margin-left": "1rem",
                     "margin-top": `${index() == 0 ? "0.5rem" : "0px"}`,
@@ -246,9 +270,11 @@ function Logging() {
                 </Button>
                 <Plot
                   id={currentID()}
+                  group={logName()}
                   name=""
                   header={currentHeader}
                   series={currentItems}
+                  context={plots[index()]}
                   style={{
                     width: "100%",
                     height: `calc(100% / ${splitIndex().length} - 3rem`,

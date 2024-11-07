@@ -1,5 +1,7 @@
 import {
+  For,
   JSX,
+  Show,
   createEffect,
   createSignal,
   onCleanup,
@@ -7,7 +9,7 @@ import {
   splitProps,
   useContext,
 } from "solid-js";
-import { render } from "solid-js/web";
+import { createStore } from "solid-js/store";
 
 import uPlot, { AlignedData } from "uplot";
 import "uplot/dist/uPlot.min.css";
@@ -15,7 +17,7 @@ import "uplot/dist/uPlot.min.css";
 import { GlobalStateContext } from "~/GlobalState";
 import { Heading } from "~/components/ui/heading";
 import { ToggleGroup } from "~/components/ui/toggle-group";
-import { SettingButton } from "./SettingButton";
+import { IconButton } from "~/components/ui/icon-button";
 import {
   IconArrowsMove,
   IconCrosshair,
@@ -23,17 +25,21 @@ import {
   IconZoomReset,
 } from "@tabler/icons-solidjs";
 import { Stack } from "styled-system/jsx";
-import { IconButton } from "./ui/icon-button";
+import { Legend } from "./Plot/Legend";
 
 export type PlotProps = JSX.HTMLAttributes<HTMLDivElement> & {
   id: string;
+  group?: string;
   name: string;
   header: string[];
   series: number[][];
+  context?: PlotContext;
 };
 
-type PlotContainer = {
-  plot: uPlot | null;
+export type PlotContext = {
+  visible: boolean[];
+  color: string[];
+  palette: string[];
 };
 
 enum CursorMode {
@@ -49,7 +55,44 @@ export function Plot(props: PlotProps) {
   var bg_muted = getComputedCSSVariableValue("--colors-bg-muted");
   const { globalState } = useContext(GlobalStateContext)!;
   var theme = globalState.theme;
-  var uplot: PlotContainer = { plot: null };
+
+  const [render, setRender] = createSignal(false);
+  var plot: uPlot;
+
+  const group = () => props.group ?? props.id;
+
+  const [ctx, setCtx] = createStore(
+    props.context != null ? props.context : ({} as PlotContext),
+  );
+
+  const [getContext, setGetContext] = createSignal(ctx);
+  const [setContext, setSetContext] = createSignal(setCtx);
+
+  // Reset context when context prop changes.
+  createEffect(() => {
+    const [ctx, setCtx] = createStore(
+      props.context != null ? props.context : ({} as PlotContext),
+    );
+
+    setGetContext(ctx);
+    setSetContext((_) => setCtx);
+
+    if (!getContext().palette || getContext().palette.length == 0) {
+      setContext()("palette", kelly_colors_hex);
+    }
+
+    setContext()(
+      "color",
+      props.header.map(
+        (_, index) => kelly_colors_hex[index % kelly_colors_hex.length],
+      ),
+    );
+
+    setContext()(
+      "visible",
+      props.header.map(() => true),
+    );
+  });
 
   // Store whether zoom reset button should be disabled.
   const [zoomReset, setZoomReset] = createSignal(true);
@@ -79,12 +122,11 @@ export function Plot(props: PlotProps) {
   const checkZoomLevel = async () => {
     setTimeout(() => {
       setZoomReset(
-        !uplot.plot ||
-          !uplot.plot.scales.x.min ||
-          !uplot.plot.scales.x.max ||
+        !plot ||
+          !plot.scales.x.min ||
+          !plot.scales.x.max ||
           !(
-            uplot.plot.scales.x.min > 0 ||
-            uplot.plot.scales.x.max < uplot.plot.data[0].length - 1
+            plot.scales.x.min > 0 || plot.scales.x.max < plot.data[0].length - 1
           ),
       );
     }, 10);
@@ -106,17 +148,15 @@ export function Plot(props: PlotProps) {
 
   function createPlot() {
     var plot_element = document.getElementById(props.id)!;
-    var legend_element = document.getElementById(props.id + "-legend")!;
     plot_element.replaceChildren();
-    legend_element.replaceChildren();
 
     var series: uPlot.Series[] = [
       {
         label: "Cycle",
       },
-      ...props.header.map((label, index, _) => ({
-        label: label,
-        stroke: kelly_colors_hex[index % kelly_colors_hex.length],
+      ...props.header.map((_, index) => ({
+        label: props.header[index],
+        stroke: () => getContext().color[index],
       })),
     ];
     var scales: uPlot.Scales = {
@@ -126,12 +166,12 @@ export function Plot(props: PlotProps) {
     };
 
     // Save and restore existing plot state.
-    if (uplot.plot) {
-      series = uplot.plot.series;
-      scales = uplot.plot.scales;
+    if (plot) {
+      series = plot.series;
+      scales = plot.scales;
     }
 
-    uplot.plot = new uPlot(
+    plot = new uPlot(
       {
         scales: scales,
         axes: [
@@ -155,21 +195,14 @@ export function Plot(props: PlotProps) {
           },
         ],
         legend: {
-          mount: (_, el) => {
-            legend_element.appendChild(el);
-          },
-          markers: {
-            show: true,
-            width: 3,
-          },
-          values: [],
+          show: false,
         },
         width: plot_element.clientWidth,
         height: plot_element.clientHeight,
         series: series,
         cursor: {
           sync: {
-            key: "plotSync",
+            key: group(),
           },
           bind: {
             mousedown: (u, _targ, handler) => {
@@ -179,7 +212,7 @@ export function Plot(props: PlotProps) {
                   if (cursorMode() !== CursorMode.Lock) {
                     // @ts-ignore
                     if (u.cursor._lock) {
-                      uPlot.sync("plotSync").plots.forEach((up) => {
+                      uPlot.sync(group()).plots.forEach((up) => {
                         // @ts-ignore
                         up.cursor._lock = false;
                       });
@@ -188,7 +221,7 @@ export function Plot(props: PlotProps) {
                     // @ts-ignore
                     const new_lock = !u.cursor._lock;
                     // Lock cursor in plot only when control-clicking.
-                    uPlot.sync("plotSync").plots.forEach((up) => {
+                    uPlot.sync(group()).plots.forEach((up) => {
                       // @ts-ignore
                       up.cursor._lock = new_lock;
                     });
@@ -226,7 +259,7 @@ export function Plot(props: PlotProps) {
                         (scaleXMin = scXMin0), (scaleXMax = xMax);
                       else (scaleXMin = scaleXMin), (scaleXMax = scaleXMax);
 
-                      uPlot.sync("plotSync").plots.forEach((up) => {
+                      uPlot.sync(group()).plots.forEach((up) => {
                         up.setScale("x", {
                           min: scaleXMin,
                           max: scaleXMax,
@@ -261,7 +294,7 @@ export function Plot(props: PlotProps) {
             },
           },
         },
-        plugins: [wheelZoomPlugin({ factor: 0.75 })],
+        plugins: [wheelZoomPlugin({ factor: 0.75, group: group() })],
       },
       [
         [...Array(props.series[0].length).keys()],
@@ -269,10 +302,11 @@ export function Plot(props: PlotProps) {
       ] as AlignedData,
       plot_element,
     );
-
-    for (var i = 0; i < props.header.length; i++) {
-      addOptionButton(props.id, uplot, i + 1);
-    }
+    setRender(true);
+    setContext()(
+      "visible",
+      props.header.map(() => true),
+    );
   }
 
   onMount(() => {
@@ -282,8 +316,8 @@ export function Plot(props: PlotProps) {
         if (entries.length == 0) return;
         const entry = entries[0];
         setTimeout(() => {
-          if (uplot.plot) {
-            uplot.plot.setSize({
+          if (plot) {
+            plot.setSize({
               width: entry.contentRect.width,
               height: entry.contentRect.height,
             });
@@ -310,23 +344,6 @@ export function Plot(props: PlotProps) {
       opacity: 0.1;
     }
   `;
-  const legend_css = `
-    .u-inline tr {
-      display: block;
-    }
-
-    .u-series td {
-      padding: 0px;
-    }
-
-    .u-legend {
-      text-align: left;
-    }
-    .u-legend th {
-      vertical-align: middle;
-      display: inline-block;
-    }
-  `;
 
   return (
     <>
@@ -345,7 +362,7 @@ export function Plot(props: PlotProps) {
           id={props.id}
           style={{
             float: "left",
-            width: "calc(100% - 15em)",
+            width: "calc(100% - 15rem)",
             height: "calc(100% - 0.5rem)",
           }}
         ></div>
@@ -361,7 +378,7 @@ export function Plot(props: PlotProps) {
             variant={"outline"}
             disabled={zoomReset()}
             onclick={() => {
-              uPlot.sync("plotSync").plots.forEach((up: uPlot) => {
+              uPlot.sync(group()).plots.forEach((up: uPlot) => {
                 up.setScale("x", { min: 0, max: up.data[0].length - 1 });
               });
             }}
@@ -432,18 +449,49 @@ export function Plot(props: PlotProps) {
             </ToggleGroup.Item>
           </ToggleGroup.Root>
         </Stack>
-        <style>{legend_css}</style>
-        <div
-          id={props.id + "-legend"}
-          style={{
-            float: "left",
-            "margin-top": "0.5rem",
-            "margin-bottom": "1rem",
-            height: "calc(100% - 1.5rem - 3rem - 0.5rem)",
-            width: "15em",
-            overflow: "auto",
-          }}
-        ></div>
+        <Show when={render()}>
+          <Stack
+            style={{
+              "margin-top": "1rem",
+              "padding-bottom": "0.5rem",
+              float: "left",
+              width: "15rem",
+              "max-height": "calc(100% - 1.5rem - 3rem)",
+              "overflow-x": "auto",
+              "overflow-y": "auto",
+            }}
+          >
+            <Legend
+              plot={plot!}
+              series={"Cycle"}
+              width={"min-content"}
+              readonly
+            />
+            <For each={props.header}>
+              {(header, index) => (
+                <Legend
+                  plot={plot!}
+                  series={header}
+                  visible={getContext().visible[index()]}
+                  onVisibleChange={(new_visible) => {
+                    setContext()("visible", index(), new_visible);
+                    // Index must add 1 to account for X-axis "Cycle" series
+                    plot.setSeries(index() + 1, {
+                      show: new_visible,
+                    });
+                  }}
+                  color={getContext().color[index()]}
+                  onColorChange={(new_color) => {
+                    setContext()("color", index(), new_color);
+                    plot.redraw();
+                  }}
+                  palette={getContext().palette}
+                  width={"min-content"}
+                />
+              )}
+            </For>
+          </Stack>
+        </Show>
       </div>
     </>
   );
@@ -517,37 +565,13 @@ function wheelZoomPlugin(opts: any) {
           let nxMax = nxMin + nxRange;
           [nxMin, nxMax] = clamp(nxRange, nxMin, nxMax, xRange, xMin, xMax);
 
-          uPlot.sync("plotSync").plots.forEach((up: uPlot) => {
+          uPlot.sync(opts.group).plots.forEach((up: uPlot) => {
             up.setScale("x", { min: nxMin, max: nxMax });
           });
         });
       },
     },
   };
-}
-
-function addOptionButton(uplotId: string, uplot: PlotContainer, index: number) {
-  const div = document.getElementById(uplotId + "-wrapper");
-  if (div) {
-    const legend_elements = div.querySelectorAll(`.u-series`);
-    var row = legend_elements.item(index) as HTMLTableRowElement;
-    var new_cell = row.insertCell(0);
-    new_cell.style.height = "1.5em";
-    new_cell.style.width = "1.5em";
-    new_cell.style.padding = "0px";
-    new_cell.style.margin = "0px";
-    new_cell.style.verticalAlign = "middle";
-    new_cell.className = "";
-    const container = document.createElement("div");
-    container.style.height = "1.5em";
-    container.style.width = "1.5em";
-    container.style.verticalAlign = "top";
-    new_cell.appendChild(container);
-    render(
-      () => <SettingButton uplotId={uplotId} uplot={uplot} index={index} />,
-      container,
-    );
-  }
 }
 
 const kelly_colors_hex = [
