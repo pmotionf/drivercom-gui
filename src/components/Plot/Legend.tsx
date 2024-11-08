@@ -38,8 +38,8 @@ export type LegendProps = StackProps & {
   onColorChange?: (new_color: string) => void;
   palette?: string[];
   onPaletteChange?: (new_palette: string[]) => void;
-  strokeStyle?: LegendStroke;
-  onStrokeStyleChange?: (new_style: LegendStroke) => void;
+  stroke?: LegendStroke;
+  onStrokeChange?: (new_style: LegendStroke) => void;
   readonly?: boolean;
 };
 
@@ -57,8 +57,8 @@ export function Legend(props: LegendProps) {
     "onVisibleChange",
     "color",
     "onColorChange",
-    "strokeStyle",
-    "onStrokeStyleChange",
+    "stroke",
+    "onStrokeChange",
     "readonly",
   ]);
 
@@ -79,9 +79,7 @@ export function Legend(props: LegendProps) {
     props.visible != null ? props.visible : true,
   );
   const [color, setColor] = createSignal(props.color ?? "");
-
-  const [stroke, _setStroke] = createSignal(LegendStroke.Line);
-
+  const [stroke, setStroke] = createSignal(props.stroke ?? LegendStroke.Line);
   const [value, setValue] = createSignal(null as number | null);
 
   // Autodetect initial color from plot if color is not provided in props.
@@ -94,12 +92,6 @@ export function Legend(props: LegendProps) {
     }
     props.onColorChange?.(new_color);
     setColor(new_color);
-  }
-
-  if (props.strokeStyle == null && LegendStroke) {
-    var new_style = stroke();
-    props.onStrokeStyleChange?.(new_style);
-    _setStroke(new_style);
   }
 
   const updateValue = () => {
@@ -206,13 +198,13 @@ export function Legend(props: LegendProps) {
                 <SeriesConfiguration
                   series={props.series}
                   color={color()}
-                  strokeStyle={stroke()}
+                  stroke={stroke()}
                   palette={props.palette}
                   onSave={(new_color, new_style) => {
                     props.onColorChange?.(new_color);
-                    props.onStrokeStyleChange?.(new_style);
+                    props.onStrokeChange?.(new_style);
                     setColor(new_color);
-                    _setStroke(new_style);
+                    setStroke(new_style);
                     setConfigOpen(false);
                   }}
                   onCancel={() => setConfigOpen(false)}

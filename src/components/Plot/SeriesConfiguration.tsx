@@ -15,8 +15,7 @@ export type SeriesConfigurationProps = ColorPicker.RootProps & {
   series: string;
   palette?: string[];
   color?: string;
-  //style
-  strokeStyle?: LegendStroke;
+  stroke?: LegendStroke;
   onSave?: (new_color: string, new_style: LegendStroke) => void;
   onCancel?: () => void;
 };
@@ -26,7 +25,7 @@ export function SeriesConfiguration(props: SeriesConfigurationProps) {
     "series",
     "palette",
     "color",
-    "strokeStyle",
+    "stroke",
     "onSave",
     "onCancel",
   ]);
@@ -35,7 +34,7 @@ export function SeriesConfiguration(props: SeriesConfigurationProps) {
     parseColor(props.color ?? "#fff"),
   );
 
-  const [style, setStyle] = createSignal(props.strokeStyle);
+  const [stroke, setStroke] = createSignal(props.stroke ?? LegendStroke.Line);
 
   return (
     <Card.Root>
@@ -100,9 +99,9 @@ export function SeriesConfiguration(props: SeriesConfigurationProps) {
           Style
         </Heading>
         <ToggleGroup.Root
-          value={[LegendStroke[style()!]]}
+          value={[LegendStroke[stroke()]]}
           onValueChange={(details) => {
-            setStyle(
+            setStroke(
               LegendStroke[details.value[0] as keyof typeof LegendStroke],
             );
           }}
@@ -120,7 +119,7 @@ export function SeriesConfiguration(props: SeriesConfigurationProps) {
       <Card.Footer>
         <Button
           onClick={() => {
-            props.onSave?.(selectedColor().toString("rgba"), style()!);
+            props.onSave?.(selectedColor().toString("rgba"), stroke());
           }}
         >
           Save

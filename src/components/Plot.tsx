@@ -493,8 +493,8 @@ export function Plot(props: PlotProps) {
                   }}
                   palette={getContext().palette}
                   width={"min-content"}
-                  strokeStyle={getContext().style[index()]}
-                  onStrokeStyleChange={(new_style) => {
+                  stroke={getContext().style[index()]}
+                  onStrokeChange={(new_style) => {
                     setContext()("style", index(), new_style);
                     plot.delSeries(index() + 1);
                     if (getContext().style[index()] === LegendStroke.Line) {
