@@ -497,26 +497,17 @@ export function Plot(props: PlotProps) {
                   onStrokeChange={(new_style) => {
                     setContext()("style", index(), new_style);
                     plot.delSeries(index() + 1);
-                    if (getContext().style[index()] === LegendStroke.Line) {
-                      plot.addSeries(
-                        {
-                          stroke: getContext().color[index()],
-                          label: header,
-                        },
-                        index() + 1,
-                      );
-                    } else if (
-                      getContext().style[index()] === LegendStroke.Dash
-                    ) {
-                      plot.addSeries(
-                        {
-                          stroke: getContext().color[index()],
-                          label: header,
-                          dash: [10, 5],
-                        },
-                        index() + 1,
-                      );
-                    }
+                    const config = {
+                      stroke: getContext().color[index()],
+                      label: header,
+                      ...(getContext().style[index()] === LegendStroke.Dash && {
+                        dash: [10, 5],
+                      }),
+                      ...(getContext().style[index()] === LegendStroke.Dot && {
+                        dash: [0, 5],
+                      }),
+                    };
+                    plot.addSeries(config, index() + 1);
                     plot.redraw();
                   }}
                 />
