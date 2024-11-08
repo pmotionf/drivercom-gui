@@ -38,6 +38,8 @@ export type LegendProps = StackProps & {
   onColorChange?: (new_color: string) => void;
   palette?: string[];
   onPaletteChange?: (new_palette: string[]) => void;
+  stroke?: LegendStroke;
+  onStrokeChange?: (new_style: LegendStroke) => void;
   readonly?: boolean;
 };
 
@@ -55,6 +57,8 @@ export function Legend(props: LegendProps) {
     "onVisibleChange",
     "color",
     "onColorChange",
+    "stroke",
+    "onStrokeChange",
     "readonly",
   ]);
 
@@ -75,9 +79,7 @@ export function Legend(props: LegendProps) {
     props.visible != null ? props.visible : true,
   );
   const [color, setColor] = createSignal(props.color ?? "");
-
-  const [stroke, _setStroke] = createSignal(LegendStroke.Line);
-
+  const [stroke, setStroke] = createSignal(props.stroke ?? LegendStroke.Line);
   const [value, setValue] = createSignal(null as number | null);
 
   // Autodetect initial color from plot if color is not provided in props.
@@ -196,10 +198,13 @@ export function Legend(props: LegendProps) {
                 <SeriesConfiguration
                   series={props.series}
                   color={color()}
+                  stroke={stroke()}
                   palette={props.palette}
-                  onSave={(new_color) => {
+                  onSave={(new_color, new_style) => {
                     props.onColorChange?.(new_color);
+                    props.onStrokeChange?.(new_style);
                     setColor(new_color);
+                    setStroke(new_style);
                     setConfigOpen(false);
                   }}
                   onCancel={() => setConfigOpen(false)}
