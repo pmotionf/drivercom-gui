@@ -8,12 +8,12 @@ const { withProvider, withContext } = createStyleContext(treeView)
 
 export type RootProviderProps = ComponentProps<typeof RootProvider>
 export const RootProvider = withProvider<
-  Assign<Assign<HTMLStyledProps<'div'>, TreeView.RootProviderBaseProps>, TreeViewVariantProps>
+  Assign<Assign<HTMLStyledProps<'div'>, TreeView.RootProviderBaseProps<any>>, TreeViewVariantProps>
 >(TreeView.RootProvider, 'root')
 
 export type RootProps = ComponentProps<typeof Root>
 export const Root = withProvider<
-  Assign<Assign<HTMLStyledProps<'div'>, TreeView.RootBaseProps>, TreeViewVariantProps>
+  Assign<Assign<HTMLStyledProps<'div'>, TreeView.RootBaseProps<any>>, TreeViewVariantProps>
 >(TreeView.Root, 'root')
 
 export const BranchContent = withContext<
@@ -65,4 +65,4 @@ export const Tree = withContext<Assign<HTMLStyledProps<'ul'>, TreeView.TreeBaseP
   'tree',
 )
 
-export { TreeViewContext as Context } from '@ark-ui/solid'
+export const Context = TreeView.Context;
