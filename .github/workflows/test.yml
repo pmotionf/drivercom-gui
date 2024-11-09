@@ -23,7 +23,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Install dependencies
-        run: deno i
+        run: deno i --frozen
 
       - name: Run `deno fmt`
         if: matrix.os == 'self-hosted'
