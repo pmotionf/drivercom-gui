@@ -36,7 +36,7 @@ function Logging() {
     const file = details.files[0];
     setLogName(file.name);
     setLogStatus("loading");
-    var reader = new FileReader();
+    const reader = new FileReader();
 
     reader.onload = () => {
       setLogStatus("");
@@ -52,8 +52,8 @@ function Logging() {
         return;
       }
 
-      let schema = inferSchema(csv_str);
-      let parser = initParser(schema);
+      const schema = inferSchema(csv_str);
+      const parser = initParser(schema);
       const local_header = rows[0].replace(/,\s*$/, "").split(",");
       const data = parser.typedCols(csv_str).map((row) =>
         row.map((val) => {
@@ -179,8 +179,8 @@ function Logging() {
             onFileAccept={loadLog}
             onFileReject={(details) => {
               if (details.files.length == 0) return;
-              var description = "The provided log file is invalid:\n";
-              for (var i = 0; i < details.files[0].errors.length; i++) {
+              let description = "The provided log file is invalid:\n";
+              for (let i = 0; i < details.files[0].errors.length; i++) {
                 if (description.slice(-1) !== "\n") {
                   description += ", ";
                 }

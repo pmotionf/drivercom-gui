@@ -1,13 +1,15 @@
 import { defineConfig } from "vite";
+import deno from "@deno/vite-plugin";
 import solid from "vite-plugin-solid";
 import tsconfigPaths from "vite-tsconfig-paths";
+import process from "node:process";
 
 // @ts-expect-error process is a nodejs global
 const host = process.env.TAURI_DEV_HOST;
 
 // https://vitejs.dev/config/
-export default defineConfig(async () => ({
-  plugins: [solid(), tsconfigPaths({ root: "./" })],
+export default defineConfig({
+  plugins: [deno(), solid(), tsconfigPaths({ root: "./" })],
 
   // Vite options tailored for Tauri development and only applied in `tauri dev` or `tauri build`
   //
@@ -30,4 +32,4 @@ export default defineConfig(async () => ({
       ignored: ["**/src-tauri/**"],
     },
   },
-}));
+});

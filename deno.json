@@ -1,15 +1,28 @@
 {
+  "exclude": ["dist/", "src-tauri/", ".github/", ".vscode/"],
   "tasks": {
     "prepare": "panda codegen",
-    "dev": "vite",
-    "build": "vite build",
-    "serve": "vite preview",
+    "dev": "deno run -A --node-modules-dir npm:vite",
+    "build": "deno run -A --node-modules-dir npm:vite build",
+    "serve": "deno run -A --node-modules-dir npm:vite preview",
     "tauri": "tauri"
   },
   "fmt": {
     "useTabs": false,
     "indentWidth": 2,
-    "semiColons": true,
-    "exclude": ["src-tauri/", ".github/", ".vscode/"]
+    "semiColons": true
+  },
+  "lint": {
+    "exclude": ["styled-system/", "src/components/ui"]
+  },
+  "compilerOptions": {
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "jsx": "react-jsx",
+    "jsxImportSource": "solid-js"
+  },
+  "imports": {
+    "~/": "./src/",
+    "styled-system/": "./styled-system/",
+    "@deno/vite-plugin": "npm:@deno/vite-plugin@^1.0.0"
   }
 }

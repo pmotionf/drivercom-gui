@@ -62,8 +62,8 @@ export function Legend(props: LegendProps) {
     "readonly",
   ]);
 
-  var seriesIndex: number = 0;
-  var seriesFound: boolean = false;
+  let seriesIndex: number = 0;
+  let seriesFound: boolean = false;
   props.plot.series.forEach((series, index) => {
     if (series.label === props.series) {
       seriesIndex = index;
@@ -84,11 +84,17 @@ export function Legend(props: LegendProps) {
 
   // Autodetect initial color from plot if color is not provided in props.
   if (props.color == null && props.plot.series[seriesIndex].stroke) {
-    var new_color = color();
+    let new_color = color();
     if (typeof props.plot.series[seriesIndex].stroke === "string") {
       new_color = props.plot.series[seriesIndex].stroke as string;
     } else if (typeof props.plot.series[seriesIndex].stroke === "function") {
-      new_color = (props.plot.series[seriesIndex].stroke as Function)();
+      new_color = (props.plot.series[seriesIndex].stroke as (
+        self: uPlot,
+        seriesIdx: number,
+      ) => CanvasRenderingContext2D["strokeStyle"])(
+        props.plot,
+        seriesIndex,
+      ) as string;
     }
     props.onColorChange?.(new_color);
     setColor(new_color);

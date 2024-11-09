@@ -52,13 +52,13 @@ enum CursorMode {
 
 export function Plot(props: PlotProps) {
   const [, rest] = splitProps(props, ["name", "header", "series", "id"]);
-  var fg_default = getComputedCSSVariableValue("--colors-fg-default");
-  var bg_muted = getComputedCSSVariableValue("--colors-bg-muted");
+  let fg_default = getComputedCSSVariableValue("--colors-fg-default");
+  let bg_muted = getComputedCSSVariableValue("--colors-bg-muted");
   const { globalState } = useContext(GlobalStateContext)!;
-  var theme = globalState.theme;
+  let theme = globalState.theme;
 
   const [render, setRender] = createSignal(false);
-  var plot: uPlot;
+  let plot: uPlot;
 
   const group = () => props.group ?? props.id;
 
@@ -114,6 +114,7 @@ export function Plot(props: PlotProps) {
     } else if (event.key === "Shift") {
       setCursorMode(CursorMode.Zoom);
     } else if (event.key === "Alt") {
+      // TODO: Handle alt click
     }
   };
   const cursorModeRelease = (event: KeyboardEvent) => {
@@ -122,10 +123,11 @@ export function Plot(props: PlotProps) {
     } else if (event.key === "Shift" && cursorMode() === CursorMode.Zoom) {
       setCursorMode(lastCursorMode());
     } else if (event.key === "Alt" && cursorMode() === CursorMode.None) {
+      // TODO: Handle alt click
     }
   };
 
-  const checkZoomLevel = async () => {
+  const checkZoomLevel = () => {
     setTimeout(() => {
       setZoomReset(
         !plot ||
@@ -153,10 +155,10 @@ export function Plot(props: PlotProps) {
   });
 
   function createPlot() {
-    var plot_element = document.getElementById(props.id)!;
+    const plot_element = document.getElementById(props.id)!;
     plot_element.replaceChildren();
 
-    var series: uPlot.Series[] = [
+    let series: uPlot.Series[] = [
       {
         label: "Cycle",
       },
@@ -165,7 +167,7 @@ export function Plot(props: PlotProps) {
         stroke: () => getContext().color[index],
       })),
     ];
-    var scales: uPlot.Scales = {
+    let scales: uPlot.Scales = {
       x: {
         time: false,
       },
@@ -216,19 +218,19 @@ export function Plot(props: PlotProps) {
                 if (e.button == 0) {
                   // Always release cursor lock if not control-clicking.
                   if (cursorMode() !== CursorMode.Lock) {
-                    // @ts-ignore
+                    // @ts-ignore: TSC unable to detect `_lock` field
                     if (u.cursor._lock) {
                       uPlot.sync(group()).plots.forEach((up) => {
-                        // @ts-ignore
+                        // @ts-ignore: TSC unable to detect `_lock` field
                         up.cursor._lock = false;
                       });
                     }
                   } else {
-                    // @ts-ignore
+                    // @ts-ignore: TSC unable to detect `_lock` field
                     const new_lock = !u.cursor._lock;
                     // Lock cursor in plot only when control-clicking.
                     uPlot.sync(group()).plots.forEach((up) => {
-                      // @ts-ignore
+                      // @ts-ignore: TSC unable to detect `_lock` field
                       up.cursor._lock = new_lock;
                     });
                     return null;
@@ -237,33 +239,33 @@ export function Plot(props: PlotProps) {
                   if (cursorMode() === CursorMode.Zoom) {
                     handler(e);
                   } else if (cursorMode() === CursorMode.Pan) {
-                    let xMin = 0;
-                    let xMax = u.data[0].length;
+                    const xMin = 0;
+                    const xMax = u.data[0].length;
 
-                    let left0 = e.clientX;
+                    const left0 = e.clientX;
 
-                    let scXMin0 = u.scales.x.min!;
-                    let scXMax0 = u.scales.x.max!;
+                    const scXMin0 = u.scales.x.min!;
+                    const scXMax0 = u.scales.x.max!;
 
-                    let xUnitsPerPx = u.posToVal(1, "x") - u.posToVal(0, "x");
+                    const xUnitsPerPx = u.posToVal(1, "x") - u.posToVal(0, "x");
 
-                    function onmove(e: any) {
+                    const onmove = (e: MouseEvent) => {
                       e.preventDefault();
 
-                      let left1 = e.clientX;
+                      const left1 = e.clientX;
                       const dx = xUnitsPerPx * (left1 - left0);
 
-                      let minXBoundary = scXMin0 - dx;
-                      let maxXBoundary = scXMax0 - dx;
+                      const minXBoundary = scXMin0 - dx;
+                      const maxXBoundary = scXMax0 - dx;
 
-                      var scaleXMin = minXBoundary;
-                      var scaleXMax = maxXBoundary;
+                      let scaleXMin = minXBoundary;
+                      let scaleXMax = maxXBoundary;
 
                       if (xMin >= minXBoundary) {
                         (scaleXMin = xMin), (scaleXMax = scXMax0);
                       } else if (xMax <= maxXBoundary) {
                         (scaleXMin = scXMin0), (scaleXMax = xMax);
-                      } else (scaleXMin = scaleXMin), (scaleXMax = scaleXMax);
+                      }
 
                       uPlot.sync(group()).plots.forEach((up) => {
                         up.setScale("x", {
@@ -271,12 +273,12 @@ export function Plot(props: PlotProps) {
                           max: scaleXMax,
                         });
                       });
-                    }
+                    };
 
-                    function onup() {
+                    const onup = () => {
                       document.removeEventListener("mousemove", onmove);
                       document.removeEventListener("mouseup", onup);
-                    }
+                    };
 
                     document.addEventListener("mousemove", onmove);
                     document.addEventListener("mouseup", onup);
@@ -318,7 +320,7 @@ export function Plot(props: PlotProps) {
   onMount(() => {
     // Wrap in create effect to handle ID changing.
     createEffect(() => {
-      var resize = new ResizeObserver((entries) => {
+      const resize = new ResizeObserver((entries) => {
         if (entries.length == 0) return;
         const entry = entries[0];
         setTimeout(() => {
@@ -533,7 +535,7 @@ function getComputedCSSVariableValue(variable: string) {
 
   while (value.startsWith("var(")) {
     // Extract the name of the referenced variable
-    let referencedVarName = value.slice(4, value.length - 1);
+    const referencedVarName = value.slice(4, value.length - 1);
     value = getComputedStyle(document.documentElement).getPropertyValue(
       referencedVarName,
     );
@@ -542,8 +544,13 @@ function getComputedCSSVariableValue(variable: string) {
   return value.trim();
 }
 
-function wheelZoomPlugin(opts: any) {
-  let factor = opts.factor || 0.75;
+type WheelZoomPluginOpts = {
+  factor: number;
+  group: string;
+};
+
+function wheelZoomPlugin(opts: WheelZoomPluginOpts) {
+  const factor = opts.factor || 0.75;
 
   let xMin: number, xMax: number, xRange: number;
 
@@ -577,20 +584,20 @@ function wheelZoomPlugin(opts: any) {
 
         xRange = xMax - xMin;
 
-        let over = u.over;
-        let rect = over.getBoundingClientRect();
+        const over = u.over;
+        const rect = over.getBoundingClientRect();
 
         // wheel scroll zoom
-        over.addEventListener("wheel", (e: any) => {
+        over.addEventListener("wheel", (e) => {
           e.preventDefault();
 
-          let { left } = u.cursor;
+          const { left } = u.cursor;
 
-          let leftPct = left! / rect.width;
-          let xVal = u.posToVal(left!, "x");
-          let oxRange = u.scales.x.max! - u.scales.x.min!;
+          const leftPct = left! / rect.width;
+          const xVal = u.posToVal(left!, "x");
+          const oxRange = u.scales.x.max! - u.scales.x.min!;
 
-          let nxRange = e.deltaY < 0 ? oxRange * factor : oxRange / factor;
+          const nxRange = e.deltaY < 0 ? oxRange * factor : oxRange / factor;
           let nxMin = xVal - leftPct * nxRange;
           let nxMax = nxMin + nxRange;
           [nxMin, nxMax] = clamp(nxRange, nxMin, nxMax, xRange, xMin, xMax);
