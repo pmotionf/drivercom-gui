@@ -2,8 +2,8 @@
   "version": "4",
   "specifiers": {
     "npm:@ark-ui/solid@^4.4.0": "4.4.0_solid-js@1.9.3__seroval@1.1.1_@internationalized+date@3.5.6",
-    "npm:@pandacss/dev@~0.46.1": "0.46.1_typescript@5.6.3",
-    "npm:@park-ui/panda-preset@0.42": "0.42.0_@pandacss+dev@0.46.1__typescript@5.6.3_typescript@5.6.3",
+    "npm:@pandacss/dev@~0.46.1": "0.46.1",
+    "npm:@park-ui/panda-preset@0.42": "0.42.0_@pandacss+dev@0.46.1",
     "npm:@solid-primitives/deep@~0.2.10": "0.2.10_solid-js@1.9.3__seroval@1.1.1",
     "npm:@solidjs/router@~0.14.10": "0.14.10_solid-js@1.9.3__seroval@1.1.1",
     "npm:@tabler/icons-solidjs@^3.21.0": "3.21.0_solid-js@1.9.3__seroval@1.1.1",
@@ -13,13 +13,11 @@
     "npm:@tauri-apps/plugin-fs@~2.0.2": "2.0.2",
     "npm:@tauri-apps/plugin-shell@^2.0.1": "2.0.1",
     "npm:@tauri-apps/plugin-window-state@2.0": "2.0.0",
-    "npm:prettier@^3.3.3": "3.3.3",
     "npm:solid-js@^1.9.3": "1.9.3_seroval@1.1.1",
-    "npm:typescript@^5.6.3": "5.6.3",
     "npm:udsv@~0.5.3": "0.5.3",
     "npm:uplot@^1.6.31": "1.6.31",
     "npm:vite-plugin-solid@^2.10.2": "2.10.2_solid-js@1.9.3__seroval@1.1.1_vite@5.4.10_@babel+core@7.26.0",
-    "npm:vite-tsconfig-paths@5.0.1": "5.0.1_vite@5.4.10_typescript@5.6.3",
+    "npm:vite-tsconfig-paths@5.0.1": "5.0.1_vite@5.4.10",
     "npm:vite@^5.4.10": "5.4.10"
   },
   "npm": {
@@ -526,7 +524,7 @@
         "escalade@3.1.2",
         "merge-anything",
         "microdiff",
-        "typescript@5.3.3"
+        "typescript"
       ]
     },
     "@pandacss/core@0.46.1_postcss@8.4.47": {
@@ -554,7 +552,7 @@
         "ts-pattern@5.0.8"
       ]
     },
-    "@pandacss/dev@0.46.1_typescript@5.6.3": {
+    "@pandacss/dev@0.46.1": {
       "integrity": "sha512-zZ72oNFXQcFhZ8bKO/e6gmbk4vI294pRIQwD0o/CCRK8zAcjbkkgfqZBMKykYKHNXoAwDnBQBIjuWqVvsWagyw==",
       "dependencies": [
         "@clack/prompts",
@@ -569,7 +567,7 @@
         "cac"
       ]
     },
-    "@pandacss/extractor@0.46.1_typescript@5.6.3": {
+    "@pandacss/extractor@0.46.1": {
       "integrity": "sha512-YwZjt/x37NDBgJY3UNfzD7KJFrJKXnbYgE3+uZAYu47xD/eO6foHtlQM4pkJlTObvodIyiylQvv3bXhY0KznuA==",
       "dependencies": [
         "@pandacss/shared",
@@ -603,7 +601,7 @@
         "kleur"
       ]
     },
-    "@pandacss/node@0.46.1_typescript@5.6.3": {
+    "@pandacss/node@0.46.1": {
       "integrity": "sha512-vkw6PAENndthIQ7b4jOogpbF1jsJb5BKqICjesArJhYbdm9VivfrpWcxRkYgJF3lGUu8V6+fOwXwvDrkpLvokA==",
       "dependencies": [
         "@pandacss/config",
@@ -631,13 +629,13 @@
         "pkg-types@1.0.3",
         "pluralize",
         "postcss",
-        "prettier@3.2.5",
+        "prettier",
         "ts-morph",
         "ts-pattern@5.0.8",
-        "tsconfck@3.0.2_typescript@5.6.3"
+        "tsconfck@3.0.2"
       ]
     },
-    "@pandacss/parser@0.46.1_typescript@5.6.3": {
+    "@pandacss/parser@0.46.1": {
       "integrity": "sha512-cNHXMTYTeSg6eQlLDQUypKb/TMDkDSl49XaXEekhD+o4HlMrwy9KTqqZB/Il+L3rvICMGXUjv+dAKRjDOcAhcA==",
       "dependencies": [
         "@pandacss/config",
@@ -652,7 +650,7 @@
         "ts-pattern@5.0.8"
       ]
     },
-    "@pandacss/postcss@0.46.1_typescript@5.6.3": {
+    "@pandacss/postcss@0.46.1": {
       "integrity": "sha512-GKG9Lm9ywn4dKgN04PIFo6FSCaEQubFhIK5KfIBG7aY+OglzVXSDWdO19zwV2lDjrdd48hyw54ERjFc0LNIU+w==",
       "dependencies": [
         "@pandacss/node",
@@ -686,7 +684,7 @@
     "@pandacss/types@0.46.1": {
       "integrity": "sha512-hExBBB/QwKxf0MT8/67zNePm27996ALlEaef7z/9Fzhhh2yX5UGmDHTAQCe8T0XyWpIky8v/YekZ8YMANlvxtw=="
     },
-    "@park-ui/panda-preset@0.42.0_@pandacss+dev@0.46.1__typescript@5.6.3_typescript@5.6.3": {
+    "@park-ui/panda-preset@0.42.0_@pandacss+dev@0.46.1": {
       "integrity": "sha512-YvFYNylONBwlnbEZJkziArzqznS6XMCcok8GlrgcIZ8VhjvJbG3Vct1kJr0KYkWOMhQLyFnS75+60ojQyxHNOQ==",
       "dependencies": [
         "@ark-ui/anatomy",
@@ -2736,9 +2734,6 @@
     "prettier@3.2.5": {
       "integrity": "sha512-3/GWa9aOC0YeD7LUfvOG2NiDyhOWRvt1k+rcKhOuYnMY24iiCphgneUfJDyFXd6rZCAnuLBv6UeAULtrhT/F4A=="
     },
-    "prettier@3.3.3": {
-      "integrity": "sha512-i2tDNA0O5IrMO757lfrdQZCc2jPNDVntV0m/+4whiDfWaTKfMNgR7Qz0NAeGz/nRqF4m5/6CLzbP4/liHt12Ew=="
-    },
     "proxy-compare@3.0.0": {
       "integrity": "sha512-y44MCkgtZUCT9tZGuE278fB7PWVf7fRYy0vbRXAts2o5F0EfC4fIQrvQQGBJo1WJbFcVLXzApOscyJuZqHQc1w=="
     },
@@ -2835,13 +2830,13 @@
         "is-number"
       ]
     },
-    "ts-evaluator@1.2.0_typescript@5.6.3": {
+    "ts-evaluator@1.2.0_typescript@5.3.3": {
       "integrity": "sha512-ncSGek1p92bj2ifB7s9UBgryHCkU9vwC5d+Lplt12gT9DH+e41X8dMoHRQjIMeAvyG7j9dEnuHmwgOtuRIQL+Q==",
       "dependencies": [
         "ansi-colors",
         "crosspath",
         "object-path",
-        "typescript@5.6.3"
+        "typescript"
       ]
     },
     "ts-morph@21.0.1": {
@@ -2857,26 +2852,17 @@
     "ts-pattern@5.2.0": {
       "integrity": "sha512-aGaSpOlDcns7ZoeG/OMftWyQG1KqPVhgplhJxNCvyIXqWrumM5uIoOSarw/hmmi/T1PnuQ/uD8NaFHvLpHicDg=="
     },
-    "tsconfck@3.0.2_typescript@5.6.3": {
-      "integrity": "sha512-6lWtFjwuhS3XI4HsX4Zg0izOI3FU/AI9EGVlPEUMDIhvLPMD4wkiof0WCoDgW7qY+Dy198g4d9miAqUHWHFH6Q==",
-      "dependencies": [
-        "typescript@5.6.3"
-      ]
+    "tsconfck@3.0.2": {
+      "integrity": "sha512-6lWtFjwuhS3XI4HsX4Zg0izOI3FU/AI9EGVlPEUMDIhvLPMD4wkiof0WCoDgW7qY+Dy198g4d9miAqUHWHFH6Q=="
     },
-    "tsconfck@3.1.4_typescript@5.6.3": {
-      "integrity": "sha512-kdqWFGVJqe+KGYvlSO9NIaWn9jT1Ny4oKVzAJsKii5eoE9snzTJzL4+MMVOMn+fikWGFmKEylcXL710V/kIPJQ==",
-      "dependencies": [
-        "typescript@5.6.3"
-      ]
+    "tsconfck@3.1.4": {
+      "integrity": "sha512-kdqWFGVJqe+KGYvlSO9NIaWn9jT1Ny4oKVzAJsKii5eoE9snzTJzL4+MMVOMn+fikWGFmKEylcXL710V/kIPJQ=="
     },
     "tslib@2.8.1": {
       "integrity": "sha512-oJFu94HQb+KVduSUQL7wnpmqnfmLsOA/nAh6b6EH0wCEoK0/mPeXU6c3wKDV83MkOuHPRHtSXKKU99IBazS/2w=="
     },
     "typescript@5.3.3": {
       "integrity": "sha512-pXWcraxM0uxAS+tN0AG/BF2TyqmHO014Z070UsJ+pFvYuRSq8KH8DmWpnbXe0pEPDHXZV3FcAbJkijJ5oNEnWw=="
-    },
-    "typescript@5.6.3": {
-      "integrity": "sha512-hjcS1mhfuyi4WW8IWtjP7brDrG2cuDZukyrYrSauoXGNgx0S7zceP07adYkJycEr56BOUTNPzbInooiN3fn1qw=="
     },
     "udsv@0.5.3": {
       "integrity": "sha512-A4WSOXDgyu3ZlQnMZu9lVtuAhke9X5XG9RZFGbO3urSiCjwYKfy96XV/+BWnm1Y1lKKaBInU0e98Moy6TOiVYA=="
@@ -2928,12 +2914,12 @@
         "vitefu"
       ]
     },
-    "vite-tsconfig-paths@5.0.1_vite@5.4.10_typescript@5.6.3": {
+    "vite-tsconfig-paths@5.0.1_vite@5.4.10": {
       "integrity": "sha512-yqwv+LstU7NwPeNqajZzLEBVpUFU6Dugtb2P84FXuvaoYA+/70l9MHE+GYfYAycVyPSDYZ7mjOFuYBRqlEpTig==",
       "dependencies": [
         "debug",
         "globrex",
-        "tsconfck@3.1.4_typescript@5.6.3",
+        "tsconfck@3.1.4",
         "vite"
       ]
     },
@@ -2971,9 +2957,7 @@
         "npm:@tauri-apps/plugin-fs@~2.0.2",
         "npm:@tauri-apps/plugin-shell@^2.0.1",
         "npm:@tauri-apps/plugin-window-state@2.0",
-        "npm:prettier@^3.3.3",
         "npm:solid-js@^1.9.3",
-        "npm:typescript@^5.6.3",
         "npm:udsv@~0.5.3",
         "npm:uplot@^1.6.31",
         "npm:vite-plugin-solid@^2.10.2",
