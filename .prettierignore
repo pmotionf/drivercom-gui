@@ -1,5 +1,6 @@
 # Ignore artifacts:
 .vscode
+package.json
 pnpm-lock.yaml
 styled-system
 src-tauri/gen
