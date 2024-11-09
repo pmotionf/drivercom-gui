@@ -1,10 +1,10 @@
-import { memo, splitProps } from '../helpers.mjs';
-import { createRecipe, mergeRecipes } from './create-recipe.mjs';
+import { memo, splitProps } from "../helpers.mjs";
+import { createRecipe, mergeRecipes } from "./create-recipe.mjs";
 
-const buttonFn = /* @__PURE__ */ createRecipe('button', {
+const buttonFn = /* @__PURE__ */ createRecipe("button", {
   "variant": "solid",
-  "size": "md"
-}, [])
+  "size": "md",
+}, []);
 
 const buttonVariantMap = {
   "variant": [
@@ -12,7 +12,7 @@ const buttonVariantMap = {
     "outline",
     "ghost",
     "link",
-    "subtle"
+    "subtle",
   ],
   "size": [
     "xs",
@@ -20,24 +20,24 @@ const buttonVariantMap = {
     "md",
     "lg",
     "xl",
-    "2xl"
-  ]
-}
+    "2xl",
+  ],
+};
 
-const buttonVariantKeys = Object.keys(buttonVariantMap)
+const buttonVariantKeys = Object.keys(buttonVariantMap);
 
 export const button = /* @__PURE__ */ Object.assign(memo(buttonFn.recipeFn), {
   __recipe__: true,
-  __name__: 'button',
+  __name__: "button",
   __getCompoundVariantCss__: buttonFn.__getCompoundVariantCss__,
   raw: (props) => props,
   variantKeys: buttonVariantKeys,
   variantMap: buttonVariantMap,
   merge(recipe) {
-    return mergeRecipes(this, recipe)
+    return mergeRecipes(this, recipe);
   },
   splitVariantProps(props) {
-    return splitProps(props, buttonVariantKeys)
+    return splitProps(props, buttonVariantKeys);
   },
   getVariantProps: buttonFn.getVariantProps,
-})
+});

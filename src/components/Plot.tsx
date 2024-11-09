@@ -1,11 +1,11 @@
 import {
-  For,
-  JSX,
-  Show,
   createEffect,
   createSignal,
+  For,
+  JSX,
   onCleanup,
   onMount,
+  Show,
   splitProps,
   useContext,
 } from "solid-js";
@@ -259,11 +259,11 @@ export function Plot(props: PlotProps) {
                       var scaleXMin = minXBoundary;
                       var scaleXMax = maxXBoundary;
 
-                      if (xMin >= minXBoundary)
+                      if (xMin >= minXBoundary) {
                         (scaleXMin = xMin), (scaleXMax = scXMax0);
-                      else if (xMax <= maxXBoundary)
+                      } else if (xMax <= maxXBoundary) {
                         (scaleXMin = scXMin0), (scaleXMax = xMax);
-                      else (scaleXMin = scaleXMin), (scaleXMax = scaleXMax);
+                      } else (scaleXMin = scaleXMin), (scaleXMax = scaleXMax);
 
                       uPlot.sync(group()).plots.forEach((up) => {
                         up.setScale("x", {
@@ -377,7 +377,8 @@ export function Plot(props: PlotProps) {
             width: "calc(100% - 15rem)",
             height: "calc(100% - 0.5rem)",
           }}
-        ></div>
+        >
+        </div>
         <Stack
           direction={"row"}
           style={{
@@ -414,48 +415,42 @@ export function Plot(props: PlotProps) {
             <ToggleGroup.Item
               value={CursorMode[CursorMode.Pan]}
               aria-label="Toggle Pan"
-              color={
-                cursorMode() === CursorMode.Pan ? "fg.default" : "fg.muted"
-              }
-              bgColor={
-                cursorMode() === CursorMode.Pan
-                  ? "bg.emphasized"
-                  : lastCursorMode() === CursorMode.Pan
-                    ? "bg.subtle"
-                    : "bg.default"
-              }
+              color={cursorMode() === CursorMode.Pan
+                ? "fg.default"
+                : "fg.muted"}
+              bgColor={cursorMode() === CursorMode.Pan
+                ? "bg.emphasized"
+                : lastCursorMode() === CursorMode.Pan
+                ? "bg.subtle"
+                : "bg.default"}
             >
               <IconArrowsMove />
             </ToggleGroup.Item>
             <ToggleGroup.Item
               value={CursorMode[CursorMode.Zoom]}
               aria-label="Toggle Selection Zoom"
-              color={
-                cursorMode() === CursorMode.Zoom ? "fg.default" : "fg.muted"
-              }
-              bgColor={
-                cursorMode() === CursorMode.Zoom
-                  ? "bg.emphasized"
-                  : lastCursorMode() === CursorMode.Zoom
-                    ? "bg.subtle"
-                    : "bg.default"
-              }
+              color={cursorMode() === CursorMode.Zoom
+                ? "fg.default"
+                : "fg.muted"}
+              bgColor={cursorMode() === CursorMode.Zoom
+                ? "bg.emphasized"
+                : lastCursorMode() === CursorMode.Zoom
+                ? "bg.subtle"
+                : "bg.default"}
             >
               <IconZoomInArea />
             </ToggleGroup.Item>
             <ToggleGroup.Item
               value={CursorMode[CursorMode.Lock]}
               aria-label="Toggle Cursor Lock"
-              color={
-                cursorMode() === CursorMode.Lock ? "fg.default" : "fg.muted"
-              }
-              bgColor={
-                cursorMode() === CursorMode.Lock
-                  ? "bg.emphasized"
-                  : lastCursorMode() === CursorMode.Lock
-                    ? "bg.subtle"
-                    : "bg.default"
-              }
+              color={cursorMode() === CursorMode.Lock
+                ? "fg.default"
+                : "fg.muted"}
+              bgColor={cursorMode() === CursorMode.Lock
+                ? "bg.emphasized"
+                : lastCursorMode() === CursorMode.Lock
+                ? "bg.subtle"
+                : "bg.default"}
             >
               <IconCrosshair />
             </ToggleGroup.Item>

@@ -1,58 +1,79 @@
-import { compact, getSlotCompoundVariant, memo, splitProps } from '../helpers.mjs';
-import { createRecipe } from './create-recipe.mjs';
+import {
+  compact,
+  getSlotCompoundVariant,
+  memo,
+  splitProps,
+} from "../helpers.mjs";
+import { createRecipe } from "./create-recipe.mjs";
 
 const checkboxDefaultVariants = {
-  "size": "md"
-}
-const checkboxCompoundVariants = []
+  "size": "md",
+};
+const checkboxCompoundVariants = [];
 
 const checkboxSlotNames = [
   [
     "root",
-    "checkbox__root"
+    "checkbox__root",
   ],
   [
     "label",
-    "checkbox__label"
+    "checkbox__label",
   ],
   [
     "control",
-    "checkbox__control"
+    "checkbox__control",
   ],
   [
     "indicator",
-    "checkbox__indicator"
+    "checkbox__indicator",
   ],
   [
     "group",
-    "checkbox__group"
-  ]
-]
-const checkboxSlotFns = /* @__PURE__ */ checkboxSlotNames.map(([slotName, slotKey]) => [slotName, createRecipe(slotKey, checkboxDefaultVariants, getSlotCompoundVariant(checkboxCompoundVariants, slotName))])
+    "checkbox__group",
+  ],
+];
+const checkboxSlotFns = /* @__PURE__ */ checkboxSlotNames.map((
+  [slotName, slotKey],
+) => [
+  slotName,
+  createRecipe(
+    slotKey,
+    checkboxDefaultVariants,
+    getSlotCompoundVariant(checkboxCompoundVariants, slotName),
+  ),
+]);
 
 const checkboxFn = memo((props = {}) => {
-  return Object.fromEntries(checkboxSlotFns.map(([slotName, slotFn]) => [slotName, slotFn.recipeFn(props)]))
-})
+  return Object.fromEntries(
+    checkboxSlotFns.map((
+      [slotName, slotFn],
+    ) => [slotName, slotFn.recipeFn(props)]),
+  );
+});
 
 const checkboxVariantKeys = [
-  "size"
-]
-const getVariantProps = (variants) => ({ ...checkboxDefaultVariants, ...compact(variants) })
+  "size",
+];
+const getVariantProps = (variants) => ({
+  ...checkboxDefaultVariants,
+  ...compact(variants),
+});
 
 export const checkbox = /* @__PURE__ */ Object.assign(checkboxFn, {
   __recipe__: false,
-  __name__: 'checkbox',
+  __name__: "checkbox",
   raw: (props) => props,
   variantKeys: checkboxVariantKeys,
   variantMap: {
-  "size": [
-    "sm",
-    "md",
-    "lg"
-  ]
-},
-  splitVariantProps(props) {
-    return splitProps(props, checkboxVariantKeys)
+    "size": [
+      "sm",
+      "md",
+      "lg",
+    ],
   },
-  getVariantProps
-})
+  splitVariantProps(props) {
+    return splitProps(props, checkboxVariantKeys);
+  },
+  getVariantProps,
+});

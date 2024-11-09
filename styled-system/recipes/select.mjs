@@ -1,104 +1,125 @@
-import { compact, getSlotCompoundVariant, memo, splitProps } from '../helpers.mjs';
-import { createRecipe } from './create-recipe.mjs';
+import {
+  compact,
+  getSlotCompoundVariant,
+  memo,
+  splitProps,
+} from "../helpers.mjs";
+import { createRecipe } from "./create-recipe.mjs";
 
 const selectDefaultVariants = {
   "size": "md",
-  "variant": "outline"
-}
-const selectCompoundVariants = []
+  "variant": "outline",
+};
+const selectCompoundVariants = [];
 
 const selectSlotNames = [
   [
     "label",
-    "select__label"
+    "select__label",
   ],
   [
     "positioner",
-    "select__positioner"
+    "select__positioner",
   ],
   [
     "trigger",
-    "select__trigger"
+    "select__trigger",
   ],
   [
     "indicator",
-    "select__indicator"
+    "select__indicator",
   ],
   [
     "clearTrigger",
-    "select__clearTrigger"
+    "select__clearTrigger",
   ],
   [
     "item",
-    "select__item"
+    "select__item",
   ],
   [
     "itemText",
-    "select__itemText"
+    "select__itemText",
   ],
   [
     "itemIndicator",
-    "select__itemIndicator"
+    "select__itemIndicator",
   ],
   [
     "itemGroup",
-    "select__itemGroup"
+    "select__itemGroup",
   ],
   [
     "itemGroupLabel",
-    "select__itemGroupLabel"
+    "select__itemGroupLabel",
   ],
   [
     "list",
-    "select__list"
+    "select__list",
   ],
   [
     "content",
-    "select__content"
+    "select__content",
   ],
   [
     "root",
-    "select__root"
+    "select__root",
   ],
   [
     "control",
-    "select__control"
+    "select__control",
   ],
   [
     "valueText",
-    "select__valueText"
-  ]
-]
-const selectSlotFns = /* @__PURE__ */ selectSlotNames.map(([slotName, slotKey]) => [slotName, createRecipe(slotKey, selectDefaultVariants, getSlotCompoundVariant(selectCompoundVariants, slotName))])
+    "select__valueText",
+  ],
+];
+const selectSlotFns = /* @__PURE__ */ selectSlotNames.map((
+  [slotName, slotKey],
+) => [
+  slotName,
+  createRecipe(
+    slotKey,
+    selectDefaultVariants,
+    getSlotCompoundVariant(selectCompoundVariants, slotName),
+  ),
+]);
 
 const selectFn = memo((props = {}) => {
-  return Object.fromEntries(selectSlotFns.map(([slotName, slotFn]) => [slotName, slotFn.recipeFn(props)]))
-})
+  return Object.fromEntries(
+    selectSlotFns.map((
+      [slotName, slotFn],
+    ) => [slotName, slotFn.recipeFn(props)]),
+  );
+});
 
 const selectVariantKeys = [
   "variant",
-  "size"
-]
-const getVariantProps = (variants) => ({ ...selectDefaultVariants, ...compact(variants) })
+  "size",
+];
+const getVariantProps = (variants) => ({
+  ...selectDefaultVariants,
+  ...compact(variants),
+});
 
 export const select = /* @__PURE__ */ Object.assign(selectFn, {
   __recipe__: false,
-  __name__: 'select',
+  __name__: "select",
   raw: (props) => props,
   variantKeys: selectVariantKeys,
   variantMap: {
-  "variant": [
-    "outline",
-    "ghost"
-  ],
-  "size": [
-    "sm",
-    "md",
-    "lg"
-  ]
-},
-  splitVariantProps(props) {
-    return splitProps(props, selectVariantKeys)
+    "variant": [
+      "outline",
+      "ghost",
+    ],
+    "size": [
+      "sm",
+      "md",
+      "lg",
+    ],
   },
-  getVariantProps
-})
+  splitVariantProps(props) {
+    return splitProps(props, selectVariantKeys);
+  },
+  getVariantProps,
+});

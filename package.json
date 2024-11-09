@@ -2,15 +2,6 @@
   "name": "drivercom-gui",
   "description": "",
   "type": "module",
-  "scripts": {
-    "prepare": "panda codegen",
-    "start": "vite",
-    "dev": "vite",
-    "build": "vite build",
-    "serve": "vite preview",
-    "tauri": "tauri"
-  },
-  "license": "MIT",
   "dependencies": {
     "@ark-ui/solid": "^4.4.0",
     "@solid-primitives/deep": "^0.2.10",
@@ -33,6 +24,6 @@
     "typescript": "^5.6.3",
     "vite": "^5.4.10",
     "vite-plugin-solid": "^2.10.2",
-    "vite-tsconfig-paths": "^5.1.1"
+    "vite-tsconfig-paths": "5.0.1"
   }
 }

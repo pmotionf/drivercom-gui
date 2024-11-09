@@ -1,7 +1,7 @@
 import "./App.css";
 
 import { invoke } from "@tauri-apps/api/core";
-import { Index, Show, ValidComponent, createSignal, onMount } from "solid-js";
+import { createSignal, Index, onMount, Show, ValidComponent } from "solid-js";
 import { Dynamic, Portal } from "solid-js/web";
 import type { RouteSectionProps } from "@solidjs/router";
 import { useNavigate } from "@solidjs/router";
@@ -11,15 +11,15 @@ import {
   IconFileSettings,
   IconGraph,
   IconMenu,
+  IconMoonFilled,
   IconPlugConnected,
   IconSunFilled,
-  IconMoonFilled,
 } from "@tabler/icons-solidjs";
 
 import {
   globalState,
-  setGlobalState,
   GlobalStateContext,
+  setGlobalState,
   Theme,
 } from "./GlobalState";
 

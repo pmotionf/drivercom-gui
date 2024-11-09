@@ -1,70 +1,91 @@
-import { compact, getSlotCompoundVariant, memo, splitProps } from '../helpers.mjs';
-import { createRecipe } from './create-recipe.mjs';
+import {
+  compact,
+  getSlotCompoundVariant,
+  memo,
+  splitProps,
+} from "../helpers.mjs";
+import { createRecipe } from "./create-recipe.mjs";
 
 const numberInputDefaultVariants = {
-  "size": "md"
-}
-const numberInputCompoundVariants = []
+  "size": "md",
+};
+const numberInputCompoundVariants = [];
 
 const numberInputSlotNames = [
   [
     "root",
-    "numberInput__root"
+    "numberInput__root",
   ],
   [
     "label",
-    "numberInput__label"
+    "numberInput__label",
   ],
   [
     "input",
-    "numberInput__input"
+    "numberInput__input",
   ],
   [
     "control",
-    "numberInput__control"
+    "numberInput__control",
   ],
   [
     "valueText",
-    "numberInput__valueText"
+    "numberInput__valueText",
   ],
   [
     "incrementTrigger",
-    "numberInput__incrementTrigger"
+    "numberInput__incrementTrigger",
   ],
   [
     "decrementTrigger",
-    "numberInput__decrementTrigger"
+    "numberInput__decrementTrigger",
   ],
   [
     "scrubber",
-    "numberInput__scrubber"
-  ]
-]
-const numberInputSlotFns = /* @__PURE__ */ numberInputSlotNames.map(([slotName, slotKey]) => [slotName, createRecipe(slotKey, numberInputDefaultVariants, getSlotCompoundVariant(numberInputCompoundVariants, slotName))])
+    "numberInput__scrubber",
+  ],
+];
+const numberInputSlotFns = /* @__PURE__ */ numberInputSlotNames.map((
+  [slotName, slotKey],
+) => [
+  slotName,
+  createRecipe(
+    slotKey,
+    numberInputDefaultVariants,
+    getSlotCompoundVariant(numberInputCompoundVariants, slotName),
+  ),
+]);
 
 const numberInputFn = memo((props = {}) => {
-  return Object.fromEntries(numberInputSlotFns.map(([slotName, slotFn]) => [slotName, slotFn.recipeFn(props)]))
-})
+  return Object.fromEntries(
+    numberInputSlotFns.map((
+      [slotName, slotFn],
+    ) => [slotName, slotFn.recipeFn(props)]),
+  );
+});
 
 const numberInputVariantKeys = [
-  "size"
-]
-const getVariantProps = (variants) => ({ ...numberInputDefaultVariants, ...compact(variants) })
+  "size",
+];
+const getVariantProps = (variants) => ({
+  ...numberInputDefaultVariants,
+  ...compact(variants),
+});
 
 export const numberInput = /* @__PURE__ */ Object.assign(numberInputFn, {
   __recipe__: false,
-  __name__: 'numberInput',
+  __name__: "numberInput",
   raw: (props) => props,
   variantKeys: numberInputVariantKeys,
   variantMap: {
-  "size": [
-    "md",
-    "lg",
-    "xl"
-  ]
-},
-  splitVariantProps(props) {
-    return splitProps(props, numberInputVariantKeys)
+    "size": [
+      "md",
+      "lg",
+      "xl",
+    ],
   },
-  getVariantProps
-})
+  splitVariantProps(props) {
+    return splitProps(props, numberInputVariantKeys);
+  },
+  getVariantProps,
+});

@@ -6,7 +6,9 @@ var isObjectOrArray = (obj) => typeof obj === "object" && obj !== null;
 
 // src/compact.ts
 function compact(value) {
-  return Object.fromEntries(Object.entries(value ?? {}).filter(([_, value2]) => value2 !== void 0));
+  return Object.fromEntries(
+    Object.entries(value ?? {}).filter(([_, value2]) => value2 !== void 0),
+  );
 }
 
 // src/condition.ts
@@ -22,14 +24,16 @@ function toChar(code) {
 function toName(code) {
   let name = "";
   let x;
-  for (x = Math.abs(code); x > 52; x = x / 52 | 0)
+  for (x = Math.abs(code); x > 52; x = x / 52 | 0) {
     name = toChar(x % 52) + name;
+  }
   return toChar(x % 52) + name;
 }
 function toPhash(h, x) {
   let i = x.length;
-  while (i)
+  while (i) {
     h = h * 33 ^ x.charCodeAt(--i);
+  }
   return h;
 }
 function toHash(value) {
@@ -42,7 +46,9 @@ function isImportant(value) {
   return typeof value === "string" ? importantRegex.test(value) : false;
 }
 function withoutImportant(value) {
-  return typeof value === "string" ? value.replace(importantRegex, "").trim() : value;
+  return typeof value === "string"
+    ? value.replace(importantRegex, "").trim()
+    : value;
 }
 function withoutSpace(str) {
   return typeof str === "string" ? str.replaceAll(" ", "_") : str;
@@ -66,8 +72,9 @@ var memo = (fn) => {
 // src/merge-props.ts
 function mergeProps(...sources) {
   return sources.reduce((prev, obj) => {
-    if (!obj)
+    if (!obj) {
       return prev;
+    }
     Object.keys(obj).forEach((key) => {
       const prevValue = prev[key];
       const value = obj[key];
@@ -106,10 +113,12 @@ function walkObject(target, predicate, options = {}) {
   return inner(target);
 }
 function mapObject(obj, fn) {
-  if (Array.isArray(obj))
+  if (Array.isArray(obj)) {
     return obj.map((value) => fn(value));
-  if (!isObject(obj))
+  }
+  if (!isObject(obj)) {
     return fn(obj);
+  }
   return walkObject(obj, (value) => fn(value));
 }
 
@@ -123,7 +132,7 @@ function toResponsiveObject(values, breakpoints) {
       }
       return acc;
     },
-    {}
+    {},
   );
 }
 function normalizeStyleObject(styles, context, shorthand = true) {
@@ -132,12 +141,16 @@ function normalizeStyleObject(styles, context, shorthand = true) {
   return walkObject(
     styles,
     (value) => {
-      return Array.isArray(value) ? toResponsiveObject(value, conditions.breakpoints.keys) : value;
+      return Array.isArray(value)
+        ? toResponsiveObject(value, conditions.breakpoints.keys)
+        : value;
     },
     {
       stop: (value) => Array.isArray(value),
-      getKey: shorthand ? (prop) => hasShorthand ? resolveShorthand(prop) : prop : void 0
-    }
+      getKey: shorthand
+        ? (prop) => hasShorthand ? resolveShorthand(prop) : prop
+        : void 0,
+    },
   );
 }
 
@@ -145,19 +158,24 @@ function normalizeStyleObject(styles, context, shorthand = true) {
 var fallbackCondition = {
   shift: (v) => v,
   finalize: (v) => v,
-  breakpoints: { keys: [] }
+  breakpoints: { keys: [] },
 };
-var sanitize = (value) => typeof value === "string" ? value.replaceAll(/[\n\s]+/g, " ") : value;
+var sanitize = (value) =>
+  typeof value === "string" ? value.replaceAll(/[\n\s]+/g, " ") : value;
 function createCss(context) {
   const { utility, hash, conditions: conds = fallbackCondition } = context;
-  const formatClassName = (str) => [utility.prefix, str].filter(Boolean).join("-");
+  const formatClassName = (str) =>
+    [utility.prefix, str].filter(Boolean).join("-");
   const hashFn = (conditions, className) => {
     let result;
     if (hash) {
       const baseArray = [...conds.finalize(conditions), className];
       result = formatClassName(utility.toHash(baseArray, toHash));
     } else {
-      const baseArray = [...conds.finalize(conditions), formatClassName(className)];
+      const baseArray = [
+        ...conds.finalize(conditions),
+        formatClassName(className),
+      ];
       result = baseArray.join(":");
     }
     return result;
@@ -167,28 +185,36 @@ function createCss(context) {
     const normalizedObject = normalizeStyleObject(styleObject, context);
     const classNames = /* @__PURE__ */ new Set();
     walkObject(normalizedObject, (value, paths) => {
-      if (value == null)
+      if (value == null) {
         return;
+      }
       const important = isImportant(value);
       const [prop, ...allConditions] = conds.shift(paths);
       const conditions = filterBaseConditions(allConditions);
-      const transformed = utility.transform(prop, withoutImportant(sanitize(value)));
+      const transformed = utility.transform(
+        prop,
+        withoutImportant(sanitize(value)),
+      );
       let className = hashFn(conditions, transformed.className);
-      if (important)
+      if (important) {
         className = `${className}!`;
+      }
       classNames.add(className);
     });
     return Array.from(classNames).join(" ");
   });
 }
 function compactStyles(...styles) {
-  return styles.flat().filter((style) => isObject(style) && Object.keys(compact(style)).length > 0);
+  return styles.flat().filter((style) =>
+    isObject(style) && Object.keys(compact(style)).length > 0
+  );
 }
 function createMergeCss(context) {
   function resolve(styles) {
     const allStyles = compactStyles(...styles);
-    if (allStyles.length === 1)
+    if (allStyles.length === 1) {
       return allStyles;
+    }
     return allStyles.map((style) => normalizeStyleObject(style, context));
   }
   function mergeCss(...styles) {
@@ -204,9 +230,11 @@ function createMergeCss(context) {
 var wordRegex = /([A-Z])/g;
 var msRegex = /^ms-/;
 var hypenateProperty = memo((property) => {
-  if (property.startsWith("--"))
+  if (property.startsWith("--")) {
     return property;
-  return property.replace(wordRegex, "-$1").replace(msRegex, "-ms-").toLowerCase();
+  }
+  return property.replace(wordRegex, "-$1").replace(msRegex, "-ms-")
+    .toLowerCase();
 });
 
 // src/is-css-function.ts
@@ -215,9 +243,12 @@ var fnRegExp = new RegExp(`^(${fns.join("|")})\\(.*\\)`);
 var isCssFunction = (v) => typeof v === "string" && fnRegExp.test(v);
 
 // src/is-css-unit.ts
-var lengthUnits = "cm,mm,Q,in,pc,pt,px,em,ex,ch,rem,lh,rlh,vw,vh,vmin,vmax,vb,vi,svw,svh,lvw,lvh,dvw,dvh,cqw,cqh,cqi,cqb,cqmin,cqmax,%";
+var lengthUnits =
+  "cm,mm,Q,in,pc,pt,px,em,ex,ch,rem,lh,rlh,vw,vh,vmin,vmax,vb,vi,svw,svh,lvw,lvh,dvw,dvh,cqw,cqh,cqi,cqb,cqmin,cqmax,%";
 var lengthUnitsPattern = `(?:${lengthUnits.split(",").join("|")})`;
-var lengthRegExp = new RegExp(`^[+-]?[0-9]*.?[0-9]+(?:[eE][+-]?[0-9]+)?${lengthUnitsPattern}$`);
+var lengthRegExp = new RegExp(
+  `^[+-]?[0-9]*.?[0-9]+(?:[eE][+-]?[0-9]+)?${lengthUnitsPattern}$`,
+);
 var isCssUnit = (v) => typeof v === "string" && lengthRegExp.test(v);
 
 // src/is-css-var.ts
@@ -228,12 +259,15 @@ var patternFns = {
   map: mapObject,
   isCssFunction,
   isCssVar,
-  isCssUnit
+  isCssUnit,
 };
 var getPatternStyles = (pattern, styles) => {
-  if (!pattern?.defaultValues)
+  if (!pattern?.defaultValues) {
     return styles;
-  const defaults = typeof pattern.defaultValues === "function" ? pattern.defaultValues(styles) : pattern.defaultValues;
+  }
+  const defaults = typeof pattern.defaultValues === "function"
+    ? pattern.defaultValues(styles)
+    : pattern.defaultValues;
   return Object.assign({}, defaults, compact(styles));
 };
 
@@ -244,11 +278,15 @@ var getSlotRecipes = (recipe = {}) => {
     base: recipe.base?.[slot] ?? {},
     variants: {},
     defaultVariants: recipe.defaultVariants ?? {},
-    compoundVariants: recipe.compoundVariants ? getSlotCompoundVariant(recipe.compoundVariants, slot) : []
+    compoundVariants: recipe.compoundVariants
+      ? getSlotCompoundVariant(recipe.compoundVariants, slot)
+      : [],
   });
   const slots = recipe.slots ?? [];
   const recipeParts = slots.map((slot) => [slot, init(slot)]);
-  for (const [variantsKey, variantsSpec] of Object.entries(recipe.variants ?? {})) {
+  for (
+    const [variantsKey, variantsSpec] of Object.entries(recipe.variants ?? {})
+  ) {
     for (const [variantKey, variantSpec] of Object.entries(variantsSpec)) {
       recipeParts.forEach(([slot, slotRecipe]) => {
         slotRecipe.variants[variantsKey] ??= {};
@@ -258,7 +296,12 @@ var getSlotRecipes = (recipe = {}) => {
   }
   return Object.fromEntries(recipeParts);
 };
-var getSlotCompoundVariant = (compoundVariants, slotName) => compoundVariants.filter((compoundVariant) => compoundVariant.css[slotName]).map((compoundVariant) => ({ ...compoundVariant, css: compoundVariant.css[slotName] }));
+var getSlotCompoundVariant = (compoundVariants, slotName) =>
+  compoundVariants.filter((compoundVariant) => compoundVariant.css[slotName])
+    .map((compoundVariant) => ({
+      ...compoundVariant,
+      css: compoundVariant.css[slotName],
+    }));
 
 // src/split-props.ts
 function splitProps(props, ...keys) {
@@ -308,10 +351,8 @@ export {
   toHash,
   uniq,
   walkObject,
-  withoutSpace
+  withoutSpace,
 };
-
-
 
 // src/normalize-html.ts
 var htmlProps = ["htmlSize", "htmlTranslate", "htmlWidth", "htmlHeight"];
@@ -319,18 +360,19 @@ function convert(key) {
   return htmlProps.includes(key) ? key.replace("html", "").toLowerCase() : key;
 }
 function normalizeHTMLProps(props) {
-  return Object.fromEntries(Object.entries(props).map(([key, value]) => [convert(key), value]));
+  return Object.fromEntries(
+    Object.entries(props).map(([key, value]) => [convert(key), value]),
+  );
 }
 normalizeHTMLProps.keys = htmlProps;
-export {
-  normalizeHTMLProps
-};
-
+export { normalizeHTMLProps };
 
 export function __spreadValues(a, b) {
-  return { ...a, ...b }
+  return { ...a, ...b };
 }
 
 export function __objRest(source, exclude) {
-  return Object.fromEntries(Object.entries(source).filter(([key]) => !exclude.includes(key)))
+  return Object.fromEntries(
+    Object.entries(source).filter(([key]) => !exclude.includes(key)),
+  );
 }

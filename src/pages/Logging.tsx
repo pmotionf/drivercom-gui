@@ -1,10 +1,10 @@
-import { Show, createSignal, For, createEffect } from "solid-js";
+import { createEffect, createSignal, For, Show } from "solid-js";
 import { Portal } from "solid-js/web";
 import { createStore } from "solid-js/store";
 import { trackStore } from "@solid-primitives/deep";
 
 import { inferSchema, initParser } from "udsv";
-import { IconX, IconChevronsDown, IconChevronsUp } from "@tabler/icons-solidjs";
+import { IconChevronsDown, IconChevronsUp, IconX } from "@tabler/icons-solidjs";
 
 import { Button } from "~/components/ui/button";
 import { Collapsible } from "~/components/ui/collapsible";
@@ -59,13 +59,14 @@ function Logging() {
         row.map((val) => {
           if (typeof val === "boolean") return val ? 1 : 0;
           return val;
-        }),
+        })
       );
       if (data.length < local_header.length) {
         setLogStatus("failed");
         toaster.create({
           title: "Invalid Log File",
-          description: `Data has ${data.length} columns, while header has ${local_header.length} labels.`,
+          description:
+            `Data has ${data.length} columns, while header has ${local_header.length} labels.`,
           type: "error",
         });
         return;
@@ -254,13 +255,11 @@ function Logging() {
               <>
                 <Button
                   onClick={() => splitPlot(index())}
-                  disabled={
-                    currentHeader.length <= 1 ||
+                  disabled={currentHeader.length <= 1 ||
                     !plots[index()] ||
                     !plots[index()].visible ||
                     allVisible(index()) ||
-                    allInvisible(index())
-                  }
+                    allInvisible(index())}
                   style={{
                     "margin-left": "1rem",
                     "margin-top": `${index() == 0 ? "0.5rem" : "0px"}`,

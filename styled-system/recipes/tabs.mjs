@@ -1,64 +1,69 @@
-import { compact, getSlotCompoundVariant, memo, splitProps } from '../helpers.mjs';
-import { createRecipe } from './create-recipe.mjs';
+import {
+  compact,
+  getSlotCompoundVariant,
+  memo,
+  splitProps,
+} from "../helpers.mjs";
+import { createRecipe } from "./create-recipe.mjs";
 
 const tabsDefaultVariants = {
   "size": "md",
-  "variant": "line"
-}
+  "variant": "line",
+};
 const tabsCompoundVariants = [
   {
     "size": "sm",
     "variant": "enclosed",
     "css": {
       "list": {
-        "height": "10"
+        "height": "10",
       },
       "trigger": {
         "h": "8",
         "minW": "8",
         "textStyle": "sm",
-        "px": "3"
+        "px": "3",
       },
       "content": {
-        "p": "3.5"
-      }
-    }
+        "p": "3.5",
+      },
+    },
   },
   {
     "size": "md",
     "variant": "enclosed",
     "css": {
       "list": {
-        "height": "11"
+        "height": "11",
       },
       "trigger": {
         "h": "9",
         "minW": "9",
         "textStyle": "sm",
-        "px": "3.5"
+        "px": "3.5",
       },
       "content": {
-        "p": "4"
-      }
-    }
+        "p": "4",
+      },
+    },
   },
   {
     "size": "lg",
     "variant": "enclosed",
     "css": {
       "list": {
-        "height": "12"
+        "height": "12",
       },
       "trigger": {
         "h": "10",
         "minW": "10",
         "textStyle": "sm",
-        "px": "4"
+        "px": "4",
       },
       "content": {
-        "p": "4.5"
-      }
-    }
+        "p": "4.5",
+      },
+    },
   },
   {
     "size": "sm",
@@ -68,12 +73,12 @@ const tabsCompoundVariants = [
         "h": "9",
         "minW": "9",
         "textStyle": "sm",
-        "px": "3.5"
+        "px": "3.5",
       },
       "content": {
-        "p": "3.5"
-      }
-    }
+        "p": "3.5",
+      },
+    },
   },
   {
     "size": "md",
@@ -83,12 +88,12 @@ const tabsCompoundVariants = [
         "h": "10",
         "minW": "10",
         "textStyle": "sm",
-        "px": "4"
+        "px": "4",
       },
       "content": {
-        "p": "4"
-      }
-    }
+        "p": "4",
+      },
+    },
   },
   {
     "size": "lg",
@@ -98,12 +103,12 @@ const tabsCompoundVariants = [
         "h": "11",
         "minW": "11",
         "textStyle": "md",
-        "px": "4.5"
+        "px": "4.5",
       },
       "content": {
-        "p": "4.5"
-      }
-    }
+        "p": "4.5",
+      },
+    },
   },
   {
     "size": "sm",
@@ -113,12 +118,12 @@ const tabsCompoundVariants = [
         "fontSize": "sm",
         "h": "9",
         "minW": "9",
-        "px": "2.5"
+        "px": "2.5",
       },
       "content": {
-        "pt": "3"
-      }
-    }
+        "pt": "3",
+      },
+    },
   },
   {
     "size": "md",
@@ -128,12 +133,12 @@ const tabsCompoundVariants = [
         "fontSize": "md",
         "h": "10",
         "minW": "10",
-        "px": "3"
+        "px": "3",
       },
       "content": {
-        "pt": "4"
-      }
-    }
+        "pt": "4",
+      },
+    },
   },
   {
     "size": "lg",
@@ -143,68 +148,82 @@ const tabsCompoundVariants = [
         "px": "3.5",
         "h": "11",
         "minW": "11",
-        "fontSize": "md"
+        "fontSize": "md",
       },
       "content": {
-        "pt": "5"
-      }
-    }
-  }
-]
+        "pt": "5",
+      },
+    },
+  },
+];
 
 const tabsSlotNames = [
   [
     "root",
-    "tabs__root"
+    "tabs__root",
   ],
   [
     "list",
-    "tabs__list"
+    "tabs__list",
   ],
   [
     "trigger",
-    "tabs__trigger"
+    "tabs__trigger",
   ],
   [
     "content",
-    "tabs__content"
+    "tabs__content",
   ],
   [
     "indicator",
-    "tabs__indicator"
-  ]
-]
-const tabsSlotFns = /* @__PURE__ */ tabsSlotNames.map(([slotName, slotKey]) => [slotName, createRecipe(slotKey, tabsDefaultVariants, getSlotCompoundVariant(tabsCompoundVariants, slotName))])
+    "tabs__indicator",
+  ],
+];
+const tabsSlotFns = /* @__PURE__ */ tabsSlotNames.map((
+  [slotName, slotKey],
+) => [
+  slotName,
+  createRecipe(
+    slotKey,
+    tabsDefaultVariants,
+    getSlotCompoundVariant(tabsCompoundVariants, slotName),
+  ),
+]);
 
 const tabsFn = memo((props = {}) => {
-  return Object.fromEntries(tabsSlotFns.map(([slotName, slotFn]) => [slotName, slotFn.recipeFn(props)]))
-})
+  return Object.fromEntries(
+    tabsSlotFns.map(([slotName, slotFn]) => [slotName, slotFn.recipeFn(props)]),
+  );
+});
 
 const tabsVariantKeys = [
   "variant",
-  "size"
-]
-const getVariantProps = (variants) => ({ ...tabsDefaultVariants, ...compact(variants) })
+  "size",
+];
+const getVariantProps = (variants) => ({
+  ...tabsDefaultVariants,
+  ...compact(variants),
+});
 
 export const tabs = /* @__PURE__ */ Object.assign(tabsFn, {
   __recipe__: false,
-  __name__: 'tabs',
+  __name__: "tabs",
   raw: (props) => props,
   variantKeys: tabsVariantKeys,
   variantMap: {
-  "variant": [
-    "enclosed",
-    "line",
-    "outline"
-  ],
-  "size": [
-    "sm",
-    "md",
-    "lg"
-  ]
-},
-  splitVariantProps(props) {
-    return splitProps(props, tabsVariantKeys)
+    "variant": [
+      "enclosed",
+      "line",
+      "outline",
+    ],
+    "size": [
+      "sm",
+      "md",
+      "lg",
+    ],
   },
-  getVariantProps
-})
+  splitVariantProps(props) {
+    return splitProps(props, tabsVariantKeys);
+  },
+  getVariantProps,
+});

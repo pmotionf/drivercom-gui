@@ -1,42 +1,58 @@
-import { type Assign, RadioGroup } from '@ark-ui/solid'
-import type { ComponentProps } from 'solid-js'
-import { type RadioButtonGroupVariantProps, radioButtonGroup } from 'styled-system/recipes'
-import type { HTMLStyledProps } from 'styled-system/types'
-import { createStyleContext } from './utils/create-style-context'
+import { type Assign, RadioGroup } from "@ark-ui/solid";
+import type { ComponentProps } from "solid-js";
+import {
+  radioButtonGroup,
+  type RadioButtonGroupVariantProps,
+} from "styled-system/recipes";
+import type { HTMLStyledProps } from "styled-system/types";
+import { createStyleContext } from "./utils/create-style-context";
 
-const { withProvider, withContext } = createStyleContext(radioButtonGroup)
+const { withProvider, withContext } = createStyleContext(radioButtonGroup);
 
-export type RootProps = ComponentProps<typeof Root>
+export type RootProps = ComponentProps<typeof Root>;
 export const Root = withProvider<
-  Assign<Assign<HTMLStyledProps<'div'>, RadioGroup.RootProps>, RadioButtonGroupVariantProps>
->(RadioGroup.Root, 'root')
+  Assign<
+    Assign<HTMLStyledProps<"div">, RadioGroup.RootProps>,
+    RadioButtonGroupVariantProps
+  >
+>(RadioGroup.Root, "root");
 
-export const Indicator = withContext<Assign<HTMLStyledProps<'div'>, RadioGroup.IndicatorProps>>(
+export const Indicator = withContext<
+  Assign<HTMLStyledProps<"div">, RadioGroup.IndicatorProps>
+>(
   RadioGroup.Indicator,
-  'indicator',
-)
+  "indicator",
+);
 
-export const ItemControl = withContext<Assign<HTMLStyledProps<'div'>, RadioGroup.ItemControlProps>>(
+export const ItemControl = withContext<
+  Assign<HTMLStyledProps<"div">, RadioGroup.ItemControlProps>
+>(
   RadioGroup.ItemControl,
-  'itemControl',
-)
+  "itemControl",
+);
 
-export const Item = withContext<Assign<HTMLStyledProps<'label'>, RadioGroup.ItemProps>>(
+export const Item = withContext<
+  Assign<HTMLStyledProps<"label">, RadioGroup.ItemProps>
+>(
   RadioGroup.Item,
-  'item',
-)
+  "item",
+);
 
-export const ItemText = withContext<Assign<HTMLStyledProps<'span'>, RadioGroup.ItemTextProps>>(
+export const ItemText = withContext<
+  Assign<HTMLStyledProps<"span">, RadioGroup.ItemTextProps>
+>(
   RadioGroup.ItemText,
-  'itemText',
-)
+  "itemText",
+);
 
-export const Label = withContext<Assign<HTMLStyledProps<'label'>, RadioGroup.LabelProps>>(
+export const Label = withContext<
+  Assign<HTMLStyledProps<"label">, RadioGroup.LabelProps>
+>(
   RadioGroup.Label,
-  'label',
-)
+  "label",
+);
 
 export {
   RadioGroupContext as Context,
   RadioGroupItemHiddenInput as ItemHiddenInput,
-} from '@ark-ui/solid'
+} from "@ark-ui/solid";

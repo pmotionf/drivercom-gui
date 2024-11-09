@@ -154,9 +154,9 @@ export function Legend(props: LegendProps) {
     <Stack
       direction="row"
       gap={"1"}
-      opacity={
-        (props.visible != null ? props.visible : visible()) ? "100%" : "30%"
-      }
+      opacity={(props.visible != null ? props.visible : visible())
+        ? "100%"
+        : "30%"}
       {...rest}
     >
       <Show

@@ -1,52 +1,71 @@
-import { compact, getSlotCompoundVariant, memo, splitProps } from '../helpers.mjs';
-import { createRecipe } from './create-recipe.mjs';
+import {
+  compact,
+  getSlotCompoundVariant,
+  memo,
+  splitProps,
+} from "../helpers.mjs";
+import { createRecipe } from "./create-recipe.mjs";
 
-const cardDefaultVariants = {}
-const cardCompoundVariants = []
+const cardDefaultVariants = {};
+const cardCompoundVariants = [];
 
 const cardSlotNames = [
   [
     "root",
-    "card__root"
+    "card__root",
   ],
   [
     "header",
-    "card__header"
+    "card__header",
   ],
   [
     "body",
-    "card__body"
+    "card__body",
   ],
   [
     "footer",
-    "card__footer"
+    "card__footer",
   ],
   [
     "title",
-    "card__title"
+    "card__title",
   ],
   [
     "description",
-    "card__description"
-  ]
-]
-const cardSlotFns = /* @__PURE__ */ cardSlotNames.map(([slotName, slotKey]) => [slotName, createRecipe(slotKey, cardDefaultVariants, getSlotCompoundVariant(cardCompoundVariants, slotName))])
+    "card__description",
+  ],
+];
+const cardSlotFns = /* @__PURE__ */ cardSlotNames.map((
+  [slotName, slotKey],
+) => [
+  slotName,
+  createRecipe(
+    slotKey,
+    cardDefaultVariants,
+    getSlotCompoundVariant(cardCompoundVariants, slotName),
+  ),
+]);
 
 const cardFn = memo((props = {}) => {
-  return Object.fromEntries(cardSlotFns.map(([slotName, slotFn]) => [slotName, slotFn.recipeFn(props)]))
-})
+  return Object.fromEntries(
+    cardSlotFns.map(([slotName, slotFn]) => [slotName, slotFn.recipeFn(props)]),
+  );
+});
 
-const cardVariantKeys = []
-const getVariantProps = (variants) => ({ ...cardDefaultVariants, ...compact(variants) })
+const cardVariantKeys = [];
+const getVariantProps = (variants) => ({
+  ...cardDefaultVariants,
+  ...compact(variants),
+});
 
 export const card = /* @__PURE__ */ Object.assign(cardFn, {
   __recipe__: false,
-  __name__: 'card',
+  __name__: "card",
   raw: (props) => props,
   variantKeys: cardVariantKeys,
   variantMap: {},
   splitVariantProps(props) {
-    return splitProps(props, cardVariantKeys)
+    return splitProps(props, cardVariantKeys);
   },
-  getVariantProps
-})
+  getVariantProps,
+});

@@ -1,0 +1,15 @@
+{
+  "tasks": {
+    "prepare": "panda codegen",
+    "dev": "vite",
+    "build": "vite build",
+    "serve": "vite preview",
+    "tauri": "tauri"
+  },
+  "fmt": {
+    "useTabs": false,
+    "indentWidth": 2,
+    "semiColons": true,
+    "exclude": ["src-tauri/", ".github/", ".vscode/"]
+  }
+}

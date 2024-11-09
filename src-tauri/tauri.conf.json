@@ -3,9 +3,9 @@
   "productName": "Drivercom",
   "identifier": "com.pmotionf.drivercom-gui",
   "build": {
-    "beforeDevCommand": "pnpm dev",
+    "beforeDevCommand": "deno task dev",
     "devUrl": "http://localhost:1420",
-    "beforeBuildCommand": "pnpm build",
+    "beforeBuildCommand": "deno task build",
     "frontendDist": "../dist"
   },
   "app": {

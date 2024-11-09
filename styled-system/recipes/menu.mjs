@@ -1,95 +1,114 @@
-import { compact, getSlotCompoundVariant, memo, splitProps } from '../helpers.mjs';
-import { createRecipe } from './create-recipe.mjs';
+import {
+  compact,
+  getSlotCompoundVariant,
+  memo,
+  splitProps,
+} from "../helpers.mjs";
+import { createRecipe } from "./create-recipe.mjs";
 
 const menuDefaultVariants = {
-  "size": "md"
-}
-const menuCompoundVariants = []
+  "size": "md",
+};
+const menuCompoundVariants = [];
 
 const menuSlotNames = [
   [
     "arrow",
-    "menu__arrow"
+    "menu__arrow",
   ],
   [
     "arrowTip",
-    "menu__arrowTip"
+    "menu__arrowTip",
   ],
   [
     "content",
-    "menu__content"
+    "menu__content",
   ],
   [
     "contextTrigger",
-    "menu__contextTrigger"
+    "menu__contextTrigger",
   ],
   [
     "indicator",
-    "menu__indicator"
+    "menu__indicator",
   ],
   [
     "item",
-    "menu__item"
+    "menu__item",
   ],
   [
     "itemGroup",
-    "menu__itemGroup"
+    "menu__itemGroup",
   ],
   [
     "itemGroupLabel",
-    "menu__itemGroupLabel"
+    "menu__itemGroupLabel",
   ],
   [
     "itemIndicator",
-    "menu__itemIndicator"
+    "menu__itemIndicator",
   ],
   [
     "itemText",
-    "menu__itemText"
+    "menu__itemText",
   ],
   [
     "positioner",
-    "menu__positioner"
+    "menu__positioner",
   ],
   [
     "separator",
-    "menu__separator"
+    "menu__separator",
   ],
   [
     "trigger",
-    "menu__trigger"
+    "menu__trigger",
   ],
   [
     "triggerItem",
-    "menu__triggerItem"
-  ]
-]
-const menuSlotFns = /* @__PURE__ */ menuSlotNames.map(([slotName, slotKey]) => [slotName, createRecipe(slotKey, menuDefaultVariants, getSlotCompoundVariant(menuCompoundVariants, slotName))])
+    "menu__triggerItem",
+  ],
+];
+const menuSlotFns = /* @__PURE__ */ menuSlotNames.map((
+  [slotName, slotKey],
+) => [
+  slotName,
+  createRecipe(
+    slotKey,
+    menuDefaultVariants,
+    getSlotCompoundVariant(menuCompoundVariants, slotName),
+  ),
+]);
 
 const menuFn = memo((props = {}) => {
-  return Object.fromEntries(menuSlotFns.map(([slotName, slotFn]) => [slotName, slotFn.recipeFn(props)]))
-})
+  return Object.fromEntries(
+    menuSlotFns.map(([slotName, slotFn]) => [slotName, slotFn.recipeFn(props)]),
+  );
+});
 
 const menuVariantKeys = [
-  "size"
-]
-const getVariantProps = (variants) => ({ ...menuDefaultVariants, ...compact(variants) })
+  "size",
+];
+const getVariantProps = (variants) => ({
+  ...menuDefaultVariants,
+  ...compact(variants),
+});
 
 export const menu = /* @__PURE__ */ Object.assign(menuFn, {
   __recipe__: false,
-  __name__: 'menu',
+  __name__: "menu",
   raw: (props) => props,
   variantKeys: menuVariantKeys,
   variantMap: {
-  "size": [
-    "xs",
-    "sm",
-    "md",
-    "lg"
-  ]
-},
-  splitVariantProps(props) {
-    return splitProps(props, menuVariantKeys)
+    "size": [
+      "xs",
+      "sm",
+      "md",
+      "lg",
+    ],
   },
-  getVariantProps
-})
+  splitVariantProps(props) {
+    return splitProps(props, menuVariantKeys);
+  },
+  getVariantProps,
+});
