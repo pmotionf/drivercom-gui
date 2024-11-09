@@ -3,12 +3,14 @@
   "specifiers": {
     "npm:@ark-ui/solid@^4.4.0": "4.4.0_solid-js@1.9.3__seroval@1.1.1_@internationalized+date@3.5.6",
     "npm:@deno/vite-plugin@1": "1.0.0_vite@5.4.10",
+    "npm:@pandacss/dev@0.46.1": "0.46.1",
     "npm:@pandacss/dev@~0.46.1": "0.46.1",
     "npm:@park-ui/panda-preset@0.42": "0.42.0_@pandacss+dev@0.46.1",
     "npm:@solid-primitives/deep@~0.2.10": "0.2.10_solid-js@1.9.3__seroval@1.1.1",
     "npm:@solidjs/router@~0.14.10": "0.14.10_solid-js@1.9.3__seroval@1.1.1",
     "npm:@tabler/icons-solidjs@^3.21.0": "3.21.0_solid-js@1.9.3__seroval@1.1.1",
     "npm:@tauri-apps/api@^2.0.3": "2.1.0",
+    "npm:@tauri-apps/cli@2.0.4": "2.0.4",
     "npm:@tauri-apps/cli@^2.0.4": "2.0.4",
     "npm:@tauri-apps/plugin-dialog@~2.0.1": "2.0.1",
     "npm:@tauri-apps/plugin-fs@~2.0.2": "2.0.2",
@@ -2952,29 +2954,25 @@
   },
   "workspace": {
     "dependencies": [
-      "npm:@deno/vite-plugin@1"
-    ],
-    "packageJson": {
-      "dependencies": [
-        "npm:@ark-ui/solid@^4.4.0",
-        "npm:@pandacss/dev@~0.46.1",
-        "npm:@park-ui/panda-preset@0.42",
-        "npm:@solid-primitives/deep@~0.2.10",
-        "npm:@solidjs/router@~0.14.10",
-        "npm:@tabler/icons-solidjs@^3.21.0",
-        "npm:@tauri-apps/api@^2.0.3",
-        "npm:@tauri-apps/cli@^2.0.4",
-        "npm:@tauri-apps/plugin-dialog@~2.0.1",
-        "npm:@tauri-apps/plugin-fs@~2.0.2",
-        "npm:@tauri-apps/plugin-shell@^2.0.1",
-        "npm:@tauri-apps/plugin-window-state@2.0",
-        "npm:solid-js@^1.9.3",
-        "npm:udsv@~0.5.3",
-        "npm:uplot@^1.6.31",
-        "npm:vite-plugin-solid@^2.10.2",
-        "npm:vite-tsconfig-paths@5.0.1",
-        "npm:vite@^5.4.10"
-      ]
-    }
+      "npm:@ark-ui/solid@^4.4.0",
+      "npm:@deno/vite-plugin@1",
+      "npm:@pandacss/dev@~0.46.1",
+      "npm:@park-ui/panda-preset@0.42",
+      "npm:@solid-primitives/deep@~0.2.10",
+      "npm:@solidjs/router@~0.14.10",
+      "npm:@tabler/icons-solidjs@^3.21.0",
+      "npm:@tauri-apps/api@^2.0.3",
+      "npm:@tauri-apps/cli@^2.0.4",
+      "npm:@tauri-apps/plugin-dialog@~2.0.1",
+      "npm:@tauri-apps/plugin-fs@~2.0.2",
+      "npm:@tauri-apps/plugin-shell@^2.0.1",
+      "npm:@tauri-apps/plugin-window-state@2.0",
+      "npm:solid-js@^1.9.3",
+      "npm:udsv@~0.5.3",
+      "npm:uplot@^1.6.31",
+      "npm:vite-plugin-solid@^2.10.2",
+      "npm:vite-tsconfig-paths@5.0.1",
+      "npm:vite@^5.4.10"
+    ]
   }
 }

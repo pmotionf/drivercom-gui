@@ -1,5 +1,5 @@
 {
-  "exclude": ["dist/", "src-tauri/", ".github/", ".vscode/"],
+  "exclude": ["dist/", "src-tauri/", ".github/", ".vscode/", ".vite/"],
   "tasks": {
     "prepare": "panda codegen",
     "dev": "deno run -A --node-modules-dir npm:vite",
@@ -23,6 +23,24 @@
   "imports": {
     "~/": "./src/",
     "styled-system/": "./styled-system/",
-    "@deno/vite-plugin": "npm:@deno/vite-plugin@^1.0.0"
+    "@deno/vite-plugin": "npm:@deno/vite-plugin@^1.0.0",
+    "@ark-ui/solid": "npm:@ark-ui/solid@^4.4.0",
+    "@solid-primitives/deep": "npm:@solid-primitives/deep@^0.2.10",
+    "@solidjs/router": "npm:@solidjs/router@^0.14.10",
+    "@tabler/icons-solidjs": "npm:@tabler/icons-solidjs@^3.21.0",
+    "@tauri-apps/api": "npm:@tauri-apps/api@^2.0.3",
+    "@tauri-apps/plugin-dialog": "npm:@tauri-apps/plugin-dialog@~2.0.1",
+    "@tauri-apps/plugin-fs": "npm:@tauri-apps/plugin-fs@~2.0.2",
+    "@tauri-apps/plugin-shell": "npm:@tauri-apps/plugin-shell@^2.0.1",
+    "@tauri-apps/plugin-window-state": "npm:@tauri-apps/plugin-window-state@~2.0.0",
+    "solid-js": "npm:solid-js@^1.9.3",
+    "udsv": "npm:udsv@^0.5.3",
+    "uplot": "npm:uplot@^1.6.31",
+    "@pandacss/dev": "npm:@pandacss/dev@^0.46.1",
+    "@park-ui/panda-preset": "npm:@park-ui/panda-preset@^0.42.0",
+    "@tauri-apps/cli": "npm:@tauri-apps/cli@^2.0.4",
+    "vite": "npm:vite@^5.4.10",
+    "vite-plugin-solid": "npm:vite-plugin-solid@^2.10.2",
+    "vite-tsconfig-paths": "npm:vite-tsconfig-paths@5.0.1"
   }
 }
