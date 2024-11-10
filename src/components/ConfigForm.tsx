@@ -1,4 +1,4 @@
-import { For, JSX, splitProps } from "solid-js";
+import { For, JSX, splitProps, createEffect, Show } from "solid-js";
 import { createStore } from "solid-js/store";
 import { save } from "@tauri-apps/plugin-dialog";
 import { writeTextFile } from "@tauri-apps/plugin-fs";
@@ -11,18 +11,51 @@ import { Input } from "~/components/ui/input";
 
 import { IconChevronDown } from "@tabler/icons-solidjs";
 
+import { useNavigate } from "@solidjs/router";
+
 export type ConfigFormProps = JSX.HTMLAttributes<HTMLFormElement> & {
   label: string;
   config: object;
+  port: string;
 };
 
 export function ConfigForm(props: ConfigFormProps) {
   const [, rest] = splitProps(props, ["config"]);
 
-  const [config] = createStore(props.config);
+  const [config, setConfig] = createStore(props.config);
+  createEffect(() => {
+    setConfig(props.config);
+  });
+
+  const navigate = useNavigate();
+  async function sendConfig() {
+    const dataString = encodeURIComponent(JSON.stringify(props.config));
+    if (dataString) {
+      navigate(`/Driver?&data=${dataString}&port=${props.port}`);
+    }
+  }
+
+  function SwitchConfigPage() {
+    const dataString = encodeURIComponent(JSON.stringify(props.config));
+    if (dataString) {
+      navigate(`/Driver?`);
+    }
+  }
 
   return (
     <form {...rest}>
+      <Show when={props.port !== ""}>
+        <Button
+          type="button"
+          style={{
+            float: "right",
+            "margin-top": "1em",
+          }}
+          onclick={SwitchConfigPage}
+        >
+          {"<- 뒤로"}
+        </Button>
+      </Show>
       <fieldset
         style={{
           "border-width": "1px",
@@ -64,6 +97,18 @@ export function ConfigForm(props: ConfigFormProps) {
           }}
         >
           Save
+        </Button>
+
+        <Button
+          type="button"
+          style={{
+            float: "right",
+            "margin-top": "1em",
+          }}
+          disabled={props.port == ""}
+          onclick={sendConfig}
+        >
+          Send_Driver
         </Button>
       </fieldset>
     </form>
@@ -141,7 +186,7 @@ function ConfigObject(props: ConfigObjectProps) {
               </FormLabel>
             );
           }
-          if (typeof value === "number") {
+          if (typeof value === "number" || typeof value === "string") {
             return (
               <FormLabel
                 style={{
