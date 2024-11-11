@@ -20,6 +20,7 @@
     "jsx": "react-jsx",
     "jsxImportSource": "solid-js"
   },
+  "nodeModulesDir": "auto",
   "imports": {
     "~/": "./src/",
     "styled-system/": "./styled-system/",
