@@ -620,8 +620,8 @@ function wheelZoomPlugin(opts: WheelZoomPluginOpts) {
   };
 }
 
-const [getDotStyleLine, setGetDotStyleLine] = createSignal<number[]>();
-const [dotFilter, setDotFilter] = createSignal<number[]>();
+const [getDotStyleLine, setGetDotStyleLine] = createSignal<number[]>([]);
+const [dotFilter, setDotFilter] = createSignal<number[]>([]);
 
 function changeDotFilter(u: uPlot, array: number[]) {
   getDotStyleLine()!.forEach((element, index) => {
