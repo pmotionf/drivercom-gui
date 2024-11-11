@@ -26,7 +26,9 @@ function Configuration() {
           const data = JSON.parse(e.target?.result as string); // JSON 파싱
           setJsonData({ ...data });
           setFileName(file.name);
-        } catch (error) {}
+        } catch (_error) {
+          // TODO: Handle JSON parse error
+        }
         setFileSelectOpen(false);
       };
       reader.readAsText(file); // 파일 내용을 텍스트로 읽기

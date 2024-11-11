@@ -1,7 +1,7 @@
 import "./App.css";
 
 import { invoke } from "@tauri-apps/api/core";
-import { Index, Show, ValidComponent, createSignal, onMount } from "solid-js";
+import { createSignal, Index, onMount, Show, ValidComponent } from "solid-js";
 import { Dynamic, Portal } from "solid-js/web";
 import type { RouteSectionProps } from "@solidjs/router";
 import { useNavigate } from "@solidjs/router";
@@ -11,22 +11,22 @@ import {
   IconFileSettings,
   IconGraph,
   IconMenu,
+  IconMoonFilled,
   IconPlugConnected,
   IconSunFilled,
-  IconMoonFilled,
 } from "@tabler/icons-solidjs";
 
 import {
   globalState,
-  setGlobalState,
   GlobalStateContext,
+  setGlobalState,
   Theme,
-} from "./GlobalState";
+} from "./GlobalState.ts";
 
-import { Button } from "~/components/ui/button";
-import { Drawer } from "~/components/ui/drawer";
-import { SegmentGroup } from "~/components/ui/segment-group";
-import { Text } from "~/components/ui/text";
+import { Button } from "~/components/ui/button.tsx";
+import { Drawer } from "~/components/ui/drawer.tsx";
+import { SegmentGroup } from "~/components/ui/segment-group.tsx";
+import { Text } from "~/components/ui/text.tsx";
 
 type PageMeta = {
   icon: ValidComponent;
@@ -37,10 +37,10 @@ type PageMeta = {
 function App(props: RouteSectionProps) {
   // Necessary for light/dark mode detection
   onMount(() => {
-    const prefers_dark = window.matchMedia(
+    const prefers_dark = globalThis.matchMedia(
       "(prefers-color-scheme: dark)",
     ).matches;
-    var theme_str: Theme = prefers_dark ? "dark" : "light";
+    let theme_str: Theme = prefers_dark ? "dark" : "light";
 
     if (typeof localStorage !== "undefined" && localStorage.getItem("theme")) {
       theme_str = localStorage.getItem("theme")! as Theme;

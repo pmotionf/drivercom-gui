@@ -1,8 +1,0 @@
-# Ignore artifacts:
-.vscode
-package.json
-pnpm-lock.yaml
-styled-system
-src-tauri/gen
-src-tauri/target
-src/components/ui

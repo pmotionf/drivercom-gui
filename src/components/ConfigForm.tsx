@@ -133,7 +133,8 @@ function ConfigObject(props: ConfigObjectProps) {
                   onCheckedChange={(e) => {
                     setObject(
                       key as keyof typeof object,
-                      // @ts-ignore
+                      // @ts-ignore: TSC unable to handle generic object type
+                      // in store
                       e.checked,
                     );
                   }}
@@ -158,7 +159,8 @@ function ConfigObject(props: ConfigObjectProps) {
                   onChange={(e) => {
                     setObject(
                       key as keyof typeof object,
-                      // @ts-ignore
+                      // @ts-ignore: TSC unable to handle generic object type
+                      // in store
                       Number(e.target.value),
                     );
                   }}

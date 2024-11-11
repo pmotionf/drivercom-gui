@@ -1,33 +1,43 @@
-import { type Assign, type PolymorphicProps, ark } from '@ark-ui/solid'
-import type { ComponentProps } from 'solid-js'
-import { alert } from 'styled-system/recipes'
-import type { HTMLStyledProps } from 'styled-system/types'
-import { createStyleContext } from './utils/create-style-context'
+import { ark, type Assign, type PolymorphicProps } from "@ark-ui/solid";
+import type { ComponentProps } from "solid-js";
+import { alert } from "styled-system/recipes";
+import type { HTMLStyledProps } from "styled-system/types";
+import { createStyleContext } from "./utils/create-style-context";
 
-const { withProvider, withContext } = createStyleContext(alert)
+const { withProvider, withContext } = createStyleContext(alert);
 
-export type RootProps = ComponentProps<typeof Root>
-export const Root = withProvider<Assign<HTMLStyledProps<'div'>, PolymorphicProps<'div'>>>(
+export type RootProps = ComponentProps<typeof Root>;
+export const Root = withProvider<
+  Assign<HTMLStyledProps<"div">, PolymorphicProps<"div">>
+>(
   ark.div,
-  'root',
-)
+  "root",
+);
 
-export const Content = withContext<Assign<HTMLStyledProps<'div'>, PolymorphicProps<'div'>>>(
+export const Content = withContext<
+  Assign<HTMLStyledProps<"div">, PolymorphicProps<"div">>
+>(
   ark.div,
-  'content',
-)
+  "content",
+);
 
-export const Description = withContext<Assign<HTMLStyledProps<'div'>, PolymorphicProps<'div'>>>(
+export const Description = withContext<
+  Assign<HTMLStyledProps<"div">, PolymorphicProps<"div">>
+>(
   ark.div,
-  'description',
-)
+  "description",
+);
 
-export const Icon = withContext<Assign<HTMLStyledProps<'svg'>, PolymorphicProps<'svg'>>>(
+export const Icon = withContext<
+  Assign<HTMLStyledProps<"svg">, PolymorphicProps<"svg">>
+>(
   ark.svg,
-  'icon',
-)
+  "icon",
+);
 
-export const Title = withContext<Assign<HTMLStyledProps<'h5'>, PolymorphicProps<'h5'>>>(
+export const Title = withContext<
+  Assign<HTMLStyledProps<"h5">, PolymorphicProps<"h5">>
+>(
   ark.h5,
-  'title',
-)
+  "title",
+);

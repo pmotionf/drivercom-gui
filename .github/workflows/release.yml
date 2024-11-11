@@ -36,11 +36,11 @@ jobs:
 
       - name: Install dependencies
         if: ${{ steps.check-tag.outputs.exists != 'true' }}
-        run: pnpm i
+        run: deno i
 
       - name: Build Linux
         if: ${{ steps.check-tag.outputs.exists != 'true' }}
-        run: pnpm tauri build
+        run: deno task  tauri build
 
       - name: Create release
         if: ${{ steps.check-tag.outputs.exists != 'true' }}

@@ -4,17 +4,17 @@
 
 ### Requirements
 
-1. `pnpm`
+1. `deno`
 2. `rustc` & `cargo`
 
 ### Setup
 
-`pnpm i`
+`deno i`
 
-`pnpm exec prettier --write .`
+`deno fmt`
 
-`tsc`
+`deno lint`
 
 ### Running
 
-To run a development build, use `pnpm run tauri dev`
+To run a development build, use `deno task tauri dev`

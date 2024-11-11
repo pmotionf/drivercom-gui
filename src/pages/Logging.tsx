@@ -1,10 +1,10 @@
-import { Show, createSignal, For, createEffect } from "solid-js";
+import { createEffect, createSignal, For, Show } from "solid-js";
 import { Portal } from "solid-js/web";
 import { createStore } from "solid-js/store";
 import { trackStore } from "@solid-primitives/deep";
 
 import { inferSchema, initParser } from "udsv";
-import { IconX, IconChevronsDown, IconChevronsUp } from "@tabler/icons-solidjs";
+import { IconChevronsDown, IconChevronsUp, IconX } from "@tabler/icons-solidjs";
 
 import { Button } from "~/components/ui/button";
 import { Collapsible } from "~/components/ui/collapsible";
@@ -36,7 +36,7 @@ function Logging() {
     const file = details.files[0];
     setLogName(file.name);
     setLogStatus("loading");
-    var reader = new FileReader();
+    const reader = new FileReader();
 
     reader.onload = () => {
       setLogStatus("");
@@ -52,20 +52,21 @@ function Logging() {
         return;
       }
 
-      let schema = inferSchema(csv_str);
-      let parser = initParser(schema);
+      const schema = inferSchema(csv_str);
+      const parser = initParser(schema);
       const local_header = rows[0].replace(/,\s*$/, "").split(",");
       const data = parser.typedCols(csv_str).map((row) =>
         row.map((val) => {
           if (typeof val === "boolean") return val ? 1 : 0;
           return val;
-        }),
+        })
       );
       if (data.length < local_header.length) {
         setLogStatus("failed");
         toaster.create({
           title: "Invalid Log File",
-          description: `Data has ${data.length} columns, while header has ${local_header.length} labels.`,
+          description:
+            `Data has ${data.length} columns, while header has ${local_header.length} labels.`,
           type: "error",
         });
         return;
@@ -178,8 +179,8 @@ function Logging() {
             onFileAccept={loadLog}
             onFileReject={(details) => {
               if (details.files.length == 0) return;
-              var description = "The provided log file is invalid:\n";
-              for (var i = 0; i < details.files[0].errors.length; i++) {
+              let description = "The provided log file is invalid:\n";
+              for (let i = 0; i < details.files[0].errors.length; i++) {
                 if (description.slice(-1) !== "\n") {
                   description += ", ";
                 }
@@ -254,13 +255,11 @@ function Logging() {
               <>
                 <Button
                   onClick={() => splitPlot(index())}
-                  disabled={
-                    currentHeader.length <= 1 ||
+                  disabled={currentHeader.length <= 1 ||
                     !plots[index()] ||
                     !plots[index()].visible ||
                     allVisible(index()) ||
-                    allInvisible(index())
-                  }
+                    allInvisible(index())}
                   style={{
                     "margin-left": "1rem",
                     "margin-top": `${index() == 0 ? "0.5rem" : "0px"}`,
