@@ -7,7 +7,12 @@ import { IconButton } from "~/components/ui/icon-button";
 import { Input } from "~/components/ui/input";
 import { Button } from "~/components/ui/button";
 import { Card } from "../ui/card";
-import { IconX, IconLine, IconLineDashed } from "@tabler/icons-solidjs";
+import {
+  IconX,
+  IconLine,
+  IconLineDashed,
+  IconPoint,
+} from "@tabler/icons-solidjs";
 import { ToggleGroup } from "~/components/ui/toggle-group";
 import { LegendStroke } from "./Legend";
 
@@ -105,7 +110,7 @@ export function SeriesConfiguration(props: SeriesConfigurationProps) {
               LegendStroke[details.value[0] as keyof typeof LegendStroke],
             );
           }}
-          width={"5rem"}
+          width={"7.6rem"}
           style={{ "margin-top": "0.4rem" }}
         >
           <ToggleGroup.Item value={LegendStroke[LegendStroke.Line]}>
@@ -113,6 +118,9 @@ export function SeriesConfiguration(props: SeriesConfigurationProps) {
           </ToggleGroup.Item>
           <ToggleGroup.Item value={LegendStroke[LegendStroke.Dash]}>
             <IconLineDashed />
+          </ToggleGroup.Item>
+          <ToggleGroup.Item value={LegendStroke[LegendStroke.Dot]}>
+            <IconPoint />
           </ToggleGroup.Item>
         </ToggleGroup.Root>
       </Card.Body>
