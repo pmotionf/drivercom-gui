@@ -5,7 +5,7 @@
     "dev": "deno run -A --node-modules-dir npm:vite",
     "build": "deno run -A --node-modules-dir npm:vite build",
     "serve": "deno run -A --node-modules-dir npm:vite preview",
-    "tauri": "tauri"
+    "tauri": "deno task prepare && tauri"
   },
   "fmt": {
     "useTabs": false,
