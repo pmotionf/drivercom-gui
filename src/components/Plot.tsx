@@ -606,9 +606,7 @@ function wheelZoomPlugin(opts: WheelZoomPluginOpts) {
           const filter = calculateFilter(xRange0);
           const filterXMax: number = u.data[0].length - 1;
           const array = calculateDotFilter(filter, filterXMax);
-          if (array != dotFilter()) {
-            setDotFilter(array);
-          }
+          setDotFilter(array);
           changeDotFilter(u, array);
 
           uPlot.sync(opts.group).plots.forEach((up: uPlot) => {
