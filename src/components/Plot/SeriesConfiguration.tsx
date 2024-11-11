@@ -8,10 +8,10 @@ import { Input } from "~/components/ui/input";
 import { Button } from "~/components/ui/button";
 import { Card } from "../ui/card";
 import {
-  IconX,
   IconLine,
   IconLineDashed,
   IconPoint,
+  IconX,
 } from "@tabler/icons-solidjs";
 import { ToggleGroup } from "~/components/ui/toggle-group";
 import { LegendStroke } from "./Legend";

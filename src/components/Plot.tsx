@@ -602,10 +602,10 @@ function wheelZoomPlugin(opts: WheelZoomPluginOpts) {
           let nxMax = nxMin + nxRange;
           [nxMin, nxMax] = clamp(nxRange, nxMin, nxMax, xRange, xMin, xMax);
 
-          let xRange0 = nxMax - nxMin;
-          let filter = calculateFilter(xRange0);
+          const xRange0 = nxMax - nxMin;
+          const filter = calculateFilter(xRange0);
           const filterXMax: number = u.data[0].length - 1;
-          let array = calculateDotFilter(filter, filterXMax);
+          const array = calculateDotFilter(filter, filterXMax);
           if (array != dotFilter()) {
             setDotFilter(array);
           }
@@ -673,7 +673,7 @@ function calculateFilter(xRange: number) {
 
 function calculateDotFilter(filter: number, xMax0: number): number[] {
   let i: number = 0;
-  let array: number[] = [];
+  const array: number[] = [];
   while (i <= xMax0) {
     if (i % filter === 0) {
       array.push(i);
