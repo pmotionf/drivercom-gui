@@ -31,6 +31,7 @@ import { Portal } from "solid-js/web";
 
 export type LegendProps = StackProps & {
   plot: uPlot;
+  group?: string;
   series: string;
   visible?: boolean;
   onVisibleChange?: (new_visible: boolean) => void;
@@ -52,6 +53,7 @@ export enum LegendStroke {
 export function Legend(props: LegendProps) {
   const [, rest] = splitProps(props, [
     "plot",
+    "group",
     "series",
     "visible",
     "onVisibleChange",
@@ -61,6 +63,8 @@ export function Legend(props: LegendProps) {
     "onStrokeChange",
     "readonly",
   ]);
+
+  const group = () => props.group ?? props.id ?? "";
 
   let seriesIndex: number = 0;
   let seriesFound: boolean = false;
@@ -119,13 +123,23 @@ export function Legend(props: LegendProps) {
   };
 
   onMount(() => {
-    props.plot.over.addEventListener("mousemove", updateValue);
-    props.plot.over.addEventListener("mouseleave", updateValue);
+    createEffect(() => {
+      uPlot.sync(group()).plots.forEach((up) => {
+        up.over.removeEventListener("mousemove", updateValue);
+        up.over.removeEventListener("mouseleave", updateValue);
+      });
+      uPlot.sync(group()).plots.forEach((up) => {
+        up.over.addEventListener("mousemove", updateValue);
+        up.over.addEventListener("mouseleave", updateValue);
+      });
+    });
   });
 
   onCleanup(() => {
-    props.plot.over.removeEventListener("mousemove", updateValue);
-    props.plot.over.removeEventListener("mouseleave", updateValue);
+    uPlot.sync(group()).plots.forEach((up) => {
+      up.over.removeEventListener("mousemove", updateValue);
+      up.over.removeEventListener("mouseleave", updateValue);
+    });
   });
 
   createEffect(() => {

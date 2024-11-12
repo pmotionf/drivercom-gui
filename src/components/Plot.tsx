@@ -60,7 +60,7 @@ export function Plot(props: PlotProps) {
   const [render, setRender] = createSignal(false);
   let plot: uPlot;
 
-  const group = () => props.group ?? props.id;
+  const group = () => props.group ?? props.id ?? "";
 
   const [ctx, setCtx] = createStore(
     props.context != null ? props.context : ({} as PlotContext),
@@ -473,6 +473,7 @@ export function Plot(props: PlotProps) {
             <Legend
               plot={plot!}
               series={"Cycle"}
+              group={group()}
               width={"min-content"}
               readonly
             />
@@ -480,6 +481,7 @@ export function Plot(props: PlotProps) {
               {(header, index) => (
                 <Legend
                   plot={plot!}
+                  group={group()}
                   series={header}
                   visible={getContext().visible[index()]}
                   onVisibleChange={(new_visible) => {
