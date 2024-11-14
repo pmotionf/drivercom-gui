@@ -16,7 +16,7 @@ import {
 import { ToggleGroup } from "~/components/ui/toggle-group";
 import { LegendStroke } from "./Legend";
 
-export type SeriesConfigurationProps = ColorPicker.RootProps & {
+export type SeriesConfigurationProps = Omit<ColorPicker.RootProps, "stroke"> & {
   series: string;
   palette?: string[];
   color?: string;

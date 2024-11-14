@@ -29,7 +29,7 @@ import { Icon } from "../ui/icon";
 import { Heading } from "../ui/heading";
 import { Portal } from "solid-js/web";
 
-export type LegendProps = StackProps & {
+export type LegendProps = Omit<StackProps, "stroke"> & {
   plot: uPlot;
   group?: string;
   series: string;

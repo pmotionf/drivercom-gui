@@ -25,6 +25,9 @@ jobs:
       - name: Install dependencies
         run: deno i --frozen
 
+      - name: Prepare `styled-system`
+        run: deno task prepare
+
       - name: Run `deno fmt`
         if: matrix.os == 'self-hosted'
         run: deno fmt --check
@@ -32,3 +35,7 @@ jobs:
       - name: Run `deno lint`
         if: matrix.os == 'self-hosted'
         run: deno lint
+
+      - name: Run `tsc`
+        if: matrix.os == 'self-hosted'
+        run: tsc

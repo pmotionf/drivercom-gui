@@ -10,7 +10,8 @@
   "fmt": {
     "useTabs": false,
     "indentWidth": 2,
-    "semiColons": true
+    "semiColons": true,
+    "exclude": ["styled-system/"]
   },
   "lint": {
     "exclude": ["styled-system/", "src/components/ui"]
