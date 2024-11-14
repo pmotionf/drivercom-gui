@@ -100,6 +100,30 @@ export function Plot(props: PlotProps) {
     );
   });
 
+  createEffect(() => {
+    if (getContext().style.every((v) => v != LegendStroke.Dot)) return;
+    const df = dotFilter();
+    setTimeout(() => {
+      if (df.length > 0) {
+        getContext().style.forEach((style, index) => {
+          if (style === LegendStroke.Dot) {
+            plot.series[index + 1].points!.filter = checkDotFilter;
+          }
+        });
+        plot.redraw();
+      } else {
+        let need_redraw: boolean = false;
+        plot.series.forEach((series) => {
+          if (series.points?.filter === checkDotFilter) {
+            series.points!.filter = () => null;
+            need_redraw = true;
+          }
+        });
+        if (need_redraw) plot.redraw();
+      }
+    }, 100);
+  });
+
   // Store whether zoom reset button should be disabled.
   const [zoomReset, setZoomReset] = createSignal(true);
 
@@ -137,8 +161,36 @@ export function Plot(props: PlotProps) {
             plot.scales.x.min > 0 || plot.scales.x.max < plot.data[0].length - 1
           ),
       );
+
+      setXRange(plot.scales.x.max! - plot.scales.x.min!);
     }, 10);
   };
+
+  const [dotFilter, setDotFilter] = createSignal<number[]>([]);
+  const checkDotFilter = () => dotFilter();
+  const [xRange, setXRange] = createSignal<number>(0);
+
+  createEffect(() => {
+    const domainWidth: number =
+      document.getElementById(props.id + "-wrapper")!.offsetWidth;
+    const scale: number = xRange() / domainWidth;
+    const array: number[] = [];
+
+    let i: number = 0;
+    while (scale > 0.1) {
+      array.push(i);
+      i += (Math.floor(scale) > 0
+        ? Math.floor(scale)
+        : parseFloat(scale.toFixed(1))) * 10;
+      if (i >= plot.data[0].length) {
+        break;
+      }
+    }
+
+    if (scale <= 0.1) array.splice(0, array.length);
+
+    setDotFilter(array);
+  });
 
   onMount(() => {
     document.addEventListener("keydown", cursorModeActivate);
@@ -353,12 +405,6 @@ export function Plot(props: PlotProps) {
     }
   `;
 
-  createEffect(() => {
-    if (getContext().style) {
-      setGetDotStyleLine(getContext().style);
-    }
-  });
-
   return (
     <>
       <div {...rest} id={props.id + "-wrapper"}>
@@ -395,6 +441,7 @@ export function Plot(props: PlotProps) {
             onclick={() => {
               uPlot.sync(group()).plots.forEach((up: uPlot) => {
                 up.setScale("x", { min: 0, max: up.data[0].length - 1 });
+                setXRange(up.data[0].length - 1);
               });
             }}
           >
@@ -512,9 +559,8 @@ export function Plot(props: PlotProps) {
                         dash: [0, 5],
                         points: {
                           show: true,
-                          ...(dotFilter()!.length !== 0 && {
-                            filter: dotFilter()!,
-                          }),
+                          ...(dotFilter().length !== 0 &&
+                            { filter: checkDotFilter }),
                         },
                       }),
                     };
@@ -604,13 +650,6 @@ function wheelZoomPlugin(opts: WheelZoomPluginOpts) {
           let nxMax = nxMin + nxRange;
           [nxMin, nxMax] = clamp(nxRange, nxMin, nxMax, xRange, xMin, xMax);
 
-          const xRange0 = nxMax - nxMin;
-          const filter = calculateFilter(xRange0);
-          const filterXMax: number = u.data[0].length - 1;
-          const array = calculateDotFilter(filter, filterXMax);
-          setDotFilter(array);
-          changeDotFilter(u, array);
-
           uPlot.sync(opts.group).plots.forEach((up: uPlot) => {
             up.setScale("x", { min: nxMin, max: nxMax });
           });
@@ -618,70 +657,6 @@ function wheelZoomPlugin(opts: WheelZoomPluginOpts) {
       },
     },
   };
-}
-
-const [getDotStyleLine, setGetDotStyleLine] = createSignal<number[]>([]);
-const [dotFilter, setDotFilter] = createSignal<number[]>([]);
-
-function changeDotFilter(u: uPlot, array: number[]) {
-  getDotStyleLine()!.forEach((element, index) => {
-    if (element === LegendStroke.Dot) {
-      const series = u.series!;
-      const seriesIndex = index + 1;
-      const config = {
-        stroke: series[seriesIndex].stroke,
-        label: series[seriesIndex].label,
-        dash: [0, 5],
-        points: {
-          show: true,
-          ...(array.length !== 0 && { filter: array }),
-        },
-      };
-      u.delSeries(seriesIndex);
-      u.addSeries(config, seriesIndex);
-    }
-  });
-  u.redraw();
-}
-
-function calculateFilter(xRange: number) {
-  let filterValue = 0;
-
-  if (xRange <= 150 && xRange > 0) {
-    filterValue = 0;
-  } else if (xRange <= 300) {
-    filterValue = 2;
-  } else if (xRange <= 500) {
-    filterValue = 5;
-  } else if (xRange <= 1000) {
-    filterValue = 10;
-  } else if (xRange <= 5000) {
-    filterValue = 25;
-  } else if (xRange < 10000) {
-    filterValue = 50;
-  } else if (xRange < 50000) {
-    filterValue = 75;
-  } else if (xRange >= 10000) {
-    const rangeLength = JSON.stringify(xRange).length - 3;
-    filterValue = 10 ** rangeLength;
-  } else {
-    filterValue = 0;
-  }
-
-  return filterValue;
-}
-
-function calculateDotFilter(filter: number, xMax0: number): number[] {
-  let i: number = 0;
-  const array: number[] = [];
-  while (i <= xMax0) {
-    if (i % filter === 0) {
-      array.push(i);
-      i += filter;
-    }
-    i++;
-  }
-  return array;
 }
 
 const kelly_colors_hex = [
