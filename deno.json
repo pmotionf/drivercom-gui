@@ -1,5 +1,13 @@
 {
-  "exclude": ["dist/", "src-tauri/", ".github/", ".vscode/", ".vite/"],
+  "exclude": [
+    "dist/",
+    "src-tauri/",
+    "src/components/ui/",
+    "styled-system/",
+    ".github/",
+    ".vscode/",
+    ".vite/"
+  ],
   "tasks": {
     "prepare": "panda codegen",
     "dev": "deno run -A --node-modules-dir npm:vite",
@@ -11,15 +19,14 @@
     "useTabs": false,
     "indentWidth": 2,
     "semiColons": true,
-    "exclude": ["styled-system/"]
-  },
-  "lint": {
-    "exclude": ["styled-system/", "src/components/ui"]
   },
   "compilerOptions": {
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "jsx": "react-jsx",
-    "jsxImportSource": "solid-js"
+    "jsxImportSource": "solid-js",
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "target": "ES2022"
   },
   "nodeModulesDir": "auto",
   "imports": {

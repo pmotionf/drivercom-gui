@@ -8,16 +8,20 @@ import {
   splitProps,
   Switch,
 } from "solid-js";
+import { Portal } from "solid-js/web";
 
-import { Stack, StackProps } from "styled-system/jsx";
+import { Stack, StackProps } from "styled-system/jsx/index.mjs";
 
 import uPlot from "uplot";
 
-import { Button } from "~/components/ui/button";
-import { Dialog } from "~/components/ui/dialog";
-import { IconButton } from "~/components/ui/icon-button";
-import { Text } from "~/components/ui/text";
-import { SeriesConfiguration } from "./SeriesConfiguration";
+import { Button } from "~/components/ui/button.tsx";
+import { Dialog } from "~/components/ui/dialog.tsx";
+import { Heading } from "~/components/ui/heading.tsx";
+import { Icon } from "~/components/ui/icon.tsx";
+import { IconButton } from "~/components/ui/icon-button.tsx";
+import { Text } from "~/components/ui/text.tsx";
+
+import { SeriesConfiguration } from "~/components/Plot/SeriesConfiguration.tsx";
 
 import {
   IconLine,
@@ -25,9 +29,6 @@ import {
   IconPoint,
   IconX,
 } from "@tabler/icons-solidjs";
-import { Icon } from "../ui/icon";
-import { Heading } from "../ui/heading";
-import { Portal } from "solid-js/web";
 
 export type LegendProps = Omit<StackProps, "stroke"> & {
   plot: uPlot;

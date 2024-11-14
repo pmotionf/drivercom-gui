@@ -1,10 +1,10 @@
-import { Button } from "~/components/ui/button";
-import { Spinner } from "~/components/ui/spinner";
+import { Button } from "~/components/ui/button.tsx";
+import { Spinner } from "~/components/ui/spinner.tsx";
 import { IconChevronDown } from "@tabler/icons-solidjs";
-import { Accordion } from "~/components/ui/accordion";
+import { Accordion } from "~/components/ui/accordion.tsx";
 import { createSignal } from "solid-js";
-import { Text } from "~/components/ui/text";
-import { Box } from "styled-system/jsx";
+import { Text } from "~/components/ui/text.tsx";
+import { Box } from "styled-system/jsx/index.mjs";
 
 function Connect() {
   //Items Dummy data

@@ -3,11 +3,11 @@ import { createStore } from "solid-js/store";
 import { save } from "@tauri-apps/plugin-dialog";
 import { writeTextFile } from "@tauri-apps/plugin-fs";
 
-import { Accordion } from "~/components/ui/accordion";
-import { Button } from "~/components/ui/button";
-import { Checkbox } from "~/components/ui/checkbox";
-import { FormLabel } from "~/components/ui/form-label";
-import { Input } from "~/components/ui/input";
+import { Accordion } from "~/components/ui/accordion.tsx";
+import { Button } from "~/components/ui/button.tsx";
+import { Checkbox } from "~/components/ui/checkbox.tsx";
+import { FormLabel } from "~/components/ui/form-label.tsx";
+import { Input } from "~/components/ui/input.tsx";
 
 import { IconChevronDown } from "@tabler/icons-solidjs";
 

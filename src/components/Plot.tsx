@@ -14,18 +14,18 @@ import { createStore } from "solid-js/store";
 import uPlot, { AlignedData } from "uplot";
 import "uplot/dist/uPlot.min.css";
 
-import { GlobalStateContext } from "~/GlobalState";
-import { Heading } from "~/components/ui/heading";
-import { ToggleGroup } from "~/components/ui/toggle-group";
-import { IconButton } from "~/components/ui/icon-button";
+import { GlobalStateContext } from "~/GlobalState.ts";
+import { Heading } from "~/components/ui/heading.tsx";
+import { ToggleGroup } from "~/components/ui/toggle-group.tsx";
+import { IconButton } from "~/components/ui/icon-button.tsx";
 import {
   IconArrowsMove,
   IconCrosshair,
   IconZoomInArea,
   IconZoomReset,
 } from "@tabler/icons-solidjs";
-import { Stack } from "styled-system/jsx";
-import { Legend, LegendStroke } from "./Plot/Legend";
+import { Stack } from "styled-system/jsx/index.mjs";
+import { Legend, LegendStroke } from "~/components/Plot/Legend.tsx";
 
 export type PlotProps = JSX.HTMLAttributes<HTMLDivElement> & {
   id: string;
