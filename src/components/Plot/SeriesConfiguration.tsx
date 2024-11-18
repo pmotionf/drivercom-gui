@@ -106,9 +106,17 @@ export function SeriesConfiguration(props: SeriesConfigurationProps) {
         <ToggleGroup.Root
           value={[LegendStroke[stroke()]]}
           onValueChange={(details) => {
-            setStroke(
-              LegendStroke[details.value[0] as keyof typeof LegendStroke],
-            );
+            if (details.value.length > 0) {
+              setStroke(
+                LegendStroke[details.value[0] as keyof typeof LegendStroke],
+              );
+            } else {
+              const current_stroke = stroke();
+              const other_stroke = ((current_stroke.valueOf() + 1) %
+                Object.keys(LegendStroke).length) as LegendStroke;
+              setStroke(other_stroke);
+              setStroke(current_stroke);
+            }
           }}
           width={"7.6rem"}
           style={{ "margin-top": "0.4rem" }}
