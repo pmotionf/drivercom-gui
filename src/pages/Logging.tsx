@@ -1,19 +1,15 @@
-import { createEffect, createSignal, For, Show } from "solid-js";
-import { Portal } from "solid-js/web";
-import { createStore } from "solid-js/store";
-import { trackStore } from "@solid-primitives/deep";
-
+import { createSignal, For } from "solid-js";
 import { inferSchema, initParser } from "udsv";
-import { IconChevronsDown, IconChevronsUp, IconX } from "@tabler/icons-solidjs";
-
-import { Button } from "~/components/ui/button";
-import { Collapsible } from "~/components/ui/collapsible";
-import type { FileUploadFileAcceptDetails } from "@ark-ui/solid";
+import {
+  type FileUploadFileAcceptDetails,
+  FileUploadTrigger,
+} from "@ark-ui/solid";
 import { FileUpload } from "~/components/ui/file-upload";
-import { Spinner } from "~/components/ui/spinner";
-import { Text } from "~/components/ui/text";
 import { Toast } from "~/components/ui/toast";
-import { Plot, type PlotContext } from "~/components/Plot";
+import { Tabs } from "~/components/ui/tabs";
+import { IconButton } from "~/components/ui/icon-button";
+import { LoggingTab, LoggingTabProps } from "./Logging/LoggingTab";
+import { IconPlus, IconX } from "@tabler/icons-solidjs";
 
 function Logging() {
   const toaster = Toast.createToaster({
@@ -21,29 +17,32 @@ function Logging() {
     gap: 24,
   });
 
-  const [fileSelectOpen, setFileSelectOpen] = createSignal(true);
+  // Reorder tab
+  const [draggedTabIndex, setDraggedTabIndex] = createSignal<number | null>(null);
 
-  const [logStatus, setLogStatus] = createSignal("");
-  const [logName, setLogName] = createSignal("");
-  const [header, setHeader] = createSignal([] as string[]);
-  const [series, setSeries] = createSignal([] as number[][]);
-  const [plots, setPlots] = createStore([] as PlotContext[]);
+  const handleDragOver = (e: DragEvent, index: number) => {
+    e.preventDefault();
+    if (draggedTabIndex() !== null && draggedTabIndex() !== index) {
+      const updateTab = [...tabContext()];
+      const [draggedTab] = updateTab.splice(draggedTabIndex()!, 1);
+      updateTab.splice(index, 0, draggedTab);
+      setTabContext(updateTab);
+      setDraggedTabIndex(index);
+    }
+  };
 
-  const [splitIndex, setSplitIndex] = createSignal([] as number[][]);
+  const [tabId, setTabId] = createSignal(0);
+  const [tabContext, setTabContext] = createSignal<LoggingTabProps[]>([]);
 
   function loadLog(details: FileUploadFileAcceptDetails) {
     if (details.files.length == 0) return;
     const file = details.files[0];
-    setLogName(file.name);
-    setLogStatus("loading");
     const reader = new FileReader();
 
     reader.onload = () => {
-      setLogStatus("");
       const csv_str: string = (reader.result! as string).trim();
       const rows = csv_str.split("\n");
       if (rows.length < 2) {
-        setLogStatus("failed");
         toaster.create({
           title: "Invalid Log File",
           description: "Not enough rows.",
@@ -62,7 +61,6 @@ function Logging() {
         })
       );
       if (data.length < local_header.length) {
-        setLogStatus("failed");
         toaster.create({
           title: "Invalid Log File",
           description:
@@ -72,143 +70,151 @@ function Logging() {
         return;
       }
 
-      setHeader(local_header);
-      setSeries(data.slice(0, local_header.length));
-      setFileSelectOpen(false);
-
       const indexArray = Array.from(
-        { length: header().length },
+        { length: local_header.length },
         (_, index) => index,
       );
-      setSplitIndex([indexArray]);
+
+      createTab(file.name, local_header, data.slice(0, local_header.length), [
+        indexArray,
+      ]);
     };
 
     reader.onerror = () => {
-      setLogStatus("failed");
       toaster.create({
         title: "Log File Loading Failed",
         description: `${reader.error!.name}: ${reader.error!.message}`,
         type: "error",
       });
     };
-
     reader.readAsText(file);
   }
 
-  function resetChart() {
-    const indexArray = Array.from(
-      { length: header().length },
-      (_, index) => index,
-    );
-    setSplitIndex([indexArray]);
-  }
-
-  function splitPlot(plot_index: number) {
-    const hiddens = plots[plot_index].visible.reduce(
-      (filtered: number[], visible, index) => {
-        if (!visible) {
-          filtered.push(splitIndex()[plot_index][index]);
-        }
-        return filtered;
-      },
-      [],
-    );
-    const visibles = plots[plot_index].visible.reduce(
-      (filtered: number[], visible, index) => {
-        if (visible) {
-          filtered.push(splitIndex()[plot_index][index]);
-        }
-        return filtered;
-      },
-      [],
-    );
-
-    setSplitIndex((prev) => {
-      const updated = [...prev];
-      updated.splice(plot_index, 1, visibles, hiddens);
-      return updated;
+  function createTab(
+    fileName: string,
+    plotHeader: string[],
+    plotSeries: number[][],
+    plotSplitIndex: number[][],
+  ) {
+    setTabId(tabId() + 1);
+    setTabContext((prev) => {
+      const updateTabCtx = [...prev, {
+        tabId: tabId().toString(),
+        logName: fileName,
+        header: plotHeader,
+        series: plotSeries,
+        splitIndex: plotSplitIndex,
+      }];
+      return updateTabCtx;
     });
   }
 
-  const allVisible = (index: number) => {
-    trackStore(plots[index].visible);
-    return plots[index].visible.every((b) => b);
-  };
-  const allInvisible = (index: number) => {
-    trackStore(plots[index].visible);
-    return plots[index].visible.every((b) => !b);
-  };
+  function deleteTab(index: number) {
+    setTabContext((prev) => {
+      const updateTabCtx = [...prev];
+      updateTabCtx.splice(index, 1);
+      return updateTabCtx;
+    });
+  }
 
-  // UI 렌더링
   return (
     <>
-      <Portal>
-        <Button
-          variant="ghost"
-          style={{
-            position: "fixed",
-            "padding-right": "0.8em",
-            "padding-left": "0.5em",
-            "text-align": "right",
-            top: "0px",
-            right: "0px",
-          }}
-          onClick={() => {
-            setFileSelectOpen((prev) => !prev);
-          }}
-        >
-          <Show when={logStatus() === "loading"}>
-            <Spinner size="sm" />
-          </Show>
-          <Show when={logStatus() === "failed"}>
-            <IconX color="red" />
-          </Show>
-          <Show when={logName() !== ""}>
-            <Text>{logName()}</Text>
-          </Show>
-          <Show when={fileSelectOpen()} fallback={<IconChevronsDown />}>
-            <IconChevronsUp />
-          </Show>
-        </Button>
-      </Portal>
-      <Collapsible.Root open={fileSelectOpen()} lazyMount unmountOnExit>
-        <Collapsible.Content>
-          <FileUpload.Root
-            accept="text/csv"
-            minFileSize={3}
-            onFileAccept={loadLog}
-            onFileReject={(details) => {
-              if (details.files.length == 0) return;
-              let description = "The provided log file is invalid:\n";
-              for (let i = 0; i < details.files[0].errors.length; i++) {
-                if (description.slice(-1) !== "\n") {
-                  description += ", ";
-                }
-                description += details.files[0].errors[i];
-              }
-              toaster.create({
-                title: "Invalid Log File",
-                description: description,
-                type: "error",
-              });
+      <Tabs.Root
+        defaultValue={tabId().toString()}
+        style={{ width: "100%", height: "100%" }}
+      >
+        <div class="tab-container" style={{ width: "100%", "display": "flex" }}>
+          <Tabs.List
+            id="tabList"
+            style={{
+              height: "3rem",
+              background: "--colors-bg-muted",
+              "padding-top": "0.5rem",
+              width: "100%",
+              "overflow-x": "auto",
+              margin: "0",
             }}
           >
-            <FileUpload.Dropzone>
-              <FileUpload.Label>Drop Log File (CSV)</FileUpload.Label>
-              <FileUpload.Trigger
-                asChild={(triggerProps) => (
-                  <Button size="sm" {...triggerProps()} variant="outline">
-                    <Show when={logName() === ""} fallback="Change">
-                      Select
-                    </Show>
-                  </Button>
-                )}
+            <For each={tabContext()}>
+              {(ctx, index) => (
+                <Tabs.Trigger
+                  class="tab-trigger"
+                  value={ctx.tabId}
+                  title={ctx.logName}
+                  draggable
+                  onDragStart={() => {
+                    setDraggedTabIndex(index());
+                  }}
+                  onDragOver={(e) => handleDragOver(e, index())}
+                  onDrop={() => {
+                    setDraggedTabIndex(null);
+                  }}
+                  style={{
+                    "cursor": "grab",
+                  }}
+                >
+                  {ctx.logName}
+                </Tabs.Trigger>
+              )}
+            </For>
+              <FileUpload.Root
+                accept="text/csv"
+                minFileSize={3}
+                onFileAccept={loadLog}
+                width={"1rem"}
+                style={{ "margin-left": "0" }}
+                onFileReject={(details) => {
+                  if (details.files.length == 0) return;
+                  let description = "The provided log file is invalid:\n";
+                  for (let i = 0; i < details.files[0].errors.length; i++) {
+                    if (description.slice(-1) !== "\n") {
+                      description += ", ";
+                    }
+                    description += details.files[0].errors[i];
+                  }
+                  toaster.create({
+                    title: "Invalid Log File",
+                    description: description,
+                    type: "error",
+                  });
+                }}
+              >
+                <FileUploadTrigger
+                  asChild={(triggerProps) => (
+                    <IconButton
+                      size={"xs"}
+                      variant={"ghost"}
+                      {...triggerProps()}
+                    >
+                      <IconPlus />
+                    </IconButton>
+                  )}
+                />
+                <FileUpload.HiddenInput />
+              </FileUpload.Root>
+            <Tabs.Indicator />
+          </Tabs.List>
+        </div>
+        <For each={tabContext()}>
+          {(ctx) => (
+            <Tabs.Content
+              value={ctx.tabId}
+              width={"100%"}
+              height={"calc(100vh - 3rem)"}
+              style={{ "overflow-y": "auto" }}
+            >
+              <LoggingTab
+                tabId={ctx.tabId}
+                header={ctx.header}
+                logName={ctx.logName}
+                series={ctx.series}
+                splitIndex={ctx.splitIndex}
+                style={{ "height": "100%" }}
               />
-            </FileUpload.Dropzone>
-            <FileUpload.HiddenInput />
-          </FileUpload.Root>
-        </Collapsible.Content>
-      </Collapsible.Root>
+            </Tabs.Content>
+          )}
+        </For>
+      </Tabs.Root>
       <Toast.Toaster toaster={toaster}>
         {(toast) => (
           <Toast.Root>
@@ -220,71 +226,6 @@ function Logging() {
           </Toast.Root>
         )}
       </Toast.Toaster>
-
-      <Show when={series().length > 0}>
-        <Button
-          variant="ghost"
-          disabled={splitIndex().length <= 1}
-          onclick={resetChart}
-          style={{
-            "margin-top": "0.5rem",
-            "margin-left": "1rem",
-          }}
-        >
-          Reset
-        </Button>
-        <For each={splitIndex()}>
-          {(item, index) => {
-            // Header and items need not be derived state, as they will not
-            // change within a plot.
-            const currentHeader = item.map((i) => header()[i]);
-            const currentItems = item.map((i) => series()[i]);
-
-            // Current ID must be derived state as index can change based on
-            // added/merged plots.
-            const currentID = () => logName() + index();
-
-            // Re-render plot contexts every time `splitIndex` is changed.
-            // TODO: Do not always initialize as empty, figure out how to save
-            // existing state and update for index changes.
-            createEffect(() => {
-              setPlots(index(), {} as PlotContext);
-            });
-
-            return (
-              <>
-                <Button
-                  onClick={() => splitPlot(index())}
-                  disabled={currentHeader.length <= 1 ||
-                    !plots[index()] ||
-                    !plots[index()].visible ||
-                    allVisible(index()) ||
-                    allInvisible(index())}
-                  style={{
-                    "margin-left": "1rem",
-                    "margin-top": `${index() == 0 ? "0.5rem" : "0px"}`,
-                  }}
-                >
-                  Split Plot
-                </Button>
-                <Plot
-                  id={currentID()}
-                  group={logName()}
-                  name=""
-                  header={currentHeader}
-                  series={currentItems}
-                  context={plots[index()]}
-                  style={{
-                    width: "100%",
-                    height: `calc(100% / ${splitIndex().length} - 3rem`,
-                    "min-height": "18rem",
-                  }}
-                />
-              </>
-            );
-          }}
-        </For>
-      </Show>
     </>
   );
 }
