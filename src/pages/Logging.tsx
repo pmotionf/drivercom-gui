@@ -4,7 +4,7 @@ import { createStore } from "solid-js/store";
 import { trackStore } from "@solid-primitives/deep";
 
 import { inferSchema, initParser } from "udsv";
-import { IconChevronsDown, IconChevronsUp, IconX } from "@tabler/icons-solidjs";
+import { IconChevronsDown, IconChevronsUp, IconPlus, IconX } from "@tabler/icons-solidjs";
 
 import { Button } from "~/components/ui/button";
 import { Collapsible } from "~/components/ui/collapsible";
@@ -14,6 +14,8 @@ import { Spinner } from "~/components/ui/spinner";
 import { Text } from "~/components/ui/text";
 import { Toast } from "~/components/ui/toast";
 import { Plot, type PlotContext } from "~/components/Plot";
+import { Tabs } from '~/components/ui/tabs'
+//import { LoggingPlot } from "~/components/LoggingPlot";
 
 function Logging() {
   const toaster = Toast.createToaster({
@@ -21,18 +23,63 @@ function Logging() {
     gap: 24,
   });
 
+  // test seperate file open loader
   const [fileSelectOpen, setFileSelectOpen] = createSignal(true);
+  //const [fileSelectOpen, setFileSelectOpen] = createSignal(Array(3).fill(true))
 
+  // loading status
   const [logStatus, setLogStatus] = createSignal("");
+  //const [logStatus, setLogStatus] = createSignal(Array(3).fill(""))
+
+  // file name
   const [logName, setLogName] = createSignal("");
+  // plot header
   const [header, setHeader] = createSignal([] as string[]);
+  // plot series data
   const [series, setSeries] = createSignal([] as number[][]);
+  // plot context
   const [plots, setPlots] = createStore([] as PlotContext[]);
 
   const [splitIndex, setSplitIndex] = createSignal([] as number[][]);
 
-  function loadLog(details: FileUploadFileAcceptDetails) {
-    if (details.files.length == 0) return;
+  type TabContext = {
+    logName : string,
+    header : string[],
+    series : number[][],
+    plots : PlotContext[],
+    logStatus: string,
+    fileSelectOpen: boolean,
+  }
+
+  const [tabCtx, setTabCtx ] = createStore<TabContext[]>([]);
+
+  const addTabContext = (
+    id: string,
+    headerdata: string[],
+    seriesdata: number[][],
+    plotsdata: PlotContext[],
+    logStatusdata: string,
+    fileSelectOpenstate: boolean,
+    index: number
+  ) => {
+    setTabCtx((prev) => {
+      const  updateCtx = [...prev , { logName: id, 
+        header: headerdata, 
+        series: seriesdata, 
+        plots: plotsdata, 
+        logStatus: logStatusdata, 
+        fileSelectOpen : fileSelectOpenstate, 
+      }]
+      return updateCtx;
+  });
+  };
+
+  
+  //const [setTabContext, setSetTabContext] = createSignal(setTabCtx);
+  //const [getTabContext, setGetTabContext] = createSignal(tabCtx);
+
+  function loadLog(details: FileUploadFileAcceptDetails, index: number) {
+  if (details.files.length == 0) return;
     const file = details.files[0];
     setLogName(file.name);
     setLogStatus("loading");
@@ -93,6 +140,8 @@ function Logging() {
     };
 
     reader.readAsText(file);
+
+    addTabContext(logName(), header(), series(), plots, logStatus(), fileSelectOpen(), index);
   }
 
   function resetChart() {
@@ -139,10 +188,107 @@ function Logging() {
     return plots[index].visible.every((b) => !b);
   };
 
-  // UI 렌더링
+
+  /*const dummyData = [
+    {id: "dummy1"}, {id: "dummy2"},{id: "dummy3"}
+  ]*/
+
   return (
     <>
-      <Portal>
+      <Tabs.Root defaultValue="new_tab">
+        <Tabs.List
+        style={{"margin-top" : "0.5rem"}}>
+          <For each={tabCtx}>
+            {(ctx) => (
+              <Tabs.Trigger value={ctx.logName}>
+                {ctx.logName}
+              </Tabs.Trigger>
+            )}
+          </For>
+          <Tabs.Trigger value = "new_tab">
+            <IconPlus/>
+          </Tabs.Trigger>
+          <Tabs.Indicator />
+        </Tabs.List>
+        <For each = {tabCtx}>
+          {(ctx, i) => (
+            <Tabs.Content value= {ctx.logName} width={"100%"}>
+              <Portal>
+                <Button
+                  variant="ghost"
+                  style={{
+                    position: "fixed",
+                    "padding-right": "0.8em",
+                    "padding-left": "0.5em",
+                    "text-align": "right",
+                    top: "0px",
+                    right: "0px",
+                  }}
+                  onClick={() => {
+                    setTabCtx((prevFile) => {
+                      var prevFiles = [...prevFile];
+                      prevFiles[i()].fileSelectOpen = !prevFiles[i()].fileSelectOpen;
+                      return prevFiles;
+                    });
+                  }}
+                >
+                  <Show when={ctx.logStatus === "loading"}>
+                    <Spinner size="sm" />
+                  </Show>
+                  <Show when={ctx.logStatus === "failed"}>
+                    <IconX color="red" />
+                  </Show>
+                  <Show when={ctx.logStatus !== ""}>
+                    <Text>{ctx.logName}</Text>
+                  </Show>
+                  <Show when={ctx.fileSelectOpen} fallback={<IconChevronsDown />}>
+                    <IconChevronsUp />
+                  </Show>
+                </Button>
+              </Portal>
+              <Collapsible.Root open={ctx.fileSelectOpen} lazyMount unmountOnExit>
+                <Collapsible.Content>
+                  <FileUpload.Root
+                    accept="text/csv"
+                    minFileSize={3}
+                    onFileAccept={(e) => loadLog(e, i())}
+                    onFileReject={(details) => {
+                      if (details.files.length == 0) return;
+                      let description = "The provided log file is invalid:\n";
+                      for (let i = 0; i < details.files[0].errors.length; i++) {
+                        if (description.slice(-1) !== "\n") {
+                          description += ", ";
+                        }
+                        description += details.files[0].errors[i];
+                      }
+                      toaster.create({
+                        title: "Invalid Log File",
+                        description: description,
+                        type: "error",
+                      });
+                    }}
+                  >
+                    <FileUpload.Dropzone>
+                      <FileUpload.Label>Drop Log File (CSV)</FileUpload.Label>
+                      <FileUpload.Trigger
+                        asChild={(triggerProps) => (
+                          <Button size="sm" {...triggerProps()} variant="outline">
+                            <Show when={logName() === ""} fallback="Change">
+                              Select
+                            </Show>
+                          </Button>
+                        )}
+                      />
+                    </FileUpload.Dropzone>
+                    <FileUpload.HiddenInput />
+                  </FileUpload.Root>
+                </Collapsible.Content>
+              </Collapsible.Root>
+            </Tabs.Content>
+          )}
+        </For>
+        <Tabs.Content value = "new_tab">
+        <Portal>
         <Button
           variant="ghost"
           style={{
@@ -176,7 +322,7 @@ function Logging() {
           <FileUpload.Root
             accept="text/csv"
             minFileSize={3}
-            onFileAccept={loadLog}
+            onFileAccept={(e) => {loadLog(e, tabCtx.length)}}
             onFileReject={(details) => {
               if (details.files.length == 0) return;
               let description = "The provided log file is invalid:\n";
@@ -209,6 +355,9 @@ function Logging() {
           </FileUpload.Root>
         </Collapsible.Content>
       </Collapsible.Root>
+        </Tabs.Content>
+      </Tabs.Root>
+      
       <Toast.Toaster toaster={toaster}>
         {(toast) => (
           <Toast.Root>
@@ -220,7 +369,6 @@ function Logging() {
           </Toast.Root>
         )}
       </Toast.Toaster>
-
       <Show when={series().length > 0}>
         <Button
           variant="ghost"
