@@ -21,6 +21,8 @@ jobs:
         run: echo "::add-mask::$NAME_MASK"
 
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
       - name: Install dependencies
         run: deno i --frozen

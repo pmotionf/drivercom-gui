@@ -8,20 +8,25 @@ on:
       - main
   workflow_dispatch:
 
-permissions: write-all
-
 jobs:
   release:
     strategy:
       matrix:
         os: [self-hosted]
     runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash
     if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    permissions:
+      contents: write
     steps:
       - name: Log masks
         run: echo "::add-mask::$NAME_MASK"
 
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
       - name: Parse version
         id: parse-version
@@ -40,12 +45,14 @@ jobs:
 
       - name: Build Linux
         if: ${{ steps.check-tag.outputs.exists != 'true' }}
-        run: deno task  tauri build
+        run: deno task tauri build
 
       - name: Create release
         if: ${{ steps.check-tag.outputs.exists != 'true' }}
         run: |
-          gh release create --generate-notes \
-            "${{ steps.parse-version.outputs.VERSION }}" \
+          gh release create --generate-notes "${VERSION}" \
             src-tauri/target/release/bundle/deb/*.deb \
             src-tauri/target/release/bundle/rpm/*.rpm
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VERSION: ${{ steps.parse-version.outputs.VERSION }}
