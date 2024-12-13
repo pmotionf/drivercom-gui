@@ -1,4 +1,4 @@
-import { createSignal, For } from "solid-js";
+import { createSignal, For, Show } from "solid-js";
 import { inferSchema, initParser } from "udsv";
 import {
   type FileUploadFileAcceptDetails,
@@ -10,6 +10,8 @@ import { Tabs } from "~/components/ui/tabs";
 import { IconButton } from "~/components/ui/icon-button";
 import { LoggingTab, LoggingTabProps } from "./Logging/LoggingTab";
 import { IconPlus, IconX } from "@tabler/icons-solidjs";
+import { Editable } from "~/components/ui/editable";
+import { Stack } from "styled-system/jsx";
 
 function Logging() {
   const toaster = Toast.createToaster({
@@ -33,6 +35,7 @@ function Logging() {
 
   const [tabId, setTabId] = createSignal(0);
   const [tabContext, setTabContext] = createSignal<LoggingTabProps[]>([]);
+  
 
   function loadLog(details: FileUploadFileAcceptDetails) {
     if (details.files.length == 0) return;
@@ -75,9 +78,9 @@ function Logging() {
         (_, index) => index,
       );
 
-      createTab(file.name, local_header, data.slice(0, local_header.length), [
-        indexArray,
-      ]);
+      createTab(file.name, local_header, data.slice(0, local_header.length), 
+        [indexArray],
+      );
     };
 
     reader.onerror = () => {
@@ -117,84 +120,123 @@ function Logging() {
     });
   }
 
+  function updateLogName(index: number, value: string) {
+    setTabContext((prev) => {
+      const updateTabCtx = [...prev];
+      updateTabCtx[index].logName = value;
+      return updateTabCtx;
+    })
+  }
+
   return (
     <>
-      <Tabs.Root
-        defaultValue={tabId().toString()}
+      <Tabs.Root 
+        defaultValue = {tabId().toString()} 
         style={{ width: "100%", height: "100%" }}
-      >
+        >
         <div class="tab-container" style={{ width: "100%", "display": "flex" }}>
-          <Tabs.List
-            id="tabList"
-            style={{
-              height: "3rem",
-              background: "--colors-bg-muted",
-              "padding-top": "0.5rem",
-              width: "100%",
-              "overflow-x": "auto",
-              margin: "0",
+        <Tabs.List
+          style={{
+          height : "3rem",
+          width: "100%",
+          background: "--colors-bg-muted",
+          "padding-top" : "0.5rem",
+          }}>
+          <For each={tabContext()}>
+            {(ctx, index) => (
+              <Tabs.Trigger 
+                value={ctx.tabId}
+                >
+                  <Editable.Root
+                    defaultValue={ctx.logName}
+                    activationMode="dblclick"
+                    onValueChange={(e) => updateLogName(index(), e.value)}
+                  >
+                    <Stack direction={"row"}>
+                    <Editable.Area >
+                      <Editable.Input />
+                      <Editable.Preview />
+                    </Editable.Area>
+                    <Editable.Context >
+                      {(editable) => (
+                        <Editable.Control>
+                          <Show
+                            when={editable().editing}
+                            fallback={
+                              <IconButton
+                                variant="ghost"
+                                size={"xs"}
+                                onClick={() => (deleteTab(index()))}
+                              >
+                                <IconX />
+                              </IconButton>
+                            }
+                          >
+                            <>
+                              <Editable.CancelTrigger
+                                asChild={(triggerProps) => (
+                                  <IconButton
+                                    {...triggerProps()}
+                                    variant="ghost"
+                                    size={"xs"}
+                                  >
+                                    <IconX />
+                                  </IconButton>
+                                )}
+                              />
+                            </>
+                          </Show>
+                        </Editable.Control>
+                      )}
+                      
+                    </Editable.Context>
+                    </Stack>
+                  </Editable.Root>
+                
+              </Tabs.Trigger>
+              
+            )}
+          </For>
+          <FileUpload.Root
+            accept="text/csv"
+            minFileSize={3}
+            onFileAccept={loadLog}
+            width={"1rem"}
+            onFileReject={(details) => {
+              if (details.files.length == 0) return;
+              let description = "The provided log file is invalid:\n";
+              for (let i = 0; i < details.files[0].errors.length; i++) {
+                if (description.slice(-1) !== "\n") {
+                  description += ", ";
+                }
+                description += details.files[0].errors[i];
+              }
+              toaster.create({
+                title: "Invalid Log File",
+                description: description,
+                type: "error",
+              });
             }}
           >
-            <For each={tabContext()}>
-              {(ctx, index) => (
-                <Tabs.Trigger
-                  class="tab-trigger"
-                  value={ctx.tabId}
-                  title={ctx.logName}
-                  draggable
-                  onDragStart={() => {
-                    setDraggedTabIndex(index());
-                  }}
-                  onDragOver={(e) => handleDragOver(e, index())}
-                  onDrop={() => {
-                    setDraggedTabIndex(null);
-                  }}
-                  style={{
-                    "cursor": "grab",
-                  }}
+            <FileUploadTrigger
+              asChild={(triggerProps) => (
+                <IconButton
+                  size={"xs"}
+                  variant={"ghost"}
+                  {...triggerProps()}
+                  
                 >
-                  {ctx.logName}
-                </Tabs.Trigger>
+                  <IconPlus />
+                </IconButton>
               )}
-            </For>
-              <FileUpload.Root
-                accept="text/csv"
-                minFileSize={3}
-                onFileAccept={loadLog}
-                width={"1rem"}
-                style={{ "margin-left": "0" }}
-                onFileReject={(details) => {
-                  if (details.files.length == 0) return;
-                  let description = "The provided log file is invalid:\n";
-                  for (let i = 0; i < details.files[0].errors.length; i++) {
-                    if (description.slice(-1) !== "\n") {
-                      description += ", ";
-                    }
-                    description += details.files[0].errors[i];
-                  }
-                  toaster.create({
-                    title: "Invalid Log File",
-                    description: description,
-                    type: "error",
-                  });
-                }}
-              >
-                <FileUploadTrigger
-                  asChild={(triggerProps) => (
-                    <IconButton
-                      size={"xs"}
-                      variant={"ghost"}
-                      {...triggerProps()}
-                    >
-                      <IconPlus />
-                    </IconButton>
-                  )}
-                />
-                <FileUpload.HiddenInput />
-              </FileUpload.Root>
-            <Tabs.Indicator />
-          </Tabs.List>
-        </div>
+            />
+            <FileUpload.HiddenInput />
+          </FileUpload.Root>
+          <Tabs.Indicator />
+          
+        </Tabs.List>
+        </div>   
+        
         <For each={tabContext()}>
           {(ctx) => (
             <Tabs.Content
