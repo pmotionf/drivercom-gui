@@ -20,7 +20,9 @@ function Logging() {
   });
 
   // Reorder tab
-  const [draggedTabIndex, setDraggedTabIndex] = createSignal<number | null>(null);
+  const [draggedTabIndex, setDraggedTabIndex] = createSignal<number | null>(
+    null,
+  );
 
   const handleDragOver = (e: DragEvent, index: number) => {
     e.preventDefault();
@@ -35,7 +37,41 @@ function Logging() {
 
   const [tabId, setTabId] = createSignal(0);
   const [tabContext, setTabContext] = createSignal<LoggingTabProps[]>([]);
-  
+
+  function createTab(
+    fileName: string,
+    plotHeader: string[],
+    plotSeries: number[][],
+    plotSplitIndex: number[][],
+  ) {
+    setTabId(tabId() + 1);
+    setTabContext((prev) => {
+      const updateTabCtx = [...prev, {
+        tabId: tabId().toString(),
+        logName: fileName,
+        header: plotHeader,
+        series: plotSeries,
+        splitIndex: plotSplitIndex,
+      }];
+      return updateTabCtx;
+    });
+  }
+
+  function deleteTab(index: number) {
+    setTabContext((prev) => {
+      const updateTabCtx = [...prev];
+      updateTabCtx.splice(index, 1);
+      return updateTabCtx;
+    });
+  }
+
+  function updateLogName(index: number, value: string) {
+    setTabContext((prev) => {
+      const updateTabCtx = [...prev];
+      updateTabCtx[index].logName = value;
+      return updateTabCtx;
+    });
+  }
 
   function loadLog(details: FileUploadFileAcceptDetails) {
     if (details.files.length == 0) return;
@@ -78,9 +114,9 @@ function Logging() {
         (_, index) => index,
       );
 
-      createTab(file.name, local_header, data.slice(0, local_header.length), 
-        [indexArray],
-      );
+      createTab(file.name, local_header, data.slice(0, local_header.length), [
+        indexArray,
+      ]);
     };
 
     reader.onerror = () => {
@@ -93,71 +129,49 @@ function Logging() {
     reader.readAsText(file);
   }
 
-  function createTab(
-    fileName: string,
-    plotHeader: string[],
-    plotSeries: number[][],
-    plotSplitIndex: number[][],
-  ) {
-    setTabId(tabId() + 1);
-    setTabContext((prev) => {
-      const updateTabCtx = [...prev, {
-        tabId: tabId().toString(),
-        logName: fileName,
-        header: plotHeader,
-        series: plotSeries,
-        splitIndex: plotSplitIndex,
-      }];
-      return updateTabCtx;
-    });
-  }
-
-  function deleteTab(index: number) {
-    setTabContext((prev) => {
-      const updateTabCtx = [...prev];
-      updateTabCtx.splice(index, 1);
-      return updateTabCtx;
-    });
-  }
-
-  function updateLogName(index: number, value: string) {
-    setTabContext((prev) => {
-      const updateTabCtx = [...prev];
-      updateTabCtx[index].logName = value;
-      return updateTabCtx;
-    })
-  }
-
   return (
     <>
       <Tabs.Root 
-        defaultValue = {tabId().toString()} 
-        style={{ width: "100%", height: "100%" }}
+        defaultValue={tabId().toString()} 
+        width={"100%"}
+        height= {"100%"}
         >
-        <div class="tab-container" style={{ width: "100%", "display": "flex" }}>
         <Tabs.List
+          id="tabs-width"
           style={{
-          height : "3rem",
-          width: "100%",
-          background: "--colors-bg-muted",
-          "padding-top" : "0.5rem",
-          }}>
+            height: "3rem",
+            background: "--colors-bg-muted",
+            "padding-top": "0.5rem",
+          }}
+        >
           <For each={tabContext()}>
             {(ctx, index) => (
-              <Tabs.Trigger 
+              <Tabs.Trigger
                 value={ctx.tabId}
+                title={ctx.logName}
+                draggable
+                onDragStart={() => setDraggedTabIndex(index())}
+                onDragOver={(e) => handleDragOver(e, index())}
+                onDrop={() => {
+                  setDraggedTabIndex(null);
+                }}
+              >
+                <Editable.Root
+                  defaultValue={ctx.logName}
+                  activationMode="dblclick"
+                  onValueChange={(e) => updateLogName(index(), e.value)}
                 >
-                  <Editable.Root
-                    defaultValue={ctx.logName}
-                    activationMode="dblclick"
-                    onValueChange={(e) => updateLogName(index(), e.value)}
-                  >
-                    <Stack direction={"row"}>
-                    <Editable.Area >
+                  <Stack direction={"row"}>
+                    <Editable.Area
+                      style={{
+                        overflow: "hidden",
+                        "padding-top": "0.2rem",
+                      }}
+                    >
                       <Editable.Input />
                       <Editable.Preview />
                     </Editable.Area>
-                    <Editable.Context >
+                    <Editable.Context>
                       {(editable) => (
                         <Editable.Control>
                           <Show
@@ -188,55 +202,51 @@ function Logging() {
                           </Show>
                         </Editable.Control>
                       )}
-                      
                     </Editable.Context>
-                    </Stack>
-                  </Editable.Root>
-                
+                  </Stack>
+                </Editable.Root>
               </Tabs.Trigger>
-              
             )}
           </For>
-          <FileUpload.Root
-            accept="text/csv"
-            minFileSize={3}
-            onFileAccept={loadLog}
-            width={"1rem"}
-            onFileReject={(details) => {
-              if (details.files.length == 0) return;
-              let description = "The provided log file is invalid:\n";
-              for (let i = 0; i < details.files[0].errors.length; i++) {
-                if (description.slice(-1) !== "\n") {
-                  description += ", ";
+          <Show when={tabContext().length !== 20}>
+            <FileUpload.Root
+              accept="text/csv"
+              minFileSize={3}
+              onFileAccept={loadLog}
+              width={"1rem"}
+              style={{ "margin-left": "0" }}
+              onFileReject={(details) => {
+                if (details.files.length == 0) return;
+                let description = "The provided log file is invalid:\n";
+                for (let i = 0; i < details.files[0].errors.length; i++) {
+                  if (description.slice(-1) !== "\n") {
+                    description += ", ";
+                  }
+                  description += details.files[0].errors[i];
                 }
-                description += details.files[0].errors[i];
-              }
-              toaster.create({
-                title: "Invalid Log File",
-                description: description,
-                type: "error",
-              });
-            }}
-          >
-            <FileUploadTrigger
-              asChild={(triggerProps) => (
-                <IconButton
-                  size={"xs"}
-                  variant={"ghost"}
-                  {...triggerProps()}
-                  
-                >
-                  <IconPlus />
-                </IconButton>
-              )}
-            />
-            <FileUpload.HiddenInput />
-          </FileUpload.Root>
+                toaster.create({
+                  title: "Invalid Log File",
+                  description: description,
+                  type: "error",
+                });
+              }}
+            >
+              <FileUploadTrigger
+                asChild={(triggerProps) => (
+                  <IconButton
+                    size={"xs"}
+                    variant={"ghost"}
+                    {...triggerProps()}
+                  >
+                    <IconPlus />
+                  </IconButton>
+                )}
+              />
+              <FileUpload.HiddenInput />
+            </FileUpload.Root>
+          </Show>
           <Tabs.Indicator />
-          
         </Tabs.List>
-        </div>   
-        
         <For each={tabContext()}>
           {(ctx) => (
             <Tabs.Content
