@@ -35,7 +35,36 @@ function Logging() {
     }
   };
 
+  // Drag Scroll
+  const [isDragScrolling, setIsDragScrolling] = createSignal(false);
+  const [clientX, setClientX] = createSignal<number | null>(null);
+  const [prevPositionX, setPrevPositionX] = createSignal<number>(0);
+  let scrollContainer: HTMLDivElement | undefined;
+
+  const mouseMoveHandler = (e: MouseEvent) => {
+    if (!isDragScrolling() || !scrollContainer || !clientX()) return;
+
+    const movement = clientX()! - e.clientX + prevPositionX();
+    scrollContainer.scrollTo({ left: movement });
+  };
+
+  // Scroll the tab while reordering the tabs.
+  const dragOverScroll = (e: MouseEvent) => {
+    if (!isDragScrolling() || !scrollContainer || !clientX()) return;
+
+    const movement = (e.clientX - clientX()! + prevPositionX()) * 0.05;
+    scrollContainer.scrollBy({ left: movement });
+  };
+
+  const scrollToRight = () => {
+    if (scrollContainer) {
+      scrollContainer.scrollTo(10000, 0);
+    }
+  };
+
+  // Containing tab context
   const [tabId, setTabId] = createSignal(0);
+  const [tabValue, setTabValue] = createSignal<string>("");
   const [tabContext, setTabContext] = createSignal<LoggingTabProps[]>([]);
 
   function createTab(
@@ -55,9 +84,23 @@ function Logging() {
       }];
       return updateTabCtx;
     });
+    setTabValue(tabId().toString());
+    setTimeout(() => {
+      scrollToRight();
+    }, 10);
   }
 
   function deleteTab(index: number) {
+    const prevValue = tabValue();
+    const contextIndex = index === 0 ? 1 : index - 1;
+    const newValue = tabValue() === tabContext()[index].tabId
+      ? tabContext()[contextIndex].tabId
+      : prevValue;
+    
+    setTimeout(() => {
+      setTabValue(newValue);
+    }, 0);
+
     setTabContext((prev) => {
       const updateTabCtx = [...prev];
       updateTabCtx.splice(index, 1);
@@ -73,6 +116,7 @@ function Logging() {
     });
   }
 
+  // Load File
   function loadLog(details: FileUploadFileAcceptDetails) {
     if (details.files.length == 0) return;
     const file = details.files[0];
@@ -131,17 +175,34 @@ function Logging() {
 
   return (
     <>
-      <Tabs.Root 
-        defaultValue={tabId().toString()} 
-        width={"100%"}
-        height= {"100%"}
-        >
+      <Tabs.Root
+        value={tabValue()}
+        onValueChange={(e) => setTabValue(e.value)}
+        width="100%"
+        height="100%"
+      >
         <Tabs.List
-          id="tabs-width"
+          ref={scrollContainer}
           style={{
-            height: "3rem",
             background: "--colors-bg-muted",
             "padding-top": "0.5rem",
+            height: "3rem",
+            "overflow-x": "auto",
+          }}
+          gap="0"
+          onMouseDown={(e) => {
+            setClientX(e.clientX);
+            setIsDragScrolling(true);
+            setPrevPositionX(e.currentTarget.scrollLeft);
+          }}
+          onMouseMove={(e) => mouseMoveHandler(e)}
+          onMouseUp={() => {
+            setIsDragScrolling(false);
+            setClientX(null);
+          }}
+          onmouseleave={() => {
+            setIsDragScrolling(false);
+            setClientX(null);
           }}
         >
           <For each={tabContext()}>
@@ -150,24 +211,32 @@ function Logging() {
                 value={ctx.tabId}
                 title={ctx.logName}
                 draggable
-                onDragStart={() => setDraggedTabIndex(index())}
-                onDragOver={(e) => handleDragOver(e, index())}
+                onDragStart={(e) => {
+                  setDraggedTabIndex(index()); 
+                  setTabValue(ctx.tabId);
+                  setPrevPositionX(e.currentTarget.scrollLeft);
+                  setClientX(e.clientX);
+                  setIsDragScrolling(true);
+                }}
+                onDragOver={(e) => {
+                  handleDragOver(e, index());
+                  dragOverScroll(e)
+                }}
                 onDrop={() => {
                   setDraggedTabIndex(null);
+                  setClientX(null);
+                  setIsDragScrolling(false);
                 }}
+                style={{ "padding-right": "0" }}
               >
                 <Editable.Root
                   defaultValue={ctx.logName}
                   activationMode="dblclick"
                   onValueChange={(e) => updateLogName(index(), e.value)}
+                  paddingTop="0.1rem"
                 >
                   <Stack direction={"row"}>
-                    <Editable.Area
-                      style={{
-                        overflow: "hidden",
-                        "padding-top": "0.2rem",
-                      }}
-                    >
+                    <Editable.Area>
                       <Editable.Input />
                       <Editable.Preview />
                     </Editable.Area>
@@ -180,7 +249,10 @@ function Logging() {
                               <IconButton
                                 variant="ghost"
                                 size={"xs"}
-                                onClick={() => (deleteTab(index()))}
+                                onClick={() => {
+                                  deleteTab(index());
+                                }}
+                                borderRadius="1rem"
                               >
                                 <IconX />
                               </IconButton>
@@ -192,7 +264,8 @@ function Logging() {
                                   <IconButton
                                     {...triggerProps()}
                                     variant="ghost"
-                                    size={"xs"}
+                                    size="xs"
+                                    borderRadius="1rem"
                                   >
                                     <IconX />
                                   </IconButton>
@@ -208,13 +281,11 @@ function Logging() {
               </Tabs.Trigger>
             )}
           </For>
-          <Show when={tabContext().length !== 20}>
+          <Show when={tabContext.length !== 20}>
             <FileUpload.Root
               accept="text/csv"
               minFileSize={3}
               onFileAccept={loadLog}
-              width={"1rem"}
-              style={{ "margin-left": "0" }}
               onFileReject={(details) => {
                 if (details.files.length == 0) return;
                 let description = "The provided log file is invalid:\n";
@@ -237,6 +308,8 @@ function Logging() {
                     size={"xs"}
                     variant={"ghost"}
                     {...triggerProps()}
+                    width={"1rem"}
+                    borderRadius={"1rem"}
                   >
                     <IconPlus />
                   </IconButton>
@@ -251,8 +324,7 @@ function Logging() {
           {(ctx) => (
             <Tabs.Content
               value={ctx.tabId}
-              width={"100%"}
-              height={"calc(100vh - 3rem)"}
+              height={"100%"}
               style={{ "overflow-y": "auto" }}
             >
               <LoggingTab
@@ -261,7 +333,6 @@ function Logging() {
                 logName={ctx.logName}
                 series={ctx.series}
                 splitIndex={ctx.splitIndex}
-                style={{ "height": "100%" }}
               />
             </Tabs.Content>
           )}
