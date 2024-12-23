@@ -3,22 +3,43 @@ import { createEffect, createSignal, For, JSX } from "solid-js";
 import { createStore } from "solid-js/store";
 import { Plot, PlotContext } from "~/components/Plot";
 import { Button } from "~/components/ui/button";
+import { inferSchema, initParser } from "udsv";
 
 export type LoggingTabProps = JSX.HTMLAttributes<HTMLDivElement> & {
   tabId: string;
-  logName: string;
-  header: string[];
-  series: number[][];
-  splitIndex: number[][];
+  file: string;
 };
 
 export function LoggingTab(props: LoggingTabProps) {
+  const csv_str: string = props.file;
+  const rows = csv_str.split("\n");
+
+  const schema = inferSchema(csv_str);
+  const parser = initParser(schema);
+  const local_header = rows[0].replace(/,\s*$/, "").split(",");
+
+  const data = parser.typedCols(csv_str).map((row) =>
+    row.map((val) => {
+      if (typeof val === "boolean") return val ? 1 : 0;
+      return val;
+    })
+  );
+
+  const indexArray = Array.from(
+    { length: local_header.length },
+    (_, index) => index,
+  );
+
+  const header = local_header;
+  const series = data.slice(0, local_header.length);
+
   const [plots, setPlots] = createStore([] as PlotContext[]);
-  const [splitIndex, setSplitIndex] = createSignal(props.splitIndex);
+  const [splitIndex, setSplitIndex] = createSignal([] as number[][]);
+  setSplitIndex([indexArray]);
 
   function resetChart() {
     const indexArray = Array.from(
-      { length: props.header.length },
+      { length: header.length },
       (_, index) => index,
     );
     setSplitIndex([indexArray]);
@@ -77,8 +98,8 @@ export function LoggingTab(props: LoggingTabProps) {
         {(item, index) => {
           // Header and items need not be derived state, as they will not
           // change within a plot.
-          const currentHeader = item.map((i) => props.header[i]);
-          const currentItems = item.map((i) => props.series[i]);
+          const currentHeader = item.map((i) => header[i]);
+          const currentItems = item.map((i) => series[i]);
 
           // Current ID must be derived state as index can change based on
           // added/merged plots.

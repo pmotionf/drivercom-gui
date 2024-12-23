@@ -1,24 +1,10 @@
 import { createSignal, For, Show } from "solid-js";
-import { inferSchema, initParser } from "udsv";
-import {
-  type FileUploadFileAcceptDetails,
-  FileUploadTrigger,
-} from "@ark-ui/solid";
-import { FileUpload } from "~/components/ui/file-upload";
-import { Toast } from "~/components/ui/toast";
 import { Tabs } from "~/components/ui/tabs";
-import { IconButton } from "~/components/ui/icon-button";
-import { LoggingTab, LoggingTabProps } from "./Logging/LoggingTab";
-import { IconPlus, IconX } from "@tabler/icons-solidjs";
-import { Editable } from "~/components/ui/editable";
-import { Stack } from "styled-system/jsx";
+import { LoggingTab } from "./Logging/LoggingTab";
+import { CreateTabButton } from "./Logging/CreateTabButton";
+import { TabEditable } from "./Logging/TabEditable";
 
 function Logging() {
-  const toaster = Toast.createToaster({
-    placement: "top-end",
-    gap: 24,
-  });
-
   // Reorder tab
   const [draggedTabIndex, setDraggedTabIndex] = createSignal<number | null>(
     null,
@@ -27,10 +13,10 @@ function Logging() {
   const handleDragOver = (e: DragEvent, index: number) => {
     e.preventDefault();
     if (draggedTabIndex() !== null && draggedTabIndex() !== index) {
-      const updateTab = [...tabContext()];
+      const updateTab = [...tabList()];
       const [draggedTab] = updateTab.splice(draggedTabIndex()!, 1);
       updateTab.splice(index, 0, draggedTab);
-      setTabContext(updateTab);
+      setTabList(updateTab);
       setDraggedTabIndex(index);
     }
   };
@@ -70,111 +56,26 @@ function Logging() {
   };
 
   const [tabValue, setTabValue] = createSignal<string>("");
-  const [tabContext, setTabContext] = createSignal<LoggingTabProps[]>([]);
-
-  function createTab(
-    fileName: string,
-    plotHeader: string[],
-    plotSeries: number[][],
-    plotSplitIndex: number[][],
-  ) {
-    const tabId: string = crypto.randomUUID()
-    setTabContext((prev) => {
-      const updateTabCtx = [...prev, {
-        tabId: tabId.toString(),
-        logName: fileName,
-        header: plotHeader,
-        series: plotSeries,
-        splitIndex: plotSplitIndex,
-      }];
-      return updateTabCtx;
-    });
-    setTabValue(tabId);
-    setTimeout(() => {
-      scrollToRight();
-    }, 10);
-  }
+  const [tabList, setTabList] = createSignal([] as string[]);
 
   function deleteTab(index: number) {
     const contextIndex = index === 0 ? 1 : index - 1;
-    const newValue = tabValue() === tabContext()[index].tabId
-      ? tabContext()[contextIndex].tabId
+    const newValue = tabValue() === tabList()[index]
+      ? tabList()[contextIndex]
       : tabValue();
 
     setTimeout(() => {
       setTabValue(newValue);
     }, 0);
-    setTabContext((prev) => {
-      const updateTabCtx = [...prev];
-      updateTabCtx.splice(index, 1);
-      return updateTabCtx;
-    });
-  }
-
-  function updateLogName(index: number, value: string) {
-    setTabContext((prev) => {
-      const updateTabCtx = [...prev];
-      updateTabCtx[index].logName = value;
+    setTabList((prev) => {
+      const updateTabCtx = prev.filter((_, i) => i !== index);
       return updateTabCtx;
     });
   }
 
   // Load File
-  function loadLog(details: FileUploadFileAcceptDetails) {
-    if (details.files.length == 0) return;
-    const file = details.files[0];
-    const reader = new FileReader();
-
-    reader.onload = () => {
-      const csv_str: string = (reader.result! as string).trim();
-      const rows = csv_str.split("\n");
-      if (rows.length < 2) {
-        toaster.create({
-          title: "Invalid Log File",
-          description: "Not enough rows.",
-          type: "error",
-        });
-        return;
-      }
-
-      const schema = inferSchema(csv_str);
-      const parser = initParser(schema);
-      const local_header = rows[0].replace(/,\s*$/, "").split(",");
-      const data = parser.typedCols(csv_str).map((row) =>
-        row.map((val) => {
-          if (typeof val === "boolean") return val ? 1 : 0;
-          return val;
-        })
-      );
-      if (data.length < local_header.length) {
-        toaster.create({
-          title: "Invalid Log File",
-          description:
-            `Data has ${data.length} columns, while header has ${local_header.length} labels.`,
-          type: "error",
-        });
-        return;
-      }
-
-      const indexArray = Array.from(
-        { length: local_header.length },
-        (_, index) => index,
-      );
-
-      createTab(file.name, local_header, data.slice(0, local_header.length), [
-        indexArray,
-      ]);
-    };
-
-    reader.onerror = () => {
-      toaster.create({
-        title: "Log File Loading Failed",
-        description: `${reader.error!.name}: ${reader.error!.message}`,
-        type: "error",
-      });
-    };
-    reader.readAsText(file);
-  }
+  const [file, setFile] = createSignal("");
+  const [tabName, setTabName] = createSignal("");
 
   return (
     <>
@@ -209,15 +110,14 @@ function Logging() {
           }}
           onWheel={(e) => mouseWheelHandler(e)}
         >
-          <For each={tabContext()}>
+          <For each={tabList()}>
             {(ctx, index) => (
               <Tabs.Trigger
-                value={ctx.tabId}
-                title={ctx.logName}
+                value={ctx}
                 draggable
                 onDragStart={(e) => {
                   setDraggedTabIndex(index());
-                  setTabValue(ctx.tabId);
+                  setTabValue(ctx);
                   setPrevPositionX(e.currentTarget.scrollLeft);
                   setClientX(e.clientX);
                   setIsDragScrolling(true);
@@ -233,126 +133,43 @@ function Logging() {
                 }}
                 style={{ "padding-right": "0" }}
               >
-                <Editable.Root
-                  defaultValue={ctx.logName}
-                  activationMode="dblclick"
-                  onValueChange={(e) => updateLogName(index(), e.value)}
-                  paddingTop="0.1rem"
-                >
-                  <Stack direction={"row"}>
-                    <Editable.Area>
-                      <Editable.Input />
-                      <Editable.Preview />
-                    </Editable.Area>
-                    <Editable.Context>
-                      {(editable) => (
-                        <Editable.Control>
-                          <Show
-                            when={editable().editing}
-                            fallback={
-                              <IconButton
-                                variant="ghost"
-                                size={"xs"}
-                                onClick={() => {
-                                  deleteTab(index());
-                                }}
-                                borderRadius="1rem"
-                              >
-                                <IconX />
-                              </IconButton>
-                            }
-                          >
-                            <>
-                              <Editable.CancelTrigger
-                                asChild={(triggerProps) => (
-                                  <IconButton
-                                    {...triggerProps()}
-                                    variant="ghost"
-                                    size="xs"
-                                    borderRadius="1rem"
-                                  >
-                                    <IconX />
-                                  </IconButton>
-                                )}
-                              />
-                            </>
-                          </Show>
-                        </Editable.Control>
-                      )}
-                    </Editable.Context>
-                  </Stack>
-                </Editable.Root>
+                <TabEditable
+                  tabName={tabName()}
+                  onDelete={() => deleteTab(index())}
+                />
               </Tabs.Trigger>
             )}
           </For>
-          <Show when={tabContext.length !== 20}>
-            <FileUpload.Root
-              accept="text/csv"
-              minFileSize={3}
-              onFileAccept={loadLog}
-              onFileReject={(details) => {
-                if (details.files.length == 0) return;
-                let description = "The provided log file is invalid:\n";
-                for (let i = 0; i < details.files[0].errors.length; i++) {
-                  if (description.slice(-1) !== "\n") {
-                    description += ", ";
-                  }
-                  description += details.files[0].errors[i];
-                }
-                toaster.create({
-                  title: "Invalid Log File",
-                  description: description,
-                  type: "error",
+          <Show when={tabList().length !== 20}>
+            <CreateTabButton
+              onCreateTabValue={(tabId, file, name) => {
+                setFile(file);
+                setTabName(name);
+                setTabList((prev) => {
+                  return [...prev, tabId];
                 });
+                setTabValue(tabId);
+                scrollToRight();
               }}
-            >
-              <FileUploadTrigger
-                asChild={(triggerProps) => (
-                  <IconButton
-                    size={"xs"}
-                    variant={"ghost"}
-                    {...triggerProps()}
-                    width={"1rem"}
-                    borderRadius={"1rem"}
-                  >
-                    <IconPlus />
-                  </IconButton>
-                )}
-              />
-              <FileUpload.HiddenInput />
-            </FileUpload.Root>
+            />
           </Show>
           <Tabs.Indicator />
         </Tabs.List>
-        <For each={tabContext()}>
+        <For each={tabList()}>
           {(ctx) => (
             <Tabs.Content
-              value={ctx.tabId}
+              value={ctx}
               height={"100%"}
               style={{ "overflow-y": "auto" }}
             >
               <LoggingTab
-                tabId={ctx.tabId}
-                header={ctx.header}
-                logName={ctx.logName}
-                series={ctx.series}
-                splitIndex={ctx.splitIndex}
+                tabId={ctx}
+                file={file()}
               />
             </Tabs.Content>
           )}
         </For>
       </Tabs.Root>
-      <Toast.Toaster toaster={toaster}>
-        {(toast) => (
-          <Toast.Root>
-            <Toast.Title>{toast().title}</Toast.Title>
-            <Toast.Description>{toast().description}</Toast.Description>
-            <Toast.CloseTrigger>
-              <IconX />
-            </Toast.CloseTrigger>
-          </Toast.Root>
-        )}
-      </Toast.Toaster>
     </>
   );
 }
