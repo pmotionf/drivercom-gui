@@ -69,7 +69,6 @@ function Logging() {
     scrollContainer.scrollLeft += e.deltaY;
   };
 
-  const [tabId, setTabId] = createSignal(0);
   const [tabValue, setTabValue] = createSignal<string>("");
   const [tabContext, setTabContext] = createSignal<LoggingTabProps[]>([]);
 
@@ -79,10 +78,10 @@ function Logging() {
     plotSeries: number[][],
     plotSplitIndex: number[][],
   ) {
-    setTabId(tabId() + 1);
+    const tabId: string = crypto.randomUUID()
     setTabContext((prev) => {
       const updateTabCtx = [...prev, {
-        tabId: tabId().toString(),
+        tabId: tabId.toString(),
         logName: fileName,
         header: plotHeader,
         series: plotSeries,
@@ -90,7 +89,7 @@ function Logging() {
       }];
       return updateTabCtx;
     });
-    setTabValue(tabId().toString());
+    setTabValue(tabId);
     setTimeout(() => {
       scrollToRight();
     }, 10);
