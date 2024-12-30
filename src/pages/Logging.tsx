@@ -139,6 +139,55 @@ function Logging() {
     return plots[index].visible.every((b) => !b);
   };
 
+  /*const newContext: PlotContext = {
+    color: [
+      "#FFFFFF",
+      "#FFFFFF",
+      "#FFFFFF",
+    ],
+    palette: [
+      "#ffffff",
+      "#803E75",
+      "#FF6800",
+    ],
+    style: [
+      0,
+      0,
+      0,
+    ],
+    visible: [
+      true,
+      true,
+      true,
+    ],
+  };*/
+
+  //let context: string[] = [];
+  let colorArray : string[] = [];
+  let styleArray : number[] = [];
+
+  /*function newContext () {
+    if(plots[0]){
+      console.log(plots)
+    }
+
+    if(plots[0].color.length === header().length){
+      
+      //colorArray = plots[0].color
+      //styleArray = plots[0].style
+    } 
+
+    
+    const newContext : PlotContext = {
+      color : colorArray!,
+      style : styleArray!,
+      visible : [],
+      palette : []
+    }
+      console.log(newContext)
+    
+  }*/
+
   // UI 렌더링
   return (
     <>
@@ -239,6 +288,10 @@ function Logging() {
             // change within a plot.
             const currentHeader = item.map((i) => header()[i]);
             const currentItems = item.map((i) => series()[i]);
+            //const currentPlot = item.map((i) => newPlotContext[i])
+            /*const currentPlot = item.map((i) =>
+              !plots ? {} as PlotContext : plots[i]
+            );*/
 
             // Current ID must be derived state as index can change based on
             // added/merged plots.
@@ -247,9 +300,149 @@ function Logging() {
             // Re-render plot contexts every time `splitIndex` is changed.
             // TODO: Do not always initialize as empty, figure out how to save
             // existing state and update for index changes.
-            createEffect(() => {
+
+            //const existingContext = {} as PlotContext;
+            //const newPlotContext : PlotContext = {visible : [] , color : ["#000000"], palette : [], style: []};
+
+            // Also add this is plotProps:
+            // onContextChange? : (ctx : plotContext) => void
+            // and test it, But it made a infinity loading
+
+            /*createEffect(() => {
               setPlots(index(), {} as PlotContext);
+            })*/
+
+            /*const number0 = index()
+              const test2 = Array.from(
+                {length : header().length},
+                (_, index) => plots[number0].color[index]
+              )
+              console.log(test2);*/
+
+              if(plots[0] && plots[0].color.length === header().length){
+                colorArray = plots[0].color
+                styleArray = plots[0].style
+              }
+      
+            createEffect(() => {
+              if(plots) {
+                const prevContext : PlotContext = {
+                  color : colorArray,
+                  style : styleArray,
+                  palette : [],
+                  visible: []
+                }
+
+                var newContext : PlotContext = {} as PlotContext;
+
+                for(let i = 0; i < splitIndex()[index()].length; i++){
+                  const contextIndex = splitIndex()[index()][i]
+                  console.log(
+                    prevContext.color[contextIndex],
+                    prevContext.style[contextIndex]
+                  )
+                  
+                }
+                setPlots(index(), newContext)    
+                console.log(newContext)
+              } else {
+                setPlots(index(), {} as PlotContext);
+              }
+              console.log(colorArray, styleArray)
+
+              // This works on console.log, but dosent appear the result in UI. Need to find other way.
+              /*if (plots[index()].color) {
+                const color = plots[index()].color;
+                //const style = plots[index()].style
+                if (color.length === header().length && index() === 0) {
+                  context = Array.from(
+                    { length: header().length },
+                    (_, index) => color[index],
+                  );
+                } else {
+                  /*for(let i = 0; i < splitIndex()[index()].length; i++ ){
+                    const contextIndex = splitIndex()[index()][i]
+                    if(context!){
+                      //console.log(contextIndex, context[contextIndex])
+                    }
+
+                  }
+
+                  const newPlotContextColor = Array.from(
+                    { length: currentHeader.length },
+                    (_, i) => context[splitIndex()[index()][i]],
+                  );
+
+                  const newPlotContextVisible = Array.from(
+                    { length: currentHeader.length },
+                    (_) => true,
+                  );
+
+                  const newPlotContext: PlotContext = {
+                    visible: newPlotContextVisible,
+                    color: newPlotContextColor,
+                    palette: plots[index()].palette!,
+                    style: plots[index()].style,
+                  };
+
+                  createEffect(() => {
+                    setTimeout(() => {
+                      setPlots(index(), newPlotContext);
+                    })
+
+                  })
+
+                  //console.log(plots[index()]);
+                }
+
+                //console.log(currentContext)
+              }*/
             });
+
+            /*createEffect(() => {
+
+              //setPlots(index() , {} as PlotContext)
+              //const plotContext = existingContext;
+              //console.log(existingContext)
+
+              //const existingContext = plots
+              //plots ? setPlots(index(), existingContext[index()]) : setPlots(index(), {} as PlotContext)
+
+              // setPlots(index(), existingContext)
+              // setPlots(index(), newPlotContext)
+
+              /*setPlots((prev) => {
+                var updatedContext = prev;
+                updatedContext[index()] = (...currentPlot)
+                return updatedContext
+              })*/
+
+            /*console.log(plots);
+
+              const newContext: PlotContext = {
+                color: [
+                  "#FFB300",
+                  "#803E75",
+                  "#FF6800",
+                ],
+                palette: [
+                  "#ffffff",
+                  "#803E75",
+                  "#232C16",
+                ],
+                style: [
+                  0,
+                  0,
+                  0,
+                ],
+                visible: [
+                  true,
+                  true,
+                  true,
+                ],
+              };
+              setPlots(index(), newContext);
+            });*/
 
             return (
               <>
