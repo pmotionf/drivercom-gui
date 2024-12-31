@@ -4,7 +4,13 @@ import { createStore } from "solid-js/store";
 import { trackStore } from "@solid-primitives/deep";
 
 import { inferSchema, initParser } from "udsv";
-import { IconChevronsDown, IconChevronsUp, IconX } from "@tabler/icons-solidjs";
+import {
+  IconChevronsDown,
+  IconChevronsUp,
+  IconDragDrop,
+  IconDragDrop2,
+  IconX,
+} from "@tabler/icons-solidjs";
 
 import { Button } from "~/components/ui/button";
 import { Collapsible } from "~/components/ui/collapsible";
@@ -14,6 +20,7 @@ import { Spinner } from "~/components/ui/spinner";
 import { Text } from "~/components/ui/text";
 import { Toast } from "~/components/ui/toast";
 import { Plot, type PlotContext } from "~/components/Plot";
+import { IconButton } from "~/components/ui/icon-button";
 
 function Logging() {
   const toaster = Toast.createToaster({
@@ -101,6 +108,7 @@ function Logging() {
       (_, index) => index,
     );
     setSplitIndex([indexArray]);
+    setReorderPlotMode(false);
   }
 
   function splitPlot(plot_index: number) {
@@ -139,9 +147,43 @@ function Logging() {
     return plots[index].visible.every((b) => !b);
   };
 
+  // reorder plot
+  const [reorderPlotMode, setReorderPlotMode] = createSignal(false);
+  const [draggedPlotIndex, setDraggedPlotIndex] = createSignal<number | null>(
+    null,
+  );
+  const [clientY, setClientY] = createSignal<number | null>(null);
+  const [prevPositionY, setPrevPositionY] = createSignal<number>(0);
+  let scrollYContainer: HTMLDivElement | undefined;
+
+  const handleDragOver = (e: DragEvent, index: number) => {
+    e.preventDefault();
+    if (draggedPlotIndex() !== null && draggedPlotIndex() !== index) {
+      const updateTab = [...splitIndex()];
+      const [draggedTab] = updateTab.splice(draggedPlotIndex()!, 1);
+      updateTab.splice(index, 0, draggedTab);
+      setSplitIndex(updateTab);
+      setDraggedPlotIndex(index);
+    }
+  };
+
+  const dragOverScroll = (e: MouseEvent) => {
+    if (!scrollYContainer) return;
+
+    const movement = (e.clientY - clientY()! + prevPositionY()) * 0.05;
+    scrollYContainer.scrollBy({ top: movement });
+  };
+
   // UI 렌더링
   return (
-    <>
+    <div
+      style={{
+        width: "100%",
+        height: "calc(100% - 0.5rem)",
+        "overflow-y": "auto",
+      }}
+      ref={scrollYContainer}
+    >
       <Portal>
         <Button
           variant="ghost"
@@ -233,6 +275,23 @@ function Logging() {
         >
           Reset
         </Button>
+
+        <IconButton
+          variant="ghost"
+          disabled={splitIndex().length <= 1}
+          onclick={() => setReorderPlotMode(!reorderPlotMode())}
+          style={{
+            "margin-top": "0.6rem",
+          }}
+        >
+          <Show
+            when={reorderPlotMode() == false}
+            fallback={<IconDragDrop />}
+          >
+            <IconDragDrop2 />
+          </Show>
+        </IconButton>
+
         <For each={splitIndex()}>
           {(item, index) => {
             // Header and items need not be derived state, as they will not
@@ -279,13 +338,26 @@ function Logging() {
                     height: `calc(100% / ${splitIndex().length} - 3rem`,
                     "min-height": "18rem",
                   }}
+                  draggable={reorderPlotMode() ? true : false}
+                  ondragstart={(e) => {
+                    if (reorderPlotMode()) {
+                      setDraggedPlotIndex(index());
+                      setClientY(e.clientY);
+                      setPrevPositionY(e.target.clientTop);
+                    }
+                  }}
+                  ondragover={(e) => {
+                    handleDragOver(e, index());
+                    dragOverScroll(e);
+                  }}
+                  ondragend={() => setDraggedPlotIndex(null)}
                 />
               </>
             );
           }}
         </For>
       </Show>
-    </>
+    </div>
   );
 }
 
