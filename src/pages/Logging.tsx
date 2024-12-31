@@ -152,6 +152,9 @@ function Logging() {
   const [draggedPlotIndex, setDraggedPlotIndex] = createSignal<number | null>(
     null,
   );
+  const [clientY, setClientY] = createSignal<number | null>(null);
+  const [prevPositionY, setPrevPositionY] = createSignal<number>(0);
+  let scrollYContainer: HTMLDivElement | undefined;
 
   const handleDragOver = (e: DragEvent, index: number) => {
     e.preventDefault();
@@ -164,9 +167,23 @@ function Logging() {
     }
   };
 
+  const dragOverScroll = (e: MouseEvent) => {
+    if (!scrollYContainer) return;
+
+    const movement = (e.clientY - clientY()! + prevPositionY()) * 0.05;
+    scrollYContainer.scrollBy({ top: movement });
+  };
+
   // UI 렌더링
   return (
-    <>
+    <div
+      style={{
+        width: "100%",
+        height: "calc(100% - 0.5rem)",
+        "overflow-y": "auto",
+      }}
+      ref={scrollYContainer}
+    >
       <Portal>
         <Button
           variant="ghost"
@@ -322,12 +339,17 @@ function Logging() {
                     "min-height": "18rem",
                   }}
                   draggable={reorderPlotMode() ? true : false}
-                  ondragstart={() => {
+                  ondragstart={(e) => {
                     if (reorderPlotMode()) {
                       setDraggedPlotIndex(index());
+                      setClientY(e.clientY);
+                      setPrevPositionY(e.target.clientTop);
                     }
                   }}
-                  ondragover={(e) => handleDragOver(e, index())}
+                  ondragover={(e) => {
+                    handleDragOver(e, index());
+                    dragOverScroll(e);
+                  }}
                   ondragend={() => setDraggedPlotIndex(null)}
                 />
               </>
@@ -335,7 +357,7 @@ function Logging() {
           }}
         </For>
       </Show>
-    </>
+    </div>
   );
 }
 
