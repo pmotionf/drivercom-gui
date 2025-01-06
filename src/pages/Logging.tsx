@@ -80,7 +80,26 @@ function Logging() {
         { length: header().length },
         (_, index) => index,
       );
-      setSplitIndex([indexArray]);
+
+      // Split boolean type plot and number type plot
+      const booleanTypeList = indexArray.filter((e) => {
+        const parseBoolean = series()[e]
+          .filter((element) => element !== 0)
+          .filter((element) => element !== 1);
+        return parseBoolean.length === 0;
+      });
+
+      const numberTypeList = indexArray.filter((e) => {
+        const parseBoolean = series()[e]
+          .filter((element) => element !== 0)
+          .filter((element) => element !== 1);
+        return parseBoolean.length !== 0;
+      });
+
+      booleanTypeList.length !== indexArray.length &&
+        booleanTypeList.length !== 0
+        ? setSplitIndex([booleanTypeList, numberTypeList])
+        : setSplitIndex([indexArray]);
     };
 
     reader.onerror = () => {
