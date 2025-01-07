@@ -3,6 +3,9 @@ import { Tabs } from "~/components/ui/tabs";
 import { LoggingTab } from "./Logging/LoggingTab";
 import { CreateTabButton } from "./Logging/CreateTabButton";
 import { TabEditable } from "./Logging/TabEditable";
+import { Stack } from "styled-system/jsx";
+import { IconButton } from "~/components/ui/icon-button";
+import { IconX } from "@tabler/icons-solidjs";
 
 function Logging() {
   // Reorder tab
@@ -139,10 +142,19 @@ function Logging() {
                 }}
                 style={{ "padding-right": "0" }}
               >
-                <TabEditable
-                  tabName={tabName()}
-                  onDelete={() => deleteTab(index())}
-                />
+                <Stack direction = "row">
+                  <TabEditable
+                    tabName={tabName()}
+                  />
+                  <IconButton
+                    onClick={() => deleteTab(index())}
+                    variant="ghost"
+                    size="xs"
+                    width="1rem"
+                    borderRadius="1rem">
+                      <IconX/>
+                    </IconButton>
+                </Stack>
               </Tabs.Trigger>
             )}
           </For>
