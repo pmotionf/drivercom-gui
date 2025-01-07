@@ -21,12 +21,15 @@ function Logging() {
     }
   };
 
-  // Drag Scroll
+  // Drag Scroll this need to be deleted
   const [isDragScrolling, setIsDragScrolling] = createSignal(false);
+  // Mouse X coordinate on screen.
   const [clientX, setClientX] = createSignal<number | null>(null);
+  // Tab X coordinate relative to start of tab list, can extend beyond screen.
   const [prevPositionX, setPrevPositionX] = createSignal<number>(0);
   let scrollContainer: HTMLDivElement | undefined;
 
+  // Handles mouse movement when dragging a tab for reordering.
   const mouseMoveHandler = (e: MouseEvent) => {
     if (!isDragScrolling() || !scrollContainer || !clientX()) return;
 
@@ -34,7 +37,7 @@ function Logging() {
     scrollContainer.scrollTo({ left: movement });
   };
 
-  // Scroll the tab while reordering the tabs.
+  // Handles scrolling tab list during drag/reorder.
   const dragOverScroll = (e: MouseEvent) => {
     if (!isDragScrolling() || !scrollContainer || !clientX()) return;
 
@@ -42,6 +45,7 @@ function Logging() {
     scrollContainer.scrollBy({ left: movement });
   };
 
+  // Scrolls tab list to the end.
   const scrollToRight = () => {
     if (scrollContainer) {
       scrollContainer.scrollBy(1000, 0);
@@ -55,6 +59,7 @@ function Logging() {
     scrollContainer.scrollLeft += e.deltaY;
   };
 
+  // Active tab ID
   const [tabValue, setTabValue] = createSignal<string>("");
   const [tabList, setTabList] = createSignal([] as string[]);
 
@@ -75,6 +80,7 @@ function Logging() {
 
   // Load File
   const [file, setFile] = createSignal("");
+  // Active tab name
   const [tabName, setTabName] = createSignal("");
 
   return (
@@ -140,30 +146,28 @@ function Logging() {
               </Tabs.Trigger>
             )}
           </For>
-          <Show when={tabList().length !== 20}>
-            <CreateTabButton
-              onCreateTabValue={(tabId, file, name) => {
-                setFile(file);
-                setTabName(name);
-                setTabList((prev) => {
-                  return [...prev, tabId];
-                });
-                setTabValue(tabId);
-                scrollToRight();
-              }}
-            />
-          </Show>
+          <CreateTabButton
+            onCreateTabValue={(tabId, file, name) => {
+              setFile(file);
+              setTabName(name);
+              setTabList((prev) => {
+                return [...prev, tabId];
+              });
+              setTabValue(tabId);
+              scrollToRight();
+            }}
+          />
           <Tabs.Indicator />
         </Tabs.List>
         <For each={tabList()}>
-          {(ctx) => (
+          {(tabId) => (
             <Tabs.Content
-              value={ctx}
+              value={tabId}
               height={"100%"}
               style={{ "overflow-y": "auto" }}
             >
               <LoggingTab
-                tabId={ctx}
+                tabId={tabId}
                 file={file()}
               />
             </Tabs.Content>

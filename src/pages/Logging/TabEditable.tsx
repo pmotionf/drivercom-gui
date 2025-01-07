@@ -10,6 +10,7 @@ export type TabEditableProps = JSX.HTMLAttributes<HTMLElement> & {
   onTabNameChange?: (tabName: string) => void;
 };
 
+/// Editable tab name inside tab.
 export function TabEditable(props: TabEditableProps) {
   const [tabName, setTabName] = createSignal(props.tabName);
 
