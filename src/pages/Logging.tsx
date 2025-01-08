@@ -1,4 +1,4 @@
-import { createSignal, For, Show } from "solid-js";
+import { createSignal, For } from "solid-js";
 import { Tabs } from "~/components/ui/tabs";
 import { LoggingTab } from "./Logging/LoggingTab";
 import { CreateTabButton } from "./Logging/CreateTabButton";
@@ -13,6 +13,7 @@ function Logging() {
     null,
   );
 
+  // Reorder tab by dragging
   const handleDragOver = (e: DragEvent, index: number) => {
     e.preventDefault();
     if (draggedTabIndex() !== null && draggedTabIndex() !== index) {
@@ -32,14 +33,6 @@ function Logging() {
   const [prevPositionX, setPrevPositionX] = createSignal<number>(0);
   let scrollContainer: HTMLDivElement | undefined;
 
-  // Handles mouse movement when dragging a tab for reordering.
-  const mouseMoveHandler = (e: MouseEvent) => {
-    if (!isDragScrolling() || !scrollContainer || !clientX()) return;
-
-    const movement = clientX()! - e.clientX + prevPositionX();
-    scrollContainer.scrollTo({ left: movement });
-  };
-
   // Handles scrolling tab list during drag/reorder.
   const dragOverScroll = (e: MouseEvent) => {
     if (!isDragScrolling() || !scrollContainer || !clientX()) return;
@@ -49,9 +42,10 @@ function Logging() {
   };
 
   // Scrolls tab list to the end.
-  const scrollToRight = () => {
-    if (scrollContainer) {
-      scrollContainer.scrollBy(1000, 0);
+  const scrollToEnd = () => {
+    if (!scrollContainer) return;
+    if (scrollContainer.offsetWidth !== scrollContainer.scrollWidth) {
+      scrollContainer.scrollTo(scrollContainer.scrollWidth, 0);
     }
   };
 
@@ -100,23 +94,8 @@ function Logging() {
             background: "--colors-bg-muted",
             "padding-top": "0.5rem",
             height: "3rem",
-            "overflow-x": "auto",
           }}
           gap="0"
-          onMouseDown={(e) => {
-            setClientX(e.clientX);
-            setIsDragScrolling(true);
-            setPrevPositionX(e.currentTarget.scrollLeft);
-          }}
-          onMouseMove={(e) => mouseMoveHandler(e)}
-          onMouseUp={() => {
-            setIsDragScrolling(false);
-            setClientX(null);
-          }}
-          onmouseleave={() => {
-            setIsDragScrolling(false);
-            setClientX(null);
-          }}
           onWheel={(e) => mouseWheelHandler(e)}
         >
           <For each={tabList()}>
@@ -142,7 +121,7 @@ function Logging() {
                 }}
                 style={{ "padding-right": "0" }}
               >
-                <Stack direction = "row">
+                <Stack direction="row">
                   <TabEditable
                     tabName={tabName()}
                   />
@@ -151,9 +130,10 @@ function Logging() {
                     variant="ghost"
                     size="xs"
                     width="1rem"
-                    borderRadius="1rem">
-                      <IconX/>
-                    </IconButton>
+                    borderRadius="1rem"
+                  >
+                    <IconX />
+                  </IconButton>
                 </Stack>
               </Tabs.Trigger>
             )}
@@ -166,7 +146,7 @@ function Logging() {
                 return [...prev, tabId];
               });
               setTabValue(tabId);
-              scrollToRight();
+              scrollToEnd();
             }}
           />
           <Tabs.Indicator />
