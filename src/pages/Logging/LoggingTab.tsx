@@ -4,38 +4,84 @@ import { createStore } from "solid-js/store";
 import { Plot, PlotContext } from "~/components/Plot";
 import { Button } from "~/components/ui/button";
 import { inferSchema, initParser } from "udsv";
+import { FileUploadFileChangeDetails } from "@ark-ui/solid";
+
+export type ErrorMessage = {
+  title: string;
+  description: string;
+  type: string;
+};
 
 export type LoggingTabProps = JSX.HTMLAttributes<HTMLDivElement> & {
   tabId: string;
-  file: string;
+  details: FileUploadFileChangeDetails;
+  onErrorMessage?: (message: ErrorMessage) => void;
 };
 
 export function LoggingTab(props: LoggingTabProps) {
-  const csv_str: string = props.file;
-  const rows = csv_str.split("\n");
-
-  const schema = inferSchema(csv_str);
-  const parser = initParser(schema);
-  const local_header = rows[0].replace(/,\s*$/, "").split(",");
-
-  const data = parser.typedCols(csv_str).map((row) =>
-    row.map((val) => {
-      if (typeof val === "boolean") return val ? 1 : 0;
-      return val;
-    })
-  );
-
-  const indexArray = Array.from(
-    { length: local_header.length },
-    (_, index) => index,
-  );
-
-  const header = local_header;
-  const series = data.slice(0, local_header.length);
-
   const [plots, setPlots] = createStore([] as PlotContext[]);
   const [splitIndex, setSplitIndex] = createSignal([] as number[][]);
-  setSplitIndex([indexArray]);
+  let header: string[] = [];
+  let series: number[][] = [];
+
+  const file = props.details.acceptedFiles[0];
+  const reader = new FileReader();
+
+  reader.onload = () => {
+    const csv_str: string = (reader.result! as string).trim();
+    const rows = csv_str.split("\n");
+    if (rows.length < 2) {
+      const errorMessage: ErrorMessage = {
+        title: "Invalid Log File",
+        description: "Not enough rows.",
+        type: "error",
+      };
+      props.onErrorMessage?.(errorMessage);
+      return;
+    }
+
+    const schema = inferSchema(csv_str);
+    const parser = initParser(schema);
+    const local_header = rows[0].replace(/,\s*$/, "").split(",");
+    const data = parser.typedCols(csv_str).map((row) =>
+      row.map((val) => {
+        if (typeof val === "boolean") return val ? 1 : 0;
+        return val;
+      })
+    );
+
+    if (data.length < local_header.length) {
+      const errorMessage: ErrorMessage = {
+        title: "Invalid Log File",
+        description:
+          `Data has ${data.length} columns, while header has ${local_header.length} labels.`,
+        type: "error",
+      };
+      props.onErrorMessage?.(errorMessage);
+      return;
+    }
+
+    if (typeof (reader.result!) === "string") {
+      const indexArray = Array.from(
+        { length: local_header.length },
+        (_, index) => index,
+      );
+
+      header = local_header;
+      series = data.slice(0, local_header.length);
+      setSplitIndex([indexArray]);
+    }
+  };
+
+  reader.onerror = () => {
+    const errorMessage: ErrorMessage = {
+      title: "Log File Loading Failed",
+      description: `${reader.error!.name}: ${reader.error!.message}`,
+      type: "error",
+    };
+    props.onErrorMessage?.(errorMessage);
+  };
+  reader.readAsText(file);
 
   function resetChart() {
     const indexArray = Array.from(

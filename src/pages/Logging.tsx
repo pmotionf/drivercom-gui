@@ -6,6 +6,8 @@ import { TabEditable } from "./Logging/TabEditable";
 import { Stack } from "styled-system/jsx";
 import { IconButton } from "~/components/ui/icon-button";
 import { IconX } from "@tabler/icons-solidjs";
+import { Toast } from "~/components/ui/toast";
+import { FileUploadFileChangeDetails } from "@ark-ui/solid";
 
 function Logging() {
   // Reorder tab
@@ -75,13 +77,28 @@ function Logging() {
     });
   }
 
-  // Load File
-  const [file, setFile] = createSignal("");
-  // Active tab name
-  const [tabName, setTabName] = createSignal("");
+  const [file, setFile] = createSignal<FileUploadFileChangeDetails | undefined>(
+    undefined,
+  );
+
+  const toaster = Toast.createToaster({
+    placement: "top-end",
+    gap: 24,
+  });
 
   return (
     <>
+      <Toast.Toaster toaster={toaster}>
+        {(toast) => (
+          <Toast.Root>
+            <Toast.Title>{toast().title}</Toast.Title>
+            <Toast.Description>{toast().description}</Toast.Description>
+            <Toast.CloseTrigger>
+              <IconX />
+            </Toast.CloseTrigger>
+          </Toast.Root>
+        )}
+      </Toast.Toaster>
       <Tabs.Root
         value={tabValue()}
         onValueChange={(e) => setTabValue(e.value)}
@@ -123,7 +140,7 @@ function Logging() {
               >
                 <Stack direction="row">
                   <TabEditable
-                    tabName={tabName()}
+                    tabName={ctx}
                   />
                   <IconButton
                     onClick={() => deleteTab(index())}
@@ -139,9 +156,16 @@ function Logging() {
             )}
           </For>
           <CreateTabButton
-            onCreateTabValue={(tabId, file, name) => {
-              setFile(file);
-              setTabName(name);
+            onCreateTabValue={(tabId, fileDetails) => {
+              if (fileDetails.rejectedFiles.length !== 0) {
+                toaster.create({
+                  title: "Invalid Log File",
+                  description: "The provided log file is invalid:\n",
+                  type: "error",
+                });
+                return;
+              }
+              setFile(fileDetails);
               setTabList((prev) => {
                 return [...prev, tabId];
               });
@@ -160,7 +184,10 @@ function Logging() {
             >
               <LoggingTab
                 tabId={tabId}
-                file={file()}
+                details={file()!}
+                onErrorMessage={(msg) => {
+                  toaster.create(msg);
+                }}
               />
             </Tabs.Content>
           )}
