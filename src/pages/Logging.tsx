@@ -3,7 +3,6 @@ import { Tabs } from "~/components/ui/tabs";
 import { LoggingTab } from "./Logging/LoggingTab";
 import { CreateTabButton } from "./Logging/CreateTabButton";
 import { TabEditable } from "./Logging/TabEditable";
-import { Stack } from "styled-system/jsx";
 import { IconButton } from "~/components/ui/icon-button";
 import { IconX } from "@tabler/icons-solidjs";
 import { Toast } from "~/components/ui/toast";
@@ -14,6 +13,7 @@ function Logging() {
   const [draggedTabIndex, setDraggedTabIndex] = createSignal<number | null>(
     null,
   );
+  const [deleteButtonPress, setDeleteButtonPress] = createSignal<boolean>(false);
 
   // Reorder tab by dragging
   const handleDragOver = (e: DragEvent, index: number) => {
@@ -109,36 +109,41 @@ function Logging() {
           ref={scrollContainer}
           style={{
             background: "--colors-bg-muted",
-            "padding-top": "0.5rem",
             height: "3rem",
+            "padding-top" : "0.5rem"
           }}
           gap="0"
           onWheel={(e) => mouseWheelHandler(e)}
         >
           <For each={tabList()}>
             {(ctx, index) => (
-              <Tabs.Trigger
-                value={ctx}
-                draggable
-                onDragStart={(e) => {
-                  setDraggedTabIndex(index());
-                  setTabValue(ctx);
-                  setPrevPositionX(e.currentTarget.scrollLeft);
-                  setClientX(e.clientX);
-                  setIsDragScrolling(true);
-                }}
-                onDragOver={(e) => {
-                  handleDragOver(e, index());
-                  dragOverScroll(e);
-                }}
-                onDrop={() => {
-                  setDraggedTabIndex(null);
-                  setClientX(null);
-                  setIsDragScrolling(false);
-                }}
-                style={{ "padding-right": "0" }}
-              >
-                <Stack direction="row">
+              <>
+                <Tabs.Trigger
+                  value={ctx}
+                  draggable
+                  onDragStart={(e) => {
+                    if(deleteButtonPress()!){
+                      setDeleteButtonPress(false);
+                      return;
+                    }
+                    setDraggedTabIndex(index());
+                    setTabValue(ctx);
+                    setPrevPositionX(e.currentTarget.scrollLeft);
+                    setClientX(e.clientX);
+                    setIsDragScrolling(true);
+                  }}
+                  onDragOver={(e) => {
+                    handleDragOver(e, index());
+                    dragOverScroll(e);
+                  }}
+                  onDragEnd={() => {
+                    setClientX(null);
+                    setIsDragScrolling(false);
+                    setDraggedTabIndex(null);
+                    }}
+                  style={{ "padding-right": "0" }}
+                  height={"100%"}
+                >
                   <TabEditable
                     tabName={ctx}
                   />
@@ -148,35 +153,46 @@ function Logging() {
                     size="xs"
                     width="1rem"
                     borderRadius="1rem"
+                    draggable
+                    cursor={isDragScrolling() ? "not-allowed" : "auto"}
+                    onDragStart={(e) => {
+                      e.dataTransfer?.setDragImage(
+                        document.createElement("img"),
+                        0,
+                        0,
+                      );
+                      setDeleteButtonPress(true);
+                    }}
+                    onDragOver={() => {return;}}
                   >
                     <IconX />
                   </IconButton>
-                </Stack>
-              </Tabs.Trigger>
+                </Tabs.Trigger>
+              </>
             )}
           </For>
-          <CreateTabButton
-            onCreateTabValue={(tabId, fileDetails) => {
-              if (fileDetails.rejectedFiles.length !== 0) {
-                toaster.create({
-                  title: "Invalid Log File",
-                  description: "The provided log file is invalid:\n",
-                  type: "error",
+            <CreateTabButton
+              onCreateTabValue={(tabId, fileDetails) => {
+                if (fileDetails.rejectedFiles.length !== 0) {
+                  toaster.create({
+                    title: "Invalid Log File",
+                    description: "The provided log file is invalid:\n",
+                    type: "error",
+                  });
+                  return;
+                }
+                setFile(fileDetails);
+                setTabList((prev) => {
+                  return [...prev, tabId];
                 });
-                return;
-              }
-              setFile(fileDetails);
-              setTabList((prev) => {
-                return [...prev, tabId];
-              });
-              setTabValue(tabId);
-              scrollToEnd();
-            }}
-          />
+                setTabValue(tabId);
+                scrollToEnd();
+              }}
+            />
           <Tabs.Indicator />
         </Tabs.List>
         <For each={tabList()}>
-          {(tabId) => (
+          {(tabId, index) => (
             <Tabs.Content
               value={tabId}
               height={"100%"}
@@ -187,6 +203,7 @@ function Logging() {
                 details={file()!}
                 onErrorMessage={(msg) => {
                   toaster.create(msg);
+                  deleteTab(index())
                 }}
               />
             </Tabs.Content>
