@@ -1,19 +1,22 @@
 import { createSignal, For } from "solid-js";
 import { Tabs } from "~/components/ui/tabs";
 import { LoggingTab } from "./Logging/LoggingTab";
-import { CreateTabButton } from "./Logging/CreateTabButton";
-import { TabEditable } from "./Logging/TabEditable";
 import { IconButton } from "~/components/ui/icon-button";
-import { IconX } from "@tabler/icons-solidjs";
+import { IconPlus, IconX } from "@tabler/icons-solidjs";
 import { Toast } from "~/components/ui/toast";
 import { FileUploadFileChangeDetails } from "@ark-ui/solid";
+import { Editable } from "~/components/ui/editable";
+import { FileUpload } from "~/components/ui/file-upload";
 
 function Logging() {
   // Reorder tab
   const [draggedTabIndex, setDraggedTabIndex] = createSignal<number | null>(
     null,
   );
-  const [deleteButtonPress, setDeleteButtonPress] = createSignal<boolean>(false);
+  // The signal can know when tab delete button has pressed
+  const [deleteButtonPress, setDeleteButtonPress] = createSignal<boolean>(
+    false,
+  );
 
   // Reorder tab by dragging
   const handleDragOver = (e: DragEvent, index: number) => {
@@ -63,6 +66,7 @@ function Logging() {
   const [tabList, setTabList] = createSignal([] as string[]);
 
   function deleteTab(index: number) {
+    if (editMode()) return;
     const contextIndex = index === 0 ? 1 : index - 1;
     const newValue = tabValue() === tabList()[index]
       ? tabList()[contextIndex]
@@ -77,14 +81,15 @@ function Logging() {
     });
   }
 
-  const [file, setFile] = createSignal<FileUploadFileChangeDetails | undefined>(
-    undefined,
-  );
+  let file: FileUploadFileChangeDetails;
 
   const toaster = Toast.createToaster({
     placement: "top-end",
     gap: 24,
   });
+
+  //check tab editable is in edit mode or not, to disable delete button on situation
+  const [editMode, setEditMode] = createSignal<boolean>(false);
 
   return (
     <>
@@ -110,7 +115,7 @@ function Logging() {
           style={{
             background: "--colors-bg-muted",
             height: "3rem",
-            "padding-top" : "0.5rem"
+            "padding-top": "0.5rem",
           }}
           gap="0"
           onWheel={(e) => mouseWheelHandler(e)}
@@ -122,7 +127,7 @@ function Logging() {
                   value={ctx}
                   draggable
                   onDragStart={(e) => {
-                    if(deleteButtonPress()!){
+                    if (deleteButtonPress()!) {
                       setDeleteButtonPress(false);
                       return;
                     }
@@ -140,15 +145,24 @@ function Logging() {
                     setClientX(null);
                     setIsDragScrolling(false);
                     setDraggedTabIndex(null);
-                    }}
-                  style={{ "padding-right": "0" }}
+                  }}
+                  style={{ "padding-right": "0", "padding-top": "0.1rem" }}
                   height={"100%"}
                 >
-                  <TabEditable
-                    tabName={ctx}
-                  />
+                  <Editable.Root
+                    defaultValue={file.acceptedFiles[0].name /*tab name*/}
+                    activationMode="dblclick"
+                    onEditChange={() => setEditMode(!editMode())}
+                  >
+                    <Editable.Area>
+                      <Editable.Input />
+                      <Editable.Preview />
+                    </Editable.Area>
+                  </Editable.Root>
                   <IconButton
-                    onClick={() => deleteTab(index())}
+                    onClick={() => {
+                      deleteTab(index());
+                    }}
                     variant="ghost"
                     size="xs"
                     width="1rem"
@@ -163,7 +177,10 @@ function Logging() {
                       );
                       setDeleteButtonPress(true);
                     }}
-                    onDragOver={() => {return;}}
+                    onDragOver={() => {
+                      return;
+                    }}
+                    disabled={editMode()}
                   >
                     <IconX />
                   </IconButton>
@@ -171,24 +188,34 @@ function Logging() {
               </>
             )}
           </For>
-            <CreateTabButton
-              onCreateTabValue={(tabId, fileDetails) => {
-                if (fileDetails.rejectedFiles.length !== 0) {
-                  toaster.create({
-                    title: "Invalid Log File",
-                    description: "The provided log file is invalid:\n",
-                    type: "error",
-                  });
-                  return;
-                }
-                setFile(fileDetails);
-                setTabList((prev) => {
-                  return [...prev, tabId];
-                });
-                setTabValue(tabId);
-                scrollToEnd();
-              }}
+          <FileUpload.Root
+            accept="text/csv"
+            minFileSize={3}
+            onFileChange={(details) => {
+              file = details;
+              const tabId = crypto.randomUUID();
+              setTabList((prev) => {
+                return [...prev, tabId];
+              });
+              setTabValue(tabId);
+              scrollToEnd();
+            }}
+          >
+            <FileUpload.Trigger
+              asChild={(triggerProps) => (
+                <IconButton
+                  size={"xs"}
+                  variant={"ghost"}
+                  {...triggerProps()}
+                  width={"1rem"}
+                  borderRadius={"1rem"}
+                >
+                  <IconPlus />
+                </IconButton>
+              )}
             />
+            <FileUpload.HiddenInput />
+          </FileUpload.Root>
           <Tabs.Indicator />
         </Tabs.List>
         <For each={tabList()}>
@@ -200,10 +227,10 @@ function Logging() {
             >
               <LoggingTab
                 tabId={tabId}
-                details={file()!}
+                details={file}
                 onErrorMessage={(msg) => {
                   toaster.create(msg);
-                  deleteTab(index())
+                  deleteTab(index());
                 }}
               />
             </Tabs.Content>
