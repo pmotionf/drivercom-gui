@@ -1,109 +1,294 @@
 import { Button } from "~/components/ui/button";
-import { Spinner } from "~/components/ui/spinner";
-import { IconChevronDown } from "@tabler/icons-solidjs";
-import { Accordion } from "~/components/ui/accordion";
-import { createSignal } from "solid-js";
+import { IconPlug, IconPlugOff, IconX } from "@tabler/icons-solidjs";
 import { Text } from "~/components/ui/text";
-import { Box } from "styled-system/jsx";
+import { Stack } from "styled-system/jsx";
+import { Card } from "~/components/ui/card";
+
+import { Command } from "@tauri-apps/plugin-shell";
+import { createSignal, For, Show } from "solid-js";
+import { Accordion } from "~/components/ui/accordion";
+import { Toast } from "~/components/ui/toast";
+import { portId, setPortId } from "~/GlobalState";
+import { Icon } from "~/components/ui/icon";
 
 function Connect() {
-  //Items Dummy data
-  const items = ["list1", "list2", "list3"];
+  const [isDetected, setIsDetected] = createSignal<boolean>(false);
+  const [portList, setPortList] = createSignal<string[]>([]);
+  const [buttonSignalArray, setButtonSignalArray] = createSignal<boolean[]>([]);
 
-  //리스트 갯수에 따른 버튼 관리
-  const [statuses, setStatuses] = createSignal(
-    Array(items.length).fill("연결하기"),
-  );
-  const [loading, setLoading] = createSignal(Array(items.length).fill(false));
-  const [connecting, setConnecting] = createSignal(
-    Array(items.length).fill("연결하시겠습니까?"),
-  );
-
-  //버튼클릭 기능
-  const HandleClick = (index: number) => {
-    setStatuses((prevStatuses) => {
-      const newStatuses = [...prevStatuses];
-      newStatuses[index] = "연결취소";
-      //로딩바
-      setLoading((prevLoading) => {
-        const newLoading = [...prevLoading];
-        newLoading[index] = true;
-        return newLoading;
+  async function detectPort() {
+    const drivercom = Command.sidecar("binaries/drivercom", [
+      "port.detect",
+    ]);
+    const output = await drivercom.execute();
+    if (output.stdout.length === 0) {
+      const stderr = output.stderr;
+      toaster.create({
+        title: "Port detect fail",
+        description: `${stderr}`,
+        type: "error",
       });
-      setConnecting((prevConnecting) => {
-        const newConnecting = [...prevConnecting];
-        newConnecting[index] = "연결중입니다";
-        return newConnecting;
-      });
+      return;
+    }
 
-      setTimeout(() => {
-        setStatuses((prevStatuses) => {
-          const currentStatuses = [...prevStatuses];
-          //if(prevStatuses === 1) currentStatuses[index] = "failure"; else
-          currentStatuses[index] = "완료";
-          setLoading((prevLoading) => {
-            const newLoading = [...prevLoading];
-            newLoading[index] = false;
-            return newLoading;
-          });
-          setConnecting((prevConnecting) => {
-            const newConnecting = [...prevConnecting];
-            newConnecting[index] = "연결되었습니다";
-            return newConnecting;
-          });
-
-          return currentStatuses;
-        });
-      }, 2000);
-
-      return newStatuses;
+    toaster.create({
+      title: "Port detect success",
+      description: `${output.stdout}`,
+      type: "error",
     });
-  };
+    setIsDetected(true);
+    getPortList();
+  }
 
-  //아이템에 있는 리스트 갯수에 따라 박스와 버튼 생성
-  const ConnectionList = () => {
-    return (
-      <Accordion.Root multiple={true}>
-        {items.map((item, index) => (
-          <Accordion.Item value={item} ml={"16px"}>
-            <Accordion.ItemTrigger>
-              {item}
-              <Accordion.ItemIndicator>
-                <IconChevronDown />
-              </Accordion.ItemIndicator>
-            </Accordion.ItemTrigger>
-            <Accordion.ItemContent>
-              {connecting()[index]}
-              {loading()[index] && <Spinner marginLeft={"8px"} />}
-              <Button
-                ml={"10"}
-                onClick={() => HandleClick(index)}
-                disabled={statuses()[index] === "완료"}
-              >
-                {statuses()[index]}
-              </Button>
-            </Accordion.ItemContent>
-          </Accordion.Item>
-        ))}
-      </Accordion.Root>
+  async function getPortList() {
+    const drivercom = Command.sidecar("binaries/drivercom", [
+      "port.list",
+    ]);
+    const output = await drivercom.execute();
+    const portList = output.stdout.match(/\((\w+)\)/g) as string[];
+    portList.length === 0 ? setIsDetected(false) : setIsDetected(true);
+
+    if (!isDetected()) return;
+    const isConnectedArray = Array.from(
+      { length: portList.length },
+      (_) => false,
     );
-  };
+    setButtonSignalArray(isConnectedArray);
+    setPortList(portList);
+  }
+
+  const [isConnected, setIsConnected] = createSignal<boolean>();
+
+  const toaster = Toast.createToaster({
+    placement: "top-end",
+    gap: 24,
+  });
 
   return (
     <>
-      <Text size="3xl" fontWeight="bold" margin={"20px"}>
-        Connect
-      </Text>
-      <Box
-        bg="accent.a2"
-        p="4"
-        borderRadius="l3"
-        mt="6"
-        height="100%"
-        overflowY="auto"
+      <Toast.Toaster toaster={toaster}>
+        {(toast) => (
+          <Toast.Root>
+            <Toast.Title>{toast().title}</Toast.Title>
+            <Toast.Description>{toast().description}</Toast.Description>
+            <Toast.CloseTrigger>
+              <IconX />
+            </Toast.CloseTrigger>
+          </Toast.Root>
+        )}
+      </Toast.Toaster>
+      <div
+        style={{ "padding": "3rem", "height": "100%" }}
       >
-        <div id="container">{ConnectionList()}</div>
-      </Box>
+        <Text
+          variant={"heading"}
+          size={"2xl"}
+        >
+          Port
+        </Text>
+        <Card.Root
+          marginTop={"2rem"}
+          style={{ "min-width": "50rem" }}
+        >
+          <Stack
+            direction={"row"}
+          >
+            <Card.Header
+              paddingLeft={"2rem"}
+              width={"3rem"}
+              paddingTop={"2rem"}
+            >
+              <Show
+                when={isConnected()}
+                fallback={<IconPlugOff opacity={"20%"} />}
+              >
+                <IconPlug />
+              </Show>
+            </Card.Header>
+            <Card.Body
+              paddingTop={"1rem"}
+            >
+              <Text
+                variant={"heading"}
+                size={"xl"}
+              >
+                {isConnected()
+                  ? "Connected"
+                  : isDetected()
+                  ? "Port detected"
+                  : "Not found"}
+              </Text>
+              <Text
+                opacity={"70%"}
+              >
+                {isConnected()
+                  ? portId()
+                  : isDetected()
+                  ? "Port is found"
+                  : "Port is not found"}
+              </Text>
+            </Card.Body>
+            <Card.Footer
+              paddingTop={"1.5rem"}
+              paddingRight={"2rem"}
+            >
+              <Button
+                disabled={isDetected() ? isConnected() ? false : true : false}
+                onClick={() =>
+                  isConnected() ? setIsConnected(false) : detectPort()}
+                variant={isConnected() ? "outline" : "solid"}
+              >
+                {isConnected()
+                  ? "Cancel"
+                  : isDetected()
+                  ? "Port detected"
+                  : "Detect port"}
+              </Button>
+            </Card.Footer>
+          </Stack>
+        </Card.Root>
+
+        <Text
+          variant={"heading"}
+          size={"2xl"}
+          marginTop={"3rem"}
+        >
+          Port List
+        </Text>
+        <Text
+          marginTop={"0.5rem"}
+        >
+          {isDetected() ? "Port found" : "Not found"}
+        </Text>
+        <Card.Root
+          height={`calc(100% - 19rem)`}
+          marginTop={"1rem"}
+          marginBottom={"3rem"}
+          style={{
+            "overflow-y": "auto",
+            "min-height": "22rem",
+            "min-width": "50rem",
+          }}
+        >
+          <Card.Body
+            paddingRight={"2rem"}
+            paddingLeft={"2rem"}
+            paddingTop={"1.5rem"}
+          >
+            <Show
+              when={isDetected()}
+              fallback={
+                <div
+                  style={{
+                    width: "100%",
+                    "text-align": "center",
+                    "margin-top": `calc(100% / 10)`,
+                  }}
+                >
+                  <Icon
+                    size={"2xl"}
+                    opacity={"20%"}
+                  >
+                    <IconPlugOff
+                      size={"2xl"}
+                    />
+                  </Icon>
+
+                  <Text
+                    variant={"heading"}
+                    size={"xl"}
+                    marginTop={"1rem"}
+                    opacity={"70%"}
+                  >
+                    Port is not detected
+                  </Text>
+                  <Text
+                    opacity={"60%"}
+                  >
+                    Click the button above to detect port
+                  </Text>
+                </div>
+              }
+            >
+              <Accordion.Root multiple>
+                <For each={portList()}>
+                  {(port, index) => (
+                    <Accordion.Item value={index().toString()} gap={0}>
+                      <Accordion.ItemTrigger>
+                        <Stack direction={"row"}>
+                          <IconPlug />
+                          {port}
+                        </Stack>
+                      </Accordion.ItemTrigger>
+                      <Accordion.ItemContent
+                        padding={"1rem"}
+                      >
+                        <Stack direction={"row"} width={"100%"}>
+                          <Text>
+                            <Show
+                              when={isConnected() &&
+                                buttonSignalArray()[index()]}
+                              fallback={"Not connected"}
+                            >
+                              Connected
+                            </Show>
+                          </Text>
+                          <Stack direction={"row-reverse"} width={"100%"}>
+                            <Button
+                              variant={buttonSignalArray()[index()]
+                                ? "outline"
+                                : "solid"}
+                              onClick={() => {
+                                const isFalse = Array.from(
+                                  { length: portList().length },
+                                  (_) =>
+                                    false,
+                                );
+                                if (
+                                  isConnected() && buttonSignalArray()[index()]
+                                ) {
+                                  setIsConnected(false);
+                                  setButtonSignalArray(isFalse);
+                                  setPortId("");
+                                } else if (
+                                  isConnected() && !buttonSignalArray()[index()]
+                                ) {
+                                  isFalse[index()] = true;
+                                  setButtonSignalArray(isFalse);
+                                  setPortId(port);
+                                } else {
+                                  setPortId(port);
+                                  setButtonSignalArray((prev) => {
+                                    const updateList = prev;
+                                    updateList[index()] = true;
+                                    return updateList;
+                                  });
+                                  setIsConnected(true);
+                                }
+                              }}
+                              width={"8rem"}
+                            >
+                              <Show
+                                when={isConnected() &&
+                                  buttonSignalArray()[index()]}
+                                fallback={"Connect"}
+                              >
+                                Cancel
+                              </Show>
+                            </Button>
+                          </Stack>
+                        </Stack>
+                      </Accordion.ItemContent>
+                    </Accordion.Item>
+                  )}
+                </For>
+              </Accordion.Root>
+            </Show>
+          </Card.Body>
+          <Card.Footer>
+          </Card.Footer>
+        </Card.Root>
+      </div>
     </>
   );
 }

@@ -1,7 +1,13 @@
 import "./App.css";
 
 import { invoke } from "@tauri-apps/api/core";
-import { createSignal, Index, onMount, Show, ValidComponent } from "solid-js";
+import {
+  createSignal,
+  Index,
+  onMount,
+  Show,
+  ValidComponent,
+} from "solid-js";
 import { Dynamic, Portal } from "solid-js/web";
 import type { RouteSectionProps } from "@solidjs/router";
 import { useNavigate } from "@solidjs/router";
@@ -56,6 +62,7 @@ function App(props: RouteSectionProps) {
   const [cliVersion, _] = createSignal("0.0.0");
 
   const navigate = useNavigate();
+
   const pages: { [url: string]: PageMeta } = {
     configuration: {
       icon: IconFileSettings,
@@ -70,7 +77,7 @@ function App(props: RouteSectionProps) {
     connect: {
       icon: IconPlugConnected,
       label: "Connect",
-      disabled: true,
+      disabled: false,
     },
   };
   const [page, setPage] = createSignal("");
