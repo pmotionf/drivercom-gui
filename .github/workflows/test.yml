@@ -35,13 +35,10 @@ jobs:
         run: deno task prepare
 
       - name: Run `deno fmt`
-        if: matrix.os == 'self-hosted'
         run: deno fmt --check
 
       - name: Run `deno lint`
-        if: matrix.os == 'self-hosted'
         run: deno lint
 
       - name: Run `tsc`
-        if: matrix.os == 'self-hosted'
         run: tsc
