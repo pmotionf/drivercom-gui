@@ -14,8 +14,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [self-hosted]
-    runs-on: ${{ matrix.os }}
+        os: [Windows, Linux]
+    runs-on: [self-hosted, "${{ matrix.os }}" ]
     steps:
       - name: Log masks
         run: echo "::add-mask::$NAME_MASK"
@@ -23,6 +23,10 @@ jobs:
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
+
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: vx.x.x
 
       - name: Install dependencies
         run: deno i --frozen
