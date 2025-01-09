@@ -14,18 +14,20 @@ function Logging() {
     null,
   );
   // The signal can know when tab delete button has pressed
-  const [deleteButtonPress, setDeleteButtonPress] = createSignal<boolean>(
+  const [isDeleteButtonPressed, setIsDeleteButtonPressed] = createSignal<
+    boolean
+  >(
     false,
   );
 
   // Reorder tab by dragging
-  const handleDragOver = (e: DragEvent, index: number) => {
+  const reorderTabsOnDragOver = (e: DragEvent, index: number) => {
     e.preventDefault();
     if (draggedTabIndex() !== null && draggedTabIndex() !== index) {
-      const updateTab = [...tabList()];
+      const updateTab = [...tabIdList()];
       const [draggedTab] = updateTab.splice(draggedTabIndex()!, 1);
       updateTab.splice(index, 0, draggedTab);
-      setTabList(updateTab);
+      setTabIdList(updateTab);
       setDraggedTabIndex(index);
     }
   };
@@ -62,20 +64,20 @@ function Logging() {
   };
 
   // Active tab ID
-  const [tabValue, setTabValue] = createSignal<string>("");
-  const [tabList, setTabList] = createSignal([] as string[]);
+  const [focusedTab, setFocusedTab] = createSignal<string>("");
+  const [tabIdList, setTabIdList] = createSignal([] as string[]);
 
   function deleteTab(index: number) {
-    if (editMode()) return;
+    if (isEditMode()) return;
     const contextIndex = index === 0 ? 1 : index - 1;
-    const newValue = tabValue() === tabList()[index]
-      ? tabList()[contextIndex]
-      : tabValue();
+    const newValue = focusedTab() === tabIdList()[index]
+      ? tabIdList()[contextIndex]
+      : focusedTab();
 
     setTimeout(() => {
-      setTabValue(newValue);
+      setFocusedTab(newValue);
     }, 0);
-    setTabList((prev) => {
+    setTabIdList((prev) => {
       const updateTabCtx = prev.filter((_, i) => i !== index);
       return updateTabCtx;
     });
@@ -88,8 +90,8 @@ function Logging() {
     gap: 24,
   });
 
-  //check tab editable is in edit mode or not, to disable delete button on situation
-  const [editMode, setEditMode] = createSignal<boolean>(false);
+  // Check if the tab is editable and in edit mode to disable the delete button.
+  const [isEditMode, setIsEditMode] = createSignal<boolean>(false);
 
   return (
     <>
@@ -105,8 +107,8 @@ function Logging() {
         )}
       </Toast.Toaster>
       <Tabs.Root
-        value={tabValue()}
-        onValueChange={(e) => setTabValue(e.value)}
+        value={focusedTab()}
+        onValueChange={(e) => setFocusedTab(e.value)}
         width="100%"
         height="100%"
       >
@@ -120,25 +122,25 @@ function Logging() {
           gap="0"
           onWheel={(e) => mouseWheelHandler(e)}
         >
-          <For each={tabList()}>
-            {(ctx, index) => (
+          <For each={tabIdList()}>
+            {(tabId, index) => (
               <>
                 <Tabs.Trigger
-                  value={ctx}
+                  value={tabId}
                   draggable
                   onDragStart={(e) => {
-                    if (deleteButtonPress()!) {
-                      setDeleteButtonPress(false);
+                    if (isDeleteButtonPressed()!) {
+                      setIsDeleteButtonPressed(false);
                       return;
                     }
                     setDraggedTabIndex(index());
-                    setTabValue(ctx);
+                    setFocusedTab(tabId);
                     setPrevPositionX(e.currentTarget.scrollLeft);
                     setClientX(e.clientX);
                     setIsDragScrolling(true);
                   }}
                   onDragOver={(e) => {
-                    handleDragOver(e, index());
+                    reorderTabsOnDragOver(e, index());
                     dragOverScroll(e);
                   }}
                   onDragEnd={() => {
@@ -152,7 +154,7 @@ function Logging() {
                   <Editable.Root
                     defaultValue={file.acceptedFiles[0].name /*tab name*/}
                     activationMode="dblclick"
-                    onEditChange={() => setEditMode(!editMode())}
+                    onEditChange={() => setIsEditMode(!isEditMode())}
                   >
                     <Editable.Area>
                       <Editable.Input />
@@ -175,12 +177,12 @@ function Logging() {
                         0,
                         0,
                       );
-                      setDeleteButtonPress(true);
+                      setIsDeleteButtonPressed(true);
                     }}
                     onDragOver={() => {
                       return;
                     }}
-                    disabled={editMode()}
+                    disabled={isEditMode()}
                   >
                     <IconX />
                   </IconButton>
@@ -194,10 +196,10 @@ function Logging() {
             onFileChange={(details) => {
               file = details;
               const tabId = crypto.randomUUID();
-              setTabList((prev) => {
+              setTabIdList((prev) => {
                 return [...prev, tabId];
               });
-              setTabValue(tabId);
+              setFocusedTab(tabId);
               scrollToEnd();
             }}
           >
@@ -218,7 +220,7 @@ function Logging() {
           </FileUpload.Root>
           <Tabs.Indicator />
         </Tabs.List>
-        <For each={tabList()}>
+        <For each={tabIdList()}>
           {(tabId, index) => (
             <Tabs.Content
               value={tabId}
