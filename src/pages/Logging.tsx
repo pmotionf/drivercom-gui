@@ -1,214 +1,100 @@
-import { createEffect, createSignal, For, Show } from "solid-js";
-import { Portal } from "solid-js/web";
-import { createStore } from "solid-js/store";
-import { trackStore } from "@solid-primitives/deep";
-
-import { inferSchema, initParser } from "udsv";
-import { IconChevronsDown, IconChevronsUp, IconX } from "@tabler/icons-solidjs";
-
-import { Button } from "~/components/ui/button";
-import { Collapsible } from "~/components/ui/collapsible";
-import type { FileUploadFileAcceptDetails } from "@ark-ui/solid";
-import { FileUpload } from "~/components/ui/file-upload";
-import { Spinner } from "~/components/ui/spinner";
-import { Text } from "~/components/ui/text";
+import { createSignal, For } from "solid-js";
+import { Tabs } from "~/components/ui/tabs";
+import { LoggingTab } from "./Logging/LoggingTab";
+import { IconButton } from "~/components/ui/icon-button";
+import { IconPlus, IconX } from "@tabler/icons-solidjs";
 import { Toast } from "~/components/ui/toast";
-import { Plot, type PlotContext } from "~/components/Plot";
+import { FileUploadFileChangeDetails } from "@ark-ui/solid";
+import { Editable } from "~/components/ui/editable";
+import { FileUpload } from "~/components/ui/file-upload";
 
 function Logging() {
+  // Reorder tab
+  const [draggedTabIndex, setDraggedTabIndex] = createSignal<number | null>(
+    null,
+  );
+  // The signal can know when tab delete button has pressed
+  const [isDeleteButtonPressed, setIsDeleteButtonPressed] = createSignal<
+    boolean
+  >(
+    false,
+  );
+
+  // Reorder tab by dragging
+  const reorderTabsOnDragOver = (e: DragEvent, index: number) => {
+    e.preventDefault();
+    if (draggedTabIndex() !== null && draggedTabIndex() !== index) {
+      const updateTab = [...tabIdList()];
+      const [draggedTab] = updateTab.splice(draggedTabIndex()!, 1);
+      updateTab.splice(index, 0, draggedTab);
+      setTabIdList(updateTab);
+      setDraggedTabIndex(index);
+    }
+  };
+
+  // Drag Scroll this need to be deleted
+  const [isDragScrolling, setIsDragScrolling] = createSignal(false);
+  // Mouse X coordinate on screen.
+  const [clientX, setClientX] = createSignal<number | null>(null);
+  // Tab X coordinate relative to start of tab list, can extend beyond screen.
+  const [prevPositionX, setPrevPositionX] = createSignal<number>(0);
+  let scrollContainer: HTMLDivElement | undefined;
+
+  // Handles scrolling tab list during drag/reorder.
+  const dragOverScroll = (e: MouseEvent) => {
+    if (!isDragScrolling() || !scrollContainer || !clientX()) return;
+
+    const movement = (e.clientX - clientX()! + prevPositionX()) * 0.05;
+    scrollContainer.scrollBy({ left: movement });
+  };
+
+  // Scrolls tab list to the end.
+  const scrollToEnd = () => {
+    if (!scrollContainer) return;
+    if (scrollContainer.offsetWidth !== scrollContainer.scrollWidth) {
+      scrollContainer.scrollTo(scrollContainer.scrollWidth, 0);
+    }
+  };
+
+  const mouseWheelHandler = (e: WheelEvent) => {
+    if (!scrollContainer || isDragScrolling()) return;
+
+    e.preventDefault;
+    scrollContainer.scrollLeft += e.deltaY;
+  };
+
+  // Active tab ID
+  const [focusedTab, setFocusedTab] = createSignal<string>("");
+  const [tabIdList, setTabIdList] = createSignal([] as string[]);
+
+  function deleteTab(index: number) {
+    if (isEditMode()) return;
+    const contextIndex = index === 0 ? 1 : index - 1;
+    const newValue = focusedTab() === tabIdList()[index]
+      ? tabIdList()[contextIndex]
+      : focusedTab();
+
+    setTimeout(() => {
+      setFocusedTab(newValue);
+    }, 0);
+    setTabIdList((prev) => {
+      const updateTabCtx = prev.filter((_, i) => i !== index);
+      return updateTabCtx;
+    });
+  }
+
+  let file: FileUploadFileChangeDetails;
+
   const toaster = Toast.createToaster({
     placement: "top-end",
     gap: 24,
   });
 
-  const [fileSelectOpen, setFileSelectOpen] = createSignal(true);
+  // Check if the tab is editable and in edit mode to disable the delete button.
+  const [isEditMode, setIsEditMode] = createSignal<boolean>(false);
 
-  const [logStatus, setLogStatus] = createSignal("");
-  const [logName, setLogName] = createSignal("");
-  const [header, setHeader] = createSignal([] as string[]);
-  const [series, setSeries] = createSignal([] as number[][]);
-  const [plots, setPlots] = createStore([] as PlotContext[]);
-
-  const [splitIndex, setSplitIndex] = createSignal([] as number[][]);
-
-  function loadLog(details: FileUploadFileAcceptDetails) {
-    if (details.files.length == 0) return;
-    const file = details.files[0];
-    setLogName(file.name);
-    setLogStatus("loading");
-    const reader = new FileReader();
-
-    reader.onload = () => {
-      setLogStatus("");
-      const csv_str: string = (reader.result! as string).trim();
-      const rows = csv_str.split("\n");
-      if (rows.length < 2) {
-        setLogStatus("failed");
-        toaster.create({
-          title: "Invalid Log File",
-          description: "Not enough rows.",
-          type: "error",
-        });
-        return;
-      }
-
-      const schema = inferSchema(csv_str);
-      const parser = initParser(schema);
-      const local_header = rows[0].replace(/,\s*$/, "").split(",");
-      const data = parser.typedCols(csv_str).map((row) =>
-        row.map((val) => {
-          if (typeof val === "boolean") return val ? 1 : 0;
-          return val;
-        })
-      );
-      if (data.length < local_header.length) {
-        setLogStatus("failed");
-        toaster.create({
-          title: "Invalid Log File",
-          description:
-            `Data has ${data.length} columns, while header has ${local_header.length} labels.`,
-          type: "error",
-        });
-        return;
-      }
-
-      setHeader(local_header);
-      setSeries(data.slice(0, local_header.length));
-      setFileSelectOpen(false);
-
-      const indexArray = Array.from(
-        { length: header().length },
-        (_, index) => index,
-      );
-      setSplitIndex([indexArray]);
-    };
-
-    reader.onerror = () => {
-      setLogStatus("failed");
-      toaster.create({
-        title: "Log File Loading Failed",
-        description: `${reader.error!.name}: ${reader.error!.message}`,
-        type: "error",
-      });
-    };
-
-    reader.readAsText(file);
-  }
-
-  function resetChart() {
-    const indexArray = Array.from(
-      { length: header().length },
-      (_, index) => index,
-    );
-    setSplitIndex([indexArray]);
-  }
-
-  function splitPlot(plot_index: number) {
-    const hiddens = plots[plot_index].visible.reduce(
-      (filtered: number[], visible, index) => {
-        if (!visible) {
-          filtered.push(splitIndex()[plot_index][index]);
-        }
-        return filtered;
-      },
-      [],
-    );
-    const visibles = plots[plot_index].visible.reduce(
-      (filtered: number[], visible, index) => {
-        if (visible) {
-          filtered.push(splitIndex()[plot_index][index]);
-        }
-        return filtered;
-      },
-      [],
-    );
-
-    setSplitIndex((prev) => {
-      const updated = [...prev];
-      updated.splice(plot_index, 1, visibles, hiddens);
-      return updated;
-    });
-  }
-
-  const allVisible = (index: number) => {
-    trackStore(plots[index].visible);
-    return plots[index].visible.every((b) => b);
-  };
-  const allInvisible = (index: number) => {
-    trackStore(plots[index].visible);
-    return plots[index].visible.every((b) => !b);
-  };
-
-  // UI 렌더링
   return (
     <>
-      <Portal>
-        <Button
-          variant="ghost"
-          style={{
-            position: "fixed",
-            "padding-right": "0.8em",
-            "padding-left": "0.5em",
-            "text-align": "right",
-            top: "0px",
-            right: "0px",
-          }}
-          onClick={() => {
-            setFileSelectOpen((prev) => !prev);
-          }}
-        >
-          <Show when={logStatus() === "loading"}>
-            <Spinner size="sm" />
-          </Show>
-          <Show when={logStatus() === "failed"}>
-            <IconX color="red" />
-          </Show>
-          <Show when={logName() !== ""}>
-            <Text>{logName()}</Text>
-          </Show>
-          <Show when={fileSelectOpen()} fallback={<IconChevronsDown />}>
-            <IconChevronsUp />
-          </Show>
-        </Button>
-      </Portal>
-      <Collapsible.Root open={fileSelectOpen()} lazyMount unmountOnExit>
-        <Collapsible.Content>
-          <FileUpload.Root
-            accept="text/csv"
-            minFileSize={3}
-            onFileAccept={loadLog}
-            onFileReject={(details) => {
-              if (details.files.length == 0) return;
-              let description = "The provided log file is invalid:\n";
-              for (let i = 0; i < details.files[0].errors.length; i++) {
-                if (description.slice(-1) !== "\n") {
-                  description += ", ";
-                }
-                description += details.files[0].errors[i];
-              }
-              toaster.create({
-                title: "Invalid Log File",
-                description: description,
-                type: "error",
-              });
-            }}
-          >
-            <FileUpload.Dropzone>
-              <FileUpload.Label>Drop Log File (CSV)</FileUpload.Label>
-              <FileUpload.Trigger
-                asChild={(triggerProps) => (
-                  <Button size="sm" {...triggerProps()} variant="outline">
-                    <Show when={logName() === ""} fallback="Change">
-                      Select
-                    </Show>
-                  </Button>
-                )}
-              />
-            </FileUpload.Dropzone>
-            <FileUpload.HiddenInput />
-          </FileUpload.Root>
-        </Collapsible.Content>
-      </Collapsible.Root>
       <Toast.Toaster toaster={toaster}>
         {(toast) => (
           <Toast.Root>
@@ -220,71 +106,139 @@ function Logging() {
           </Toast.Root>
         )}
       </Toast.Toaster>
-
-      <Show when={series().length > 0}>
-        <Button
-          variant="ghost"
-          disabled={splitIndex().length <= 1}
-          onclick={resetChart}
+      <Tabs.Root
+        value={focusedTab()}
+        onValueChange={(e) => setFocusedTab(e.value)}
+        width="100%"
+        height="100%"
+      >
+        <Tabs.List
+          ref={scrollContainer}
           style={{
-            "margin-top": "0.5rem",
-            "margin-left": "1rem",
+            background: "--colors-bg-muted",
+            height: "3rem",
+            "padding-top": "0.5rem",
           }}
+          gap="0"
+          onWheel={(e) => mouseWheelHandler(e)}
         >
-          Reset
-        </Button>
-        <For each={splitIndex()}>
-          {(item, index) => {
-            // Header and items need not be derived state, as they will not
-            // change within a plot.
-            const currentHeader = item.map((i) => header()[i]);
-            const currentItems = item.map((i) => series()[i]);
-
-            // Current ID must be derived state as index can change based on
-            // added/merged plots.
-            const currentID = () => logName() + index();
-
-            // Re-render plot contexts every time `splitIndex` is changed.
-            // TODO: Do not always initialize as empty, figure out how to save
-            // existing state and update for index changes.
-            createEffect(() => {
-              setPlots(index(), {} as PlotContext);
-            });
-
-            return (
+          <For each={tabIdList()}>
+            {(tabId, index) => (
               <>
-                <Button
-                  onClick={() => splitPlot(index())}
-                  disabled={currentHeader.length <= 1 ||
-                    !plots[index()] ||
-                    !plots[index()].visible ||
-                    allVisible(index()) ||
-                    allInvisible(index())}
-                  style={{
-                    "margin-left": "1rem",
-                    "margin-top": `${index() == 0 ? "0.5rem" : "0px"}`,
+                <Tabs.Trigger
+                  value={tabId}
+                  draggable
+                  onDragStart={(e) => {
+                    if (isDeleteButtonPressed()!) {
+                      setIsDeleteButtonPressed(false);
+                      return;
+                    }
+                    setDraggedTabIndex(index());
+                    setFocusedTab(tabId);
+                    setPrevPositionX(e.currentTarget.scrollLeft);
+                    setClientX(e.clientX);
+                    setIsDragScrolling(true);
                   }}
+                  onDragOver={(e) => {
+                    reorderTabsOnDragOver(e, index());
+                    dragOverScroll(e);
+                  }}
+                  onDragEnd={() => {
+                    setClientX(null);
+                    setIsDragScrolling(false);
+                    setDraggedTabIndex(null);
+                  }}
+                  style={{ "padding-right": "0", "padding-top": "0.1rem" }}
+                  height={"100%"}
                 >
-                  Split Plot
-                </Button>
-                <Plot
-                  id={currentID()}
-                  group={logName()}
-                  name=""
-                  header={currentHeader}
-                  series={currentItems}
-                  context={plots[index()]}
-                  style={{
-                    width: "100%",
-                    height: `calc(100% / ${splitIndex().length} - 3rem`,
-                    "min-height": "18rem",
-                  }}
-                />
+                  <Editable.Root
+                    defaultValue={file.acceptedFiles[0].name /*tab name*/}
+                    activationMode="dblclick"
+                    onEditChange={() => setIsEditMode(!isEditMode())}
+                  >
+                    <Editable.Area>
+                      <Editable.Input />
+                      <Editable.Preview />
+                    </Editable.Area>
+                  </Editable.Root>
+                  <IconButton
+                    onClick={() => {
+                      deleteTab(index());
+                    }}
+                    variant="ghost"
+                    size="xs"
+                    width="1rem"
+                    borderRadius="1rem"
+                    draggable
+                    cursor={isDragScrolling() ? "not-allowed" : "auto"}
+                    onDragStart={(e) => {
+                      e.dataTransfer?.setDragImage(
+                        document.createElement("img"),
+                        0,
+                        0,
+                      );
+                      setIsDeleteButtonPressed(true);
+                    }}
+                    onDragOver={() => {
+                      return;
+                    }}
+                    disabled={isEditMode()}
+                  >
+                    <IconX />
+                  </IconButton>
+                </Tabs.Trigger>
               </>
-            );
-          }}
+            )}
+          </For>
+          <FileUpload.Root
+            accept="text/csv"
+            minFileSize={3}
+            onFileChange={(details) => {
+              file = details;
+              const tabId = crypto.randomUUID();
+              setTabIdList((prev) => {
+                return [...prev, tabId];
+              });
+              setFocusedTab(tabId);
+              scrollToEnd();
+            }}
+          >
+            <FileUpload.Trigger
+              asChild={(triggerProps) => (
+                <IconButton
+                  size={"xs"}
+                  variant={"ghost"}
+                  {...triggerProps()}
+                  width={"1rem"}
+                  borderRadius={"1rem"}
+                >
+                  <IconPlus />
+                </IconButton>
+              )}
+            />
+            <FileUpload.HiddenInput />
+          </FileUpload.Root>
+          <Tabs.Indicator />
+        </Tabs.List>
+        <For each={tabIdList()}>
+          {(tabId, index) => (
+            <Tabs.Content
+              value={tabId}
+              height={"100%"}
+              style={{ "overflow-y": "auto" }}
+            >
+              <LoggingTab
+                tabId={tabId}
+                details={file}
+                onErrorMessage={(msg) => {
+                  toaster.create(msg);
+                  deleteTab(index());
+                }}
+              />
+            </Tabs.Content>
+          )}
         </For>
-      </Show>
+      </Tabs.Root>
     </>
   );
 }

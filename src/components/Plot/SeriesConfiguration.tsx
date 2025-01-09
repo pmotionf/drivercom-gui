@@ -1,5 +1,4 @@
 import { createSignal, For, splitProps } from "solid-js";
-
 import { parseColor } from "@ark-ui/solid";
 import { ColorPicker } from "~/components/ui/color-picker";
 import { Heading } from "~/components/ui/heading";
