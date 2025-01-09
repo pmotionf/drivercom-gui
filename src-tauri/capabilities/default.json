@@ -5,6 +5,16 @@
   "windows": ["main"],
   "permissions": [
     "core:default",
+    {
+      "identifier": "shell:allow-execute",
+      "allow": [
+        {
+          "args": true,
+          "name": "binaries/drivercom",
+          "sidecar": true
+        }
+      ]
+    },
     "shell:allow-open",
     "dialog:default",
     "fs:default",
