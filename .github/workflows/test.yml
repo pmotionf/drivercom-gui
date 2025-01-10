@@ -44,11 +44,8 @@ jobs:
         run: deno run -A npm:typescript/tsc
 
       - uses: dtolnay/rust-toolchain@stable
-
-      - name: Setup Cargo tools
-        run: |
-          rustup component add rustfmt
-          rustup component add clippy
+        with:
+          components: clippy, rustfmt
 
       - name: Cargo Verify Project
         working-directory: ./src-tauri
