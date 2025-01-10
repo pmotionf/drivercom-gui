@@ -45,6 +45,10 @@ jobs:
 
       - uses: dtolnay/rust-toolchain@stable
 
+      - name: Setup Cargo tools
+        run: |
+          rustup component add rustfmt
+
       - name: Cargo Verify Project
         working-directory: ./src-tauri
         run: cargo verify-project
