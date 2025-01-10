@@ -70,5 +70,5 @@ jobs:
 
       - name: Cargo Clippy
         working-directory: ./src-tauri
-        run: cargo clippy -- -W clippy::pedantic
+        run: cargo clippy --no-deps -- -W clippy::pedantic
 
