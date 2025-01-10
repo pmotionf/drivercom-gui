@@ -48,6 +48,7 @@ jobs:
       - name: Setup Cargo tools
         run: |
           rustup component add rustfmt
+          rustup component add clippy
 
       - name: Cargo Verify Project
         working-directory: ./src-tauri
