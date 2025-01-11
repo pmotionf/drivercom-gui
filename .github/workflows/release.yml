@@ -46,15 +46,17 @@ jobs:
           repo: "pmotionf/drivercom-gui"
 
       - name: Create release
+        id: create-release
         if: ${{ steps.check-tag.outputs.exists != 'true' }}
         run: |
           gh release create --generate-notes "${VERSION}"
-          echo "::set-output name=created_release::true"
+          echo "created_release=true" >> $GITHUB_OUTPUT
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           VERSION: ${{ steps.parse-version.outputs.VERSION }}
     outputs:
-      created_release: ${{ steps.set.outputs.created_release }}
+      created_release: ${{ steps.create-release.outputs.created_release }}
+      version: ${{ steps.parse-version.outputs.VERSION }}
 
   assets:
     name: assets
@@ -98,7 +100,7 @@ jobs:
             src-tauri/target/release/bundle/rpm/*.rpm
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          VERSION: ${{ steps.parse-version.outputs.VERSION }}
+          VERSION: ${{ needs.release.outputs.version }}
 
       - name: Upload Windows
         if: matrix.os == 'Windows'
@@ -107,4 +109,4 @@ jobs:
             src-tauri/target/release/bundle/msi/*.msi
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          VERSION: ${{ steps.parse-version.outputs.VERSION }}
+          VERSION: ${{ needs.release.outputs.version }}
