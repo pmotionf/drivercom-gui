@@ -10,10 +10,11 @@ on:
 
 jobs:
   release:
+    name: release
     strategy:
       matrix:
-        os: [self-hosted]
-    runs-on: ${{ matrix.os }}
+        os: [Linux]
+    runs-on: [self-hosted, "${{ matrix.os }}"]
     defaults:
       run:
         shell: bash
@@ -28,6 +29,11 @@ jobs:
         with:
           persist-credentials: false
 
+      - uses: dtolnay/rust-toolchain@stable
+
+      - name: Setup Cargo tooling
+        run: cargo install cargo-get
+
       - name: Parse version
         id: parse-version
         run: |
@@ -39,20 +45,66 @@ jobs:
           tag: "${{ steps.parse-version.outputs.VERSION }}"
           repo: "pmotionf/drivercom-gui"
 
-      - name: Install dependencies
-        if: ${{ steps.check-tag.outputs.exists != 'true' }}
-        run: deno i
-
-      - name: Build Linux
-        if: ${{ steps.check-tag.outputs.exists != 'true' }}
-        run: deno task tauri build
-
       - name: Create release
         if: ${{ steps.check-tag.outputs.exists != 'true' }}
         run: |
-          gh release create --generate-notes "${VERSION}" \
+          gh release create --generate-notes "${VERSION}"
+          echo "::set-output name=created_release::true"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VERSION: ${{ steps.parse-version.outputs.VERSION }}
+    outputs:
+      created_release: ${{ steps.set.outputs.created_release }}
+
+  assets:
+    name: assets
+    needs: release
+    if: needs.release.outputs.created_release == 'true'
+    strategy:
+      matrix:
+        os: [Windows, Linux]
+    runs-on: [self-hosted, "${{ matrix.os }}"]
+    permissions:
+      contents: write
+    steps:
+      - name: Log masks on Linux
+        if: matrix.os == 'Linux'
+        run: echo "::add-mask::$NAME_MASK"
+
+      - name: Log masks on Windows
+        if: matrix.os == 'Windows'
+        run: echo "::add-mask::$env:NAME_MASK"
+
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: vx.x.x
+
+      - name: Install dependencies
+        run: deno i
+
+      - name: Build
+        run: deno task tauri build
+
+      - name: Upload Linux
+        if: matrix.os =='Linux'
+        run: |
+          gh release upload "${VERSION}" \
             src-tauri/target/release/bundle/deb/*.deb \
             src-tauri/target/release/bundle/rpm/*.rpm
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VERSION: ${{ steps.parse-version.outputs.VERSION }}
+
+      - name: Upload Windows
+        if: matrix.os == 'Windows'
+        run: |
+          gh release upload "${VERSION}" \
+            src-tauri/target/release/bundle/msi/*.msi
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           VERSION: ${{ steps.parse-version.outputs.VERSION }}
