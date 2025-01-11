@@ -105,8 +105,8 @@ jobs:
       - name: Upload Windows
         if: matrix.os == 'Windows'
         run: |
-          gh release upload "${VERSION}" \
-            src-tauri/target/release/bundle/msi/*.msi
+          gh release upload $env:VERSION `
+            (Get-Item "src-tauri\target\release\bundle\msi\*.msi").FullName
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           VERSION: ${{ needs.release.outputs.version }}
