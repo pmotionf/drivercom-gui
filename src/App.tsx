@@ -1,19 +1,14 @@
 import "./App.css";
 
 import { invoke } from "@tauri-apps/api/core";
-import {
-  createSignal,
-  Index,
-  onMount,
-  Show,
-  ValidComponent,
-} from "solid-js";
+import { createSignal, Index, onMount, Show, ValidComponent } from "solid-js";
 import { Dynamic, Portal } from "solid-js/web";
 import type { RouteSectionProps } from "@solidjs/router";
 import { useNavigate } from "@solidjs/router";
 
 import {
   IconChevronLeftPipe,
+  IconFileAnalytics,
   IconFileSettings,
   IconGraph,
   IconMenu,
@@ -77,6 +72,11 @@ function App(props: RouteSectionProps) {
     connect: {
       icon: IconPlugConnected,
       label: "Connect",
+      disabled: false,
+    },
+    logConfigure: {
+      icon: IconFileAnalytics,
+      label: "Log Configure",
       disabled: false,
     },
   };
