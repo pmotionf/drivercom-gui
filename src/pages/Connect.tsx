@@ -30,12 +30,6 @@ function Connect() {
       });
       return;
     }
-
-    toaster.create({
-      title: "Port detect success",
-      description: `${output.stdout}`,
-      type: "error",
-    });
     setIsDetected(true);
     getPortList();
   }
@@ -45,16 +39,18 @@ function Connect() {
       "port.list",
     ]);
     const output = await drivercom.execute();
-    const portList = output.stdout.match(/\((\w+)\)/g) as string[];
-    portList.length === 0 ? setIsDetected(false) : setIsDetected(true);
+    const portList = output.stdout.split("\n");
+    const filterPortList = portList.filter((e) => e !== "\\\\.\\COM (COM)")
+      .filter((e) => e.length !== 0);
+    filterPortList.length === 0 ? setIsDetected(false) : setIsDetected(true);
 
     if (!isDetected()) return;
     const isConnectedArray = Array.from(
-      { length: portList.length },
+      { length: filterPortList.length },
       (_) => false,
     );
     setButtonSignalArray(isConnectedArray);
-    setPortList(portList);
+    setPortList(filterPortList);
   }
 
   const [isConnected, setIsConnected] = createSignal<boolean>();
@@ -122,7 +118,7 @@ function Connect() {
                 opacity={"70%"}
               >
                 {isConnected()
-                  ? portId()
+                  ? portId().slice(4, 8)
                   : isDetected()
                   ? "Port is found"
                   : "Port is not found"}
@@ -134,8 +130,9 @@ function Connect() {
             >
               <Button
                 disabled={isDetected() ? isConnected() ? false : true : false}
-                onClick={() =>
-                  isConnected() ? setIsConnected(false) : detectPort()}
+                onClick={() => {
+                  isConnected() ? setIsConnected(false) : detectPort();
+                }}
                 variant={isConnected() ? "outline" : "solid"}
               >
                 {isConnected()
@@ -217,7 +214,7 @@ function Connect() {
                       <Accordion.ItemTrigger>
                         <Stack direction={"row"}>
                           <IconPlug />
-                          {port}
+                          {port.slice(4, 8)}
                         </Stack>
                       </Accordion.ItemTrigger>
                       <Accordion.ItemContent
@@ -255,9 +252,9 @@ function Connect() {
                                 ) {
                                   isFalse[index()] = true;
                                   setButtonSignalArray(isFalse);
-                                  setPortId(port);
+                                  setPortId(port.slice(0, 8));
                                 } else {
-                                  setPortId(port);
+                                  setPortId(port.slice(0, 8));
                                   setButtonSignalArray((prev) => {
                                     const updateList = prev;
                                     updateList[index()] = true;
