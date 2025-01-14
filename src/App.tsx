@@ -8,6 +8,7 @@ import { useNavigate } from "@solidjs/router";
 
 import {
   IconChevronLeftPipe,
+  IconFileCode2,
   IconFileSettings,
   IconGraph,
   IconMenu,
@@ -56,6 +57,7 @@ function App(props: RouteSectionProps) {
   const [cliVersion, _] = createSignal("0.0.0");
 
   const navigate = useNavigate();
+
   const pages: { [url: string]: PageMeta } = {
     configuration: {
       icon: IconFileSettings,
@@ -70,7 +72,12 @@ function App(props: RouteSectionProps) {
     connect: {
       icon: IconPlugConnected,
       label: "Connect",
-      disabled: true,
+      disabled: false,
+    },
+    logConfigure: {
+      icon: IconFileCode2,
+      label: "Log Configure",
+      disabled: false,
     },
   };
   const [page, setPage] = createSignal("");
