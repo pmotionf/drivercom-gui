@@ -22,12 +22,16 @@ function Connect() {
     ]);
     const output = await drivercom.execute();
     if (output.stdout.length === 0) {
-      const stderr = output.stderr;
+      const stderr = output.stderr.split("\n").filter((e) => e.length !== 0)
+        .filter((e) =>
+          e !== "info: Attempting connection with serial port: \\\\.\\COM (COM)"
+        );
       toaster.create({
         title: "Port detect fail",
         description: `${stderr}`,
         type: "error",
       });
+      setIsDetected(false);
       return;
     }
     setIsDetected(true);
@@ -129,16 +133,22 @@ function Connect() {
               paddingRight={"2rem"}
             >
               <Button
-                disabled={isDetected() ? isSelected() ? false : true : false}
                 onClick={() => {
-                  isSelected() ? setIsSelected(false) : detectPort();
+                  if (isSelected()) setIsSelected(false);
+                  else {
+                    if (isDetected()) {
+                      setPortList([]);
+                      setPortId("");
+                    }
+                    detectPort();
+                  }
                 }}
                 variant={isSelected() ? "outline" : "solid"}
               >
                 {isSelected()
                   ? "Cancel"
                   : isDetected()
-                  ? "Port detected"
+                  ? "Rescan port"
                   : "Detect port"}
               </Button>
             </Card.Footer>
@@ -221,7 +231,7 @@ function Connect() {
                         padding={"1rem"}
                       >
                         <Stack direction={"row"} width={"100%"}>
-                          <Text>
+                          <Text width={"10%"}>
                             <Show
                               when={isSelected() &&
                                 buttonSignalArray()[index()]}
@@ -232,9 +242,6 @@ function Connect() {
                           </Text>
                           <Stack direction={"row-reverse"} width={"100%"}>
                             <Button
-                              variant={buttonSignalArray()[index()]
-                                ? "outline"
-                                : "solid"}
                               onClick={() => {
                                 const isFalse = Array.from(
                                   { length: portList().length },
