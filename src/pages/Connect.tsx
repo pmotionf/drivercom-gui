@@ -45,15 +45,15 @@ function Connect() {
     filterPortList.length === 0 ? setIsDetected(false) : setIsDetected(true);
 
     if (!isDetected()) return;
-    const isConnectedArray = Array.from(
+    const isSelectedArray = Array.from(
       { length: filterPortList.length },
       (_) => false,
     );
-    setButtonSignalArray(isConnectedArray);
+    setButtonSignalArray(isSelectedArray);
     setPortList(filterPortList);
   }
 
-  const [isConnected, setIsConnected] = createSignal<boolean>();
+  const [isSelected, setIsSelected] = createSignal<boolean>();
 
   const toaster = Toast.createToaster({
     placement: "top-end",
@@ -95,7 +95,7 @@ function Connect() {
               paddingTop={"2rem"}
             >
               <Show
-                when={isConnected()}
+                when={isSelected()}
                 fallback={<IconPlugOff opacity={"20%"} />}
               >
                 <IconPlug />
@@ -108,8 +108,8 @@ function Connect() {
                 variant={"heading"}
                 size={"xl"}
               >
-                {isConnected()
-                  ? "Connected"
+                {isSelected()
+                  ? "Selected"
                   : isDetected()
                   ? "Port detected"
                   : "Not found"}
@@ -117,7 +117,7 @@ function Connect() {
               <Text
                 opacity={"70%"}
               >
-                {isConnected()
+                {isSelected()
                   ? portId().slice(4, 8)
                   : isDetected()
                   ? "Port is found"
@@ -129,13 +129,13 @@ function Connect() {
               paddingRight={"2rem"}
             >
               <Button
-                disabled={isDetected() ? isConnected() ? false : true : false}
+                disabled={isDetected() ? isSelected() ? false : true : false}
                 onClick={() => {
-                  isConnected() ? setIsConnected(false) : detectPort();
+                  isSelected() ? setIsSelected(false) : detectPort();
                 }}
-                variant={isConnected() ? "outline" : "solid"}
+                variant={isSelected() ? "outline" : "solid"}
               >
-                {isConnected()
+                {isSelected()
                   ? "Cancel"
                   : isDetected()
                   ? "Port detected"
@@ -223,11 +223,11 @@ function Connect() {
                         <Stack direction={"row"} width={"100%"}>
                           <Text>
                             <Show
-                              when={isConnected() &&
+                              when={isSelected() &&
                                 buttonSignalArray()[index()]}
-                              fallback={"Not connected"}
+                              fallback={"Not selected"}
                             >
-                              Connected
+                              Selected
                             </Show>
                           </Text>
                           <Stack direction={"row-reverse"} width={"100%"}>
@@ -242,13 +242,13 @@ function Connect() {
                                     false,
                                 );
                                 if (
-                                  isConnected() && buttonSignalArray()[index()]
+                                  isSelected() && buttonSignalArray()[index()]
                                 ) {
-                                  setIsConnected(false);
+                                  setIsSelected(false);
                                   setButtonSignalArray(isFalse);
                                   setPortId("");
                                 } else if (
-                                  isConnected() && !buttonSignalArray()[index()]
+                                  isSelected() && !buttonSignalArray()[index()]
                                 ) {
                                   isFalse[index()] = true;
                                   setButtonSignalArray(isFalse);
@@ -260,15 +260,15 @@ function Connect() {
                                     updateList[index()] = true;
                                     return updateList;
                                   });
-                                  setIsConnected(true);
+                                  setIsSelected(true);
                                 }
                               }}
                               width={"8rem"}
                             >
                               <Show
-                                when={isConnected() &&
+                                when={isSelected() &&
                                   buttonSignalArray()[index()]}
-                                fallback={"Connect"}
+                                fallback={"Select"}
                               >
                                 Cancel
                               </Show>
