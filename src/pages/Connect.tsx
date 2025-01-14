@@ -12,9 +12,18 @@ import { portId, setPortId } from "~/GlobalState";
 import { Icon } from "~/components/ui/icon";
 
 function Connect() {
-  const [isDetected, setIsDetected] = createSignal<boolean>(false);
+  const [isDetected, setIsDetected] = createSignal<boolean>(
+    portId().length !== 0 ? true : false,
+  );
   const [portList, setPortList] = createSignal<string[]>([]);
   const [buttonSignalArray, setButtonSignalArray] = createSignal<boolean[]>([]);
+  const [isSelected, setIsSelected] = createSignal<boolean>(
+    portId().length !== 0 ? true : false,
+  );
+
+  if (portId().length !== 0) {
+    detectPort();
+  }
 
   async function detectPort() {
     const drivercom = Command.sidecar("binaries/drivercom", [
@@ -22,18 +31,18 @@ function Connect() {
     ]);
     const output = await drivercom.execute();
     if (output.stdout.length === 0) {
-      const stderr = output.stderr.split("\n").filter((e) => e.length !== 0)
-        .filter((e) =>
-          e !== "info: Attempting connection with serial port: \\\\.\\COM (COM)"
-        );
-      toaster.create({
+      setIsDetected(false);
+      setPortList([]);
+      setPortId("");
+
+      isSelected() ? setIsSelected(false) : toaster.create({
         title: "Port detect fail",
-        description: `${stderr}`,
+        description: "Serial port is not provided",
         type: "error",
       });
-      setIsDetected(false);
       return;
     }
+
     setIsDetected(true);
     getPortList();
   }
@@ -49,15 +58,17 @@ function Connect() {
     filterPortList.length === 0 ? setIsDetected(false) : setIsDetected(true);
 
     if (!isDetected()) return;
+    setPortList(filterPortList);
+
     const isSelectedArray = Array.from(
       { length: filterPortList.length },
       (_) => false,
     );
+    if (portId().length !== 0) {
+      isSelectedArray[filterPortList.indexOf(`${portId()}`) + 1] = true;
+    }
     setButtonSignalArray(isSelectedArray);
-    setPortList(filterPortList);
   }
-
-  const [isSelected, setIsSelected] = createSignal<boolean>();
 
   const toaster = Toast.createToaster({
     placement: "top-end",
@@ -134,8 +145,10 @@ function Connect() {
             >
               <Button
                 onClick={() => {
-                  if (isSelected()) setIsSelected(false);
-                  else {
+                  if (isSelected()) {
+                    setIsSelected(false);
+                    setPortId("");
+                  } else {
                     if (isDetected()) {
                       setPortList([]);
                       setPortId("");
@@ -183,40 +196,40 @@ function Connect() {
             paddingTop={"1.5rem"}
           >
             <Show
-              when={isDetected()}
-              fallback={
-                <div
-                  style={{
-                    width: "100%",
-                    "text-align": "center",
-                    "margin-top": `calc(100% / 10)`,
-                  }}
-                >
-                  <Icon
-                    size={"2xl"}
-                    opacity={"20%"}
-                  >
-                    <IconPlugOff
-                      size={"2xl"}
-                    />
-                  </Icon>
-
-                  <Text
-                    variant={"heading"}
-                    size={"xl"}
-                    marginTop={"1rem"}
-                    opacity={"70%"}
-                  >
-                    Port is not detected
-                  </Text>
-                  <Text
-                    opacity={"60%"}
-                  >
-                    Click the button above to detect port
-                  </Text>
-                </div>
-              }
+              when={!isDetected()}
             >
+              <div
+                style={{
+                  width: "100%",
+                  "text-align": "center",
+                  "margin-top": `calc(100% / 10)`,
+                }}
+              >
+                <Icon
+                  size={"2xl"}
+                  opacity={"20%"}
+                >
+                  <IconPlugOff
+                    size={"2xl"}
+                  />
+                </Icon>
+
+                <Text
+                  variant={"heading"}
+                  size={"xl"}
+                  marginTop={"1rem"}
+                  opacity={"70%"}
+                >
+                  Port is not detected
+                </Text>
+                <Text
+                  opacity={"60%"}
+                >
+                  Click the button above to detect port
+                </Text>
+              </div>
+            </Show>
+            <Show when={isDetected()}>
               <Accordion.Root multiple>
                 <For each={portList()}>
                   {(port, index) => (
