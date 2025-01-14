@@ -1,5 +1,12 @@
 {
-  "exclude": ["dist/", "src-tauri/", ".github/", ".vscode/", ".vite/"],
+  "exclude": [
+    "dist/",
+    "src-tauri/",
+    ".github/",
+    ".vscode/",
+    ".vite/",
+    "binaries/"
+  ],
   "tasks": {
     "prepare": "panda codegen",
     "dev": "deno run -A --node-modules-dir npm:vite",
@@ -14,7 +21,7 @@
     "exclude": ["styled-system/"]
   },
   "lint": {
-    "exclude": ["styled-system/", "src/components/ui"]
+    "exclude": ["styled-system/", "src/components/ui", "binaries/"]
   },
   "compilerOptions": {
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
@@ -25,6 +32,7 @@
   "imports": {
     "~/": "./src/",
     "styled-system/": "./styled-system/",
+    "binaries/": "./src-tauri/binaries/",
     "@deno/vite-plugin": "npm:@deno/vite-plugin@^1.0.0",
     "@ark-ui/solid": "npm:@ark-ui/solid@^4.4.0",
     "@solid-primitives/deep": "npm:@solid-primitives/deep@^0.2.10",
