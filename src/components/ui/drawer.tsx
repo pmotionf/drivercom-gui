@@ -1,1 +1,1 @@
-export * as Drawer from "./styled/drawer.tsx";
+export * as Drawer from "./styled/drawer";

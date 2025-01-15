@@ -1,5 +1,7 @@
 import { defineConfig } from "@pandacss/dev";
 import { createPreset } from "@park-ui/panda-preset";
+import indigo from "@park-ui/panda-preset/colors/indigo";
+import slate from "@park-ui/panda-preset/colors/slate";
 
 export default defineConfig({
   // Whether to use css reset
@@ -8,9 +10,9 @@ export default defineConfig({
   presets: [
     "@pandacss/preset-base",
     createPreset({
-      accentColor: "indigo",
-      grayColor: "slate",
-      borderRadius: "md",
+      accentColor: indigo,
+      grayColor: slate,
+      radius: "md",
     }),
   ],
 
