@@ -1,7 +1,14 @@
 import "./App.css";
 
 import { invoke } from "@tauri-apps/api/core";
-import { createSignal, Index, onMount, Show, ValidComponent } from "solid-js";
+import {
+  createEffect,
+  createSignal,
+  Index,
+  onMount,
+  Show,
+  ValidComponent,
+} from "solid-js";
 import { Dynamic, Portal } from "solid-js/web";
 import type { RouteSectionProps } from "@solidjs/router";
 import { useNavigate } from "@solidjs/router";
@@ -14,12 +21,14 @@ import {
   IconMenu,
   IconMoonFilled,
   IconPlugConnected,
+  IconPlugConnectedX,
   IconSunFilled,
 } from "@tabler/icons-solidjs";
 
 import {
   globalState,
   GlobalStateContext,
+  portId,
   setGlobalState,
   Theme,
 } from "./GlobalState.ts";
@@ -58,6 +67,18 @@ function App(props: RouteSectionProps) {
 
   const navigate = useNavigate();
 
+  const [Icon, setIcon] = createSignal<ValidComponent>(IconPlugConnected);
+  createEffect(() => {
+    const portIdIsAvailble = portId().length !== 0 ? true : false;
+    portIdIsAvailble
+      ? setIcon(() => {
+        return IconPlugConnected;
+      })
+      : setIcon(() => {
+        return IconPlugConnectedX;
+      });
+  });
+
   const pages: { [url: string]: PageMeta } = {
     configuration: {
       icon: IconFileSettings,
@@ -70,7 +91,7 @@ function App(props: RouteSectionProps) {
       disabled: false,
     },
     connect: {
-      icon: IconPlugConnected,
+      icon: Icon(),
       label: "Connect",
       disabled: false,
     },
