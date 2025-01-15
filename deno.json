@@ -5,7 +5,15 @@
     "dev": "deno run -A --node-modules-dir npm:vite",
     "build": "deno run -A --node-modules-dir npm:vite build",
     "serve": "deno run -A --node-modules-dir npm:vite preview",
-    "tauri": "deno task prepare && tauri"
+    "tauri": {
+      "command": "deno task prepare && tauri",
+      "dependencies": ["unpack-drivercom"]
+    },
+    "fetch-drivercom": "mkdir -p src-tauri/binaries && cd src-tauri/binaries && gh release download -R pmotionf/drivercom-cli -p '*-drivercom-cli-*.zip' --clobber",
+    "unpack-drivercom": {
+      "command": "deno run -A unpack-drivercom.js",
+      "dependencies": ["fetch-drivercom"]
+    }
   },
   "fmt": {
     "useTabs": false,
@@ -25,6 +33,7 @@
   "imports": {
     "@pandacss/preset-base": "npm:@pandacss/preset-base@^0.51.1",
     "lucide-solid": "npm:lucide-solid@^0.471.0",
+    "unzipper": "npm:unzipper@^0.12.3",
     "~/": "./src/",
     "styled-system/": "./styled-system/",
     "@deno/vite-plugin": "npm:@deno/vite-plugin@^1.0.2",
