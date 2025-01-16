@@ -36,8 +36,8 @@ function Connect() {
       setPortId("");
 
       isSelected() ? setIsSelected(false) : toaster.create({
-        title: "Port detect fail",
-        description: "Serial port is not provided",
+        title: "No Ports Found",
+        description: "No driver serial ports were detected.",
         type: "error",
       });
       return;
@@ -94,96 +94,47 @@ function Connect() {
         <Text
           variant={"heading"}
           size={"2xl"}
+          minWidth={"5rem"}
+          marginLeft="0.2rem"
         >
-          Port
+          Ports
         </Text>
-        <Card.Root
-          marginTop={"2rem"}
-          style={{ "min-width": "50rem" }}
-        >
-          <Stack
-            direction={"row"}
+        <Stack width={"100%"} direction={"row"} paddingRight={"2rem"}>
+          <Text
+            size={"lg"}
+            width="10rem"
+            marginTop="0.5rem"
+            marginLeft="0.2rem"
           >
-            <Card.Header
-              paddingLeft={"2rem"}
-              width={"3rem"}
-              paddingTop={"2rem"}
-            >
-              <Show
-                when={isSelected()}
-                fallback={<IconPlugOff opacity={"20%"} />}
-              >
-                <IconPlug />
-              </Show>
-            </Card.Header>
-            <Card.Body
-              paddingTop={"1rem"}
-            >
-              <Text
-                variant={"heading"}
-                size={"xl"}
-              >
-                {isSelected()
-                  ? "Selected"
-                  : isDetected()
-                  ? "Port detected"
-                  : "Not found"}
-              </Text>
-              <Text
-                opacity={"70%"}
-              >
-                {isSelected()
-                  ? portId().slice(4, 8)
-                  : isDetected()
-                  ? "Port is found"
-                  : "Port is not found"}
-              </Text>
-            </Card.Body>
-            <Card.Footer
-              paddingTop={"1.5rem"}
-              paddingRight={"2rem"}
-            >
-              <Button
-                onClick={() => {
-                  if (isSelected()) {
-                    setIsSelected(false);
+            {isSelected()
+              ? portId().slice(4, portId().length)
+              : "No port selected"}
+          </Text>
+          <Stack direction={"row-reverse"} width={"calc(100% - 10rem)"}>
+            <Button
+              onClick={() => {
+                if (isSelected()) {
+                  setIsSelected(false);
+                  setPortId("");
+                } else {
+                  if (isDetected()) {
+                    setPortList([]);
                     setPortId("");
-                  } else {
-                    if (isDetected()) {
-                      setPortList([]);
-                      setPortId("");
-                    }
-                    detectPort();
                   }
-                }}
-                variant={isSelected() ? "outline" : "solid"}
-              >
-                {isSelected()
-                  ? "Cancel"
-                  : isDetected()
-                  ? "Rescan port"
-                  : "Detect port"}
-              </Button>
-            </Card.Footer>
+                  detectPort();
+                }
+              }}
+              variant={isSelected() ? "outline" : "solid"}
+              width={"4rem"}
+              disabled={isSelected() ? true : false}
+            >
+              Scan
+            </Button>
           </Stack>
-        </Card.Root>
-
-        <Text
-          variant={"heading"}
-          size={"2xl"}
-          marginTop={"3rem"}
-        >
-          Port List
-        </Text>
-        <Text
-          marginTop={"0.5rem"}
-        >
-          {isDetected() ? "Port found" : "Not found"}
-        </Text>
+        </Stack>
         <Card.Root
-          height={`calc(100% - 19rem)`}
-          marginTop={"1rem"}
-          marginBottom={"3rem"}
+          height={"calc(100% - 6rem)"}
+          marginTop={"1.5rem"}
           style={{
             "overflow-y": "auto",
             "min-height": "22rem",
@@ -202,100 +153,105 @@ function Connect() {
                 style={{
                   width: "100%",
                   "text-align": "center",
-                  "margin-top": `calc(100% / 10)`,
+                  "margin-top": `calc(100% / 6)`,
                 }}
               >
                 <Icon
-                  size={"2xl"}
+                  size={"xl"}
                   opacity={"20%"}
                 >
                   <IconPlugOff
-                    size={"2xl"}
+                    size={"xl"}
                   />
                 </Icon>
 
                 <Text
                   variant={"heading"}
-                  size={"xl"}
+                  size={"2xl"}
                   marginTop={"1rem"}
                   opacity={"70%"}
                 >
-                  Port is not detected
-                </Text>
-                <Text
-                  opacity={"60%"}
-                >
-                  Click the button above to detect port
+                  No ports Found
                 </Text>
               </div>
             </Show>
             <Show when={isDetected()}>
-              <Accordion.Root multiple>
+              <Accordion.Root multiple padding={0}>
                 <For each={portList()}>
                   {(port, index) => (
-                    <Accordion.Item value={index().toString()} gap={0}>
-                      <Accordion.ItemTrigger>
-                        <Stack direction={"row"}>
+                    <Accordion.Item
+                      value={index().toString()}
+                      rowGap={"0"}
+                      paddingTop={"1rem"}
+                      paddingBottom={"1rem"}
+                    >
+                      <Stack direction={"row"} width={"100%"}>
+                        <Icon
+                          opacity={portId() === port.slice(0, port.length - 7)
+                            ? "100%"
+                            : "30%"}
+                          padding={"0"}
+                          width="24px"
+                          height={"24px"}
+                          marginTop={"0.4rem"}
+                        >
                           <IconPlug />
-                          {port.slice(4, 8)}
-                        </Stack>
-                      </Accordion.ItemTrigger>
-                      <Accordion.ItemContent
-                        padding={"1rem"}
-                      >
-                        <Stack direction={"row"} width={"100%"}>
-                          <Text width={"10%"}>
+                        </Icon>
+                        <Text
+                          paddingLeft={"1.5rem"}
+                          fontWeight={"bold"}
+                          marginTop={"0.4rem"}
+                          width={"5rem"}
+                        >
+                          {port.slice(4, length - 7)}
+                        </Text>
+                        <Stack
+                          direction={"row-reverse"}
+                          width={"calc(100% - 24px - 5rem)"}
+                        >
+                          <Button
+                            onClick={() => {
+                              const isFalse = Array.from(
+                                { length: portList().length },
+                                (_) => false,
+                              );
+                              if (
+                                isSelected() && buttonSignalArray()[index()]
+                              ) {
+                                setIsSelected(false);
+                                setButtonSignalArray(isFalse);
+                                setPortId("");
+                              } else if (
+                                isSelected() && !buttonSignalArray()[index()]
+                              ) {
+                                isFalse[index()] = true;
+                                setButtonSignalArray(isFalse);
+                                setPortId(port.slice(0, length - 7));
+                              } else {
+                                setPortId(port.slice(0, length - 7));
+                                setButtonSignalArray((prev) => {
+                                  const updateList = prev;
+                                  updateList[index()] = true;
+                                  return updateList;
+                                });
+                                setIsSelected(true);
+                              }
+                            }}
+                            width={"8rem"}
+                            variant={portId() === port.slice(0, length - 7)
+                              ? "outline"
+                              : "solid"}
+                          >
                             <Show
                               when={isSelected() &&
                                 buttonSignalArray()[index()]}
-                              fallback={"Not selected"}
+                              fallback={"Select"}
                             >
-                              Selected
+                              Cancel
                             </Show>
-                          </Text>
-                          <Stack direction={"row-reverse"} width={"100%"}>
-                            <Button
-                              onClick={() => {
-                                const isFalse = Array.from(
-                                  { length: portList().length },
-                                  (_) =>
-                                    false,
-                                );
-                                if (
-                                  isSelected() && buttonSignalArray()[index()]
-                                ) {
-                                  setIsSelected(false);
-                                  setButtonSignalArray(isFalse);
-                                  setPortId("");
-                                } else if (
-                                  isSelected() && !buttonSignalArray()[index()]
-                                ) {
-                                  isFalse[index()] = true;
-                                  setButtonSignalArray(isFalse);
-                                  setPortId(port.slice(0, 8));
-                                } else {
-                                  setPortId(port.slice(0, 8));
-                                  setButtonSignalArray((prev) => {
-                                    const updateList = prev;
-                                    updateList[index()] = true;
-                                    return updateList;
-                                  });
-                                  setIsSelected(true);
-                                }
-                              }}
-                              width={"8rem"}
-                            >
-                              <Show
-                                when={isSelected() &&
-                                  buttonSignalArray()[index()]}
-                                fallback={"Select"}
-                              >
-                                Cancel
-                              </Show>
-                            </Button>
-                          </Stack>
+                          </Button>
                         </Stack>
-                      </Accordion.ItemContent>
+                      </Stack>
                     </Accordion.Item>
                   )}
                 </For>
