@@ -6,17 +6,17 @@ import { Route, Router } from "@solidjs/router";
 
 import App from "./App";
 const Configuration = lazy(() => import("./pages/Configuration"));
-const Logging = lazy(() => import("./pages/Logging"));
+const LogViewer = lazy(() => import("./pages/LogViewer"));
 const Connect = lazy(() => import("./pages/Connect"));
-const LogConfigure = lazy(() => import("./pages/LogConfigure"));
+const Logging = lazy(() => import("./pages/Logging"));
 
 render(
   () => (
     <Router root={App}>
       <Route path="/configuration" component={Configuration} />
-      <Route path="/logging" component={Logging} />
+      <Route path="/logviewer" component={LogViewer} />
       <Route path="/connect" component={Connect} />
-      <Route path="/logConfigure" component={LogConfigure} />
+      <Route path="/logging" component={Logging} />
     </Router>
   ),
   document.getElementById("root") as HTMLElement,
