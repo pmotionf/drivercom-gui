@@ -17,4 +17,6 @@ export const GlobalStateContext = createContext<{
   setGlobalState: SetStoreFunction<GlobalState>;
 }>();
 
+export const [cliVersion, setCliVersion] = createSignal<string>("");
+
 export const [portId, setPortId] = createSignal<string>("");
