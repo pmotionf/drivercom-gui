@@ -1,21 +1,14 @@
 import "./App.css";
 
 import { invoke } from "@tauri-apps/api/core";
-import {
-  createEffect,
-  createSignal,
-  Index,
-  onMount,
-  Show,
-  ValidComponent,
-} from "solid-js";
+import { createSignal, Index, onMount, Show, ValidComponent } from "solid-js";
 import { Dynamic, Portal } from "solid-js/web";
 import type { RouteSectionProps } from "@solidjs/router";
 import { useNavigate } from "@solidjs/router";
 
 import {
   IconChevronLeftPipe,
-  IconFileAnalytics,
+  IconDeviceAnalytics,
   IconFileSettings,
   IconGraph,
   IconMenu,
@@ -26,9 +19,11 @@ import {
 } from "@tabler/icons-solidjs";
 
 import {
+  cliVersion,
   globalState,
   GlobalStateContext,
   portId,
+  setCliVersion,
   setGlobalState,
   Theme,
 } from "./GlobalState.ts";
@@ -37,6 +32,8 @@ import { Button } from "~/components/ui/button.tsx";
 import { Drawer } from "~/components/ui/drawer.tsx";
 import { SegmentGroup } from "~/components/ui/segment-group.tsx";
 import { Text } from "~/components/ui/text.tsx";
+
+import { Command } from "@tauri-apps/plugin-shell";
 
 type PageMeta = {
   icon: ValidComponent;
@@ -58,26 +55,22 @@ function App(props: RouteSectionProps) {
 
     document.documentElement.dataset.theme = theme_str;
     setGlobalState("theme", theme_str);
+
+    detectCliVersion();
   });
+
+  async function detectCliVersion() {
+    const drivercom = Command.sidecar("binaries/drivercom", [
+      "version",
+    ]);
+    const output = await drivercom.execute();
+    setCliVersion(output.stdout);
+  }
 
   const [version, setVersion] = createSignal("0.0.0");
   invoke("version").then((ver) => setVersion(ver as string));
 
-  const [cliVersion, _] = createSignal("0.0.0");
-
   const navigate = useNavigate();
-
-  const [Icon, setIcon] = createSignal<ValidComponent>(IconPlugConnected);
-  createEffect(() => {
-    const portIdIsAvailble = portId().length !== 0 ? true : false;
-    portIdIsAvailble
-      ? setIcon(() => {
-        return IconPlugConnected;
-      })
-      : setIcon(() => {
-        return IconPlugConnectedX;
-      });
-  });
 
   const pages: { [url: string]: PageMeta } = {
     configuration: {
@@ -88,16 +81,23 @@ function App(props: RouteSectionProps) {
     logging: {
       icon: IconGraph,
       label: "Logging",
+      disabled: true,
+    },
+    logViewer: {
+      icon: IconDeviceAnalytics,
+      label: "Log Viewer",
       disabled: false,
     },
     connect: {
-      icon: Icon(),
+      icon: (iconProps) => (
+        <Show
+          when={portId().length > 0}
+          fallback={<IconPlugConnectedX {...iconProps} />}
+        >
+          <IconPlugConnected {...iconProps} />
+        </Show>
+      ),
       label: "Connect",
-      disabled: false,
-    },
-    logConfigure: {
-      icon: IconFileAnalytics,
-      label: "Log Configure",
       disabled: false,
     },
   };
