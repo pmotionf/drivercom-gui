@@ -63,7 +63,7 @@ jobs:
       - name: Cargo Build
         run: deno task tauri build --verbose
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.DRIVERCOM_CLI_RELEASE_ACCESS_TOKEN }}
 
       - name: Cargo Test
         working-directory: ./src-tauri
