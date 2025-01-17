@@ -20,3 +20,4 @@ export const GlobalStateContext = createContext<{
 export const [cliVersion, setCliVersion] = createSignal<string>("");
 
 export const [portId, setPortId] = createSignal<string>("");
+export const [portList, setPortList] = createSignal<string[]>([]);
