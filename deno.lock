@@ -3,6 +3,7 @@
   "specifiers": {
     "npm:@ark-ui/solid@^4.4.0": "4.9.0_solid-js@1.9.4__seroval@1.2.0_@internationalized+date@3.6.0",
     "npm:@deno/vite-plugin@^1.0.2": "1.0.2_vite@6.0.7",
+    "npm:@pandacss/dev@0.51.1": "0.51.1",
     "npm:@pandacss/dev@~0.51.1": "0.51.1",
     "npm:@pandacss/preset-base@~0.51.1": "0.51.1",
     "npm:@park-ui/panda-preset@~0.43.1": "0.43.1_@pandacss+dev@0.51.1",
@@ -10,6 +11,7 @@
     "npm:@solidjs/router@~0.15.3": "0.15.3_solid-js@1.9.4__seroval@1.2.0",
     "npm:@tabler/icons-solidjs@^3.21.0": "3.28.1_solid-js@1.9.4__seroval@1.2.0",
     "npm:@tauri-apps/api@^2.2.0": "2.2.0",
+    "npm:@tauri-apps/cli@2.2.4": "2.2.4",
     "npm:@tauri-apps/cli@^2.2.4": "2.2.4",
     "npm:@tauri-apps/plugin-dialog@^2.2.0": "2.2.0",
     "npm:@tauri-apps/plugin-fs@^2.2.0": "2.2.0",
@@ -22,6 +24,7 @@
     "npm:uplot@^1.6.31": "1.6.31",
     "npm:vite-plugin-solid@^2.10.2": "2.11.0_solid-js@1.9.4__seroval@1.2.0_vite@6.0.7_@babel+core@7.26.0",
     "npm:vite-tsconfig-paths@^5.1.4": "5.1.4_vite@6.0.7",
+    "npm:vite@*": "6.0.7",
     "npm:vite@^6.0.7": "6.0.7"
   },
   "npm": {
