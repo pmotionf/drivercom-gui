@@ -30,6 +30,7 @@ export function LogViewerTab(props: LogViewerTabProps) {
   reader.onload = () => {
     const csv_str: string = (reader.result! as string).trim();
     const rows = csv_str.split("\n");
+    console.log(rows);
     if (rows.length < 2) {
       const errorMessage: ErrorMessage = {
         title: "Invalid Log File",
@@ -41,11 +42,12 @@ export function LogViewerTab(props: LogViewerTabProps) {
     }
 
     const schema = inferSchema(csv_str);
+    console.log(schema);
     const parser = initParser(schema);
     const local_header = rows[0].replace(/,\s*$/, "").split(",");
     const data = parser.typedCols(csv_str).map((row) =>
       row.map((val) => {
-        if (typeof val === "boolean") return val ? 1 : 0;
+        if (typeof val === "boolean") return val ? 0 : 1;
         return val;
       })
     );

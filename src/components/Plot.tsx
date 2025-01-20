@@ -26,6 +26,7 @@ import {
 } from "@tabler/icons-solidjs";
 import { Stack } from "styled-system/jsx";
 import { Legend, LegendStroke } from "./Plot/Legend";
+import { Text } from "./ui/text";
 
 export type PlotProps = JSX.HTMLAttributes<HTMLDivElement> & {
   id: string;
@@ -161,7 +162,7 @@ export function Plot(props: PlotProps) {
             plot.scales.x.min > 0 || plot.scales.x.max < plot.data[0].length - 1
           ),
       );
-
+      console.log(plot.scales.y);
       setXRange(plot.scales.x.max! - plot.scales.x.min!);
     }, 10);
   };
@@ -261,6 +262,10 @@ export function Plot(props: PlotProps) {
         height: plot_element.clientHeight,
         series: series,
         cursor: {
+          drag: {
+            x: true,
+            y: true,
+          },
           sync: {
             key: group(),
           },
@@ -405,6 +410,8 @@ export function Plot(props: PlotProps) {
     }
   `;
 
+  const [drivercomMsgType, setDrivercomMsgType] = createSignal<boolean>(true);
+
   return (
     <>
       <div {...rest} id={props.id + "-wrapper"}>
@@ -425,6 +432,7 @@ export function Plot(props: PlotProps) {
             width: "calc(100% - 15rem)",
             height: "calc(100% - 0.5rem)",
           }}
+          onMouseMove={() => console.log(u)}
         >
         </div>
         <Stack
@@ -526,48 +534,57 @@ export function Plot(props: PlotProps) {
             />
             <For each={props.header}>
               {(header, index) => (
-                <Legend
-                  plot={plot!}
-                  group={group()}
-                  series={header}
-                  visible={getContext().visible[index()]}
-                  onVisibleChange={(new_visible) => {
-                    setContext()("visible", index(), new_visible);
-                    // Index must add 1 to account for X-axis "Cycle" series
-                    plot.setSeries(index() + 1, {
-                      show: new_visible,
-                    });
-                  }}
-                  color={getContext().color[index()]}
-                  onColorChange={(new_color) => {
-                    setContext()("color", index(), new_color);
-                    plot.redraw();
-                  }}
-                  palette={getContext().palette}
-                  width={"min-content"}
-                  stroke={getContext().style[index()]}
-                  onStrokeChange={(new_style) => {
-                    setContext()("style", index(), new_style);
-                    plot.delSeries(index() + 1);
-                    const config = {
-                      stroke: getContext().color[index()],
-                      label: header,
-                      ...(getContext().style[index()] === LegendStroke.Dash && {
-                        dash: [10, 5],
-                      }),
-                      ...(getContext().style[index()] === LegendStroke.Dot && {
-                        dash: [0, 5],
-                        points: {
-                          show: true,
-                          ...(dotFilter().length !== 0 &&
-                            { filter: checkDotFilter }),
-                        },
-                      }),
-                    };
-                    plot.addSeries(config, index() + 1);
-                    plot.redraw();
-                  }}
-                />
+                <div>
+                  <Legend
+                    plot={plot!}
+                    group={group()}
+                    series={header}
+                    visible={getContext().visible[index()]}
+                    onVisibleChange={(new_visible) => {
+                      setContext()("visible", index(), new_visible);
+                      // Index must add 1 to account for X-axis "Cycle" series
+                      plot.setSeries(index() + 1, {
+                        show: new_visible,
+                      });
+                    }}
+                    color={getContext().color[index()]}
+                    onColorChange={(new_color) => {
+                      setContext()("color", index(), new_color);
+                      plot.redraw();
+                    }}
+                    palette={getContext().palette}
+                    width={"min-content"}
+                    stroke={getContext().style[index()]}
+                    onStrokeChange={(new_style) => {
+                      setContext()("style", index(), new_style);
+                      plot.delSeries(index() + 1);
+                      const config = {
+                        stroke: getContext().color[index()],
+                        label: header,
+                        ...(getContext().style[index()] === LegendStroke.Dash &&
+                          {
+                            dash: [10, 5],
+                          }),
+                        ...(getContext().style[index()] === LegendStroke.Dot &&
+                          {
+                            dash: [0, 5],
+                            points: {
+                              show: true,
+                              ...(dotFilter().length !== 0 &&
+                                { filter: checkDotFilter }),
+                            },
+                          }),
+                      };
+                      plot.addSeries(config, index() + 1);
+                      plot.redraw();
+                    }}
+                  />
+                  <Show when={drivercomMsgType()}>
+                    <Text>
+                      test
+                    </Text>
+                  </Show>
+                </div>
               )}
             </For>
           </Stack>
