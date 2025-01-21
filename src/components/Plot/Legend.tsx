@@ -28,6 +28,7 @@ import {
 import { Icon } from "../ui/icon";
 import { Heading } from "../ui/heading";
 import { Portal } from "solid-js/web";
+import { enumMappings, enumSeries } from "~/GlobalState";
 
 export type LegendProps = Omit<StackProps, "stroke"> & {
   plot: uPlot;
@@ -84,7 +85,7 @@ export function Legend(props: LegendProps) {
   );
   const [color, setColor] = createSignal(props.color ?? "");
   const [stroke, setStroke] = createSignal(props.stroke ?? LegendStroke.Line);
-  const [value, setValue] = createSignal(null as number | null);
+  const [value, setValue] = createSignal(null as number | string | null);
 
   // Autodetect initial color from plot if color is not provided in props.
   if (props.color == null && props.plot.series[seriesIndex].stroke) {
@@ -104,6 +105,30 @@ export function Legend(props: LegendProps) {
     setColor(new_color);
   }
 
+  const [enumMappingsIndex, setEnumMappingsIndex] = createSignal<number | null>(
+    null,
+  );
+
+  createEffect(() => {
+    let matchedSeriesName = "";
+    for (let i = 0; i < enumSeries().length; i++) {
+      const enumSeriesName = enumSeries()[i][0];
+      if (props.series === enumSeriesName) {
+        matchedSeriesName = enumSeries()[i][1];
+
+        break;
+      }
+    }
+    if (matchedSeriesName.length == 0) return;
+
+    for (let i = 0; i < enumMappings().length; i++) {
+      const enumTypeName = enumMappings()[i][0];
+      if (matchedSeriesName === enumTypeName) {
+        setEnumMappingsIndex(i);
+      }
+    }
+  });
+
   const updateValue = () => {
     if (props.visible != null) {
       if (!props.visible) return;
@@ -113,7 +138,18 @@ export function Legend(props: LegendProps) {
     if (data_index != null) {
       const val = props.plot.data[seriesIndex][data_index];
       if (val != null) {
-        setValue(val);
+        if (enumMappingsIndex() != null) {
+          let name = "";
+          for (const mapping of enumMappings()[enumMappingsIndex()!][1]) {
+            if (mapping[0] == val) {
+              name = mapping[1];
+              break;
+            }
+          }
+          setValue(`${name} (${val})`);
+        } else {
+          setValue(val);
+        }
       } else {
         setValue(null);
       }

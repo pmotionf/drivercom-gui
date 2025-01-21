@@ -21,3 +21,8 @@ export const [cliVersion, setCliVersion] = createSignal<string>("");
 
 export const [portId, setPortId] = createSignal<string>("");
 export const [portList, setPortList] = createSignal<string[]>([]);
+
+export const [enumSeries, setEnumSeries] = createSignal<[string, string][]>([]);
+export const [enumMappings, setEnumMappings] = createSignal<
+  [string, [number, string][]][]
+>([]);

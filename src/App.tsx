@@ -24,6 +24,8 @@ import {
   GlobalStateContext,
   portId,
   setCliVersion,
+  setEnumMappings,
+  setEnumSeries,
   setGlobalState,
   Theme,
 } from "./GlobalState.ts";
@@ -57,6 +59,7 @@ function App(props: RouteSectionProps) {
     setGlobalState("theme", theme_str);
 
     detectCliVersion();
+    parseEnumMappings();
   });
 
   async function detectCliVersion() {
@@ -65,6 +68,57 @@ function App(props: RouteSectionProps) {
     ]);
     const output = await drivercom.execute();
     setCliVersion(output.stdout);
+  }
+
+  async function parseEnumMappings() {
+    const drivercom = Command.sidecar("binaries/drivercom", [
+      "log.utils.lists_code_names",
+    ]);
+    const output = await drivercom.execute();
+
+    const outputLines = output.stdout.split("\n");
+    const seriesMappingsLine = outputLines[0].trim();
+    const enumMappingsLines = outputLines.slice(1).map((line) => line.trim())
+      .filter((line) => line.length > 0 && line[0] == "[");
+
+    const seriesMappings = seriesMappingsLine.split(",").filter((seriesChunk) =>
+      seriesChunk.length > 0
+    ).map((e) => {
+      return e.split(":");
+    });
+    setEnumSeries(seriesMappings.map((seriesMapping) => [
+      seriesMapping[0], // Series name
+      seriesMapping[1], // Series enum type name
+    ]));
+
+    const enumTypeNames: string[] = enumMappingsLines.map((line) => {
+      const closingBracketIndex = line.indexOf("]");
+      return line.slice(1, closingBracketIndex);
+    });
+
+    const enumCodeMappings: [number, string][][] = enumMappingsLines.map(
+      (line) => {
+        const equalsIndex = line.indexOf("=");
+        const mappingsString = line.slice(equalsIndex + 1);
+        const mappingsList = mappingsString.split(",").filter((mappingString) =>
+          mappingString.length > 0
+        );
+        const mappingsSplitList = mappingsList.map((mappingString) =>
+          mappingString.split(":")
+        ).filter((mappingSplit) => mappingSplit.length == 2);
+        return mappingsSplitList.map((mappingSplit) => [
+          Number(mappingSplit[0]), // Enum integer code
+          mappingSplit[1], // Enum name
+        ]);
+      },
+    );
+
+    setEnumMappings(
+      enumTypeNames.map((
+        enumTypeName,
+        index,
+      ) => [enumTypeName, enumCodeMappings[index]]),
+    );
   }
 
   const [version, setVersion] = createSignal("0.0.0");
