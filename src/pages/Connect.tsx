@@ -1,110 +1,180 @@
 import { Button } from "~/components/ui/button";
-import { Spinner } from "~/components/ui/spinner";
-import { IconChevronDown } from "@tabler/icons-solidjs";
-import { Accordion } from "~/components/ui/accordion";
-import { createSignal } from "solid-js";
+import { IconPlug, IconPlugOff, IconX } from "@tabler/icons-solidjs";
 import { Text } from "~/components/ui/text";
-import { Box } from "styled-system/jsx";
+import { Stack } from "styled-system/jsx";
+import { Card } from "~/components/ui/card";
+
+import { Command } from "@tauri-apps/plugin-shell";
+import { For, Show } from "solid-js";
+import { Accordion } from "~/components/ui/accordion";
+import { Toast } from "~/components/ui/toast";
+import { portId, portList, setPortId, setPortList } from "~/GlobalState";
+import { Dynamic } from "solid-js/web";
 
 function Connect() {
-  //Items Dummy data
-  const items = ["list1", "list2", "list3"];
+  async function detectPort() {
+    const drivercom = Command.sidecar("binaries/drivercom", [
+      "port.detect",
+    ]);
+    const output = await drivercom.execute();
 
-  //리스트 갯수에 따른 버튼 관리
-  const [statuses, setStatuses] = createSignal(
-    Array(items.length).fill("연결하기"),
-  );
-  const [loading, setLoading] = createSignal(Array(items.length).fill(false));
-  const [connecting, setConnecting] = createSignal(
-    Array(items.length).fill("연결하시겠습니까?"),
-  );
+    const portNames = output.stdout.split("\n").map(
+      (portName) => {
+        const matched = portName.match(/\(([^)]+)\)/);
+        return matched;
+      },
+    ).filter((e) => e !== null).map((e) => e[1]);
+    setPortList(portNames);
 
-  //버튼클릭 기능
-  const HandleClick = (index: number) => {
-    setStatuses((prevStatuses) => {
-      const newStatuses = [...prevStatuses];
-      newStatuses[index] = "연결취소";
-      //로딩바
-      setLoading((prevLoading) => {
-        const newLoading = [...prevLoading];
-        newLoading[index] = true;
-        return newLoading;
+    if (portNames.length == 0) {
+      setPortId("");
+      toaster.create({
+        title: "No Ports Found",
+        description: "No driver serial ports were detected.",
+        type: "error",
       });
-      setConnecting((prevConnecting) => {
-        const newConnecting = [...prevConnecting];
-        newConnecting[index] = "연결중입니다";
-        return newConnecting;
-      });
+      return;
+    }
+  }
 
-      setTimeout(() => {
-        setStatuses((prevStatuses) => {
-          const currentStatuses = [...prevStatuses];
-          //if(prevStatuses === 1) currentStatuses[index] = "failure"; else
-          currentStatuses[index] = "완료";
-          setLoading((prevLoading) => {
-            const newLoading = [...prevLoading];
-            newLoading[index] = false;
-            return newLoading;
-          });
-          setConnecting((prevConnecting) => {
-            const newConnecting = [...prevConnecting];
-            newConnecting[index] = "연결되었습니다";
-            return newConnecting;
-          });
-
-          return currentStatuses;
-        });
-      }, 2000);
-
-      return newStatuses;
-    });
-  };
-
-  //아이템에 있는 리스트 갯수에 따라 박스와 버튼 생성
-  const ConnectionList = () => {
-    return (
-      <Accordion.Root multiple={true}>
-        {items.map((item, index) => (
-          <Accordion.Item value={item} ml={"16px"}>
-            <Accordion.ItemTrigger>
-              {item}
-              <Accordion.ItemIndicator>
-                <IconChevronDown />
-              </Accordion.ItemIndicator>
-            </Accordion.ItemTrigger>
-            <Accordion.ItemContent>
-              {connecting()[index]}
-              {loading()[index] && <Spinner marginLeft={"8px"} />}
-              <Button
-                ml={"10"}
-                onClick={() => HandleClick(index)}
-                disabled={statuses()[index] === "완료"}
-              >
-                {statuses()[index]}
-              </Button>
-            </Accordion.ItemContent>
-          </Accordion.Item>
-        ))}
-      </Accordion.Root>
-    );
-  };
+  const toaster = Toast.createToaster({
+    placement: "top-end",
+    gap: 24,
+  });
 
   return (
-    <>
-      <Text size="3xl" fontWeight="bold" margin={"20px"}>
-        Connect
-      </Text>
-      <Box
-        bg="accent.a2"
-        p="4"
-        borderRadius="l3"
-        mt="6"
-        height="100%"
-        overflowY="auto"
+    <div
+      style={{ "padding": "3rem", "height": `100%`, "width": "100%" }}
+    >
+      <Text
+        variant={"heading"}
+        size={"2xl"}
+        marginLeft={"0.2rem"}
       >
-        <div id="container">{ConnectionList()}</div>
-      </Box>
-    </>
+        Ports
+      </Text>
+      <Stack
+        width={"100%"}
+        direction={"row"}
+        minWidth={"50rem"}
+        marginLeft={"0.2rem"}
+      >
+        <Text
+          size={"lg"}
+          width="20rem"
+          fontWeight={"light"}
+          opacity={"60%"}
+          marginTop="1rem"
+        >
+          {portId().length > 0 ? portId() : "No port selected"}
+        </Text>
+        <Button
+          onClick={() => detectPort()}
+          marginLeft={`calc(100% - 20rem - 5rem)`}
+          marginRight={"1rem"}
+          width="7rem"
+        >
+          Scan
+        </Button>
+      </Stack>
+      <Card.Root
+        width={"100%"}
+        height={`calc(100% - 6rem)`}
+        marginTop={"1.5rem"}
+        style={{
+          "overflow-y": "auto",
+          "min-height": "20rem",
+          "min-width": "50rem",
+        }}
+      >
+        <Show
+          when={portList().length == 0}
+        >
+          <div
+            style={{
+              width: "100%",
+              "text-align": "center",
+              "margin-top": `20%`,
+            }}
+          >
+            <Dynamic
+              component={IconPlugOff}
+              size={40}
+              opacity={"30%"}
+              style={{ "margin-left": `calc(50% - 1rem)` }}
+            />
+
+            <Text
+              variant={"heading"}
+              size={"2xl"}
+              marginTop={"1rem"}
+              opacity={"70%"}
+            >
+              No ports Found
+            </Text>
+          </div>
+        </Show>
+        <Show when={portList().length > 0}>
+          <Accordion.Root
+            multiple
+            borderTop={"0"}
+            borderBottom={"0"}
+            paddingRight={"1rem"}
+            paddingLeft={"1rem"}
+          >
+            <For each={portList()}>
+              {(port) => (
+                <Accordion.Item
+                  value={port}
+                  paddingTop={"1rem"}
+                  paddingBottom={"1rem"}
+                >
+                  <Stack direction="row" width="100%">
+                    <IconPlug
+                      style={{
+                        "margin-top": "0.5rem",
+                        opacity: portId() === port ? "100%" : "30%",
+                        width: "3rem",
+                      }}
+                    />
+                    <Text
+                      fontWeight="bold"
+                      width="10%"
+                      marginTop="0.5rem"
+                    >
+                      {port}
+                    </Text>
+                    <Button
+                      onClick={() => {
+                        setPortId(
+                          portId() === port ? "" : port,
+                        );
+                      }}
+                      width="7rem"
+                      marginLeft={`calc(100% - 10% - 7rem)`}
+                      variant={portId() === port ? "outline" : "solid"}
+                    >
+                      {portId() === port ? "Cancel" : "Select"}
+                    </Button>
+                  </Stack>
+                </Accordion.Item>
+              )}
+            </For>
+          </Accordion.Root>
+        </Show>
+      </Card.Root>
+      <Toast.Toaster toaster={toaster}>
+        {(toast) => (
+          <Toast.Root>
+            <Toast.Title>{toast().title}</Toast.Title>
+            <Toast.Description>{toast().description}</Toast.Description>
+            <Toast.CloseTrigger>
+              <IconX />
+            </Toast.CloseTrigger>
+          </Toast.Root>
+        )}
+      </Toast.Toaster>
+    </div>
   );
 }
 

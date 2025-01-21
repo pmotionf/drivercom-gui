@@ -12,13 +12,13 @@ export type ErrorMessage = {
   type: string;
 };
 
-export type LoggingTabProps = JSX.HTMLAttributes<HTMLDivElement> & {
+export type LogViewerTabProps = JSX.HTMLAttributes<HTMLDivElement> & {
   tabId: string;
   details: FileUploadFileChangeDetails;
   onErrorMessage?: (message: ErrorMessage) => void;
 };
 
-export function LoggingTab(props: LoggingTabProps) {
+export function LogViewerTab(props: LogViewerTabProps) {
   const [plots, setPlots] = createStore([] as PlotContext[]);
   const [splitIndex, setSplitIndex] = createSignal([] as number[][]);
   let header: string[] = [];

@@ -91,6 +91,8 @@ jobs:
 
       - name: Build
         run: deno task tauri build
+        env:
+          GH_TOKEN: ${{ secrets.DRIVERCOM_CLI_RELEASE_ACCESS_TOKEN }}
 
       - name: Upload Linux
         if: matrix.os =='Linux'

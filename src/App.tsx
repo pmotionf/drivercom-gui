@@ -8,17 +8,22 @@ import { useNavigate } from "@solidjs/router";
 
 import {
   IconChevronLeftPipe,
+  IconDeviceAnalytics,
   IconFileSettings,
   IconGraph,
   IconMenu,
   IconMoonFilled,
   IconPlugConnected,
+  IconPlugConnectedX,
   IconSunFilled,
 } from "@tabler/icons-solidjs";
 
 import {
+  cliVersion,
   globalState,
   GlobalStateContext,
+  portId,
+  setCliVersion,
   setGlobalState,
   Theme,
 } from "./GlobalState.ts";
@@ -27,6 +32,8 @@ import { Button } from "~/components/ui/button.tsx";
 import { Drawer } from "~/components/ui/drawer.tsx";
 import { SegmentGroup } from "~/components/ui/segment-group.tsx";
 import { Text } from "~/components/ui/text.tsx";
+
+import { Command } from "@tauri-apps/plugin-shell";
 
 type PageMeta = {
   icon: ValidComponent;
@@ -48,14 +55,23 @@ function App(props: RouteSectionProps) {
 
     document.documentElement.dataset.theme = theme_str;
     setGlobalState("theme", theme_str);
+
+    detectCliVersion();
   });
+
+  async function detectCliVersion() {
+    const drivercom = Command.sidecar("binaries/drivercom", [
+      "version",
+    ]);
+    const output = await drivercom.execute();
+    setCliVersion(output.stdout);
+  }
 
   const [version, setVersion] = createSignal("0.0.0");
   invoke("version").then((ver) => setVersion(ver as string));
 
-  const [cliVersion, _] = createSignal("0.0.0");
-
   const navigate = useNavigate();
+
   const pages: { [url: string]: PageMeta } = {
     configuration: {
       icon: IconFileSettings,
@@ -65,12 +81,24 @@ function App(props: RouteSectionProps) {
     logging: {
       icon: IconGraph,
       label: "Logging",
+      disabled: true,
+    },
+    logViewer: {
+      icon: IconDeviceAnalytics,
+      label: "Log Viewer",
       disabled: false,
     },
     connect: {
-      icon: IconPlugConnected,
+      icon: (iconProps) => (
+        <Show
+          when={portId().length > 0}
+          fallback={<IconPlugConnectedX {...iconProps} />}
+        >
+          <IconPlugConnected {...iconProps} />
+        </Show>
+      ),
       label: "Connect",
-      disabled: true,
+      disabled: false,
     },
   };
   const [page, setPage] = createSignal("");
