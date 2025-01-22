@@ -135,7 +135,7 @@ function App(props: RouteSectionProps) {
     logging: {
       icon: IconGraph,
       label: "Logging",
-      disabled: true,
+      disabled: false,
     },
     logViewer: {
       icon: IconDeviceAnalytics,

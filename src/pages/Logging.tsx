@@ -15,12 +15,15 @@ export function Logging() {
     if (portId().length === 0) return;
     const sideCommand = Command.sidecar("binaries/drivercom", [
       `--port`,
-      `${portId()}`,
+      `\\\\.\\${portId()}`,
       `log.configure.get`,
     ]);
     const output = await sideCommand.execute();
+    const obj = JSON.parse(output.stdout);
+    console.log(obj);
+
     if (output.stdout.length === 0) return;
-    setLogConfigureFile(output.stdout);
+    setLogConfigureFile(obj);
     setIsFileOpen(true);
   }
 
@@ -37,8 +40,16 @@ export function Logging() {
               minFileSize={3}
               onFileChange={(details) => {
                 if (details.rejectedFiles.length !== 0) return;
-                setLogConfigureFile(details.acceptedFiles[0]);
-                setIsFileOpen(true);
+                const file = details.acceptedFiles[0];
+                if (file) {
+                  const reader = new FileReader();
+                  reader.onload = (e) => {
+                    const data = JSON.parse(e.target?.result as string); // JSON 파싱
+                    setLogConfigureFile({ ...data });
+                    setIsFileOpen(true);
+                  };
+                  reader.readAsText(file);
+                }
               }}
             >
               <FileUpload.Trigger
@@ -68,9 +79,6 @@ export function Logging() {
           </Stack>
         </Show>
         <Show when={isFileOpen()}>
-          <Text>
-            {logConfigureFile().toString()}
-          </Text>
           <LoggingForm jsonfile={logConfigureFile()} />
         </Show>
       </div>
