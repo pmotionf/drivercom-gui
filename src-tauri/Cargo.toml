@@ -1,6 +1,6 @@
 [package]
 name = "drivercom-gui"
-version = "0.3.4"
+version = "0.3.5"
 description = ""
 authors = [""]
 edition = "2021"
