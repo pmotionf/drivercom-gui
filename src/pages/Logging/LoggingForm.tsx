@@ -2,111 +2,211 @@ import { For, JSX, Show } from "solid-js";
 import { Stack } from "styled-system/jsx";
 import { Button } from "~/components/ui/button";
 import { Checkbox } from "~/components/ui/checkbox";
-import { Field } from "~/components/ui/field";
 import { Text } from "~/components/ui/text";
 import { save } from "@tauri-apps/plugin-dialog";
 import { writeTextFile } from "@tauri-apps/plugin-fs";
+import { Card } from "~/components/ui/card";
+import { Input } from "~/components/ui/input";
+import { portId } from "~/GlobalState";
+import { Command } from "@tauri-apps/plugin-shell";
+import { createStore } from "solid-js/store";
 
 export type LoggingFormProps = JSX.HTMLAttributes<Element> & {
   jsonfile: object;
+  fileName: string;
 };
 
 export function LoggingForm(props: LoggingFormProps) {
-  /*const parseConfig = Object.entries(props.jsonfile)[1];
-  const configObjectData = Object.entries(parseConfig[1]);*/
-  const logForm = [props.jsonfile];
+  const logFormPortId = `\\\\.\\${portId()}`;
+  const logForm = props.jsonfile;
+
+  function logStart() {
+    Command.sidecar("binaries/drivercom", [
+      `--port`,
+      `${logFormPortId}`,
+      `log.start`,
+    ]);
+  }
+
+  function logSave() {
+    Command.sidecar("binaries/drivercom", [
+      `--port`,
+      `${logFormPortId}`,
+      `log.configure`,
+    ]);
+  }
+
+  function logStop() {
+    Command.sidecar("binaries/drivercom", [
+      `--port`,
+      `${logFormPortId}`,
+      `log.stop`,
+    ]);
+  }
 
   return (
     <div style={{ "width": "50%" }}>
-      <For each={Object.entries(props.jsonfile)}>
-        {(list) => (
-          <Field.Root>
-            <Field.Label fontSize={"xl"}>
-              {list[0]}
-            </Field.Label>
-            <Show when={typeof list[1] === "number"}>
-              <Field.Input
-                type={typeof list[1]}
-                placeholder={typeof list[1]}
-                value={list[1]}
-              />
-            </Show>
-            <Show when={typeof list[1] === "object"}>
-              <For each={Object.entries(list[1])}>
-                {(valueName) => (
-                  // axis, hall sensor
-                  <Stack direction={"row"}>
-                    <Show when={typeof valueName[1] === "boolean"}>
-                      <Checkbox>
-                        {`${list[0]} ${Number(valueName[0]) + 1}`}
-                      </Checkbox>
-                    </Show>
-                    <Show when={typeof valueName[1] === "number"}>
-                      <Text width={"20%"}>
-                        {`${list[0]} ${Number(valueName[0]) + 1}`}
-                      </Text>
-                      <Field.Input
-                        type={typeof valueName[1]}
-                        placeholder={typeof valueName[1]}
-                        value={Number(valueName[1])}
-                      />
-                    </Show>
-                    <Show when={typeof valueName[1] === "object"}>
-                      <Text>
-                        test
-                      </Text>
-                    </Show>
-                  </Stack>
-                )}
-              </For>
-            </Show>
-          </Field.Root>
-        )}
-      </For>
-      <Button
-        type="button"
-        style={{
-          float: "right",
-          "margin-top": "1em",
-        }}
-        onClick={async () => {
-          const json_str = JSON.stringify(logForm, null, "  ");
-          const path = await save({
-            filters: [
-              {
-                name: "JSON",
-                extensions: ["json"],
-              },
-            ],
-          });
-          if (!path) {
-            // TODO: Show error toast
-            return;
-          }
-          const extension = path.split(".").pop();
-          if (extension != "json") {
-            // TODO: Show error toast
-            return;
-          }
-          // TODO: Handle write promise error with toast
-          await writeTextFile(path, json_str);
-        }}
-      >
-        Save
-      </Button>
+      <Card.Root>
+        <Card.Header>
+          <Text fontWeight={"bold"} size={"2xl"}>
+            {props.fileName}
+          </Text>
+          <Text
+            marginTop={"0.5rem"}
+            fontWeight={"light"}
+            opacity={"60%"}
+            size={"lg"}
+          >
+            Log Configuration
+          </Text>
+        </Card.Header>
+        <Card.Body gap={1.5}>
+          <LogFormObject object={logForm} />
+        </Card.Body>
+        <Card.Footer marginTop={"3rem"}>
+          <Stack direction={"row"}>
+            <Button
+              disabled={logFormPortId.length > 0}
+              onClick={() => logStart()}
+              variant={"outline"}
+            >
+              Log Start
+            </Button>
+            <Button
+              disabled={logFormPortId.length > 0}
+              onClick={() => logStop()}
+              variant={"outline"}
+            >
+              Log Stop
+            </Button>
+            <Button
+              type="button"
+              onClick={async () => {
+                const json_str = JSON.stringify(logForm, null, "  ");
+                const path = await save({
+                  filters: [
+                    {
+                      name: "JSON",
+                      extensions: ["json"],
+                    },
+                  ],
+                });
+                if (!path) {
+                  // TODO: Show error toast
+                  return;
+                }
+                const extension = path.split(".").pop();
+                if (extension != "json") {
+                  // TODO: Show error toast
+                  return;
+                }
+                // TODO: Handle write promise error with toast
+                await writeTextFile(path, json_str);
+                logSave();
+              }}
+            >
+              Save
+            </Button>
+          </Stack>
+        </Card.Footer>
+      </Card.Root>
     </div>
   );
 }
 
-export type parseObjectLogFormProps = JSX.HTMLAttributes<Element> & {
-  parseObject: unknown;
+export type logFormObjectProps = JSX.HTMLAttributes<Element> & {
+  object: object;
+  sectionName?: string;
 };
 
-export function parseObjectLogForm(props: parseObjectLogFormProps) {
-  // find out a way to parse again of this object
+export function LogFormObject(props: logFormObjectProps) {
+  const [obj, setObject] = createStore<object>(props.object);
+
   return (
-    <Text>
-      {typeof props.parseObject}
-    </Text>
+    <For each={Object.entries(obj)}>
+      {(key) => (
+        <>
+          <Show when={props.sectionName === undefined}>
+            <Text
+              fontWeight={"bold"}
+              marginTop={"1rem"}
+              opacity={"50%"}
+              size={"lg"}
+            >
+              {key[0]}
+            </Text>
+          </Show>
+          <Show when={typeof key[1] === "number" && key[0] !== "_"}>
+            <Stack direction={"row"}>
+              <Show when={props.sectionName}>
+                <Text marginTop="0.3rem" width={"30%"}>
+                  {`${props.sectionName} ${Number(key[0]) + 1}`}
+                </Text>
+              </Show>
+              <Input
+                value={Number(key[1])}
+                type={"number"}
+                onChange={(e) =>
+                  setObject(
+                    key[0] as keyof typeof obj,
+                    // @ts-ignore : TSC unable to handle generic object type
+                    // in store
+                    Number(e.target.value),
+                  )}
+              />
+            </Stack>
+          </Show>
+          <Show when={typeof key[1] === "string"}>
+            <Text marginTop="0.3rem" width={"30%"}>
+              {key[0]}
+            </Text>
+            <Input
+              type="string"
+              value={`${key[1]}`}
+              placeHolder={key[0]}
+              onchange={(e) => {
+                setObject(
+                  key[0] as keyof typeof obj,
+                  // @ts-ignore : TSC unable to handle generic object type
+                  // in store
+                  e.target.value,
+                );
+              }}
+            />
+          </Show>
+          <Show when={typeof key[1] === "boolean"}>
+            <Checkbox
+              checked={obj[key[0] as keyof typeof obj]}
+              onCheckedChange={(e) => {
+                setObject(
+                  key[0] as keyof typeof obj,
+                  // @ts-ignore : TSC unable to handle generic object type
+                  // in store
+                  e.checked,
+                );
+              }}
+            >
+              {!isNaN(Number(key[0]))
+                ? `${props.sectionName} ${Number(key[0]) + 1}`
+                : key[0]}
+            </Checkbox>
+          </Show>
+          <Show when={typeof key[1] === "object"}>
+            <Show when={props.sectionName !== undefined}>
+              <Text
+                marginTop={"0.2rem"}
+              >
+                {key[0]}
+              </Text>
+            </Show>
+            <LogFormObject
+              object={key[1]}
+              sectionName={key[0]}
+              style={{ "margin-bottom": "0.5rem" }}
+            />
+          </Show>
+        </>
+      )}
+    </For>
   );
 }

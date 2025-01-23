@@ -10,6 +10,7 @@ import { LoggingForm } from "./Logging/LoggingForm";
 export function Logging() {
   const [isFileOpen, setIsFileOpen] = createSignal<boolean>(false);
   const [logConfigureFile, setLogConfigureFile] = createSignal({});
+  const [fileName, setFileName] = createSignal<string>("");
 
   async function GetFileFromPort() {
     if (portId().length === 0) return;
@@ -20,19 +21,25 @@ export function Logging() {
     ]);
     const output = await sideCommand.execute();
     const obj = JSON.parse(output.stdout);
-    console.log(obj);
 
     if (output.stdout.length === 0) return;
     setLogConfigureFile(obj);
     setIsFileOpen(true);
+    setFileName("Change this name");
   }
 
   return (
     <>
-      <div style={{ "margin-left": "calc(100% / 3)", "padding-top": "3rem" }}>
+      <div
+        style={{
+          "margin-left": "calc(100% / 3)",
+          "padding-top": "3rem",
+          "padding-bottom": "3rem",
+        }}
+      >
         <Show when={!isFileOpen()}>
           <Text variant={"heading"}>
-            Open Log
+            Log configuration
           </Text>
           <Stack direction={"row"} marginTop={"1rem"}>
             <FileUpload.Root
@@ -49,6 +56,7 @@ export function Logging() {
                     setIsFileOpen(true);
                   };
                   reader.readAsText(file);
+                  setFileName(details.acceptedFiles[0].name);
                 }
               }}
             >
@@ -79,7 +87,7 @@ export function Logging() {
           </Stack>
         </Show>
         <Show when={isFileOpen()}>
-          <LoggingForm jsonfile={logConfigureFile()} />
+          <LoggingForm jsonfile={logConfigureFile()} fileName={fileName()} />
         </Show>
       </div>
     </>
