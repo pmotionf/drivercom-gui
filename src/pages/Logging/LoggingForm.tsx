@@ -1,4 +1,4 @@
-import { For, JSX, Show } from "solid-js";
+import { createSignal, For, JSX, Show } from "solid-js";
 import { Stack } from "styled-system/jsx";
 import { Button } from "~/components/ui/button";
 import { Checkbox } from "~/components/ui/checkbox";
@@ -7,9 +7,10 @@ import { save } from "@tauri-apps/plugin-dialog";
 import { writeTextFile } from "@tauri-apps/plugin-fs";
 import { Card } from "~/components/ui/card";
 import { Input } from "~/components/ui/input";
-import { portId } from "~/GlobalState";
+import { logFormFileFormat, portId } from "~/GlobalState";
 import { Command } from "@tauri-apps/plugin-shell";
 import { createStore } from "solid-js/store";
+import { Editable } from "~/components/ui/editable";
 
 export type LoggingFormProps = JSX.HTMLAttributes<Element> & {
   jsonfile: object;
@@ -18,7 +19,7 @@ export type LoggingFormProps = JSX.HTMLAttributes<Element> & {
 
 export function LoggingForm(props: LoggingFormProps) {
   const logFormPortId = `\\\\.\\${portId()}`;
-  const logForm = props.jsonfile;
+  const logForm = logFormFileFormat();
 
   function logStart() {
     Command.sidecar("binaries/drivercom", [
@@ -44,13 +45,28 @@ export function LoggingForm(props: LoggingFormProps) {
     ]);
   }
 
+  const [fileName, setFileName] = createSignal<string>(props.fileName);
+
   return (
-    <div style={{ "width": "50%" }}>
+    <div style={{ "width": "30rem" }}>
       <Card.Root>
-        <Card.Header>
-          <Text fontWeight={"bold"} size={"2xl"}>
-            {props.fileName}
-          </Text>
+        <Card.Header paddingTop={"3rem"}>
+          <Editable.Root
+            placeholder="File name"
+            defaultValue={fileName()}
+            activationMode="dblclick"
+            onValueCommit={(e) => {
+              setFileName(e.value);
+            }}
+            fontWeight={"bold"}
+            fontSize={"2xl"}
+          >
+            <Editable.Area>
+              <Editable.Input />
+              <Editable.Preview />
+            </Editable.Area>
+          </Editable.Root>
+
           <Text
             marginTop={"0.5rem"}
             fontWeight={"light"}
@@ -84,6 +100,7 @@ export function LoggingForm(props: LoggingFormProps) {
               onClick={async () => {
                 const json_str = JSON.stringify(logForm, null, "  ");
                 const path = await save({
+                  defaultPath: `${fileName()}`,
                   filters: [
                     {
                       name: "JSON",

@@ -1,7 +1,7 @@
 import { Stack } from "styled-system/jsx";
 import { Button } from "~/components/ui/button";
 import { Text } from "~/components/ui/text";
-import { portId } from "~/GlobalState";
+import { logFormFileFormat, portId } from "~/GlobalState";
 import { Command } from "@tauri-apps/plugin-shell";
 import { createSignal, Show } from "solid-js";
 import { FileUpload } from "@ark-ui/solid";
@@ -17,7 +17,7 @@ export function Logging() {
     const sideCommand = Command.sidecar("binaries/drivercom", [
       `--port`,
       `\\\\.\\${portId()}`,
-      `log.configure.get`,
+      `log.config.get`,
     ]);
     const output = await sideCommand.execute();
     const obj = JSON.parse(output.stdout);
@@ -32,7 +32,6 @@ export function Logging() {
     <>
       <div
         style={{
-          "margin-left": "calc(100% / 3)",
           "padding-top": "3rem",
           "padding-bottom": "3rem",
         }}
@@ -41,7 +40,20 @@ export function Logging() {
           <Text variant={"heading"}>
             Log configuration
           </Text>
-          <Stack direction={"row"} marginTop={"1rem"}>
+          <Stack direction={"row"} marginTop={"1rem"} justifyContent={"center"}>
+            <Stack>
+            </Stack>
+            <Button
+              variant={"outline"}
+              padding={"4rem"}
+              onClick={() => {
+                setLogConfigureFile(logFormFileFormat());
+                setIsFileOpen(true);
+                setFileName("New file");
+              }}
+            >
+              Create New File
+            </Button>
             <FileUpload.Root
               accept="application/json"
               minFileSize={3}
@@ -52,6 +64,12 @@ export function Logging() {
                   const reader = new FileReader();
                   reader.onload = (e) => {
                     const data = JSON.parse(e.target?.result as string); // JSON 파싱
+                    // Need to check more keys for checking the format is same
+                    const fileLog = Object.keys(data).sort();
+                    const emptyLog = Object.keys(logFormFileFormat()).sort();
+                    if (JSON.stringify(fileLog) !== JSON.stringify(emptyLog)) {
+                      return;
+                    }
                     setLogConfigureFile({ ...data });
                     setIsFileOpen(true);
                   };
@@ -73,7 +91,6 @@ export function Logging() {
               />
               <FileUpload.HiddenInput />
             </FileUpload.Root>
-
             <Button
               variant={"outline"}
               padding={"4rem"}
@@ -86,9 +103,11 @@ export function Logging() {
             </Button>
           </Stack>
         </Show>
-        <Show when={isFileOpen()}>
-          <LoggingForm jsonfile={logConfigureFile()} fileName={fileName()} />
-        </Show>
+        <Stack direction="row" justifyContent={"center"}>
+          <Show when={isFileOpen()}>
+            <LoggingForm jsonfile={logConfigureFile()} fileName={fileName()} />
+          </Show>
+        </Stack>
       </div>
     </>
   );

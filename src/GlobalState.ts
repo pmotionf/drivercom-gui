@@ -26,3 +26,5 @@ export const [enumSeries, setEnumSeries] = createSignal<[string, string][]>([]);
 export const [enumMappings, setEnumMappings] = createSignal<
   [string, [number, string][]][]
 >([]);
+
+export const [logFormFileFormat, setLogFormFileFormat] = createSignal({});

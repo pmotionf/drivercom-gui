@@ -27,6 +27,7 @@ import {
   setEnumMappings,
   setEnumSeries,
   setGlobalState,
+  setLogFormFileFormat,
   Theme,
 } from "./GlobalState.ts";
 
@@ -60,6 +61,7 @@ function App(props: RouteSectionProps) {
 
     detectCliVersion();
     parseEnumMappings();
+    buildEmptyLogConfiguration();
   });
 
   async function detectCliVersion() {
@@ -119,6 +121,15 @@ function App(props: RouteSectionProps) {
         index,
       ) => [enumTypeName, enumCodeMappings[index]]),
     );
+  }
+
+  async function buildEmptyLogConfiguration() {
+    const logConfig = Command.sidecar("binaries/drivercom", [
+      "log.config.empty",
+    ]);
+    const output = await logConfig.execute();
+    const logFormatToJson = JSON.parse(output.stdout);
+    setLogFormFileFormat(logFormatToJson);
   }
 
   const [version, setVersion] = createSignal("0.0.0");
