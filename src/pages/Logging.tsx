@@ -55,7 +55,7 @@ export function Logging() {
           )}
         </Toast.Toaster>
         <Show when={!isFileOpen()}>
-          <Stack width="48%" marginLeft="26%">
+          <Stack width="44rem" marginLeft={`calc((100% - 44rem) / 2)`}>
             <Text variant={"heading"} size={"xl"}>
               Log configuration
             </Text>
@@ -69,8 +69,17 @@ export function Logging() {
                 padding={"4rem"}
                 onClick={() => {
                   setFileName("New file");
-                  setLogConfigureFile(logFormFileFormat());
+                  const newFile = logFormFileFormat()
+                  setLogConfigureFile(newFile);
                   setIsFileOpen(true);
+                }}
+                onMouseOver={(e) => {
+                  e.currentTarget.style.backgroundColor =
+                    "var(--colors-bg-muted)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor =
+                    "var(--colors-bg-error)";
                 }}
               >
                 Create New File
@@ -119,6 +128,14 @@ export function Logging() {
                       {...triggerProps()}
                       variant={"outline"}
                       padding={"4rem"}
+                      onMouseOver={(e) => {
+                        e.currentTarget.style.backgroundColor =
+                          "var(--colors-bg-muted)";
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.backgroundColor =
+                          "var(--colors-bg-error)";
+                      }}
                     >
                       File Upload
                     </Button>
@@ -129,9 +146,17 @@ export function Logging() {
               <Button
                 variant={"outline"}
                 padding={"4rem"}
-                disabled={portId().length === 0 ? true : false}
+                disabled={portId().length === 0}
                 onClick={() => {
                   GetFileFromPort();
+                }}
+                onMouseOver={(e) => {
+                  e.currentTarget.style.backgroundColor =
+                    "var(--colors-bg-muted)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor =
+                    "var(--colors-bg-error)";
                 }}
               >
                 Get file from port

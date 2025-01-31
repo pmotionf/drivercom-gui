@@ -33,8 +33,7 @@ export function LoggingForm(props: LoggingFormProps) {
       `${logFormPortId}`,
       `log.start`,
     ]);
-    const output = await logStart.execute();
-    console.log(output);
+    await logStart.execute();
   }
 
   async function logStop() {
@@ -43,8 +42,47 @@ export function LoggingForm(props: LoggingFormProps) {
       `${logFormPortId}`,
       `log.stop`,
     ]);
+    await logStop.execute();
+  }
+
+  async function logGet() {
+    const logStop = Command.sidecar("binaries/drivercom", [
+      `--port`,
+      `${logFormPortId}`,
+      `log.get`,
+    ]);
     const output = await logStop.execute();
-    console.log(output);
+
+    const csvFile = output.stdout;
+    const path = await save({
+      defaultPath: `${fileName()}`,
+      filters: [
+        {
+          name: "CSV",
+          extensions: ["csv"],
+        },
+      ],
+    });
+
+    if (!path) {
+      props.onErrorMessage?.({
+        title: "Invalid File Path",
+        description: "The specified file path is invalid.",
+        type: "error",
+      });
+      return;
+    }
+    const extension = path.split(".").pop();
+    if (extension != "csv") {
+      props.onErrorMessage?.({
+        title: "Invalid File Extension",
+        description: "The specified file extension is invalid.",
+        type: "error",
+      });
+      return;
+    }
+    // TODO: Handle write promise error with toast
+    await writeTextFile(path, csvFile);
   }
 
   const [fileName, setFileName] = createSignal<string>(props.fileName);
@@ -94,18 +132,25 @@ export function LoggingForm(props: LoggingFormProps) {
         <Card.Footer marginTop={"3rem"} marginBottom={"2rem"}>
           <Stack direction={"row"}>
             <Button
-              disabled={logFormPortId.length <= 0}
+              disabled={logFormPortId.length === 0}
               onClick={() => logStart()}
               variant={"outline"}
             >
               Log Start
             </Button>
             <Button
-              disabled={logFormPortId.length <= 0}
+              disabled={logFormPortId.length === 0}
               onClick={() => logStop()}
               variant={"outline"}
             >
               Log Stop
+            </Button>
+            <Button
+              disabled={logFormPortId.length === 0}
+              onClick={() => logGet()}
+              variant={"outline"}
+            >
+              Log Get
             </Button>
             <Menu.Root>
               <Menu.Trigger>
@@ -155,8 +200,10 @@ export function LoggingForm(props: LoggingFormProps) {
                   <Menu.Separator />
                   <Menu.Item
                     value={"Save to port"}
+                    disabled={logFormPortId.length === 0}
                     onClick={async () => {
                       const json_str = JSON.stringify(logForm, null, "  ");
+                      if (portId().length === 0) return;
                       const logSave = Command.sidecar("binaries/drivercom", [
                         `--port`,
                         `${logFormPortId}`,
