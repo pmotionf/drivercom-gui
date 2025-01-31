@@ -78,7 +78,8 @@ function App(props: RouteSectionProps) {
 
   async function parseEnumMappings() {
     const drivercom = Command.sidecar("binaries/drivercom", [
-      "log.utils.lists_code_names",
+      "log.util.list_code_names",
+      "--compact",
     ]);
     const output = await drivercom.execute();
 
