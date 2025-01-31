@@ -7,48 +7,50 @@ import { save } from "@tauri-apps/plugin-dialog";
 import { writeTextFile } from "@tauri-apps/plugin-fs";
 import { Card } from "~/components/ui/card";
 import { Input } from "~/components/ui/input";
-import { logFormFileFormat, portId } from "~/GlobalState";
+import { portId } from "~/GlobalState";
 import { Command } from "@tauri-apps/plugin-shell";
 import { createStore } from "solid-js/store";
 import { Editable } from "~/components/ui/editable";
+import { IconButton } from "~/components/ui/icon-button";
+import { IconX } from "@tabler/icons-solidjs";
+import { Menu } from "~/components/ui/menu";
+import { ErrorMessage } from "../LogViewer/LogViewerTab";
 
 export type LoggingFormProps = JSX.HTMLAttributes<Element> & {
   jsonfile: object;
   fileName: string;
+  onCancel?: () => void;
+  onErrorMessage?: (message: ErrorMessage) => void;
 };
 
 export function LoggingForm(props: LoggingFormProps) {
-  const logFormPortId = `\\\\.\\${portId()}`;
-  const logForm = logFormFileFormat();
+  const logFormPortId = portId();
+  const logForm = props.jsonfile;
 
-  function logStart() {
-    Command.sidecar("binaries/drivercom", [
+  async function logStart() {
+    const logStart = Command.sidecar("binaries/drivercom", [
       `--port`,
       `${logFormPortId}`,
       `log.start`,
     ]);
+    const output = await logStart.execute();
+    console.log(output);
   }
 
-  function logSave() {
-    Command.sidecar("binaries/drivercom", [
-      `--port`,
-      `${logFormPortId}`,
-      `log.configure`,
-    ]);
-  }
-
-  function logStop() {
-    Command.sidecar("binaries/drivercom", [
+  async function logStop() {
+    const logStop = Command.sidecar("binaries/drivercom", [
       `--port`,
       `${logFormPortId}`,
       `log.stop`,
     ]);
+    const output = await logStop.execute();
+    console.log(output);
   }
 
   const [fileName, setFileName] = createSignal<string>(props.fileName);
 
   return (
-    <div style={{ "width": "30rem" }}>
+    <div style={{ "width": "30rem", "margin-bottom": "3rem" }}>
       <Card.Root>
         <Card.Header paddingTop={"3rem"}>
           <Editable.Root
@@ -78,52 +80,121 @@ export function LoggingForm(props: LoggingFormProps) {
         </Card.Header>
         <Card.Body gap={1.5}>
           <LogFormObject object={logForm} />
+          <IconButton
+            onClick={() => props.onCancel?.()}
+            variant="ghost"
+            borderRadius="1rem"
+            width="1rem"
+            style={{ position: "absolute", top: "1.5rem", right: "0.5rem" }}
+            padding="0"
+          >
+            <IconX />
+          </IconButton>
         </Card.Body>
-        <Card.Footer marginTop={"3rem"}>
+        <Card.Footer marginTop={"3rem"} marginBottom={"2rem"}>
           <Stack direction={"row"}>
             <Button
-              disabled={logFormPortId.length > 0}
+              disabled={logFormPortId.length <= 0}
               onClick={() => logStart()}
               variant={"outline"}
             >
               Log Start
             </Button>
             <Button
-              disabled={logFormPortId.length > 0}
+              disabled={logFormPortId.length <= 0}
               onClick={() => logStop()}
               variant={"outline"}
             >
               Log Stop
             </Button>
-            <Button
-              type="button"
-              onClick={async () => {
-                const json_str = JSON.stringify(logForm, null, "  ");
-                const path = await save({
-                  defaultPath: `${fileName()}`,
-                  filters: [
-                    {
-                      name: "JSON",
-                      extensions: ["json"],
-                    },
-                  ],
-                });
-                if (!path) {
-                  // TODO: Show error toast
-                  return;
-                }
-                const extension = path.split(".").pop();
-                if (extension != "json") {
-                  // TODO: Show error toast
-                  return;
-                }
-                // TODO: Handle write promise error with toast
-                await writeTextFile(path, json_str);
-                logSave();
-              }}
-            >
-              Save
-            </Button>
+            <Menu.Root>
+              <Menu.Trigger>
+                <Button>
+                  Save
+                </Button>
+              </Menu.Trigger>
+              <Menu.Positioner>
+                <Menu.Content width="8rem">
+                  <Menu.Item
+                    value={"Save as file"}
+                    onClick={async () => {
+                      const json_str = JSON.stringify(logForm, null, "  ");
+                      const path = await save({
+                        defaultPath: `${fileName()}`,
+                        filters: [
+                          {
+                            name: "JSON",
+                            extensions: ["json"],
+                          },
+                        ],
+                      });
+                      if (!path) {
+                        props.onErrorMessage?.({
+                          title: "Invalid File Path",
+                          description: "The specified file path is invalid.",
+                          type: "error",
+                        });
+                        return;
+                      }
+                      const extension = path.split(".").pop();
+                      if (extension != "json") {
+                        props.onErrorMessage?.({
+                          title: "Invalid File Extension",
+                          description:
+                            "The specified file extension is invalid.",
+                          type: "error",
+                        });
+                        return;
+                      }
+                      // TODO: Handle write promise error with toast
+                      await writeTextFile(path, json_str);
+                    }}
+                  >
+                    Save as file
+                  </Menu.Item>
+                  <Menu.Separator />
+                  <Menu.Item
+                    value={"Save to port"}
+                    onClick={async () => {
+                      const json_str = JSON.stringify(logForm, null, "  ");
+                      const logSave = Command.sidecar("binaries/drivercom", [
+                        `--port`,
+                        `${logFormPortId}`,
+                        `log.config.set`,
+                        json_str,
+                      ]);
+                      const output = await logSave.execute();
+                      // Error Message
+                      if (output.stderr.length > 0) {
+                        const checkErrorMsg = output.stderr.split(`\n`)[0]
+                          .replaceAll(" ", "")
+                          .split(":");
+                        if (checkErrorMsg[0] !== "error") return;
+                        // Only show error message, when the message starts with error
+                        // Also change upper case to lower case, to show as a message
+                        const parseErrorMsg = Array.from(checkErrorMsg[1]).map(
+                          (alphabet, index) => {
+                            return alphabet === alphabet.toUpperCase()
+                              ? index === 0
+                                ? ` ${alphabet}`
+                                : ` ${alphabet.toLowerCase()}`
+                              : alphabet;
+                          },
+                        ).toString().replaceAll(",", "");
+                        props.onErrorMessage?.({
+                          title: "Invalid Log Error",
+                          description: parseErrorMsg,
+                          type: "error",
+                        });
+                        return;
+                      }
+                    }}
+                  >
+                    Save to port
+                  </Menu.Item>
+                </Menu.Content>
+              </Menu.Positioner>
+            </Menu.Root>
           </Stack>
         </Card.Footer>
       </Card.Root>
@@ -163,13 +234,14 @@ export function LogFormObject(props: logFormObjectProps) {
               <Input
                 value={Number(key[1])}
                 type={"number"}
-                onChange={(e) =>
+                onChange={(e) => {
                   setObject(
                     key[0] as keyof typeof obj,
                     // @ts-ignore : TSC unable to handle generic object type
                     // in store
                     Number(e.target.value),
-                  )}
+                  );
+                }}
               />
             </Stack>
           </Show>
