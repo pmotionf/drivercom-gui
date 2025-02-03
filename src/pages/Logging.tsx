@@ -19,7 +19,7 @@ export function Logging() {
   const [logConfigureFile, setLogConfigureFile] = createSignal({});
   const [fileName, setFileName] = createSignal<string>("");
 
-  async function GetFileFromPort() {
+  async function GetConfigFromPort() {
     if (portId().length === 0) return;
     const sideCommand = Command.sidecar("binaries/drivercom", [
       `--port`,
@@ -74,8 +74,7 @@ export function Logging() {
                 padding={"4rem"}
                 onClick={() => {
                   setFileName("New file");
-                  const newFile = logFormFileFormat();
-                  setLogConfigureFile(newFile);
+                  setLogConfigureFile(logFormFileFormat());
                   setIsFileOpen(true);
                 }}
                 onMouseOver={(e) => {
@@ -166,7 +165,7 @@ export function Logging() {
                 padding={"4rem"}
                 disabled={portId().length === 0}
                 onClick={() => {
-                  GetFileFromPort();
+                  GetConfigFromPort();
                 }}
                 onMouseOver={(e) => {
                   e.currentTarget.style.backgroundColor =
@@ -177,7 +176,7 @@ export function Logging() {
                     "var(--colors-bg-error)";
                 }}
               >
-                Get config from port
+                Get Config From
               </Button>
             </Stack>
             <Show when={recentFilesPath().length !== 0}>
