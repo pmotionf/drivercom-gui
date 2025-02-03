@@ -1,4 +1,4 @@
-import { createSignal, For, JSX, Show } from "solid-js";
+import { createSignal, For, JSX, onMount, Show } from "solid-js";
 import { Stack } from "styled-system/jsx";
 import { Button } from "~/components/ui/button";
 import { Checkbox } from "~/components/ui/checkbox";
@@ -24,13 +24,31 @@ export type LoggingFormProps = JSX.HTMLAttributes<Element> & {
 };
 
 export function LoggingForm(props: LoggingFormProps) {
-  const logFormPortId = portId();
   const logForm = props.jsonfile;
+  const [cycles , setCycles] = createSignal<number>(0);
+
+  onMount(() => {
+    logConfigGet()
+  })
+
+  async function logConfigGet() {
+    const logConfigGet = Command.sidecar("binaries/drivercom", [
+      `--port`,
+      portId(),
+      `log.config.get`
+    ])
+    const output = await logConfigGet.execute()
+    const parsePortData = JSON.parse(output.stdout)
+    const indexOfCycles = Object.keys(parsePortData).indexOf("cycles")
+    setCycles(Number(Object.entries(parsePortData)[indexOfCycles][1]))
+  }
 
   async function logStart() {
+    if(cycles() === 0) return; 
+
     const logStart = Command.sidecar("binaries/drivercom", [
       `--port`,
-      `${logFormPortId}`,
+      portId(),
       `log.start`,
     ]);
     await logStart.execute();
@@ -39,50 +57,59 @@ export function LoggingForm(props: LoggingFormProps) {
   async function logStop() {
     const logStop = Command.sidecar("binaries/drivercom", [
       `--port`,
-      `${logFormPortId}`,
+      portId(),
       `log.stop`,
     ]);
     await logStop.execute();
   }
-
+  
+  const [loading, setLoading] = createSignal(false)
   async function logGet() {
-    const logStop = Command.sidecar("binaries/drivercom", [
+    setLoading(true)
+    const logGet = Command.sidecar("binaries/drivercom", [
       `--port`,
-      `${logFormPortId}`,
+      portId(),
       `log.get`,
     ]);
-    const output = await logStop.execute();
-
-    const csvFile = output.stdout;
-    const path = await save({
-      defaultPath: `${fileName()}`,
-      filters: [
-        {
-          name: "CSV",
-          extensions: ["csv"],
-        },
-      ],
-    });
-
-    if (!path) {
-      props.onErrorMessage?.({
-        title: "Invalid File Path",
-        description: "The specified file path is invalid.",
-        type: "error",
+    const output = await logGet.execute();
+    
+    if(output.stdout){
+      const path = await save({
+        defaultPath: `${fileName()}`,
+        filters: [
+          {
+            name: "CSV",
+            extensions: ["csv"],
+          },
+        ],
       });
-      return;
+  
+      if (!path) {
+        props.onErrorMessage?.({
+          title: "Invalid File Path",
+          description: "The specified file path is invalid.",
+          type: "error",
+        });
+        setLoading(false);
+        return;
+      }
+      const extension = path.split(".").pop();
+      if (extension != "csv") {
+        props.onErrorMessage?.({
+          title: "Invalid File Extension",
+          description: "The specified file extension is invalid.",
+          type: "error",
+        });
+        setLoading(false);
+        return;
+      }
+      // TODO: Handle write promise error with toast
+      const csvFile = output.stdout
+      await writeTextFile(path, csvFile);
+      setTimeout(() => {
+        setLoading(false)
+      },100)
     }
-    const extension = path.split(".").pop();
-    if (extension != "csv") {
-      props.onErrorMessage?.({
-        title: "Invalid File Extension",
-        description: "The specified file extension is invalid.",
-        type: "error",
-      });
-      return;
-    }
-    // TODO: Handle write promise error with toast
-    await writeTextFile(path, csvFile);
   }
 
   const [fileName, setFileName] = createSignal<string>(props.fileName);
@@ -132,23 +159,24 @@ export function LoggingForm(props: LoggingFormProps) {
         <Card.Footer marginTop={"3rem"} marginBottom={"2rem"}>
           <Stack direction={"row"}>
             <Button
-              disabled={logFormPortId.length === 0}
+              disabled={cycles() === 0}
               onClick={() => logStart()}
               variant={"outline"}
             >
               Log Start
             </Button>
             <Button
-              disabled={logFormPortId.length === 0}
+              disabled={cycles() === 0}
               onClick={() => logStop()}
               variant={"outline"}
             >
               Log Stop
             </Button>
             <Button
-              disabled={logFormPortId.length === 0}
+              disabled={cycles() === 0}
               onClick={() => logGet()}
               variant={"outline"}
+              loading = {loading()}
             >
               Log Get
             </Button>
@@ -200,22 +228,25 @@ export function LoggingForm(props: LoggingFormProps) {
                   <Menu.Separator />
                   <Menu.Item
                     value={"Save to port"}
-                    disabled={logFormPortId.length === 0}
+                    disabled={portId().length === 0}
                     onClick={async () => {
                       const json_str = JSON.stringify(logForm, null, "  ");
                       if (portId().length === 0) return;
                       const logSave = Command.sidecar("binaries/drivercom", [
                         `--port`,
-                        `${logFormPortId}`,
+                        portId(),
                         `log.config.set`,
                         json_str,
                       ]);
                       const output = await logSave.execute();
                       // Error Message
+                      logConfigGet()
+
                       if (output.stderr.length > 0) {
                         const checkErrorMsg = output.stderr.split(`\n`)[0]
                           .replaceAll(" ", "")
                           .split(":");
+                          
                         if (checkErrorMsg[0] !== "error") return;
                         // Only show error message, when the message starts with error
                         // Also change upper case to lower case, to show as a message
@@ -235,6 +266,8 @@ export function LoggingForm(props: LoggingFormProps) {
                         });
                         return;
                       }
+
+                      
                     }}
                   >
                     Save to port

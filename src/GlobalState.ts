@@ -28,3 +28,5 @@ export const [enumMappings, setEnumMappings] = createSignal<
 >([]);
 
 export const [logFormFileFormat, setLogFormFileFormat] = createSignal({});
+
+export const [recentFilesPath, setRecentFilesPath] = createSignal<File[]>([]);

@@ -1,9 +1,14 @@
 import { Stack } from "styled-system/jsx";
 import { Button } from "~/components/ui/button";
 import { Text } from "~/components/ui/text";
-import { logFormFileFormat, portId } from "~/GlobalState";
+import {
+  logFormFileFormat,
+  portId,
+  recentFilesPath,
+  setRecentFilesPath,
+} from "~/GlobalState";
 import { Command } from "@tauri-apps/plugin-shell";
-import { createSignal, Show } from "solid-js";
+import { createSignal, For, Show } from "solid-js";
 import { FileUpload } from "@ark-ui/solid";
 import { LoggingForm } from "./Logging/LoggingForm";
 import { Toast } from "~/components/ui/toast";
@@ -39,7 +44,7 @@ export function Logging() {
     <>
       <div
         style={{
-          "padding-top": "3rem",
+          "padding-top": "4rem",
           "padding-bottom": "3rem",
         }}
       >
@@ -55,13 +60,13 @@ export function Logging() {
           )}
         </Toast.Toaster>
         <Show when={!isFileOpen()}>
-          <Stack width="44rem" marginLeft={`calc((100% - 44rem) / 2)`}>
-            <Text variant={"heading"} size={"xl"}>
-              Log configuration
+          <Stack width="45rem" marginLeft={`calc((100% - 45rem) / 2)`}>
+            <Text variant={"heading"} size={"2xl"}>
+              Log Configuration
             </Text>
             <Stack
               direction={"row"}
-              marginTop={"1rem"}
+              marginTop={"1.5rem"}
               justifyContent={"center"}
             >
               <Button
@@ -69,7 +74,7 @@ export function Logging() {
                 padding={"4rem"}
                 onClick={() => {
                   setFileName("New file");
-                  const newFile = logFormFileFormat()
+                  const newFile = logFormFileFormat();
                   setLogConfigureFile(newFile);
                   setIsFileOpen(true);
                 }}
@@ -94,6 +99,7 @@ export function Logging() {
                       description: "File format is invalid.",
                       type: "error",
                     });
+
                     return;
                   }
                   const file = details.acceptedFiles[0];
@@ -114,10 +120,22 @@ export function Logging() {
                         });
                         return;
                       }
+
                       setLogConfigureFile({ ...data });
                       setIsFileOpen(true);
+                      setRecentFilesPath((prev) => {
+                        const parseFilePath = prev.filter((prevFile) =>
+                          prevFile.name !== file.name &&
+                          prevFile.lastModified !== file.lastModified
+                        );
+                        const updateFilePath = [file, ...parseFilePath];
+                        return updateFilePath.length === 8
+                          ? updateFilePath.slice(0, 7)
+                          : updateFilePath;
+                      });
                     };
                     reader.readAsText(file);
+
                     setFileName(details.acceptedFiles[0].name);
                   }
                 }}
@@ -159,9 +177,49 @@ export function Logging() {
                     "var(--colors-bg-error)";
                 }}
               >
-                Get file from port
+                Get config from port
               </Button>
             </Stack>
+            <Show when={recentFilesPath().length !== 0}>
+              <Text variant={"heading"} size={"xl"} marginTop={"2rem"}>
+                Recent files
+              </Text>
+              <Stack marginTop={"0.5rem"}>
+                <For each={recentFilesPath()}>
+                  {(file) => (
+                    <Text
+                      onClick={() => {
+                        if (file) {
+                          const reader = new FileReader();
+                          reader.onload = (e) => {
+                            const data = JSON.parse(e.target?.result as string); // JSON 파싱
+                            setLogConfigureFile({ ...data });
+                            setIsFileOpen(true);
+                          };
+                          reader.readAsText(file);
+                          setFileName(file.name);
+                          setRecentFilesPath((prev) => {
+                            const parseFilePath = prev.filter((prevFile) =>
+                              prevFile.name !== file.name &&
+                              prevFile.lastModified !== file.lastModified
+                            );
+                            const updateFilePath = [file, ...parseFilePath];
+                            return updateFilePath.length === 8
+                              ? updateFilePath.slice(0, 7)
+                              : updateFilePath;
+                          });
+                        }
+                      }}
+                      style={{ "text-decoration": "underline" }}
+                      fontWeight="light"
+                      cursor={"pointer"}
+                    >
+                      {file.name}
+                    </Text>
+                  )}
+                </For>
+              </Stack>
+            </Show>
           </Stack>
         </Show>
         <Stack direction="row" justifyContent={"center"}>
