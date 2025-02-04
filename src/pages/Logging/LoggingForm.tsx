@@ -1,4 +1,4 @@
-import { createEffect, createSignal, For, JSX, Show } from "solid-js";
+import { createEffect, createSignal, For, JSX, onMount, Show } from "solid-js";
 import { Stack } from "styled-system/jsx";
 import { Button } from "~/components/ui/button";
 import { Checkbox } from "~/components/ui/checkbox";
@@ -7,7 +7,11 @@ import { save } from "@tauri-apps/plugin-dialog";
 import { writeTextFile } from "@tauri-apps/plugin-fs";
 import { Card } from "~/components/ui/card";
 import { Input } from "~/components/ui/input";
-import { portId } from "~/GlobalState";
+import {
+  logStartCombinatorList,
+  logStartConditionList,
+  portId,
+} from "~/GlobalState";
 import { Command } from "@tauri-apps/plugin-shell";
 import { createStore } from "solid-js/store";
 import { Editable } from "~/components/ui/editable";
@@ -15,6 +19,7 @@ import { IconButton } from "~/components/ui/icon-button";
 import { IconX } from "@tabler/icons-solidjs";
 import { Menu } from "~/components/ui/menu";
 import { ErrorMessage } from "../LogViewer/LogViewerTab";
+import { createListCollection, Select } from "~/components/ui/select";
 
 export type LoggingFormProps = JSX.HTMLAttributes<Element> & {
   jsonfile: object;
@@ -28,6 +33,10 @@ export function LoggingForm(props: LoggingFormProps) {
   const [cyclesCompleted, setCyclesCompleted] = createSignal<number>(0);
   const [currentCycles, setCurrentCycles] = createSignal<number>(0);
   const [currentLogStatus, setCurrentLogStatus] = createSignal<string>("");
+
+  onMount(() => {
+    logStatus();
+  });
 
   async function logStatus() {
     if (portId().length === 0) return;
@@ -127,7 +136,6 @@ export function LoggingForm(props: LoggingFormProps) {
               <Editable.Preview />
             </Editable.Area>
           </Editable.Root>
-
           <Text
             marginTop={"0.5rem"}
             fontWeight={"light"}
@@ -166,6 +174,14 @@ export function LoggingForm(props: LoggingFormProps) {
                 logStatus();
                 getCyclesValue();
 
+                if (currentLogStatus() === "Log.Status.invalid") {
+                  props.onErrorMessage?.({
+                    title: "Log Invalid",
+                    description: "Current log state is invalid.",
+                    type: "error",
+                  });
+                  return;
+                }
                 createEffect(() => {
                   if (cyclesCompleted() !== currentCycles()) {
                     logStatus();
@@ -315,6 +331,7 @@ export function LogFormObject(props: logFormObjectProps) {
   const [prevCheckBoxIndex, setPrevCheckBoxIndex] = createSignal<number | null>(
     null,
   );
+
   const checkBoxShiftClick = (index: number) => {
     if (prevCheckBoxIndex() === null) return;
     const startNumber = Math.min(prevCheckBoxIndex()!, index);
@@ -330,6 +347,20 @@ export function LogFormObject(props: logFormObjectProps) {
       );
     });
   };
+
+  const parseStartConditionList = logStartConditionList().map((condition) => {
+    return { label: condition, value: condition };
+  });
+  const logStartConditions = createListCollection({
+    items: parseStartConditionList,
+  });
+
+  const parseCombinatorList = logStartCombinatorList().map((condition) => {
+    return { label: condition, value: condition };
+  });
+  const logStartCombinators = createListCollection({
+    items: parseCombinatorList,
+  });
 
   return (
     <For each={Object.entries(obj)}>
@@ -381,19 +412,45 @@ export function LogFormObject(props: logFormObjectProps) {
             >
               {key[0]}
             </Text>
-            <Input
-              type="string"
-              value={`${key[1]}`}
-              placeHolder={key[0]}
-              onchange={(e) => {
+            <Select.Root
+              positioning={{ sameWidth: true }}
+              width="2xs"
+              collection={key[0].toString() === "kind"
+                ? logStartConditions
+                : logStartCombinators}
+              defaultValue={[key[1].toString()]}
+              onValueChange={(v) => {
                 setObject(
                   key[0] as keyof typeof obj,
                   // @ts-ignore : TSC unable to handle generic object type
                   // in store
-                  e.target.value,
+                  Object.values(v.items)[0].label,
                 );
               }}
-            />
+            >
+              <Select.Control>
+                <Select.Trigger>
+                  <Select.ValueText placeholder="Select a Framework" />
+                </Select.Trigger>
+              </Select.Control>
+              <Select.Positioner>
+                <Select.Content>
+                  <For
+                    each={key[0].toString() === "kind"
+                      ? logStartConditions.items
+                      : logStartCombinators.items}
+                  >
+                    {(item) => (
+                      <Select.Item item={item}>
+                        <Select.ItemText>{item.label}</Select.ItemText>
+                        <Select.ItemIndicator>
+                        </Select.ItemIndicator>
+                      </Select.Item>
+                    )}
+                  </For>
+                </Select.Content>
+              </Select.Positioner>
+            </Select.Root>
           </Show>
           <Show when={typeof key[1] === "boolean"}>
             <Checkbox

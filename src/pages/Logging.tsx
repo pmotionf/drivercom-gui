@@ -71,9 +71,9 @@ export function Logging() {
           )}
         </Toast.Toaster>
         <Show when={!isFileOpen()}>
-          <Stack width="45rem" marginLeft={`calc((100% - 45rem) / 2)`}>
+          <Stack width="42rem" marginLeft={`calc((100% - 42rem) / 2)`}>
             <Text variant={"heading"} size={"2xl"}>
-              Log Configuration
+              Logging
             </Text>
             <Stack
               direction={"row"}
@@ -161,7 +161,7 @@ export function Logging() {
                           "var(--colors-bg-error)";
                       }}
                     >
-                      File Upload
+                      Open File
                     </Button>
                   )}
                 />
@@ -183,7 +183,7 @@ export function Logging() {
                     "var(--colors-bg-error)";
                 }}
               >
-                Get Config From
+                Get From Port
               </Button>
             </Stack>
             <Show when={recentFilesPath().length !== 0}>
