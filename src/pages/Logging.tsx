@@ -18,7 +18,6 @@ export function Logging() {
   const [isFileOpen, setIsFileOpen] = createSignal<boolean>(false);
   const [logConfigureFile, setLogConfigureFile] = createSignal({});
   const [fileName, setFileName] = createSignal<string>("");
-  const emptyLog = logFormFileFormat();
 
   async function GetConfigFromPort() {
     if (portId().length === 0) return;
@@ -33,6 +32,17 @@ export function Logging() {
     if (output.stdout.length === 0) return;
     setFileName("New File");
     setLogConfigureFile(obj);
+    setIsFileOpen(true);
+  }
+
+  async function getEmptyLogConfiguration() {
+    const logConfig = Command.sidecar("binaries/drivercom", [
+      "log.config.empty",
+    ]);
+    const output = await logConfig.execute();
+    const logFormatToJson = JSON.parse(output.stdout);
+    setFileName("New File");
+    setLogConfigureFile(logFormatToJson);
     setIsFileOpen(true);
   }
 
@@ -73,11 +83,7 @@ export function Logging() {
               <Button
                 variant={"outline"}
                 padding={"4rem"}
-                onClick={() => {
-                  setFileName("New file");
-                  setLogConfigureFile(emptyLog);
-                  setIsFileOpen(true);
-                }}
+                onClick={() => getEmptyLogConfiguration()}
                 onMouseOver={(e) => {
                   e.currentTarget.style.backgroundColor =
                     "var(--colors-bg-muted)";
