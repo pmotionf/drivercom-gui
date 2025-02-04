@@ -18,6 +18,7 @@ export function Logging() {
   const [isFileOpen, setIsFileOpen] = createSignal<boolean>(false);
   const [logConfigureFile, setLogConfigureFile] = createSignal({});
   const [fileName, setFileName] = createSignal<string>("");
+  const emptyLog = logFormFileFormat();
 
   async function GetConfigFromPort() {
     if (portId().length === 0) return;
@@ -74,7 +75,7 @@ export function Logging() {
                 padding={"4rem"}
                 onClick={() => {
                   setFileName("New file");
-                  setLogConfigureFile(logFormFileFormat());
+                  setLogConfigureFile(emptyLog);
                   setIsFileOpen(true);
                 }}
                 onMouseOver={(e) => {

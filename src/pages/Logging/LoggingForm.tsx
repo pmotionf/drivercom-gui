@@ -133,6 +133,7 @@ export function LoggingForm(props: LoggingFormProps) {
             fontWeight={"light"}
             opacity={"60%"}
             size={"lg"}
+            userSelect={"none"}
           >
             Log Configuration
           </Text>
@@ -153,6 +154,7 @@ export function LoggingForm(props: LoggingFormProps) {
         <Card.Footer marginTop={"3rem"} marginBottom={"2rem"}>
           <Stack direction={"row"}>
             <Button
+              disabled={portId().length === 0}
               loading={currentLogStatus() === "Log.Status.started"}
               onClick={async () => {
                 const logStart = Command.sidecar("binaries/drivercom", [
@@ -175,7 +177,8 @@ export function LoggingForm(props: LoggingFormProps) {
               Log Start
             </Button>
             <Button
-              disabled={currentLogStatus() !== "Log.Status.started"}
+              disabled={currentLogStatus() !== "Log.Status.started" ||
+                portId().length === 0}
               onClick={async () => {
                 const logStop = Command.sidecar("binaries/drivercom", [
                   `--port`,
@@ -191,7 +194,8 @@ export function LoggingForm(props: LoggingFormProps) {
             </Button>
             <Button
               disabled={currentLogStatus() === "Log.Status.started" ||
-                currentLogStatus() === "Log.Status.invalid"}
+                currentLogStatus() === "Log.Status.invalid" ||
+                portId().length === 0}
               onClick={() => {
                 logGet();
               }}
@@ -308,9 +312,28 @@ export type logFormObjectProps = JSX.HTMLAttributes<Element> & {
 export function LogFormObject(props: logFormObjectProps) {
   const [obj, setObject] = createStore<object>(props.object);
 
+  const [prevCheckBoxIndex, setPrevCheckBoxIndex] = createSignal<number | null>(
+    null,
+  );
+  const checkBoxShiftClick = (index: number) => {
+    if (prevCheckBoxIndex() === null) return;
+    const startNumber = Math.min(prevCheckBoxIndex()!, index);
+    const endNumber = Math.max(prevCheckBoxIndex()!, index);
+
+    const keys = Object.keys(obj).slice(startNumber, endNumber + 1);
+    keys.forEach((key) => {
+      setObject(
+        key as keyof typeof obj,
+        // @ts-ignore : TSC unable to handle generic object type
+        // in store
+        true,
+      );
+    });
+  };
+
   return (
     <For each={Object.entries(obj)}>
-      {(key) => (
+      {(key, index) => (
         <>
           <Show when={props.sectionName === undefined}>
             <Text
@@ -318,6 +341,7 @@ export function LogFormObject(props: logFormObjectProps) {
               marginTop={"1rem"}
               opacity={"50%"}
               size={"lg"}
+              userSelect={"none"}
             >
               {key[0]}
             </Text>
@@ -325,7 +349,12 @@ export function LogFormObject(props: logFormObjectProps) {
           <Show when={typeof key[1] === "number" && key[0] !== "_"}>
             <Stack direction={"row"}>
               <Show when={props.sectionName}>
-                <Text marginTop="0.3rem" width={"30%"}>
+                <Text
+                  marginTop="0.3rem"
+                  width={"30%"}
+                  fontWeight={"light"}
+                  userSelect={"none"}
+                >
                   {`${props.sectionName} ${Number(key[0]) + 1}`}
                 </Text>
               </Show>
@@ -344,7 +373,12 @@ export function LogFormObject(props: logFormObjectProps) {
             </Stack>
           </Show>
           <Show when={typeof key[1] === "string"}>
-            <Text marginTop="0.3rem" width={"30%"}>
+            <Text
+              marginTop="0.3rem"
+              width={"30%"}
+              fontWeight={"light"}
+              userSelect={"none"}
+            >
               {key[0]}
             </Text>
             <Input
@@ -372,16 +406,29 @@ export function LogFormObject(props: logFormObjectProps) {
                   e.checked,
                 );
               }}
+              onClick={(e) => {
+                if (key[1] as keyof typeof obj) {
+                  setPrevCheckBoxIndex(null);
+                  return;
+                }
+                !e.shiftKey
+                  ? setPrevCheckBoxIndex(index())
+                  : checkBoxShiftClick(index());
+              }}
             >
-              {!isNaN(Number(key[0]))
-                ? `${props.sectionName} ${Number(key[0]) + 1}`
-                : key[0]}
+              <Text fontWeight={"light"} userSelect={"none"}>
+                {!isNaN(Number(key[0]))
+                  ? `${props.sectionName} ${Number(key[0]) + 1}`
+                  : key[0]}
+              </Text>
             </Checkbox>
           </Show>
           <Show when={typeof key[1] === "object"}>
             <Show when={props.sectionName !== undefined}>
               <Text
                 marginTop={"0.2rem"}
+                fontWeight={"medium"}
+                userSelect={"none"}
               >
                 {key[0]}
               </Text>
