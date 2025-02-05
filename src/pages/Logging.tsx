@@ -31,7 +31,7 @@ export function Logging() {
     const obj = JSON.parse(output.stdout);
 
     if (output.stdout.length === 0) return;
-    setFileName("New File");
+    setFileName(portId());
     setLogConfigureFile(obj);
     setIsFileOpen(true);
   }
@@ -192,17 +192,8 @@ export function Logging() {
                   {(path) => (
                     <Text
                       onClick={async () => {
-                        if (!path) {
-                          toaster.create({
-                            title: "Invalid File Path",
-                            description: "The specified file path is invalid.",
-                            type: "error",
-                          });
-                          return;
-                        }
-
-                        if (path) {
-                          const output = await readTextFile(path);
+                          try {
+                            const output = await readTextFile(path);
                           const parseFileToJson = JSON.parse(output);
                           const openJsonFileKeys = Object.keys(parseFileToJson)
                             .sort();
@@ -231,7 +222,20 @@ export function Logging() {
                           });
                           setLogConfigureFile(parseFileToJson);
                           setIsFileOpen(true);
-                        }
+
+                          } catch {
+                            toaster.create({
+                              title: "Invalid File Path",
+                              description: "The specified file path does not exist.",
+                              type: "error"
+                            })
+                            setRecentFilesPath((prev) => {
+                              const parseFilePath = prev.filter((prevPath) =>
+                                prevPath !== path
+                              );
+                              return [...parseFilePath].slice(0, 7);
+                            });
+                          }
                       }}
                       style={{ "text-decoration": "underline" }}
                       fontWeight="light"

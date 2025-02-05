@@ -33,11 +33,7 @@ export function LoggingForm(props: LoggingFormProps) {
   const logForm = props.jsonfile;
   const [cyclesCompleted, setCyclesCompleted] = createSignal<number>(0);
   const [currentCycles, setCurrentCycles] = createSignal<number>(0);
-  const [currentLogStatus, setCurrentLogStatus] = createSignal<string>("");
-
-  onMount(() => {
-    logStatus();
-  });
+  const [currentLogStatus, setCurrentLogStatus] = createSignal<string>("")
 
   async function logStatus() {
     if (portId().length === 0) return;
@@ -77,9 +73,21 @@ export function LoggingForm(props: LoggingFormProps) {
       portId(),
       `log.get`,
     ]);
-    const output = await logGet.execute();
+    const output = await logGet.execute(); 
 
     if (output.stdout) {
+      const checkError = output.stdout.split("\n").filter((line) => line.length > 0)
+      if(checkError.length <= 1) {
+        props.onErrorMessage?.({
+          title: "Invalid Log",
+           description: "Log is not available.",
+           type : "error"
+        })
+        setLogGetBtnLoading(false);
+        setCurrentLogStatus("Log.status.invalid")
+        return;
+      }
+
       const path = await save({
         defaultPath: `${fileName()}`,
         filters: [
@@ -163,7 +171,7 @@ export function LoggingForm(props: LoggingFormProps) {
         <Card.Footer marginTop={"3rem"} marginBottom={"2rem"}>
           <Stack direction={"row"}>
             <Button
-              disabled={portId().length === 0}
+              disabled={portId().length === 0 || logGetBtnLoading() || cyclesCompleted() === currentCycles()}
               loading={currentLogStatus() === "Log.Status.started"}
               onClick={async () => {
                 const logStart = Command.sidecar("binaries/drivercom", [
@@ -173,7 +181,7 @@ export function LoggingForm(props: LoggingFormProps) {
                 ]);
                 await logStart.execute();
                 logStatus();
-                getCyclesValue();
+                getCyclesValue()
 
                 if (currentLogStatus() === "Log.Status.invalid") {
                   props.onErrorMessage?.({
@@ -184,7 +192,8 @@ export function LoggingForm(props: LoggingFormProps) {
                   return;
                 }
                 createEffect(() => {
-                  if (cyclesCompleted() !== currentCycles()) {
+                  const cyclesNumber = cyclesCompleted()
+                  if (cyclesNumber !== currentCycles()) {
                     logStatus();
                   }
                 });
@@ -210,9 +219,7 @@ export function LoggingForm(props: LoggingFormProps) {
               Log Stop
             </Button>
             <Button
-              disabled={currentLogStatus() === "Log.Status.started" ||
-                currentLogStatus() === "Log.Status.invalid" ||
-                portId().length === 0}
+              disabled={currentLogStatus() !== "Log.Status.stopped"}
               onClick={() => {
                 logGet();
               }}
@@ -286,14 +293,15 @@ export function LoggingForm(props: LoggingFormProps) {
                         json_str,
                       ]);
                       const output = await logSave.execute();
+                      setTimeout(() => {
+                        getCyclesValue();
+                        logStatus();
+                      },100)
                       // Error Message
-                      logStatus();
-
                       if (output.stderr.length > 0) {
                         const checkErrorMsg = output.stderr.split(`\n`)[0]
                           .replaceAll(" ", "")
                           .split(":");
-
                         if (checkErrorMsg[0] !== "error") return;
                         // Only show error message, when the message starts with error
                         // Also change upper case to lower case, to show as a message
