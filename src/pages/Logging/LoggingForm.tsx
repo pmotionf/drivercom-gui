@@ -11,6 +11,7 @@ import {
   logStartCombinatorList,
   logStartConditionList,
   portId,
+  setRecentFilesPath,
 } from "~/GlobalState";
 import { Command } from "@tauri-apps/plugin-shell";
 import { createStore } from "solid-js/store";
@@ -261,6 +262,12 @@ export function LoggingForm(props: LoggingFormProps) {
                       }
                       // TODO: Handle write promise error with toast
                       await writeTextFile(path, json_str);
+                      setRecentFilesPath((prev) => {
+                        const parseFilePath = prev.filter((prevPath) =>
+                          prevPath !== path
+                        );
+                        return [path, ...parseFilePath].slice(0, 7);
+                      });
                     }}
                   >
                     Save as file

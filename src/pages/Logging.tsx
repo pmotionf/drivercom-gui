@@ -9,10 +9,11 @@ import {
 } from "~/GlobalState";
 import { Command } from "@tauri-apps/plugin-shell";
 import { createSignal, For, Show } from "solid-js";
-import { FileUpload } from "@ark-ui/solid";
 import { LoggingForm } from "./Logging/LoggingForm";
 import { Toast } from "~/components/ui/toast";
 import { IconX } from "@tabler/icons-solidjs";
+import { open } from "@tauri-apps/plugin-dialog";
+import { readTextFile } from "@tauri-apps/plugin-fs";
 
 export function Logging() {
   const [isFileOpen, setIsFileOpen] = createSignal<boolean>(false);
@@ -95,78 +96,74 @@ export function Logging() {
               >
                 Create New File
               </Button>
-              <FileUpload.Root
-                accept="application/json"
-                minFileSize={3}
-                onFileChange={(details) => {
-                  if (details.rejectedFiles.length !== 0) {
+              <Button
+                variant={"outline"}
+                padding={"4rem"}
+                onMouseOver={(e) => {
+                  e.currentTarget.style.backgroundColor =
+                    "var(--colors-bg-muted)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor =
+                    "var(--colors-bg-error)";
+                }}
+                onClick={async () => {
+                  const path = await open({
+                    multiple: false,
+                    filters: [
+                      { name: "JSON", extensions: ["json"] },
+                    ],
+                  });
+
+                  if (!path) {
                     toaster.create({
-                      title: "Invalid Log File",
-                      description: "File format is invalid.",
+                      title: "Invalid File Path",
+                      description: "The specified file path is invalid.",
                       type: "error",
                     });
-
                     return;
                   }
-                  const file = details.acceptedFiles[0];
-                  if (file) {
-                    const reader = new FileReader();
-                    reader.onload = (e) => {
-                      const data = JSON.parse(e.target?.result as string); // JSON 파싱
-                      // Need to check more keys for checking the format is same
-                      const fileLog = Object.keys(data).sort();
-                      const emptyLog = Object.keys(logFormFileFormat()).sort();
-                      if (
-                        JSON.stringify(fileLog) !== JSON.stringify(emptyLog)
-                      ) {
-                        toaster.create({
-                          title: "Invalid Log File",
-                          description: "File is missing required information.",
-                          type: "error",
-                        });
-                        return;
-                      }
 
-                      setLogConfigureFile({ ...data });
-                      setIsFileOpen(true);
-                      setRecentFilesPath((prev) => {
-                        const parseFilePath = prev.filter((prevFile) =>
-                          prevFile.name !== file.name &&
-                          prevFile.lastModified !== file.lastModified
-                        );
-                        const updateFilePath = [file, ...parseFilePath];
-                        return updateFilePath.length === 8
-                          ? updateFilePath.slice(0, 7)
-                          : updateFilePath;
-                      });
-                    };
-                    reader.readAsText(file);
-
-                    setFileName(details.acceptedFiles[0].name);
+                  const extension = path.split(".").pop();
+                  if (extension != "json") {
+                    toaster.create({
+                      title: "Invalid File Extension",
+                      description: "The specified file extension is invalid.",
+                      type: "error",
+                    });
+                    return;
                   }
+
+                  const output = await readTextFile(path);
+                  const parseFileToJson = JSON.parse(output);
+                  const openJsonFileKeys = Object.keys(parseFileToJson).sort();
+                  const checkFileFormat = Object.keys(logFormFileFormat())
+                    .sort();
+                  if (
+                    openJsonFileKeys.toString() !== checkFileFormat.toString()
+                  ) {
+                    toaster.create({
+                      title: "Invalid Log Fields",
+                      description: "The specified fields are invalid.",
+                      type: "error",
+                    });
+                    return;
+                  }
+
+                  const fileName = path.toString().split("\\");
+                  setFileName(fileName[fileName.length - 1]);
+                  setRecentFilesPath((prev) => {
+                    const parseFilePath = prev.filter((prevPath) =>
+                      prevPath !== path
+                    );
+                    return [path, ...parseFilePath];
+                  });
+                  setLogConfigureFile(parseFileToJson);
+                  setIsFileOpen(true);
                 }}
               >
-                <FileUpload.Trigger
-                  asChild={(triggerProps) => (
-                    <Button
-                      {...triggerProps()}
-                      variant={"outline"}
-                      padding={"4rem"}
-                      onMouseOver={(e) => {
-                        e.currentTarget.style.backgroundColor =
-                          "var(--colors-bg-muted)";
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.backgroundColor =
-                          "var(--colors-bg-error)";
-                      }}
-                    >
-                      Open File
-                    </Button>
-                  )}
-                />
-                <FileUpload.HiddenInput />
-              </FileUpload.Root>
+                Open File
+              </Button>
               <Button
                 variant={"outline"}
                 padding={"4rem"}
@@ -192,35 +189,55 @@ export function Logging() {
               </Text>
               <Stack marginTop={"0.5rem"}>
                 <For each={recentFilesPath()}>
-                  {(file) => (
+                  {(path) => (
                     <Text
-                      onClick={() => {
-                        if (file) {
-                          const reader = new FileReader();
-                          reader.onload = (e) => {
-                            const data = JSON.parse(e.target?.result as string); // JSON 파싱
-                            setLogConfigureFile({ ...data });
-                            setIsFileOpen(true);
-                          };
-                          reader.readAsText(file);
-                          setFileName(file.name);
-                          setRecentFilesPath((prev) => {
-                            const parseFilePath = prev.filter((prevFile) =>
-                              prevFile.name !== file.name &&
-                              prevFile.lastModified !== file.lastModified
-                            );
-                            const updateFilePath = [file, ...parseFilePath];
-                            return updateFilePath.length === 8
-                              ? updateFilePath.slice(0, 7)
-                              : updateFilePath;
+                      onClick={async () => {
+                        if (!path) {
+                          toaster.create({
+                            title: "Invalid File Path",
+                            description: "The specified file path is invalid.",
+                            type: "error",
                           });
+                          return;
+                        }
+
+                        if (path) {
+                          const output = await readTextFile(path);
+                          const parseFileToJson = JSON.parse(output);
+                          const openJsonFileKeys = Object.keys(parseFileToJson)
+                            .sort();
+                          const checkFileFormat = Object.keys(
+                            logFormFileFormat(),
+                          ).sort();
+                          if (
+                            openJsonFileKeys.toString() !==
+                              checkFileFormat.toString()
+                          ) {
+                            toaster.create({
+                              title: "Invalid Log Fields",
+                              description: "The specified fields are invalid.",
+                              type: "error",
+                            });
+                            return;
+                          }
+
+                          const fileName = path.toString().split("\\");
+                          setFileName(fileName[fileName.length - 1]);
+                          setRecentFilesPath((prev) => {
+                            const parseFilePath = prev.filter((prevPath) =>
+                              prevPath !== path
+                            );
+                            return [path, ...parseFilePath].slice(0, 7);
+                          });
+                          setLogConfigureFile(parseFileToJson);
+                          setIsFileOpen(true);
                         }
                       }}
                       style={{ "text-decoration": "underline" }}
                       fontWeight="light"
                       cursor={"pointer"}
                     >
-                      {file.name}
+                      {path}
                     </Text>
                   )}
                 </For>
