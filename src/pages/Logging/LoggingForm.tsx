@@ -11,7 +11,7 @@ import {
   logStartCombinatorList,
   logStartConditionList,
   portId,
-  setRecentFilesPath,
+  setRecentFilePaths,
 } from "~/GlobalState";
 import { Command } from "@tauri-apps/plugin-shell";
 import { createStore } from "solid-js/store";
@@ -31,11 +31,14 @@ export type LoggingFormProps = JSX.HTMLAttributes<Element> & {
 
 export function LoggingForm(props: LoggingFormProps) {
   const logForm = props.jsonfile;
-  const [cyclesCompleted, setCyclesCompleted] = createSignal<number>(0);
-  const [currentCycles, setCurrentCycles] = createSignal<number>(0);
-  const [currentLogStatus, setCurrentLogStatus] = createSignal<string>("")
+  const [fileName, setFileName] = createSignal<string>(props.fileName);
 
-  async function logStatus() {
+  // Retrieve Current Logging status from the Port
+  const [cyclesCompleted, setCyclesCompleted] = createSignal<number>(0);
+  const [currentLogStatus, setCurrentLogStatus] = createSignal<string>("");
+
+  // Get current Logging status
+  async function getCurrentLogStatus() {
     if (portId().length === 0) return;
     const logStatus = Command.sidecar("binaries/drivercom", [
       `--port`,
@@ -44,50 +47,64 @@ export function LoggingForm(props: LoggingFormProps) {
     ]);
     const output = await logStatus.execute();
     const parseOutput = output.stdout.replaceAll(" ", "").replaceAll("\n", "");
-    const splitToArray = parseOutput.split(",").map((value) => {
+    const currentLogStatusList = parseOutput.split(",").map((value) => {
       return value.split(":");
     });
-    setCurrentLogStatus(splitToArray[0][1]);
-    setCyclesCompleted(Number(splitToArray[1][1]));
+
+    const currentCompletedLogCycle = Number(currentLogStatusList[1][1]);
+    setCyclesCompleted(currentCompletedLogCycle);
+
+    const currentLogState = currentLogStatusList[0][1];
+    if (!currentLogState) return;
+    setCurrentLogStatus(currentLogState);
   }
 
-  async function getCyclesValue() {
-    if (portId().length === 0) return;
-    const logConfigGet = Command.sidecar("binaries/drivercom", [
-      `--port`,
-      portId(),
-      `log.config.get`,
-    ]);
-    const output = await logConfigGet.execute();
-    const parseObject = JSON.parse(output.stdout);
-    const cyclesIndex = Object.keys(parseObject).indexOf("cycles");
-    const cyclesValue = Object.values(parseObject)[cyclesIndex];
-    setCurrentCycles(Number(cyclesValue));
-  }
+  onMount(() => {
+    getCurrentLogStatus();
+  });
 
+  // Check when logging status became to start until it ends.
+  // To display Log Start button loading.
+  createEffect(() => {
+    const currentLogCycle = cyclesCompleted();
+    if (currentLogCycle < 0 && currentLogStatus() === "Log.Status.stopped") {
+      return;
+    }
+    if (currentLogStatus() === "Log.Status.started") {
+      setTimeout(() => {
+        getCurrentLogStatus();
+      }, 100);
+    }
+  });
+
+  // Signal for display Log Get button loading while saving log.csv file.
   const [logGetBtnLoading, setLogGetBtnLoading] = createSignal(false);
-  async function logGet() {
-    setLogGetBtnLoading(true);
+
+  // Save log.csv file && Display `Log Get` button loading while saving log.csv file
+  async function saveLogCsvFile() {
     const logGet = Command.sidecar("binaries/drivercom", [
       `--port`,
       portId(),
       `log.get`,
     ]);
-    const output = await logGet.execute(); 
+    const output = await logGet.execute();
 
-    if (output.stdout) {
-      const checkError = output.stdout.split("\n").filter((line) => line.length > 0)
-      if(checkError.length <= 1) {
+    if (output) {
+      const checkError = output.stdout.split("\n").filter((line) =>
+        line.length > 0
+      );
+      if (checkError.length <= 1) {
         props.onErrorMessage?.({
           title: "Invalid Log",
-           description: "Log is not available.",
-           type : "error"
-        })
+          description: "Invalid log status.",
+          type: "error",
+        });
         setLogGetBtnLoading(false);
-        setCurrentLogStatus("Log.status.invalid")
+        setCurrentLogStatus("Log.status.invalid");
         return;
       }
 
+      setLogGetBtnLoading(true);
       const path = await save({
         defaultPath: `${fileName()}`,
         filters: [
@@ -101,7 +118,7 @@ export function LoggingForm(props: LoggingFormProps) {
       if (!path) {
         props.onErrorMessage?.({
           title: "Invalid File Path",
-          description: "The specified file path is invalid.",
+          description: "The file path is invalid.",
           type: "error",
         });
         setLogGetBtnLoading(false);
@@ -111,7 +128,7 @@ export function LoggingForm(props: LoggingFormProps) {
       if (extension != "csv") {
         props.onErrorMessage?.({
           title: "Invalid File Extension",
-          description: "The specified file extension is invalid.",
+          description: "The file extension is invalid.",
           type: "error",
         });
         setLogGetBtnLoading(false);
@@ -124,11 +141,91 @@ export function LoggingForm(props: LoggingFormProps) {
     }
   }
 
-  const [fileName, setFileName] = createSignal<string>(props.fileName);
+  async function startLogging() {
+    const logStart = Command.sidecar("binaries/drivercom", [
+      `--port`,
+      portId(),
+      `log.start`,
+    ]);
+    await logStart.execute();
+    getCurrentLogStatus();
+
+    // Error message for when Log status is invalid
+    if (currentLogStatus() === "Log.Status.invalid") {
+      props.onErrorMessage?.({
+        title: "Invalid Log",
+        description: "The log is invalid.",
+        type: "error",
+      });
+      return;
+    }
+  }
+
+  async function stopLogging() {
+    const logStop = Command.sidecar("binaries/drivercom", [
+      `--port`,
+      portId(),
+      `log.stop`,
+    ]);
+    await logStop.execute();
+    getCurrentLogStatus();
+  }
+
+  async function saveLogAsFile() {
+    const json_str = JSON.stringify(logForm, null, "  ");
+    const path = await save({
+      defaultPath: `${fileName()}`,
+      filters: [
+        {
+          name: "JSON",
+          extensions: ["json"],
+        },
+      ],
+    });
+    if (!path) {
+      props.onErrorMessage?.({
+        title: "Invalid File Path",
+        description: "The specified file path is invalid.",
+        type: "error",
+      });
+      return;
+    }
+    const extension = path.split(".").pop();
+    if (extension != "json") {
+      props.onErrorMessage?.({
+        title: "Invalid File Extension",
+        description: "The specified file extension is invalid.",
+        type: "error",
+      });
+      return;
+    }
+    // TODO: Handle write promise error with toast
+    await writeTextFile(path, json_str);
+    setRecentFilePaths((prev) => {
+      const parseFilePath = prev.filter((prevPath) => prevPath !== path);
+      return [path, ...parseFilePath].slice(0, 7);
+    });
+  }
+
+  async function saveLogToPort() {
+    if (portId().length === 0) return;
+    const json_str = JSON.stringify(logForm, null, "  ");
+    const logSave = Command.sidecar("binaries/drivercom", [
+      `--port`,
+      portId(),
+      `log.config.set`,
+      json_str,
+    ]);
+    await logSave.execute();
+
+    setTimeout(() => {
+      getCurrentLogStatus();
+    }, 100);
+  }
 
   return (
-    <div style={{ "width": "30rem", "margin-bottom": "3rem" }}>
-      <Card.Root>
+    <div style={{ width: "40rem", "margin-bottom": "3rem" }}>
+      <Card.Root padding={"0.5rem"}>
         <Card.Header paddingTop={"3rem"}>
           <Editable.Root
             placeholder="File name"
@@ -141,88 +238,46 @@ export function LoggingForm(props: LoggingFormProps) {
             fontSize={"2xl"}
           >
             <Editable.Area>
-              <Editable.Input />
+              <Editable.Input width={"90%"} />
               <Editable.Preview />
             </Editable.Area>
           </Editable.Root>
-          <Text
-            marginTop={"0.5rem"}
-            fontWeight={"light"}
-            opacity={"60%"}
-            size={"lg"}
-            userSelect={"none"}
-          >
-            Log Configuration
-          </Text>
-        </Card.Header>
-        <Card.Body gap={1.5}>
-          <LogFormObject object={logForm} />
           <IconButton
             onClick={() => props.onCancel?.()}
             variant="ghost"
             borderRadius="1rem"
             width="1rem"
-            style={{ position: "absolute", top: "1.5rem", right: "0.5rem" }}
+            style={{ position: "absolute", top: "1.5rem", right: "1.5rem" }}
             padding="0"
           >
             <IconX />
           </IconButton>
+        </Card.Header>
+        <Card.Body gap={1.5}>
+          <LogConfigFieldSet object={logForm} />
         </Card.Body>
         <Card.Footer marginTop={"3rem"} marginBottom={"2rem"}>
           <Stack direction={"row"}>
             <Button
-              disabled={portId().length === 0 || logGetBtnLoading() || cyclesCompleted() === currentCycles()}
+              disabled={portId().length === 0 || logGetBtnLoading() ||
+                currentLogStatus() === "Log.Status.invalid"}
               loading={currentLogStatus() === "Log.Status.started"}
-              onClick={async () => {
-                const logStart = Command.sidecar("binaries/drivercom", [
-                  `--port`,
-                  portId(),
-                  `log.start`,
-                ]);
-                await logStart.execute();
-                logStatus();
-                getCyclesValue()
-
-                if (currentLogStatus() === "Log.Status.invalid") {
-                  props.onErrorMessage?.({
-                    title: "Log Invalid",
-                    description: "Current log state is invalid.",
-                    type: "error",
-                  });
-                  return;
-                }
-                createEffect(() => {
-                  const cyclesNumber = cyclesCompleted()
-                  if (cyclesNumber !== currentCycles()) {
-                    logStatus();
-                  }
-                });
-              }}
+              onClick={() => startLogging()}
               variant={"outline"}
             >
               Log Start
             </Button>
             <Button
-              disabled={currentLogStatus() !== "Log.Status.started" ||
-                portId().length === 0}
-              onClick={async () => {
-                const logStop = Command.sidecar("binaries/drivercom", [
-                  `--port`,
-                  portId(),
-                  `log.stop`,
-                ]);
-                await logStop.execute();
-                logStatus();
-              }}
+              disabled={currentLogStatus() !== "Log.Status.started"}
+              onClick={() => stopLogging()}
               variant={"outline"}
             >
               Log Stop
             </Button>
             <Button
-              disabled={currentLogStatus() !== "Log.Status.stopped"}
-              onClick={() => {
-                logGet();
-              }}
+              disabled={currentLogStatus() !== "Log.Status.stopped" ||
+                portId().length === 0}
+              onClick={() => saveLogCsvFile()}
               variant={"outline"}
               loading={logGetBtnLoading()}
             >
@@ -238,90 +293,17 @@ export function LoggingForm(props: LoggingFormProps) {
                 <Menu.Content width="8rem">
                   <Menu.Item
                     value={"Save as file"}
-                    onClick={async () => {
-                      const json_str = JSON.stringify(logForm, null, "  ");
-                      const path = await save({
-                        defaultPath: `${fileName()}`,
-                        filters: [
-                          {
-                            name: "JSON",
-                            extensions: ["json"],
-                          },
-                        ],
-                      });
-                      if (!path) {
-                        props.onErrorMessage?.({
-                          title: "Invalid File Path",
-                          description: "The specified file path is invalid.",
-                          type: "error",
-                        });
-                        return;
-                      }
-                      const extension = path.split(".").pop();
-                      if (extension != "json") {
-                        props.onErrorMessage?.({
-                          title: "Invalid File Extension",
-                          description:
-                            "The specified file extension is invalid.",
-                          type: "error",
-                        });
-                        return;
-                      }
-                      // TODO: Handle write promise error with toast
-                      await writeTextFile(path, json_str);
-                      setRecentFilesPath((prev) => {
-                        const parseFilePath = prev.filter((prevPath) =>
-                          prevPath !== path
-                        );
-                        return [path, ...parseFilePath].slice(0, 7);
-                      });
-                    }}
+                    onClick={() => saveLogAsFile()}
+                    userSelect="none"
                   >
                     Save as file
                   </Menu.Item>
                   <Menu.Separator />
                   <Menu.Item
                     value={"Save to port"}
-                    disabled={portId().length === 0}
-                    onClick={async () => {
-                      const json_str = JSON.stringify(logForm, null, "  ");
-                      if (portId().length === 0) return;
-                      const logSave = Command.sidecar("binaries/drivercom", [
-                        `--port`,
-                        portId(),
-                        `log.config.set`,
-                        json_str,
-                      ]);
-                      const output = await logSave.execute();
-                      setTimeout(() => {
-                        getCyclesValue();
-                        logStatus();
-                      },100)
-                      // Error Message
-                      if (output.stderr.length > 0) {
-                        const checkErrorMsg = output.stderr.split(`\n`)[0]
-                          .replaceAll(" ", "")
-                          .split(":");
-                        if (checkErrorMsg[0] !== "error") return;
-                        // Only show error message, when the message starts with error
-                        // Also change upper case to lower case, to show as a message
-                        const parseErrorMsg = Array.from(checkErrorMsg[1]).map(
-                          (alphabet, index) => {
-                            return alphabet === alphabet.toUpperCase()
-                              ? index === 0
-                                ? ` ${alphabet}`
-                                : ` ${alphabet.toLowerCase()}`
-                              : alphabet;
-                          },
-                        ).toString().replaceAll(",", "");
-                        props.onErrorMessage?.({
-                          title: "Invalid Log Error",
-                          description: parseErrorMsg,
-                          type: "error",
-                        });
-                        return;
-                      }
-                    }}
+                    disabled={portId().length === 0 || logGetBtnLoading()}
+                    onClick={() => saveLogToPort()}
+                    userSelect="none"
                   >
                     Save to port
                   </Menu.Item>
@@ -335,12 +317,13 @@ export function LoggingForm(props: LoggingFormProps) {
   );
 }
 
-export type logFormObjectProps = JSX.HTMLAttributes<Element> & {
+export type logConfigFieldSetProps = JSX.HTMLAttributes<Element> & {
   object: object;
   sectionName?: string;
 };
 
-export function LogFormObject(props: logFormObjectProps) {
+// Component for parse log config to display log config field.
+export function LogConfigFieldSet(props: logConfigFieldSetProps) {
   const [obj, setObject] = createStore<object>(props.object);
 
   const [prevCheckBoxIndex, setPrevCheckBoxIndex] = createSignal<number | null>(
@@ -363,6 +346,7 @@ export function LogFormObject(props: logFormObjectProps) {
     });
   };
 
+  // Log config start condition list for select component
   const parseStartConditionList = logStartConditionList().map((condition) => {
     return { label: condition, value: condition };
   });
@@ -370,6 +354,7 @@ export function LogFormObject(props: logFormObjectProps) {
     items: parseStartConditionList,
   });
 
+  // Log config start combinator list for select component
   const parseCombinatorList = logStartCombinatorList().map((condition) => {
     return { label: condition, value: condition };
   });
@@ -389,7 +374,7 @@ export function LogFormObject(props: logFormObjectProps) {
               size={"lg"}
               userSelect={"none"}
             >
-              {key[0]}
+              {`${key[0][0].toUpperCase()}${key[0].slice(1, key[0].length)}`}
             </Text>
           </Show>
           <Show when={typeof key[1] === "number" && key[0] !== "_"}>
@@ -422,10 +407,10 @@ export function LogFormObject(props: logFormObjectProps) {
             <Text
               marginTop="0.3rem"
               width={"30%"}
-              fontWeight={"light"}
               userSelect={"none"}
+              marginBottom={"0.5rem"}
             >
-              {key[0]}
+              {`${key[0][0].toUpperCase()}${key[0].slice(1, key[0].length)}`}
             </Text>
             <Select.Root
               positioning={{ sameWidth: true }}
@@ -499,13 +484,14 @@ export function LogFormObject(props: logFormObjectProps) {
             <Show when={props.sectionName !== undefined}>
               <Text
                 marginTop={"0.2rem"}
+                marginBottom={"0.5rem"}
                 fontWeight={"medium"}
                 userSelect={"none"}
               >
-                {key[0]}
+                {`${key[0][0].toUpperCase()}${key[0].slice(1, key[0].length)}`}
               </Text>
             </Show>
-            <LogFormObject
+            <LogConfigFieldSet
               object={key[1]}
               sectionName={key[0]}
               style={{ "margin-bottom": "0.5rem" }}
