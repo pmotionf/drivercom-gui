@@ -36,18 +36,12 @@ export function Logging() {
     setIsFileOpen(true);
   }
 
-  async function getEmptyLog() {
-    const logConfig = Command.sidecar("binaries/drivercom", [
-      "log.config.empty",
-    ]);
-    const output = await logConfig.execute();
-    const parseFileToObject = JSON.parse(output.stdout);
-    setFileName("New File");
-    setLogConfigureFile(parseFileToObject);
-    setIsFileOpen(true);
-  }
+  const toaster = Toast.createToaster({
+    placement: "top-end",
+    gap: 24,
+  });
 
-  async function getFilePath() {
+  async function openFileDialog() {
     const path = await open({
       multiple: false,
       filters: [
@@ -76,28 +70,30 @@ export function Logging() {
     return path;
   }
 
+  function checkFileFormat(file: object): string {
+    const newFileFormat = Object.entries(file)
+      .map((line) => {
+        const key = line[0];
+        const value = line[1];
+        if (typeof value !== "object") return [key, typeof value];
+        const parseValue = checkFileFormat(value);
+        return [key, parseValue];
+      })
+      .sort()
+      .toString();
+
+    return newFileFormat;
+  }
+
   async function readJsonFile(path: string) {
     try {
       const output = await readTextFile(path);
       const parseFileToObject = JSON.parse(output);
-      const newFileFormat = Object.entries(parseFileToObject)
-        .map((line) => {
-          return [line[0], typeof line[1]];
-        })
-        .sort()
-        .toString();
-      const logFileFormat = Object.entries(
-        logFormFileFormat(),
-      )
-        .map((line) => {
-          return [line[0], typeof line[1]];
-        })
-        .sort()
-        .toString();
+      const checkNewFileFormat = checkFileFormat(parseFileToObject);
+      const logFileFormat = checkFileFormat(logFormFileFormat());
 
       if (
-        newFileFormat !==
-          logFileFormat
+        checkNewFileFormat !== logFileFormat
       ) {
         toaster.create({
           title: "Invalid Log",
@@ -111,7 +107,7 @@ export function Logging() {
       setFileName(fileName!);
       setRecentFilePaths((prev) => {
         const parseFilePath = prev.filter((prevPath) => prevPath !== path);
-        return [path, ...parseFilePath].slice(0, 7);
+        return [path, ...parseFilePath];
       });
       setLogConfigureFile(parseFileToObject);
       setIsFileOpen(true);
@@ -123,22 +119,18 @@ export function Logging() {
       });
       setRecentFilePaths((prev) => {
         const parseFilePath = prev.filter((prevPath) => prevPath !== path);
-        return [...parseFilePath].slice(0, 7);
+        return [...parseFilePath];
       });
     }
   }
-
-  const toaster = Toast.createToaster({
-    placement: "top-end",
-    gap: 24,
-  });
 
   return (
     <>
       <div
         style={{
           "padding-top": "4rem",
-          "padding-bottom": "3rem",
+          "padding-bottom": "4rem",
+          "height": "100%",
         }}
       >
         <Toast.Toaster toaster={toaster}>
@@ -170,7 +162,11 @@ export function Logging() {
             </Stack>
           }
         >
-          <Stack width="42rem" marginLeft={`calc((100% - 42rem) / 2)`}>
+          <Stack
+            width="42rem"
+            marginLeft={`calc((100% - 42rem) / 2)`}
+            height={"100%"}
+          >
             <Text variant={"heading"} size={"3xl"}>
               Logging
             </Text>
@@ -182,7 +178,14 @@ export function Logging() {
               <Button
                 variant={"outline"}
                 padding={"4rem"}
-                onClick={() => getEmptyLog()}
+                onClick={() => {
+                  const newEmptyFile = JSON.parse(
+                    JSON.stringify(logFormFileFormat()),
+                  );
+                  setFileName("New File");
+                  setLogConfigureFile(newEmptyFile);
+                  setIsFileOpen(true);
+                }}
               >
                 Create New File
               </Button>
@@ -190,7 +193,7 @@ export function Logging() {
                 variant={"outline"}
                 padding={"4rem"}
                 onClick={async () => {
-                  const path = await getFilePath();
+                  const path = await openFileDialog();
                   if (!path) return;
                   readJsonFile(path);
                 }}
@@ -212,7 +215,11 @@ export function Logging() {
               <Text size={"xl"} marginTop={"2rem"} fontWeight={"bold"}>
                 Recent
               </Text>
-              <Stack marginTop={"0.5rem"}>
+              <Stack
+                marginTop={"0.5rem"}
+                maxHeight={"100%"}
+                style={{ "overflow-y": "auto" }}
+              >
                 <For each={recentFilePaths()}>
                   {(path) => (
                     <Text

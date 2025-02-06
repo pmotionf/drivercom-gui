@@ -33,11 +33,9 @@ export function LoggingForm(props: LoggingFormProps) {
   const logForm = props.jsonfile;
   const [fileName, setFileName] = createSignal<string>(props.fileName);
 
-  // Retrieve Current Logging status from the Port
   const [cyclesCompleted, setCyclesCompleted] = createSignal<number>(0);
   const [currentLogStatus, setCurrentLogStatus] = createSignal<string>("");
 
-  // Get current Logging status
   async function getCurrentLogStatus() {
     if (portId().length === 0) return;
     const logStatus = Command.sidecar("binaries/drivercom", [
@@ -82,6 +80,7 @@ export function LoggingForm(props: LoggingFormProps) {
 
   // Save log.csv file && Display `Log Get` button loading while saving log.csv file
   async function saveLogCsvFile() {
+    setLogGetBtnLoading(true);
     const logGet = Command.sidecar("binaries/drivercom", [
       `--port`,
       portId(),
@@ -104,7 +103,6 @@ export function LoggingForm(props: LoggingFormProps) {
         return;
       }
 
-      setLogGetBtnLoading(true);
       const path = await save({
         defaultPath: `${fileName()}`,
         filters: [
@@ -134,7 +132,7 @@ export function LoggingForm(props: LoggingFormProps) {
         setLogGetBtnLoading(false);
         return;
       }
-      // TODO: Handle write promise error with toast
+
       const csvFile = output.stdout;
       await writeTextFile(path, csvFile);
       setLogGetBtnLoading(false);
@@ -199,11 +197,11 @@ export function LoggingForm(props: LoggingFormProps) {
       });
       return;
     }
-    // TODO: Handle write promise error with toast
+
     await writeTextFile(path, json_str);
     setRecentFilePaths((prev) => {
       const parseFilePath = prev.filter((prevPath) => prevPath !== path);
-      return [path, ...parseFilePath].slice(0, 7);
+      return [path, ...parseFilePath];
     });
   }
 
