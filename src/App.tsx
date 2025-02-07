@@ -24,6 +24,7 @@ import {
   GlobalStateContext,
   portId,
   setCliVersion,
+  setConfigFormFileFormat,
   setEnumMappings,
   setEnumSeries,
   setGlobalState,
@@ -64,6 +65,7 @@ function App(props: RouteSectionProps) {
     detectCliVersion();
     parseEnumMappings();
     buildEmptyLogConfiguration();
+    buildEmptyDriverConfiguration();
     getLogStartCombinator();
     getLogStartCondition();
   });
@@ -134,6 +136,15 @@ function App(props: RouteSectionProps) {
     const output = await logConfig.execute();
     const logFormatToJson = JSON.parse(output.stdout);
     setLogFormFileFormat(logFormatToJson);
+  }
+
+  async function buildEmptyDriverConfiguration() {
+    const configEmpty = Command.sidecar("binaries/drivercom", [
+      "config.empty",
+    ]);
+    const output = await configEmpty.execute();
+    const configFormatToJson = JSON.parse(output.stdout);
+    setConfigFormFileFormat(configFormatToJson);
   }
 
   async function getLogStartCondition() {
