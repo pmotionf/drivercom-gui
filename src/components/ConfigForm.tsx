@@ -6,7 +6,6 @@ import { writeTextFile } from "@tauri-apps/plugin-fs";
 import { Accordion } from "~/components/ui/accordion";
 import { Button } from "~/components/ui/button";
 import { Checkbox } from "~/components/ui/checkbox";
-import { FormLabel } from "~/components/ui/form-label";
 import { Input } from "~/components/ui/input";
 
 import { Menu } from "./ui/menu";
@@ -18,7 +17,7 @@ import { Card } from "./ui/card";
 import { Text } from "./ui/text";
 import { Editable } from "./ui/editable";
 import { IconButton } from "./ui/icon-button";
-import { IconX } from "@tabler/icons-solidjs";
+import { IconChevronDown, IconX } from "@tabler/icons-solidjs";
 
 export type ConfigFormProps = JSX.HTMLAttributes<HTMLFormElement> & {
   label: string;
@@ -160,32 +159,62 @@ function ConfigObject(props: ConfigObjectProps) {
           const value = entry[1];
           if (value.constructor === Array) {
             return (
-              <ConfigList
-                style={{ "margin-top": "1rem" }}
-                label={key}
-                list={value}
-                id_prefix={props.id_prefix}
-              />
+              <>
+                <Stack
+                  style={{
+                    "border-width": "1px",
+                    "padding-right": "1rem",
+                    "padding-left": "1rem",
+                    "margin-top": "1rem",
+                    "border-radius": "0.5rem",
+                    "margin-bottom": "0.5rem",
+                    "padding-bottom": "0.5rem",
+                  }}
+                >
+                  <ConfigList
+                    label={key}
+                    list={value}
+                    id_prefix={props.id_prefix}
+                  />
+                </Stack>
+              </>
             );
           }
           if (typeof value === "object") {
             return (
               <Stack
-                style={{
+                /*style={{
                   "border-width": "1px",
                   padding: "1rem",
                   "margin-top": "1rem",
                   "border-radius": "0.5rem",
-                }}
+                  "margin-bottom": "0.5rem",
+                }}*/
               >
-                <Text>
-                  {key}
-                </Text>
-                <ConfigObject
-                  object={value}
-                  id_prefix={props.id_prefix + key}
-                  style={{ "padding-left": "1em" }}
-                />
+                <fieldset
+                  style={{
+                    "border-width": "1px",
+                    padding: "1rem",
+                    "padding-top": "0",
+                    "margin-bottom": "1rem",
+                    "border-radius": "0.5rem",
+                    "margin-top": "1rem",
+                  }}
+                >
+                  <legend>
+                    <Text
+                      fontWeight={"bold"}
+                      opacity={"70%"}
+                    >
+                      {`${key[0].toUpperCase()}${key.slice(1, key.length)}`}
+                    </Text>
+                  </legend>
+                  <ConfigObject
+                    object={value}
+                    id_prefix={props.id_prefix + key}
+                    style={{ "padding-left": "1rem" }}
+                  />
+                </fieldset>
               </Stack>
             );
           }
@@ -202,6 +231,7 @@ function ConfigObject(props: ConfigObjectProps) {
                     e.checked,
                   );
                 }}
+                marginTop={"1rem"}
               >
                 <Text fontWeight={"light"} userSelect={"none"}>
                   {key}
@@ -211,17 +241,18 @@ function ConfigObject(props: ConfigObjectProps) {
           }
           if (typeof value === "number") {
             return (
-              <FormLabel
-                style={{
-                  display: "flex",
-                  "align-content": "center",
-                  "line-height": "3em",
-                  "justify-content": "space-between",
-                }}
+              <Stack
+                direction={"row"}
+                width={"100%"}
+                marginTop={"1rem"}
+                marginBottom={"0.5rem"}
               >
-                {key}
+                <Text width={"50%"} marginTop={"0.4rem"} fontWeight={"light"}>
+                  {key}
+                </Text>
                 <Input
-                  id={props.id_prefix + key}
+                  width={"50%"}
+                  placeholder={key}
                   value={object[key as keyof typeof object]}
                   onChange={(e) => {
                     setObject(
@@ -231,13 +262,8 @@ function ConfigObject(props: ConfigObjectProps) {
                       Number(e.target.value),
                     );
                   }}
-                  style={{
-                    "margin-left": "1em",
-                    "min-width": "8em",
-                    "max-width": "12em",
-                  }}
                 />
-              </FormLabel>
+              </Stack>
             );
           }
         }}
@@ -258,16 +284,27 @@ function ConfigList(props: ConfigListProps) {
   const [list] = createStore(props.list);
 
   return (
-    <Accordion.Root multiple {...rest}>
+    <Accordion.Root
+      multiple
+      {...rest}
+      style={{ "border-bottom": "0", "border-top": "0" }}
+    >
       <For each={list}>
         {(item, index) => {
           const title = props.label + " " + (index() + 1).toString();
           return (
             <Accordion.Item value={props.id_prefix + title}>
               <Accordion.ItemTrigger>
-                {title}
+                <Text fontWeight={"bold"} size={"md"} opacity={"70%"}>
+                  {title}
+                </Text>
+                <Accordion.ItemIndicator>
+                  <IconChevronDown />
+                </Accordion.ItemIndicator>
               </Accordion.ItemTrigger>
-              <Accordion.ItemContent>
+              <Accordion.ItemContent
+                padding={"0"}
+              >
                 <ConfigObject
                   object={item}
                   id_prefix={props.id_prefix + title}
