@@ -9,7 +9,7 @@ import { Checkbox } from "~/components/ui/checkbox";
 import { Input } from "~/components/ui/input";
 
 import { Menu } from "./ui/menu";
-import { portId } from "~/GlobalState";
+import { portId, setRecentConfigFilePaths } from "~/GlobalState";
 import { ErrorMessage } from "~/pages/LogViewer/LogViewerTab";
 import { Command } from "@tauri-apps/plugin-shell";
 import { Stack } from "styled-system/jsx";
@@ -28,12 +28,12 @@ export type ConfigFormProps = JSX.HTMLAttributes<HTMLFormElement> & {
 
 export function ConfigForm(props: ConfigFormProps) {
   const [config] = createStore(props.config);
-  const [fileName, setFileName] = createSignal<string>("");
+  const [fileName, setFileName] = createSignal<string>(props.label);
 
   async function saveLogAsFile() {
     const json_str = JSON.stringify(config, null, "  ");
     const path = await save({
-      defaultPath: `${props.label}`,
+      defaultPath: `${fileName()}`,
       filters: [
         {
           name: "JSON",
@@ -60,6 +60,12 @@ export function ConfigForm(props: ConfigFormProps) {
     }
 
     await writeTextFile(path, json_str);
+    setRecentConfigFilePaths((prev) => {
+      const newRecentFiles = prev.filter((prevFilePath) =>
+        prevFilePath !== path
+      );
+      return [path, ...newRecentFiles];
+    });
   }
 
   async function saveLogToPort() {
@@ -104,7 +110,7 @@ export function ConfigForm(props: ConfigFormProps) {
             <IconX />
           </IconButton>
         </Card.Header>
-        <Card.Body>
+        <Card.Body marginTop={"1rem"}>
           <ConfigObject object={config} id_prefix={props.label} />
         </Card.Body>
         <Card.Footer>

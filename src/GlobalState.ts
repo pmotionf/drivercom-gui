@@ -33,6 +33,9 @@ export const [configFormFileFormat, setConfigFormFileFormat] = createSignal({});
 export const [recentLogFilePaths, setRecentLogFilePaths] = createSignal<
   string[]
 >([]);
+export const [recentConfigFilePaths, setRecentConfigFilePaths] = createSignal<
+  string[]
+>([]);
 
 export const [logStartConditionList, setLogStartCoditionList] = createSignal<
   string[]

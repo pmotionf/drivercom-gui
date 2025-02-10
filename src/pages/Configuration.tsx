@@ -1,16 +1,22 @@
-import { createSignal, Show } from "solid-js";
+import { createSignal, For, Show } from "solid-js";
 
 import { Button } from "~/components/ui/button";
 
 import { ConfigForm } from "~/components/ConfigForm";
-import { IconX } from "@tabler/icons-solidjs";
+import { IconFile, IconX } from "@tabler/icons-solidjs";
 import { open } from "@tauri-apps/plugin-dialog";
 import { Toast } from "~/components/ui/toast";
 import { readTextFile } from "@tauri-apps/plugin-fs";
 import { Stack } from "styled-system/jsx";
 import { Text } from "~/components/ui/text";
-import { configFormFileFormat, portId } from "~/GlobalState";
+import {
+  configFormFileFormat,
+  portId,
+  recentConfigFilePaths,
+  setRecentConfigFilePaths,
+} from "~/GlobalState";
 import { Command } from "@tauri-apps/plugin-shell";
+import { IconButton } from "~/components/ui/icon-button";
 
 function Configuration() {
   const [configureFile, setConfigureFile] = createSignal({});
@@ -121,17 +127,40 @@ function Configuration() {
       setFileName(fileName!);
       setConfigureFile(parseFileToObject);
       setIsFileOpen(true);
+      setRecentConfigFilePaths((prev) => {
+        const newRecentFiles = prev.filter((prevFilePath) =>
+          prevFilePath !== path
+        );
+        return [path, ...newRecentFiles];
+      });
     } catch {
       toaster.create({
         title: "Invalid File Path",
         description: "The file path is invalid.",
         type: "error",
       });
+      setRecentConfigFilePaths((prev) => {
+        const newRecentFiles = prev.filter((prevFilePath) =>
+          prevFilePath !== path
+        );
+        return [...newRecentFiles];
+      });
     }
   }
 
   return (
     <>
+      <Toast.Toaster toaster={toaster}>
+        {(toast) => (
+          <Toast.Root>
+            <Toast.Title>{toast().title}</Toast.Title>
+            <Toast.Description>{toast().description}</Toast.Description>
+            <Toast.CloseTrigger>
+              <IconX />
+            </Toast.CloseTrigger>
+          </Toast.Root>
+        )}
+      </Toast.Toaster>
       <div
         style={{
           "padding-top": "4rem",
@@ -139,17 +168,6 @@ function Configuration() {
           "height": "100%",
         }}
       >
-        <Toast.Toaster toaster={toaster}>
-          {(toast) => (
-            <Toast.Root>
-              <Toast.Title>{toast().title}</Toast.Title>
-              <Toast.Description>{toast().description}</Toast.Description>
-              <Toast.CloseTrigger>
-                <IconX />
-              </Toast.CloseTrigger>
-            </Toast.Root>
-          )}
-        </Toast.Toaster>
         <Show
           when={!isFileOpen()}
           fallback={
@@ -211,6 +229,71 @@ function Configuration() {
                 Get From Port
               </Button>
             </Stack>
+            <Show when={recentConfigFilePaths().length !== 0}>
+              <Text size={"xl"} marginTop={"2rem"} fontWeight={"bold"}>
+                Recent
+              </Text>
+              <Stack
+                marginTop={"1rem"}
+                maxHeight={"100%"}
+                style={{ "overflow-y": "auto" }}
+              >
+                <For each={recentConfigFilePaths()}>
+                  {(path, index) => (
+                    <Stack
+                      style={{ padding: "1rem" }}
+                      direction={"row"}
+                      borderWidth={"1px"}
+                      borderRadius={"0.5rem"}
+                    >
+                      <IconButton disabled width={"1rem"} cursor={"default"}>
+                        <IconFile />
+                      </IconButton>
+                      <Text
+                        cursor={"pointer"}
+                        userSelect="none"
+                        onClick={() => {
+                          readJsonFile(path);
+                        }}
+                        size={"lg"}
+                        marginLeft={"0.5rem"}
+                        marginTop={"0.2rem"}
+                        width={"20rem"}
+                      >
+                        {path.match(/[^\\\\]+$/)}
+                      </Text>
+                      <Text
+                        userSelect="none"
+                        fontWeight={"light"}
+                        marginLeft={"0.5rem"}
+                        marginTop={"0.4rem"}
+                        width={"15rem"}
+                        opacity={"70%"}
+                      >
+                        {path.match(/[^?!\\\\]+$/)}
+                      </Text>
+                      <Stack width={"100%"} direction={"row-reverse"}>
+                        <IconButton
+                          padding={"0"}
+                          variant={"ghost"}
+                          borderRadius={"1rem"}
+                          onClick={() => {
+                            setRecentConfigFilePaths((prev) => {
+                              const updateFilePath = prev.filter((_, i) => {
+                                return i !== index();
+                              });
+                              return updateFilePath;
+                            });
+                          }}
+                        >
+                          <IconX />
+                        </IconButton>
+                      </Stack>
+                    </Stack>
+                  )}
+                </For>
+              </Stack>
+            </Show>
           </Stack>
         </Show>
       </div>
