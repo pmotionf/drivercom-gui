@@ -30,7 +30,9 @@ export const [enumMappings, setEnumMappings] = createSignal<
 export const [logFormFileFormat, setLogFormFileFormat] = createSignal({});
 export const [configFormFileFormat, setConfigFormFileFormat] = createSignal({});
 
-export const [recentFilePaths, setRecentFilePaths] = createSignal<string[]>([]);
+export const [recentLogFilePaths, setRecentLogFilePaths] = createSignal<
+  string[]
+>([]);
 
 export const [logStartConditionList, setLogStartCoditionList] = createSignal<
   string[]
