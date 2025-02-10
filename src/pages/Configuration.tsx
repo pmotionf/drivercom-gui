@@ -33,7 +33,6 @@ function Configuration() {
     setFileName(portId());
     setConfigureFile(parseConfigToObject);
     setIsFileOpen(true);
-    console.log(parseConfigToObject);
   }
 
   async function openFileDialog() {
@@ -65,10 +64,58 @@ function Configuration() {
     return path;
   }
 
+  function compareFileFormat(newFile: object, fileFormat: object): boolean {
+    const newFileObject = Object.entries(newFile).sort();
+    const configFileObject = Object.entries(fileFormat).sort();
+
+    const newFileFormat = newFileObject.map((line) => {
+      const key = line[0];
+      const value = line[1];
+      if (typeof value === "object") {
+        const checkValue = Object.entries(value).map((valueLine) => {
+          const valueKey = valueLine[0];
+          const typeOfValue = typeof valueLine[1];
+          return [valueKey, typeOfValue];
+        });
+        return checkValue;
+      }
+      return [key, typeof value];
+    }).toString();
+
+    const configFileFormat = configFileObject.map((line) => {
+      const key = line[0];
+      const value = line[1];
+      if (typeof value === "object") {
+        const checkValue = Object.entries(value).map((valueLine) => {
+          const valueKey = valueLine[0];
+          const typeOfValue = typeof valueLine[1];
+          return [valueKey, typeOfValue];
+        });
+        return checkValue;
+      }
+      return [key, typeof value];
+    }).toString();
+
+    return newFileFormat === configFileFormat;
+  }
+
   async function readJsonFile(path: string) {
     try {
       const output = await readTextFile(path);
       const parseFileToObject = JSON.parse(output);
+
+      const checkFileFormat = compareFileFormat(
+        parseFileToObject,
+        configFormFileFormat(),
+      );
+      if (!checkFileFormat) {
+        toaster.create({
+          title: "Invalid File",
+          description: "The file is invalid.",
+          type: "error",
+        });
+        return;
+      }
 
       const fileName = path.replaceAll("\\", "/").split("/").pop();
       setFileName(fileName!);
