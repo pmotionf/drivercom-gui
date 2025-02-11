@@ -24,16 +24,24 @@ export type ConfigFormProps = JSX.HTMLAttributes<HTMLFormElement> & {
   config: object;
   onErrorMessage?: (msg: ErrorMessage) => void;
   onCancel?: () => void;
+  path?: string;
 };
 
 export function ConfigForm(props: ConfigFormProps) {
   const [config] = createStore(props.config);
   const [fileName, setFileName] = createSignal<string>(props.label);
 
-  async function saveLogAsFile() {
+  let currentPath: string = "";
+  if (props.path) {
+    const fileNameFromPath = props.path.match(/[^?!\\\\]+$/)!.toString();
+    currentPath = props.path.replace(fileNameFromPath, "");
+  }
+
+  async function saveConfigAsFile() {
     const json_str = JSON.stringify(config, null, "  ");
+
     const path = await save({
-      defaultPath: `${fileName()}`,
+      defaultPath: `${currentPath}${fileName()}`,
       filters: [
         {
           name: "JSON",
@@ -59,6 +67,13 @@ export function ConfigForm(props: ConfigFormProps) {
       return;
     }
 
+    if (currentPath === "") {
+      const currentPathFileName = path.match(/[^?!\\\\]+$/)!.toString();
+      setFileName(currentPathFileName);
+      currentPath = path.replace(currentPathFileName, "");
+      console.log(currentPath);
+    }
+
     await writeTextFile(path, json_str);
     setRecentConfigFilePaths((prev) => {
       const newRecentFiles = prev.filter((prevFilePath) =>
@@ -68,16 +83,16 @@ export function ConfigForm(props: ConfigFormProps) {
     });
   }
 
-  async function saveLogToPort() {
+  async function saveConfigToPort() {
     if (portId().length === 0) return;
     const json_str = JSON.stringify(config, null, "  ");
-    const logSave = Command.sidecar("binaries/drivercom", [
+    const saveConfig = Command.sidecar("binaries/drivercom", [
       `--port`,
       portId(),
       `config.set`,
       json_str,
     ]);
-    await logSave.execute();
+    await saveConfig.execute();
   }
 
   return (
@@ -99,6 +114,13 @@ export function ConfigForm(props: ConfigFormProps) {
               <Editable.Preview />
             </Editable.Area>
           </Editable.Root>
+          <Text
+            marginTop={"1rem"}
+            opacity={"40%"}
+            fontWeight={"light"}
+          >
+            {props.path ? props.path : ""}
+          </Text>
           <IconButton
             onClick={() => props.onCancel?.()}
             variant="ghost"
@@ -124,9 +146,11 @@ export function ConfigForm(props: ConfigFormProps) {
               <Menu.Positioner>
                 <Menu.Content width="8rem">
                   <Menu.Item
-                    value={"Save as file"}
-                    onClick={() => saveLogAsFile()}
-                    userSelect="none"
+                    value="Save as file"
+                    onClick={() => {
+                      saveConfigAsFile();
+                    }}
+                    userSelect={"none"}
                   >
                     Save as file
                   </Menu.Item>
@@ -134,7 +158,7 @@ export function ConfigForm(props: ConfigFormProps) {
                   <Menu.Item
                     value={"Save to port"}
                     disabled={portId().length === 0}
-                    onClick={() => saveLogToPort()}
+                    onClick={() => saveConfigToPort()}
                     userSelect="none"
                   >
                     Save to port
@@ -188,40 +212,39 @@ function ConfigObject(props: ConfigObjectProps) {
           }
           if (typeof value === "object") {
             return (
-              <Stack
-                /*style={{
+              <fieldset
+                style={{
                   "border-width": "1px",
                   padding: "1rem",
-                  "margin-top": "1rem",
+                  "padding-top": "0",
+                  "margin-bottom": "1rem",
                   "border-radius": "0.5rem",
-                  "margin-bottom": "0.5rem",
-                }}*/
+                  "margin-top": "1rem",
+                }}
               >
-                <fieldset
-                  style={{
-                    "border-width": "1px",
-                    padding: "1rem",
-                    "padding-top": "0",
-                    "margin-bottom": "1rem",
-                    "border-radius": "0.5rem",
-                    "margin-top": "1rem",
-                  }}
-                >
-                  <legend>
-                    <Text
-                      fontWeight={"bold"}
-                      opacity={"70%"}
-                    >
-                      {`${key[0].toUpperCase()}${key.slice(1, key.length)}`}
-                    </Text>
-                  </legend>
-                  <ConfigObject
-                    object={value}
-                    id_prefix={props.id_prefix + key}
-                    style={{ "padding-left": "1rem" }}
-                  />
-                </fieldset>
-              </Stack>
+                <legend>
+                  <Text
+                    fontWeight={"bold"}
+                    opacity={"70%"}
+                  >
+                    {`${key[0].toUpperCase()}${
+                      Array.from(key.slice(1, key.length)).map(
+                        (char, index) => {
+                          if (key[index] === "_") {
+                            return char.toUpperCase();
+                          }
+                          return char;
+                        },
+                      ).toString().replaceAll(",", "")
+                    }`}
+                  </Text>
+                </legend>
+                <ConfigObject
+                  object={value}
+                  id_prefix={props.id_prefix + key}
+                  style={{ "padding-left": "1rem" }}
+                />
+              </fieldset>
             );
           }
           if (typeof value === "boolean") {
@@ -302,7 +325,16 @@ function ConfigList(props: ConfigListProps) {
             <Accordion.Item value={props.id_prefix + title}>
               <Accordion.ItemTrigger>
                 <Text fontWeight={"bold"} size={"md"} opacity={"70%"}>
-                  {title}
+                  {`${title[0].toUpperCase()}${
+                    Array.from(title.slice(1, title.length)).map(
+                      (char, index) => {
+                        if (title[index] === "_") {
+                          return char.toUpperCase();
+                        }
+                        return char;
+                      },
+                    ).toString().replaceAll(",", "")
+                  }`}
                 </Text>
                 <Accordion.ItemIndicator>
                   <IconChevronDown />
