@@ -27,6 +27,9 @@ import {
   setEnumMappings,
   setEnumSeries,
   setGlobalState,
+  setLogFormFileFormat,
+  setLogStartCoditionList,
+  setLogStartCombinatorList,
   Theme,
 } from "./GlobalState.ts";
 
@@ -60,6 +63,9 @@ function App(props: RouteSectionProps) {
 
     detectCliVersion();
     parseEnumMappings();
+    buildEmptyLogConfiguration();
+    getLogStartCombinator();
+    getLogStartCondition();
   });
 
   async function detectCliVersion() {
@@ -121,6 +127,41 @@ function App(props: RouteSectionProps) {
     );
   }
 
+  async function buildEmptyLogConfiguration() {
+    const logConfig = Command.sidecar("binaries/drivercom", [
+      "log.config.empty",
+    ]);
+    const output = await logConfig.execute();
+    const logFormatToJson = JSON.parse(output.stdout);
+    setLogFormFileFormat(logFormatToJson);
+  }
+
+  async function getLogStartCondition() {
+    const logStartCondition = Command.sidecar("binaries/drivercom", [
+      `log.config.start.condition.list`,
+    ]);
+    const output = await logStartCondition.execute();
+    const parseOutput = output.stdout.replaceAll("[", "").replaceAll("]", "")
+      .split(":");
+    const startConditionList = parseOutput[1].split(",").filter((value) =>
+      value !== "\n"
+    );
+    setLogStartCoditionList(startConditionList);
+  }
+
+  async function getLogStartCombinator() {
+    const logStartCombinator = Command.sidecar("binaries/drivercom", [
+      `log.config.start.combinator.list`,
+    ]);
+    const output = await logStartCombinator.execute();
+    const parseOutput = output.stdout.replaceAll("[", "").replaceAll("]", "")
+      .split(":");
+    const startCombinatorList = parseOutput[1].split(",").filter((value) =>
+      value !== "\n"
+    );
+    setLogStartCombinatorList(startCombinatorList);
+  }
+
   const [version, setVersion] = createSignal("0.0.0");
   invoke("version").then((ver) => setVersion(ver as string));
 
@@ -135,7 +176,7 @@ function App(props: RouteSectionProps) {
     logging: {
       icon: IconGraph,
       label: "Logging",
-      disabled: true,
+      disabled: false,
     },
     logViewer: {
       icon: IconDeviceAnalytics,

@@ -27,7 +27,6 @@ function Connect() {
     setPortList(portNames);
 
     if (portNames.length == 0) {
-      setPortId("");
       toaster.create({
         title: "No Ports Found",
         description: "No driver serial ports were detected.",
@@ -35,6 +34,7 @@ function Connect() {
       });
       return;
     }
+    setPortId("");
   }
 
   const toaster = Toast.createToaster({
