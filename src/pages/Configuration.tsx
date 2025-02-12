@@ -1,9 +1,7 @@
 import { createSignal, For, Show } from "solid-js";
 
 import { ConfigForm } from "~/components/ConfigForm";
-import {
-  IconX,
-} from "@tabler/icons-solidjs";
+import { IconX } from "@tabler/icons-solidjs";
 import { open } from "@tauri-apps/plugin-dialog";
 import { Toast } from "~/components/ui/toast";
 import { readTextFile } from "@tauri-apps/plugin-fs";
@@ -43,7 +41,7 @@ function Configuration() {
     setIsFileOpen(true);
   }
 
-  async function openFileDialog() {
+  async function openFileDialog(): Promise<string | undefined> {
     const path = await open({
       multiple: false,
       filters: [
@@ -69,73 +67,14 @@ function Configuration() {
       });
       return undefined;
     }
-    return path;
+    return path.replaceAll("\\", "/");
   }
 
-  function compareFileFormat(newFile: object, fileFormat: object): boolean {
-    const newFileObject = Object.entries(newFile).sort();
-    const configFileObject = Object.entries(fileFormat).sort();
-
-    const newFileFormat = newFileObject.map((line) => {
-      const key = line[0];
-      const value = line[1];
-      if (typeof value === "object") {
-        const checkValue = Object.entries(value).map((valueLine) => {
-          const valueKey = valueLine[0];
-          const typeOfValue = typeof valueLine[1];
-          return [valueKey, typeOfValue];
-        });
-        return checkValue;
-      }
-      return [key, typeof value];
-    }).toString();
-
-    const configFileFormat = configFileObject.map((line) => {
-      const key = line[0];
-      const value = line[1];
-      if (typeof value === "object") {
-        const checkValue = Object.entries(value).map((valueLine) => {
-          const valueKey = valueLine[0];
-          const typeOfValue = typeof valueLine[1];
-          return [valueKey, typeOfValue];
-        });
-        return checkValue;
-      }
-      return [key, typeof value];
-    }).toString();
-
-    return newFileFormat === configFileFormat;
-  }
-
-  async function readJsonFile(path: string) {
+  async function readJsonFile(path: string): Promise<object | undefined> {
     try {
       const output = await readTextFile(path);
       const parseFileToObject = JSON.parse(output);
-
-      const checkFileFormat = compareFileFormat(
-        parseFileToObject,
-        configFormFileFormat(),
-      );
-      if (!checkFileFormat) {
-        toaster.create({
-          title: "Invalid File",
-          description: "The file is invalid.",
-          type: "error",
-        });
-        return;
-      }
-
-      const fileName = path.replaceAll("\\", "/").split("/").pop();
-      setFileName(fileName!);
-      setFilePath(path);
-      setConfigureFile(parseFileToObject);
-      setIsFileOpen(true);
-      setRecentConfigFilePaths((prev) => {
-        const newRecentFiles = prev.filter((prevFilePath) =>
-          prevFilePath !== path
-        );
-        return [path, ...newRecentFiles];
-      });
+      return parseFileToObject;
     } catch {
       toaster.create({
         title: "Invalid File Path",
@@ -146,42 +85,91 @@ function Configuration() {
         const newRecentFiles = prev.filter((prevFilePath) =>
           prevFilePath !== path
         );
-        return [...newRecentFiles];
+        return newRecentFiles;
       });
-      setFilePath(undefined);
     }
   }
 
-  const [isHovered, setIsHoverd] = createSignal<[boolean, number | null]> ([false, null])
+  function compareFileFormat(newFile: object, fileFormat: object): boolean {
+    const newFileObject = Object.entries(newFile).sort();
+    const configFileObject = Object.entries(fileFormat).sort();
+
+    const newFileFormat = newFileObject.map(([key, value]) => {
+      if (typeof value === "object") {
+        const checkValue = Object.entries(value).map(
+          (valueKey, valueObject) => {
+            return [valueKey, typeof valueObject];
+          },
+        );
+        return checkValue;
+      }
+      return [key, typeof value];
+    }).toString();
+
+    const configFileFormat = configFileObject.map(([key, value]) => {
+      if (typeof value === "object") {
+        const checkValue = Object.entries(value).map(
+          (valueKey, valueObject) => {
+            return [valueKey, typeof valueObject];
+          },
+        );
+        return checkValue;
+      }
+      return [key, typeof value];
+    }).toString();
+
+    return newFileFormat === configFileFormat;
+  }
+
+  function setFileData(file: object, path: string) {
+    setConfigureFile(file);
+    setFilePath(path);
+    setFileName(path.split("/").pop()!);
+    setRecentConfigFilePaths((prev) => {
+      const newRecentFiles = prev.filter((prevFilePath) =>
+        prevFilePath !== path
+      );
+      return [path, ...newRecentFiles];
+    });
+    setIsFileOpen(true);
+  }
+
+  // Check recent file list item is hovered
+  const [isButtonHovered, setIsButtonHoverd] = createSignal<
+    [boolean, number | null]
+  >([
+    false,
+    null,
+  ]);
 
   return (
     <>
-      <Toast.Toaster toaster={toaster}>
-        {(toast) => (
-          <Toast.Root>
-            <Toast.Title>{toast().title}</Toast.Title>
-            <Toast.Description>{toast().description}</Toast.Description>
-            <Toast.CloseTrigger>
-              <IconX />
-            </Toast.CloseTrigger>
-          </Toast.Root>
-        )}
-      </Toast.Toaster>
       <div
         style={{
           "padding-top": "4rem",
           "padding-bottom": "4rem",
           "height": "100%",
-          "width" : "100%"
+          "width": `calc(100% - 3rem)`,
         }}
       >
+        <Toast.Toaster toaster={toaster}>
+          {(toast) => (
+            <Toast.Root>
+              <Toast.Title>{toast().title}</Toast.Title>
+              <Toast.Description>{toast().description}</Toast.Description>
+              <Toast.CloseTrigger>
+                <IconX />
+              </Toast.CloseTrigger>
+            </Toast.Root>
+          )}
+        </Toast.Toaster>
         <Show
           when={!isFileOpen()}
           fallback={
             <Stack direction="row" justifyContent={"center"}>
               <ConfigForm
                 label={fileName()}
-                config={configureFile()}
+                config={configureFile}
                 onErrorMessage={(msg) => toaster.create(msg)}
                 onCancel={() => setIsFileOpen(false)}
                 path={filePath()}
@@ -222,7 +210,20 @@ function Configuration() {
                 onClick={async () => {
                   const path = await openFileDialog();
                   if (!path) return;
-                  readJsonFile(path);
+                  const object = await readJsonFile(path);
+                  const checkObject = compareFileFormat(
+                    object!,
+                    configFormFileFormat(),
+                  );
+                  if (!checkObject) {
+                    toaster.create({
+                      title: "Invalid File",
+                      description: "The file is invalid.",
+                      type: "error",
+                    });
+                    return;
+                  }
+                  setFileData(object!, path);
                 }}
               >
                 Open File
@@ -243,22 +244,24 @@ function Configuration() {
                 Recent
               </Text>
               <Stack direction={"row"} width="100%" marginTop={"0.5rem"}>
-                  <Text
-                    width={"16rem"}
-                    size={"sm"}
-                    fontWeight={"light"}
-                    opacity={"50%"}>
-                    File
-                  </Text>
-                  <Text
+                <Text
+                  width={"16rem"}
                   size={"sm"}
                   fontWeight={"light"}
-                    opacity={"50%"}>
-                    Path
-                  </Text>
-                </Stack>
+                  opacity={"50%"}
+                >
+                  File
+                </Text>
+                <Text
+                  size={"sm"}
+                  fontWeight={"light"}
+                  opacity={"50%"}
+                >
+                  Path
+                </Text>
+              </Stack>
               <Stack
-                style={{ "overflow-y": "auto"}}
+                style={{ "overflow-y": "auto" }}
                 height={"100%"}
                 width={"45rem"}
                 gap={"0"}
@@ -268,26 +271,22 @@ function Configuration() {
               >
                 <For each={recentConfigFilePaths()}>
                   {(path, index) => (
-                      <Button
+                    <Button
                       width={"100%"}
                       variant={"ghost"}
-                      padding= {"0.5rem"}
-                      paddingTop = {"1rem"}
+                      padding={"0.5rem"}
+                      paddingTop={"1rem"}
                       paddingBottom={"1rem"}
-                      marginTop={index() === 0? "1rem" : "0"}
-                      marginBottom={index() === recentConfigFilePaths().length-1? "1rem" : "0"}
-                      onMouseEnter={() => {
-                        setIsHoverd([true, index()])
-                      }}
+                      onMouseEnter={() => setIsButtonHoverd([true, index()])}
                       onMouseLeave={() => {
-                        setIsHoverd([false, null])
+                        setIsButtonHoverd([false, null]);
                       }}
-                      >
+                    >
                       <Text
                         userSelect="none"
-                        onClick={() => {
-                          readJsonFile(path);
-                          setFilePath(path);
+                        onClick={async () => {
+                          const object = await readJsonFile(path);
+                          setFileData(object!, path);
                         }}
                         size={"md"}
                         height={"2rem"}
@@ -298,11 +297,11 @@ function Configuration() {
                           "display": "block",
                           "overflow": "hidden",
                           "text-align": "left",
-                          "margin-top" : "0.4rem",
-                          width : "16rem",
+                          "margin-top": "0.4rem",
+                          width: "16rem",
                         }}
                       >
-                        {path.match(/[^\\\\]+$/)!.toString()}
+                        {path.match(/[^//]+$/)!.toString()}
                       </Text>
                       <Text
                         userSelect="none"
@@ -310,9 +309,9 @@ function Configuration() {
                         fontWeight={"light"}
                         marginLeft={"0.5rem"}
                         opacity={"70%"}
-                        onClick={() => {
-                          readJsonFile(path);
-                          setFilePath(path);
+                        onClick={async () => {
+                          const object = await readJsonFile(path);
+                          setFileData(object!, path);
                         }}
                         style={{
                           "white-space": "nowrap",
@@ -320,48 +319,45 @@ function Configuration() {
                           "display": "block",
                           "overflow": "hidden",
                           "text-align": "left",
-                          width : `15rem`
+                          width: `15rem`,
                         }}
                       >
                         {path.replace(
-                          path.match(/[^?!\\\\]+$/)!.toString(),
+                          path.match(/[^?!//]+$/)!.toString(),
                           "",
                         )}
                       </Text>
-                        <Stack width={"calc(100% - 16rem - 15rem)"} direction={"row-reverse"}>
-                        <Show when = {isHovered()[0] === true && isHovered()[1] === index()}>
-                        <IconButton
-                          padding={"0"}
-                          opacity={"50%"} 
-                          variant={"ghost"}
-                          borderRadius={"2rem"}
-                          size={"sm"}
-                          width={"1rem"}
-                          onClick={() => {
-                            setRecentConfigFilePaths((prev) => {
-                              const updateFilePath = prev.filter((_, i) => {
-                                return i !== index();
-                              });
-                              return updateFilePath;
-                            });
-                          }}
+                      <Stack
+                        width={"calc(100% - 16rem - 15rem)"}
+                        direction={"row-reverse"}
+                      >
+                        <Show
+                          when={isButtonHovered()[0] === true &&
+                            isButtonHovered()[1] === index()}
                         >
-                          <IconX 
-                          
-                          width={"1rem"}
-                          onClick={() => {
-                            setRecentConfigFilePaths((prev) => {
-                              const updateFilePath = prev.filter((_, i) => {
-                                return i !== index();
+                          <IconButton
+                            padding={"0"}
+                            opacity={"50%"}
+                            variant={"ghost"}
+                            borderRadius={"2rem"}
+                            size={"sm"}
+                            width={"1rem"}
+                            onClick={() => {
+                              setRecentConfigFilePaths((prev) => {
+                                const updateFilePath = prev.filter((_, i) => {
+                                  return i !== index();
+                                });
+                                return updateFilePath;
                               });
-                              return updateFilePath;
-                            });
-                          }}
-                          />
-                        </IconButton>
+                            }}
+                          >
+                            <IconX
+                              width={"1rem"}
+                            />
+                          </IconButton>
                         </Show>
-                        </Stack>
-                        </Button>
+                      </Stack>
+                    </Button>
                   )}
                 </For>
               </Stack>
