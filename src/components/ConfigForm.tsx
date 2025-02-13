@@ -1,19 +1,11 @@
-import { createSignal, For, JSX, splitProps } from "solid-js";
+import { For, JSX, splitProps } from "solid-js";
 import { createStore } from "solid-js/store";
-import { save } from "@tauri-apps/plugin-dialog";
-import { writeTextFile } from "@tauri-apps/plugin-fs";
 
 import { Accordion } from "~/components/ui/accordion";
-import { Button } from "~/components/ui/button";
 import { Checkbox } from "~/components/ui/checkbox";
 import { Input } from "~/components/ui/input";
 
-import { Menu } from "./ui/menu";
-import { portId, setRecentConfigFilePaths } from "~/GlobalState";
-import { ErrorMessage } from "~/pages/LogViewer/LogViewerTab";
-import { Command } from "@tauri-apps/plugin-shell";
 import { Stack } from "styled-system/jsx";
-import { Card } from "./ui/card";
 import { Text } from "./ui/text";
 import { Editable } from "./ui/editable";
 import { IconButton } from "./ui/icon-button";
@@ -21,154 +13,55 @@ import { IconChevronDown, IconX } from "@tabler/icons-solidjs";
 
 export type ConfigFormProps = JSX.HTMLAttributes<HTMLFormElement> & {
   label: string;
+  onLabelChange?: (label: string) => void;
   config: object;
-  onErrorMessage?: (msg: ErrorMessage) => void;
   onCancel?: () => void;
-  path?: string;
 };
 
 export function ConfigForm(props: ConfigFormProps) {
   const [config] = createStore(props.config);
-  const [fileName, setFileName] = createSignal<string>(props.label);
-
-  let currentPath: string = "";
-  if (props.path) {
-    const fileNameFromPath = props.path.match(/[^?!\\\\]+$/)!.toString();
-    currentPath = props.path.replace(fileNameFromPath, "");
-  }
-
-  async function saveConfigAsFile() {
-    const json_str = JSON.stringify(config, null, "  ");
-
-    const path = await save({
-      defaultPath: `${currentPath}${fileName()}`,
-      filters: [
-        {
-          name: "JSON",
-          extensions: ["json"],
-        },
-      ],
-    });
-    if (!path) {
-      props.onErrorMessage?.({
-        title: "Invalid File Path",
-        description: "The specified file path is invalid.",
-        type: "error",
-      });
-      return;
-    }
-    const extension = path.split(".").pop();
-    if (extension != "json") {
-      props.onErrorMessage?.({
-        title: "Invalid File Extension",
-        description: "The specified file extension is invalid.",
-        type: "error",
-      });
-      return;
-    }
-
-    if (currentPath === "") {
-      const currentPathFileName = path.match(/[^?!\\\\]+$/)!.toString();
-      setFileName(currentPathFileName);
-      currentPath = path.replace(currentPathFileName, "");
-      console.log(currentPath);
-    }
-
-    await writeTextFile(path, json_str);
-    setRecentConfigFilePaths((prev) => {
-      const newRecentFiles = prev.filter((prevFilePath) =>
-        prevFilePath !== path
-      );
-      return [path, ...newRecentFiles];
-    });
-  }
-
-  async function saveConfigToPort() {
-    if (portId().length === 0) return;
-    const json_str = JSON.stringify(config, null, "  ");
-    const saveConfig = Command.sidecar("binaries/drivercom", [
-      `--port`,
-      portId(),
-      `config.set`,
-      json_str,
-    ]);
-    await saveConfig.execute();
-  }
 
   return (
-    <div style={{ width: "40rem", "margin-bottom": "3rem" }}>
-      <Card.Root padding={"0.5rem"}>
-        <Card.Header paddingTop={"3rem"}>
-          <Editable.Root
-            placeholder="File name"
-            defaultValue={fileName()}
-            activationMode="dblclick"
-            onValueCommit={(e) => {
-              setFileName(e.value);
+    <div style={{ width: "100%", "margin-bottom": "3rem" }}>
+      <Editable.Root
+        placeholder="File name"
+        defaultValue={props.label ? props.label : "New File"}
+        activationMode="dblclick"
+        onValueCommit={(e) => {
+          props.onLabelChange?.(e.value);
+        }}
+        fontWeight={"bold"}
+        fontSize={"2xl"}
+      >
+        <Editable.Area>
+          <Editable.Input width={"90%"} />
+          <Editable.Preview
+            width={"90%"}
+            style={{
+              "text-overflow": "ellipsis",
+              "display": "block",
+              "overflow": "hidden",
+              "text-align": "left",
             }}
-            fontWeight={"bold"}
-            fontSize={"2xl"}
-          >
-            <Editable.Area>
-              <Editable.Input width={"90%"} />
-              <Editable.Preview />
-            </Editable.Area>
-          </Editable.Root>
-          <Text
-            marginTop={"1rem"}
-            opacity={"40%"}
-            fontWeight={"light"}
-          >
-            {props.path ? props.path : ""}
-          </Text>
-          <IconButton
-            onClick={() => props.onCancel?.()}
-            variant="ghost"
-            borderRadius="1rem"
-            width="1rem"
-            style={{ position: "absolute", top: "1.5rem", right: "1.5rem" }}
-            padding="0"
-          >
-            <IconX />
-          </IconButton>
-        </Card.Header>
-        <Card.Body marginTop={"1rem"}>
-          <ConfigObject object={config} id_prefix={props.label} />
-        </Card.Body>
-        <Card.Footer>
-          <Stack direction={"row-reverse"}>
-            <Menu.Root>
-              <Menu.Trigger>
-                <Button>
-                  Save
-                </Button>
-              </Menu.Trigger>
-              <Menu.Positioner>
-                <Menu.Content width="8rem">
-                  <Menu.Item
-                    value="Save as file"
-                    onClick={() => {
-                      saveConfigAsFile();
-                    }}
-                    userSelect={"none"}
-                  >
-                    Save as file
-                  </Menu.Item>
-                  <Menu.Separator />
-                  <Menu.Item
-                    value={"Save to port"}
-                    disabled={portId().length === 0}
-                    onClick={() => saveConfigToPort()}
-                    userSelect="none"
-                  >
-                    Save to port
-                  </Menu.Item>
-                </Menu.Content>
-              </Menu.Positioner>
-            </Menu.Root>
-          </Stack>
-        </Card.Footer>
-      </Card.Root>
+          />
+        </Editable.Area>
+      </Editable.Root>
+      <IconButton
+        onClick={() => props.onCancel?.()}
+        variant="ghost"
+        borderRadius="1rem"
+        width="1rem"
+        style={{ position: "absolute", top: "1.5rem", right: "1.5rem" }}
+        padding="0"
+      >
+        <IconX />
+      </IconButton>
+      <div style={{ "margin-top": "4rem", "margin-bottom": "2rem" }}>
+        <ConfigObject
+          object={config}
+          id_prefix={props.label}
+        />
+      </div>
     </div>
   );
 }
