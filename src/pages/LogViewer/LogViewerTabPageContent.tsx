@@ -1,10 +1,10 @@
 import { trackStore } from "@solid-primitives/deep";
-import { createEffect, createSignal, For, JSX } from "solid-js";
+import { createEffect, createSignal, For, JSX, onMount } from "solid-js";
 import { createStore } from "solid-js/store";
 import { Plot, PlotContext } from "~/components/Plot";
 import { Button } from "~/components/ui/button";
 import { inferSchema, initParser } from "udsv";
-import { FileUploadFileChangeDetails } from "@ark-ui/solid";
+import { readTextFile } from "@tauri-apps/plugin-fs";
 
 export type ErrorMessage = {
   title: string;
@@ -12,23 +12,26 @@ export type ErrorMessage = {
   type: string;
 };
 
-export type LogViewerTabPageContentProps = JSX.HTMLAttributes<HTMLDivElement> & {
-  tabId: string;
-  details: FileUploadFileChangeDetails;
-  onErrorMessage?: (message: ErrorMessage) => void;
-};
+export type LogViewerTabPageContentProps =
+  & JSX.HTMLAttributes<HTMLDivElement>
+  & {
+    tabId: string;
+    filePath: string;
+    onErrorMessage?: (message: ErrorMessage) => void;
+  };
 
 export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
   const [plots, setPlots] = createStore([] as PlotContext[]);
   const [splitIndex, setSplitIndex] = createSignal([] as number[][]);
-  let header: string[] = [];
-  let series: number[][] = [];
+  const [header, setHeader] = createSignal<string[]>([]);
+  const [series, setSeries] = createSignal<number[][]>([]);
 
-  const file = props.details.acceptedFiles[0];
-  const reader = new FileReader();
+  onMount(() => {
+    openCsvFile(props.filePath);
+  });
 
-  reader.onload = () => {
-    const csv_str: string = (reader.result! as string).trim();
+  async function openCsvFile(path: string) {
+    const csv_str = await readTextFile(path);
     const rows = csv_str.split("\n");
     if (rows.length < 2) {
       const errorMessage: ErrorMessage = {
@@ -49,7 +52,6 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
         return val;
       })
     );
-
     if (data.length < local_header.length) {
       const errorMessage: ErrorMessage = {
         title: "Invalid Log File",
@@ -61,27 +63,15 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
       return;
     }
 
-    if (typeof (reader.result!) === "string") {
-      const indexArray = Array.from(
-        { length: local_header.length },
-        (_, index) => index,
-      );
+    const indexArray = Array.from(
+      { length: local_header.length },
+      (_, index) => index,
+    );
 
-      header = local_header;
-      series = data.slice(0, local_header.length);
-      setSplitIndex([indexArray]);
-    }
-  };
-
-  reader.onerror = () => {
-    const errorMessage: ErrorMessage = {
-      title: "Log File Loading Failed",
-      description: `${reader.error!.name}: ${reader.error!.message}`,
-      type: "error",
-    };
-    props.onErrorMessage?.(errorMessage);
-  };
-  reader.readAsText(file);
+    setHeader(local_header);
+    setSeries(data.slice(0, local_header.length));
+    setSplitIndex([indexArray]);
+  }
 
   function resetChart() {
     const indexArray = Array.from(
@@ -144,8 +134,8 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
         {(item, index) => {
           // Header and items need not be derived state, as they will not
           // change within a plot.
-          const currentHeader = item.map((i) => header[i]);
-          const currentItems = item.map((i) => series[i]);
+          const currentHeader = item.map((i) => header()[i]);
+          const currentItems = item.map((i) => series()[i]);
 
           // Current ID must be derived state as index can change based on
           // added/merged plots.
