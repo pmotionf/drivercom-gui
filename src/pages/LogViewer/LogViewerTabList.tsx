@@ -10,14 +10,9 @@ export type LogViewerTabListProps = JSX.HTMLAttributes<HTMLDivElement> & {
   tabListPosition: string;
   onCreateTab?: () => void;
   onDeleteTab?: (tadId: string) => void;
-  onDraggedTabIndex?: (index: number | null) => void;
-  onReorderTabs?: (
-    e: DragEvent,
-    tabIndex: number,
-    draggedTabIndex: number | null,
-  ) => void;
   onDraggedTabId?: (tabId: string, filePath: string) => void;
   onTabDrop?: () => void;
+  onReorderTab?: (tabList: [string, string][]) => void;
 };
 
 export function LogViewerTabList(props: LogViewerTabListProps) {
@@ -25,6 +20,20 @@ export function LogViewerTabList(props: LogViewerTabListProps) {
   const [draggedTabIndex, setDraggedTabIndex] = createSignal<number | null>(
     null,
   );
+  const [reorderTabList, setReorderTabList] = createSignal<
+    [string, string][] | undefined
+  >(undefined);
+
+  const reorderTabsOnDragOver = (e: DragEvent, index: number) => {
+    e.preventDefault();
+    if (draggedTabIndex() !== null && draggedTabIndex() !== index) {
+      const updateTab = [...props.tabList];
+      const [draggedTab] = updateTab.splice(draggedTabIndex()!, 1);
+      updateTab.splice(index, 0, draggedTab);
+      setReorderTabList(updateTab);
+      setDraggedTabIndex(index);
+    }
+  };
 
   const [clientX, setClientX] = createSignal<number | null>(null);
   // Tab X coordinate relative to start of tab list, can extend beyond screen.
@@ -102,6 +111,7 @@ export function LogViewerTabList(props: LogViewerTabListProps) {
               props.onTabDrop?.();
             }}
             width={"100%"}
+            marginRight={"0"}
           >
             <For each={props.tabList}>
               {([tabId, filePath], index) => (
@@ -119,16 +129,28 @@ export function LogViewerTabList(props: LogViewerTabListProps) {
                     setDraggedTabInfo([tabId, filePath]);
                   }}
                   onDragOver={(e) => {
-                    props.onReorderTabs?.(
-                      e,
-                      Number(index()),
-                      draggedTabIndex(),
-                    );
+                    reorderTabsOnDragOver(e, index());
                     dragOverScroll(e);
                   }}
                   onDragEnd={() => {
+                    const findDraggedTabInfo = props.tabList.filter((info) => {
+                      return info[0] === draggedTabInfo()![0];
+                    });
+                    if (findDraggedTabInfo.length !== 1) return;
+                    if (!reorderTabList()) return;
+
+                    props.onReorderTab?.(reorderTabList()!);
                     setDraggedTabIndex(null);
                     setClientX(null);
+                    setFocusedTab(tabId);
+                    setReorderTabList(undefined);
+                  }}
+                  onDrop={() => {
+                    const findDraggedTabInfo = props.tabList.filter((info) => {
+                      return info[0] === draggedTabInfo()![0];
+                    });
+                    if (findDraggedTabInfo.length === 1) return;
+                    props.onTabDrop?.();
                   }}
                 >
                   <Editable.Root
@@ -169,6 +191,13 @@ export function LogViewerTabList(props: LogViewerTabListProps) {
             >
               <IconPlus />
             </IconButton>
+            <div
+              style={{ "width": "100%" }}
+              onDragOver={(e) => {
+                e.preventDefault();
+              }}
+            >
+            </div>
             <Tabs.Indicator />
           </Tabs.List>
           <For each={props.tabList}>
