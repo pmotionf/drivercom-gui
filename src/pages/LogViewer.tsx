@@ -50,14 +50,16 @@ function LogViewer() {
     gap: 24,
   });
 
-  const [draggedTabInfo, setDraggedTabInfo] = createSignal<[string, string]>();
+  const [draggedTabInfo, setDraggedTabInfo] = createSignal<[string , string ] | undefined>();
+  const [isDragging, setIsDragging] = createSignal<boolean>(false);
 
   const [orientationMode, setOrientationMode] = createSignal<
     "vertical" | "horizontal" | undefined
   >("horizontal");
 
   return (
-    <>
+    <div
+    style={{"overflow-y" : "hidden", width : `100%`, height : "100%"}}>
       <Toast.Toaster toaster={toaster}>
         {(toast) => (
           <Toast.Root>
@@ -78,10 +80,14 @@ function LogViewer() {
         ]}
         width={"calc(100% -3rem)"}
         height={"calc(100% -3rem)"}
-        style={{ "overflow-y": "hidden" }}
+        onDragEnter={() => {
+          setIsDragging(true)
+        }}
+        onDragEnd={() => {
+          setIsDragging(false)
+        }}
       >
         <Splitter.Panel id="a">
-          <div style={{ "width": "100%", "height": "100%" }}>
             <LogViewerTabList
               style={{ "width": "100%", "height": "100%" }}
               tabList={logViewTabListLeft()}
@@ -127,7 +133,6 @@ function LogViewer() {
                 setDraggedTabInfo(undefined);
               }}
             />
-          </div>
         </Splitter.Panel>
         <Show when={logViewTabListRight().length !== 0}>
           <Splitter.ResizeTrigger id="a:b" />
@@ -136,11 +141,10 @@ function LogViewer() {
           <Splitter.Panel
             id="b"
             draggable
-            onDragStart={(e) =>
-              e.dataTransfer!.setData("text/plain", e.target.id)}
+            onDragStart={(e) =>{
+              e.dataTransfer!.setData("text/plain", e.target.id)
+            }}
           >
-            <div style={{ "width": "100%", "height": "100%" }}>
-              <div style={{ "width": "100%", "height": "100%" }}>
                 <LogViewerTabList
                   tabList={logViewTabListRight()}
                   tabListPosition="right"
@@ -185,14 +189,12 @@ function LogViewer() {
                     setDraggedTabInfo(undefined);
                   }}
                 />
-              </div>
-            </div>
           </Splitter.Panel>
         </Show>
       </Splitter.Root>
       <Show
         when={logViewTabListRight().length === 0 &&
-          logViewTabListLeft().length > 1}
+          logViewTabListLeft().length > 1 && isDragging()}
       >
         <Stack
           backgroundColor={"bg.disabled"}
@@ -206,7 +208,7 @@ function LogViewer() {
             opacity: "0%",
           }}
           onDragEnter={(e) => {
-            e.currentTarget.style.opacity = "30%";
+            e.currentTarget.style.opacity = "50%";
           }}
           onDragLeave={(e) => {
             e.currentTarget.style.opacity = "0%";
@@ -214,6 +216,37 @@ function LogViewer() {
           onDragOver={(e) => e.preventDefault()}
           onDrop={(e) => {
             e.currentTarget.style.opacity = "0%";
+            setOrientationMode("horizontal")
+            setLogViewTabListLeft((prev) => {
+              return prev.filter((prevTabId) =>
+                prevTabId[0] !== draggedTabInfo()![0]
+              );
+            });
+            setLogViewTabListRight([draggedTabInfo()!]);
+          }}
+        >
+        </Stack>
+        <Stack
+          backgroundColor={"bg.disabled"}
+          style={{
+            width: "100%",
+            height: "calc(50% - 3rem) ",
+            "border-width": "1",
+            position: "absolute",
+            bottom: "0",
+            left: "0",
+            opacity: "0%",
+          }}
+          onDragEnter={(e) => {
+            e.currentTarget.style.opacity = "50%";
+          }}
+          onDragLeave={(e) => {
+            e.currentTarget.style.opacity = "0%";
+          }}
+          onDragOver={(e) => e.preventDefault()}
+          onDrop={(e) => {
+            e.currentTarget.style.opacity = "0%";
+            setOrientationMode("vertical")
             setLogViewTabListLeft((prev) => {
               return prev.filter((prevTabId) =>
                 prevTabId[0] !== draggedTabInfo()![0]
@@ -226,12 +259,12 @@ function LogViewer() {
       </Show>
       <Show
         when={logViewTabListRight().length >= 1 &&
-          orientationMode() === "horizontal"}
+          orientationMode() === "horizontal" && isDragging()}
       >
         <Stack
           backgroundColor={"bg.disabled"}
           style={{
-            width: "100%",
+            width: `calc(100% - 3rem)`,
             height: "calc(50% - 3rem)",
             "border-width": "1",
             position: "absolute",
@@ -239,7 +272,7 @@ function LogViewer() {
             opacity: "0%",
           }}
           onDragEnter={(e) => {
-            e.currentTarget.style.opacity = "30%";
+            e.currentTarget.style.opacity = "50%";
           }}
           onDragLeave={(e) => {
             e.currentTarget.style.opacity = "0%";
@@ -256,21 +289,21 @@ function LogViewer() {
       </Show>
       <Show
         when={logViewTabListRight().length >= 1 &&
-          orientationMode() === "vertical"}
-      >
+          orientationMode() === "vertical" && isDragging()}
+        >
         <Stack
           backgroundColor={"bg.disabled"}
           style={{
             width: "50%",
-            height: "calc(100% - 3rem)",
+            height: "calc(50% - 3rem)",
             "border-width": "1",
             position: "absolute",
             right: "0",
-            bottom: "0",
+            top: "3rem",
             opacity: "0%",
           }}
           onDragEnter={(e) => {
-            e.currentTarget.style.opacity = "30%";
+            e.currentTarget.style.opacity = "50%";
           }}
           onDragLeave={(e) => {
             e.currentTarget.style.opacity = "0%";
@@ -285,7 +318,7 @@ function LogViewer() {
         >
         </Stack>
       </Show>
-    </>
+    </div>
   );
 }
 
