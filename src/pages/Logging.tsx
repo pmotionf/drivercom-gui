@@ -4,8 +4,8 @@ import { Text } from "~/components/ui/text";
 import {
   logFormFileFormat,
   portId,
-  recentFilePaths,
-  setRecentFilePaths,
+  recentLogFilePaths,
+  setRecentLogFilePaths,
 } from "~/GlobalState";
 import { Command } from "@tauri-apps/plugin-shell";
 import { createSignal, For, Show } from "solid-js";
@@ -105,7 +105,7 @@ export function Logging() {
 
       const fileName = path.replaceAll("\\", "/").split("/").pop();
       setFileName(fileName!);
-      setRecentFilePaths((prev) => {
+      setRecentLogFilePaths((prev) => {
         const parseFilePath = prev.filter((prevPath) => prevPath !== path);
         return [path, ...parseFilePath];
       });
@@ -117,7 +117,7 @@ export function Logging() {
         description: "The file path is invalid.",
         type: "error",
       });
-      setRecentFilePaths((prev) => {
+      setRecentLogFilePaths((prev) => {
         const parseFilePath = prev.filter((prevPath) => prevPath !== path);
         return [...parseFilePath];
       });
@@ -211,7 +211,7 @@ export function Logging() {
                 Get From Port
               </Button>
             </Stack>
-            <Show when={recentFilePaths().length !== 0}>
+            <Show when={recentLogFilePaths().length !== 0}>
               <Text size={"xl"} marginTop={"2rem"} fontWeight={"bold"}>
                 Recent
               </Text>
@@ -220,7 +220,7 @@ export function Logging() {
                 maxHeight={"100%"}
                 style={{ "overflow-y": "auto" }}
               >
-                <For each={recentFilePaths()}>
+                <For each={recentLogFilePaths()}>
                   {(path) => (
                     <Text
                       onClick={() => {
