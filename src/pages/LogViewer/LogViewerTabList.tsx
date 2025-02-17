@@ -1,4 +1,4 @@
-import { createEffect, createSignal, For, JSX } from "solid-js";
+import { createEffect, createSignal, For, indexArray, JSX } from "solid-js";
 import { Tabs } from "~/components/ui/tabs";
 import { IconButton } from "~/components/ui/icon-button";
 import { IconPlus, IconX } from "@tabler/icons-solidjs";
@@ -10,7 +10,7 @@ export type LogViewerTabListProps = JSX.HTMLAttributes<HTMLDivElement> & {
   tabListPosition: string;
   onCreateTab?: () => void;
   onDeleteTab?: (tadId: string) => void;
-  onDraggedTabId?: (tabId: string, filePath: string) => void;
+  onDraggedTabId?: (tabId: string , filePath: string )  => void;
   onTabDrop?: () => void;
   onReorderTab?: (tabList: [string, string][]) => void;
 };
@@ -30,7 +30,7 @@ export function LogViewerTabList(props: LogViewerTabListProps) {
       const updateTab = [...props.tabList];
       const [draggedTab] = updateTab.splice(draggedTabIndex()!, 1);
       updateTab.splice(index, 0, draggedTab);
-      setReorderTabList(updateTab);
+      props.onReorderTab?.([...updateTab]);
       setDraggedTabIndex(index);
     }
   };
@@ -64,11 +64,13 @@ export function LogViewerTabList(props: LogViewerTabListProps) {
   const [focusedTab, setFocusedTab] = createSignal<string>("");
   const [isTabDeleted, setIsTabDeleted] = createSignal<boolean>(false);
   const [deleteTabIndex, setDeleteTabIndex] = createSignal<number | null>(null);
+  const [isDragging, setIsDragging] = createSignal<boolean>(false);
 
   // Focus tab whenether it's deleted or created
   createEffect(() => {
     const tabIdList = props.tabList;
     if (tabIdList.length === 0) return;
+    if (isDragging()) return;
 
     if (isTabDeleted()) {
       if (!deleteTabIndex) return;
@@ -88,6 +90,8 @@ export function LogViewerTabList(props: LogViewerTabListProps) {
   });
 
   const [draggedTabInfo, setDraggedTabInfo] = createSignal<[string, string]>();
+
+  const [splitIndex, setSplitIndex] = createSignal<[string, number[][]][]>([]);
 
   return (
     <>
@@ -127,6 +131,7 @@ export function LogViewerTabList(props: LogViewerTabListProps) {
                     //drag to other tab
                     props.onDraggedTabId?.(tabId, filePath);
                     setDraggedTabInfo([tabId, filePath]);
+                    setIsDragging(true);
                   }}
                   onDragOver={(e) => {
                     reorderTabsOnDragOver(e, index());
@@ -137,13 +142,15 @@ export function LogViewerTabList(props: LogViewerTabListProps) {
                       return info[0] === draggedTabInfo()![0];
                     });
                     if (findDraggedTabInfo.length !== 1) return;
-                    if (!reorderTabList()) return;
+                    //if (!reorderTabList()) return;
 
-                    props.onReorderTab?.(reorderTabList()!);
+                    //props.onReorderTab?.(reorderTabList()!);
                     setDraggedTabIndex(null);
                     setClientX(null);
-                    setFocusedTab(tabId);
-                    setReorderTabList(undefined);
+                    setIsDragging(false);
+                    //setFocusedTab(tabId);
+                    //setReorderTabList(undefined);
+                    
                   }}
                   onDrop={() => {
                     const findDraggedTabInfo = props.tabList.filter((info) => {
@@ -205,15 +212,24 @@ export function LogViewerTabList(props: LogViewerTabListProps) {
               <Tabs.Content
                 value={currentTabId}
                 height={"100%"}
+                width={"100% "}
+                style={{"overflow-y" : "auto"}}
               >
                 <LogViewerTabPageContent
                   tabId={currentTabId}
                   filePath={currentFilePath}
+                  onSplit={(e) => {
+                    if(e.length === 0) return;
+                    setSplitIndex((prev) => {
+                      return [...prev, [currentTabId, e]]
+                    })
+                  }}
                 />
               </Tabs.Content>
             )}
           </For>
         </Tabs.Root>
+
       </div>
     </>
   );

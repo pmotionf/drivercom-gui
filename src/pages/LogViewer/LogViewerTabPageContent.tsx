@@ -1,5 +1,5 @@
 import { trackStore } from "@solid-primitives/deep";
-import { createEffect, createSignal, For, JSX, onMount } from "solid-js";
+import { createEffect, createSignal, For, indexArray, JSX, onMount } from "solid-js";
 import { createStore } from "solid-js/store";
 import { Plot, PlotContext } from "~/components/Plot";
 import { Button } from "~/components/ui/button";
@@ -18,6 +18,8 @@ export type LogViewerTabPageContentProps =
     tabId: string;
     filePath: string;
     onErrorMessage?: (message: ErrorMessage) => void;
+    splitArray? : number[][] | undefined
+    onSplit?: (indexArray : number[][]) => void
   };
 
 export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
@@ -25,6 +27,7 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
   const [splitIndex, setSplitIndex] = createSignal([] as number[][]);
   const [header, setHeader] = createSignal<string[]>([]);
   const [series, setSeries] = createSignal<number[][]>([]);
+
 
   onMount(() => {
     openCsvFile(props.filePath);
@@ -70,7 +73,14 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
 
     setHeader(local_header);
     setSeries(data.slice(0, local_header.length));
-    setSplitIndex([indexArray]);
+
+    if(props.splitArray === undefined) {
+      setSplitIndex([indexArray]);
+    } else {
+      setSplitIndex(props.splitArray)
+    }
+    props.onSplit?.(splitIndex())
+
   }
 
   function resetChart() {
@@ -106,6 +116,7 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
       updated.splice(plot_index, 1, visibles, hiddens);
       return updated;
     });
+
   }
 
   const allVisible = (index: number) => {
@@ -151,7 +162,12 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
           return (
             <>
               <Button
-                onClick={() => splitPlot(index())}
+                onClick={
+                  () => {
+                    splitPlot(index())
+                    props.onSplit?.(splitIndex())
+                  }
+                }
                 disabled={currentHeader.length <= 1 ||
                   !plots[index()] ||
                   !plots[index()].visible ||
