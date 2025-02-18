@@ -8,10 +8,10 @@ import { IconX } from "@tabler/icons-solidjs";
 
 function LogViewer() {
   const [logViewTabListLeft, setLogViewTabListLeft] = createSignal<
-    [string, string, number[][]][]
+    [string, string, number[][], string][]
   >([]);
   const [logViewTabListRight, setLogViewTabListRight] = createSignal<
-    [string, string, number[][]][]
+    [string, string, number[][], string][]
   >(
     [],
   );
@@ -51,7 +51,7 @@ function LogViewer() {
   });
 
   const [draggedTabInfo, setDraggedTabInfo] = createSignal<
-    [string, string, number[][]] | undefined
+    [string, string, number[][], string] | undefined
   >();
   const [isDragging, setIsDragging] = createSignal<boolean>(false);
 
@@ -60,9 +60,8 @@ function LogViewer() {
   >("horizontal");
 
   createEffect(() => {
-    console.log(isDragging());
+    console.log(logViewTabListLeft());
   });
-
   return (
     <div
       style={{ "overflow-y": "hidden", width: `100%`, height: "100%" }}
@@ -110,14 +109,14 @@ function LogViewer() {
                 });
                 return;
               }
-              setLogViewTabListLeft((prev) => [...prev, [...tabInfo, []]]);
+              setLogViewTabListLeft((prev) => [...prev, [...tabInfo, [], ""]]);
             }}
             onDeleteTab={(deleteTabId) =>
               setLogViewTabListLeft((prev) =>
                 prev.filter((id) => id[0] !== deleteTabId)
               )}
-            onDraggedTabId={(id, path, indexArray) => {
-              setDraggedTabInfo([id, path, indexArray]);
+            onDraggedTabId={(id, path, indexArray, tabName) => {
+              setDraggedTabInfo([id, path, indexArray, tabName]);
             }}
             onTabDrop={() => {
               const findDuplicateTab =
@@ -166,14 +165,16 @@ function LogViewer() {
                   });
                   return;
                 }
-                setLogViewTabListRight((prev) => [...prev, [...tabInfo, []]]);
+                setLogViewTabListRight((
+                  prev,
+                ) => [...prev, [...tabInfo, [], ""]]);
               }}
               onDeleteTab={(deletTabid) =>
                 setLogViewTabListRight((prev) =>
                   prev.filter((id) => id[0] !== deletTabid)
                 )}
-              onDraggedTabId={(id, path, indexArray) => {
-                setDraggedTabInfo([id, path, indexArray]);
+              onDraggedTabId={(id, path, indexArray, tabName) => {
+                setDraggedTabInfo([id, path, indexArray, tabName]);
               }}
               onTabDrop={() => {
                 const findDuplicateTab =

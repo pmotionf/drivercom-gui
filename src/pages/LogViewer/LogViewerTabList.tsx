@@ -6,7 +6,7 @@ import { Editable } from "~/components/ui/editable";
 import { LogViewerTabPageContent } from "./LogViewerTabPageContent";
 
 export type LogViewerTabListProps = JSX.HTMLAttributes<HTMLDivElement> & {
-  tabList: [string, string, number[][]][]; // tabId, filePath, split index array, tab name
+  tabList: [string, string, number[][], string][]; // tabId, filePath, split index array, tab name
   tabListPosition: string;
   newtabContext?: number[][]; //SplitIndexArray, Also gonna sennd & get plot context
   onCreateTab?: () => void;
@@ -15,9 +15,10 @@ export type LogViewerTabListProps = JSX.HTMLAttributes<HTMLDivElement> & {
     tabId: string,
     filePath: string,
     indexArray: number[][],
+    tabName: string,
   ) => void;
   onTabDrop?: () => void;
-  onReorderTab?: (tabList: [string, string, number[][]][]) => void;
+  onReorderTab?: (tabList: [string, string, number[][], string][]) => void;
 };
 
 export function LogViewerTabList(props: LogViewerTabListProps) {
@@ -98,6 +99,7 @@ export function LogViewerTabList(props: LogViewerTabListProps) {
   const [draggedTabInfo, setDraggedTabInfo] = createSignal<[string, string]>();
 
   const [splitIndex, setSplitIndex] = createSignal<[string, number[][]][]>([]);
+  const [tabNameList, setTabNameList] = createSignal<[string, string][]>([]);
 
   return (
     <>
@@ -136,7 +138,7 @@ export function LogViewerTabList(props: LogViewerTabListProps) {
             marginRight={"0"}
           >
             <For each={props.tabList}>
-              {([currentTabId, currentFilePath], index) => (
+              {([currentTabId, currentFilePath, _, currentTabName], index) => (
                 <Tabs.Trigger
                   value={currentTabId}
                   draggable
@@ -147,14 +149,22 @@ export function LogViewerTabList(props: LogViewerTabListProps) {
                     setClientX(e.clientX);
 
                     //drag to other tab
-                    const indexArray =
-                      splitIndex().filter((line) =>
-                        line[0] === currentTabId
-                      )[0][1];
+                    const indexArray = splitIndex().filter((line) =>
+                      line[0] === currentTabId
+                    )[0][1];
+                    const tabName = tabNameList().filter((info) => {
+                      return info[0] === currentTabId;
+                    });
+                    const dragTabName = currentTabName.length !== 0
+                      ? currentTabName
+                      : tabName.length === 0
+                      ? ""
+                      : tabName[0][1];
                     props.onDraggedTabId?.(
                       currentTabId,
                       currentFilePath,
                       indexArray,
+                      dragTabName,
                     );
                     setDraggedTabInfo([currentTabId, currentFilePath]);
                   }}
@@ -167,7 +177,9 @@ export function LogViewerTabList(props: LogViewerTabListProps) {
                     const findDraggedTabInfo = props.tabList.filter((info) => {
                       return info[0] === draggedTabInfo()![0];
                     });
-                    if (findDraggedTabInfo.length !== 1) return;
+                    if (findDraggedTabInfo.length !== 1) {
+                      return;
+                    }
                     setDraggedTabIndex(null);
                     setClientX(null);
                   }}
@@ -175,18 +187,26 @@ export function LogViewerTabList(props: LogViewerTabListProps) {
                     const findDraggedTabInfo = props.tabList.filter((info) => {
                       return info[0] === draggedTabInfo()![0];
                     });
-                    if (findDraggedTabInfo.length === 1) return;
+                    if (findDraggedTabInfo.length === 1) {
+                      return;
+                    }
                     props.onTabDrop?.();
                     setIsReordering(false);
                   }}
                 >
                   <Editable.Root
-                    defaultValue={
-                      JSON.stringify(currentFilePath.match((/[^?!//]+$/)!))
+                    defaultValue={currentTabName.length === 0
+                      ? JSON.stringify(currentFilePath.match((/[^?!//]+$/)!))
                         .slice(2, -2) /*change to tabname*/
-                    }
+                      : currentTabName}
                     activationMode="dblclick"
-                    onValueCommit={() => {
+                    onValueCommit={(v) => {
+                      setTabNameList((prev) => {
+                        const updatePrev = prev.filter(([tabId, _]) => {
+                          return tabId !== currentTabId;
+                        });
+                        return [...updatePrev, [currentTabId, v.value]];
+                      });
                     }}
                   >
                     <Editable.Area>
