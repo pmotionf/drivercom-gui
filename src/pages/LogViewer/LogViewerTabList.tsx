@@ -1,4 +1,4 @@
-import { createEffect, createSignal, For, indexArray, JSX } from "solid-js";
+import { createEffect, createSignal, For, JSX } from "solid-js";
 import { Tabs } from "~/components/ui/tabs";
 import { IconButton } from "~/components/ui/icon-button";
 import { IconPlus, IconX } from "@tabler/icons-solidjs";
@@ -6,13 +6,18 @@ import { Editable } from "~/components/ui/editable";
 import { LogViewerTabPageContent } from "./LogViewerTabPageContent";
 
 export type LogViewerTabListProps = JSX.HTMLAttributes<HTMLDivElement> & {
-  tabList: [string, string][];
+  tabList: [string, string, number[][]][]; // tabId, filePath, split index array, tab name
   tabListPosition: string;
+  newtabContext?: number[][]; //SplitIndexArray, Also gonna sennd & get plot context
   onCreateTab?: () => void;
   onDeleteTab?: (tadId: string) => void;
-  onDraggedTabId?: (tabId: string , filePath: string )  => void;
+  onDraggedTabId?: (
+    tabId: string,
+    filePath: string,
+    indexArray: number[][],
+  ) => void;
   onTabDrop?: () => void;
-  onReorderTab?: (tabList: [string, string][]) => void;
+  onReorderTab?: (tabList: [string, string, number[][]][]) => void;
 };
 
 export function LogViewerTabList(props: LogViewerTabListProps) {
@@ -20,9 +25,6 @@ export function LogViewerTabList(props: LogViewerTabListProps) {
   const [draggedTabIndex, setDraggedTabIndex] = createSignal<number | null>(
     null,
   );
-  const [reorderTabList, setReorderTabList] = createSignal<
-    [string, string][] | undefined
-  >(undefined);
 
   const reorderTabsOnDragOver = (e: DragEvent, index: number) => {
     e.preventDefault();
@@ -64,13 +66,17 @@ export function LogViewerTabList(props: LogViewerTabListProps) {
   const [focusedTab, setFocusedTab] = createSignal<string>("");
   const [isTabDeleted, setIsTabDeleted] = createSignal<boolean>(false);
   const [deleteTabIndex, setDeleteTabIndex] = createSignal<number | null>(null);
-  const [isDragging, setIsDragging] = createSignal<boolean>(false);
+  const [isReordering, setIsReordering] = createSignal<boolean>(false);
 
-  // Focus tab whenether it's deleted or created
+  // Focus tab whenether it's deleted or created or reordering.
   createEffect(() => {
     const tabIdList = props.tabList;
     if (tabIdList.length === 0) return;
-    if (isDragging()) return;
+
+    if (isReordering()) {
+      setFocusedTab(draggedTabInfo()![0]);
+      return;
+    }
 
     if (isTabDeleted()) {
       if (!deleteTabIndex) return;
@@ -95,7 +101,19 @@ export function LogViewerTabList(props: LogViewerTabListProps) {
 
   return (
     <>
-      <div style={{ "width": "100%", height: "100%" }}>
+      <div
+        style={{ "width": "100%", height: "100%" }}
+        onDragStart={() => {
+          setIsReordering(true);
+        }}
+        onDragEnd={() => {
+          setIsReordering(false);
+          setFocusedTab(draggedTabInfo()![0]);
+        }}
+        onDragLeave={() => {
+          setIsReordering(false);
+        }}
+      >
         <Tabs.Root
           value={focusedTab()}
           onValueChange={(e) => setFocusedTab(e.value)}
@@ -118,39 +136,40 @@ export function LogViewerTabList(props: LogViewerTabListProps) {
             marginRight={"0"}
           >
             <For each={props.tabList}>
-              {([tabId, filePath], index) => (
+              {([currentTabId, currentFilePath], index) => (
                 <Tabs.Trigger
-                  value={tabId}
+                  value={currentTabId}
                   draggable
                   onDragStart={(e) => {
                     setDraggedTabIndex(index());
-                    setFocusedTab(tabId);
+                    setFocusedTab(currentTabId);
                     setPrevPositionX(e.currentTarget.scrollLeft);
                     setClientX(e.clientX);
 
                     //drag to other tab
-                    props.onDraggedTabId?.(tabId, filePath);
-                    setDraggedTabInfo([tabId, filePath]);
-                    setIsDragging(true);
+                    const indexArray =
+                      splitIndex().filter((line) =>
+                        line[0] === currentTabId
+                      )[0][1];
+                    props.onDraggedTabId?.(
+                      currentTabId,
+                      currentFilePath,
+                      indexArray,
+                    );
+                    setDraggedTabInfo([currentTabId, currentFilePath]);
                   }}
                   onDragOver={(e) => {
                     reorderTabsOnDragOver(e, index());
                     dragOverScroll(e);
+                    setIsReordering(true);
                   }}
                   onDragEnd={() => {
                     const findDraggedTabInfo = props.tabList.filter((info) => {
                       return info[0] === draggedTabInfo()![0];
                     });
                     if (findDraggedTabInfo.length !== 1) return;
-                    //if (!reorderTabList()) return;
-
-                    //props.onReorderTab?.(reorderTabList()!);
                     setDraggedTabIndex(null);
                     setClientX(null);
-                    setIsDragging(false);
-                    //setFocusedTab(tabId);
-                    //setReorderTabList(undefined);
-                    
                   }}
                   onDrop={() => {
                     const findDraggedTabInfo = props.tabList.filter((info) => {
@@ -158,15 +177,17 @@ export function LogViewerTabList(props: LogViewerTabListProps) {
                     });
                     if (findDraggedTabInfo.length === 1) return;
                     props.onTabDrop?.();
+                    setIsReordering(false);
                   }}
                 >
                   <Editable.Root
                     defaultValue={
-                      JSON.stringify(filePath.match((/[^?!//]+$/)!))
+                      JSON.stringify(currentFilePath.match((/[^?!//]+$/)!))
                         .slice(2, -2) /*change to tabname*/
                     }
                     activationMode="dblclick"
-                    onEditChange={() => {}}
+                    onValueCommit={() => {
+                    }}
                   >
                     <Editable.Area>
                       <Editable.Input width="100%" />
@@ -178,7 +199,7 @@ export function LogViewerTabList(props: LogViewerTabListProps) {
                     size={"sm"}
                     onClick={() => {
                       setDeleteTabIndex(index());
-                      props.onDeleteTab?.(tabId);
+                      props.onDeleteTab?.(currentTabId);
                       setIsTabDeleted(true);
                     }}
                   >
@@ -208,28 +229,31 @@ export function LogViewerTabList(props: LogViewerTabListProps) {
             <Tabs.Indicator />
           </Tabs.List>
           <For each={props.tabList}>
-            {([currentTabId, currentFilePath]) => (
+            {([currentTabId, currentFilePath, currentTabIndex]) => (
               <Tabs.Content
                 value={currentTabId}
                 height={"100%"}
                 width={"100% "}
-                style={{"overflow-y" : "auto"}}
+                style={{ "overflow-y": "auto" }}
               >
                 <LogViewerTabPageContent
                   tabId={currentTabId}
                   filePath={currentFilePath}
                   onSplit={(e) => {
-                    if(e.length === 0) return;
+                    if (e.length === 0) return;
                     setSplitIndex((prev) => {
-                      return [...prev, [currentTabId, e]]
-                    })
+                      const updatePrev = prev.filter(([tabId, _]) => {
+                        return tabId !== currentTabId;
+                      });
+                      return [...updatePrev, [currentTabId, e]];
+                    });
                   }}
+                  splitArray={currentTabIndex}
                 />
               </Tabs.Content>
             )}
           </For>
         </Tabs.Root>
-
       </div>
     </>
   );
