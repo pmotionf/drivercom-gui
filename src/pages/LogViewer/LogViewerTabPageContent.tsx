@@ -1,5 +1,5 @@
 import { trackStore } from "@solid-primitives/deep";
-import { createEffect, createSignal, For, indexArray, JSX, onMount } from "solid-js";
+import { createEffect, createSignal, For, JSX, onMount } from "solid-js";
 import { createStore } from "solid-js/store";
 import { Plot, PlotContext } from "~/components/Plot";
 import { Button } from "~/components/ui/button";
@@ -18,16 +18,17 @@ export type LogViewerTabPageContentProps =
     tabId: string;
     filePath: string;
     onErrorMessage?: (message: ErrorMessage) => void;
-    splitArray? : number[][] | undefined
-    onSplit?: (indexArray : number[][]) => void
+    splitArray?: number[][];
+    onSplit?: (indexArray: number[][]) => void;
+    plotContext: PlotContext[];
+    onContextChange?: (plotContext: PlotContext[]) => void;
   };
 
 export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
-  const [plots, setPlots] = createStore([] as PlotContext[]);
+  const [plots, setPlots] = createStore(props.plotContext);
   const [splitIndex, setSplitIndex] = createSignal([] as number[][]);
   const [header, setHeader] = createSignal<string[]>([]);
   const [series, setSeries] = createSignal<number[][]>([]);
-
 
   onMount(() => {
     openCsvFile(props.filePath);
@@ -74,13 +75,12 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
     setHeader(local_header);
     setSeries(data.slice(0, local_header.length));
 
-    if(props.splitArray === undefined) {
+    if (props.splitArray!.length === 0) {
       setSplitIndex([indexArray]);
     } else {
-      setSplitIndex(props.splitArray)
+      setSplitIndex(props.splitArray!);
     }
-    props.onSplit?.(splitIndex())
-
+    props.onSplit?.(splitIndex());
   }
 
   function resetChart() {
@@ -116,7 +116,6 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
       updated.splice(plot_index, 1, visibles, hiddens);
       return updated;
     });
-
   }
 
   const allVisible = (index: number) => {
@@ -162,12 +161,10 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
           return (
             <>
               <Button
-                onClick={
-                  () => {
-                    splitPlot(index())
-                    props.onSplit?.(splitIndex())
-                  }
-                }
+                onClick={() => {
+                  splitPlot(index());
+                  props.onSplit?.(splitIndex());
+                }}
                 disabled={currentHeader.length <= 1 ||
                   !plots[index()] ||
                   !plots[index()].visible ||
@@ -187,6 +184,10 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
                 header={currentHeader}
                 series={currentItems}
                 context={plots[index()]}
+                onContextChange={(ctx) => {
+                  setPlots(index(), ctx);
+                  props.onContextChange?.(plots);
+                }}
                 style={{
                   width: "100%",
                   height: `calc(100% / ${splitIndex().length} - 3rem`,
