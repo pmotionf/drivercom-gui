@@ -1,28 +1,87 @@
 import { Stack } from "styled-system/jsx";
 import { Splitter } from "~/components/ui/splitter";
-import { createEffect, createSignal, Show } from "solid-js";
+import { createEffect, createSignal, For, onMount, Show } from "solid-js";
 import { LogViewerTabList } from "./LogViewer/LogViewerTabList";
 import { open } from "@tauri-apps/plugin-dialog";
 import { Toast } from "~/components/ui/toast";
 import { IconX } from "@tabler/icons-solidjs";
 
 function LogViewer() {
-  const [logViewTabListLeft, setLogViewTabListLeft] = createSignal<
-    [string, string, number[][], string][]
+  const [logViewTabList, setLogViewTabList] = createSignal<
+    { id: string; tabs: [string, string, number[][], string][] }[]
   >([]);
-  const [logViewTabListRight, setLogViewTabListRight] = createSignal<
-    [string, string, number[][], string][]
-  >(
-    [],
-  );
+  const [splitterList, setSplitterList] = createSignal<
+    { id: string; size: number }[]
+  >([]);
 
-  createEffect(() => {
-    const leftTabList = logViewTabListLeft();
-    if (leftTabList.length === 0 && logViewTabListRight().length !== 0) {
-      setLogViewTabListLeft(logViewTabListRight());
-      setLogViewTabListRight([]);
-    }
+  onMount(() => {
+    const uuid = crypto.randomUUID();
+    setLogViewTabList([{ id: uuid, tabs: [] }]);
+    setSplitterList([{ id: uuid, size: 100 }]);
   });
+
+  // If tab list length is 0, then the panel will close automatically
+  createEffect(() => {
+    const tabList = logViewTabList();
+    if (tabList.length === 1) return;
+    const zeroTabList = tabList.filter((tab) => tab.tabs.length === 0);
+    zeroTabList.forEach((deleteTab) => {
+      setSplitterList((prev) => {
+        const parsePrevList = prev.filter((tab) => tab.id !== deleteTab.id);
+        const panelSize = 100 / parsePrevList.length;
+        const updateList = [...parsePrevList].map((panel) => {
+          return { id: panel.id, size: panelSize };
+        });
+        return updateList;
+      });
+      setLogViewTabList((prev) => {
+        return prev.filter((tab) => tab.id !== deleteTab.id);
+      });
+    });
+  });
+
+  const dropTabOnSplitter = (direction: string, index: number) => {
+    const indexOnDirection = direction === "right" ? index + 1 : index - 1;
+    const uuid = crypto.randomUUID();
+    setLogViewTabList((prev) => {
+      const updateList = [...prev].map((item, i) => {
+        if (i === index) {
+          return {
+            id: item.id,
+            tabs: [...item.tabs].filter((item) =>
+              item[0] !== draggedTabInfo()![0]
+            ),
+          };
+        } else return item;
+      });
+      const newTab = { id: uuid, tabs: [draggedTabInfo()!] };
+      const addNewTabList: {
+        id: string;
+        tabs: [string, string, number[][], string][];
+      }[] = [
+        ...updateList.slice(0, indexOnDirection),
+        newTab,
+        ...updateList.slice(indexOnDirection),
+      ];
+      return addNewTabList;
+    });
+    const logViewTabListLength = logViewTabList().length;
+    setTimeout(() => {
+      setSplitterList((prev) => {
+        const panelSize = 100 / (logViewTabListLength + 1);
+        const updateList: { id: string; size: number }[] = [...prev].map(
+          (line) => {
+            return { id: line.id, size: panelSize };
+          },
+        );
+        return [...updateList.slice(0, indexOnDirection), {
+          id: uuid,
+          size: panelSize,
+        }, ...updateList.slice(indexOnDirection)];
+      });
+    }, 10);
+    setIsDragging([false, null]);
+  };
 
   async function openFileDialog(): Promise<[string, string] | undefined> {
     const path = await open({
@@ -51,287 +110,193 @@ function LogViewer() {
   });
 
   const [draggedTabInfo, setDraggedTabInfo] = createSignal<
-    [string, string, number[][], string] | undefined
+    [string, string, number[][], string] | undefined // tab id, file path, split indexarray, tab name,
   >();
-  const [isDragging, setIsDragging] = createSignal<boolean>(false);
+  const [draggedTabIsFrom, setDraggedTabIsFrom] = createSignal<string>(""); // tab list id
 
-  const [orientationMode, setOrientationMode] = createSignal<
-    "vertical" | "horizontal" | undefined
-  >("horizontal");
+  const [isDragging, setIsDragging] = createSignal<[boolean, number | null]>([
+    false,
+    null,
+  ]);
 
-  createEffect(() => {
-    console.log(logViewTabListLeft());
-  });
   return (
-    <div
-      style={{ "overflow-y": "hidden", width: `100%`, height: "100%" }}
-    >
-      <Toast.Toaster toaster={toaster}>
-        {(toast) => (
-          <Toast.Root>
-            <Toast.Title>{toast().title}</Toast.Title>
-            <Toast.Description>{toast().description}</Toast.Description>
-            <Toast.CloseTrigger>
-              <IconX />
-            </Toast.CloseTrigger>
-          </Toast.Root>
-        )}
-      </Toast.Toaster>
+    <>
+      <div
+        style={{ "overflow-y": "hidden", width: `100%`, height: "100%" }}
+      >
+        <Toast.Toaster toaster={toaster}>
+          {(toast) => (
+            <Toast.Root>
+              <Toast.Title>{toast().title}</Toast.Title>
+              <Toast.Description>{toast().description}</Toast.Description>
+              <Toast.CloseTrigger>
+                <IconX />
+              </Toast.CloseTrigger>
+            </Toast.Root>
+          )}
+        </Toast.Toaster>
 
-      <Splitter.Root
-        orientation={orientationMode()}
-        size={[
-          { id: "a", size: 50 },
-          { id: "b", size: 50 },
-        ]}
-        width={"calc(100% -3rem)"}
-        height={"calc(100% -3rem)"}
-        onDragEnter={() => {
-          setIsDragging(true);
-        }}
-        onDragOver={(e) => e.preventDefault()}
-        onDragEnd={() => {
-          setIsDragging(false);
-        }}
-      >
-        <Splitter.Panel id="a">
-          <LogViewerTabList
-            style={{ "width": "100%", "height": "100%" }}
-            tabList={logViewTabListLeft()}
-            tabListPosition="left"
-            onCreateTab={async () => {
-              const tabInfo = await openFileDialog();
-              if (!tabInfo) {
-                toaster.create({
-                  title: "Ivalid File",
-                  description: "The file is invalid.",
-                  type: "error",
-                });
-                return;
-              }
-              setLogViewTabListLeft((prev) => [...prev, [...tabInfo, [], ""]]);
-            }}
-            onDeleteTab={(deleteTabId) =>
-              setLogViewTabListLeft((prev) =>
-                prev.filter((id) => id[0] !== deleteTabId)
-              )}
-            onDraggedTabId={(id, path, indexArray, tabName) => {
-              setDraggedTabInfo([id, path, indexArray, tabName]);
-            }}
-            onTabDrop={() => {
-              const findDuplicateTab =
-                logViewTabListLeft().filter(([tabId, _]) => {
-                  return tabId === draggedTabInfo()![0];
-                }).length;
-              if (findDuplicateTab === 1) return;
-
-              setLogViewTabListLeft((prev) => {
-                return [...prev, draggedTabInfo()!];
-              });
-              setLogViewTabListRight((prev) => {
-                return prev.filter(([tabId, _]) => {
-                  return tabId !== draggedTabInfo()![0];
-                });
-              });
-              setDraggedTabInfo(undefined);
-            }}
-            onReorderTab={(tabList) => {
-              setLogViewTabListLeft(tabList);
-              setDraggedTabInfo(undefined);
-            }}
-          />
-        </Splitter.Panel>
-        <Show when={logViewTabListRight().length !== 0}>
-          <Splitter.ResizeTrigger id="a:b" />
-        </Show>
-        <Show when={logViewTabListRight().length !== 0}>
-          <Splitter.Panel
-            id="b"
-            draggable
-            onDragStart={(e) => {
-              e.dataTransfer!.setData("text/plain", e.target.id);
-            }}
-          >
-            <LogViewerTabList
-              tabList={logViewTabListRight()}
-              tabListPosition="right"
-              onCreateTab={async () => {
-                const tabInfo = await openFileDialog();
-                if (!tabInfo) {
-                  toaster.create({
-                    title: "Ivalid File",
-                    description: "The file is invalid.",
-                    type: "error",
-                  });
-                  return;
-                }
-                setLogViewTabListRight((
-                  prev,
-                ) => [...prev, [...tabInfo, [], ""]]);
-              }}
-              onDeleteTab={(deletTabid) =>
-                setLogViewTabListRight((prev) =>
-                  prev.filter((id) => id[0] !== deletTabid)
-                )}
-              onDraggedTabId={(id, path, indexArray, tabName) => {
-                setDraggedTabInfo([id, path, indexArray, tabName]);
-              }}
-              onTabDrop={() => {
-                const findDuplicateTab =
-                  logViewTabListRight().filter(([tabId, _]) => {
-                    return tabId === draggedTabInfo()![0];
-                  }).length;
-                if (findDuplicateTab === 1) return;
-
-                setLogViewTabListRight((prev) => {
-                  return [...prev, draggedTabInfo()!];
-                });
-                setLogViewTabListLeft((prev) => {
-                  return prev.filter(([tabId, _]) => {
-                    return tabId !== draggedTabInfo()![0];
-                  });
-                });
-                setDraggedTabInfo(undefined);
-              }}
-              onReorderTab={(tabList) => {
-                setLogViewTabListRight(tabList);
-                setDraggedTabInfo(undefined);
-              }}
-            />
-          </Splitter.Panel>
-        </Show>
-      </Splitter.Root>
-      <Show
-        when={logViewTabListRight().length === 0 &&
-          logViewTabListLeft().length > 1 && isDragging()}
-      >
-        <Stack
-          backgroundColor={"bg.disabled"}
-          style={{
-            width: "50%",
-            height: "calc(100% - 3rem) ",
-            "border-width": "1",
-            position: "absolute",
-            bottom: "0",
-            "right": "0",
-            opacity: "0%",
-          }}
-          onDragEnter={(e) => {
-            e.currentTarget.style.opacity = "50%";
-          }}
-          onDragLeave={(e) => {
-            e.currentTarget.style.opacity = "0%";
-          }}
-          onDragOver={(e) => e.preventDefault()}
-          onDrop={(e) => {
-            e.currentTarget.style.opacity = "0%";
-            setOrientationMode("horizontal");
-            setLogViewTabListLeft((prev) => {
-              return prev.filter((prevTabId) =>
-                prevTabId[0] !== draggedTabInfo()![0]
-              );
-            });
-            setLogViewTabListRight([draggedTabInfo()!]);
-            setIsDragging(false);
-          }}
+        <Splitter.Root
+          size={splitterList()}
         >
-        </Stack>
-        <Stack
-          backgroundColor={"bg.disabled"}
-          style={{
-            width: "100%",
-            height: "calc(50% - 3rem) ",
-            "border-width": "1",
-            position: "absolute",
-            bottom: "0",
-            left: "0",
-            opacity: "0%",
-          }}
-          onDragEnter={(e) => {
-            e.currentTarget.style.opacity = "50%";
-          }}
-          onDragLeave={(e) => {
-            e.currentTarget.style.opacity = "0%";
-          }}
-          onDragOver={(e) => e.preventDefault()}
-          onDrop={(e) => {
-            e.currentTarget.style.opacity = "0%";
-            setOrientationMode("vertical");
-            setLogViewTabListLeft((prev) => {
-              return prev.filter((prevTabId) =>
-                prevTabId[0] !== draggedTabInfo()![0]
-              );
-            });
-            setLogViewTabListRight([draggedTabInfo()!]);
-            setIsDragging(false);
-          }}
-        >
-        </Stack>
-      </Show>
-      <Show
-        when={logViewTabListRight().length >= 1 &&
-          orientationMode() === "horizontal" && isDragging()}
-      >
-        <Stack
-          backgroundColor={"bg.disabled"}
-          style={{
-            width: `calc(100% - 3rem)`,
-            height: "calc(50% - 3rem)",
-            "border-width": "1",
-            position: "absolute",
-            bottom: "0",
-            opacity: "0%",
-          }}
-          onDragEnter={(e) => {
-            e.currentTarget.style.opacity = "50%";
-          }}
-          onDragLeave={(e) => {
-            e.currentTarget.style.opacity = "0%";
-          }}
-          onDragOver={(e) => e.preventDefault()}
-          onDrop={(e) => {
-            const id = e.dataTransfer!.getData("text");
-            e.currentTarget.style.opacity = "0%";
-            if (id.split(":").pop() !== "b") return;
-            setOrientationMode("vertical");
-            setIsDragging(false);
-          }}
-        >
-        </Stack>
-      </Show>
-      <Show
-        when={logViewTabListRight().length >= 1 &&
-          orientationMode() === "vertical" && isDragging()}
-      >
-        <Stack
-          backgroundColor={"bg.disabled"}
-          style={{
-            width: "50%",
-            height: "calc(50% - 3rem)",
-            "border-width": "1",
-            position: "absolute",
-            right: "0",
-            top: "3rem",
-            opacity: "0%",
-          }}
-          onDragEnter={(e) => {
-            e.currentTarget.style.opacity = "50%";
-          }}
-          onDragLeave={(e) => {
-            e.currentTarget.style.opacity = "0%";
-          }}
-          onDragOver={(e) => e.preventDefault()}
-          onDrop={(e) => {
-            const id = e.dataTransfer!.getData("text");
-            e.currentTarget.style.opacity = "0%";
-            if (id.split(":").pop() !== "b") return;
-            setOrientationMode("horizontal");
-            setIsDragging(false);
-          }}
-        >
-        </Stack>
-      </Show>
-    </div>
+          <For each={splitterList() && logViewTabList()}>
+            {(item, index) => (
+              <>
+                <Show when={index() !== 0}>
+                  <Splitter.ResizeTrigger
+                    id={`${logViewTabList()[index() - 1].id}:${item.id}`}
+                  />
+                </Show>
+                <Splitter.Panel
+                  id={item.id}
+                  width={"100%"}
+                  height={"100%"}
+                  gap="0"
+                  onDragStart={() => setIsDragging([true, index()])}
+                  onDragOver={(e) => e.preventDefault()}
+                  onDragEnd={() => setIsDragging([false, null])}
+                >
+                  <div
+                    style={{
+                      width: "100%",
+                      "height": `100%`,
+                    }}
+                  >
+                    <LogViewerTabList
+                      id={item.id}
+                      style={{
+                        "width": "100%",
+                        "height": "100%",
+                        position: "absolute",
+                      }}
+                      tabList={item.tabs}
+                      onCreateTab={async () => {
+                        const tabInfo = await openFileDialog();
+                        if (!tabInfo) {
+                          toaster.create({
+                            title: "Ivalid File",
+                            description: "The file is invalid.",
+                            type: "error",
+                          });
+                          return;
+                        }
+                        setLogViewTabList((prev) => {
+                          const updateList: {
+                            id: string;
+                            tabs: [string, string, number[][], string][];
+                          }[] = [...prev].map((item, i) => {
+                            if (i === index()) {
+                              return {
+                                id: item.id,
+                                tabs: [...item.tabs, [...tabInfo, [], ""]],
+                              };
+                            } else return item;
+                          });
+                          return updateList;
+                        });
+                      }}
+                      onDeleteTab={(deleteTabId) => {
+                        setLogViewTabList((prev) => {
+                          const updateList = [...prev].map((item, i) => {
+                            if (i === index()) {
+                              return {
+                                id: item.id,
+                                tabs: [
+                                  ...item.tabs.filter((tab) =>
+                                    tab[0] !== deleteTabId
+                                  ),
+                                ],
+                              };
+                            } else return item;
+                          });
+                          return updateList;
+                        });
+                      }}
+                      onDraggedTabId={(
+                        id,
+                        path,
+                        indexArray,
+                        tabName,
+                        tabListId,
+                      ) => {
+                        setDraggedTabInfo([id, path, indexArray, tabName]);
+                        setDraggedTabIsFrom(tabListId);
+                      }}
+                      onTabDrop={() => {
+                        if (draggedTabIsFrom() === item.id) return;
+                        setLogViewTabList((prev) => {
+                          const updateList: {
+                            id: string;
+                            tabs: [string, string, number[][], string][];
+                          }[] = [...prev].map((item, i) => {
+                            if (index() === i) {
+                              return {
+                                id: item.id,
+                                tabs: [...item.tabs, [...draggedTabInfo()!]],
+                              };
+                            } else if (item.id === draggedTabIsFrom()) {
+                              return {
+                                id: item.id,
+                                tabs: [...item.tabs.filter((item) => {
+                                  return item[0] !== draggedTabInfo()![0];
+                                })],
+                              };
+                            } else return item;
+                          });
+                          return updateList;
+                        });
+                      }}
+                    />
+                  </div>
+                  <Show
+                    when={isDragging()[0] && isDragging()[1] === index() &&
+                      item.tabs.length > 1}
+                  >
+                    <Stack
+                      backgroundColor={"bg.muted"}
+                      style={{
+                        width: "50%",
+                        height: "100%",
+                        "margin-top": "6rem",
+                        "margin-left": "0",
+                        opacity: "0%",
+                        position: "fixed",
+                        left: "0",
+                      }}
+                      onDragEnter={(e) =>
+                        e.currentTarget.style.opacity = "100%"}
+                      onDragLeave={(e) => e.currentTarget.style.opacity = "0%"}
+                      onDragOver={(e) => e.preventDefault()}
+                      onDrop={() => {
+                        dropTabOnSplitter("left", index());
+                      }}
+                    >
+                    </Stack>
+                    <Stack
+                      backgroundColor={"bg.muted"}
+                      style={{
+                        width: "50%",
+                        height: "100%",
+                        "margin-top": "6rem",
+                        opacity: "0%",
+                      }}
+                      onDragEnter={(e) =>
+                        e.currentTarget.style.opacity = "100%"}
+                      onDragLeave={(e) => e.currentTarget.style.opacity = "0%"}
+                      onDragOver={(e) => e.preventDefault()}
+                      onDrop={() => {
+                        dropTabOnSplitter("right", index());
+                      }}
+                    >
+                    </Stack>
+                  </Show>
+                </Splitter.Panel>
+              </>
+            )}
+          </For>
+        </Splitter.Root>
+      </div>
+    </>
   );
 }
 

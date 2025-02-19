@@ -1,4 +1,4 @@
-import { createEffect, createSignal, For, JSX } from "solid-js";
+import { createEffect, createSignal, For, JSX,} from "solid-js";
 import { Tabs } from "~/components/ui/tabs";
 import { IconButton } from "~/components/ui/icon-button";
 import { IconPlus, IconX } from "@tabler/icons-solidjs";
@@ -6,9 +6,8 @@ import { Editable } from "~/components/ui/editable";
 import { LogViewerTabPageContent } from "./LogViewerTabPageContent";
 
 export type LogViewerTabListProps = JSX.HTMLAttributes<HTMLDivElement> & {
+  id : string;
   tabList: [string, string, number[][], string][]; // tabId, filePath, split index array, tab name
-  tabListPosition: string;
-  newtabContext?: number[][]; //SplitIndexArray, Also gonna sennd & get plot context
   onCreateTab?: () => void;
   onDeleteTab?: (tadId: string) => void;
   onDraggedTabId?: (
@@ -16,9 +15,9 @@ export type LogViewerTabListProps = JSX.HTMLAttributes<HTMLDivElement> & {
     filePath: string,
     indexArray: number[][],
     tabName: string,
+    tabListId : string
   ) => void;
   onTabDrop?: () => void;
-  onReorderTab?: (tabList: [string, string, number[][], string][]) => void;
 };
 
 export function LogViewerTabList(props: LogViewerTabListProps) {
@@ -26,14 +25,35 @@ export function LogViewerTabList(props: LogViewerTabListProps) {
   const [draggedTabIndex, setDraggedTabIndex] = createSignal<number | null>(
     null,
   );
+  const [reorderTabList, setReorderTabList] = createSignal(props.tabList)
+  
+  // This is for while reordering tab, if tab is added or deleted
+  // Doesnt bother the reorder index, and still reordering well
+  createEffect(() => {
+    const list = props.tabList 
+    if (list.length === 0) return;
+
+    if(props.tabList.length > reorderTabList().length){
+      setReorderTabList((prev) => {
+        return [...prev, [...list[length - 1]]]
+      })
+    }
+
+    if(props.tabList.length < reorderTabList().length){
+      const parsePropList = list.sort()
+      const parseReorderList = reorderTabList().sort()
+      const deletedTab = parsePropList.filter((line, i) => {line[0] !== parseReorderList[i][0]})[0]
+      setReorderTabList((prev) => {return prev.filter((prevTab) => prevTab[0] !== deletedTab[0])})
+    }
+  })
 
   const reorderTabsOnDragOver = (e: DragEvent, index: number) => {
     e.preventDefault();
     if (draggedTabIndex() !== null && draggedTabIndex() !== index) {
-      const updateTab = [...props.tabList];
+      const updateTab = [...reorderTabList()];
       const [draggedTab] = updateTab.splice(draggedTabIndex()!, 1);
       updateTab.splice(index, 0, draggedTab);
-      props.onReorderTab?.([...updateTab]);
+      setReorderTabList([...updateTab]);
       setDraggedTabIndex(index);
     }
   };
@@ -137,7 +157,7 @@ export function LogViewerTabList(props: LogViewerTabListProps) {
             width={"100%"}
             marginRight={"0"}
           >
-            <For each={props.tabList}>
+            <For each={reorderTabList()}>
               {([currentTabId, currentFilePath, _, currentTabName], index) => (
                 <Tabs.Trigger
                   value={currentTabId}
@@ -165,6 +185,7 @@ export function LogViewerTabList(props: LogViewerTabListProps) {
                       currentFilePath,
                       indexArray,
                       dragTabName,
+                      props.id
                     );
                     setDraggedTabInfo([currentTabId, currentFilePath]);
                   }}
@@ -248,31 +269,35 @@ export function LogViewerTabList(props: LogViewerTabListProps) {
             </div>
             <Tabs.Indicator />
           </Tabs.List>
-          <For each={props.tabList}>
-            {([currentTabId, currentFilePath, currentTabIndex]) => (
-              <Tabs.Content
-                value={currentTabId}
-                height={"100%"}
-                width={"100% "}
-                style={{ "overflow-y": "auto" }}
-              >
-                <LogViewerTabPageContent
-                  tabId={currentTabId}
-                  filePath={currentFilePath}
-                  onSplit={(e) => {
-                    if (e.length === 0) return;
-                    setSplitIndex((prev) => {
-                      const updatePrev = prev.filter(([tabId, _]) => {
-                        return tabId !== currentTabId;
+          <div
+            style={{ width: "100%", height: "100%" }}
+          >
+            <For each={reorderTabList()}>
+              {([currentTabId, currentFilePath, currentTabIndex, _]) => (
+                <Tabs.Content
+                  value={currentTabId}
+                  height={"100%"}
+                  width={"100% "}
+                  style={{ "overflow-y": "auto" }}
+                >
+                  <LogViewerTabPageContent
+                    tabId={currentTabId}
+                    filePath={currentFilePath}
+                    onSplit={(e) => {
+                      if (e.length === 0) return;
+                      setSplitIndex((prev) => {
+                        const updatePrev = prev.filter(([tabId, _]) => {
+                          return tabId !== currentTabId;
+                        });
+                        return [...updatePrev, [currentTabId, e]];
                       });
-                      return [...updatePrev, [currentTabId, e]];
-                    });
-                  }}
-                  splitArray={currentTabIndex}
-                />
-              </Tabs.Content>
-            )}
-          </For>
+                    }}
+                    splitArray={currentTabIndex}
+                  />
+                </Tabs.Content>
+              )}
+            </For>
+          </div>
         </Tabs.Root>
       </div>
     </>
