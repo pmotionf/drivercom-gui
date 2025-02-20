@@ -30,13 +30,13 @@ export function ConfigForm(props: ConfigFormProps) {
         onValueCommit={(e) => {
           props.onLabelChange?.(e.value);
         }}
-        fontWeight={"bold"}
-        fontSize={"2xl"}
+        fontWeight="bold"
+        fontSize="2xl"
       >
         <Editable.Area>
-          <Editable.Input width={"90%"} />
+          <Editable.Input width="90%" />
           <Editable.Preview
-            width={"90%"}
+            width="90%"
             style={{
               "text-overflow": "ellipsis",
               "display": "block",
@@ -117,8 +117,8 @@ function ConfigObject(props: ConfigObjectProps) {
               >
                 <legend>
                   <Text
-                    fontWeight={"bold"}
-                    opacity={"70%"}
+                    fontWeight="bold"
+                    opacity="70%"
                   >
                     {`${key[0].toUpperCase()}${
                       Array.from(key.slice(1, key.length)).map(
@@ -153,9 +153,9 @@ function ConfigObject(props: ConfigObjectProps) {
                     e.checked,
                   );
                 }}
-                marginTop={"1rem"}
+                marginTop="1rem"
               >
-                <Text fontWeight={"light"} userSelect={"none"}>
+                <Text fontWeight="light" userSelect="none">
                   {key}
                 </Text>
               </Checkbox>
@@ -164,16 +164,16 @@ function ConfigObject(props: ConfigObjectProps) {
           if (typeof value === "number") {
             return (
               <Stack
-                direction={"row"}
-                width={"100%"}
-                marginTop={"1rem"}
-                marginBottom={"0.5rem"}
+                direction="row"
+                width="100%"
+                marginTop="1rem"
+                marginBottom="0.5rem"
               >
-                <Text width={"50%"} marginTop={"0.4rem"} fontWeight={"light"}>
+                <Text width="50%" marginTop="0.4rem" fontWeight="light">
                   {key}
                 </Text>
                 <Input
-                  width={"50%"}
+                  width="50%"
                   placeholder={key}
                   value={object[key as keyof typeof object]}
                   onChange={(e) => {
@@ -217,7 +217,7 @@ function ConfigList(props: ConfigListProps) {
           return (
             <Accordion.Item value={props.id_prefix + title}>
               <Accordion.ItemTrigger>
-                <Text fontWeight={"bold"} size={"md"} opacity={"70%"}>
+                <Text fontWeight="bold" size="md" opacity="70%">
                   {`${title[0].toUpperCase()}${
                     Array.from(title.slice(1, title.length)).map(
                       (char, index) => {
@@ -233,9 +233,7 @@ function ConfigList(props: ConfigListProps) {
                   <IconChevronDown />
                 </Accordion.ItemIndicator>
               </Accordion.ItemTrigger>
-              <Accordion.ItemContent
-                padding={"0"}
-              >
+              <Accordion.ItemContent padding="0">
                 <ConfigObject
                   object={item}
                   id_prefix={props.id_prefix + title}

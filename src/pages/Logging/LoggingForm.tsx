@@ -223,8 +223,8 @@ export function LoggingForm(props: LoggingFormProps) {
 
   return (
     <div style={{ width: "40rem", "margin-bottom": "3rem" }}>
-      <Card.Root padding={"0.5rem"}>
-        <Card.Header paddingTop={"3rem"}>
+      <Card.Root padding="0.5rem">
+        <Card.Header paddingTop="3rem">
           <Editable.Root
             placeholder="File name"
             defaultValue={fileName()}
@@ -232,11 +232,11 @@ export function LoggingForm(props: LoggingFormProps) {
             onValueCommit={(e) => {
               setFileName(e.value);
             }}
-            fontWeight={"bold"}
-            fontSize={"2xl"}
+            fontWeight="bold"
+            fontSize="2xl"
           >
             <Editable.Area>
-              <Editable.Input width={"90%"} />
+              <Editable.Input width="90%" />
               <Editable.Preview />
             </Editable.Area>
           </Editable.Root>
@@ -254,21 +254,21 @@ export function LoggingForm(props: LoggingFormProps) {
         <Card.Body gap={1.5}>
           <LogConfigFieldSet object={logForm} />
         </Card.Body>
-        <Card.Footer marginTop={"3rem"} marginBottom={"2rem"}>
-          <Stack direction={"row"}>
+        <Card.Footer marginTop="3rem" marginBottom="2rem">
+          <Stack direction="row">
             <Button
               disabled={portId().length === 0 || logGetBtnLoading() ||
                 currentLogStatus() === "Log.Status.invalid"}
               loading={currentLogStatus() === "Log.Status.started"}
               onClick={() => startLogging()}
-              variant={"outline"}
+              variant="outline"
             >
               Log Start
             </Button>
             <Button
               disabled={currentLogStatus() !== "Log.Status.started"}
               onClick={() => stopLogging()}
-              variant={"outline"}
+              variant="outline"
             >
               Log Stop
             </Button>
@@ -276,7 +276,7 @@ export function LoggingForm(props: LoggingFormProps) {
               disabled={currentLogStatus() !== "Log.Status.stopped" ||
                 portId().length === 0}
               onClick={() => saveLogCsvFile()}
-              variant={"outline"}
+              variant="outline"
               loading={logGetBtnLoading()}
             >
               Log Get
@@ -290,7 +290,7 @@ export function LoggingForm(props: LoggingFormProps) {
               <Menu.Positioner>
                 <Menu.Content width="8rem">
                   <Menu.Item
-                    value={"Save as file"}
+                    value="Save as file"
                     onClick={() => saveLogAsFile()}
                     userSelect="none"
                   >
@@ -298,7 +298,7 @@ export function LoggingForm(props: LoggingFormProps) {
                   </Menu.Item>
                   <Menu.Separator />
                   <Menu.Item
-                    value={"Save to port"}
+                    value="Save to port"
                     disabled={portId().length === 0 || logGetBtnLoading()}
                     onClick={() => saveLogToPort()}
                     userSelect="none"
@@ -366,30 +366,30 @@ export function LogConfigFieldSet(props: logConfigFieldSetProps) {
         <>
           <Show when={props.sectionName === undefined}>
             <Text
-              fontWeight={"bold"}
-              marginTop={"1rem"}
-              opacity={"50%"}
-              size={"lg"}
-              userSelect={"none"}
+              fontWeight="bold"
+              marginTop="1rem"
+              opacity="50%"
+              size="lg"
+              userSelect="none"
             >
               {`${key[0][0].toUpperCase()}${key[0].slice(1, key[0].length)}`}
             </Text>
           </Show>
           <Show when={typeof key[1] === "number" && key[0] !== "_"}>
-            <Stack direction={"row"}>
+            <Stack direction="row">
               <Show when={props.sectionName}>
                 <Text
                   marginTop="0.3rem"
-                  width={"30%"}
-                  fontWeight={"light"}
-                  userSelect={"none"}
+                  width="30%"
+                  fontWeight="light"
+                  userSelect="none"
                 >
                   {`${props.sectionName} ${Number(key[0]) + 1}`}
                 </Text>
               </Show>
               <Input
                 value={Number(key[1])}
-                type={"number"}
+                type="number"
                 onChange={(e) => {
                   setObject(
                     key[0] as keyof typeof obj,
@@ -404,9 +404,9 @@ export function LogConfigFieldSet(props: logConfigFieldSetProps) {
           <Show when={typeof key[1] === "string"}>
             <Text
               marginTop="0.3rem"
-              width={"30%"}
-              userSelect={"none"}
-              marginBottom={"0.5rem"}
+              width="30%"
+              userSelect="none"
+              marginBottom="0.5rem"
             >
               {`${key[0][0].toUpperCase()}${key[0].slice(1, key[0].length)}`}
             </Text>
@@ -471,7 +471,7 @@ export function LogConfigFieldSet(props: logConfigFieldSetProps) {
                   : checkBoxShiftClick(index());
               }}
             >
-              <Text fontWeight={"light"} userSelect={"none"}>
+              <Text fontWeight="light" userSelect="none">
                 {!isNaN(Number(key[0]))
                   ? `${props.sectionName} ${Number(key[0]) + 1}`
                   : key[0]}
@@ -481,10 +481,10 @@ export function LogConfigFieldSet(props: logConfigFieldSetProps) {
           <Show when={typeof key[1] === "object"}>
             <Show when={props.sectionName !== undefined}>
               <Text
-                marginTop={"0.2rem"}
-                marginBottom={"0.5rem"}
-                fontWeight={"medium"}
-                userSelect={"none"}
+                marginTop="0.2rem"
+                marginBottom="0.5rem"
+                fontWeight="medium"
+                userSelect="none"
               >
                 {`${key[0][0].toUpperCase()}${key[0].slice(1, key[0].length)}`}
               </Text>

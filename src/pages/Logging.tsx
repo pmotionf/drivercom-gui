@@ -147,7 +147,7 @@ export function Logging() {
         <Show
           when={!isFileOpen()}
           fallback={
-            <Stack direction="row" justifyContent={"center"}>
+            <Stack direction="row" justifyContent="center">
               <LoggingForm
                 jsonfile={logConfigureFile()}
                 fileName={fileName()}
@@ -165,19 +165,19 @@ export function Logging() {
           <Stack
             width="42rem"
             marginLeft={`calc((100% - 42rem) / 2)`}
-            height={"100%"}
+            height="100%"
           >
-            <Text variant={"heading"} size={"3xl"}>
+            <Text variant="heading" size="3xl">
               Logging
             </Text>
             <Stack
-              direction={"row"}
-              justifyContent={"center"}
-              marginTop={"1.5rem"}
+              direction="row"
+              justifyContent="center"
+              marginTop="1.5rem"
             >
               <Button
-                variant={"outline"}
-                padding={"4rem"}
+                variant="outline"
+                padding="4rem"
                 onClick={() => {
                   const newEmptyFile = JSON.parse(
                     JSON.stringify(logFormFileFormat()),
@@ -190,8 +190,8 @@ export function Logging() {
                 Create New File
               </Button>
               <Button
-                variant={"outline"}
-                padding={"4rem"}
+                variant="outline"
+                padding="4rem"
                 onClick={async () => {
                   const path = await openFileDialog();
                   if (!path) return;
@@ -201,8 +201,8 @@ export function Logging() {
                 Open File
               </Button>
               <Button
-                variant={"outline"}
-                padding={"4rem"}
+                variant="outline"
+                padding="4rem"
                 disabled={portId().length === 0}
                 onClick={() => {
                   GetLogConfigFromPort();
@@ -212,12 +212,12 @@ export function Logging() {
               </Button>
             </Stack>
             <Show when={recentLogFilePaths().length !== 0}>
-              <Text size={"xl"} marginTop={"2rem"} fontWeight={"bold"}>
+              <Text size="xl" marginTop="2rem" fontWeight="bold">
                 Recent
               </Text>
               <Stack
-                marginTop={"0.5rem"}
-                maxHeight={"100%"}
+                marginTop="0.5rem"
+                maxHeight="100%"
                 style={{ "overflow-y": "auto" }}
               >
                 <For each={recentLogFilePaths()}>
@@ -226,7 +226,7 @@ export function Logging() {
                       onClick={() => {
                         readJsonFile(path);
                       }}
-                      cursor={"pointer"}
+                      cursor="pointer"
                       userSelect="none"
                     >
                       {path}

@@ -149,7 +149,7 @@ function LogViewer() {
                     setDraggedTabIndex(null);
                   }}
                   style={{ "padding-right": "0", "padding-top": "0.1rem" }}
-                  height={"100%"}
+                  height="100%"
                 >
                   <Editable.Root
                     defaultValue={file.acceptedFiles[0].name /*tab name*/}
@@ -206,11 +206,11 @@ function LogViewer() {
             <FileUpload.Trigger
               asChild={(triggerProps) => (
                 <IconButton
-                  size={"xs"}
-                  variant={"ghost"}
+                  size="xs"
+                  variant="ghost"
                   {...triggerProps()}
-                  width={"1rem"}
-                  borderRadius={"1rem"}
+                  width="1rem"
+                  borderRadius="1rem"
                 >
                   <IconPlus />
                 </IconButton>
@@ -224,7 +224,7 @@ function LogViewer() {
           {(tabId, index) => (
             <Tabs.Content
               value={tabId}
-              height={"100%"}
+              height="100%"
               style={{ "overflow-y": "auto" }}
             >
               <LogViewerTab

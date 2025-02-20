@@ -258,7 +258,7 @@ function App(props: RouteSectionProps) {
               }}
             >
               <Drawer.Content>
-                <Drawer.Header position={"relative"}>
+                <Drawer.Header position="relative">
                   <div
                     style={{
                       display: "flex",
@@ -271,7 +271,7 @@ function App(props: RouteSectionProps) {
                     </Drawer.Title>
                     <Button
                       variant="ghost"
-                      size={"sm"}
+                      size="sm"
                       style={{
                         position: "absolute",
                         bottom: "0px",
@@ -350,7 +350,7 @@ function App(props: RouteSectionProps) {
                     <SegmentGroup.Indicator />
                   </SegmentGroup.Root>
                 </Drawer.Body>
-                <Drawer.Footer display={"block"} padding={"0.5rem"}>
+                <Drawer.Footer display="block" padding="0.5rem">
                   <div
                     id="versions-footer"
                     style={{
@@ -410,8 +410,8 @@ function App(props: RouteSectionProps) {
                     size="sm"
                     fontWeight="light"
                     color="{colors.gray.a10}"
-                    textAlign={"center"}
-                    marginTop={"0.5rem"}
+                    textAlign="center"
+                    marginTop="0.5rem"
                   >
                     <i>Copyright © 2024 PMF, Inc.</i>
                   </Text>

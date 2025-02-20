@@ -1,5 +1,13 @@
 {
-  "exclude": ["dist/", "src-tauri/", ".github/", ".vscode/", ".vite/"],
+  "exclude": [
+    "dist/",
+    "src-tauri/",
+    ".github/",
+    ".vscode/",
+    ".vite/",
+    "styled-system/",
+    "src/components/ui/"
+  ],
   "tasks": {
     "prepare": "panda codegen",
     "dev": "deno run -A --node-modules-dir npm:vite",
@@ -18,11 +26,7 @@
   "fmt": {
     "useTabs": false,
     "indentWidth": 2,
-    "semiColons": true,
-    "exclude": ["styled-system/"]
-  },
-  "lint": {
-    "exclude": ["styled-system/", "src/components/ui"]
+    "semiColons": true
   },
   "compilerOptions": {
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
