@@ -5,17 +5,18 @@ import { LogViewerTabList } from "./LogViewer/LogViewerTabList";
 import { open } from "@tauri-apps/plugin-dialog";
 import { Toast } from "~/components/ui/toast";
 import { IconX } from "@tabler/icons-solidjs";
+import { PlotContext } from "~/components/Plot"
 
 function LogViewer() {
   const [logViewTabList, setLogViewTabList] = createSignal<
-    { id: string; tabs: [string, string, number[][], string][] }[]
+    { id: string; tabs: [string, string, number[][], PlotContext[], string][] }[]
   >([]);
   const [splitterList, setSplitterList] = createSignal<
     { id: string; size: number }[]
   >([]);
 
   onMount(() => {
-    const uuid = crypto.randomUUID();
+    const uuid = getCryptoUUID()
     setLogViewTabList([{ id: uuid, tabs: [] }]);
     setSplitterList([{ id: uuid, size: 100 }]);
   });
@@ -24,25 +25,33 @@ function LogViewer() {
   createEffect(() => {
     const tabList = logViewTabList();
     if (tabList.length === 1) return;
+
+    let parseList = tabList;
     const zeroTabList = tabList.filter((tab) => tab.tabs.length === 0);
-    zeroTabList.forEach((deleteTab) => {
-      setSplitterList((prev) => {
-        const parsePrevList = prev.filter((tab) => tab.id !== deleteTab.id);
-        const panelSize = 100 / parsePrevList.length;
-        const updateList = [...parsePrevList].map((panel) => {
-          return { id: panel.id, size: panelSize };
-        });
-        return updateList;
+    if(zeroTabList.length !== 0) {
+      zeroTabList.forEach((deletedTab) => {
+        parseList = parseList.filter((tab) => tab.id !== deletedTab.id)
+      })
+      setLogViewTabList(parseList)
+    } 
+
+    setSplitterList(() => {
+      const panelSize = 100 / parseList.length;
+      const updateList = parseList.map((panel) => {
+        return { id: panel.id, size: panelSize };
       });
-      setLogViewTabList((prev) => {
-        return prev.filter((tab) => tab.id !== deleteTab.id);
-      });
+      return updateList;
     });
   });
 
+  const [draggedTabInfo, setDraggedTabInfo] = createSignal<
+    [string, string, number[][], PlotContext[], string] | undefined // tab id, file path, split indexarray, tab name,
+  >();
+  const [draggedTabIsFrom, setDraggedTabIsFrom] = createSignal<string>(""); // tab list id
+
   const dropTabOnSplitter = (direction: string, index: number) => {
     const indexOnDirection = direction === "right" ? index + 1 : index - 1;
-    const uuid = crypto.randomUUID();
+    const uuid = getCryptoUUID()
     setLogViewTabList((prev) => {
       const updateList = [...prev].map((item, i) => {
         if (i === index) {
@@ -57,7 +66,7 @@ function LogViewer() {
       const newTab = { id: uuid, tabs: [draggedTabInfo()!] };
       const addNewTabList: {
         id: string;
-        tabs: [string, string, number[][], string][];
+        tabs: [string, string, number[][], PlotContext[], string][];
       }[] = [
         ...updateList.slice(0, indexOnDirection),
         newTab,
@@ -65,23 +74,13 @@ function LogViewer() {
       ];
       return addNewTabList;
     });
-    const logViewTabListLength = logViewTabList().length;
-    setTimeout(() => {
-      setSplitterList((prev) => {
-        const panelSize = 100 / (logViewTabListLength + 1);
-        const updateList: { id: string; size: number }[] = [...prev].map(
-          (line) => {
-            return { id: line.id, size: panelSize };
-          },
-        );
-        return [...updateList.slice(0, indexOnDirection), {
-          id: uuid,
-          size: panelSize,
-        }, ...updateList.slice(indexOnDirection)];
-      });
-    }, 10);
-    setIsDragging([false, null]);
   };
+
+  
+  const toaster = Toast.createToaster({
+    placement: "top-end",
+    gap: 24,
+  });
 
   async function openFileDialog(): Promise<[string, string] | undefined> {
     const path = await open({
@@ -92,32 +91,37 @@ function LogViewer() {
     });
 
     if (!path) {
+      toaster.create({
+        title: "Ivalid File",
+        description: "The file is invalid.",
+        type: "error",
+      });
       return undefined;
     }
 
     const extensions = path.slice(path.length - 4, path.length);
     if (extensions !== ".csv") {
+      toaster.create({
+        title: "Ivalid File",
+        description: "The file is invalid.",
+        type: "error",
+      });
       return undefined;
     }
 
-    const tabId = crypto.randomUUID();
+    const tabId = getCryptoUUID()
     return [tabId, path.replaceAll("\\", "/")];
   }
-
-  const toaster = Toast.createToaster({
-    placement: "top-end",
-    gap: 24,
-  });
-
-  const [draggedTabInfo, setDraggedTabInfo] = createSignal<
-    [string, string, number[][], string] | undefined // tab id, file path, split indexarray, tab name,
-  >();
-  const [draggedTabIsFrom, setDraggedTabIsFrom] = createSignal<string>(""); // tab list id
 
   const [isDragging, setIsDragging] = createSignal<[boolean, number | null]>([
     false,
     null,
   ]);
+
+  function getCryptoUUID() : string {
+    const uuid : string = crypto.randomUUID()
+    return uuid
+  }
 
   return (
     <>
@@ -170,7 +174,7 @@ function LogViewer() {
                         position: "absolute",
                       }}
                       tabList={item.tabs}
-                      onCreateTab={async () => {
+                      onCreateTab={async (ctx) => {
                         const tabInfo = await openFileDialog();
                         if (!tabInfo) {
                           toaster.create({
@@ -183,12 +187,25 @@ function LogViewer() {
                         setLogViewTabList((prev) => {
                           const updateList: {
                             id: string;
-                            tabs: [string, string, number[][], string][];
+                            tabs: [string, string, number[][], PlotContext[], string][];
                           }[] = [...prev].map((item, i) => {
                             if (i === index()) {
+                              const updateTabs = [...item.tabs]
+                              const plotContextTabs : [string, string, number[][], PlotContext[], string][] = 
+                              updateTabs.map(([id, filePath, splitIndexArray, context, tabName]) => {
+                                const plotContext = ctx.filter(([contextId, _]) => contextId === id)
+                                console.log(plotContext)
+                                if(plotContext.length === 0){
+                                  return [id, filePath, splitIndexArray,context,tabName]
+                                } else {
+                                  
+                                  return [id, filePath, splitIndexArray, plotContext[0][1], tabName]
+                                }
+                                
+                              })
                               return {
                                 id: item.id,
-                                tabs: [...item.tabs, [...tabInfo, [], ""]],
+                                tabs: [...plotContextTabs, [...tabInfo, [], [], ""]],
                               };
                             } else return item;
                           });
@@ -216,10 +233,11 @@ function LogViewer() {
                         id,
                         path,
                         indexArray,
+                        plotContext,
                         tabName,
                         tabListId,
                       ) => {
-                        setDraggedTabInfo([id, path, indexArray, tabName]);
+                        setDraggedTabInfo([id, path, indexArray, plotContext, tabName]);
                         setDraggedTabIsFrom(tabListId);
                       }}
                       onTabDrop={() => {
@@ -227,7 +245,7 @@ function LogViewer() {
                         setLogViewTabList((prev) => {
                           const updateList: {
                             id: string;
-                            tabs: [string, string, number[][], string][];
+                            tabs: [string, string, number[][], PlotContext[], string][];
                           }[] = [...prev].map((item, i) => {
                             if (index() === i) {
                               return {
@@ -246,32 +264,13 @@ function LogViewer() {
                           return updateList;
                         });
                       }}
+                      onContextChange={(tabid, ctx) => {}}
                     />
                   </div>
                   <Show
                     when={isDragging()[0] && isDragging()[1] === index() &&
                       item.tabs.length > 1}
                   >
-                    <Stack
-                      backgroundColor={"bg.muted"}
-                      style={{
-                        width: "50%",
-                        height: "100%",
-                        "margin-top": "6rem",
-                        "margin-left": "0",
-                        opacity: "0%",
-                        position: "fixed",
-                        left: "0",
-                      }}
-                      onDragEnter={(e) =>
-                        e.currentTarget.style.opacity = "100%"}
-                      onDragLeave={(e) => e.currentTarget.style.opacity = "0%"}
-                      onDragOver={(e) => e.preventDefault()}
-                      onDrop={() => {
-                        dropTabOnSplitter("left", index());
-                      }}
-                    >
-                    </Stack>
                     <Stack
                       backgroundColor={"bg.muted"}
                       style={{
