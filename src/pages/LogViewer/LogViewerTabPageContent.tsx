@@ -20,12 +20,20 @@ export type LogViewerTabPageContentProps =
     onErrorMessage?: (message: ErrorMessage) => void;
     splitArray?: number[][];
     onSplit?: (indexArray: number[][]) => void;
-    plotContext: PlotContext[];
+    plotContext?: string[];
     onContextChange?: (plotContext: PlotContext[]) => void;
   };
 
 export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
-  const [plots, setPlots] = createStore(props.plotContext);
+  const unknownObject = props.plotContext!.map((str) => {
+    return JSON.parse(str) as PlotContext;
+  });
+  const parsePlotContext: PlotContext[] = unknownObject.map((obj) => {
+    return { ...obj };
+  });
+  console.log(parsePlotContext);
+
+  const [plots, setPlots] = createStore([] as PlotContext[]);
   const [splitIndex, setSplitIndex] = createSignal([] as number[][]);
   const [header, setHeader] = createSignal<string[]>([]);
   const [series, setSeries] = createSignal<number[][]>([]);
@@ -132,7 +140,10 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
       <Button
         variant="ghost"
         disabled={splitIndex().length <= 1}
-        onclick={resetChart}
+        onclick={() => {
+          resetChart();
+          props.onSplit?.(splitIndex());
+        }}
         style={{
           "margin-top": "0.5rem",
           "margin-left": "1rem",
@@ -186,7 +197,7 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
                 context={plots[index()]}
                 onContextChange={(ctx) => {
                   setPlots(index(), ctx);
-                  props.onContextChange?.(plots);
+                  props.onContextChange?.(JSON.parse(JSON.stringify(plots)));
                 }}
                 style={{
                   width: "100%",
