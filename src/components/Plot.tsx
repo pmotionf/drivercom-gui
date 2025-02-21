@@ -34,7 +34,7 @@ export type PlotProps = JSX.HTMLAttributes<HTMLDivElement> & {
   header: string[];
   series: number[][];
   context?: PlotContext;
-  onContextChange?: (context : PlotContext) => void
+  onContextChange?: (context: PlotContext) => void;
 };
 
 export type PlotContext = {
@@ -538,12 +538,12 @@ export function Plot(props: PlotProps) {
                     plot.setSeries(index() + 1, {
                       show: new_visible,
                     });
-                    props.onContextChange?.(getContext())
+                    props.onContextChange?.(getContext());
                   }}
                   color={getContext().color[index()]}
                   onColorChange={(new_color) => {
                     setContext()("color", index(), new_color);
-                    props.onContextChange?.(getContext())
+                    props.onContextChange?.(getContext());
                     plot.redraw();
                   }}
                   palette={getContext().palette}
@@ -568,7 +568,7 @@ export function Plot(props: PlotProps) {
                       }),
                     };
                     plot.addSeries(config, index() + 1);
-                    props.onContextChange?.(getContext())
+                    props.onContextChange?.(getContext());
                     plot.redraw();
                   }}
                 />
