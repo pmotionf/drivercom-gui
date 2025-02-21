@@ -20,13 +20,12 @@ export type LogViewerTabPageContentProps =
     onErrorMessage?: (message: ErrorMessage) => void;
     splitArray?: number[][];
     onSplit?: (indexArray: number[][]) => void;
-    plotContext : PlotContext[]
-    onContextChange? : (plotContext : PlotContext[]) => void
+    plotContext: PlotContext[];
+    onContextChange?: (plotContext: PlotContext[]) => void;
   };
 
 export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
-  const [plots, setPlots] = createStore(props.plotContext as PlotContext[]);
-  console.log(plots)
+  const [plots, setPlots] = createStore(props.plotContext);
   const [splitIndex, setSplitIndex] = createSignal([] as number[][]);
   const [header, setHeader] = createSignal<string[]>([]);
   const [series, setSeries] = createSignal<number[][]>([]);
@@ -186,8 +185,8 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
                 series={currentItems}
                 context={plots[index()]}
                 onContextChange={(ctx) => {
-                  setPlots(index(), ctx)
-                  props.onContextChange?.(plots)
+                  setPlots(index(), ctx);
+                  props.onContextChange?.(plots);
                 }}
                 style={{
                   width: "100%",
