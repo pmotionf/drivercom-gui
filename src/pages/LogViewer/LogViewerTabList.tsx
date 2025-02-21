@@ -1,9 +1,4 @@
-import {
-  createEffect,
-  createSignal,
-  For,
-  JSX,
-} from "solid-js";
+import { createEffect, createSignal, For, JSX } from "solid-js";
 import { Tabs } from "~/components/ui/tabs";
 import { IconButton } from "~/components/ui/icon-button";
 import { IconPlus, IconX } from "@tabler/icons-solidjs";
@@ -20,7 +15,7 @@ export type LogViewerTabListProps = JSX.HTMLAttributes<HTMLDivElement> & {
     tabId: string,
     filePath: string,
     indexArray: number[][],
-    context: PlotContext[],
+    context: string[],
     tabName: string,
     tabListId: string,
   ) => void;
@@ -108,6 +103,8 @@ export function LogViewerTabList(props: LogViewerTabListProps) {
   createEffect(() => {
     const tabIdList = reorderTabList();
     if (tabIdList.length === 0) return;
+
+    console.log(tabIdList);
     if (isReordering()) {
       setFocusedTab(draggedTabId()!);
       return;
@@ -172,8 +169,8 @@ export function LogViewerTabList(props: LogViewerTabListProps) {
                 [
                   currentTabId,
                   currentFilePath,
-                  currentSplitIndex,
-                  currentPlotContext,
+                  _,
+                  ,
                   currentTabName,
                 ],
                 index,
@@ -187,12 +184,16 @@ export function LogViewerTabList(props: LogViewerTabListProps) {
                     setPrevPositionX(e.currentTarget.scrollLeft);
                     setClientX(e.clientX);
 
+                    const changedTabContext =
+                      props.tabList.filter((info) =>
+                        info[0] === currentTabId
+                      )[0];
                     props.onDraggedTabInfo?.(
                       currentTabId,
                       currentFilePath,
-                      currentSplitIndex,
-                      currentPlotContext,
-                      currentTabName,
+                      changedTabContext[2], // Split series index array
+                      changedTabContext[3].map((obj) => JSON.stringify(obj)), // Plot context
+                      changedTabContext[4], // Tab name
                       props.id,
                     );
                     setDraggedTabId(currentTabId);
@@ -275,8 +276,7 @@ export function LogViewerTabList(props: LogViewerTabListProps) {
                 [
                   currentTabId,
                   currentFilePath,
-                  currentTabIndex,
-                  currentPlotContext,
+                  currentTabIndexArray,
                 ],
               ) => (
                 <Tabs.Content
@@ -288,19 +288,29 @@ export function LogViewerTabList(props: LogViewerTabListProps) {
                     e.preventDefault();
                   }}
                   onDragEnter={() => props.onTabContextDragEnter?.(true)}
-                  onDrop={() => props.onTabContextDragEnter?.(false)}
+                  onDrop={() => {
+                    props.onTabContextDragEnter?.(false);
+                  }}
                 >
                   <LogViewerTabPageContent
                     tabId={currentTabId}
-                    plotContext={currentPlotContext}
+                    plotContext={props.tabList.filter((tab) =>
+                      tab[0] === currentTabId
+                    )[0][3].map((obj) => {
+                      return JSON.stringify(obj);
+                    })}
                     filePath={currentFilePath}
                     onSplit={(e) => {
                       if (e.length === 0) return;
                       props.onSplit?.(currentTabId, e);
                     }}
-                    splitArray={currentTabIndex}
+                    splitArray={currentTabIndexArray}
                     onContextChange={(changedPlotContext) => {
-                      props.onContextChange?.(currentTabId, changedPlotContext);
+                      console.log("test");
+                      props.onContextChange?.(
+                        currentTabId,
+                        JSON.parse(JSON.stringify(changedPlotContext)),
+                      );
                     }}
                   />
                 </Tabs.Content>

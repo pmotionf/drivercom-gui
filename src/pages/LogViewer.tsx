@@ -48,13 +48,34 @@ function LogViewer() {
   });
 
   const [draggedTabInfo, setDraggedTabInfo] = createSignal<
-    [string, string, number[][], PlotContext[], string] | undefined // tab id, file path, split indexarray, tab name,
+    [string, string, number[][], string[], string] | undefined // tab id, file path, split indexarray, tab name,
   >();
   const [draggedTabIsFrom, setDraggedTabIsFrom] = createSignal<string>(""); // tab list id
+
+  createEffect(() => {
+    console.log(draggedTabInfo());
+  });
 
   const dropTabOnSplitter = (index: number) => {
     const indexOnDirection = index + 1;
     const uuid = getCryptoUUID();
+    const parseObject = draggedTabInfo()![3].map((string) => {
+      return JSON.parse(string) as PlotContext;
+    });
+    const parseDraggedTabInfo: [
+      string,
+      string,
+      number[][],
+      PlotContext[],
+      string,
+    ] = [
+      draggedTabInfo()![0],
+      draggedTabInfo()![1],
+      draggedTabInfo()![2],
+      parseObject,
+      draggedTabInfo()![4],
+    ];
+
     setLogViewTabList((prev) => {
       const updateList = [...prev].map((item, i) => {
         if (i === index) {
@@ -66,7 +87,7 @@ function LogViewer() {
           };
         } else return item;
       });
-      const newTab = { id: uuid, tabs: [draggedTabInfo()!] };
+      const newTab = { id: uuid, tabs: [parseDraggedTabInfo] };
       const addNewTabList: {
         id: string;
         tabs: [string, string, number[][], PlotContext[], string][];
@@ -243,9 +264,27 @@ function LogViewer() {
                             ][];
                           }[] = [...prev].map((item, i) => {
                             if (index() === i) {
+                              const parseObject = draggedTabInfo()![3].map(
+                                (string) => {
+                                  return JSON.parse(string) as PlotContext;
+                                },
+                              );
+                              const parseDraggedTabInfo: [
+                                string,
+                                string,
+                                number[][],
+                                PlotContext[],
+                                string,
+                              ] = [
+                                draggedTabInfo()![0],
+                                draggedTabInfo()![1],
+                                draggedTabInfo()![2],
+                                parseObject,
+                                draggedTabInfo()![4],
+                              ];
                               return {
                                 id: item.id,
-                                tabs: [...item.tabs, [...draggedTabInfo()!]],
+                                tabs: [...item.tabs, [...parseDraggedTabInfo]],
                               };
                             } else if (item.id === draggedTabIsFrom()) {
                               return {
@@ -260,6 +299,11 @@ function LogViewer() {
                         });
                       }}
                       onContextChange={(id, changedCtx) => {
+                        const updateCtx: PlotContext[] = changedCtx.map(
+                          (ctx) => {
+                            return JSON.parse(JSON.stringify(ctx));
+                          },
+                        );
                         setLogViewTabList((prev) => {
                           const updateList = [...prev];
                           updateList[index()].tabs = updateList[index()].tabs
@@ -272,7 +316,7 @@ function LogViewer() {
                                     splitTab,
                                     filePath,
                                     indexArray,
-                                    changedCtx,
+                                    updateCtx,
                                     tabName,
                                   ];
                                 } else {
