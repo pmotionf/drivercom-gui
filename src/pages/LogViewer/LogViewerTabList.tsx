@@ -39,6 +39,8 @@ export function LogViewerTabList(props: LogViewerTabListProps) {
     const list = props.tabList;
     if (list.length === 0) return;
 
+    console.log(list);
+
     if (props.tabList.length > reorderTabList().length) {
       setReorderTabList((prev) => {
         return [...prev, [...list[length - 1]]];
@@ -104,7 +106,6 @@ export function LogViewerTabList(props: LogViewerTabListProps) {
     const tabIdList = reorderTabList();
     if (tabIdList.length === 0) return;
 
-    console.log(tabIdList);
     if (isReordering()) {
       setFocusedTab(draggedTabId()!);
       return;
@@ -278,6 +279,7 @@ export function LogViewerTabList(props: LogViewerTabListProps) {
                   currentFilePath,
                   currentTabIndexArray,
                 ],
+                index,
               ) => (
                 <Tabs.Content
                   value={currentTabId}
@@ -294,11 +296,7 @@ export function LogViewerTabList(props: LogViewerTabListProps) {
                 >
                   <LogViewerTabPageContent
                     tabId={currentTabId}
-                    plotContext={props.tabList.filter((tab) =>
-                      tab[0] === currentTabId
-                    )[0][3].map((obj) => {
-                      return JSON.stringify(obj);
-                    })}
+                    plotContext={props.tabList[index()][3]}
                     filePath={currentFilePath}
                     onSplit={(e) => {
                       if (e.length === 0) return;
@@ -306,7 +304,6 @@ export function LogViewerTabList(props: LogViewerTabListProps) {
                     }}
                     splitArray={currentTabIndexArray}
                     onContextChange={(changedPlotContext) => {
-                      console.log("test");
                       props.onContextChange?.(
                         currentTabId,
                         JSON.parse(JSON.stringify(changedPlotContext)),

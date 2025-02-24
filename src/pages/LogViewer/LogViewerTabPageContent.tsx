@@ -20,26 +20,22 @@ export type LogViewerTabPageContentProps =
     onErrorMessage?: (message: ErrorMessage) => void;
     splitArray?: number[][];
     onSplit?: (indexArray: number[][]) => void;
-    plotContext?: string[];
+    plotContext?: PlotContext[];
     onContextChange?: (plotContext: PlotContext[]) => void;
   };
 
 export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
-  const unknownObject = props.plotContext!.map((str) => {
-    return JSON.parse(str) as PlotContext;
-  });
-  const parsePlotContext: PlotContext[] = unknownObject.map((obj) => {
-    return { ...obj };
-  });
-  console.log(parsePlotContext);
-
-  const [plots, setPlots] = createStore([] as PlotContext[]);
+  const [plots, setPlots] = createStore([{} as PlotContext]);
   const [splitIndex, setSplitIndex] = createSignal([] as number[][]);
+  //const [prevSplitIndex, setPrevSplitIndex] = createSignal([] as number[][]);
   const [header, setHeader] = createSignal<string[]>([]);
   const [series, setSeries] = createSignal<number[][]>([]);
 
   onMount(() => {
     openCsvFile(props.filePath);
+    if (props.plotContext && props.plotContext.length !== 0) {
+      setPlots(props.plotContext);
+    }
   });
 
   async function openCsvFile(path: string) {
@@ -86,14 +82,14 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
     if (props.splitArray!.length === 0) {
       setSplitIndex([indexArray]);
     } else {
-      setSplitIndex(props.splitArray!);
+      setSplitIndex([...props.splitArray!]);
     }
     props.onSplit?.(splitIndex());
   }
 
   function resetChart() {
     const indexArray = Array.from(
-      { length: header.length },
+      { length: header().length },
       (_, index) => index,
     );
     setSplitIndex([indexArray]);
@@ -135,6 +131,8 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
     return plots[index].visible.every((b) => !b);
   };
 
+  const [isChange, setIsChange] = createSignal<boolean>(false);
+
   return (
     <>
       <Button
@@ -165,8 +163,29 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
           // Re-render plot contexts every time `splitIndex` is changed.
           // TODO: Do not always initialize as empty, figure out how to save
           // existing state and update for index changes.
+
           createEffect(() => {
-            setPlots(index(), {} as PlotContext);
+            setPlots(index(), {});
+
+            /*setPlots(index(), {
+              visible : [...item.map((i) => props.plotContext![0].visible[i])],
+              color : [...item.map((i) => props.plotContext![0].color[i])],
+              palette : [],
+              style : [...item.map((i) => props.plotContext![0].style[i])],
+            })*/
+
+            /*if (props.plotContext!.length !== splitIndex().length){
+              setPlots(index(), {visible : item.map(() => true)})
+            }*/
+          });
+
+          createEffect(() => {
+            const checkChanged = isChange();
+            if (!checkChanged) return;
+
+            setPlots(index(), {});
+            props.onContextChange?.(plots);
+            setIsChange(false);
           });
 
           return (
@@ -197,6 +216,7 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
                 context={plots[index()]}
                 onContextChange={(ctx) => {
                   setPlots(index(), ctx);
+                  setIsChange(true);
                   props.onContextChange?.(JSON.parse(JSON.stringify(plots)));
                 }}
                 style={{
