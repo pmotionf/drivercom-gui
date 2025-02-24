@@ -64,7 +64,7 @@ export function Plot(props: PlotProps) {
   const group = () => props.group ?? props.id ?? "";
 
   const [ctx, setCtx] = createStore(
-    props.context != null ? props.context : ({} as PlotContext),
+    props.context ? props.context : ({} as PlotContext),
   );
 
   const [getContext, setGetContext] = createSignal(ctx);
@@ -82,23 +82,29 @@ export function Plot(props: PlotProps) {
     if (!getContext().palette || getContext().palette.length == 0) {
       setContext()("palette", kelly_colors_hex);
     }
+    
+    if(!getContext().color || getContext().color.length === 0) {
+      setContext()(
+        "color",
+        props.header.map(
+          (_, index) => kelly_colors_hex[index % kelly_colors_hex.length],
+        ),
+      );
+    }
+    
+    if(!getContext().style || getContext().style.length === 0) {
+      setContext()(
+        "style",
+        props.header.map(() => LegendStroke.Line),
+      );
+    }
 
-    setContext()(
-      "color",
-      props.header.map(
-        (_, index) => kelly_colors_hex[index % kelly_colors_hex.length],
-      ),
-    );
-
-    setContext()(
-      "style",
-      props.header.map(() => LegendStroke.Line),
-    );
-
-    setContext()(
-      "visible",
-      props.header.map(() => true),
-    );
+    if(!getContext().visible || getContext().visible.length === 0) {
+      setContext()(
+        "visible",
+        props.header.map(() => true),
+      );
+    }
   });
 
   createEffect(() => {
@@ -218,6 +224,20 @@ export function Plot(props: PlotProps) {
       ...props.header.map((_, index) => ({
         label: props.header[index],
         stroke: () => getContext().color[index],
+        show : getContext().visible[index],
+        ...{
+          ...(getContext().style[index] === LegendStroke.Dash && {
+            dash: [10, 5],
+          }),
+          ...(getContext().style[index] === LegendStroke.Dot && {
+            dash: [0, 5],
+            points: {
+              show: true,
+              ...(dotFilter().length !== 0 &&
+                { filter: checkDotFilter() }),
+            },
+          }),
+        }
       })),
     ];
     let scales: uPlot.Scales = {
@@ -363,10 +383,16 @@ export function Plot(props: PlotProps) {
       ] as AlignedData,
       plot_element,
     );
+
     setRender(true);
+
+    const visibleList = !getContext().visible || getContext().visible.length === 0 ?
+    props.header.map(() => true) :
+    getContext().visible
+
     setContext()(
       "visible",
-      props.header.map(() => true),
+      visibleList,
     );
   }
 

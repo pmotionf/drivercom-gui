@@ -104,7 +104,6 @@ export function LogViewerTabList(props: LogViewerTabListProps) {
     const tabIdList = reorderTabList();
     if (tabIdList.length === 0) return;
 
-    console.log(tabIdList);
     if (isReordering()) {
       setFocusedTab(draggedTabId()!);
       return;
@@ -269,7 +268,7 @@ export function LogViewerTabList(props: LogViewerTabListProps) {
             <Tabs.Indicator />
           </Tabs.List>
           <div
-            style={{ width: "100%", height: "100%" }}
+            style={{ width: "100%", height: "100%", "margin-bottom" : "1rem" }}
           >
             <For each={reorderTabList()}>
               {(
@@ -278,6 +277,7 @@ export function LogViewerTabList(props: LogViewerTabListProps) {
                   currentFilePath,
                   currentTabIndexArray,
                 ],
+                index,
               ) => (
                 <Tabs.Content
                   value={currentTabId}
@@ -293,20 +293,16 @@ export function LogViewerTabList(props: LogViewerTabListProps) {
                   }}
                 >
                   <LogViewerTabPageContent
+                    style = {{"margin-bottom" : "1rem"}}
                     tabId={currentTabId}
-                    plotContext={props.tabList.filter((tab) =>
-                      tab[0] === currentTabId
-                    )[0][3].map((obj) => {
-                      return JSON.stringify(obj);
-                    })}
+                    plotContext={props.tabList[index()][3]}
                     filePath={currentFilePath}
                     onSplit={(e) => {
                       if (e.length === 0) return;
                       props.onSplit?.(currentTabId, e);
                     }}
-                    splitArray={currentTabIndexArray}
+                    splitPlotIndex={currentTabIndexArray}
                     onContextChange={(changedPlotContext) => {
-                      console.log("test");
                       props.onContextChange?.(
                         currentTabId,
                         JSON.parse(JSON.stringify(changedPlotContext)),

@@ -52,10 +52,6 @@ function LogViewer() {
   >();
   const [draggedTabIsFrom, setDraggedTabIsFrom] = createSignal<string>(""); // tab list id
 
-  createEffect(() => {
-    console.log(draggedTabInfo());
-  });
-
   const dropTabOnSplitter = (index: number) => {
     const indexOnDirection = index + 1;
     const uuid = getCryptoUUID();
@@ -299,6 +295,7 @@ function LogViewer() {
                         });
                       }}
                       onContextChange={(id, changedCtx) => {
+                        console.log(changedCtx);
                         const updateCtx: PlotContext[] = changedCtx.map(
                           (ctx) => {
                             return JSON.parse(JSON.stringify(ctx));
