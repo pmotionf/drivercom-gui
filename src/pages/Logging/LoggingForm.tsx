@@ -19,7 +19,7 @@ import { Editable } from "~/components/ui/editable";
 import { IconButton } from "~/components/ui/icon-button";
 import { IconX } from "@tabler/icons-solidjs";
 import { Menu } from "~/components/ui/menu";
-import { ErrorMessage } from "../LogViewer/LogViewerTab";
+import { ErrorMessage } from "../LogViewer/LogViewerTabPageContent";
 import { createListCollection, Select } from "~/components/ui/select";
 
 export type LoggingFormProps = JSX.HTMLAttributes<Element> & {

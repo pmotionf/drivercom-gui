@@ -34,6 +34,7 @@ export type PlotProps = JSX.HTMLAttributes<HTMLDivElement> & {
   header: string[];
   series: number[][];
   context?: PlotContext;
+  onContextChange?: (context: PlotContext) => void;
 };
 
 export type PlotContext = {
@@ -63,7 +64,7 @@ export function Plot(props: PlotProps) {
   const group = () => props.group ?? props.id ?? "";
 
   const [ctx, setCtx] = createStore(
-    props.context != null ? props.context : ({} as PlotContext),
+    props.context ? props.context : ({} as PlotContext),
   );
 
   const [getContext, setGetContext] = createSignal(ctx);
@@ -81,23 +82,29 @@ export function Plot(props: PlotProps) {
     if (!getContext().palette || getContext().palette.length == 0) {
       setContext()("palette", kelly_colors_hex);
     }
+    
+    if(!getContext().color || getContext().color.length === 0) {
+      setContext()(
+        "color",
+        props.header.map(
+          (_, index) => kelly_colors_hex[index % kelly_colors_hex.length],
+        ),
+      );
+    }
+    
+    if(!getContext().style || getContext().style.length === 0) {
+      setContext()(
+        "style",
+        props.header.map(() => LegendStroke.Line),
+      );
+    }
 
-    setContext()(
-      "color",
-      props.header.map(
-        (_, index) => kelly_colors_hex[index % kelly_colors_hex.length],
-      ),
-    );
-
-    setContext()(
-      "style",
-      props.header.map(() => LegendStroke.Line),
-    );
-
-    setContext()(
-      "visible",
-      props.header.map(() => true),
-    );
+    if(!getContext().visible || getContext().visible.length === 0) {
+      setContext()(
+        "visible",
+        props.header.map(() => true),
+      );
+    }
   });
 
   createEffect(() => {
@@ -217,6 +224,20 @@ export function Plot(props: PlotProps) {
       ...props.header.map((_, index) => ({
         label: props.header[index],
         stroke: () => getContext().color[index],
+        show : getContext().visible[index],
+        ...{
+          ...(getContext().style[index] === LegendStroke.Dash && {
+            dash: [10, 5],
+          }),
+          ...(getContext().style[index] === LegendStroke.Dot && {
+            dash: [0, 5],
+            points: {
+              show: true,
+              ...(dotFilter().length !== 0 &&
+                { filter: checkDotFilter() }),
+            },
+          }),
+        }
       })),
     ];
     let scales: uPlot.Scales = {
@@ -363,10 +384,10 @@ export function Plot(props: PlotProps) {
       plot_element,
     );
     setRender(true);
-    setContext()(
+    /*setContext()(
       "visible",
       props.header.map(() => true),
-    );
+    );*/
   }
 
   onMount(() => {
@@ -537,10 +558,12 @@ export function Plot(props: PlotProps) {
                     plot.setSeries(index() + 1, {
                       show: new_visible,
                     });
+                    props.onContextChange?.(getContext());
                   }}
                   color={getContext().color[index()]}
                   onColorChange={(new_color) => {
                     setContext()("color", index(), new_color);
+                    props.onContextChange?.(getContext());
                     plot.redraw();
                   }}
                   palette={getContext().palette}
@@ -565,6 +588,7 @@ export function Plot(props: PlotProps) {
                       }),
                     };
                     plot.addSeries(config, index() + 1);
+                    props.onContextChange?.(getContext());
                     plot.redraw();
                   }}
                 />

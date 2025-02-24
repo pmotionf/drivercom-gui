@@ -1,244 +1,432 @@
-import { createSignal, For } from "solid-js";
-import { Tabs } from "~/components/ui/tabs";
-import { LogViewerTab } from "./LogViewer/LogViewerTab";
-import { IconButton } from "~/components/ui/icon-button";
-import { IconPlus, IconX } from "@tabler/icons-solidjs";
+import { Stack } from "styled-system/jsx";
+import { Splitter } from "~/components/ui/splitter";
+import { createEffect, createSignal, For, onMount, Show } from "solid-js";
+import { LogViewerTabList } from "./LogViewer/LogViewerTabList";
+import { open } from "@tauri-apps/plugin-dialog";
 import { Toast } from "~/components/ui/toast";
-import { FileUploadFileChangeDetails } from "@ark-ui/solid";
-import { Editable } from "~/components/ui/editable";
-import { FileUpload } from "~/components/ui/file-upload";
+import { IconX } from "@tabler/icons-solidjs";
+import { PlotContext } from "~/components/Plot";
 
 function LogViewer() {
-  // Reorder tab
-  const [draggedTabIndex, setDraggedTabIndex] = createSignal<number | null>(
-    null,
-  );
-  // The signal can know when tab delete button has pressed
-  const [isDeleteButtonPressed, setIsDeleteButtonPressed] = createSignal<
-    boolean
-  >(
-    false,
-  );
+  const [logViewTabList, setLogViewTabList] = createSignal<
+    {
+      id: string;
+      tabs: [string, string, number[][], PlotContext[], string][];
+    }[]
+  >([]);
+  const [splitterList, setSplitterList] = createSignal<
+    { id: string; size: number }[]
+  >([]);
 
-  // Reorder tab by dragging
-  const reorderTabsOnDragOver = (e: DragEvent, index: number) => {
-    e.preventDefault();
-    if (draggedTabIndex() !== null && draggedTabIndex() !== index) {
-      const updateTab = [...tabIdList()];
-      const [draggedTab] = updateTab.splice(draggedTabIndex()!, 1);
-      updateTab.splice(index, 0, draggedTab);
-      setTabIdList(updateTab);
-      setDraggedTabIndex(index);
+  onMount(() => {
+    const uuid = getCryptoUUID();
+    setLogViewTabList([{ id: uuid, tabs: [] }]);
+    setSplitterList([{ id: uuid, size: 100 }]);
+  });
+
+  // If tab list length is 0, then the panel will close automatically
+  createEffect(() => {
+    const tabList = logViewTabList();
+    if (tabList.length === 1) return;
+
+    let parseList = tabList;
+    const zeroTabList = tabList.filter((tab) => tab.tabs.length === 0);
+    if (zeroTabList.length !== 0) {
+      zeroTabList.forEach((deletedTab) => {
+        parseList = parseList.filter((tab) => tab.id !== deletedTab.id);
+      });
+      setLogViewTabList(parseList);
     }
-  };
 
-  // Drag Scroll this need to be deleted
-  const [isDragScrolling, setIsDragScrolling] = createSignal(false);
-  // Mouse X coordinate on screen.
-  const [clientX, setClientX] = createSignal<number | null>(null);
-  // Tab X coordinate relative to start of tab list, can extend beyond screen.
-  const [prevPositionX, setPrevPositionX] = createSignal<number>(0);
-  let scrollContainer: HTMLDivElement | undefined;
-
-  // Handles scrolling tab list during drag/reorder.
-  const dragOverScroll = (e: MouseEvent) => {
-    if (!isDragScrolling() || !scrollContainer || !clientX()) return;
-
-    const movement = (e.clientX - clientX()! + prevPositionX()) * 0.05;
-    scrollContainer.scrollBy({ left: movement });
-  };
-
-  // Scrolls tab list to the end.
-  const scrollToEnd = () => {
-    if (!scrollContainer) return;
-    if (scrollContainer.offsetWidth !== scrollContainer.scrollWidth) {
-      scrollContainer.scrollTo(scrollContainer.scrollWidth, 0);
-    }
-  };
-
-  const mouseWheelHandler = (e: WheelEvent) => {
-    if (!scrollContainer || isDragScrolling()) return;
-
-    e.preventDefault;
-    scrollContainer.scrollLeft += e.deltaY;
-  };
-
-  // Active tab ID
-  const [focusedTab, setFocusedTab] = createSignal<string>("");
-  const [tabIdList, setTabIdList] = createSignal([] as string[]);
-
-  function deleteTab(index: number) {
-    if (isEditMode()) return;
-    const contextIndex = index === 0 ? 1 : index - 1;
-    const newValue = focusedTab() === tabIdList()[index]
-      ? tabIdList()[contextIndex]
-      : focusedTab();
-
-    setTimeout(() => {
-      setFocusedTab(newValue);
-    }, 0);
-    setTabIdList((prev) => {
-      const updateTabCtx = prev.filter((_, i) => i !== index);
-      return updateTabCtx;
+    setSplitterList(() => {
+      const panelSize = 100 / parseList.length;
+      const updateList = parseList.map((panel) => {
+        return { id: panel.id, size: panelSize };
+      });
+      return updateList;
     });
-  }
+  });
 
-  let file: FileUploadFileChangeDetails;
+  const [draggedTabInfo, setDraggedTabInfo] = createSignal<
+    [string, string, number[][], string[], string] | undefined // tab id, file path, split indexarray, tab name,
+  >();
+  const [draggedTabIsFrom, setDraggedTabIsFrom] = createSignal<string>(""); // tab list id
+
+  const dropTabOnSplitter = (index: number) => {
+    const indexOnDirection = index + 1;
+    const uuid = getCryptoUUID();
+    const parseObject = draggedTabInfo()![3].map((string) => {
+      return JSON.parse(string) as PlotContext;
+    });
+    const parseDraggedTabInfo: [
+      string,
+      string,
+      number[][],
+      PlotContext[],
+      string,
+    ] = [
+      draggedTabInfo()![0],
+      draggedTabInfo()![1],
+      draggedTabInfo()![2],
+      parseObject,
+      draggedTabInfo()![4],
+    ];
+
+    setLogViewTabList((prev) => {
+      const updateList = [...prev].map((item, i) => {
+        if (i === index) {
+          return {
+            id: item.id,
+            tabs: [...item.tabs].filter((item) =>
+              item[0] !== draggedTabInfo()![0]
+            ),
+          };
+        } else return item;
+      });
+      const newTab = { id: uuid, tabs: [parseDraggedTabInfo] };
+      const addNewTabList: {
+        id: string;
+        tabs: [string, string, number[][], PlotContext[], string][];
+      }[] = [
+        ...updateList.slice(0, indexOnDirection),
+        newTab,
+        ...updateList.slice(indexOnDirection),
+      ];
+      return addNewTabList;
+    });
+  };
 
   const toaster = Toast.createToaster({
     placement: "top-end",
     gap: 24,
   });
 
-  // Check if the tab is editable and in edit mode to disable the delete button.
-  const [isEditMode, setIsEditMode] = createSignal<boolean>(false);
+  async function openFileDialog(): Promise<[string, string] | undefined> {
+    const path = await open({
+      multiple: false,
+      filters: [
+        { name: "CSV", extensions: ["csv"] },
+      ],
+    });
+
+    if (!path) {
+      return undefined;
+    }
+
+    const extensions = path.slice(path.length - 4, path.length);
+    if (extensions !== ".csv") {
+      return undefined;
+    }
+
+    const tabId = getCryptoUUID();
+    return [tabId, path.replaceAll("\\", "/")];
+  }
+
+  const [isDragging, setIsDragging] = createSignal<[boolean, number | null]>([
+    false,
+    null,
+  ]);
+
+  function getCryptoUUID(): string {
+    const uuid: string = crypto.randomUUID();
+    return uuid;
+  }
 
   return (
     <>
-      <Toast.Toaster toaster={toaster}>
-        {(toast) => (
-          <Toast.Root>
-            <Toast.Title>{toast().title}</Toast.Title>
-            <Toast.Description>{toast().description}</Toast.Description>
-            <Toast.CloseTrigger>
-              <IconX />
-            </Toast.CloseTrigger>
-          </Toast.Root>
-        )}
-      </Toast.Toaster>
-      <Tabs.Root
-        value={focusedTab()}
-        onValueChange={(e) => setFocusedTab(e.value)}
-        width="100%"
-        height="100%"
+      <div
+        style={{ "overflow-y": "hidden", width: `100%`, height: "100%" }}
       >
-        <Tabs.List
-          ref={scrollContainer}
-          style={{
-            background: "--colors-bg-muted",
-            height: "3rem",
-            "padding-top": "0.5rem",
-          }}
-          gap="0"
-          onWheel={(e) => mouseWheelHandler(e)}
+        <Toast.Toaster toaster={toaster}>
+          {(toast) => (
+            <Toast.Root>
+              <Toast.Title>{toast().title}</Toast.Title>
+              <Toast.Description>{toast().description}</Toast.Description>
+              <Toast.CloseTrigger>
+                <IconX />
+              </Toast.CloseTrigger>
+            </Toast.Root>
+          )}
+        </Toast.Toaster>
+
+        <Splitter.Root
+          size={splitterList()}
         >
-          <For each={tabIdList()}>
-            {(tabId, index) => (
+          <For each={splitterList() && logViewTabList()}>
+            {(item, index) => (
               <>
-                <Tabs.Trigger
-                  value={tabId}
-                  draggable
-                  onDragStart={(e) => {
-                    if (isDeleteButtonPressed()!) {
-                      setIsDeleteButtonPressed(false);
-                      return;
-                    }
-                    setDraggedTabIndex(index());
-                    setFocusedTab(tabId);
-                    setPrevPositionX(e.currentTarget.scrollLeft);
-                    setClientX(e.clientX);
-                    setIsDragScrolling(true);
-                  }}
-                  onDragOver={(e) => {
-                    reorderTabsOnDragOver(e, index());
-                    dragOverScroll(e);
-                  }}
-                  onDragEnd={() => {
-                    setClientX(null);
-                    setIsDragScrolling(false);
-                    setDraggedTabIndex(null);
-                  }}
-                  style={{ "padding-right": "0", "padding-top": "0.1rem" }}
-                  height="100%"
+                <Show when={index() !== 0}>
+                  <Splitter.ResizeTrigger
+                    id={`${logViewTabList()[index() - 1].id}:${item.id}`}
+                  />
+                </Show>
+                <Splitter.Panel
+                  id={item.id}
+                  width={"100%"}
+                  height={"100%"}
+                  gap="0"
                 >
-                  <Editable.Root
-                    defaultValue={file.acceptedFiles[0].name /*tab name*/}
-                    activationMode="dblclick"
-                    onEditChange={() => setIsEditMode(!isEditMode())}
+                  <div
+                    style={{
+                      width: "100%",
+                      "height": `100%`,
+                    }}
                   >
-                    <Editable.Area>
-                      <Editable.Input />
-                      <Editable.Preview />
-                    </Editable.Area>
-                  </Editable.Root>
-                  <IconButton
-                    onClick={() => {
-                      deleteTab(index());
-                    }}
-                    variant="ghost"
-                    size="xs"
-                    width="1rem"
-                    borderRadius="1rem"
-                    draggable
-                    cursor={isDragScrolling() ? "not-allowed" : "auto"}
-                    onDragStart={(e) => {
-                      e.dataTransfer?.setDragImage(
-                        document.createElement("img"),
-                        0,
-                        0,
-                      );
-                      setIsDeleteButtonPressed(true);
-                    }}
-                    onDragOver={() => {
-                      return;
-                    }}
-                    disabled={isEditMode()}
+                    <LogViewerTabList
+                      id={item.id}
+                      style={{
+                        "width": "100%",
+                        "height": "100%",
+                        position: "absolute",
+                      }}
+                      tabList={item.tabs}
+                      onCreateTab={async () => {
+                        const tabInfo = await openFileDialog();
+                        if (!tabInfo) {
+                          toaster.create({
+                            title: "Ivalid File",
+                            description: "The file is invalid.",
+                            type: "error",
+                          });
+                          return;
+                        }
+                        setLogViewTabList((prev) => {
+                          const updateList: {
+                            id: string;
+                            tabs: [
+                              string,
+                              string,
+                              number[][],
+                              PlotContext[],
+                              string,
+                            ][];
+                          }[] = [...prev].map((item, i) => {
+                            if (i === index()) {
+                              const updateTabs = [...item.tabs];
+                              return {
+                                id: item.id,
+                                tabs: [...updateTabs, [...tabInfo, [], [], ""]],
+                              };
+                            } else return item;
+                          });
+                          return updateList;
+                        });
+                      }}
+                      onDeleteTab={(deleteTabId) => {
+                        setLogViewTabList((prev) => {
+                          const updateList = [...prev].map((item, i) => {
+                            if (i === index()) {
+                              return {
+                                id: item.id,
+                                tabs: [
+                                  ...item.tabs.filter((tab) =>
+                                    tab[0] !== deleteTabId
+                                  ),
+                                ],
+                              };
+                            } else return item;
+                          });
+                          return updateList;
+                        });
+                      }}
+                      onDraggedTabInfo={(
+                        draggedId,
+                        filepath,
+                        indexArray,
+                        plotContext,
+                        tabName,
+                        tabListId,
+                      ) => {
+                        setDraggedTabInfo([
+                          draggedId,
+                          filepath,
+                          indexArray,
+                          plotContext,
+                          tabName,
+                        ]);
+                        setDraggedTabIsFrom(tabListId);
+                      }}
+                      onTabDrop={() => {
+                        if (draggedTabIsFrom() === item.id) return;
+                        setLogViewTabList((prev) => {
+                          const updateList: {
+                            id: string;
+                            tabs: [
+                              string,
+                              string,
+                              number[][],
+                              PlotContext[],
+                              string,
+                            ][];
+                          }[] = [...prev].map((item, i) => {
+                            if (index() === i) {
+                              const parseObject = draggedTabInfo()![3].map(
+                                (string) => {
+                                  return JSON.parse(string) as PlotContext;
+                                },
+                              );
+                              const parseDraggedTabInfo: [
+                                string,
+                                string,
+                                number[][],
+                                PlotContext[],
+                                string,
+                              ] = [
+                                draggedTabInfo()![0],
+                                draggedTabInfo()![1],
+                                draggedTabInfo()![2],
+                                parseObject,
+                                draggedTabInfo()![4],
+                              ];
+                              return {
+                                id: item.id,
+                                tabs: [...item.tabs, [...parseDraggedTabInfo]],
+                              };
+                            } else if (item.id === draggedTabIsFrom()) {
+                              return {
+                                id: item.id,
+                                tabs: [...item.tabs.filter((item) => {
+                                  return item[0] !== draggedTabInfo()![0];
+                                })],
+                              };
+                            } else return item;
+                          });
+                          return updateList;
+                        });
+                      }}
+                      onContextChange={(id, changedCtx) => {
+                        console.log(changedCtx);
+                        const updateCtx: PlotContext[] = changedCtx.map(
+                          (ctx) => {
+                            return JSON.parse(JSON.stringify(ctx));
+                          },
+                        );
+                        setLogViewTabList((prev) => {
+                          const updateList = [...prev];
+                          updateList[index()].tabs = updateList[index()].tabs
+                            .map(
+                              (
+                                [splitTab, filePath, indexArray, ctx, tabName],
+                              ) => {
+                                if (splitTab === id) {
+                                  return [
+                                    splitTab,
+                                    filePath,
+                                    indexArray,
+                                    updateCtx,
+                                    tabName,
+                                  ];
+                                } else {
+                                  return [
+                                    splitTab,
+                                    filePath,
+                                    indexArray,
+                                    ctx,
+                                    tabName,
+                                  ];
+                                }
+                              },
+                            );
+                          return updateList;
+                        });
+                      }}
+                      onSplit={(id, splitArray) => {
+                        setLogViewTabList((prev) => {
+                          const updateList = [...prev];
+                          updateList[index()].tabs = updateList[index()].tabs
+                            .map(
+                              (
+                                [splitTab, filePath, indexArray, ctx, tabName],
+                              ) => {
+                                if (splitTab === id) {
+                                  return [
+                                    splitTab,
+                                    filePath,
+                                    splitArray,
+                                    ctx,
+                                    tabName,
+                                  ];
+                                } else {
+                                  return [
+                                    splitTab,
+                                    filePath,
+                                    indexArray,
+                                    ctx,
+                                    tabName,
+                                  ];
+                                }
+                              },
+                            );
+                          return updateList;
+                        });
+                      }}
+                      onTabNameChange={(id, changedName) => {
+                        setLogViewTabList((prev) => {
+                          const updateList = [...prev];
+                          updateList[index()].tabs = updateList[index()].tabs
+                            .map(
+                              (
+                                [splitTab, filePath, indexArray, ctx, tabName],
+                              ) => {
+                                if (splitTab === id) {
+                                  return [
+                                    splitTab,
+                                    filePath,
+                                    indexArray,
+                                    ctx,
+                                    changedName,
+                                  ];
+                                } else {
+                                  return [
+                                    splitTab,
+                                    filePath,
+                                    indexArray,
+                                    ctx,
+                                    tabName,
+                                  ];
+                                }
+                              },
+                            );
+                          return updateList;
+                        });
+                      }}
+                      onTabContextDragEnter={(isTabContextDragEnter) => {
+                        const tabListIndex = isTabContextDragEnter
+                          ? index()
+                          : null;
+                        setIsDragging([isTabContextDragEnter, tabListIndex]);
+                      }}
+                    />
+                  </div>
+                  <Show
+                    when={isDragging()[0] && isDragging()[1] === index() &&
+                      item.tabs.length > 1}
                   >
-                    <IconX />
-                  </IconButton>
-                </Tabs.Trigger>
+                    <Stack
+                      backgroundColor={"bg.muted"}
+                      style={{
+                        width: "50%",
+                        height: "100%",
+                        "margin-top": "6rem",
+                        opacity: "0%",
+                      }}
+                      onDragEnter={(e) =>
+                        e.currentTarget.style.opacity = "100%"}
+                      onDragLeave={(e) => e.currentTarget.style.opacity = "0%"}
+                      onDragOver={(e) => e.preventDefault()}
+                      onDrop={() => {
+                        dropTabOnSplitter(index());
+                        setIsDragging([false, null]);
+                      }}
+                    >
+                    </Stack>
+                  </Show>
+                </Splitter.Panel>
               </>
             )}
           </For>
-          <FileUpload.Root
-            accept="text/csv"
-            minFileSize={3}
-            onFileChange={(details) => {
-              file = details;
-              const tabId = crypto.randomUUID();
-              setTabIdList((prev) => {
-                return [...prev, tabId];
-              });
-              setFocusedTab(tabId);
-              scrollToEnd();
-            }}
-          >
-            <FileUpload.Trigger
-              asChild={(triggerProps) => (
-                <IconButton
-                  size="xs"
-                  variant="ghost"
-                  {...triggerProps()}
-                  width="1rem"
-                  borderRadius="1rem"
-                >
-                  <IconPlus />
-                </IconButton>
-              )}
-            />
-            <FileUpload.HiddenInput />
-          </FileUpload.Root>
-          <Tabs.Indicator />
-        </Tabs.List>
-        <For each={tabIdList()}>
-          {(tabId, index) => (
-            <Tabs.Content
-              value={tabId}
-              height="100%"
-              style={{ "overflow-y": "auto" }}
-            >
-              <LogViewerTab
-                tabId={tabId}
-                details={file}
-                onErrorMessage={(msg) => {
-                  toaster.create(msg);
-                  deleteTab(index());
-                }}
-              />
-            </Tabs.Content>
-          )}
-        </For>
-      </Tabs.Root>
+        </Splitter.Root>
+      </div>
     </>
   );
 }
