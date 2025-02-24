@@ -76,7 +76,7 @@ export function Legend(props: LegendProps) {
     }
   });
 
-  if (!seriesFound) return <></>;
+  if (!seriesFound) return;
 
   const [configOpen, setConfigOpen] = createSignal(false);
 
@@ -209,7 +209,7 @@ export function Legend(props: LegendProps) {
   return (
     <Stack
       direction="row"
-      gap={"1"}
+      gap="1"
       opacity={(props.visible != null ? props.visible : visible())
         ? "100%"
         : "30%"}
@@ -274,8 +274,8 @@ export function Legend(props: LegendProps) {
         when={!props.readonly}
         fallback={
           <Heading
-            size={"sm"}
-            fontWeight={"medium"}
+            size="sm"
+            fontWeight="medium"
             style={{ "justify-content": "left" }}
           >
             {props.series}:
@@ -296,7 +296,7 @@ export function Legend(props: LegendProps) {
         </Button>
       </Show>
       <Text
-        size={"sm"}
+        size="sm"
         style={{
           "white-space": "nowrap",
         }}

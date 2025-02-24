@@ -47,23 +47,23 @@ function Connect() {
       style={{ "padding": "3rem", "height": `100%`, "width": "100%" }}
     >
       <Text
-        variant={"heading"}
-        size={"2xl"}
-        marginLeft={"0.2rem"}
+        variant="heading"
+        size="2xl"
+        marginLeft="0.2rem"
       >
         Ports
       </Text>
       <Stack
-        width={"100%"}
-        direction={"row"}
-        minWidth={"50rem"}
-        marginLeft={"0.2rem"}
+        width="100%"
+        direction="row"
+        minWidth="50rem"
+        marginLeft="0.2rem"
       >
         <Text
-          size={"lg"}
+          size="lg"
           width="20rem"
-          fontWeight={"light"}
-          opacity={"60%"}
+          fontWeight="light"
+          opacity="60%"
           marginTop="1rem"
         >
           {portId().length > 0 ? portId() : "No port selected"}
@@ -71,16 +71,16 @@ function Connect() {
         <Button
           onClick={() => detectPort()}
           marginLeft={`calc(100% - 20rem - 5rem)`}
-          marginRight={"1rem"}
+          marginRight="1rem"
           width="7rem"
         >
           Scan
         </Button>
       </Stack>
       <Card.Root
-        width={"100%"}
+        width="100%"
         height={`calc(100% - 6rem)`}
-        marginTop={"1.5rem"}
+        marginTop="1.5rem"
         style={{
           "overflow-y": "auto",
           "min-height": "20rem",
@@ -100,15 +100,15 @@ function Connect() {
             <Dynamic
               component={IconPlugOff}
               size={40}
-              opacity={"30%"}
+              opacity="30%"
               style={{ "margin-left": `calc(50% - 1rem)` }}
             />
 
             <Text
-              variant={"heading"}
-              size={"2xl"}
-              marginTop={"1rem"}
-              opacity={"70%"}
+              variant="heading"
+              size="2xl"
+              marginTop="1rem"
+              opacity="70%"
             >
               No ports Found
             </Text>
@@ -117,17 +117,17 @@ function Connect() {
         <Show when={portList().length > 0}>
           <Accordion.Root
             multiple
-            borderTop={"0"}
-            borderBottom={"0"}
-            paddingRight={"1rem"}
-            paddingLeft={"1rem"}
+            borderTop="0"
+            borderBottom="0"
+            paddingRight="1rem"
+            paddingLeft="1rem"
           >
             <For each={portList()}>
               {(port) => (
                 <Accordion.Item
                   value={port}
-                  paddingTop={"1rem"}
-                  paddingBottom={"1rem"}
+                  paddingTop="1rem"
+                  paddingBottom="1rem"
                 >
                   <Stack direction="row" width="100%">
                     <IconPlug

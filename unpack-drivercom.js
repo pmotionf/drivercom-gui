@@ -52,15 +52,19 @@ try {
       unlink(path.join(base_path, name));
     }
   }
-  await rename(
-    path.join(base_path, binaryName + extension),
-    path.join(base_path, newBinaryName + extension),
-  );
+
+  const to_rename = path.join(base_path, binaryName + extension);
+  const renamed = path.join(base_path, newBinaryName + extension);
+
+  await rename(to_rename, renamed);
   if (platform === "windows") {
     await rename(
       path.join(base_path, binaryName + ".pdb"),
       path.join(base_path, newBinaryName + ".pdb"),
     );
+  } else if (platform === "linux") {
+    // Requires marking file as executable
+    execSync("chmod +x " + renamed);
   }
 } catch (err) {
   console.error(err);

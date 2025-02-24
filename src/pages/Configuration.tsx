@@ -225,20 +225,20 @@ function Configuration() {
         <Stack
           width="44rem"
           marginLeft={`calc((100% - 44rem) / 2)`}
-          height={"100%"}
+          height="100%"
         >
           <Show when={!isFileOpen()}>
-            <Text variant={"heading"} size={"2xl"}>
+            <Text variant="heading" size="2xl">
               Configuration
             </Text>
             <Stack
-              direction={"row"}
-              marginTop={"1.5rem"}
-              gap={"1.5rem"}
+              direction="row"
+              marginTop="1.5rem"
+              gap="1.5rem"
             >
               <Button
-                variant={"outline"}
-                padding={"4rem"}
+                variant="outline"
+                padding="4rem"
                 onClick={() => {
                   const newEmptyFile = JSON.parse(
                     JSON.stringify(configFormFileFormat()),
@@ -252,8 +252,8 @@ function Configuration() {
                 Create New File
               </Button>
               <Button
-                variant={"outline"}
-                padding={"4rem"}
+                variant="outline"
+                padding="4rem"
                 onClick={async () => {
                   const path = await openFileDialog();
                   if (!path) return;
@@ -276,8 +276,8 @@ function Configuration() {
                 Open File
               </Button>
               <Button
-                variant={"outline"}
-                padding={"4rem"}
+                variant="outline"
+                padding="4rem"
                 disabled={portId().length === 0}
                 onClick={() => {
                   setFilePath(undefined);
@@ -288,43 +288,43 @@ function Configuration() {
               </Button>
             </Stack>
             <Show when={recentConfigFilePaths().length !== 0}>
-              <Text size={"xl"} marginTop={"2rem"} fontWeight={"bold"}>
+              <Text size="xl" marginTop="2rem" fontWeight="bold">
                 Recent
               </Text>
-              <Stack direction={"row"} width="100%" marginTop={"0.5rem"}>
+              <Stack direction="row" width="100%" marginTop="0.5rem">
                 <Text
-                  width={"16rem"}
-                  size={"sm"}
-                  fontWeight={"light"}
-                  opacity={"50%"}
+                  width="16rem"
+                  size="sm"
+                  fontWeight="light"
+                  opacity="50%"
                 >
                   File
                 </Text>
                 <Text
-                  size={"sm"}
-                  fontWeight={"light"}
-                  opacity={"50%"}
+                  size="sm"
+                  fontWeight="light"
+                  opacity="50%"
                 >
                   Path
                 </Text>
               </Stack>
               <Stack
                 style={{ "overflow-y": "auto" }}
-                height={"100%"}
-                width={"100%"}
-                gap={"0"}
-                marginLeft={"-0.5rem"}
-                borderTopWidth={"1"}
-                borderBottomWidth={"1"}
+                height="100%"
+                width="100%"
+                gap="0"
+                marginLeft="-0.5rem"
+                borderTopWidth="1"
+                borderBottomWidth="1"
               >
                 <For each={recentConfigFilePaths()}>
                   {(path, index) => (
                     <Button
-                      width={"100%"}
-                      variant={"ghost"}
-                      padding={"0.5rem"}
-                      paddingTop={"1rem"}
-                      paddingBottom={"1rem"}
+                      width="100%"
+                      variant="ghost"
+                      padding="0.5rem"
+                      paddingTop="1rem"
+                      paddingBottom="1rem"
                       onMouseEnter={() => {
                         setIsButtonHoverd([true, index()]);
                       }}
@@ -335,7 +335,7 @@ function Configuration() {
                           isButtonHovered()[1] === index()
                         ? "bg.muted"
                         : "bg.canvas"}
-                      gap={"0"}
+                      gap="0"
                     >
                       <Text
                         userSelect="none"
@@ -344,9 +344,9 @@ function Configuration() {
                           setFileData(object!, path);
                           setIsButtonHoverd([false, null]);
                         }}
-                        size={"md"}
-                        height={"2rem"}
-                        fontWeight={"medium"}
+                        size="md"
+                        height="2rem"
+                        fontWeight="medium"
                         style={{
                           "white-space": "nowrap",
                           "text-overflow": "ellipsis",
@@ -361,10 +361,10 @@ function Configuration() {
                       </Text>
                       <Text
                         userSelect="none"
-                        size={"sm"}
-                        fontWeight={"light"}
-                        marginLeft={"0.5rem"}
-                        opacity={"70%"}
+                        size="sm"
+                        fontWeight="light"
+                        marginLeft="0.5rem"
+                        opacity="70%"
                         onClick={async () => {
                           const object = await readJsonFile(path);
                           setFileData(object!, path);
@@ -385,21 +385,19 @@ function Configuration() {
                           "",
                         )}
                       </Text>
-                      <Stack
-                        width={"2rem"}
-                      >
+                      <Stack width="2rem">
                         <Show
                           when={isButtonHovered()[0] === true &&
                             isButtonHovered()[1] === index()}
                         >
                           <IconButton
-                            padding={"0"}
-                            opacity={"50%"}
-                            variant={"ghost"}
-                            borderRadius={"2rem"}
-                            size={"sm"}
-                            width={"1rem"}
-                            marginRight={"1rem"}
+                            padding="0"
+                            opacity="50%"
+                            variant="ghost"
+                            borderRadius="2rem"
+                            size="sm"
+                            width="1rem"
+                            marginRight="1rem"
                             onClick={() => {
                               setRecentConfigFilePaths((prev) => {
                                 const updateFilePath = prev.filter((_, i) => {
@@ -409,9 +407,7 @@ function Configuration() {
                               });
                             }}
                           >
-                            <IconX
-                              width={"1rem"}
-                            />
+                            <IconX width="1rem" />
                           </IconButton>
                         </Show>
                       </Stack>
@@ -424,9 +420,9 @@ function Configuration() {
           <Show when={isFileOpen()}>
             <div style={{ width: "40rem", "margin-left": "2rem" }}>
               <Card.Root
-                padding={"2rem"}
-                paddingTop={"3rem"}
-                marginBottom={"3rem"}
+                padding="2rem"
+                paddingTop="3rem"
+                marginBottom="3rem"
               >
                 <ConfigForm
                   label={fileName()}
@@ -435,7 +431,7 @@ function Configuration() {
                   onCancel={() => setIsFileOpen(false)}
                 />
                 <Card.Footer padding={0}>
-                  <Stack direction={"row-reverse"}>
+                  <Stack direction="row-reverse">
                     <Menu.Root>
                       <Menu.Trigger>
                         <Button>
@@ -449,13 +445,13 @@ function Configuration() {
                             onClick={() => {
                               saveConfigAsFile();
                             }}
-                            userSelect={"none"}
+                            userSelect="none"
                           >
                             Save as file
                           </Menu.Item>
                           <Menu.Separator />
                           <Menu.Item
-                            value={"Save to port"}
+                            value="Save to port"
                             disabled={portId().length === 0}
                             onClick={() => saveConfigToPort()}
                             userSelect="none"

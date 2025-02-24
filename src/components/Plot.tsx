@@ -449,7 +449,7 @@ export function Plot(props: PlotProps) {
         >
         </div>
         <Stack
-          direction={"row"}
+          direction="row"
           style={{
             float: "left",
             height: "2.5rem",
@@ -457,7 +457,7 @@ export function Plot(props: PlotProps) {
           }}
         >
           <IconButton
-            variant={"outline"}
+            variant="outline"
             disabled={zoomReset()}
             onclick={() => {
               uPlot.sync(group()).plots.forEach((up: uPlot) => {
@@ -540,9 +540,9 @@ export function Plot(props: PlotProps) {
           >
             <Legend
               plot={plot!}
-              series={"Cycle"}
+              series="Cycle"
               group={group()}
-              width={"min-content"}
+              width="min-content"
               readonly
             />
             <For each={props.header}>
@@ -567,7 +567,7 @@ export function Plot(props: PlotProps) {
                     plot.redraw();
                   }}
                   palette={getContext().palette}
-                  width={"min-content"}
+                  width="min-content"
                   stroke={getContext().style[index()]}
                   onStrokeChange={(new_style) => {
                     setContext()("style", index(), new_style);

@@ -46,7 +46,7 @@ export function SeriesConfiguration(props: SeriesConfigurationProps) {
         <Card.Title>Configuration</Card.Title>
         <Card.Description>{props.series}</Card.Description>
         <IconButton
-          position={"absolute"}
+          position="absolute"
           variant="ghost"
           top="2"
           right="2"
@@ -117,7 +117,7 @@ export function SeriesConfiguration(props: SeriesConfigurationProps) {
               setStroke(current_stroke);
             }
           }}
-          width={"7.6rem"}
+          width="7.6rem"
           style={{ "margin-top": "0.4rem" }}
         >
           <ToggleGroup.Item value={LegendStroke[LegendStroke.Line]}>
