@@ -18,28 +18,23 @@ export type LogViewerTabPageContentProps =
     tabId: string;
     filePath: string;
     onErrorMessage?: (message: ErrorMessage) => void;
-    splitArray?: number[][];
+    splitPlotIndex?: number[][];
     onSplit?: (indexArray: number[][]) => void;
-    plotContext?: string[];
+    plotContext?: PlotContext[];
     onContextChange?: (plotContext: PlotContext[]) => void;
   };
 
 export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
-  const unknownObject = props.plotContext!.map((str) => {
-    return JSON.parse(str) as PlotContext;
-  });
-  const parsePlotContext: PlotContext[] = unknownObject.map((obj) => {
-    return { ...obj };
-  });
-  console.log(parsePlotContext);
-
-  const [plots, setPlots] = createStore([] as PlotContext[]);
+  const [plots, setPlots] = createStore([{} as PlotContext]);
   const [splitIndex, setSplitIndex] = createSignal([] as number[][]);
   const [header, setHeader] = createSignal<string[]>([]);
   const [series, setSeries] = createSignal<number[][]>([]);
 
   onMount(() => {
     openCsvFile(props.filePath);
+    if (props.plotContext && props.plotContext.length !== 0) {
+      setPlots(props.plotContext);
+    }
   });
 
   async function openCsvFile(path: string) {
@@ -83,17 +78,14 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
     setHeader(local_header);
     setSeries(data.slice(0, local_header.length));
 
-    if (props.splitArray!.length === 0) {
-      setSplitIndex([indexArray]);
-    } else {
-      setSplitIndex(props.splitArray!);
-    }
-    props.onSplit?.(splitIndex());
+    const splitIndexArray : number[][] = props.splitPlotIndex!.length === 0 ? [indexArray] : [...props.splitPlotIndex!]
+    setSplitIndex(splitIndexArray)
+    props.onSplit?.(splitIndexArray);
   }
 
   function resetChart() {
     const indexArray = Array.from(
-      { length: header.length },
+      { length: header().length },
       (_, index) => index,
     );
     setSplitIndex([indexArray]);
@@ -151,7 +143,7 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
       >
         Reset
       </Button>
-      <For each={splitIndex()}>
+      <For each={plots && splitIndex()}>
         {(item, index) => {
           // Header and items need not be derived state, as they will not
           // change within a plot.
@@ -165,8 +157,19 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
           // Re-render plot contexts every time `splitIndex` is changed.
           // TODO: Do not always initialize as empty, figure out how to save
           // existing state and update for index changes.
+
+          // Store prev split array to prevent change context 
+          // when plot doesn't split
+          let prevSplitIndex = props.splitPlotIndex!
+
           createEffect(() => {
-            setPlots(index(), {} as PlotContext);
+            if(prevSplitIndex && splitIndex().length === prevSplitIndex.length) return;
+            setPlots(index(), {visible: item.map(() => true)});
+            
+            if(index() === splitIndex().length - 1) {
+              prevSplitIndex = splitIndex()
+              props.onContextChange?.(plots)
+            }
           });
 
           return (
@@ -194,10 +197,10 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
                 name=""
                 header={currentHeader}
                 series={currentItems}
-                context={plots[index()]}
+                context={plots[index()] ? plots[index()] : {} as PlotContext}
                 onContextChange={(ctx) => {
                   setPlots(index(), ctx);
-                  props.onContextChange?.(JSON.parse(JSON.stringify(plots)));
+                  props.onContextChange?.(plots);
                 }}
                 style={{
                   width: "100%",
