@@ -78,8 +78,10 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
     setHeader(local_header);
     setSeries(data.slice(0, local_header.length));
 
-    const splitIndexArray : number[][] = props.splitPlotIndex!.length === 0 ? [indexArray] : [...props.splitPlotIndex!]
-    setSplitIndex(splitIndexArray)
+    const splitIndexArray: number[][] = props.splitPlotIndex!.length === 0
+      ? [indexArray]
+      : [...props.splitPlotIndex!];
+    setSplitIndex(splitIndexArray);
     props.onSplit?.(splitIndexArray);
   }
 
@@ -158,17 +160,23 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
           // TODO: Do not always initialize as empty, figure out how to save
           // existing state and update for index changes.
 
-          // Store prev split array to prevent change context 
+          // Store prev split array to prevent change context
           // when plot doesn't split
-          let prevSplitIndex = props.splitPlotIndex!
+          let prevSplitIndex = props.splitPlotIndex!;
 
           createEffect(() => {
-            if(prevSplitIndex && splitIndex().length === prevSplitIndex.length) return;
-            setPlots(index(), {visible: item.map(() => true)});
-            
-            if(index() === splitIndex().length - 1) {
-              prevSplitIndex = splitIndex()
-              props.onContextChange?.(plots)
+            if (
+              prevSplitIndex && splitIndex().length === prevSplitIndex.length
+            ) return;
+            setPlots(index(), {
+              visible: item.map(() => true),
+              color: [],
+              style: [],
+            });
+
+            if (index() === splitIndex().length - 1) {
+              prevSplitIndex = splitIndex();
+              props.onContextChange?.(plots);
             }
           });
 
