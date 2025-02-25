@@ -17,6 +17,7 @@ function LogViewer() {
   const [splitterList, setSplitterList] = createSignal<
     { id: string; size: number }[]
   >([]);
+  const [isTabDrop, setIsTabDrop] = createSignal<boolean>(false)
 
   onMount(() => {
     const uuid = getCryptoUUID();
@@ -38,6 +39,7 @@ function LogViewer() {
       setLogViewTabList(parseList);
     }
 
+    if(!isTabDrop()) return;
     setSplitterList(() => {
       const panelSize = 100 / parseList.length;
       const updateList = parseList.map((panel) => {
@@ -45,17 +47,21 @@ function LogViewer() {
       });
       return updateList;
     });
+
+    setIsTabDrop(false)
   });
 
-  const [draggedTabInfo, setDraggedTabInfo] = createSignal<
+  const [dragOutTabInfo, setDragOutTabInfo] = createSignal<
     [string, string, number[][], string[], string] | undefined // tab id, file path, split indexarray, tab name,
   >();
-  const [draggedTabIsFrom, setDraggedTabIsFrom] = createSignal<string>(""); // tab list id
+  const [dragOutTabSplitterId, setDragOutTabSplitterId] = createSignal<string>(
+    "",
+  ); // tab splitter id
 
   const dropTabOnSplitter = (index: number) => {
     const indexOnDirection = index + 1;
     const uuid = getCryptoUUID();
-    const parseObject = draggedTabInfo()![3].map((string) => {
+    const parseObject = dragOutTabInfo()![3].map((string) => {
       return JSON.parse(string) as PlotContext;
     });
     const parseDraggedTabInfo: [
@@ -65,11 +71,11 @@ function LogViewer() {
       PlotContext[],
       string,
     ] = [
-      draggedTabInfo()![0],
-      draggedTabInfo()![1],
-      draggedTabInfo()![2],
+      dragOutTabInfo()![0],
+      dragOutTabInfo()![1],
+      dragOutTabInfo()![2],
       parseObject,
-      draggedTabInfo()![4],
+      dragOutTabInfo()![4],
     ];
 
     setLogViewTabList((prev) => {
@@ -78,7 +84,7 @@ function LogViewer() {
           return {
             id: item.id,
             tabs: [...item.tabs].filter((item) =>
-              item[0] !== draggedTabInfo()![0]
+              item[0] !== dragOutTabInfo()![0]
             ),
           };
         } else return item;
@@ -148,9 +154,9 @@ function LogViewer() {
             </Toast.Root>
           )}
         </Toast.Toaster>
-
         <Splitter.Root
           size={splitterList()}
+          gap={"0.5"}
         >
           <For each={splitterList() && logViewTabList()}>
             {(item, index) => (
@@ -158,6 +164,17 @@ function LogViewer() {
                 <Show when={index() !== 0}>
                   <Splitter.ResizeTrigger
                     id={`${logViewTabList()[index() - 1].id}:${item.id}`}
+                    width={"4px"}
+                    padding={"0"}
+                    opacity={"0%"}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.opacity = "100%";
+                      e.currentTarget.style.transition = "opacity 0.3s ease";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.opacity = "0%";
+                      e.currentTarget.style.transition = "opacity 0.3s ease";
+                    }}
                   />
                 </Show>
                 <Splitter.Panel
@@ -237,17 +254,17 @@ function LogViewer() {
                         tabName,
                         tabListId,
                       ) => {
-                        setDraggedTabInfo([
+                        setDragOutTabInfo([
                           draggedId,
                           filepath,
                           indexArray,
                           plotContext,
                           tabName,
                         ]);
-                        setDraggedTabIsFrom(tabListId);
+                        setDragOutTabSplitterId(tabListId);
                       }}
                       onTabDrop={() => {
-                        if (draggedTabIsFrom() === item.id) return;
+                        if (dragOutTabSplitterId() === item.id) return;
                         setLogViewTabList((prev) => {
                           const updateList: {
                             id: string;
@@ -260,7 +277,7 @@ function LogViewer() {
                             ][];
                           }[] = [...prev].map((item, i) => {
                             if (index() === i) {
-                              const parseObject = draggedTabInfo()![3].map(
+                              const parseObject = dragOutTabInfo()![3].map(
                                 (string) => {
                                   return JSON.parse(string) as PlotContext;
                                 },
@@ -272,21 +289,21 @@ function LogViewer() {
                                 PlotContext[],
                                 string,
                               ] = [
-                                draggedTabInfo()![0],
-                                draggedTabInfo()![1],
-                                draggedTabInfo()![2],
+                                dragOutTabInfo()![0],
+                                dragOutTabInfo()![1],
+                                dragOutTabInfo()![2],
                                 parseObject,
-                                draggedTabInfo()![4],
+                                dragOutTabInfo()![4],
                               ];
                               return {
                                 id: item.id,
                                 tabs: [...item.tabs, [...parseDraggedTabInfo]],
                               };
-                            } else if (item.id === draggedTabIsFrom()) {
+                            } else if (item.id === dragOutTabSplitterId()) {
                               return {
                                 id: item.id,
                                 tabs: [...item.tabs.filter((item) => {
-                                  return item[0] !== draggedTabInfo()![0];
+                                  return item[0] !== dragOutTabInfo()![0];
                                 })],
                               };
                             } else return item;
@@ -295,7 +312,6 @@ function LogViewer() {
                         });
                       }}
                       onContextChange={(id, changedCtx) => {
-                        console.log(changedCtx);
                         const updateCtx: PlotContext[] = changedCtx.map(
                           (ctx) => {
                             return JSON.parse(JSON.stringify(ctx));
@@ -400,7 +416,7 @@ function LogViewer() {
                   </div>
                   <Show
                     when={isDragging()[0] && isDragging()[1] === index() &&
-                      item.tabs.length > 1}
+                      item.tabs.length > 1 && dragOutTabSplitterId() === item.id}
                   >
                     <Stack
                       backgroundColor={"bg.muted"}
@@ -415,8 +431,9 @@ function LogViewer() {
                       onDragLeave={(e) => e.currentTarget.style.opacity = "0%"}
                       onDragOver={(e) => e.preventDefault()}
                       onDrop={() => {
-                        dropTabOnSplitter(index());
                         setIsDragging([false, null]);
+                        dropTabOnSplitter(index());
+                        setIsTabDrop(true);
                       }}
                     >
                     </Stack>

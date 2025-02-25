@@ -14,12 +14,12 @@ export type LogViewerTabListProps = JSX.HTMLAttributes<HTMLDivElement> & {
   onDraggedTabInfo?: (
     tabId: string,
     filePath: string,
-    indexArray: number[][],
+    splitPlotIndex: number[][],
     context: string[],
     tabName: string,
     tabListId: string,
   ) => void;
-  onSplit?: (id: string, splitIndexArray: number[][]) => void;
+  onSplit?: (id: string, splitPlotIndex: number[][]) => void;
   onTabDrop?: () => void;
   onContextChange?: (id: string, context: PlotContext[]) => void;
   onTabNameChange?: (id: string, changedName: string) => void;
@@ -33,8 +33,9 @@ export function LogViewerTabList(props: LogViewerTabListProps) {
   );
   const [draggedTabId, setDraggedTabId] = createSignal<string>();
   const [reorderTabList, setReorderTabList] = createSignal(props.tabList);
+
   // This is for while reordering tab, if tab is added or deleted
-  // Doesnt bother the reorder index, and still reordering well
+  // Doesnt bother the reorder index, and still reordering
   createEffect(() => {
     const list = props.tabList;
     if (list.length === 0) return;
@@ -146,6 +147,7 @@ export function LogViewerTabList(props: LogViewerTabListProps) {
           onValueChange={(e) => setFocusedTab(e.value)}
           width="100%"
           height="100%"
+          gap={"0"}
         >
           <Tabs.List
             ref={scrollContainer}
@@ -214,7 +216,6 @@ export function LogViewerTabList(props: LogViewerTabListProps) {
                     if (findDraggedTabInfo.length === 1) {
                       return;
                     }
-                    props.onTabDrop?.();
                     setIsReordering(false);
                   }}
                 >
@@ -267,9 +268,7 @@ export function LogViewerTabList(props: LogViewerTabListProps) {
             </div>
             <Tabs.Indicator />
           </Tabs.List>
-          <div
-            style={{ width: "100%", height: "100%", "margin-bottom" : "1rem" }}
-          >
+    
             <For each={reorderTabList()}>
               {(
                 [
@@ -283,7 +282,9 @@ export function LogViewerTabList(props: LogViewerTabListProps) {
                   value={currentTabId}
                   height={"100%"}
                   width={"100% "}
-                  style={{ "overflow-y": "auto" }}
+                  style={{ 
+                    "overflow-y": "auto",
+                  }}
                   onDragOver={(e) => {
                     e.preventDefault();
                   }}
@@ -293,7 +294,6 @@ export function LogViewerTabList(props: LogViewerTabListProps) {
                   }}
                 >
                   <LogViewerTabPageContent
-                    style = {{"margin-bottom" : "1rem"}}
                     tabId={currentTabId}
                     plotContext={props.tabList[index()][3]}
                     filePath={currentFilePath}
@@ -312,7 +312,6 @@ export function LogViewerTabList(props: LogViewerTabListProps) {
                 </Tabs.Content>
               )}
             </For>
-          </div>
         </Tabs.Root>
       </div>
     </>
