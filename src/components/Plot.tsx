@@ -82,8 +82,8 @@ export function Plot(props: PlotProps) {
     if (!getContext().palette || getContext().palette.length == 0) {
       setContext()("palette", kelly_colors_hex);
     }
-    
-    if(!getContext().color || getContext().color.length === 0) {
+
+    if (!getContext().color || getContext().color.length === 0) {
       setContext()(
         "color",
         props.header.map(
@@ -91,15 +91,15 @@ export function Plot(props: PlotProps) {
         ),
       );
     }
-    
-    if(!getContext().style || getContext().style.length === 0) {
+
+    if (!getContext().style || getContext().style.length === 0) {
       setContext()(
         "style",
         props.header.map(() => LegendStroke.Line),
       );
     }
 
-    if(!getContext().visible || getContext().visible.length === 0) {
+    if (!getContext().visible || getContext().visible.length === 0) {
       setContext()(
         "visible",
         props.header.map(() => true),
@@ -224,7 +224,7 @@ export function Plot(props: PlotProps) {
       ...props.header.map((_, index) => ({
         label: props.header[index],
         stroke: () => getContext().color[index],
-        show : getContext().visible[index],
+        show: getContext().visible[index],
         ...{
           ...(getContext().style[index] === LegendStroke.Dash && {
             dash: [10, 5],
@@ -237,7 +237,7 @@ export function Plot(props: PlotProps) {
                 { filter: checkDotFilter() }),
             },
           }),
-        }
+        },
       })),
     ];
     let scales: uPlot.Scales = {
@@ -386,9 +386,10 @@ export function Plot(props: PlotProps) {
 
     setRender(true);
 
-    const visibleList = !getContext().visible || getContext().visible.length === 0 ?
-    props.header.map(() => true) :
-    getContext().visible
+    const visibleList =
+      !getContext().visible || getContext().visible.length === 0
+        ? props.header.map(() => true)
+        : getContext().visible;
 
     setContext()(
       "visible",
