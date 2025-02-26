@@ -22,6 +22,8 @@ export type LogViewerTabPageContentProps =
     onSplit?: (indexArray: number[][]) => void;
     plotContext?: PlotContext[];
     onContextChange?: (plotContext: PlotContext[]) => void;
+    xRange?: [number, number];
+    onXRangeChange?: (xRange: [number, number]) => void;
   };
 
 export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
@@ -29,6 +31,7 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
   const [splitIndex, setSplitIndex] = createSignal([] as number[][]);
   const [header, setHeader] = createSignal<string[]>([]);
   const [series, setSeries] = createSignal<number[][]>([]);
+
 
   onMount(() => {
     openCsvFile(props.filePath);
@@ -154,22 +157,20 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
           const currentID = () => props.tabId + index();
           let prevSplitIndex = props.splitPlotIndex!;
 
-          createEffect(() => {            
+          createEffect(() => {
             if (
               prevSplitIndex && splitIndex().length === prevSplitIndex.length
             ) return;
             setPlots(index(), {
-              visible : item.map(() => true),
-              color: [],
+              visible: item.map(() => true),
               palette: [],
-              style : [],
             });
 
             if (index() === splitIndex().length - 1) {
               prevSplitIndex = splitIndex();
               props.onContextChange?.(plots);
               props.onSplit?.(splitIndex());
-            } 
+            }
           });
 
           return (
@@ -198,6 +199,10 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
                 onContextChange={(ctx) => {
                   setPlots(index(), ctx);
                   props.onContextChange?.(plots);
+                }}
+                xRange={props.xRange}
+                onXRangeChange={(xRange) => {
+                  props.onXRangeChange?.(xRange);
                 }}
                 style={{
                   width: "100%",

@@ -35,8 +35,8 @@ export type PlotProps = JSX.HTMLAttributes<HTMLDivElement> & {
   series: number[][];
   context?: PlotContext;
   onContextChange?: (context: PlotContext) => void;
-  xRange?: number;
-  onxRangeChange?: (xRange : number) => void;
+  xRange?: [number, number];
+  onXRangeChange?: (xRange : [number, number]) => void;
 };
 
 export type PlotContext = {
@@ -68,7 +68,6 @@ export function Plot(props: PlotProps) {
   const [ctx, setCtx] = createStore(
     props.context ? props.context : ({} as PlotContext),
   );
-
   const [getContext, setGetContext] = createSignal(ctx);
   const [setContext, setSetContext] = createSignal(setCtx);
 
@@ -172,13 +171,13 @@ export function Plot(props: PlotProps) {
       );
 
       setXRange(plot.scales.x.max! - plot.scales.x.min!);
-      props.onxRangeChange?.(plot.scales.x.max! - plot.scales.x.min!)
+      props.onXRangeChange?.([plot.scales.x.min!, plot.scales.x.max!])
     }, 10);
   };
 
   const [dotFilter, setDotFilter] = createSignal<number[]>([]);
   const checkDotFilter = () => dotFilter();
-  const [xRange, setXRange] = createSignal<number>(props.xRange ? props.xRange : 0 );
+  const [xRange, setXRange] = createSignal<number>(0);
 
   createEffect(() => {
     const domainWidth: number =
@@ -198,7 +197,6 @@ export function Plot(props: PlotProps) {
     }
 
     if (scale <= 0.1) array.splice(0, array.length);
-
     setDotFilter(array);
   });
 
@@ -386,18 +384,32 @@ export function Plot(props: PlotProps) {
       ] as AlignedData,
       plot_element,
     );
-
     setRender(true);
 
+    if(props.xRange) {
+      const xMin = props.xRange[0]
+      const xMax = props.xRange[1]
+
+      if(xMin >= xMax) return;
+      uPlot.sync(group()).plots.forEach((up : uPlot) => {
+        up.setScale("x" , {min: xMin, max: xMax})
+        setXRange(xMax - xMin);
+        setTimeout(() => {
+          up.redraw();
+        }, 0)
+      })
+    }
+
     const visibleList =
-      !getContext().visible || getContext().visible.length === 0
-        ? props.header.map(() => true)
-        : getContext().visible;
+    !getContext().visible || getContext().visible.length === 0
+      ? props.header.map(() => true)
+      : getContext().visible;
 
     setContext()(
       "visible",
       visibleList,
     );
+
   }
 
   onMount(() => {
@@ -427,7 +439,12 @@ export function Plot(props: PlotProps) {
       createPlot();
     }
   });
-  createEffect(createPlot);
+
+  createEffect(() => {
+    setTimeout(() => {
+      createPlot()
+    },10) 
+  });
 
   const selection_css = `
     .u-select {
@@ -471,9 +488,10 @@ export function Plot(props: PlotProps) {
             disabled={zoomReset()}
             onclick={() => {
               uPlot.sync(group()).plots.forEach((up: uPlot) => {
-                up.setScale("x", { min: 0, max: up.data[0].length - 1 });
-                setXRange(up.data[0].length - 1);
-                props.onxRangeChange?.(up.data[0].length - 1)
+                const xMax = Number(up.data[0].length - 1)
+                up.setScale("x", { min: 0, max: xMax });
+                setXRange(xMax );
+                props.onXRangeChange?.([0, xMax])
               });
             }}
           >
@@ -602,7 +620,7 @@ export function Plot(props: PlotProps) {
                     props.onContextChange?.(getContext());
                     setTimeout(() => {
                       plot.redraw();
-                    }, 100);
+                    }, 0);
                   }}
                 />
               )}
@@ -664,8 +682,9 @@ function wheelZoomPlugin(opts: WheelZoomPluginOpts) {
   return {
     hooks: {
       ready: (u: uPlot) => {
-        xMin = u.scales.x.min!;
-        xMax = u.scales.x.max!;
+
+        xMin = 0;
+        xMax = u.data[0].length - 1!;
 
         xRange = xMax - xMin;
 

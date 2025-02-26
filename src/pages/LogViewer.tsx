@@ -11,13 +11,19 @@ function LogViewer() {
   const [logViewTabList, setLogViewTabList] = createSignal<
     {
       id: string;
-      tabs: [string, string, number[][], PlotContext[], string][];
+      tabs: [
+        string,
+        string,
+        number[][],
+        PlotContext[],
+        string,
+        [number, number],
+      ][];
     }[]
   >([]);
   const [splitterList, setSplitterList] = createSignal<
     { id: string; size: number }[]
   >([]);
-  const [isTabDrop, setIsTabDrop] = createSignal<boolean>(false)
 
   onMount(() => {
     const uuid = getCryptoUUID();
@@ -39,7 +45,6 @@ function LogViewer() {
       setLogViewTabList(parseList);
     }
 
-    if(!isTabDrop()) return;
     setSplitterList(() => {
       const panelSize = 100 / parseList.length;
       const updateList = parseList.map((panel) => {
@@ -48,11 +53,10 @@ function LogViewer() {
       return updateList;
     });
 
-    setIsTabDrop(false)
   });
 
   const [dragOutTabInfo, setDragOutTabInfo] = createSignal<
-    [string, string, number[][], string[], string] | undefined // tab id, file path, split indexarray, tab name,
+    [string, string, number[][], string[], string, [number, number]] | undefined // tab id, file path, split indexarray, tab name,
   >();
   const [dragOutTabSplitterId, setDragOutTabSplitterId] = createSignal<string>(
     "",
@@ -70,12 +74,14 @@ function LogViewer() {
       number[][],
       PlotContext[],
       string,
+      [number, number],
     ] = [
       dragOutTabInfo()![0],
       dragOutTabInfo()![1],
       dragOutTabInfo()![2],
       parseObject,
       dragOutTabInfo()![4],
+      dragOutTabInfo()![5],
     ];
 
     setLogViewTabList((prev) => {
@@ -92,7 +98,14 @@ function LogViewer() {
       const newTab = { id: uuid, tabs: [parseDraggedTabInfo] };
       const addNewTabList: {
         id: string;
-        tabs: [string, string, number[][], PlotContext[], string][];
+        tabs: [
+          string,
+          string,
+          number[][],
+          PlotContext[],
+          string,
+          [number, number],
+        ][];
       }[] = [
         ...updateList.slice(0, indexOnDirection),
         newTab,
@@ -163,7 +176,7 @@ function LogViewer() {
               <>
                 <Show when={index() !== 0}>
                   <Splitter.ResizeTrigger
-                    id={`${logViewTabList()[index() - 1].id}:${item.id}`}
+                    id={`${splitterList()[index() - 1].id}:${item.id}`}
                     width={"4px"}
                     padding={"0"}
                     opacity={"0%"}
@@ -216,13 +229,17 @@ function LogViewer() {
                               number[][],
                               PlotContext[],
                               string,
+                              [number, number],
                             ][];
                           }[] = [...prev].map((item, i) => {
                             if (i === index()) {
                               const updateTabs = [...item.tabs];
                               return {
                                 id: item.id,
-                                tabs: [...updateTabs, [...tabInfo, [], [], ""]],
+                                tabs: [...updateTabs, [...tabInfo, [], [], "", [
+                                  0,
+                                  0,
+                                ]]],
                               };
                             } else return item;
                           });
@@ -252,6 +269,7 @@ function LogViewer() {
                         indexArray,
                         plotContext,
                         tabName,
+                        xRange,
                         tabListId,
                       ) => {
                         setDragOutTabInfo([
@@ -260,6 +278,7 @@ function LogViewer() {
                           indexArray,
                           plotContext,
                           tabName,
+                          xRange,
                         ]);
                         setDragOutTabSplitterId(tabListId);
                       }}
@@ -274,6 +293,7 @@ function LogViewer() {
                               number[][],
                               PlotContext[],
                               string,
+                              [number, number],
                             ][];
                           }[] = [...prev].map((item, i) => {
                             if (index() === i) {
@@ -288,12 +308,14 @@ function LogViewer() {
                                 number[][],
                                 PlotContext[],
                                 string,
+                                [number, number],
                               ] = [
                                 dragOutTabInfo()![0],
                                 dragOutTabInfo()![1],
                                 dragOutTabInfo()![2],
                                 parseObject,
                                 dragOutTabInfo()![4],
+                                dragOutTabInfo()![5],
                               ];
                               return {
                                 id: item.id,
@@ -317,7 +339,14 @@ function LogViewer() {
                           updateList[index()].tabs = updateList[index()].tabs
                             .map(
                               (
-                                [splitTab, filePath, indexArray, ctx, tabName],
+                                [
+                                  splitTab,
+                                  filePath,
+                                  indexArray,
+                                  ctx,
+                                  tabName,
+                                  xRange,
+                                ],
                               ) => {
                                 if (splitTab === id) {
                                   return [
@@ -326,6 +355,7 @@ function LogViewer() {
                                     indexArray,
                                     changedCtx,
                                     tabName,
+                                    xRange,
                                   ];
                                 } else {
                                   return [
@@ -334,6 +364,7 @@ function LogViewer() {
                                     indexArray,
                                     ctx,
                                     tabName,
+                                    xRange,
                                   ];
                                 }
                               },
@@ -347,7 +378,14 @@ function LogViewer() {
                           updateList[index()].tabs = updateList[index()].tabs
                             .map(
                               (
-                                [splitTab, filePath, indexArray, ctx, tabName],
+                                [
+                                  splitTab,
+                                  filePath,
+                                  indexArray,
+                                  ctx,
+                                  tabName,
+                                  xRange,
+                                ],
                               ) => {
                                 if (splitTab === id) {
                                   return [
@@ -356,6 +394,7 @@ function LogViewer() {
                                     splitArray,
                                     ctx,
                                     tabName,
+                                    xRange,
                                   ];
                                 } else {
                                   return [
@@ -364,6 +403,7 @@ function LogViewer() {
                                     indexArray,
                                     ctx,
                                     tabName,
+                                    xRange,
                                   ];
                                 }
                               },
@@ -377,7 +417,14 @@ function LogViewer() {
                           updateList[index()].tabs = updateList[index()].tabs
                             .map(
                               (
-                                [splitTab, filePath, indexArray, ctx, tabName],
+                                [
+                                  splitTab,
+                                  filePath,
+                                  indexArray,
+                                  ctx,
+                                  tabName,
+                                  xRange,
+                                ],
                               ) => {
                                 if (splitTab === id) {
                                   return [
@@ -386,6 +433,7 @@ function LogViewer() {
                                     indexArray,
                                     ctx,
                                     changedName,
+                                    xRange,
                                   ];
                                 } else {
                                   return [
@@ -394,6 +442,7 @@ function LogViewer() {
                                     indexArray,
                                     ctx,
                                     tabName,
+                                    xRange,
                                   ];
                                 }
                               },
@@ -407,11 +456,51 @@ function LogViewer() {
                           : null;
                         setIsDragging([isTabContextDragEnter, tabListIndex]);
                       }}
+                      onXRangeChange={(id, changedXRange) => {
+                        setLogViewTabList((prev) => {
+                          const updateList = [...prev];
+                          updateList[index()].tabs = updateList[index()].tabs
+                            .map(
+                              (
+                                [
+                                  splitTab,
+                                  filePath,
+                                  indexArray,
+                                  ctx,
+                                  tabName,
+                                  xRange,
+                                ],
+                              ) => {
+                                if (splitTab === id) {
+                                  return [
+                                    splitTab,
+                                    filePath,
+                                    indexArray,
+                                    ctx,
+                                    tabName,
+                                    changedXRange,
+                                  ];
+                                } else {
+                                  return [
+                                    splitTab,
+                                    filePath,
+                                    indexArray,
+                                    ctx,
+                                    tabName,
+                                    xRange,
+                                  ];
+                                }
+                              },
+                            );
+                          return updateList;
+                        });
+                      }}
                     />
                   </div>
                   <Show
                     when={isDragging()[0] && isDragging()[1] === index() &&
-                      item.tabs.length > 1 && dragOutTabSplitterId() === item.id}
+                      item.tabs.length > 1 &&
+                      dragOutTabSplitterId() === item.id}
                   >
                     <Stack
                       backgroundColor={"bg.muted"}
@@ -428,7 +517,6 @@ function LogViewer() {
                       onDrop={() => {
                         setIsDragging([false, null]);
                         dropTabOnSplitter(index());
-                        setIsTabDrop(true);
                       }}
                     >
                     </Stack>

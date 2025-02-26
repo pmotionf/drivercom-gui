@@ -8,7 +8,14 @@ import { PlotContext } from "~/components/Plot";
 
 export type LogViewerTabListProps = JSX.HTMLAttributes<HTMLDivElement> & {
   id: string;
-  tabList: [string, string, number[][], PlotContext[], string][]; // tabId, filePath, split index array, tab name
+  tabList: [
+    string,
+    string,
+    number[][],
+    PlotContext[],
+    string,
+    [number, number],
+  ][]; // tabId, filePath, split index array, tab name, plot x scale
   onCreateTab?: () => void;
   onDeleteTab?: (deleteTabId: string) => void;
   onDraggedTabInfo?: (
@@ -17,11 +24,13 @@ export type LogViewerTabListProps = JSX.HTMLAttributes<HTMLDivElement> & {
     splitPlotIndex: number[][],
     context: string[],
     tabName: string,
+    xRange: [number, number],
     tabListId: string,
   ) => void;
   onSplit?: (id: string, splitPlotIndex: number[][]) => void;
   onTabDrop?: () => void;
   onContextChange?: (id: string, context: PlotContext[]) => void;
+  onXRangeChange?: (id: string, xRange: [number, number]) => void;
   onTabNameChange?: (id: string, changedName: string) => void;
   onTabContextDragEnter?: (isTabContextDragEnter: boolean) => void;
 };
@@ -195,6 +204,7 @@ export function LogViewerTabList(props: LogViewerTabListProps) {
                       changedTabContext[2], // Split series index array
                       changedTabContext[3].map((obj) => JSON.stringify(obj)), // Plot context
                       changedTabContext[4], // Tab name
+                      changedTabContext[5],
                       props.id,
                     );
                     setDraggedTabId(currentTabId);
@@ -295,7 +305,8 @@ export function LogViewerTabList(props: LogViewerTabListProps) {
               >
                 <LogViewerTabPageContent
                   tabId={currentTabId}
-                  plotContext={props.tabList[index()][3]}
+                  plotContext={props.tabList[index()][3] /*Plot context*/}
+                  xRange={props.tabList[index()][5] /*Plots's x range*/}
                   filePath={currentFilePath}
                   onSplit={(e) => {
                     if (e.length === 0) return;
@@ -308,6 +319,8 @@ export function LogViewerTabList(props: LogViewerTabListProps) {
                       JSON.parse(JSON.stringify(changedPlotContext)),
                     );
                   }}
+                  onXRangeChange={(xRange) =>
+                    props.onXRangeChange?.(currentTabId, xRange)}
                 />
               </Tabs.Content>
             )}
