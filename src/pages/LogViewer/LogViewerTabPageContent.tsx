@@ -134,10 +134,7 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
       <Button
         variant="ghost"
         disabled={splitIndex().length <= 1}
-        onclick={() => {
-          resetChart();
-          props.onSplit?.(splitIndex());
-        }}
+        onclick={() => resetChart()}
         style={{
           "margin-top": "0.5rem",
           "margin-left": "1rem",
@@ -155,13 +152,6 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
           // Current ID must be derived state as index can change based on
           // added/merged plots.
           const currentID = () => props.tabId + index();
-
-          // Re-render plot contexts every time `splitIndex` is changed.
-          // TODO: Do not always initialize as empty, figure out how to save
-          // existing state and update for index changes.
-
-          // Store prev split array to prevent change context
-          // when plot doesn't split
           let prevSplitIndex = props.splitPlotIndex!;
 
           createEffect(() => {            
@@ -178,20 +168,14 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
             if (index() === splitIndex().length - 1) {
               prevSplitIndex = splitIndex();
               props.onContextChange?.(plots);
+              props.onSplit?.(splitIndex());
             } 
           });
 
           return (
             <>
               <Button
-                onClick={() => {
-                  splitPlot(index());
-                  /*setPlots(index(), {
-                    visible: item.map(() => {return true})
-                  })
-                  props.onContextChange?.(plots)*/
-                  props.onSplit?.(splitIndex());
-                }}
+                onClick={() => splitPlot(index())}
                 disabled={currentHeader.length <= 1 ||
                   !plots[index()] ||
                   !plots[index()].visible ||
@@ -214,9 +198,6 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
                 onContextChange={(ctx) => {
                   setPlots(index(), ctx);
                   props.onContextChange?.(plots);
-                  /*const sortedPlotContext = sortPlotContext(plots, prevSplitIndex())
-                  if(!sortedPlotContext) return; 
-                  setSortPlotArray(sortedPlotContext)*/
                 }}
                 style={{
                   width: "100%",

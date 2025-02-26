@@ -35,6 +35,8 @@ export type PlotProps = JSX.HTMLAttributes<HTMLDivElement> & {
   series: number[][];
   context?: PlotContext;
   onContextChange?: (context: PlotContext) => void;
+  xRange?: number;
+  onxRangeChange?: (xRange : number) => void;
 };
 
 export type PlotContext = {
@@ -170,12 +172,13 @@ export function Plot(props: PlotProps) {
       );
 
       setXRange(plot.scales.x.max! - plot.scales.x.min!);
+      props.onxRangeChange?.(plot.scales.x.max! - plot.scales.x.min!)
     }, 10);
   };
 
   const [dotFilter, setDotFilter] = createSignal<number[]>([]);
   const checkDotFilter = () => dotFilter();
-  const [xRange, setXRange] = createSignal<number>(0);
+  const [xRange, setXRange] = createSignal<number>(props.xRange ? props.xRange : 0 );
 
   createEffect(() => {
     const domainWidth: number =
@@ -470,6 +473,7 @@ export function Plot(props: PlotProps) {
               uPlot.sync(group()).plots.forEach((up: uPlot) => {
                 up.setScale("x", { min: 0, max: up.data[0].length - 1 });
                 setXRange(up.data[0].length - 1);
+                props.onxRangeChange?.(up.data[0].length - 1)
               });
             }}
           >
@@ -596,7 +600,9 @@ export function Plot(props: PlotProps) {
                     };
                     plot.addSeries(config, index() + 1);
                     props.onContextChange?.(getContext());
-                    plot.redraw();
+                    setTimeout(() => {
+                      plot.redraw();
+                    }, 100);
                   }}
                 />
               )}
