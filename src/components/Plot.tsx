@@ -35,7 +35,7 @@ export type PlotProps = JSX.HTMLAttributes<HTMLDivElement> & {
   series: number[][];
   context?: PlotContext;
   onContextChange?: (context: PlotContext) => void;
-  xRange?: number;
+  xRange?: number | null;
   onxRangeChange?: (xRange : number) => void;
 };
 
@@ -68,7 +68,6 @@ export function Plot(props: PlotProps) {
   const [ctx, setCtx] = createStore(
     props.context ? props.context : ({} as PlotContext),
   );
-
   const [getContext, setGetContext] = createSignal(ctx);
   const [setContext, setSetContext] = createSignal(setCtx);
 
@@ -178,7 +177,17 @@ export function Plot(props: PlotProps) {
 
   const [dotFilter, setDotFilter] = createSignal<number[]>([]);
   const checkDotFilter = () => dotFilter();
-  const [xRange, setXRange] = createSignal<number>(props.xRange ? props.xRange : 0 );
+  const [xRange, setXRange] = createSignal<number>(0);
+
+  onMount(() => {
+    if(!props.xRange && props.xRange === null) return;
+    console.log(props.xRange)
+    uPlot.sync(group()).plots.forEach((up : uPlot) => {
+      up.setScale("x" , {min: 0, max: props.xRange!} )
+      setXRange(props.xRange!);
+      props.onxRangeChange?.(xRange())
+    })
+  })
 
   createEffect(() => {
     const domainWidth: number =
@@ -473,7 +482,7 @@ export function Plot(props: PlotProps) {
               uPlot.sync(group()).plots.forEach((up: uPlot) => {
                 up.setScale("x", { min: 0, max: up.data[0].length - 1 });
                 setXRange(up.data[0].length - 1);
-                props.onxRangeChange?.(up.data[0].length - 1)
+                props.onxRangeChange?.(xRange())
               });
             }}
           >

@@ -22,6 +22,8 @@ export type LogViewerTabPageContentProps =
     onSplit?: (indexArray: number[][]) => void;
     plotContext?: PlotContext[];
     onContextChange?: (plotContext: PlotContext[]) => void;
+    xRange? : number | null;
+    onXRangeChange?: (xRange : number) => void;
   };
 
 export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
@@ -29,6 +31,8 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
   const [splitIndex, setSplitIndex] = createSignal([] as number[][]);
   const [header, setHeader] = createSignal<string[]>([]);
   const [series, setSeries] = createSignal<number[][]>([]);
+
+  console.log(props.xRange)
 
   onMount(() => {
     openCsvFile(props.filePath);
@@ -198,6 +202,10 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
                 onContextChange={(ctx) => {
                   setPlots(index(), ctx);
                   props.onContextChange?.(plots);
+                }}
+                xRange={props.xRange}
+                onxRangeChange={(xRange) => {
+                  props.onXRangeChange?.(xRange)
                 }}
                 style={{
                   width: "100%",

@@ -11,7 +11,7 @@ function LogViewer() {
   const [logViewTabList, setLogViewTabList] = createSignal<
     {
       id: string;
-      tabs: [string, string, number[][], PlotContext[], string][];
+      tabs: [string, string, number[][], PlotContext[], string, number | null][];
     }[]
   >([]);
   const [splitterList, setSplitterList] = createSignal<
@@ -52,7 +52,7 @@ function LogViewer() {
   });
 
   const [dragOutTabInfo, setDragOutTabInfo] = createSignal<
-    [string, string, number[][], string[], string] | undefined // tab id, file path, split indexarray, tab name,
+    [string, string, number[][], string[], string, number | null] | undefined // tab id, file path, split indexarray, tab name,
   >();
   const [dragOutTabSplitterId, setDragOutTabSplitterId] = createSignal<string>(
     "",
@@ -70,12 +70,14 @@ function LogViewer() {
       number[][],
       PlotContext[],
       string,
+      number | null
     ] = [
       dragOutTabInfo()![0],
       dragOutTabInfo()![1],
       dragOutTabInfo()![2],
       parseObject,
       dragOutTabInfo()![4],
+      dragOutTabInfo()![5]
     ];
 
     setLogViewTabList((prev) => {
@@ -92,7 +94,7 @@ function LogViewer() {
       const newTab = { id: uuid, tabs: [parseDraggedTabInfo] };
       const addNewTabList: {
         id: string;
-        tabs: [string, string, number[][], PlotContext[], string][];
+        tabs: [string, string, number[][], PlotContext[], string, number | null][];
       }[] = [
         ...updateList.slice(0, indexOnDirection),
         newTab,
@@ -216,13 +218,14 @@ function LogViewer() {
                               number[][],
                               PlotContext[],
                               string,
+                              number | null
                             ][];
                           }[] = [...prev].map((item, i) => {
                             if (i === index()) {
                               const updateTabs = [...item.tabs];
                               return {
                                 id: item.id,
-                                tabs: [...updateTabs, [...tabInfo, [], [], ""]],
+                                tabs: [...updateTabs, [...tabInfo, [], [], "", null]],
                               };
                             } else return item;
                           });
@@ -252,6 +255,7 @@ function LogViewer() {
                         indexArray,
                         plotContext,
                         tabName,
+                        xRange,
                         tabListId,
                       ) => {
                         setDragOutTabInfo([
@@ -260,6 +264,7 @@ function LogViewer() {
                           indexArray,
                           plotContext,
                           tabName,
+                          xRange,
                         ]);
                         setDragOutTabSplitterId(tabListId);
                       }}
@@ -274,6 +279,7 @@ function LogViewer() {
                               number[][],
                               PlotContext[],
                               string,
+                              number | null
                             ][];
                           }[] = [...prev].map((item, i) => {
                             if (index() === i) {
@@ -288,12 +294,14 @@ function LogViewer() {
                                 number[][],
                                 PlotContext[],
                                 string,
+                                number | null
                               ] = [
                                 dragOutTabInfo()![0],
                                 dragOutTabInfo()![1],
                                 dragOutTabInfo()![2],
                                 parseObject,
                                 dragOutTabInfo()![4],
+                                dragOutTabInfo()![5]
                               ];
                               return {
                                 id: item.id,
@@ -317,7 +325,7 @@ function LogViewer() {
                           updateList[index()].tabs = updateList[index()].tabs
                             .map(
                               (
-                                [splitTab, filePath, indexArray, ctx, tabName],
+                                [splitTab, filePath, indexArray, ctx, tabName, xRange],
                               ) => {
                                 if (splitTab === id) {
                                   return [
@@ -326,6 +334,7 @@ function LogViewer() {
                                     indexArray,
                                     changedCtx,
                                     tabName,
+                                    xRange
                                   ];
                                 } else {
                                   return [
@@ -334,6 +343,7 @@ function LogViewer() {
                                     indexArray,
                                     ctx,
                                     tabName,
+                                    xRange
                                   ];
                                 }
                               },
@@ -347,7 +357,7 @@ function LogViewer() {
                           updateList[index()].tabs = updateList[index()].tabs
                             .map(
                               (
-                                [splitTab, filePath, indexArray, ctx, tabName],
+                                [splitTab, filePath, indexArray, ctx, tabName, xRange],
                               ) => {
                                 if (splitTab === id) {
                                   return [
@@ -356,6 +366,7 @@ function LogViewer() {
                                     splitArray,
                                     ctx,
                                     tabName,
+                                    xRange
                                   ];
                                 } else {
                                   return [
@@ -364,6 +375,7 @@ function LogViewer() {
                                     indexArray,
                                     ctx,
                                     tabName,
+                                    xRange
                                   ];
                                 }
                               },
@@ -377,7 +389,7 @@ function LogViewer() {
                           updateList[index()].tabs = updateList[index()].tabs
                             .map(
                               (
-                                [splitTab, filePath, indexArray, ctx, tabName],
+                                [splitTab, filePath, indexArray, ctx, tabName, xRange],
                               ) => {
                                 if (splitTab === id) {
                                   return [
@@ -386,6 +398,7 @@ function LogViewer() {
                                     indexArray,
                                     ctx,
                                     changedName,
+                                    xRange
                                   ];
                                 } else {
                                   return [
@@ -394,6 +407,7 @@ function LogViewer() {
                                     indexArray,
                                     ctx,
                                     tabName,
+                                    xRange
                                   ];
                                 }
                               },
@@ -406,6 +420,39 @@ function LogViewer() {
                           ? index()
                           : null;
                         setIsDragging([isTabContextDragEnter, tabListIndex]);
+                      }}
+                      onXRangeChange={(id , changedXRange) => {
+                        setLogViewTabList((prev) => {
+                          const updateList = [...prev];
+                          updateList[index()].tabs = updateList[index()].tabs
+                            .map(
+                              (
+                                [splitTab, filePath, indexArray, ctx, tabName, xRange],
+                              ) => {
+                                if (splitTab === id) {
+                                  return [
+                                    splitTab,
+                                    filePath,
+                                    indexArray,
+                                    ctx,
+                                    tabName,
+                                    changedXRange
+                                  ];
+                                } else {
+                                  return [
+                                    splitTab,
+                                    filePath,
+                                    indexArray,
+                                    ctx,
+                                    tabName,
+                                    xRange
+                                  ];
+                                }
+                              },
+                            );
+                          return updateList;
+                        });
+
                       }}
                     />
                   </div>
