@@ -312,11 +312,6 @@ function LogViewer() {
                         });
                       }}
                       onContextChange={(id, changedCtx) => {
-                        const updateCtx: PlotContext[] = changedCtx.map(
-                          (ctx) => {
-                            return JSON.parse(JSON.stringify(ctx));
-                          },
-                        );
                         setLogViewTabList((prev) => {
                           const updateList = [...prev];
                           updateList[index()].tabs = updateList[index()].tabs
@@ -329,7 +324,7 @@ function LogViewer() {
                                     splitTab,
                                     filePath,
                                     indexArray,
-                                    updateCtx,
+                                    changedCtx,
                                     tabName,
                                   ];
                                 } else {

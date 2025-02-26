@@ -268,50 +268,50 @@ export function LogViewerTabList(props: LogViewerTabListProps) {
             </div>
             <Tabs.Indicator />
           </Tabs.List>
-    
-            <For each={reorderTabList()}>
-              {(
-                [
-                  currentTabId,
-                  currentFilePath,
-                  currentTabIndexArray,
-                ],
-                index,
-              ) => (
-                <Tabs.Content
-                  value={currentTabId}
-                  height={"100%"}
-                  width={"100% "}
-                  style={{ 
-                    "overflow-y": "auto",
+
+          <For each={reorderTabList()}>
+            {(
+              [
+                currentTabId,
+                currentFilePath,
+                currentTabIndexArray,
+              ],
+              index,
+            ) => (
+              <Tabs.Content
+                value={currentTabId}
+                height={"100%"}
+                width={"100% "}
+                style={{
+                  "overflow-y": "auto",
+                }}
+                onDragOver={(e) => {
+                  e.preventDefault();
+                }}
+                onDragEnter={() => props.onTabContextDragEnter?.(true)}
+                onDrop={() => {
+                  props.onTabContextDragEnter?.(false);
+                }}
+              >
+                <LogViewerTabPageContent
+                  tabId={currentTabId}
+                  plotContext={props.tabList[index()][3]}
+                  filePath={currentFilePath}
+                  onSplit={(e) => {
+                    if (e.length === 0) return;
+                    props.onSplit?.(currentTabId, e);
                   }}
-                  onDragOver={(e) => {
-                    e.preventDefault();
+                  splitPlotIndex={currentTabIndexArray}
+                  onContextChange={(changedPlotContext) => {
+                    props.onContextChange?.(
+                      currentTabId,
+                      JSON.parse(JSON.stringify(changedPlotContext)),
+                    );
                   }}
-                  onDragEnter={() => props.onTabContextDragEnter?.(true)}
-                  onDrop={() => {
-                    props.onTabContextDragEnter?.(false);
-                  }}
-                >
-                  <LogViewerTabPageContent
-                    tabId={currentTabId}
-                    plotContext={props.tabList[index()][3]}
-                    filePath={currentFilePath}
-                    onSplit={(e) => {
-                      if (e.length === 0) return;
-                      props.onSplit?.(currentTabId, e);
-                    }}
-                    splitPlotIndex={currentTabIndexArray}
-                    onContextChange={(changedPlotContext) => {
-                      props.onContextChange?.(
-                        currentTabId,
-                        JSON.parse(JSON.stringify(changedPlotContext)),
-                      );
-                    }}
-                  />
-                </Tabs.Content>
-              )}
-            </For>
+                />
+              </Tabs.Content>
+            )}
+          </For>
         </Tabs.Root>
       </div>
     </>
