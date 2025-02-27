@@ -34,7 +34,10 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
 
 
   onMount(() => {
-    openCsvFile(props.filePath);
+    setTimeout(() => {
+      openCsvFile(props.filePath);
+    }, 100)
+
     if (props.plotContext && props.plotContext.length !== 0) {
       setPlots(props.plotContext);
     }
@@ -155,24 +158,32 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
           // Current ID must be derived state as index can change based on
           // added/merged plots.
           const currentID = () => props.tabId + index();
-          let prevSplitIndex = props.splitPlotIndex!;
+
+          let prevSplitIndex = props.splitPlotIndex 
 
           createEffect(() => {
             if (
               prevSplitIndex && splitIndex().length === prevSplitIndex.length
             ) return;
+  
             setPlots(index(), {
               visible: item.map(() => true),
+              style: [],
+              color: [],
               palette: [],
-            });
+            } as PlotContext);
 
             if (index() === splitIndex().length - 1) {
-              prevSplitIndex = splitIndex();
-              props.onContextChange?.(plots);
-              props.onSplit?.(splitIndex());
+              //setPrevSplitIndex([...splitIndex()])
+              prevSplitIndex = splitIndex()
+              setTimeout(() => {
+                props.onContextChange?.(plots);
+              })
+              props.onSplit?.(splitIndex())
             }
           });
 
+          
           return (
             <>
               <Button
@@ -199,6 +210,7 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
                 onContextChange={(ctx) => {
                   setPlots(index(), ctx);
                   props.onContextChange?.(plots);
+                  //console.log(ctx)
                 }}
                 xRange={props.xRange}
                 onXRangeChange={(xRange) => {

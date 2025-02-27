@@ -316,7 +316,7 @@ export function LogViewerTabList(props: LogViewerTabListProps) {
                   onContextChange={(changedPlotContext) => {
                     props.onContextChange?.(
                       currentTabId,
-                      JSON.parse(JSON.stringify(changedPlotContext)),
+                      changedPlotContext,
                     );
                   }}
                   onXRangeChange={(xRange) =>
