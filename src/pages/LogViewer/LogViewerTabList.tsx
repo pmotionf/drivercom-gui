@@ -163,7 +163,6 @@ export function LogViewerTabList(props: LogViewerTabListProps) {
             style={{
               background: "--colors-bg-muted",
               height: `3rem`,
-              "padding-top": "0.5rem",
             }}
             gap="0"
             onWheel={(e) => mouseWheelHandler(e)}
@@ -188,6 +187,7 @@ export function LogViewerTabList(props: LogViewerTabListProps) {
                 <Tabs.Trigger
                   value={currentTabId}
                   draggable
+                  paddingTop={"1rem"}
                   onDragStart={(e) => {
                     setDraggedTabIndex(index());
                     setFocusedTab(currentTabId);
@@ -252,6 +252,7 @@ export function LogViewerTabList(props: LogViewerTabListProps) {
                       props.onDeleteTab?.(currentTabId);
                       setIsTabDeleted(true);
                     }}
+                    borderRadius={"3rem"}
                   >
                     <IconX />
                   </IconButton>
@@ -264,8 +265,8 @@ export function LogViewerTabList(props: LogViewerTabListProps) {
                 setIsTabDeleted(false);
                 props.onCreateTab?.();
               }}
-              borderRadius={"1rem"}
-              paddingBottom={"0.5rem"}
+              borderRadius={"3rem"}
+              marginTop={"0.2rem"}
             >
               <IconPlus />
             </IconButton>

@@ -84,7 +84,7 @@ export function Plot(props: PlotProps) {
       setContext()("palette", kelly_colors_hex);
     }
 
-    if (!getContext().color || getContext().color.length === 0) {
+    if (!getContext().color || getContext().color.length == 0 || getContext().color.length !== props.header.length) {
       setContext()(
         "color",
         props.header.map(
@@ -92,15 +92,15 @@ export function Plot(props: PlotProps) {
         ),
       );
     }
-
-    if (!getContext().style || getContext().style.length === 0) {
+ 
+    if (!getContext().style || getContext().style.length == 0 || getContext().style.length !== props.header.length) {
       setContext()(
         "style",
         props.header.map(() => LegendStroke.Line),
       );
     }
-
-    if (!getContext().visible || getContext().visible.length === 0) {
+    
+    if (!getContext().visible || getContext().visible.length == 0 || getContext().visible.length !== props.header.length) {
       setContext()(
         "visible",
         props.header.map(() => true),
@@ -394,16 +394,13 @@ export function Plot(props: PlotProps) {
       uPlot.sync(group()).plots.forEach((up : uPlot) => {
         up.setScale("x" , {min: xMin, max: xMax})
         setXRange(xMax - xMin);
-        setTimeout(() => {
-          up.redraw();
-        }, 0)
       })
     }
 
     const visibleList =
     !getContext().visible || getContext().visible.length === 0
-      ? props.header.map(() => true)
-      : getContext().visible;
+    ? props.header.map(() => true)
+    : getContext().visible;
 
     setContext()(
       "visible",
@@ -443,7 +440,7 @@ export function Plot(props: PlotProps) {
   createEffect(() => {
     setTimeout(() => {
       createPlot()
-    },10) 
+    },200) 
   });
 
   const selection_css = `
@@ -490,7 +487,7 @@ export function Plot(props: PlotProps) {
               uPlot.sync(group()).plots.forEach((up: uPlot) => {
                 const xMax = Number(up.data[0].length - 1)
                 up.setScale("x", { min: 0, max: xMax });
-                setXRange(xMax );
+                setXRange(xMax);
                 props.onXRangeChange?.([0, xMax])
               });
             }}

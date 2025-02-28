@@ -508,11 +508,11 @@ function LogViewer() {
                         width: "50%",
                         height: "100%",
                         "margin-top": "6rem",
-                        opacity: "0%",
+                        opacity: "30%",
                       }}
                       onDragEnter={(e) =>
                         e.currentTarget.style.opacity = "100%"}
-                      onDragLeave={(e) => e.currentTarget.style.opacity = "0%"}
+                      onDragLeave={(e) => e.currentTarget.style.opacity = "50%"}
                       onDragOver={(e) => e.preventDefault()}
                       onDrop={() => {
                         setIsDragging([false, null]);

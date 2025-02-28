@@ -1,5 +1,5 @@
 import { trackStore } from "@solid-primitives/deep";
-import { createEffect, createSignal, For, JSX, onMount } from "solid-js";
+import { createEffect, createSignal, For, JSX, onMount, Show } from "solid-js";
 import { createStore } from "solid-js/store";
 import { Plot, PlotContext } from "~/components/Plot";
 import { Button } from "~/components/ui/button";
@@ -34,9 +34,7 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
 
 
   onMount(() => {
-    setTimeout(() => {
-      openCsvFile(props.filePath);
-    }, 100)
+    openCsvFile(props.filePath);
 
     if (props.plotContext && props.plotContext.length !== 0) {
       setPlots(props.plotContext);
@@ -135,6 +133,11 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
     return plots[index].visible.every((b) => !b);
   };
 
+  createEffect(() => {
+    props.onSplit?.(splitIndex())
+    props.onContextChange?.(plots)
+  })
+
   return (
     <>
       <Button
@@ -165,22 +168,13 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
             if (
               prevSplitIndex && splitIndex().length === prevSplitIndex.length
             ) return;
-  
-            setPlots(index(), {
-              visible: item.map(() => true),
-              style: [],
-              color: [],
-              palette: [],
-            } as PlotContext);
 
-            if (index() === splitIndex().length - 1) {
-              //setPrevSplitIndex([...splitIndex()])
+              setPlots(index(), {
+                  visible: item.map(() => true)
+                } as PlotContext
+              )
+
               prevSplitIndex = splitIndex()
-              setTimeout(() => {
-                props.onContextChange?.(plots);
-              })
-              props.onSplit?.(splitIndex())
-            }
           });
 
           
@@ -199,18 +193,17 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
                 }}
               >
                 Split Plot
-              </Button>
+              </Button>   
               <Plot
                 id={currentID()}
                 group={props.tabId}
                 name=""
                 header={currentHeader}
                 series={currentItems}
-                context={plots[index()] ? plots[index()] : {} as PlotContext}
+                context={plots[index()]}
                 onContextChange={(ctx) => {
                   setPlots(index(), ctx);
                   props.onContextChange?.(plots);
-                  //console.log(ctx)
                 }}
                 xRange={props.xRange}
                 onXRangeChange={(xRange) => {
