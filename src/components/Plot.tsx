@@ -36,7 +36,7 @@ export type PlotProps = JSX.HTMLAttributes<HTMLDivElement> & {
   context?: PlotContext;
   onContextChange?: (context: PlotContext) => void;
   xRange?: [number, number];
-  onXRangeChange?: (xRange : [number, number]) => void;
+  onXRangeChange?: (xRange: [number, number]) => void;
 };
 
 export type PlotContext = {
@@ -84,7 +84,10 @@ export function Plot(props: PlotProps) {
       setContext()("palette", kelly_colors_hex);
     }
 
-    if (!getContext().color || getContext().color.length == 0 || getContext().color.length !== props.header.length) {
+    if (
+      !getContext().color || getContext().color.length == 0 ||
+      getContext().color.length !== props.header.length
+    ) {
       setContext()(
         "color",
         props.header.map(
@@ -92,15 +95,21 @@ export function Plot(props: PlotProps) {
         ),
       );
     }
- 
-    if (!getContext().style || getContext().style.length == 0 || getContext().style.length !== props.header.length) {
+
+    if (
+      !getContext().style || getContext().style.length == 0 ||
+      getContext().style.length !== props.header.length
+    ) {
       setContext()(
         "style",
         props.header.map(() => LegendStroke.Line),
       );
     }
-    
-    if (!getContext().visible || getContext().visible.length == 0 || getContext().visible.length !== props.header.length) {
+
+    if (
+      !getContext().visible || getContext().visible.length == 0 ||
+      getContext().visible.length !== props.header.length
+    ) {
       setContext()(
         "visible",
         props.header.map(() => true),
@@ -171,7 +180,7 @@ export function Plot(props: PlotProps) {
       );
 
       setXRange(plot.scales.x.max! - plot.scales.x.min!);
-      props.onXRangeChange?.([plot.scales.x.min!, plot.scales.x.max!])
+      props.onXRangeChange?.([plot.scales.x.min!, plot.scales.x.max!]);
     }, 10);
   };
 
@@ -386,27 +395,26 @@ export function Plot(props: PlotProps) {
     );
     setRender(true);
 
-    if(props.xRange) {
-      const xMin = props.xRange[0]
-      const xMax = props.xRange[1]
+    if (props.xRange) {
+      const xMin = props.xRange[0];
+      const xMax = props.xRange[1];
 
-      if(xMin >= xMax) return;
-      uPlot.sync(group()).plots.forEach((up : uPlot) => {
-        up.setScale("x" , {min: xMin, max: xMax})
+      if (xMin >= xMax) return;
+      uPlot.sync(group()).plots.forEach((up: uPlot) => {
+        up.setScale("x", { min: xMin, max: xMax });
         setXRange(xMax - xMin);
-      })
+      });
     }
 
     const visibleList =
-    !getContext().visible || getContext().visible.length === 0
-    ? props.header.map(() => true)
-    : getContext().visible;
+      !getContext().visible || getContext().visible.length === 0
+        ? props.header.map(() => true)
+        : getContext().visible;
 
     setContext()(
       "visible",
       visibleList,
     );
-
   }
 
   onMount(() => {
@@ -439,8 +447,8 @@ export function Plot(props: PlotProps) {
 
   createEffect(() => {
     setTimeout(() => {
-      createPlot()
-    },200) 
+      createPlot();
+    }, 200);
   });
 
   const selection_css = `
@@ -485,10 +493,10 @@ export function Plot(props: PlotProps) {
             disabled={zoomReset()}
             onclick={() => {
               uPlot.sync(group()).plots.forEach((up: uPlot) => {
-                const xMax = Number(up.data[0].length - 1)
+                const xMax = Number(up.data[0].length - 1);
                 up.setScale("x", { min: 0, max: xMax });
                 setXRange(xMax);
-                props.onXRangeChange?.([0, xMax])
+                props.onXRangeChange?.([0, xMax]);
               });
             }}
           >
@@ -679,7 +687,6 @@ function wheelZoomPlugin(opts: WheelZoomPluginOpts) {
   return {
     hooks: {
       ready: (u: uPlot) => {
-
         xMin = 0;
         xMax = u.data[0].length - 1!;
 

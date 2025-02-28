@@ -156,7 +156,7 @@ export function LogViewerTabList(props: LogViewerTabListProps) {
           onValueChange={(e) => setFocusedTab(e.value)}
           width="100%"
           height="100%"
-          gap={"0"}
+          gap="0"
         >
           <Tabs.List
             ref={scrollContainer}
@@ -170,8 +170,8 @@ export function LogViewerTabList(props: LogViewerTabListProps) {
               props.onTabDrop?.();
               props.onTabContextDragEnter?.(false);
             }}
-            width={"100%"}
-            marginRight={"0"}
+            width="100%"
+            marginRight="0"
           >
             <For each={reorderTabList()}>
               {(
@@ -187,7 +187,7 @@ export function LogViewerTabList(props: LogViewerTabListProps) {
                 <Tabs.Trigger
                   value={currentTabId}
                   draggable
-                  paddingTop={"1rem"}
+                  paddingTop="1rem"
                   onDragStart={(e) => {
                     setDraggedTabIndex(index());
                     setFocusedTab(currentTabId);
@@ -245,14 +245,14 @@ export function LogViewerTabList(props: LogViewerTabListProps) {
                     </Editable.Area>
                   </Editable.Root>
                   <IconButton
-                    variant={"ghost"}
-                    size={"sm"}
+                    variant="ghost"
+                    size="sm"
                     onClick={() => {
                       setDeleteTabIndex(index());
                       props.onDeleteTab?.(currentTabId);
                       setIsTabDeleted(true);
                     }}
-                    borderRadius={"3rem"}
+                    borderRadius="3rem"
                   >
                     <IconX />
                   </IconButton>
@@ -260,13 +260,13 @@ export function LogViewerTabList(props: LogViewerTabListProps) {
               )}
             </For>
             <IconButton
-              variant={"ghost"}
+              variant="ghost"
               onClick={() => {
                 setIsTabDeleted(false);
                 props.onCreateTab?.();
               }}
-              borderRadius={"3rem"}
-              marginTop={"0.2rem"}
+              borderRadius="3rem"
+              marginTop="0.2rem"
             >
               <IconPlus />
             </IconButton>
@@ -291,8 +291,8 @@ export function LogViewerTabList(props: LogViewerTabListProps) {
             ) => (
               <Tabs.Content
                 value={currentTabId}
-                height={"100%"}
-                width={"100% "}
+                height="100%"
+                width="100% "
                 style={{
                   "overflow-y": "auto",
                 }}

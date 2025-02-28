@@ -52,7 +52,6 @@ function LogViewer() {
       });
       return updateList;
     });
-
   });
 
   const [dragOutTabInfo, setDragOutTabInfo] = createSignal<
@@ -169,7 +168,7 @@ function LogViewer() {
         </Toast.Toaster>
         <Splitter.Root
           size={splitterList()}
-          gap={"0.5"}
+          gap="0.5"
         >
           <For each={splitterList() && logViewTabList()}>
             {(item, index) => (
@@ -177,9 +176,9 @@ function LogViewer() {
                 <Show when={index() !== 0}>
                   <Splitter.ResizeTrigger
                     id={`${splitterList()[index() - 1].id}:${item.id}`}
-                    width={"4px"}
-                    padding={"0"}
-                    opacity={"0%"}
+                    width="4px"
+                    padding="0"
+                    opacity="0%"
                     onMouseEnter={(e) => {
                       e.currentTarget.style.opacity = "100%";
                       e.currentTarget.style.transition = "opacity 0.3s ease";
@@ -192,8 +191,8 @@ function LogViewer() {
                 </Show>
                 <Splitter.Panel
                   id={item.id}
-                  width={"100%"}
-                  height={"100%"}
+                  width="100%"
+                  height="100%"
                   gap="0"
                 >
                   <div
@@ -503,7 +502,7 @@ function LogViewer() {
                       dragOutTabSplitterId() === item.id}
                   >
                     <Stack
-                      backgroundColor={"bg.muted"}
+                      backgroundColor="bg.muted"
                       style={{
                         width: "50%",
                         height: "100%",

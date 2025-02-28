@@ -1,5 +1,5 @@
 import { trackStore } from "@solid-primitives/deep";
-import { createEffect, createSignal, For, JSX, onMount, Show } from "solid-js";
+import { createEffect, createSignal, For, JSX, onMount } from "solid-js";
 import { createStore } from "solid-js/store";
 import { Plot, PlotContext } from "~/components/Plot";
 import { Button } from "~/components/ui/button";
@@ -31,7 +31,6 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
   const [splitIndex, setSplitIndex] = createSignal([] as number[][]);
   const [header, setHeader] = createSignal<string[]>([]);
   const [series, setSeries] = createSignal<number[][]>([]);
-
 
   onMount(() => {
     openCsvFile(props.filePath);
@@ -134,9 +133,9 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
   };
 
   createEffect(() => {
-    props.onSplit?.(splitIndex())
-    props.onContextChange?.(plots)
-  })
+    props.onSplit?.(splitIndex());
+    props.onContextChange?.(plots);
+  });
 
   return (
     <>
@@ -162,22 +161,20 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
           // added/merged plots.
           const currentID = () => props.tabId + index();
 
-          let prevSplitIndex = props.splitPlotIndex 
+          let prevSplitIndex = props.splitPlotIndex;
 
           createEffect(() => {
             if (
               prevSplitIndex && splitIndex().length === prevSplitIndex.length
             ) return;
 
-              setPlots(index(), {
-                  visible: item.map(() => true)
-                } as PlotContext
-              )
+            setPlots(index(), {
+              visible: item.map(() => true),
+            } as PlotContext);
 
-              prevSplitIndex = splitIndex()
+            prevSplitIndex = splitIndex();
           });
 
-          
           return (
             <>
               <Button
@@ -193,7 +190,7 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
                 }}
               >
                 Split Plot
-              </Button>   
+              </Button>
               <Plot
                 id={currentID()}
                 group={props.tabId}
