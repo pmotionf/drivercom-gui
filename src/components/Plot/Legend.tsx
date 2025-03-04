@@ -160,6 +160,10 @@ export function Legend(props: LegendProps) {
 
   onMount(() => {
     createEffect(() => {
+      if (props.visible != null) {
+        if (!props.visible) return;
+      } else if (!visible()) return;
+
       uPlot.sync(group()).plots.forEach((up) => {
         up.over.removeEventListener("mousemove", updateValue);
         up.over.removeEventListener("mouseleave", updateValue);
