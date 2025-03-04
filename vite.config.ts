@@ -31,4 +31,8 @@ export default defineConfig({
       ignored: ["**/src-tauri/**"],
     },
   },
+
+  build: {
+    target: ["es2022", "edge88", "firefox78", "chrome87", "safari14"],
+  },
 });
