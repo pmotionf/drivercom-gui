@@ -1,10 +1,10 @@
 import { trackStore } from "@solid-primitives/deep";
-import { createEffect, createSignal, For, JSX } from "solid-js";
+import { createEffect, createSignal, For, JSX, onMount } from "solid-js";
 import { createStore } from "solid-js/store";
 import { Plot, PlotContext } from "~/components/Plot";
 import { Button } from "~/components/ui/button";
 import { inferSchema, initParser } from "udsv";
-import { FileUploadFileChangeDetails } from "@ark-ui/solid";
+import { readTextFile } from "@tauri-apps/plugin-fs";
 
 export type ErrorMessage = {
   title: string;
@@ -12,23 +12,36 @@ export type ErrorMessage = {
   type: string;
 };
 
-export type LogViewerTabProps = JSX.HTMLAttributes<HTMLDivElement> & {
-  tabId: string;
-  details: FileUploadFileChangeDetails;
-  onErrorMessage?: (message: ErrorMessage) => void;
-};
+export type LogViewerTabPageContentProps =
+  & JSX.HTMLAttributes<HTMLDivElement>
+  & {
+    tabId: string;
+    filePath: string;
+    onErrorMessage?: (message: ErrorMessage) => void;
+    splitPlotIndex?: number[][];
+    onSplit?: (indexArray: number[][]) => void;
+    plotContext?: PlotContext[];
+    onContextChange?: (plotContext: PlotContext[]) => void;
+    xRange?: [number, number];
+    onXRangeChange?: (xRange: [number, number]) => void;
+  };
 
-export function LogViewerTab(props: LogViewerTabProps) {
-  const [plots, setPlots] = createStore([] as PlotContext[]);
+export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
+  const [plots, setPlots] = createStore([{} as PlotContext]);
   const [splitIndex, setSplitIndex] = createSignal([] as number[][]);
-  let header: string[] = [];
-  let series: number[][] = [];
+  const [header, setHeader] = createSignal<string[]>([]);
+  const [series, setSeries] = createSignal<number[][]>([]);
 
-  const file = props.details.acceptedFiles[0];
-  const reader = new FileReader();
+  onMount(() => {
+    openCsvFile(props.filePath);
 
-  reader.onload = () => {
-    const csv_str: string = (reader.result! as string).trim();
+    if (props.plotContext && props.plotContext.length !== 0) {
+      setPlots(props.plotContext);
+    }
+  });
+
+  async function openCsvFile(path: string) {
+    const csv_str = await readTextFile(path);
     const rows = csv_str.split("\n");
     if (rows.length < 2) {
       const errorMessage: ErrorMessage = {
@@ -49,7 +62,6 @@ export function LogViewerTab(props: LogViewerTabProps) {
         return val;
       })
     );
-
     if (data.length < local_header.length) {
       const errorMessage: ErrorMessage = {
         title: "Invalid Log File",
@@ -61,31 +73,24 @@ export function LogViewerTab(props: LogViewerTabProps) {
       return;
     }
 
-    if (typeof (reader.result!) === "string") {
-      const indexArray = Array.from(
-        { length: local_header.length },
-        (_, index) => index,
-      );
+    const indexArray = Array.from(
+      { length: local_header.length },
+      (_, index) => index,
+    );
 
-      header = local_header;
-      series = data.slice(0, local_header.length);
-      setSplitIndex([indexArray]);
-    }
-  };
+    setHeader(local_header);
+    setSeries(data.slice(0, local_header.length));
 
-  reader.onerror = () => {
-    const errorMessage: ErrorMessage = {
-      title: "Log File Loading Failed",
-      description: `${reader.error!.name}: ${reader.error!.message}`,
-      type: "error",
-    };
-    props.onErrorMessage?.(errorMessage);
-  };
-  reader.readAsText(file);
+    const splitIndexArray: number[][] = props.splitPlotIndex!.length === 0
+      ? [indexArray]
+      : [...props.splitPlotIndex!];
+    setSplitIndex(splitIndexArray);
+    props.onSplit?.(splitIndexArray);
+  }
 
   function resetChart() {
     const indexArray = Array.from(
-      { length: header.length },
+      { length: header().length },
       (_, index) => index,
     );
     setSplitIndex([indexArray]);
@@ -127,12 +132,17 @@ export function LogViewerTab(props: LogViewerTabProps) {
     return plots[index].visible.every((b) => !b);
   };
 
+  createEffect(() => {
+    props.onSplit?.(splitIndex());
+    props.onContextChange?.(plots);
+  });
+
   return (
     <>
       <Button
         variant="ghost"
         disabled={splitIndex().length <= 1}
-        onclick={resetChart}
+        onclick={() => resetChart()}
         style={{
           "margin-top": "0.5rem",
           "margin-left": "1rem",
@@ -140,22 +150,29 @@ export function LogViewerTab(props: LogViewerTabProps) {
       >
         Reset
       </Button>
-      <For each={splitIndex()}>
+      <For each={plots && splitIndex()}>
         {(item, index) => {
           // Header and items need not be derived state, as they will not
           // change within a plot.
-          const currentHeader = item.map((i) => header[i]);
-          const currentItems = item.map((i) => series[i]);
+          const currentHeader = item.map((i) => header()[i]);
+          const currentItems = item.map((i) => series()[i]);
 
           // Current ID must be derived state as index can change based on
           // added/merged plots.
           const currentID = () => props.tabId + index();
 
-          // Re-render plot contexts every time `splitIndex` is changed.
-          // TODO: Do not always initialize as empty, figure out how to save
-          // existing state and update for index changes.
+          let prevSplitIndex = props.splitPlotIndex;
+
           createEffect(() => {
-            setPlots(index(), {} as PlotContext);
+            if (
+              prevSplitIndex && splitIndex().length === prevSplitIndex.length
+            ) return;
+
+            setPlots(index(), {
+              visible: item.map(() => true),
+            } as PlotContext);
+
+            prevSplitIndex = splitIndex();
           });
 
           return (
@@ -181,6 +198,14 @@ export function LogViewerTab(props: LogViewerTabProps) {
                 header={currentHeader}
                 series={currentItems}
                 context={plots[index()]}
+                onContextChange={(ctx) => {
+                  setPlots(index(), ctx);
+                  props.onContextChange?.(plots);
+                }}
+                xRange={props.xRange}
+                onXRangeChange={(xRange) => {
+                  props.onXRangeChange?.(xRange);
+                }}
                 style={{
                   width: "100%",
                   height: `calc(100% / ${splitIndex().length} - 3rem`,

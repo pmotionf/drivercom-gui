@@ -34,6 +34,9 @@ export type PlotProps = JSX.HTMLAttributes<HTMLDivElement> & {
   header: string[];
   series: number[][];
   context?: PlotContext;
+  onContextChange?: (context: PlotContext) => void;
+  xRange?: [number, number];
+  onXRangeChange?: (xRange: [number, number]) => void;
 };
 
 export type PlotContext = {
@@ -63,9 +66,8 @@ export function Plot(props: PlotProps) {
   const group = () => props.group ?? props.id ?? "";
 
   const [ctx, setCtx] = createStore(
-    props.context != null ? props.context : ({} as PlotContext),
+    props.context ? props.context : ({} as PlotContext),
   );
-
   const [getContext, setGetContext] = createSignal(ctx);
   const [setContext, setSetContext] = createSignal(setCtx);
 
@@ -82,22 +84,37 @@ export function Plot(props: PlotProps) {
       setContext()("palette", kelly_colors_hex);
     }
 
-    setContext()(
-      "color",
-      props.header.map(
-        (_, index) => kelly_colors_hex[index % kelly_colors_hex.length],
-      ),
-    );
+    if (
+      !getContext().color || getContext().color.length == 0 ||
+      getContext().color.length !== props.header.length
+    ) {
+      setContext()(
+        "color",
+        props.header.map(
+          (_, index) => kelly_colors_hex[index % kelly_colors_hex.length],
+        ),
+      );
+    }
 
-    setContext()(
-      "style",
-      props.header.map(() => LegendStroke.Line),
-    );
+    if (
+      !getContext().style || getContext().style.length == 0 ||
+      getContext().style.length !== props.header.length
+    ) {
+      setContext()(
+        "style",
+        props.header.map(() => LegendStroke.Line),
+      );
+    }
 
-    setContext()(
-      "visible",
-      props.header.map(() => true),
-    );
+    if (
+      !getContext().visible || getContext().visible.length == 0 ||
+      getContext().visible.length !== props.header.length
+    ) {
+      setContext()(
+        "visible",
+        props.header.map(() => true),
+      );
+    }
   });
 
   createEffect(() => {
@@ -163,6 +180,7 @@ export function Plot(props: PlotProps) {
       );
 
       setXRange(plot.scales.x.max! - plot.scales.x.min!);
+      props.onXRangeChange?.([plot.scales.x.min!, plot.scales.x.max!]);
     }, 10);
   };
 
@@ -188,7 +206,6 @@ export function Plot(props: PlotProps) {
     }
 
     if (scale <= 0.1) array.splice(0, array.length);
-
     setDotFilter(array);
   });
 
@@ -217,6 +234,20 @@ export function Plot(props: PlotProps) {
       ...props.header.map((_, index) => ({
         label: props.header[index],
         stroke: () => getContext().color[index],
+        show: getContext().visible[index],
+        ...{
+          ...(getContext().style[index] === LegendStroke.Dash && {
+            dash: [10, 5],
+          }),
+          ...(getContext().style[index] === LegendStroke.Dot && {
+            dash: [0, 5],
+            points: {
+              show: true,
+              ...(dotFilter().length !== 0 &&
+                { filter: checkDotFilter() }),
+            },
+          }),
+        },
       })),
     ];
     let scales: uPlot.Scales = {
@@ -363,9 +394,26 @@ export function Plot(props: PlotProps) {
       plot_element,
     );
     setRender(true);
+
+    if (props.xRange) {
+      const xMin = props.xRange[0];
+      const xMax = props.xRange[1];
+
+      if (xMin >= xMax) return;
+      uPlot.sync(group()).plots.forEach((up: uPlot) => {
+        up.setScale("x", { min: xMin, max: xMax });
+        setXRange(xMax - xMin);
+      });
+    }
+
+    const visibleList =
+      !getContext().visible || getContext().visible.length === 0
+        ? props.header.map(() => true)
+        : getContext().visible;
+
     setContext()(
       "visible",
-      props.header.map(() => true),
+      visibleList,
     );
   }
 
@@ -396,7 +444,12 @@ export function Plot(props: PlotProps) {
       createPlot();
     }
   });
-  createEffect(createPlot);
+
+  createEffect(() => {
+    setTimeout(() => {
+      createPlot();
+    }, 200);
+  });
 
   const selection_css = `
     .u-select {
@@ -440,8 +493,10 @@ export function Plot(props: PlotProps) {
             disabled={zoomReset()}
             onclick={() => {
               uPlot.sync(group()).plots.forEach((up: uPlot) => {
-                up.setScale("x", { min: 0, max: up.data[0].length - 1 });
-                setXRange(up.data[0].length - 1);
+                const xMax = Number(up.data[0].length - 1);
+                up.setScale("x", { min: 0, max: xMax });
+                setXRange(xMax);
+                props.onXRangeChange?.([0, xMax]);
               });
             }}
           >
@@ -537,10 +592,12 @@ export function Plot(props: PlotProps) {
                     plot.setSeries(index() + 1, {
                       show: new_visible,
                     });
+                    props.onContextChange?.(getContext());
                   }}
                   color={getContext().color[index()]}
                   onColorChange={(new_color) => {
                     setContext()("color", index(), new_color);
+                    props.onContextChange?.(getContext());
                     plot.redraw();
                   }}
                   palette={getContext().palette}
@@ -565,7 +622,10 @@ export function Plot(props: PlotProps) {
                       }),
                     };
                     plot.addSeries(config, index() + 1);
-                    plot.redraw();
+                    props.onContextChange?.(getContext());
+                    setTimeout(() => {
+                      plot.redraw();
+                    }, 0);
                   }}
                 />
               )}
@@ -627,8 +687,8 @@ function wheelZoomPlugin(opts: WheelZoomPluginOpts) {
   return {
     hooks: {
       ready: (u: uPlot) => {
-        xMin = u.scales.x.min!;
-        xMax = u.scales.x.max!;
+        xMin = 0;
+        xMax = u.data[0].length - 1!;
 
         xRange = xMax - xMin;
 
