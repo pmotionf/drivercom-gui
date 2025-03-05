@@ -17,7 +17,7 @@ import { Command } from "@tauri-apps/plugin-shell";
 import { createStore } from "solid-js/store";
 import { Editable } from "~/components/ui/editable";
 import { IconButton } from "~/components/ui/icon-button";
-import { IconX } from "@tabler/icons-solidjs";
+import { IconReload, IconX } from "@tabler/icons-solidjs";
 import { Menu } from "~/components/ui/menu";
 import { ErrorMessage } from "../LogViewer/LogViewerTabPageContent";
 import { createListCollection, Select } from "~/components/ui/select";
@@ -35,6 +35,8 @@ export function LoggingForm(props: LoggingFormProps) {
 
   const [cyclesCompleted, setCyclesCompleted] = createSignal<number>(0);
   const [currentLogStatus, setCurrentLogStatus] = createSignal<string>("");
+
+  let firstStart: boolean = true;
 
   async function getCurrentLogStatus() {
     if (portId().length === 0) return;
@@ -55,6 +57,17 @@ export function LoggingForm(props: LoggingFormProps) {
     const currentLogState = currentLogStatusList[0][1];
     if (!currentLogState) return;
     setCurrentLogStatus(currentLogState);
+    if (currentLogState === "Log.Status.invalid") {
+      if (firstStart) {
+        firstStart = false;
+        return;
+      }
+      props.onErrorMessage?.({
+        title: "Invalid Log",
+        description: "The log is invalid.",
+        type: "error",
+      });
+    }
   }
 
   onMount(() => {
@@ -145,18 +158,13 @@ export function LoggingForm(props: LoggingFormProps) {
       portId(),
       `log.start`,
     ]);
-    await logStart.execute();
     getCurrentLogStatus();
 
     // Error message for when Log status is invalid
     if (currentLogStatus() === "Log.Status.invalid") {
-      props.onErrorMessage?.({
-        title: "Invalid Log",
-        description: "The log is invalid.",
-        type: "error",
-      });
       return;
     }
+    await logStart.execute();
   }
 
   async function stopLogging() {
@@ -205,9 +213,9 @@ export function LoggingForm(props: LoggingFormProps) {
     });
   }
 
-  async function saveLogToPort() {
+  async function saveLogToPort(log: object) {
     if (portId().length === 0) return;
-    const json_str = JSON.stringify(logForm, null, "  ");
+    const json_str = JSON.stringify(log, null, "  ");
     const logSave = Command.sidecar("binaries/drivercom", [
       `--port`,
       portId(),
@@ -215,10 +223,10 @@ export function LoggingForm(props: LoggingFormProps) {
       json_str,
     ]);
     await logSave.execute();
+  }
 
-    setTimeout(() => {
-      getCurrentLogStatus();
-    }, 100);
+  function refreshLogStatus() {
+    getCurrentLogStatus();
   }
 
   return (
@@ -256,6 +264,13 @@ export function LoggingForm(props: LoggingFormProps) {
         </Card.Body>
         <Card.Footer marginTop="3rem" marginBottom="2rem">
           <Stack direction="row">
+            <IconButton
+              disabled={portId().length === 0}
+              onClick={() => refreshLogStatus()}
+              variant="ghost"
+            >
+              <IconReload />
+            </IconButton>
             <Button
               disabled={portId().length === 0 || logGetBtnLoading() ||
                 currentLogStatus() === "Log.Status.invalid"}
@@ -300,7 +315,10 @@ export function LoggingForm(props: LoggingFormProps) {
                   <Menu.Item
                     value="Save to port"
                     disabled={portId().length === 0 || logGetBtnLoading()}
-                    onClick={() => saveLogToPort()}
+                    onClick={async () => {
+                      await saveLogToPort(logForm);
+                      getCurrentLogStatus();
+                    }}
                     userSelect="none"
                   >
                     Save to port
