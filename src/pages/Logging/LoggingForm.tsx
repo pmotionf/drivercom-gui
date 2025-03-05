@@ -1,4 +1,4 @@
-import { createEffect, createSignal, For, JSX, onMount, Show } from "solid-js";
+import { createSignal, For, JSX, onMount, Show } from "solid-js";
 import { Stack } from "styled-system/jsx";
 import { Button } from "~/components/ui/button";
 import { Checkbox } from "~/components/ui/checkbox";
@@ -74,20 +74,6 @@ export function LoggingForm(props: LoggingFormProps) {
     getCurrentLogStatus();
   });
 
-  // Check when logging status became to start until it ends.
-  // To display Log Start button loading.
-  createEffect(() => {
-    const currentLogCycle = cyclesCompleted();
-    if (currentLogCycle < 0 && currentLogStatus() === "Log.Status.stopped") {
-      return;
-    }
-    if (currentLogStatus() === "Log.Status.started") {
-      setTimeout(() => {
-        getCurrentLogStatus();
-      }, 100);
-    }
-  });
-
   // Signal for display Log Get button loading while saving log.csv file.
   const [logGetBtnLoading, setLogGetBtnLoading] = createSignal(false);
 
@@ -97,22 +83,34 @@ export function LoggingForm(props: LoggingFormProps) {
     const logGet = Command.sidecar("binaries/drivercom", [
       `--port`,
       portId(),
+      `--timeout`,
+      `10000`,
       `log.get`,
     ]);
     const output = await logGet.execute();
 
     if (output) {
-      const checkError = output.stdout.split("\n").filter((line) =>
+      const notEmptyLines = output.stdout.split("\n").filter((line) =>
         line.length > 0
       );
-      if (checkError.length <= 1) {
+
+      if (output.stderr.length > 0) {
         props.onErrorMessage?.({
-          title: "Invalid Log",
-          description: "Invalid log status.",
+          title: "Communication Failure",
+          description: output.stderr,
           type: "error",
         });
         setLogGetBtnLoading(false);
-        setCurrentLogStatus("Log.status.invalid");
+        return;
+      }
+
+      if (notEmptyLines.length <= 1) {
+        props.onErrorMessage?.({
+          title: "Invalid Log",
+          description: "No log data found.",
+          type: "error",
+        });
+        setLogGetBtnLoading(false);
         return;
       }
 
@@ -158,12 +156,6 @@ export function LoggingForm(props: LoggingFormProps) {
       portId(),
       `log.start`,
     ]);
-    getCurrentLogStatus();
-
-    // Error message for when Log status is invalid
-    if (currentLogStatus() === "Log.Status.invalid") {
-      return;
-    }
     await logStart.execute();
   }
 
@@ -174,7 +166,6 @@ export function LoggingForm(props: LoggingFormProps) {
       `log.stop`,
     ]);
     await logStop.execute();
-    getCurrentLogStatus();
   }
 
   async function saveLogAsFile() {
@@ -225,10 +216,6 @@ export function LoggingForm(props: LoggingFormProps) {
     await logSave.execute();
   }
 
-  function refreshLogStatus() {
-    getCurrentLogStatus();
-  }
-
   return (
     <div style={{ width: "40rem", "margin-bottom": "3rem" }}>
       <Card.Root padding="0.5rem">
@@ -265,32 +252,46 @@ export function LoggingForm(props: LoggingFormProps) {
         <Card.Footer marginTop="3rem" marginBottom="2rem">
           <Stack direction="row">
             <IconButton
-              disabled={portId().length === 0}
-              onClick={() => refreshLogStatus()}
+              disabled={portId().length === 0 || logGetBtnLoading()}
+              onClick={() => getCurrentLogStatus()}
               variant="ghost"
             >
               <IconReload />
             </IconButton>
             <Button
               disabled={portId().length === 0 || logGetBtnLoading() ||
-                currentLogStatus() === "Log.Status.invalid"}
-              loading={currentLogStatus() === "Log.Status.started"}
-              onClick={() => startLogging()}
+                currentLogStatus() === "Log.Status.invalid" ||
+                currentLogStatus() === "Log.Status.started" ||
+                currentLogStatus() === "Log.Status.waiting"}
+              onClick={async () => {
+                await startLogging();
+                await getCurrentLogStatus();
+              }}
               variant="outline"
             >
               Log Start
             </Button>
             <Button
-              disabled={currentLogStatus() !== "Log.Status.started"}
-              onClick={() => stopLogging()}
+              disabled={currentLogStatus() === "Log.Status.stopped" ||
+                currentLogStatus() === "Log.Status.invalid" ||
+                portId().length === 0}
+              onClick={async () => {
+                await stopLogging();
+                await getCurrentLogStatus();
+              }}
               variant="outline"
             >
               Log Stop
             </Button>
             <Button
               disabled={currentLogStatus() !== "Log.Status.stopped" ||
-                portId().length === 0}
-              onClick={() => saveLogCsvFile()}
+                portId().length === 0 ||
+                currentLogStatus() === "Log.Status.invalid" ||
+                cyclesCompleted() === 0}
+              onClick={async () => {
+                await saveLogCsvFile();
+                //await getCurrentLogStatus()
+              }}
               variant="outline"
               loading={logGetBtnLoading()}
             >
