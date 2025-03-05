@@ -1,7 +1,13 @@
 import "./App.css";
 
 import { invoke } from "@tauri-apps/api/core";
-import { createSignal, Index, onMount, Show, ValidComponent } from "solid-js";
+import {
+  createSignal,
+  Index,
+  onMount,
+  Show,
+  ValidComponent,
+} from "solid-js";
 import { Dynamic, Portal } from "solid-js/web";
 import type { RouteSectionProps } from "@solidjs/router";
 import { useNavigate } from "@solidjs/router";
@@ -20,11 +26,13 @@ import {
 
 import {
   cliVersion,
+  driverComVersion,
   globalState,
   GlobalStateContext,
   portId,
   setCliVersion,
   setConfigFormFileFormat,
+  setDriverComVersion,
   setEnumMappings,
   setEnumSeries,
   setGlobalState,
@@ -75,7 +83,13 @@ function App(props: RouteSectionProps) {
       "version",
     ]);
     const output = await drivercom.execute();
-    setCliVersion(output.stdout);
+    const outputSplit = output.stdout.split(/\s/);
+
+    const cliVersion = outputSplit[1];
+    const drivercomVersion = outputSplit[3];
+
+    setCliVersion(cliVersion);
+    setDriverComVersion(drivercomVersion);
   }
 
   async function parseEnumMappings() {
@@ -403,6 +417,29 @@ function App(props: RouteSectionProps) {
                       }}
                     >
                       {cliVersion()}
+                    </Text>
+                    <Text
+                      size="sm"
+                      fontWeight="light"
+                      color="{colors.gray.a10}"
+                      style={{
+                        "padding-left": "0.5rem",
+                        "grid-row": 3,
+                        "grid-column": 1,
+                      }}
+                    >
+                      <i>Lib Version:</i>
+                    </Text>
+                    <Text
+                      size="sm"
+                      fontWeight="light"
+                      color="{colors.gray.a10}"
+                      style={{
+                        "grid-row": 3,
+                        "grid-column": 2,
+                      }}
+                    >
+                      {driverComVersion()}
                     </Text>
                   </div>
                   <Text
