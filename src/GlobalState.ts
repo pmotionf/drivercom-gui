@@ -57,6 +57,7 @@ export const [logViewTabList, setLogViewTabList] = createSignal<
       string,
       [number, number],
     ][];
+    focusedTab: string | undefined;
   }[]
 >([]);
 export const [splitterList, setSplitterList] = createSignal<

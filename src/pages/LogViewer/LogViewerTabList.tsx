@@ -33,6 +33,8 @@ export type LogViewerTabListProps = JSX.HTMLAttributes<HTMLDivElement> & {
   onXRangeChange?: (id: string, xRange: [number, number]) => void;
   onTabNameChange?: (id: string, changedName: string) => void;
   onTabContextDragEnter?: (isTabContextDragEnter: boolean) => void;
+  focusedTab?: string | undefined;
+  onTabFocus?: (focusedTabId: string | undefined) => void;
 };
 
 export function LogViewerTabList(props: LogViewerTabListProps) {
@@ -133,6 +135,16 @@ export function LogViewerTabList(props: LogViewerTabListProps) {
       const currentTabId = reorderTabList()[reorderTabList().length - 1][0];
       setFocusedTab(currentTabId);
       scrollToEnd();
+    }
+
+    if (props.focusedTab) {
+      setFocusedTab(props.focusedTab);
+    }
+  });
+
+  createEffect(() => {
+    if (focusedTab().length !== 0) {
+      props.onTabFocus?.(focusedTab());
     }
   });
 

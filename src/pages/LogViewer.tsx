@@ -17,7 +17,7 @@ function LogViewer() {
   onMount(() => {
     if (logViewTabList().length === 0) {
       const uuid = getCryptoUUID();
-      setLogViewTabList([{ id: uuid, tabs: [] }]);
+      setLogViewTabList([{ id: uuid, tabs: [], focusedTab: undefined }]);
       setSplitterList([{ id: uuid, size: 100 }]);
     }
   });
@@ -84,10 +84,15 @@ function LogViewer() {
             tabs: [...item.tabs].filter((item) =>
               item[0] !== dragOutTabInfo()![0]
             ),
+            focusedTab: item.focusedTab,
           };
         } else return item;
       });
-      const newTab = { id: uuid, tabs: [parseDraggedTabInfo] };
+      const newTab = {
+        id: uuid,
+        tabs: [parseDraggedTabInfo],
+        focusedTab: undefined,
+      };
       const addNewTabList: {
         id: string;
         tabs: [
@@ -98,6 +103,7 @@ function LogViewer() {
           string,
           [number, number],
         ][];
+        focusedTab: string | undefined;
       }[] = [
         ...updateList.slice(0, indexOnDirection),
         newTab,
@@ -232,6 +238,7 @@ function LogViewer() {
                               string,
                               [number, number],
                             ][];
+                            focusedTab: string | undefined;
                           }[] = [...prev].map((item, i) => {
                             if (i === index()) {
                               const updateTabs = [...item.tabs];
@@ -241,6 +248,7 @@ function LogViewer() {
                                   0,
                                   0,
                                 ]]],
+                                focusedTab: item.focusedTab,
                               };
                             } else return item;
                           });
@@ -258,6 +266,7 @@ function LogViewer() {
                                     tab[0] !== deleteTabId
                                   ),
                                 ],
+                                focusedTab: item.focusedTab,
                               };
                             } else return item;
                           });
@@ -296,6 +305,7 @@ function LogViewer() {
                               string,
                               [number, number],
                             ][];
+                            focusedTab: string | undefined;
                           }[] = [...prev].map((item, i) => {
                             if (index() === i) {
                               const parseObject = dragOutTabInfo()![3].map(
@@ -321,6 +331,7 @@ function LogViewer() {
                               return {
                                 id: item.id,
                                 tabs: [...item.tabs, [...parseDraggedTabInfo]],
+                                focusedTab: item.focusedTab,
                               };
                             } else if (item.id === dragOutTabSplitterId()) {
                               return {
@@ -328,6 +339,7 @@ function LogViewer() {
                                 tabs: [...item.tabs.filter((item) => {
                                   return item[0] !== dragOutTabInfo()![0];
                                 })],
+                                focusedTab: undefined,
                               };
                             } else return item;
                           });
@@ -494,6 +506,24 @@ function LogViewer() {
                               },
                             );
                           return updateList;
+                        });
+                      }}
+                      onTabFocus={(currentfocusTabId) => {
+                        setLogViewTabList((prev) => {
+                          const updateTabList: typeof prev = prev.map(
+                            (tab, i) => {
+                              if (i === index()) {
+                                return {
+                                  id: tab.id,
+                                  tabs: [...tab.tabs],
+                                  focusedTab: currentfocusTabId,
+                                };
+                              } else {
+                                return tab;
+                              }
+                            },
+                          );
+                          return updateTabList;
                         });
                       }}
                     />
