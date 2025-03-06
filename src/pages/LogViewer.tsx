@@ -6,29 +6,20 @@ import { open } from "@tauri-apps/plugin-dialog";
 import { Toast } from "~/components/ui/toast";
 import { IconX } from "@tabler/icons-solidjs";
 import { PlotContext } from "~/components/Plot";
+import {
+  logViewTabList,
+  setLogViewTabList,
+  setSplitterList,
+  splitterList,
+} from "~/GlobalState";
 
 function LogViewer() {
-  const [logViewTabList, setLogViewTabList] = createSignal<
-    {
-      id: string;
-      tabs: [
-        string,
-        string,
-        number[][],
-        PlotContext[],
-        string,
-        [number, number],
-      ][];
-    }[]
-  >([]);
-  const [splitterList, setSplitterList] = createSignal<
-    { id: string; size: number }[]
-  >([]);
-
   onMount(() => {
-    const uuid = getCryptoUUID();
-    setLogViewTabList([{ id: uuid, tabs: [] }]);
-    setSplitterList([{ id: uuid, size: 100 }]);
+    if (logViewTabList().length === 0) {
+      const uuid = getCryptoUUID();
+      setLogViewTabList([{ id: uuid, tabs: [] }]);
+      setSplitterList([{ id: uuid, size: 100 }]);
+    }
   });
 
   // If tab list length is 0, then the panel will close automatically
@@ -45,13 +36,15 @@ function LogViewer() {
       setLogViewTabList(parseList);
     }
 
-    setSplitterList(() => {
-      const panelSize = 100 / parseList.length;
-      const updateList = parseList.map((panel) => {
-        return { id: panel.id, size: panelSize };
+    if (parseList.length !== splitterList().length) {
+      setSplitterList(() => {
+        const panelSize = 100 / parseList.length;
+        const updateList = parseList.map((panel) => {
+          return { id: panel.id, size: panelSize };
+        });
+        return updateList;
       });
-      return updateList;
-    });
+    }
   });
 
   const [dragOutTabInfo, setDragOutTabInfo] = createSignal<
@@ -169,6 +162,15 @@ function LogViewer() {
         <Splitter.Root
           size={splitterList()}
           gap="0.5"
+          onSizeChangeEnd={(e) => {
+            const parseToSplitterSize: {
+              id: string;
+              size: number;
+            }[] = e.size.map((panel) => {
+              return { id: panel.id.toString(), size: Number(panel.size) };
+            });
+            setSplitterList(parseToSplitterSize);
+          }}
         >
           <For each={splitterList() && logViewTabList()}>
             {(item, index) => (

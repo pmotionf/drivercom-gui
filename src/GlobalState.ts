@@ -1,5 +1,6 @@
 import { createContext, createSignal } from "solid-js";
 import { createStore, SetStoreFunction } from "solid-js/store";
+import { PlotContext } from "~/components/Plot";
 
 const [globalState, setGlobalState] = createStore({
   theme: "light",
@@ -43,4 +44,21 @@ export const [logStartConditionList, setLogStartCoditionList] = createSignal<
 >([]);
 export const [logStartCombinatorList, setLogStartCombinatorList] = createSignal<
   string[]
+>([]);
+
+export const [logViewTabList, setLogViewTabList] = createSignal<
+  {
+    id: string;
+    tabs: [
+      string,
+      string,
+      number[][],
+      PlotContext[],
+      string,
+      [number, number],
+    ][];
+  }[]
+>([]);
+export const [splitterList, setSplitterList] = createSignal<
+  { id: string; size: number }[]
 >([]);
