@@ -1,4 +1,4 @@
-import { For, JSX, splitProps } from "solid-js";
+import { createSignal, For, JSX, splitProps } from "solid-js";
 import { createStore } from "solid-js/store";
 
 import { Accordion } from "~/components/ui/accordion";
@@ -205,17 +205,23 @@ function ConfigList(props: ConfigListProps) {
 
   const [list] = createStore(props.list);
 
+  const [accordionValue, setAccordionValue] = createSignal<
+    string[]
+  >([]);
+
   return (
     <Accordion.Root
       multiple
       {...rest}
       style={{ "border-bottom": "0", "border-top": "0" }}
+      value={accordionValue()}
+      onValueChange={(e) => setAccordionValue(e.value)}
     >
       <For each={list}>
         {(item, index) => {
           const title = props.label + " " + (index() + 1).toString();
           return (
-            <Accordion.Item value={props.id_prefix + title}>
+            <Accordion.Item value={title}>
               <Accordion.ItemTrigger>
                 <Text fontWeight="bold" size="md" opacity="70%">
                   {`${title[0].toUpperCase()}${
