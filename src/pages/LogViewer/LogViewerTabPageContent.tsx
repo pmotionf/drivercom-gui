@@ -1,10 +1,18 @@
 import { trackStore } from "@solid-primitives/deep";
-import { createEffect, createSignal, For, JSX, onMount } from "solid-js";
+import {
+  createEffect,
+  createSignal,
+  For,
+  JSX,
+  onCleanup,
+  onMount,
+} from "solid-js";
 import { createStore } from "solid-js/store";
 import { Plot, PlotContext } from "~/components/Plot";
 import { Button } from "~/components/ui/button";
 import { inferSchema, initParser } from "udsv";
 import { readTextFile } from "@tauri-apps/plugin-fs";
+import uPlot from "uplot";
 
 export type ErrorMessage = {
   title: string;
@@ -137,6 +145,53 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
     props.onContextChange?.(plots);
   });
 
+  const [cursorIdx, setCursorIdx] = createSignal<number | null | undefined>(0);
+
+  createEffect(() => {
+    const splitIndexLength = splitIndex().length;
+    if (splitIndexLength === 0) return;
+
+    setTimeout(() => {
+      const plotGroup: uPlot[] = uPlot.sync(props.tabId).plots;
+
+      plotGroup.forEach((plot) => {
+        plot.over.removeEventListener(
+          "mousemove",
+          () => setCursorIdx(plot.cursor.idx),
+        );
+        plot.over.removeEventListener(
+          "mouseleave",
+          () => setCursorIdx(plot.cursor.idx),
+        );
+      });
+
+      plotGroup.forEach((plot) => {
+        plot.over.addEventListener(
+          "mousemove",
+          () => setCursorIdx(plot.cursor.idx),
+        );
+        plot.over.addEventListener(
+          "mouseleave",
+          () => setCursorIdx(plot.cursor.idx),
+        );
+      });
+    }, 300);
+  });
+
+  onCleanup(() => {
+    const plotGroup: uPlot[] = uPlot.sync(props.tabId).plots;
+    plotGroup.forEach((plot) => {
+      plot.over.removeEventListener(
+        "mousemove",
+        () => setCursorIdx(plot.cursor.idx),
+      );
+      plot.over.removeEventListener(
+        "mouseleave",
+        () => setCursorIdx(plot.cursor.idx),
+      );
+    });
+  });
+
   return (
     <>
       <Button
@@ -211,6 +266,7 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
                   height: `calc(100% / ${splitIndex().length} - 3rem`,
                   "min-height": "18rem",
                 }}
+                cursorIdx={cursorIdx()}
               />
             </>
           );

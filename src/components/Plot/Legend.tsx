@@ -2,8 +2,6 @@ import {
   createEffect,
   createSignal,
   Match,
-  onCleanup,
-  onMount,
   Show,
   splitProps,
   Switch,
@@ -43,6 +41,7 @@ export type LegendProps = Omit<StackProps, "stroke"> & {
   stroke?: LegendStroke;
   onStrokeChange?: (new_style: LegendStroke) => void;
   readonly?: boolean;
+  cursorIdx?: number | null | undefined;
 };
 
 export enum LegendStroke {
@@ -64,8 +63,6 @@ export function Legend(props: LegendProps) {
     "onStrokeChange",
     "readonly",
   ]);
-
-  const group = () => props.group ?? props.id ?? "";
 
   let seriesIndex: number = 0;
   let seriesFound: boolean = false;
@@ -129,12 +126,17 @@ export function Legend(props: LegendProps) {
     }
   });
 
-  const updateValue = () => {
+  const updateValue = (data_index: number | null | undefined) => {
     if (props.visible != null) {
-      if (!props.visible) return;
-    } else if (!visible()) return;
+      if (!props.visible) {
+        setValue(null);
+        return;
+      }
+    } else if (!visible()) {
+      setValue(null);
+      return;
+    }
 
-    const data_index = props.plot.cursor.idx;
     if (data_index != null) {
       const val = props.plot.data[seriesIndex][data_index];
       if (val != null) {
@@ -158,41 +160,8 @@ export function Legend(props: LegendProps) {
     }
   };
 
-  onMount(() => {
-    createEffect(() => {
-      if (props.visible != null) {
-        if (!props.visible) return;
-      } else if (!visible()) return;
-
-      uPlot.sync(group()).plots.forEach((up) => {
-        up.over.removeEventListener("mousemove", updateValue);
-        up.over.removeEventListener("mouseleave", updateValue);
-      });
-      uPlot.sync(group()).plots.forEach((up) => {
-        up.over.addEventListener("mousemove", updateValue);
-        up.over.addEventListener("mouseleave", updateValue);
-      });
-    });
-  });
-
-  onCleanup(() => {
-    uPlot.sync(group()).plots.forEach((up) => {
-      up.over.removeEventListener("mousemove", updateValue);
-      up.over.removeEventListener("mouseleave", updateValue);
-    });
-  });
-
   createEffect(() => {
-    if (props.visible != null) {
-      if (!props.visible) {
-        setValue(null);
-        return;
-      }
-    } else if (!visible()) {
-      setValue(null);
-      return;
-    }
-    updateValue();
+    updateValue(props.cursorIdx);
   });
 
   const StrokeIcon = () => (
