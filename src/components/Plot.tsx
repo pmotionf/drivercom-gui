@@ -37,6 +37,7 @@ export type PlotProps = JSX.HTMLAttributes<HTMLDivElement> & {
   onContextChange?: (context: PlotContext) => void;
   xRange?: [number, number];
   onXRangeChange?: (xRange: [number, number]) => void;
+  cursorIdx?: number | null | undefined;
 };
 
 export type PlotContext = {
@@ -577,6 +578,7 @@ export function Plot(props: PlotProps) {
               series="Cycle"
               group={group()}
               width="min-content"
+              cursorIdx={props.cursorIdx}
               readonly
             />
             <For each={props.header}>
@@ -585,6 +587,7 @@ export function Plot(props: PlotProps) {
                   plot={plot!}
                   group={group()}
                   series={header}
+                  cursorIdx={props.cursorIdx}
                   visible={getContext().visible[index()]}
                   onVisibleChange={(new_visible) => {
                     setContext()("visible", index(), new_visible);
