@@ -46,20 +46,23 @@ export const [logStartCombinatorList, setLogStartCombinatorList] = createSignal<
   string[]
 >([]);
 
-export const [logViewTabList, setLogViewTabList] = createSignal<
+export const [logViewTabPanel, setLogViewTabPanel] = createSignal<
   {
     id: string;
-    tabs: [
-      string,
-      string,
-      number[][],
-      PlotContext[],
-      string,
-      [number, number],
-    ][];
+    tabContext: TabContext[];
     focusedTab: string | undefined;
   }[]
 >([]);
+
+export type TabContext = {
+  id: string;
+  filePath: string;
+  plotSplitIndex: number[][];
+  plotContext: PlotContext[];
+  tabName: string;
+  plotZoomState: [number, number];
+};
+
 export const [splitterList, setSplitterList] = createSignal<
   { id: string; size: number }[]
 >([]);
