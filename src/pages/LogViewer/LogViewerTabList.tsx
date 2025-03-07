@@ -4,7 +4,6 @@ import { IconButton } from "~/components/ui/icon-button";
 import { IconPlus, IconX } from "@tabler/icons-solidjs";
 import { Editable } from "~/components/ui/editable";
 import { LogViewerTabPageContent } from "./LogViewerTabPageContent";
-import { PlotContext } from "~/components/Plot";
 import { TabContext } from "~/GlobalState";
 
 export type LogViewerTabListProps = JSX.HTMLAttributes<HTMLDivElement> & {
@@ -14,13 +13,9 @@ export type LogViewerTabListProps = JSX.HTMLAttributes<HTMLDivElement> & {
   onDeleteTab?: (deleteTabId: string) => void;
   onDraggedTabInfo?: (
     tabContext: TabContext,
-    tabListId: string,
   ) => void;
-  onPlotSplit?: (id: string, splitPlotIndex: number[][]) => void;
   onTabDrop?: () => void;
-  onPlotContextChange?: (id: string, context: PlotContext[]) => void;
-  onXRangeChange?: (id: string, xRange: [number, number]) => void;
-  onTabNameChange?: (id: string, changedName: string) => void;
+  onTabContextChange?: (tabContext: TabContext) => void;
   onTabContextDrag?: (isTabContextDragEnter: boolean) => void;
   focusedTab?: string | undefined;
   onTabFocus?: (focusedTabId: string | undefined) => void;
@@ -191,7 +186,7 @@ export function LogViewerTabList(props: LogViewerTabListProps) {
 
                     const changedTabContext =
                       props.tabList.filter((info) => info.id === tab.id)[0];
-                    props.onDraggedTabInfo?.(changedTabContext, tab.id);
+                    props.onDraggedTabInfo?.(changedTabContext);
                     setDraggedTabId(tab.id);
                   }}
                   onDragOver={(e) => {
@@ -220,8 +215,10 @@ export function LogViewerTabList(props: LogViewerTabListProps) {
                         .slice(2, -2) /*change to tabname*/
                       : tab.tabName}
                     activationMode="dblclick"
-                    onValueCommit={(v) => {
-                      props.onTabNameChange?.(tab.id, v.value);
+                    onValueCommit={(tabName) => {
+                      const tabUpdate = tab;
+                      tabUpdate.tabName = tabName.value;
+                      props.onTabContextChange?.(tabUpdate);
                     }}
                   >
                     <Editable.Area>
@@ -296,19 +293,23 @@ export function LogViewerTabList(props: LogViewerTabListProps) {
                       .plotZoomState /*Plots's x range*/
                   }
                   filePath={tab.filePath}
-                  onSplit={(e) => {
-                    if (e.length === 0) return;
-                    props.onPlotSplit?.(tab.id, e);
+                  onSplit={(plotSplitIndex) => {
+                    if (plotSplitIndex.length === 0) return;
+                    const tabUpdate = tab;
+                    tabUpdate.plotSplitIndex = plotSplitIndex;
+                    props.onTabContextChange?.(tabUpdate);
                   }}
                   splitPlotIndex={tab.plotSplitIndex}
                   onContextChange={(changedPlotContext) => {
-                    props.onPlotContextChange?.(
-                      tab.id,
-                      changedPlotContext,
-                    );
+                    const tabUpdate = tab;
+                    tabUpdate.plotContext = changedPlotContext;
+                    props.onTabContextChange?.(tabUpdate);
                   }}
-                  onXRangeChange={(xRange) =>
-                    props.onXRangeChange?.(tab.id, xRange)}
+                  onXRangeChange={(xRange) => {
+                    const tabUpdate = tab;
+                    tabUpdate.plotZoomState = xRange;
+                    props.onTabContextChange?.(tabUpdate);
+                  }}
                 />
               </Tabs.Content>
             )}
@@ -318,5 +319,3 @@ export function LogViewerTabList(props: LogViewerTabListProps) {
     </>
   );
 }
-
-//346
