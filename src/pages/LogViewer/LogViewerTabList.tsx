@@ -10,7 +10,7 @@ export type LogViewerTabListProps = JSX.HTMLAttributes<HTMLDivElement> & {
   id: string;
   tabList: TabContext[];
   onCreateTab?: () => void;
-  onDeleteTab?: (deleteTabId: string) => void;
+  onDeleteTab?: (deleteTabId: string, index: number) => void;
   onDraggedTabInfo?: (
     tabContext: TabContext,
   ) => void;
@@ -91,8 +91,6 @@ export function LogViewerTabList(props: LogViewerTabListProps) {
   };
 
   const [focusedTab, setFocusedTab] = createSignal<string>("");
-  const [isTabDeleted, setIsTabDeleted] = createSignal<boolean>(false);
-  const [deleteTabIndex, setDeleteTabIndex] = createSignal<number | null>(null);
   const [isReordering, setIsReordering] = createSignal<boolean>(false);
 
   // Focus tab whenether it's deleted or created or reordering.
@@ -102,33 +100,9 @@ export function LogViewerTabList(props: LogViewerTabListProps) {
 
     if (isReordering()) {
       setFocusedTab(draggedTabId()!);
-      return;
-    }
-
-    if (isTabDeleted()) {
-      if (!deleteTabIndex) return;
-      const contextIndex = deleteTabIndex() === 0 ? 1 : deleteTabIndex()! - 1;
-      const newValue = focusedTab() === reorderTabList()[deleteTabIndex()!].id
-        ? reorderTabList()[contextIndex].id
-        : focusedTab();
-      setTimeout(() => {
-        setFocusedTab(newValue);
-        setDeleteTabIndex(null);
-      }, 0);
     } else {
-      const currentTabId = reorderTabList()[reorderTabList().length - 1].id;
-      setFocusedTab(currentTabId);
+      setFocusedTab(props.focusedTab!);
       scrollToEnd();
-    }
-
-    if (props.focusedTab) {
-      setFocusedTab(props.focusedTab);
-    }
-  });
-
-  createEffect(() => {
-    if (focusedTab().length !== 0) {
-      props.onTabFocus?.(focusedTab());
     }
   });
 
@@ -149,7 +123,10 @@ export function LogViewerTabList(props: LogViewerTabListProps) {
       >
         <Tabs.Root
           value={focusedTab()}
-          onValueChange={(e) => setFocusedTab(e.value)}
+          onValueChange={(e) => {
+            setFocusedTab(e.value);
+            props.onTabFocus?.(focusedTab());
+          }}
           width="100%"
           height="100%"
           gap="0"
@@ -170,10 +147,7 @@ export function LogViewerTabList(props: LogViewerTabListProps) {
             marginRight="0"
           >
             <For each={reorderTabList()}>
-              {(
-                tab,
-                index,
-              ) => (
+              {(tab, index) => (
                 <Tabs.Trigger
                   value={tab.id}
                   draggable
@@ -230,9 +204,7 @@ export function LogViewerTabList(props: LogViewerTabListProps) {
                     variant="ghost"
                     size="sm"
                     onClick={() => {
-                      setDeleteTabIndex(index());
-                      props.onDeleteTab?.(tab.id);
-                      setIsTabDeleted(true);
+                      props.onDeleteTab?.(tab.id, index());
                     }}
                     borderRadius="3rem"
                   >
@@ -244,7 +216,6 @@ export function LogViewerTabList(props: LogViewerTabListProps) {
             <IconButton
               variant="ghost"
               onClick={() => {
-                setIsTabDeleted(false);
                 props.onCreateTab?.();
               }}
               borderRadius="3rem"
@@ -263,10 +234,7 @@ export function LogViewerTabList(props: LogViewerTabListProps) {
           </Tabs.List>
 
           <For each={reorderTabList()}>
-            {(
-              tab,
-              index,
-            ) => (
+            {(tab, index) => (
               <Tabs.Content
                 value={tab.id}
                 height="100%"

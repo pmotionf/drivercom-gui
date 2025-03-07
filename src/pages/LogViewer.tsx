@@ -53,7 +53,7 @@ function LogViewer() {
   );
   const [draggedTabPanelIndex, setDraggedTabPanelIndex] = createSignal<number>(
     0,
-  ); // tab splitter id
+  );
 
   // Move existing tab to create new tab panel.
   const moveTabOnSplitter = (index: number) => {
@@ -181,6 +181,7 @@ function LogViewer() {
                         "height": "100%",
                       }}
                       tabList={currentPanel.tabContext}
+                      focusedTab={currentPanel.focusedTab}
                       onCreateTab={async () => {
                         const newTabInfo = await openFileDialog();
                         if (!newTabInfo) {
@@ -205,13 +206,15 @@ function LogViewer() {
                               return {
                                 id: panel.id,
                                 tabContext: [...panel.tabContext, newTab],
-                                focusedTab: currentPanel.focusedTab,
+                                focusedTab: newTabInfo.id,
                               };
                             } else return panel;
                           });
                         });
                       }}
-                      onDeleteTab={(deleteTabId) => {
+                      onDeleteTab={(deleteTabId, i) => {
+                        const focusTabIndex =
+                          i === currentPanel.tabContext.length - 1 ? i - 1 : i;
                         setLogViewPanel((prev) => {
                           return [...prev].map((panel, i) => {
                             if (i === index()) {
@@ -220,7 +223,7 @@ function LogViewer() {
                                 tabContext: panel.tabContext.filter((tab) =>
                                   tab.id !== deleteTabId
                                 ),
-                                focusedTab: panel.focusedTab,
+                                focusedTab: panel.tabContext[focusTabIndex].id,
                               };
                             } else return panel;
                           });
