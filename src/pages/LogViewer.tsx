@@ -63,19 +63,20 @@ function LogViewer() {
     setLogViewPanel((prev) => {
       const updateList = [...prev].map((tabPanel, i) => {
         if (i === index) {
+          const parseTabContext = tabPanel.tabContext.filter((tab) =>
+            tab.id !== draggedTabInfo().id
+          );
           return {
             id: tabPanel.id,
-            tabContext: tabPanel.tabContext.filter((tab) =>
-              tab.id !== draggedTabInfo().id
-            ),
-            focusedTab: tabPanel.focusedTab,
+            tabContext: [...parseTabContext],
+            focusedTab: parseTabContext[parseTabContext.length - 1].id,
           };
         } else return tabPanel;
       });
       const newTabPanel = {
         id: uuid,
         tabContext: [draggedTabInfo()],
-        focusedTab: undefined,
+        focusedTab: draggedTabInfo().id,
       };
       const addNewTabPanel = [
         ...updateList.slice(0, panelIndex),
@@ -233,6 +234,7 @@ function LogViewer() {
                         setDraggedTabInfo(tabContext);
                         setDraggedTabPanelIndex(index());
                       }}
+                      // Tab drop error. need to be fixed.
                       onTabDrop={() => {
                         if (draggedTabPanelIndex() === index()) return;
                         setLogViewPanel((prev) => {
@@ -244,15 +246,17 @@ function LogViewer() {
                                   ...tabPanel.tabContext,
                                   draggedTabInfo(),
                                 ],
-                                focusedTab: tabPanel.focusedTab,
+                                focusedTab: draggedTabInfo().id,
                               };
                             } else if (i === draggedTabPanelIndex()) {
+                              const parseTabContext = tabPanel.tabContext
+                                .filter((ctx) => {
+                                  return ctx.id !== draggedTabInfo().id;
+                                });
                               return {
                                 id: tabPanel.id,
                                 tabContext: [
-                                  ...tabPanel.tabContext.filter((ctx) => {
-                                    return ctx.id !== draggedTabInfo().id;
-                                  }),
+                                  ...parseTabContext,
                                 ],
                                 focusedTab: undefined,
                               };

@@ -101,7 +101,11 @@ export function LogViewerTabList(props: LogViewerTabListProps) {
     if (isReordering()) {
       setFocusedTab(draggedTabId()!);
     } else {
-      setFocusedTab(props.focusedTab!);
+      if (!props.focusedTab) {
+        setFocusedTab(props.tabList[props.tabList.length - 1].id);
+      } else {
+        setFocusedTab(props.focusedTab);
+      }
       scrollToEnd();
     }
   });
