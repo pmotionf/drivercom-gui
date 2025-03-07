@@ -1,5 +1,6 @@
 import { createContext, createSignal } from "solid-js";
 import { createStore, SetStoreFunction } from "solid-js/store";
+import { PlotContext } from "~/components/Plot";
 
 const [globalState, setGlobalState] = createStore({
   theme: "light",
@@ -43,4 +44,23 @@ export const [logStartConditionList, setLogStartCoditionList] = createSignal<
 >([]);
 export const [logStartCombinatorList, setLogStartCombinatorList] = createSignal<
   string[]
+>([]);
+
+export type TabContext = {
+  id: string;
+  filePath: string;
+  plotSplitIndex: number[][];
+  plotContext: PlotContext[];
+  tabName: string;
+  plotZoomState: [number, number];
+};
+export const [logViewPanelContexts, setLogViewPanelContexts] = createSignal<
+  {
+    id: string;
+    tabContext: TabContext[];
+    focusedTab: string | undefined;
+  }[]
+>([]);
+export const [logViewPanelSize, setLogViewPanelSize] = createSignal<
+  { id: string; size: number }[]
 >([]);
