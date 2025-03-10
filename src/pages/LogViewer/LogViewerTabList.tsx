@@ -156,6 +156,7 @@ export function LogViewerTabList(props: LogViewerTabListProps) {
                   value={tab.id}
                   draggable
                   paddingTop="1rem"
+                  paddingRight="0"
                   onDragStart={(e) => {
                     setDraggedTabIndex(index());
                     setFocusedTab(tab.id);
