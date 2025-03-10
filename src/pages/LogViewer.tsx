@@ -9,7 +9,6 @@ import {
   logViewPanelContexts,
   logViewPanelSize,
   setLogViewPanelContexts,
-  setLogViewPanelContexts as setLogViewPanel,
   setLogViewPanelSize,
   TabContext,
 } from "~/GlobalState";
@@ -18,8 +17,12 @@ function LogViewer() {
   onMount(() => {
     if (logViewPanelContexts().length === 0) {
       const uuid = getCryptoUUID();
-      setLogViewPanel([{ id: uuid, tabContext: [], focusedTab: undefined }]);
-      setLogViewPanelSize([{ id: uuid, size: 100 }]);
+      setLogViewPanelContexts([{
+        id: uuid,
+        tabContext: [],
+        focusedTab: undefined,
+      }]);
+      setLogViewPanelSize([{ id: uuid, size: 99 }]);
     }
   });
 
@@ -34,16 +37,31 @@ function LogViewer() {
       zeroTabList.forEach((deletedTab) => {
         parseList = parseList.filter((tab) => tab.id !== deletedTab.id);
       });
-      setLogViewPanel(parseList);
     }
+    setLogViewPanelContexts(parseList);
 
-    if (parseList.length !== logViewPanelSize().length) {
+    if (parseList.length > logViewPanelSize().length) {
+      // Use set time out to wait the panel function
       setLogViewPanelSize(() => {
+        // Avoid the maximum size error, change 100 to 99
         const panelSize = 100 / parseList.length;
         const updateList = parseList.map((panel) => {
           return { id: panel.id, size: panelSize };
         });
         return updateList;
+      });
+    }
+
+    if (parseList.length < logViewPanelSize().length) {
+      setLogViewPanelSize((prev) => {
+        const parseLogViewPanel = prev.filter((panel) =>
+          zeroTabList[0].id !== panel.id
+        );
+        const updateLogViewPanel = parseLogViewPanel.map((panel) => {
+          panel.size = 100 / parseLogViewPanel.length;
+          return panel;
+        });
+        return updateLogViewPanel;
       });
     }
   });
@@ -60,7 +78,7 @@ function LogViewer() {
     const panelIndex = index + 1;
     const uuid = getCryptoUUID();
 
-    setLogViewPanel((prev) => {
+    setLogViewPanelContexts((prev) => {
       const updateList = [...prev].map((tabPanel, i) => {
         if (i === index) {
           const parseTabContext = tabPanel.tabContext.filter((tab) =>
@@ -117,11 +135,10 @@ function LogViewer() {
 
   // Signal for showing the splitter, When tab is dragging.
   const [isDragging, setIsDragging] = createSignal<
-    [boolean, string | undefined]
-  >([
+    boolean
+  >(
     false,
-    undefined,
-  ]);
+  );
 
   function getCryptoUUID(): string {
     const uuid: string = crypto.randomUUID();
@@ -147,6 +164,12 @@ function LogViewer() {
         <Splitter.Root
           size={logViewPanelSize()}
           gap="0.5"
+          onSizeChangeEnd={(value) => {
+            const parseSizeData = value.size.map((info) => {
+              return { id: info.id.toString(), size: Number(info.size) };
+            });
+            setLogViewPanelSize(parseSizeData);
+          }}
         >
           <For each={logViewPanelSize() && logViewPanelContexts()}>
             {(currentPanel, index) => (
@@ -154,14 +177,18 @@ function LogViewer() {
                 <Show when={index() !== 0}>
                   <Splitter.ResizeTrigger
                     id={`${
-                      logViewPanelSize()[index() - 1].id
+                      logViewPanelContexts()[index() - 1].id
                     }:${currentPanel.id}`}
                     width="4px"
                     padding="0"
                     opacity="0%"
                     transition="opacity 0.3s ease"
-                    onMouseEnter={(e) => e.currentTarget.style.opacity = "100%"}
-                    onMouseLeave={(e) => e.currentTarget.style.opacity = "0%"}
+                    onMouseEnter={(
+                      e,
+                    ) => (e.currentTarget.style.opacity = "100%")}
+                    onMouseLeave={(
+                      e,
+                    ) => (e.currentTarget.style.opacity = "0%")}
                   />
                 </Show>
                 <Splitter.Panel
@@ -172,14 +199,14 @@ function LogViewer() {
                   <div
                     style={{
                       width: "100%",
-                      "height": `100%`,
+                      height: `100%`,
                     }}
                   >
                     <LogViewerTabList
                       id={currentPanel.id}
                       style={{
-                        "width": "100%",
-                        "height": "100%",
+                        width: "100%",
+                        height: "100%",
                       }}
                       tabList={currentPanel.tabContext}
                       focusedTab={currentPanel.focusedTab}
@@ -187,7 +214,7 @@ function LogViewer() {
                         const newTabInfo = await openFileDialog();
                         if (!newTabInfo) {
                           toaster.create({
-                            title: "Ivalid File",
+                            title: "Invalid File",
                             description: "The file is invalid.",
                             type: "error",
                           });
@@ -201,8 +228,8 @@ function LogViewer() {
                           tabName: "",
                           plotZoomState: [0, 0],
                         };
-                        setLogViewPanel((prev) => {
-                          return [...prev].map((panel, i) => {
+                        setLogViewPanelContexts((prev) => {
+                          return prev.map((panel, i) => {
                             if (i === index()) {
                               return {
                                 id: panel.id,
@@ -216,32 +243,36 @@ function LogViewer() {
                       onDeleteTab={(deleteTabId, i) => {
                         const focusTabIndex =
                           i === currentPanel.tabContext.length - 1 ? i - 1 : i;
-                        setLogViewPanel((prev) => {
-                          return [...prev].map((panel, i) => {
+                        const deleteTab: TabContext[] = currentPanel
+                          .tabContext
+                          .filter((tab) => tab.id !== deleteTabId);
+                        setLogViewPanelContexts((prev) => {
+                          const updateList = [...prev].map((tab, i) => {
                             if (i === index()) {
                               return {
-                                id: panel.id,
-                                tabContext: panel.tabContext.filter((tab) =>
-                                  tab.id !== deleteTabId
-                                ),
-                                focusedTab: panel.tabContext[focusTabIndex].id,
+                                ...tab,
+                                tabContext: deleteTab,
+                                focusedTab: deleteTab.length === 0
+                                  ? undefined
+                                  : deleteTab[focusTabIndex].id,
                               };
-                            } else return panel;
+                            }
+                            return tab;
                           });
+                          return updateList;
                         });
                       }}
                       onDraggedTabInfo={(tabContext) => {
                         setDraggedTabInfo(tabContext);
                         setDraggedTabPanelIndex(index());
                       }}
-                      // Tab drop error. need to be fixed.
                       onTabDrop={() => {
                         if (draggedTabPanelIndex() === index()) return;
-                        setLogViewPanel((prev) => {
-                          return [...prev].map((tabPanel, i) => {
-                            if (index() === i) {
+                        setLogViewPanelContexts((prev) => {
+                          return prev.map((tabPanel, i) => {
+                            if (i === index()) {
                               return {
-                                id: tabPanel.id,
+                                ...tabPanel,
                                 tabContext: [
                                   ...tabPanel.tabContext,
                                   draggedTabInfo(),
@@ -249,34 +280,32 @@ function LogViewer() {
                                 focusedTab: draggedTabInfo().id,
                               };
                             } else if (i === draggedTabPanelIndex()) {
-                              const parseTabContext = tabPanel.tabContext
-                                .filter((ctx) => {
-                                  return ctx.id !== draggedTabInfo().id;
-                                });
+                              const newTabContext = tabPanel.tabContext
+                                .filter(
+                                  (ctx) => ctx.id !== draggedTabInfo().id,
+                                );
                               return {
                                 id: tabPanel.id,
-                                tabContext: [
-                                  ...parseTabContext,
-                                ],
-                                focusedTab: undefined,
+                                tabContext: newTabContext,
+                                focusedTab: newTabContext.length > 0
+                                  ? newTabContext[0].id
+                                  : undefined,
                               };
-                            } else return tabPanel;
+                            }
+                            return tabPanel;
                           });
                         });
                       }}
                       onTabContextDrag={(isTabContextDragEnter) => {
-                        const panelId = isTabContextDragEnter
-                          ? currentPanel.id
-                          : undefined;
-                        setIsDragging([isTabContextDragEnter, panelId]);
+                        setIsDragging(isTabContextDragEnter);
                       }}
                       onTabContextChange={(updatedTab: TabContext) => {
-                        setLogViewPanel((prev) => {
+                        setLogViewPanelContexts((prev) => {
                           const updatePanels = [...prev];
                           updatePanels[index()].tabContext =
                             updatePanels[index()].tabContext.map((tab) => {
                               if (tab.id === updatedTab.id) return updatedTab;
-                              else return tab;
+                              return tab;
                             });
                           return updatePanels;
                         });
@@ -291,8 +320,8 @@ function LogViewer() {
                     />
                   </div>
                   <Show
-                    when={isDragging()[0] &&
-                      isDragging()[1] === currentPanel.id &&
+                    when={isDragging() &&
+                      draggedTabPanelIndex() === index() &&
                       currentPanel.tabContext.length > 1}
                   >
                     <Stack
@@ -308,7 +337,7 @@ function LogViewer() {
                       onDragLeave={(e) => e.currentTarget.style.opacity = "50%"}
                       onDragOver={(e) => e.preventDefault()}
                       onDrop={() => {
-                        setIsDragging([false, undefined]);
+                        setIsDragging(false);
                         moveTabOnSplitter(index());
                       }}
                     >
