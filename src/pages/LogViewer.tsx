@@ -6,8 +6,8 @@ import { open } from "@tauri-apps/plugin-dialog";
 import { Toast } from "~/components/ui/toast";
 import { IconX } from "@tabler/icons-solidjs";
 import {
-  logViewPanelContexts,
-  logViewPanelSize,
+  logViewerPanelContexts,
+  logViewerPanelSize,
   setLogViewPanelContexts,
   setLogViewPanelSize,
   TabContext,
@@ -18,7 +18,7 @@ function LogViewer() {
   const [render, setRender] = createSignal<boolean>(true);
 
   onMount(() => {
-    if (logViewPanelContexts().length === 0) {
+    if (logViewerPanelContexts().length === 0) {
       const uuid = getCryptoUUID();
       setLogViewPanelContexts([{
         id: uuid,
@@ -33,7 +33,7 @@ function LogViewer() {
   // Use async fuction to rerender the splitter after size is updated.
   // If it dosent use await then size error is occur.
   createEffect(async () => {
-    const tabList = logViewPanelContexts();
+    const tabList = logViewerPanelContexts();
     if (tabList.length === 1) return;
 
     let parseList = tabList;
@@ -47,7 +47,7 @@ function LogViewer() {
 
     setLogViewPanelContexts(parseList);
 
-    if (parseList.length !== logViewPanelSize().length) {
+    if (parseList.length !== logViewerPanelSize().length) {
       await setLogViewPanelSize(() => {
         const panelSize = 100 / parseList.length;
         const updatePanelSize = parseList.map((panel) => {
@@ -160,7 +160,7 @@ function LogViewer() {
           fallback={<Spinner />}
         >
           <Splitter.Root
-            size={logViewPanelSize()}
+            size={logViewerPanelSize()}
             gap="0.5"
             onSizeChangeEnd={(value) => {
               const parseSizeData = value.size.map((info) => {
@@ -169,13 +169,13 @@ function LogViewer() {
               setLogViewPanelSize(parseSizeData);
             }}
           >
-            <For each={logViewPanelSize() && logViewPanelContexts()}>
+            <For each={logViewerPanelSize() && logViewerPanelContexts()}>
               {(currentPanel, index) => (
                 <>
                   <Show when={index() !== 0}>
                     <Splitter.ResizeTrigger
                       id={`${
-                        logViewPanelContexts()[index() - 1].id
+                        logViewerPanelContexts()[index() - 1].id
                       }:${currentPanel.id}`}
                       width="4px"
                       padding="0"

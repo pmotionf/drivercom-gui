@@ -54,13 +54,13 @@ export type TabContext = {
   tabName: string;
   plotZoomState: [number, number];
 };
-export const [logViewPanelContexts, setLogViewPanelContexts] = createSignal<
+export const [logViewerPanelContexts, setLogViewPanelContexts] = createSignal<
   {
     id: string;
     tabContext: TabContext[];
     focusedTab: string | undefined;
   }[]
 >([]);
-export const [logViewPanelSize, setLogViewPanelSize] = createSignal<
+export const [logViewerPanelSize, setLogViewPanelSize] = createSignal<
   { id: string; size: number }[]
 >([]);
