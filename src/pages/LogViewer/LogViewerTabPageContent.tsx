@@ -105,18 +105,18 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
   }
 
   function splitPlot(plot_index: number) {
-    const hiddens = plots[plot_index].visible.reduce(
-      (filtered: number[], visible, index) => {
-        if (!visible) {
+    const nonSelectSeries = plots[plot_index].selected.reduce(
+      (filtered: number[], selected, index) => {
+        if (!selected) {
           filtered.push(splitIndex()[plot_index][index]);
         }
         return filtered;
       },
       [],
     );
-    const visibles = plots[plot_index].visible.reduce(
-      (filtered: number[], visible, index) => {
-        if (visible) {
+    const selectSeries = plots[plot_index].selected.reduce(
+      (filtered: number[], selected, index) => {
+        if (selected) {
           filtered.push(splitIndex()[plot_index][index]);
         }
         return filtered;
@@ -126,18 +126,18 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
 
     setSplitIndex((prev) => {
       const updated = [...prev];
-      updated.splice(plot_index, 1, visibles, hiddens);
+      updated.splice(plot_index, 1, selectSeries, nonSelectSeries);
       return updated;
     });
   }
 
-  const allVisible = (index: number) => {
-    trackStore(plots[index].visible);
-    return plots[index].visible.every((b) => b);
+  const allSelected = (index: number) => {
+    trackStore(plots[index].selected);
+    return plots[index].selected.every((b) => b);
   };
-  const allInvisible = (index: number) => {
-    trackStore(plots[index].visible);
-    return plots[index].visible.every((b) => !b);
+  const allNotSelected = (index: number) => {
+    trackStore(plots[index].selected);
+    return plots[index].selected.every((b) => !b);
   };
 
   createEffect(() => {
@@ -236,9 +236,9 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
                 onClick={() => splitPlot(index())}
                 disabled={currentHeader.length <= 1 ||
                   !plots[index()] ||
-                  !plots[index()].visible ||
-                  allVisible(index()) ||
-                  allInvisible(index())}
+                  !plots[index()].selected ||
+                  allSelected(index()) ||
+                  allNotSelected(index())}
                 style={{
                   "margin-left": "1rem",
                   "margin-top": `${index() == 0 ? "0.5rem" : "0px"}`,

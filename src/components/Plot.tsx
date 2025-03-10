@@ -21,6 +21,8 @@ import { IconButton } from "~/components/ui/icon-button";
 import {
   IconArrowsMove,
   IconCrosshair,
+  IconEditCircle,
+  IconEditCircleOff,
   IconZoomInArea,
   IconZoomReset,
 } from "@tabler/icons-solidjs";
@@ -38,6 +40,7 @@ export type PlotProps = JSX.HTMLAttributes<HTMLDivElement> & {
   xRange?: [number, number];
   onXRangeChange?: (xRange: [number, number]) => void;
   cursorIdx?: number | null | undefined;
+  onSelectedSeries?: (selectedSeriesIndexes: number[]) => void;
 };
 
 export type PlotContext = {
@@ -45,6 +48,7 @@ export type PlotContext = {
   color: string[];
   palette: string[];
   style: LegendStroke[];
+  selected: boolean[];
 };
 
 enum CursorMode {
@@ -116,6 +120,11 @@ export function Plot(props: PlotProps) {
         props.header.map(() => true),
       );
     }
+
+    setContext()(
+      "selected",
+      props.header.map(() => false),
+    );
   });
 
   createEffect(() => {
@@ -459,6 +468,10 @@ export function Plot(props: PlotProps) {
     }
   `;
 
+  const [showLegendCheckBox, setShowLegendCheckBox] = createSignal<boolean>(
+    false,
+  );
+
   return (
     <>
       <div {...rest} id={props.id + "-wrapper"}>
@@ -560,6 +573,17 @@ export function Plot(props: PlotProps) {
               <IconCrosshair />
             </ToggleGroup.Item>
           </ToggleGroup.Root>
+          <IconButton
+            variant="ghost"
+            onClick={() => setShowLegendCheckBox(!showLegendCheckBox())}
+          >
+            <Show
+              when={showLegendCheckBox()}
+              fallback={<IconEditCircleOff />}
+            >
+              <IconEditCircle />
+            </Show>
+          </IconButton>
         </Stack>
         <Show when={render()}>
           <Stack
@@ -588,6 +612,11 @@ export function Plot(props: PlotProps) {
                   group={group()}
                   series={header}
                   cursorIdx={props.cursorIdx}
+                  showCheckBox={showLegendCheckBox()}
+                  selected={getContext().selected[index()]}
+                  onSelectChange={(isChecked) => {
+                    setContext()("selected", index(), isChecked);
+                  }}
                   visible={getContext().visible[index()]}
                   onVisibleChange={(new_visible) => {
                     setContext()("visible", index(), new_visible);

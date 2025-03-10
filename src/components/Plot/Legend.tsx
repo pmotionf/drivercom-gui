@@ -27,6 +27,7 @@ import { Icon } from "../ui/icon";
 import { Heading } from "../ui/heading";
 import { Portal } from "solid-js/web";
 import { enumMappings, enumSeries } from "~/GlobalState";
+import { Checkbox } from "../ui/checkbox";
 
 export type LegendProps = Omit<StackProps, "stroke"> & {
   plot: uPlot;
@@ -42,6 +43,9 @@ export type LegendProps = Omit<StackProps, "stroke"> & {
   onStrokeChange?: (new_style: LegendStroke) => void;
   readonly?: boolean;
   cursorIdx?: number | null | undefined;
+  showCheckBox?: boolean;
+  selected?: boolean;
+  onSelectChange?: (checkBoxValue: boolean) => void;
 };
 
 export enum LegendStroke {
@@ -62,6 +66,8 @@ export function Legend(props: LegendProps) {
     "stroke",
     "onStrokeChange",
     "readonly",
+    "selected",
+    "onSelectChange",
   ]);
 
   let seriesIndex: number = 0;
@@ -83,6 +89,7 @@ export function Legend(props: LegendProps) {
   const [color, setColor] = createSignal(props.color ?? "");
   const [stroke, setStroke] = createSignal(props.stroke ?? LegendStroke.Line);
   const [value, setValue] = createSignal(null as number | string | null);
+  const [selected, setSelected] = createSignal(props.selected ?? false);
 
   // Autodetect initial color from plot if color is not provided in props.
   if (props.color == null && props.plot.series[seriesIndex].stroke) {
@@ -164,6 +171,8 @@ export function Legend(props: LegendProps) {
     updateValue(props.cursorIdx);
   });
 
+  createEffect(() => props.onSelectChange?.(selected()));
+
   const StrokeIcon = () => (
     <Switch fallback={<IconX />}>
       <Match when={stroke() == LegendStroke.Line}>
@@ -202,6 +211,19 @@ export function Legend(props: LegendProps) {
           </Icon>
         }
       >
+        <Show
+          when={!props.showCheckBox}
+          fallback={
+            <Checkbox
+              disabled={!props.visible}
+              value={selected().toString()}
+              onCheckedChange={(e) =>
+                setSelected(e.checked.toString() === "true" ? true : false)}
+            />
+          }
+        >
+          <div></div>
+        </Show>
         <Dialog.Root
           open={configOpen()}
           onOpenChange={() => setConfigOpen(false)}
