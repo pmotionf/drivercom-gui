@@ -129,7 +129,7 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
 
     setSplitIndex((prev) => {
       const updated = [...prev];
-      updated.splice(plot_index, 1, selectSeries, nonSelectSeries);
+      updated.splice(plot_index, 1, nonSelectSeries, selectSeries);
       return updated;
     });
   }
@@ -272,6 +272,7 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
                   height: `calc(100% / ${splitIndex().length} - 3rem)`,
                   "min-height": "18rem",
                   "padding-right": "0.5rem",
+                  "padding-left": "0.5rem",
                 }}
                 cursorIdx={cursorIdx()}
               />
