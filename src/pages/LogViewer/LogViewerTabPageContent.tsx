@@ -14,7 +14,7 @@ import { inferSchema, initParser } from "udsv";
 import { readTextFile } from "@tauri-apps/plugin-fs";
 import uPlot from "uplot";
 import { IconButton } from "~/components/ui/icon-button";
-import { IconRefresh, IconSeparatorHorizontal } from "@tabler/icons-solidjs";
+import { IconRotate2, IconSeparatorHorizontal } from "@tabler/icons-solidjs";
 import { Stack } from "styled-system/jsx";
 
 export type ErrorMessage = {
@@ -247,7 +247,7 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
                     disabled={splitIndex().length <= 1}
                     onclick={() => resetChart()}
                   >
-                    <IconRefresh />
+                    <IconRotate2 />
                   </IconButton>
                 </Show>
               </Stack>

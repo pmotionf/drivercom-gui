@@ -21,8 +21,8 @@ import { IconButton } from "~/components/ui/icon-button";
 import {
   IconArrowsMove,
   IconCrosshair,
-  IconHandFinger,
-  IconHandFingerOff,
+  IconLocation,
+  IconLocationOff,
   IconZoomInArea,
   IconZoomReset,
 } from "@tabler/icons-solidjs";
@@ -586,9 +586,9 @@ export function Plot(props: PlotProps) {
           >
             <Show
               when={showLegendCheckBox()}
-              fallback={<IconHandFingerOff />}
+              fallback={<IconLocationOff />}
             >
-              <IconHandFinger />
+              <IconLocation />
             </Show>
           </IconButton>
         </Stack>
