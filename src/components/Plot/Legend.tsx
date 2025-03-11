@@ -89,7 +89,6 @@ export function Legend(props: LegendProps) {
   const [color, setColor] = createSignal(props.color ?? "");
   const [stroke, setStroke] = createSignal(props.stroke ?? LegendStroke.Line);
   const [value, setValue] = createSignal(null as number | string | null);
-  const [selected, setSelected] = createSignal(props.selected ?? false);
 
   // Autodetect initial color from plot if color is not provided in props.
   if (props.color == null && props.plot.series[seriesIndex].stroke) {
@@ -171,8 +170,6 @@ export function Legend(props: LegendProps) {
     updateValue(props.cursorIdx);
   });
 
-  createEffect(() => props.onSelectChange?.(selected()));
-
   const StrokeIcon = () => (
     <Switch fallback={<IconX />}>
       <Match when={stroke() == LegendStroke.Line}>
@@ -216,9 +213,11 @@ export function Legend(props: LegendProps) {
           fallback={
             <Checkbox
               disabled={!props.visible}
-              value={selected().toString()}
+              value={props.selected ? props.selected.toString() : "false"}
               onCheckedChange={(e) =>
-                setSelected(e.checked.toString() === "true" ? true : false)}
+                props.onSelectChange?.(
+                  e.checked.toString() === "true" ? true : false,
+                )}
             />
           }
         >

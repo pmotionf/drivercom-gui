@@ -40,7 +40,6 @@ export type PlotProps = JSX.HTMLAttributes<HTMLDivElement> & {
   xRange?: [number, number];
   onXRangeChange?: (xRange: [number, number]) => void;
   cursorIdx?: number | null | undefined;
-  onSelectedSeries?: (selectedSeriesIndexes: number[]) => void;
 };
 
 export type PlotContext = {
@@ -624,6 +623,7 @@ export function Plot(props: PlotProps) {
                   selected={getContext().selected[index()]}
                   onSelectChange={(isChecked) => {
                     setContext()("selected", index(), isChecked);
+                    props.onContextChange?.(getContext());
                   }}
                   visible={getContext().visible[index()]}
                   onVisibleChange={(new_visible) => {
