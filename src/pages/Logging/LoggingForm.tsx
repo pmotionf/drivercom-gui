@@ -200,7 +200,7 @@ export function LoggingForm(props: LoggingFormProps) {
     await writeTextFile(path, json_str);
     setRecentLogFilePaths((prev) => {
       const parseFilePath = prev.filter((prevPath) => prevPath !== path);
-      return [path, ...parseFilePath];
+      return [path.replaceAll("\\", "/"), ...parseFilePath];
     });
   }
 
@@ -290,7 +290,6 @@ export function LoggingForm(props: LoggingFormProps) {
                 cyclesCompleted() === 0}
               onClick={async () => {
                 await saveLogCsvFile();
-                //await getCurrentLogStatus()
               }}
               variant="outline"
               loading={logGetBtnLoading()}

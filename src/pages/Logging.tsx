@@ -14,6 +14,7 @@ import { Toast } from "~/components/ui/toast";
 import { IconX } from "@tabler/icons-solidjs";
 import { open } from "@tauri-apps/plugin-dialog";
 import { readTextFile } from "@tauri-apps/plugin-fs";
+import { IconButton } from "~/components/ui/icon-button";
 
 export function Logging() {
   const [isFileOpen, setIsFileOpen] = createSignal<boolean>(false);
@@ -124,6 +125,26 @@ export function Logging() {
     }
   }
 
+  const [isButtonHovered, setIsButtonHoverd] = createSignal<
+    [boolean, number | null]
+  >([
+    false,
+    null,
+  ]);
+
+  function setFileData(file: object, path: string) {
+    setLogConfigureFile(file);
+    //setFilePath(path);
+    setFileName(path.split("/").pop()!);
+    setRecentLogFilePaths((prev) => {
+      const newRecentFiles = prev.filter((prevFilePath) =>
+        prevFilePath !== path
+      );
+      return [path, ...newRecentFiles];
+    });
+    setIsFileOpen(true);
+  }
+
   return (
     <>
       <div
@@ -131,6 +152,7 @@ export function Logging() {
           "padding-top": "4rem",
           "padding-bottom": "4rem",
           "height": "100%",
+          "width": `calc(100% - 3rem)`,
         }}
       >
         <Toast.Toaster toaster={toaster}>
@@ -163,17 +185,22 @@ export function Logging() {
           }
         >
           <Stack
-            width="42rem"
-            marginLeft={`calc((100% - 42rem) / 2)`}
+            width="100%"
+            alignItems="center"
             height="100%"
           >
-            <Text variant="heading" size="3xl">
+            <Text
+              variant="heading"
+              size="2xl"
+              width="44rem"
+            >
               Logging
             </Text>
             <Stack
               direction="row"
-              justifyContent="center"
               marginTop="1.5rem"
+              gap="1.5rem"
+              width="44rem"
             >
               <Button
                 variant="outline"
@@ -212,25 +239,130 @@ export function Logging() {
               </Button>
             </Stack>
             <Show when={recentLogFilePaths().length !== 0}>
-              <Text size="xl" marginTop="2rem" fontWeight="bold">
+              <Text width="44rem" size="xl" marginTop="2rem" fontWeight="bold">
                 Recent
               </Text>
+              <Stack width="44rem" direction="row" marginTop="0.5rem">
+                <Text
+                  width="16rem"
+                  size="sm"
+                  fontWeight="light"
+                  opacity="50%"
+                >
+                  File
+                </Text>
+                <Text
+                  size="sm"
+                  fontWeight="light"
+                  opacity="50%"
+                >
+                  Path
+                </Text>
+              </Stack>
               <Stack
-                marginTop="0.5rem"
-                maxHeight="100%"
                 style={{ "overflow-y": "auto" }}
+                height="100%"
+                width="44rem"
+                gap="0"
+                marginLeft="-0.5rem"
+                borderTopWidth="1"
+                borderBottomWidth="1"
               >
                 <For each={recentLogFilePaths()}>
-                  {(path) => (
-                    <Text
-                      onClick={() => {
-                        readJsonFile(path);
+                  {(path, index) => (
+                    <Button
+                      width="100%"
+                      variant="ghost"
+                      padding="0.5rem"
+                      paddingTop="1rem"
+                      paddingBottom="1rem"
+                      onMouseEnter={() => {
+                        setIsButtonHoverd([true, index()]);
                       }}
-                      cursor="pointer"
-                      userSelect="none"
+                      onMouseLeave={() => {
+                        setIsButtonHoverd([false, null]);
+                      }}
+                      bgColor={isButtonHovered()[0] === true &&
+                          isButtonHovered()[1] === index()
+                        ? "bg.muted"
+                        : "bg.canvas"}
+                      gap="0"
                     >
-                      {path}
-                    </Text>
+                      <Text
+                        userSelect="none"
+                        onClick={async () => {
+                          const object = await readJsonFile(path);
+                          setFileData(object!, path);
+                          setIsButtonHoverd([false, null]);
+                        }}
+                        size="md"
+                        height="2rem"
+                        fontWeight="medium"
+                        style={{
+                          "white-space": "nowrap",
+                          "text-overflow": "ellipsis",
+                          "display": "block",
+                          "overflow": "hidden",
+                          "text-align": "left",
+                          "margin-top": "0.4rem",
+                          width: "15rem",
+                        }}
+                      >
+                        {path.match(/[^//]+$/)!.toString()}
+                      </Text>
+                      <Text
+                        userSelect="none"
+                        size="sm"
+                        fontWeight="light"
+                        marginLeft="0.5rem"
+                        opacity="70%"
+                        onClick={async () => {
+                          const object = await readJsonFile(path);
+                          setFileData(object!, path);
+                          setIsButtonHoverd([false, null]);
+                        }}
+                        style={{
+                          "white-space": "nowrap",
+                          "text-overflow": "ellipsis",
+                          "display": "block",
+                          "overflow": "hidden",
+                          "text-align": "left",
+                          width: `calc(100% - 17rem)`,
+                          "padding-left": "1rem",
+                        }}
+                      >
+                        {path.replace(
+                          path.match(/[^?!//]+$/)!.toString(),
+                          "",
+                        )}
+                      </Text>
+                      <Stack width="2rem">
+                        <Show
+                          when={isButtonHovered()[0] === true &&
+                            isButtonHovered()[1] === index()}
+                        >
+                          <IconButton
+                            padding="0"
+                            opacity="50%"
+                            variant="ghost"
+                            borderRadius="2rem"
+                            size="sm"
+                            width="1rem"
+                            marginRight="1rem"
+                            onClick={() => {
+                              setRecentLogFilePaths((prev) => {
+                                const updateFilePath = prev.filter((_, i) => {
+                                  return i !== index();
+                                });
+                                return updateFilePath;
+                              });
+                            }}
+                          >
+                            <IconX width="1rem" />
+                          </IconButton>
+                        </Show>
+                      </Stack>
+                    </Button>
                   )}
                 </For>
               </Stack>
