@@ -575,7 +575,15 @@ export function Plot(props: PlotProps) {
           </ToggleGroup.Root>
           <IconButton
             variant="ghost"
-            onClick={() => setShowLegendCheckBox(!showLegendCheckBox())}
+            onClick={() => {
+              if (showLegendCheckBox()) {
+                setContext()(
+                  "selected",
+                  props.header.map(() => false),
+                );
+              }
+              setShowLegendCheckBox(!showLegendCheckBox());
+            }}
           >
             <Show
               when={showLegendCheckBox()}
