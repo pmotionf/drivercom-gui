@@ -17,7 +17,7 @@ import { Command } from "@tauri-apps/plugin-shell";
 import { createStore } from "solid-js/store";
 import { Editable } from "~/components/ui/editable";
 import { IconButton } from "~/components/ui/icon-button";
-import { IconReload, IconX } from "@tabler/icons-solidjs";
+import { IconFileIsr, IconReload, IconX } from "@tabler/icons-solidjs";
 import { Menu } from "~/components/ui/menu";
 import { ErrorMessage } from "../LogViewer/LogViewerTabPageContent";
 import { createListCollection, Select } from "~/components/ui/select";
@@ -25,6 +25,11 @@ import { createListCollection, Select } from "~/components/ui/select";
 export type LoggingFormProps = JSX.HTMLAttributes<Element> & {
   jsonfile: object;
   fileName: string;
+  filePath?: string;
+  mode?: "none" | "create" | "file" | "port";
+  onModeChange?: (mode: "none" | "create" | "file" | "port") => void;
+  onReadFile?: () => void;
+  onReadPort?: () => void;
   onCancel?: () => void;
   onErrorMessage?: (message: ErrorMessage) => void;
 };
@@ -245,6 +250,26 @@ export function LoggingForm(props: LoggingFormProps) {
           >
             <IconX />
           </IconButton>
+
+          <Show when={props.mode !== "create"}>
+            <IconButton
+              onClick={() => {
+                console.log(props.mode);
+                if (props.mode === "file") {
+                  props.onReadFile?.();
+                } else if (props.mode === "port") {
+                  props.onReadPort?.();
+                }
+              }}
+              variant="ghost"
+              borderRadius="1rem"
+              width="1rem"
+              style={{ position: "absolute", top: "1.5rem", right: "4rem" }}
+              padding="0"
+            >
+              <IconFileIsr />
+            </IconButton>
+          </Show>
         </Card.Header>
         <Card.Body gap={1.5}>
           <LogConfigFieldSet object={logForm} />

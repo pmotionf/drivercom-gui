@@ -15,14 +15,20 @@ import { IconX } from "@tabler/icons-solidjs";
 import { open } from "@tauri-apps/plugin-dialog";
 import { readTextFile } from "@tauri-apps/plugin-fs";
 import { IconButton } from "~/components/ui/icon-button";
+import { Spinner } from "~/components/ui/spinner";
 
 export function Logging() {
   const [isFileOpen, setIsFileOpen] = createSignal<boolean>(false);
   const [logConfigureFile, setLogConfigureFile] = createSignal({});
   const [fileName, setFileName] = createSignal<string>("");
+  const [filePath, setFilePath] = createSignal<string>("");
+  const [logMode, setLogMode] = createSignal<
+    "create" | "port" | "file" | "none"
+  >("none");
+  const [render, setRender] = createSignal<boolean>(false);
 
-  async function GetLogConfigFromPort() {
-    if (portId().length === 0) return;
+  async function GetLogConfigFromPort(): Promise<object | undefined> {
+    if (portId().length === 0) return undefined;
     const sideCommand = Command.sidecar("binaries/drivercom", [
       `--port`,
       portId(),
@@ -31,10 +37,8 @@ export function Logging() {
     const output = await sideCommand.execute();
     const obj = JSON.parse(output.stdout);
 
-    if (output.stdout.length === 0) return;
-    setFileName(portId());
-    setLogConfigureFile(obj);
-    setIsFileOpen(true);
+    if (output.stdout.length === 0) return undefined;
+    else return obj;
   }
 
   const toaster = Toast.createToaster({
@@ -42,7 +46,7 @@ export function Logging() {
     gap: 24,
   });
 
-  async function openFileDialog() {
+  async function openFileDialog(): Promise<string | undefined> {
     const path = await open({
       multiple: false,
       filters: [
@@ -86,7 +90,7 @@ export function Logging() {
     return newFileFormat;
   }
 
-  async function readJsonFile(path: string) {
+  async function readJsonFile(path: string): Promise<object | undefined> {
     try {
       const output = await readTextFile(path);
       const parseFileToObject = JSON.parse(output);
@@ -104,14 +108,7 @@ export function Logging() {
         return;
       }
 
-      const fileName = path.replaceAll("\\", "/").split("/").pop();
-      setFileName(fileName!);
-      setRecentLogFilePaths((prev) => {
-        const parseFilePath = prev.filter((prevPath) => prevPath !== path);
-        return [path, ...parseFilePath];
-      });
-      setLogConfigureFile(parseFileToObject);
-      setIsFileOpen(true);
+      return parseFileToObject;
     } catch {
       toaster.create({
         title: "Invalid File Path",
@@ -122,6 +119,7 @@ export function Logging() {
         const parseFilePath = prev.filter((prevPath) => prevPath !== path);
         return [...parseFilePath];
       });
+      return undefined;
     }
   }
 
@@ -134,7 +132,6 @@ export function Logging() {
 
   function setFileData(file: object, path: string) {
     setLogConfigureFile(file);
-    //setFilePath(path);
     setFileName(path.split("/").pop()!);
     setRecentLogFilePaths((prev) => {
       const newRecentFiles = prev.filter((prevFilePath) =>
@@ -170,17 +167,43 @@ export function Logging() {
           when={!isFileOpen()}
           fallback={
             <Stack direction="row" justifyContent="center">
-              <LoggingForm
-                jsonfile={logConfigureFile()}
-                fileName={fileName()}
-                onCancel={() => {
-                  setFileName("");
-                  setIsFileOpen(false);
-                  setLogConfigureFile({});
-                }}
-                onErrorMessage={(msg) => toaster.create(msg)}
-                style={{ "margin-bottom": "3rem" }}
-              />
+              <Show
+                when={render()}
+                fallback={<Spinner />}
+              >
+                <LoggingForm
+                  jsonfile={logConfigureFile()}
+                  fileName={fileName()}
+                  mode={logMode()}
+                  onModeChange={(mode) => {
+                    setLogMode(mode);
+                    setRender(false);
+                  }}
+                  onReadFile={async () => {
+                    setRender(false);
+                    const logObj = await readJsonFile(filePath());
+                    if (!logObj) return;
+                    await setLogConfigureFile(logObj);
+                    setRender(true);
+                  }}
+                  onReadPort={async () => {
+                    setRender(false);
+                    const logConfigObj = await GetLogConfigFromPort();
+                    if (!logConfigObj) return;
+                    await setLogConfigureFile(logConfigObj);
+                    setRender(true);
+                  }}
+                  onCancel={() => {
+                    setFileName("");
+                    setIsFileOpen(false);
+                    setLogConfigureFile({});
+                    setLogMode("none");
+                    setRender(false);
+                  }}
+                  onErrorMessage={(msg) => toaster.create(msg)}
+                  style={{ "margin-bottom": "3rem" }}
+                />
+              </Show>
             </Stack>
           }
         >
@@ -211,7 +234,9 @@ export function Logging() {
                   );
                   setFileName("New File");
                   setLogConfigureFile(newEmptyFile);
+                  setLogMode("create");
                   setIsFileOpen(true);
+                  setRender(true);
                 }}
               >
                 Create New File
@@ -222,7 +247,15 @@ export function Logging() {
                 onClick={async () => {
                   const path = await openFileDialog();
                   if (!path) return;
-                  readJsonFile(path);
+                  const logObj = await readJsonFile(path);
+                  if (!logObj) return;
+                  const fileName = path.replaceAll("\\", "/").split("/").pop();
+                  setFileName(fileName!);
+                  setLogConfigureFile(logObj);
+                  setFilePath(path!);
+                  setLogMode("file");
+                  setRender(true);
+                  setIsFileOpen(true);
                 }}
               >
                 Open File
@@ -231,8 +264,14 @@ export function Logging() {
                 variant="outline"
                 padding="4rem"
                 disabled={portId().length === 0}
-                onClick={() => {
-                  GetLogConfigFromPort();
+                onClick={async () => {
+                  const logConfigObj = await GetLogConfigFromPort();
+                  if (!logConfigObj) return;
+                  setFileName(portId());
+                  setLogConfigureFile(logConfigObj);
+                  setLogMode("port");
+                  setIsFileOpen(true);
+                  setRender(true);
                 }}
               >
                 Get From Port
