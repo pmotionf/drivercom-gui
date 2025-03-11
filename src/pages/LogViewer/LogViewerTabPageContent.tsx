@@ -241,17 +241,22 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
                 >
                   <IconSeparatorHorizontal />
                 </IconButton>
-                <Show when={index() == 0}>
-                  <IconButton
-                    variant="ghost"
-                    disabled={splitIndex().length <= 1}
-                    onclick={() => resetChart()}
+                <Show when={index() === 0}>
+                  <Stack
+                    direction="row"
+                    width="100%"
+                    paddingLeft="1.2rem"
                   >
-                    <IconRotate2 />
-                  </IconButton>
+                    <IconButton
+                      variant="outline"
+                      disabled={splitIndex().length <= 1}
+                      onclick={() => resetChart()}
+                    >
+                      <IconRotate2 />
+                    </IconButton>
+                  </Stack>
                 </Show>
               </Stack>
-
               <Plot
                 id={currentID()}
                 group={props.tabId}
