@@ -574,7 +574,7 @@ export function Plot(props: PlotProps) {
             </ToggleGroup.Item>
           </ToggleGroup.Root>
           <IconButton
-            variant="ghost"
+            variant="outline"
             onClick={() => {
               if (showLegendCheckBox()) {
                 setContext()(
@@ -600,7 +600,7 @@ export function Plot(props: PlotProps) {
               "padding-bottom": "0.5rem",
               float: "left",
               width: "15rem",
-              "max-height": "calc(100% - 1.5rem - 3rem)",
+              "max-height": "calc(100% - 2rem - 3rem)",
               "overflow-x": "auto",
               "overflow-y": "auto",
             }}

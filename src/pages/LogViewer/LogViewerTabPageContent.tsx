@@ -6,13 +6,16 @@ import {
   JSX,
   onCleanup,
   onMount,
+  Show,
 } from "solid-js";
 import { createStore } from "solid-js/store";
 import { Plot, PlotContext } from "~/components/Plot";
-import { Button } from "~/components/ui/button";
 import { inferSchema, initParser } from "udsv";
 import { readTextFile } from "@tauri-apps/plugin-fs";
 import uPlot from "uplot";
+import { IconButton } from "~/components/ui/icon-button";
+import { IconRefresh, IconSeparatorHorizontal } from "@tabler/icons-solidjs";
+import { Stack } from "styled-system/jsx";
 
 export type ErrorMessage = {
   title: string;
@@ -194,17 +197,6 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
 
   return (
     <>
-      <Button
-        variant="ghost"
-        disabled={splitIndex().length <= 1}
-        onclick={() => resetChart()}
-        style={{
-          "margin-top": "0.5rem",
-          "margin-left": "1rem",
-        }}
-      >
-        Reset
-      </Button>
       <For each={plots && splitIndex()}>
         {(item, index) => {
           // Header and items need not be derived state, as they will not
@@ -232,20 +224,34 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
 
           return (
             <>
-              <Button
-                onClick={() => splitPlot(index())}
-                disabled={currentHeader.length <= 1 ||
-                  !plots[index()] ||
-                  !plots[index()].selected ||
-                  allSelected(index()) ||
-                  allNotSelected(index())}
-                style={{
-                  "margin-left": "1rem",
-                  "margin-top": `${index() == 0 ? "0.5rem" : "0px"}`,
-                }}
+              <Stack
+                direction="row-reverse"
+                width="100%"
+                paddingRight="1.6rem"
+                style={{ "overflow": "hidden" }}
+                gap="2"
               >
-                Split Plot
-              </Button>
+                <IconButton
+                  onClick={() => splitPlot(index())}
+                  disabled={currentHeader.length <= 1 ||
+                    !plots[index()] ||
+                    !plots[index()].selected ||
+                    allSelected(index()) ||
+                    allNotSelected(index())}
+                >
+                  <IconSeparatorHorizontal />
+                </IconButton>
+                <Show when={index() == 0}>
+                  <IconButton
+                    variant="ghost"
+                    disabled={splitIndex().length <= 1}
+                    onclick={() => resetChart()}
+                  >
+                    <IconRefresh />
+                  </IconButton>
+                </Show>
+              </Stack>
+
               <Plot
                 id={currentID()}
                 group={props.tabId}
@@ -263,8 +269,9 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
                 }}
                 style={{
                   width: "100%",
-                  height: `calc(100% / ${splitIndex().length} - 3rem`,
+                  height: `calc(100% / ${splitIndex().length} - 3rem)`,
                   "min-height": "18rem",
+                  "padding-right": "0.5rem",
                 }}
                 cursorIdx={cursorIdx()}
               />
