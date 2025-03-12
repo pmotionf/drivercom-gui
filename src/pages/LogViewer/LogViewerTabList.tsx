@@ -4,18 +4,18 @@ import { IconButton } from "~/components/ui/icon-button";
 import { IconPlus, IconX } from "@tabler/icons-solidjs";
 import { Editable } from "~/components/ui/editable";
 import { LogViewerTabPageContent } from "./LogViewerTabPageContent";
-import { TabContext } from "~/GlobalState";
+import { LogViewerTabContext } from "../LogViewer";
 
 export type LogViewerTabListProps = JSX.HTMLAttributes<HTMLDivElement> & {
   id: string;
-  tabList: TabContext[];
+  tabList: LogViewerTabContext[];
   onCreateTab?: () => void;
   onDeleteTab?: (deleteTabId: string, index: number) => void;
   onDraggedTabInfo?: (
-    tabContext: TabContext,
+    tabContext: LogViewerTabContext,
   ) => void;
   onTabDrop?: () => void;
-  onTabContextChange?: (tabContext: TabContext) => void;
+  onTabContextChange?: (tabContext: LogViewerTabContext) => void;
   onTabContextDrag?: (isTabContextDragEnter: boolean) => void;
   focusedTab?: string | undefined;
   onTabFocus?: (focusedTabId: string | undefined) => void;

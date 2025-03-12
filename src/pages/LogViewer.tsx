@@ -10,9 +10,23 @@ import {
   logViewerPanelSize,
   setLogViewPanelContexts,
   setLogViewPanelSize,
-  TabContext,
 } from "~/GlobalState";
 import { Spinner } from "~/components/ui/spinner";
+import { PlotContext } from "~/components/Plot";
+
+export type LogViewerTabContext = {
+  id: string;
+  filePath: string;
+  plotSplitIndex: number[][];
+  plotContext: PlotContext[];
+  tabName: string;
+  plotZoomState: [number, number];
+};
+
+export type LogViewerPanelContext = {
+  id: string;
+  size: number;
+};
 
 function LogViewer() {
   const [render, setRender] = createSignal<boolean>(true);
@@ -60,8 +74,8 @@ function LogViewer() {
     await setRender(true);
   });
 
-  const [draggedTabInfo, setDraggedTabInfo] = createSignal<TabContext>(
-    {} as TabContext,
+  const [draggedTabInfo, setDraggedTabInfo] = createSignal<LogViewerTabContext>(
+    {} as LogViewerTabContext,
   );
   const [draggedTabPanelIndex, setDraggedTabPanelIndex] = createSignal<number>(
     0,
@@ -218,7 +232,7 @@ function LogViewer() {
                             });
                             return;
                           }
-                          const newTab: TabContext = {
+                          const newTab: LogViewerTabContext = {
                             id: newTabInfo.id,
                             filePath: newTabInfo.filePath,
                             plotSplitIndex: [],
@@ -243,7 +257,7 @@ function LogViewer() {
                             i === currentPanel.tabContext.length - 1
                               ? i - 1
                               : i;
-                          const deleteTab: TabContext[] = currentPanel
+                          const deleteTab: LogViewerTabContext[] = currentPanel
                             .tabContext
                             .filter((tab) => tab.id !== deleteTabId);
                           setLogViewPanelContexts((prev) => {
@@ -299,7 +313,9 @@ function LogViewer() {
                         onTabContextDrag={(isTabContextDragEnter) => {
                           setIsDragging(isTabContextDragEnter);
                         }}
-                        onTabContextChange={(updatedTab: TabContext) => {
+                        onTabContextChange={(
+                          updatedTab: LogViewerTabContext,
+                        ) => {
                           setLogViewPanelContexts((prev) => {
                             const updatePanels = [...prev];
                             updatePanels[index()].tabContext =
