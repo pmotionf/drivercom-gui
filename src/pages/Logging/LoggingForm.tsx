@@ -254,7 +254,6 @@ export function LoggingForm(props: LoggingFormProps) {
           <Show when={props.mode !== "create"}>
             <IconButton
               onClick={() => {
-                console.log(props.mode);
                 if (props.mode === "file") {
                   props.onReadFile?.();
                 } else if (props.mode === "port") {

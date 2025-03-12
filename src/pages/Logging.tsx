@@ -72,7 +72,7 @@ export function Logging() {
       });
       return undefined;
     }
-    return path;
+    return path.replaceAll("\\", "/");
   }
 
   function checkFileFormat(file: object): string {
@@ -90,24 +90,16 @@ export function Logging() {
     return newFileFormat;
   }
 
+  function compareFileFormat(newFile: object, fileFormat: object): boolean {
+    const newFileObject = checkFileFormat(newFile);
+    const configFileObject = checkFileFormat(fileFormat);
+    return newFileObject === configFileObject;
+  }
+
   async function readJsonFile(path: string): Promise<object | undefined> {
     try {
       const output = await readTextFile(path);
       const parseFileToObject = JSON.parse(output);
-      const checkNewFileFormat = checkFileFormat(parseFileToObject);
-      const logFileFormat = checkFileFormat(logFormFileFormat());
-
-      if (
-        checkNewFileFormat !== logFileFormat
-      ) {
-        toaster.create({
-          title: "Invalid Log",
-          description: "Invalid log file.",
-          type: "error",
-        });
-        return;
-      }
-
       return parseFileToObject;
     } catch {
       toaster.create({
@@ -116,11 +108,20 @@ export function Logging() {
         type: "error",
       });
       setRecentLogFilePaths((prev) => {
-        const parseFilePath = prev.filter((prevPath) => prevPath !== path);
-        return [...parseFilePath];
+        const newRecentFiles = prev.filter((prevFilePath) =>
+          prevFilePath !== path
+        );
+        return newRecentFiles;
       });
-      return undefined;
     }
+  }
+
+  function setFileData(file: object, path: string) {
+    setLogConfigureFile(file);
+    setFileName(path.split("/").pop()!);
+    setFilePath(path);
+    setRender(true);
+    setIsFileOpen(true);
   }
 
   const [isButtonHovered, setIsButtonHoverd] = createSignal<
@@ -129,18 +130,6 @@ export function Logging() {
     false,
     null,
   ]);
-
-  function setFileData(file: object, path: string) {
-    setLogConfigureFile(file);
-    setFileName(path.split("/").pop()!);
-    setRecentLogFilePaths((prev) => {
-      const newRecentFiles = prev.filter((prevFilePath) =>
-        prevFilePath !== path
-      );
-      return [path, ...newRecentFiles];
-    });
-    setIsFileOpen(true);
-  }
 
   return (
     <>
@@ -249,13 +238,26 @@ export function Logging() {
                   if (!path) return;
                   const logObj = await readJsonFile(path);
                   if (!logObj) return;
-                  const fileName = path.replaceAll("\\", "/").split("/").pop();
-                  setFileName(fileName!);
-                  setLogConfigureFile(logObj);
-                  setFilePath(path!);
-                  setLogMode("file");
-                  setRender(true);
-                  setIsFileOpen(true);
+                  const isFileFormatMatch = compareFileFormat(
+                    logObj,
+                    logFormFileFormat(),
+                  );
+                  if (isFileFormatMatch) {
+                    setLogMode("file");
+                    setFileData(logObj, path);
+                    setRecentLogFilePaths((prev) => {
+                      const newRecentFiles = prev.filter((prevFilePath) =>
+                        prevFilePath !== path
+                      );
+                      return [path, ...newRecentFiles];
+                    });
+                  } else {
+                    toaster.create({
+                      title: "Invalid File",
+                      description: "File format is invalid.",
+                      type: "error",
+                    });
+                  }
                 }}
               >
                 Open File
