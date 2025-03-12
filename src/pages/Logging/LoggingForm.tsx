@@ -270,8 +270,10 @@ export function LoggingForm(props: LoggingFormProps) {
             </IconButton>
           </Show>
         </Card.Header>
-        <Card.Body gap={1.5}>
-          <LogConfigFieldSet object={logForm} />
+        <Card.Body>
+          <div style={{ "margin-top": "2rem" }}>
+            <LogConfigFieldSet object={logForm} />
+          </div>
         </Card.Body>
         <Card.Footer marginTop="3rem" marginBottom="2rem">
           <Stack direction="row">
@@ -362,7 +364,6 @@ export type logConfigFieldSetProps = JSX.HTMLAttributes<Element> & {
   sectionName?: string;
 };
 
-// Component for parse log config to display log config field.
 export function LogConfigFieldSet(props: logConfigFieldSetProps) {
   const [obj, setObject] = createStore<object>(props.object);
 
@@ -404,107 +405,58 @@ export function LogConfigFieldSet(props: logConfigFieldSetProps) {
 
   return (
     <For each={Object.entries(obj)}>
-      {(key, index) => (
-        <>
-          <Show when={props.sectionName === undefined}>
-            <Text
-              fontWeight="bold"
-              marginTop="1rem"
-              opacity="50%"
-              size="lg"
-              userSelect="none"
-            >
-              {`${key[0][0].toUpperCase()}${key[0].slice(1, key[0].length)}`}
-            </Text>
-          </Show>
-          <Show when={typeof key[1] === "number" && key[0] !== "_"}>
-            <Stack direction="row">
-              <Show when={props.sectionName}>
-                <Text
-                  marginTop="0.3rem"
-                  width="30%"
-                  fontWeight="light"
-                  userSelect="none"
-                >
-                  {`${props.sectionName} ${Number(key[0]) + 1}`}
-                </Text>
-              </Show>
-              <Input
-                value={Number(key[1])}
-                type="number"
-                onChange={(e) => {
-                  setObject(
-                    key[0] as keyof typeof obj,
-                    // @ts-ignore : TSC unable to handle generic object type
-                    // in store
-                    Number(e.target.value),
-                  );
+      {(entry, index) => {
+        const key = entry[0];
+        const value = entry[1];
+        const keyArray = Array.from(key);
+        const upperCaseKey = keyArray.map((char, i) => {
+          if (i === 0) return char.toUpperCase();
+          else if (keyArray[i - 1] === "_") return char.toUpperCase();
+          else return char;
+        }).toString().replaceAll(",", "");
+
+        if (typeof value == "object") {
+          return (
+            <>
+              <fieldset
+                style={{
+                  "border-width": "1px",
+                  padding: "1rem",
+                  "padding-top": "0",
+                  "margin-bottom": "1rem",
+                  "border-radius": "0.5rem",
+                  "margin-top": "0.5rem",
                 }}
-              />
-            </Stack>
-          </Show>
-          <Show when={typeof key[1] === "string"}>
-            <Text
-              marginTop="0.3rem"
-              width="30%"
-              userSelect="none"
-              marginBottom="0.5rem"
-            >
-              {`${key[0][0].toUpperCase()}${key[0].slice(1, key[0].length)}`}
-            </Text>
-            <Select.Root
-              positioning={{ sameWidth: true }}
-              width="2xs"
-              collection={key[0].toString() === "kind"
-                ? logStartConditions
-                : logStartCombinators}
-              defaultValue={[key[1].toString()]}
-              onValueChange={(v) => {
-                setObject(
-                  key[0] as keyof typeof obj,
-                  // @ts-ignore : TSC unable to handle generic object type
-                  // in store
-                  Object.values(v.items)[0].label,
-                );
-              }}
-            >
-              <Select.Control>
-                <Select.Trigger>
-                  <Select.ValueText placeholder="Select a Framework" />
-                </Select.Trigger>
-              </Select.Control>
-              <Select.Positioner>
-                <Select.Content>
-                  <For
-                    each={key[0].toString() === "kind"
-                      ? logStartConditions.items
-                      : logStartCombinators.items}
+              >
+                <legend>
+                  <Text
+                    fontWeight="bold"
+                    opacity="50%"
+                    size="lg"
+                    userSelect="none"
                   >
-                    {(item) => (
-                      <Select.Item item={item}>
-                        <Select.ItemText>{item.label}</Select.ItemText>
-                        <Select.ItemIndicator>
-                        </Select.ItemIndicator>
-                      </Select.Item>
-                    )}
-                  </For>
-                </Select.Content>
-              </Select.Positioner>
-            </Select.Root>
-          </Show>
-          <Show when={typeof key[1] === "boolean"}>
+                    {upperCaseKey}
+                  </Text>
+                </legend>
+                <LogConfigFieldSet object={value} sectionName={key} />
+              </fieldset>
+            </>
+          );
+        }
+        if (typeof value == "boolean") {
+          return (
             <Checkbox
-              checked={obj[key[0] as keyof typeof obj]}
+              checked={obj[key as keyof typeof obj]}
               onCheckedChange={(e) => {
                 setObject(
-                  key[0] as keyof typeof obj,
+                  key as keyof typeof obj,
                   // @ts-ignore : TSC unable to handle generic object type
                   // in store
                   e.checked,
                 );
               }}
               onClick={(e) => {
-                if (key[1] as keyof typeof obj) {
+                if (value as keyof typeof obj) {
                   setPrevCheckBoxIndex(null);
                   return;
                 }
@@ -512,33 +464,112 @@ export function LogConfigFieldSet(props: logConfigFieldSetProps) {
                   ? setPrevCheckBoxIndex(index())
                   : checkBoxShiftClick(index());
               }}
+              style={{
+                "margin-top": "0.2rem",
+              }}
             >
               <Text fontWeight="light" userSelect="none">
-                {!isNaN(Number(key[0]))
-                  ? `${props.sectionName} ${Number(key[0]) + 1}`
-                  : key[0]}
+                {!isNaN(Number(key))
+                  ? `${props.sectionName} ${Number(key) + 1}`
+                  : key}
               </Text>
             </Checkbox>
-          </Show>
-          <Show when={typeof key[1] === "object"}>
-            <Show when={props.sectionName !== undefined}>
-              <Text
-                marginTop="0.2rem"
-                marginBottom="0.5rem"
-                fontWeight="medium"
-                userSelect="none"
+          );
+        }
+        if (typeof value === "number") {
+          if (key === "_") return;
+          return (
+            <>
+              <Stack
+                direction="row"
+                style={{
+                  "margin-top": "0.5rem",
+                }}
               >
-                {`${key[0][0].toUpperCase()}${key[0].slice(1, key[0].length)}`}
+                <Text
+                  marginTop="0.3rem"
+                  width="50%"
+                  fontWeight="light"
+                  userSelect="none"
+                  marginLeft="0.5rem"
+                >
+                  <Show
+                    when={props.sectionName}
+                    fallback={upperCaseKey}
+                  >
+                    {`${props.sectionName![0].toUpperCase()}${
+                      props.sectionName!.slice(1, props.sectionName!.length)
+                    } ${Number(key[0]) + 1}`}
+                  </Show>
+                </Text>
+                <Input
+                  value={Number(value)}
+                  type="number"
+                  onChange={(e) => {
+                    setObject(
+                      key as keyof typeof obj,
+                      // @ts-ignore : TSC unable to handle generic object type
+                      // in store
+                      Number(e.target.value),
+                    );
+                  }}
+                />
+              </Stack>
+            </>
+          );
+        }
+        if (typeof value == "string") {
+          return (
+            <>
+              <Text
+                marginTop="0.5rem"
+                marginLeft="0.2rem"
+                userSelect="none"
+                marginBottom="0.5rem"
+              >
+                {`${key[0].toUpperCase()}${key.slice(1, key.length)}`}
               </Text>
-            </Show>
-            <LogConfigFieldSet
-              object={key[1]}
-              sectionName={key[0]}
-              style={{ "margin-bottom": "0.5rem" }}
-            />
-          </Show>
-        </>
-      )}
+              <Select.Root
+                positioning={{ sameWidth: true }}
+                width="2xs"
+                collection={key === "kind"
+                  ? logStartConditions
+                  : logStartCombinators}
+                defaultValue={[value.toString()]}
+                onValueChange={(v) => {
+                  setObject(
+                    key as keyof typeof obj,
+                    v.items[0].label,
+                  );
+                }}
+              >
+                <Select.Control>
+                  <Select.Trigger>
+                    <Select.ValueText placeholder={`Select ${key}`} />
+                  </Select.Trigger>
+                </Select.Control>
+                <Select.Positioner>
+                  <Select.Content>
+                    <For
+                      each={key === "kind"
+                        ? logStartConditions.items
+                        : logStartCombinators.items}
+                    >
+                      {(item) => (
+                        <Select.Item item={item}>
+                          <Select.ItemText>{item.label}</Select.ItemText>
+                          <Select.ItemIndicator>
+                          </Select.ItemIndicator>
+                        </Select.Item>
+                      )}
+                    </For>
+                  </Select.Content>
+                </Select.Positioner>
+              </Select.Root>
+            </>
+          );
+        }
+      }}
     </For>
   );
 }
