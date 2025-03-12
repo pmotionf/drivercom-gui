@@ -4,35 +4,21 @@ import { IconButton } from "~/components/ui/icon-button";
 import { IconPlus, IconX } from "@tabler/icons-solidjs";
 import { Editable } from "~/components/ui/editable";
 import { LogViewerTabPageContent } from "./LogViewerTabPageContent";
-import { PlotContext } from "~/components/Plot";
+import { LogViewerTabContext } from "../LogViewer";
 
 export type LogViewerTabListProps = JSX.HTMLAttributes<HTMLDivElement> & {
   id: string;
-  tabList: [
-    string,
-    string,
-    number[][],
-    PlotContext[],
-    string,
-    [number, number],
-  ][]; // tabId, filePath, split index array, tab name, plot x scale
+  tabList: LogViewerTabContext[];
   onCreateTab?: () => void;
-  onDeleteTab?: (deleteTabId: string) => void;
+  onDeleteTab?: (deleteTabId: string, index: number) => void;
   onDraggedTabInfo?: (
-    tabId: string,
-    filePath: string,
-    splitPlotIndex: number[][],
-    context: string[],
-    tabName: string,
-    xRange: [number, number],
-    tabListId: string,
+    tabContext: LogViewerTabContext,
   ) => void;
-  onSplit?: (id: string, splitPlotIndex: number[][]) => void;
   onTabDrop?: () => void;
-  onContextChange?: (id: string, context: PlotContext[]) => void;
-  onXRangeChange?: (id: string, xRange: [number, number]) => void;
-  onTabNameChange?: (id: string, changedName: string) => void;
-  onTabContextDragEnter?: (isTabContextDragEnter: boolean) => void;
+  onTabContextChange?: (tabContext: LogViewerTabContext) => void;
+  onTabContextDrag?: (isTabContextDragEnter: boolean) => void;
+  focusedTab?: string;
+  onTabFocus?: (focusedTabId: string) => void;
 };
 
 export function LogViewerTabList(props: LogViewerTabListProps) {
@@ -51,7 +37,7 @@ export function LogViewerTabList(props: LogViewerTabListProps) {
 
     if (props.tabList.length > reorderTabList().length) {
       setReorderTabList((prev) => {
-        return [...prev, [...list[length - 1]]];
+        return [...prev, list[length - 1]];
       });
     }
 
@@ -59,10 +45,10 @@ export function LogViewerTabList(props: LogViewerTabListProps) {
       const parsePropList = list.sort();
       const parseReorderList = reorderTabList().sort();
       const deletedTab = parsePropList.filter((line, i) => {
-        line[0] !== parseReorderList[i][0];
+        line.id !== parseReorderList[i].id;
       })[0];
       setReorderTabList((prev) => {
-        return prev.filter((prevTab) => prevTab[0] !== deletedTab[0]);
+        return prev.filter((prevTab) => prevTab.id !== deletedTab.id);
       });
     }
   });
@@ -105,8 +91,6 @@ export function LogViewerTabList(props: LogViewerTabListProps) {
   };
 
   const [focusedTab, setFocusedTab] = createSignal<string>("");
-  const [isTabDeleted, setIsTabDeleted] = createSignal<boolean>(false);
-  const [deleteTabIndex, setDeleteTabIndex] = createSignal<number | null>(null);
   const [isReordering, setIsReordering] = createSignal<boolean>(false);
 
   // Focus tab whenether it's deleted or created or reordering.
@@ -116,22 +100,12 @@ export function LogViewerTabList(props: LogViewerTabListProps) {
 
     if (isReordering()) {
       setFocusedTab(draggedTabId()!);
-      return;
-    }
-
-    if (isTabDeleted()) {
-      if (!deleteTabIndex) return;
-      const contextIndex = deleteTabIndex() === 0 ? 1 : deleteTabIndex()! - 1;
-      const newValue = focusedTab() === reorderTabList()[deleteTabIndex()!][0]
-        ? reorderTabList()[contextIndex][0]
-        : focusedTab();
-      setTimeout(() => {
-        setFocusedTab(newValue);
-        setDeleteTabIndex(null);
-      }, 0);
     } else {
-      const currentTabId = reorderTabList()[reorderTabList().length - 1][0];
-      setFocusedTab(currentTabId);
+      if (!props.focusedTab) {
+        setFocusedTab(props.tabList[props.tabList.length - 1].id);
+      } else {
+        setFocusedTab(props.focusedTab);
+      }
       scrollToEnd();
     }
   });
@@ -153,7 +127,10 @@ export function LogViewerTabList(props: LogViewerTabListProps) {
       >
         <Tabs.Root
           value={focusedTab()}
-          onValueChange={(e) => setFocusedTab(e.value)}
+          onValueChange={(e) => {
+            setFocusedTab(e.value);
+            props.onTabFocus?.(focusedTab());
+          }}
           width="100%"
           height="100%"
           gap="0"
@@ -168,46 +145,28 @@ export function LogViewerTabList(props: LogViewerTabListProps) {
             onWheel={(e) => mouseWheelHandler(e)}
             onDrop={() => {
               props.onTabDrop?.();
-              props.onTabContextDragEnter?.(false);
+              props.onTabContextDrag?.(false);
             }}
             width="100%"
             marginRight="0"
           >
             <For each={reorderTabList()}>
-              {(
-                [
-                  currentTabId,
-                  currentFilePath,
-                  _,
-                  ,
-                  currentTabName,
-                ],
-                index,
-              ) => (
+              {(tab, index) => (
                 <Tabs.Trigger
-                  value={currentTabId}
+                  value={tab.id}
                   draggable
                   paddingTop="1rem"
+                  paddingRight="0"
                   onDragStart={(e) => {
                     setDraggedTabIndex(index());
-                    setFocusedTab(currentTabId);
+                    setFocusedTab(tab.id);
                     setPrevPositionX(e.currentTarget.scrollLeft);
                     setClientX(e.clientX);
 
                     const changedTabContext =
-                      props.tabList.filter((info) =>
-                        info[0] === currentTabId
-                      )[0];
-                    props.onDraggedTabInfo?.(
-                      currentTabId,
-                      currentFilePath,
-                      changedTabContext[2], // Split series index array
-                      changedTabContext[3].map((obj) => JSON.stringify(obj)), // Plot context
-                      changedTabContext[4], // Tab name
-                      changedTabContext[5],
-                      props.id,
-                    );
-                    setDraggedTabId(currentTabId);
+                      props.tabList.filter((info) => info.id === tab.id)[0];
+                    props.onDraggedTabInfo?.(changedTabContext);
+                    setDraggedTabId(tab.id);
                   }}
                   onDragOver={(e) => {
                     reorderTabsOnDragOver(e, index());
@@ -220,8 +179,8 @@ export function LogViewerTabList(props: LogViewerTabListProps) {
                     setClientX(null);
                   }}
                   onDrop={() => {
-                    const findDraggedTabInfo = props.tabList.filter((info) => {
-                      return info[0] === draggedTabId()!;
+                    const findDraggedTabInfo = props.tabList.filter((tab) => {
+                      return tab.id === draggedTabId()!;
                     });
                     if (findDraggedTabInfo.length === 1) {
                       return;
@@ -230,13 +189,15 @@ export function LogViewerTabList(props: LogViewerTabListProps) {
                   }}
                 >
                   <Editable.Root
-                    defaultValue={currentTabName.length === 0
-                      ? JSON.stringify(currentFilePath.match((/[^?!//]+$/)!))
+                    defaultValue={tab.tabName.length === 0
+                      ? JSON.stringify(tab.filePath.match((/[^?!//]+$/)!))
                         .slice(2, -2) /*change to tabname*/
-                      : currentTabName}
+                      : tab.tabName}
                     activationMode="dblclick"
-                    onValueCommit={(v) => {
-                      props.onTabNameChange?.(currentTabId, v.value);
+                    onValueCommit={(tabName) => {
+                      const tabUpdate = tab;
+                      tabUpdate.tabName = tabName.value;
+                      props.onTabContextChange?.(tabUpdate);
                     }}
                   >
                     <Editable.Area>
@@ -248,9 +209,7 @@ export function LogViewerTabList(props: LogViewerTabListProps) {
                     variant="ghost"
                     size="sm"
                     onClick={() => {
-                      setDeleteTabIndex(index());
-                      props.onDeleteTab?.(currentTabId);
-                      setIsTabDeleted(true);
+                      props.onDeleteTab?.(tab.id, index());
                     }}
                     borderRadius="3rem"
                   >
@@ -262,7 +221,6 @@ export function LogViewerTabList(props: LogViewerTabListProps) {
             <IconButton
               variant="ghost"
               onClick={() => {
-                setIsTabDeleted(false);
                 props.onCreateTab?.();
               }}
               borderRadius="3rem"
@@ -281,16 +239,9 @@ export function LogViewerTabList(props: LogViewerTabListProps) {
           </Tabs.List>
 
           <For each={reorderTabList()}>
-            {(
-              [
-                currentTabId,
-                currentFilePath,
-                currentTabIndexArray,
-              ],
-              index,
-            ) => (
+            {(tab, index) => (
               <Tabs.Content
-                value={currentTabId}
+                value={tab.id}
                 height="100%"
                 width="100% "
                 style={{
@@ -299,29 +250,39 @@ export function LogViewerTabList(props: LogViewerTabListProps) {
                 onDragOver={(e) => {
                   e.preventDefault();
                 }}
-                onDragEnter={() => props.onTabContextDragEnter?.(true)}
+                onDragEnter={() => props.onTabContextDrag?.(true)}
                 onDrop={() => {
-                  props.onTabContextDragEnter?.(false);
+                  props.onTabContextDrag?.(false);
                 }}
               >
                 <LogViewerTabPageContent
-                  tabId={currentTabId}
-                  plotContext={props.tabList[index()][3] /*Plot context*/}
-                  xRange={props.tabList[index()][5] /*Plots's x range*/}
-                  filePath={currentFilePath}
-                  onSplit={(e) => {
-                    if (e.length === 0) return;
-                    props.onSplit?.(currentTabId, e);
+                  tabId={tab.id}
+                  plotContext={
+                    props.tabList[index()]
+                      .plotContext /*Plot context*/
+                  }
+                  xRange={
+                    props.tabList[index()]
+                      .plotZoomState /*Plots's x range*/
+                  }
+                  filePath={tab.filePath}
+                  onSplit={(plotSplitIndex) => {
+                    if (plotSplitIndex.length === 0) return;
+                    const tabUpdate = tab;
+                    tabUpdate.plotSplitIndex = plotSplitIndex;
+                    props.onTabContextChange?.(tabUpdate);
                   }}
-                  splitPlotIndex={currentTabIndexArray}
+                  splitPlotIndex={tab.plotSplitIndex}
                   onContextChange={(changedPlotContext) => {
-                    props.onContextChange?.(
-                      currentTabId,
-                      changedPlotContext,
-                    );
+                    const tabUpdate = tab;
+                    tabUpdate.plotContext = changedPlotContext;
+                    props.onTabContextChange?.(tabUpdate);
                   }}
-                  onXRangeChange={(xRange) =>
-                    props.onXRangeChange?.(currentTabId, xRange)}
+                  onXRangeChange={(xRange) => {
+                    const tabUpdate = tab;
+                    tabUpdate.plotZoomState = xRange;
+                    props.onTabContextChange?.(tabUpdate);
+                  }}
                 />
               </Tabs.Content>
             )}

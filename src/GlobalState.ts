@@ -1,5 +1,6 @@
 import { createContext, createSignal } from "solid-js";
 import { createStore, SetStoreFunction } from "solid-js/store";
+import { LogViewerPanelContext, LogViewerTabContext } from "./pages/LogViewer";
 
 const [globalState, setGlobalState] = createStore({
   theme: "light",
@@ -43,4 +44,15 @@ export const [logStartConditionList, setLogStartCoditionList] = createSignal<
 >([]);
 export const [logStartCombinatorList, setLogStartCombinatorList] = createSignal<
   string[]
+>([]);
+
+export const [logViewerPanelContexts, setLogViewPanelContexts] = createSignal<
+  {
+    id: string;
+    tabContext: LogViewerTabContext[];
+    focusedTab?: string;
+  }[]
+>([]);
+export const [logViewerPanelSize, setLogViewPanelSize] = createSignal<
+  LogViewerPanelContext[]
 >([]);
