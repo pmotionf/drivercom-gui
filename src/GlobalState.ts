@@ -50,7 +50,7 @@ export const [logViewerPanelContexts, setLogViewPanelContexts] = createSignal<
   {
     id: string;
     tabContext: LogViewerTabContext[];
-    focusedTab: string | undefined;
+    focusedTab?: string;
   }[]
 >([]);
 export const [logViewerPanelSize, setLogViewPanelSize] = createSignal<

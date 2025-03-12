@@ -17,8 +17,8 @@ export type LogViewerTabListProps = JSX.HTMLAttributes<HTMLDivElement> & {
   onTabDrop?: () => void;
   onTabContextChange?: (tabContext: LogViewerTabContext) => void;
   onTabContextDrag?: (isTabContextDragEnter: boolean) => void;
-  focusedTab?: string | undefined;
-  onTabFocus?: (focusedTabId: string | undefined) => void;
+  focusedTab?: string;
+  onTabFocus?: (focusedTabId: string) => void;
 };
 
 export function LogViewerTabList(props: LogViewerTabListProps) {

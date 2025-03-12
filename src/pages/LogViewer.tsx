@@ -37,7 +37,6 @@ function LogViewer() {
       setLogViewPanelContexts([{
         id: uuid,
         tabContext: [],
-        focusedTab: undefined,
       }]);
       setLogViewPanelSize([{ id: uuid, size: 100 }]);
     }
@@ -119,7 +118,7 @@ function LogViewer() {
   });
 
   async function openFileDialog(): Promise<
-    { id: string; filePath: string } | undefined
+    { id: string; filePath: string } | null
   > {
     const path = await open({
       multiple: false,
@@ -129,12 +128,12 @@ function LogViewer() {
     });
 
     if (!path) {
-      return undefined;
+      return null;
     }
 
     const extensions = path.slice(path.length - 4, path.length);
     if (extensions !== ".csv") {
-      return undefined;
+      return null;
     }
 
     const tabId = getCryptoUUID();
@@ -266,9 +265,9 @@ function LogViewer() {
                                 return {
                                   ...tab,
                                   tabContext: deleteTab,
-                                  focusedTab: deleteTab.length === 0
-                                    ? undefined
-                                    : deleteTab[focusTabIndex].id,
+                                  ...(deleteTab.length !== 0 && {
+                                    focusedTab: deleteTab[focusTabIndex].id,
+                                  }),
                                 };
                               }
                               return tab;
@@ -301,9 +300,11 @@ function LogViewer() {
                                 return {
                                   id: tabPanel.id,
                                   tabContext: newTabContext,
-                                  focusedTab: newTabContext.length > 0
-                                    ? newTabContext[0].id
-                                    : undefined,
+                                  ...(newTabContext.length > 0 && {
+                                    focusedTab:
+                                      newTabContext[newTabContext.length - 1]
+                                        .id,
+                                  }),
                                 };
                               }
                               return tabPanel;
