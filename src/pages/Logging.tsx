@@ -15,7 +15,6 @@ import { IconX } from "@tabler/icons-solidjs";
 import { open } from "@tauri-apps/plugin-dialog";
 import { readTextFile } from "@tauri-apps/plugin-fs";
 import { IconButton } from "~/components/ui/icon-button";
-import { Spinner } from "~/components/ui/spinner";
 
 export function Logging() {
   const [isFileOpen, setIsFileOpen] = createSignal<boolean>(false);
@@ -25,7 +24,11 @@ export function Logging() {
   const [logMode, setLogMode] = createSignal<
     "create" | "port" | "file" | "none"
   >("none");
-  const [render, setRender] = createSignal<boolean>(false);
+
+  // This signal is needed in UI when reload the file or port.
+  const [renderLoggingForm, setRenderLoggingForm] = createSignal<boolean>(
+    false,
+  );
 
   async function GetLogConfigFromPort(): Promise<object | undefined> {
     if (portId().length === 0) return undefined;
@@ -77,9 +80,9 @@ export function Logging() {
 
   function checkFileFormat(file: object): string {
     const newFileFormat = Object.entries(file)
-      .map((line) => {
-        const key = line[0];
-        const value = line[1];
+      .map((entry) => {
+        const key = entry[0];
+        const value = entry[1];
         if (typeof value !== "object") return [key, typeof value];
         const parseValue = checkFileFormat(value);
         return [key, parseValue];
@@ -92,8 +95,8 @@ export function Logging() {
 
   function compareFileFormat(newFile: object, fileFormat: object): boolean {
     const newFileObject = checkFileFormat(newFile);
-    const configFileObject = checkFileFormat(fileFormat);
-    return newFileObject === configFileObject;
+    const logFileObject = checkFileFormat(fileFormat);
+    return newFileObject === logFileObject;
   }
 
   async function readJsonFile(path: string): Promise<object | undefined> {
@@ -120,7 +123,7 @@ export function Logging() {
     setLogConfigureFile(file);
     setFileName(path.split("/").pop()!);
     setFilePath(path);
-    setRender(true);
+    setRenderLoggingForm(true);
     setIsFileOpen(true);
   }
 
@@ -133,7 +136,8 @@ export function Logging() {
 
   return (
     <>
-      <div
+      <Stack
+        alignItems="center"
         style={{
           "padding-top": "4rem",
           "padding-bottom": "4rem",
@@ -155,42 +159,38 @@ export function Logging() {
         <Show
           when={!isFileOpen()}
           fallback={
-            <Stack direction="row" justifyContent="center">
+            <Stack direction="row" width="42rem">
               <Show
-                when={render()}
-                fallback={<Spinner />}
+                when={renderLoggingForm()}
+                fallback={<div></div>}
               >
                 <LoggingForm
                   jsonfile={logConfigureFile()}
                   fileName={fileName()}
+                  onFileNameChange={(newFileName) => setFileName(newFileName)}
                   mode={logMode()}
-                  onModeChange={(mode) => {
-                    setLogMode(mode);
-                    setRender(false);
-                  }}
                   onReadFile={async () => {
-                    setRender(false);
+                    setRenderLoggingForm(false);
                     const logObj = await readJsonFile(filePath());
                     if (!logObj) return;
-                    await setLogConfigureFile(logObj);
-                    setRender(true);
+                    setLogConfigureFile(logObj);
+                    setRenderLoggingForm(true);
                   }}
                   onReadPort={async () => {
-                    setRender(false);
-                    const logConfigObj = await GetLogConfigFromPort();
-                    if (!logConfigObj) return;
-                    await setLogConfigureFile(logConfigObj);
-                    setRender(true);
+                    setRenderLoggingForm(false);
+                    const logObj = await GetLogConfigFromPort();
+                    if (!logObj) return;
+                    setLogConfigureFile(logObj);
+                    setRenderLoggingForm(true);
                   }}
                   onCancel={() => {
                     setFileName("");
                     setIsFileOpen(false);
                     setLogConfigureFile({});
                     setLogMode("none");
-                    setRender(false);
+                    setRenderLoggingForm(false);
                   }}
                   onErrorMessage={(msg) => toaster.create(msg)}
-                  style={{ "margin-bottom": "3rem" }}
                 />
               </Show>
             </Stack>
@@ -225,7 +225,7 @@ export function Logging() {
                   setLogConfigureFile(newEmptyFile);
                   setLogMode("create");
                   setIsFileOpen(true);
-                  setRender(true);
+                  setRenderLoggingForm(true);
                 }}
               >
                 Create New File
@@ -273,7 +273,7 @@ export function Logging() {
                   setLogConfigureFile(logConfigObj);
                   setLogMode("port");
                   setIsFileOpen(true);
-                  setRender(true);
+                  setRenderLoggingForm(true);
                 }}
               >
                 Get From Port
@@ -410,7 +410,7 @@ export function Logging() {
             </Show>
           </Stack>
         </Show>
-      </div>
+      </Stack>
     </>
   );
 }

@@ -25,9 +25,8 @@ import { createListCollection, Select } from "~/components/ui/select";
 export type LoggingFormProps = JSX.HTMLAttributes<Element> & {
   jsonfile: object;
   fileName: string;
-  filePath?: string;
+  onFileNameChange?: (fileName: string) => void;
   mode?: "none" | "create" | "file" | "port";
-  onModeChange?: (mode: "none" | "create" | "file" | "port") => void;
   onReadFile?: () => void;
   onReadPort?: () => void;
   onCancel?: () => void;
@@ -36,7 +35,6 @@ export type LoggingFormProps = JSX.HTMLAttributes<Element> & {
 
 export function LoggingForm(props: LoggingFormProps) {
   const logForm = props.jsonfile;
-  const [fileName, setFileName] = createSignal<string>(props.fileName);
 
   const [cyclesCompleted, setCyclesCompleted] = createSignal<number>(0);
   const [currentLogStatus, setCurrentLogStatus] = createSignal<string>("");
@@ -120,7 +118,7 @@ export function LoggingForm(props: LoggingFormProps) {
       }
 
       const path = await save({
-        defaultPath: `${fileName()}`,
+        defaultPath: `${props.fileName}`,
         filters: [
           {
             name: "CSV",
@@ -176,7 +174,7 @@ export function LoggingForm(props: LoggingFormProps) {
   async function saveLogAsFile() {
     const json_str = JSON.stringify(logForm, null, "  ");
     const path = await save({
-      defaultPath: `${fileName()}`,
+      defaultPath: `${props.fileName}`,
       filters: [
         {
           name: "JSON",
@@ -222,15 +220,15 @@ export function LoggingForm(props: LoggingFormProps) {
   }
 
   return (
-    <div style={{ width: "40rem", "margin-bottom": "3rem" }}>
+    <div style={{ width: "100%", "margin-bottom": "3rem" }}>
       <Card.Root padding="0.5rem">
         <Card.Header paddingTop="3rem">
           <Editable.Root
             placeholder="File name"
-            defaultValue={fileName()}
+            defaultValue={props.fileName}
             activationMode="dblclick"
             onValueCommit={(e) => {
-              setFileName(e.value);
+              props.onFileNameChange?.(e.value);
             }}
             fontWeight="bold"
             fontSize="2xl"
@@ -250,7 +248,6 @@ export function LoggingForm(props: LoggingFormProps) {
           >
             <IconX />
           </IconButton>
-
           <Show when={props.mode !== "create"}>
             <IconButton
               onClick={() => {
