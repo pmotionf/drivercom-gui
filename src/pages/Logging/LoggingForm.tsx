@@ -21,6 +21,7 @@ import { IconFileIsr, IconReload, IconX } from "@tabler/icons-solidjs";
 import { Menu } from "~/components/ui/menu";
 import { ErrorMessage } from "../LogViewer/LogViewerTabPageContent";
 import { createListCollection, Select } from "~/components/ui/select";
+import { Tooltip } from "~/components/ui/tooltip";
 
 export type LoggingFormProps = JSX.HTMLAttributes<Element> & {
   jsonfile: object;
@@ -148,7 +149,7 @@ export function LoggingForm(props: LoggingFormProps) {
       }
 
       const csvFile = output.stdout;
-      await writeTextFile(path, csvFile);
+      await writeTextFile(`${path}.csv`, csvFile);
       setLogGetBtnLoading(false);
     }
   }
@@ -200,7 +201,7 @@ export function LoggingForm(props: LoggingFormProps) {
       return;
     }
 
-    await writeTextFile(path, json_str);
+    await writeTextFile(`${path}.json`, json_str);
     setRecentLogFilePaths((prev) => {
       const parseFilePath = prev.filter((prevPath) => prevPath !== path);
       return [path.replaceAll("\\", "/"), ...parseFilePath];
@@ -249,22 +250,33 @@ export function LoggingForm(props: LoggingFormProps) {
             <IconX />
           </IconButton>
           <Show when={props.mode !== "create"}>
-            <IconButton
-              onClick={() => {
-                if (props.mode === "file") {
-                  props.onReadFile?.();
-                } else if (props.mode === "port") {
-                  props.onReadPort?.();
-                }
-              }}
-              variant="ghost"
-              borderRadius="1rem"
-              width="1rem"
-              style={{ position: "absolute", top: "1.5rem", right: "4rem" }}
-              padding="0"
-            >
-              <IconFileIsr />
-            </IconButton>
+            <Tooltip.Root>
+              <Tooltip.Trigger>
+                <IconButton
+                  onClick={() => {
+                    if (props.mode === "file") {
+                      props.onReadFile?.();
+                    } else if (props.mode === "port") {
+                      props.onReadPort?.();
+                    }
+                  }}
+                  variant="ghost"
+                  borderRadius="1rem"
+                  width="1rem"
+                  style={{ position: "absolute", top: "1.5rem", right: "4rem" }}
+                  padding="0"
+                >
+                  <IconFileIsr />
+                </IconButton>
+              </Tooltip.Trigger>
+              <Tooltip.Positioner>
+                <Tooltip.Content backgroundColor="bg.default">
+                  <Text color="fg.default">
+                    Reload log from {`${props.mode}`}
+                  </Text>
+                </Tooltip.Content>
+              </Tooltip.Positioner>
+            </Tooltip.Root>
           </Show>
         </Card.Header>
         <Card.Body>
