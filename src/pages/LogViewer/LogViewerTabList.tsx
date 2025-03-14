@@ -100,14 +100,14 @@ export function LogViewerTabList(props: LogViewerTabListProps) {
 
     if (isReordering()) {
       setFocusedTab(draggedTabId()!);
-    } else {
-      if (!props.focusedTab) {
-        setFocusedTab(props.tabList[props.tabList.length - 1].id);
-      } else {
-        setFocusedTab(props.focusedTab);
-      }
-      scrollToEnd();
     }
+
+    if (!props.focusedTab) {
+      setFocusedTab(reorderTabList()[0].id);
+    } else {
+      setFocusedTab(props.focusedTab);
+    }
+    scrollToEnd();
   });
 
   return (
@@ -126,10 +126,9 @@ export function LogViewerTabList(props: LogViewerTabListProps) {
         }}
       >
         <Tabs.Root
-          value={focusedTab()}
+          value={props.focusedTab!}
           onValueChange={(e) => {
-            setFocusedTab(e.value);
-            props.onTabFocus?.(focusedTab());
+            props.onTabFocus?.(e.value);
           }}
           width="100%"
           height="100%"
