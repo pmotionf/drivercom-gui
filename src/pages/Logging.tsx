@@ -8,7 +8,7 @@ import {
   setRecentLogFilePaths,
 } from "~/GlobalState";
 import { Command } from "@tauri-apps/plugin-shell";
-import { createSignal, For, Show } from "solid-js";
+import { createEffect, createSignal, For, Show } from "solid-js";
 import { LoggingForm } from "./Logging/LoggingForm";
 import { Toast } from "~/components/ui/toast";
 import { IconX } from "@tabler/icons-solidjs";
@@ -29,6 +29,11 @@ export function Logging() {
   const [renderLoggingForm, setRenderLoggingForm] = createSignal<boolean>(
     false,
   );
+
+  createEffect(() => {
+    const currentMode = logMode();
+    currentMode === "none" ? setIsFileOpen(false) : setIsFileOpen(true);
+  });
 
   async function GetLogConfigFromPort(): Promise<object | null> {
     if (portId().length === 0) return null;
@@ -114,7 +119,7 @@ export function Logging() {
     setFileName(path.split("/").pop()!);
     setFilePath(path);
     setRenderLoggingForm(true);
-    setIsFileOpen(true);
+    setLogMode("file");
   }
 
   const [isButtonHovered, setIsButtonHoverd] = createSignal<
@@ -161,13 +166,12 @@ export function Logging() {
                   onFileNameChange={(newFileName) => setFileName(newFileName)}
                   mode={logMode()}
                   onModeChange={(currentMode, path) => {
-                    const parsePath = path.replaceAll("\\", "/").split("/")
-                      .pop();
+                    const parsePath = path.split("/").pop();
                     setFileName(parsePath!);
                     setLogMode(currentMode);
                     setFilePath(path);
                   }}
-                  onReadFile={async () => {
+                  onReloadFile={async () => {
                     setRenderLoggingForm(false);
                     const logObj = await readJsonFile(filePath());
                     if (!logObj) {
@@ -187,16 +191,22 @@ export function Logging() {
                     setLogConfigureFile(logObj);
                     setRenderLoggingForm(true);
                   }}
-                  onReadPort={async () => {
+                  onReloadPort={async () => {
                     setRenderLoggingForm(false);
                     const logObj = await GetLogConfigFromPort();
-                    if (!logObj) return;
+                    if (!logObj) {
+                      toaster.create({
+                        title: "Invalid Port",
+                        description: "The port is invalid.",
+                        type: "error",
+                      });
+                      return;
+                    }
                     setLogConfigureFile(logObj);
                     setRenderLoggingForm(true);
                   }}
                   onCancel={() => {
                     setFileName("");
-                    setIsFileOpen(false);
                     setLogConfigureFile({});
                     setLogMode("none");
                     setRenderLoggingForm(false);
@@ -235,7 +245,6 @@ export function Logging() {
                   setFileName("New File");
                   setLogConfigureFile(newEmptyFile);
                   setLogMode("create");
-                  setIsFileOpen(true);
                   setRenderLoggingForm(true);
                 }}
               >
@@ -296,7 +305,6 @@ export function Logging() {
                   setFileName(portId());
                   setLogConfigureFile(logConfigObj);
                   setLogMode("port");
-                  setIsFileOpen(true);
                   setRenderLoggingForm(true);
                 }}
               >

@@ -33,8 +33,8 @@ export type LoggingFormProps = JSX.HTMLAttributes<Element> & {
     mode: "none" | "create" | "file" | "port",
     filePath: string,
   ) => void;
-  onReadFile?: () => void;
-  onReadPort?: () => void;
+  onReloadFile?: () => void;
+  onReloadPort?: () => void;
   onCancel?: () => void;
   onErrorMessage?: (message: ErrorMessage) => void;
 };
@@ -255,9 +255,9 @@ export function LoggingForm(props: LoggingFormProps) {
                   <IconButton
                     onClick={() => {
                       if (props.mode === "file") {
-                        props.onReadFile?.();
+                        props.onReloadFile?.();
                       } else if (props.mode === "port") {
-                        props.onReadPort?.();
+                        props.onReloadPort?.();
                       }
                     }}
                     variant="ghost"
@@ -365,7 +365,10 @@ export function LoggingForm(props: LoggingFormProps) {
                         return;
                       }
                       if (props.mode === "create") {
-                        props.onModeChange?.("file", path);
+                        props.onModeChange?.(
+                          "file",
+                          path.replaceAll("\\", "/"),
+                        );
                       }
                       await saveLogAsFile(path, logForm);
                     }}
