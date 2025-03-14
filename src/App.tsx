@@ -325,8 +325,12 @@ function App(props: RouteSectionProps) {
                   <SegmentGroup.Root
                     value={page()}
                     onValueChange={(e) => {
-                      setPage(e.value);
-                      navigate("/" + e.value.toLowerCase(), { replace: true });
+                      if (e != null) {
+                        setPage(e.value!);
+                        navigate("/" + e.value!.toLowerCase(), {
+                          replace: true,
+                        });
+                      }
                     }}
                     style={{ width: "98%" }}
                   >
@@ -454,8 +458,10 @@ function App(props: RouteSectionProps) {
         <SegmentGroup.Root
           value={page()}
           onValueChange={(e) => {
-            setPage(e.value);
-            navigate("/" + e.value.toLowerCase(), { replace: true });
+            if (e != null) {
+              setPage(e.value!);
+              navigate("/" + e.value!.toLowerCase(), { replace: true });
+            }
           }}
           style={{
             "padding-top": "0.5rem",
