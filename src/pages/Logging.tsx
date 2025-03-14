@@ -8,20 +8,35 @@ import {
   setRecentLogFilePaths,
 } from "~/GlobalState";
 import { Command } from "@tauri-apps/plugin-shell";
-import { createSignal, For, Show } from "solid-js";
+import { createEffect, createSignal, For, Show } from "solid-js";
 import { LoggingForm } from "./Logging/LoggingForm";
 import { Toast } from "~/components/ui/toast";
 import { IconX } from "@tabler/icons-solidjs";
 import { open } from "@tauri-apps/plugin-dialog";
 import { readTextFile } from "@tauri-apps/plugin-fs";
+import { IconButton } from "~/components/ui/icon-button";
 
 export function Logging() {
   const [isFileOpen, setIsFileOpen] = createSignal<boolean>(false);
   const [logConfigureFile, setLogConfigureFile] = createSignal({});
   const [fileName, setFileName] = createSignal<string>("");
+  const [filePath, setFilePath] = createSignal<string>("");
+  const [logMode, setLogMode] = createSignal<
+    "create" | "port" | "file" | "none"
+  >("none");
 
-  async function GetLogConfigFromPort() {
-    if (portId().length === 0) return;
+  // This signal is needed in UI when reload the file or port.
+  const [renderLoggingForm, setRenderLoggingForm] = createSignal<boolean>(
+    false,
+  );
+
+  createEffect(() => {
+    const currentMode = logMode();
+    currentMode === "none" ? setIsFileOpen(false) : setIsFileOpen(true);
+  });
+
+  async function GetLogConfigFromPort(): Promise<object | null> {
+    if (portId().length === 0) return null;
     const sideCommand = Command.sidecar("binaries/drivercom", [
       `--port`,
       portId(),
@@ -30,10 +45,8 @@ export function Logging() {
     const output = await sideCommand.execute();
     const obj = JSON.parse(output.stdout);
 
-    if (output.stdout.length === 0) return;
-    setFileName(portId());
-    setLogConfigureFile(obj);
-    setIsFileOpen(true);
+    if (output.stdout.length === 0) return null;
+    else return obj;
   }
 
   const toaster = Toast.createToaster({
@@ -41,7 +54,7 @@ export function Logging() {
     gap: 24,
   });
 
-  async function openFileDialog() {
+  async function openFileDialog(): Promise<string | null> {
     const path = await open({
       multiple: false,
       filters: [
@@ -55,7 +68,7 @@ export function Logging() {
         description: "The file path is invalid.",
         type: "error",
       });
-      return undefined;
+      return null;
     }
 
     const extension = path.split(".").pop();
@@ -65,16 +78,16 @@ export function Logging() {
         description: "The file extension is invalid.",
         type: "error",
       });
-      return undefined;
+      return null;
     }
-    return path;
+    return path.replaceAll("\\", "/");
   }
 
   function checkFileFormat(file: object): string {
     const newFileFormat = Object.entries(file)
-      .map((line) => {
-        const key = line[0];
-        const value = line[1];
+      .map((entry) => {
+        const key = entry[0];
+        const value = entry[1];
         if (typeof value !== "object") return [key, typeof value];
         const parseValue = checkFileFormat(value);
         return [key, parseValue];
@@ -85,52 +98,46 @@ export function Logging() {
     return newFileFormat;
   }
 
-  async function readJsonFile(path: string) {
+  function compareFileFormat(newFile: object, fileFormat: object): boolean {
+    const newFileObject = checkFileFormat(newFile);
+    const logFileObject = checkFileFormat(fileFormat);
+    return newFileObject === logFileObject;
+  }
+
+  async function readJsonFile(path: string): Promise<object | null> {
     try {
       const output = await readTextFile(path);
       const parseFileToObject = JSON.parse(output);
-      const checkNewFileFormat = checkFileFormat(parseFileToObject);
-      const logFileFormat = checkFileFormat(logFormFileFormat());
-
-      if (
-        checkNewFileFormat !== logFileFormat
-      ) {
-        toaster.create({
-          title: "Invalid Log",
-          description: "Invalid log file.",
-          type: "error",
-        });
-        return;
-      }
-
-      const fileName = path.replaceAll("\\", "/").split("/").pop();
-      setFileName(fileName!);
-      setRecentLogFilePaths((prev) => {
-        const parseFilePath = prev.filter((prevPath) => prevPath !== path);
-        return [path, ...parseFilePath];
-      });
-      setLogConfigureFile(parseFileToObject);
-      setIsFileOpen(true);
+      return parseFileToObject;
     } catch {
-      toaster.create({
-        title: "Invalid File Path",
-        description: "The file path is invalid.",
-        type: "error",
-      });
-      setRecentLogFilePaths((prev) => {
-        const parseFilePath = prev.filter((prevPath) => prevPath !== path);
-        return [...parseFilePath];
-      });
+      return null;
     }
   }
 
+  function setFileData(file: object, path: string) {
+    setLogConfigureFile(file);
+    setFileName(path.split("/").pop()!);
+    setFilePath(path);
+    setRenderLoggingForm(true);
+    setLogMode("file");
+  }
+
+  const [isButtonHovered, setIsButtonHoverd] = createSignal<
+    [boolean, number | null]
+  >([
+    false,
+    null,
+  ]);
+
   return (
     <>
-      <div
+      <Stack
+        alignItems="center"
         style={{
           "padding-top": "4rem",
           "padding-bottom": "4rem",
           "height": "100%",
+          "width": `calc(100% - 3rem)`,
         }}
       >
         <Toast.Toaster toaster={toaster}>
@@ -147,33 +154,86 @@ export function Logging() {
         <Show
           when={!isFileOpen()}
           fallback={
-            <Stack direction="row" justifyContent="center">
-              <LoggingForm
-                jsonfile={logConfigureFile()}
-                fileName={fileName()}
-                onCancel={() => {
-                  setFileName("");
-                  setIsFileOpen(false);
-                  setLogConfigureFile({});
-                }}
-                onErrorMessage={(msg) => toaster.create(msg)}
-                style={{ "margin-bottom": "3rem" }}
-              />
+            <Stack direction="row" width="42rem">
+              <Show
+                when={renderLoggingForm()}
+                fallback={<div></div>}
+              >
+                <LoggingForm
+                  jsonfile={logConfigureFile()}
+                  fileName={fileName()}
+                  filePath={filePath()}
+                  onFileNameChange={(newFileName) => setFileName(newFileName)}
+                  mode={logMode()}
+                  onModeChange={(currentMode, path) => {
+                    const parsePath = path.split("/").pop();
+                    setFileName(parsePath!);
+                    setLogMode(currentMode);
+                    setFilePath(path);
+                  }}
+                  onReloadFile={async () => {
+                    setRenderLoggingForm(false);
+                    const logObj = await readJsonFile(filePath());
+                    if (!logObj) {
+                      toaster.create({
+                        title: "Invalid File Path",
+                        description: "The file path is invalid.",
+                        type: "error",
+                      });
+                      setRecentLogFilePaths((prev) => {
+                        const newRecentFiles = prev.filter((prevFilePath) =>
+                          prevFilePath !== filePath()
+                        );
+                        return newRecentFiles;
+                      });
+                      return;
+                    }
+                    setLogConfigureFile(logObj);
+                    setRenderLoggingForm(true);
+                  }}
+                  onReloadPort={async () => {
+                    setRenderLoggingForm(false);
+                    const logObj = await GetLogConfigFromPort();
+                    if (!logObj) {
+                      toaster.create({
+                        title: "Invalid Port",
+                        description: "The port is invalid.",
+                        type: "error",
+                      });
+                      return;
+                    }
+                    setLogConfigureFile(logObj);
+                    setRenderLoggingForm(true);
+                  }}
+                  onCancel={() => {
+                    setFileName("");
+                    setLogConfigureFile({});
+                    setLogMode("none");
+                    setRenderLoggingForm(false);
+                  }}
+                  onErrorMessage={(msg) => toaster.create(msg)}
+                />
+              </Show>
             </Stack>
           }
         >
           <Stack
-            width="42rem"
-            marginLeft={`calc((100% - 42rem) / 2)`}
+            width="100%"
+            alignItems="center"
             height="100%"
           >
-            <Text variant="heading" size="3xl">
+            <Text
+              variant="heading"
+              size="2xl"
+              width="44rem"
+            >
               Logging
             </Text>
             <Stack
               direction="row"
-              justifyContent="center"
               marginTop="1.5rem"
+              gap="1.5rem"
+              width="44rem"
             >
               <Button
                 variant="outline"
@@ -184,7 +244,8 @@ export function Logging() {
                   );
                   setFileName("New File");
                   setLogConfigureFile(newEmptyFile);
-                  setIsFileOpen(true);
+                  setLogMode("create");
+                  setRenderLoggingForm(true);
                 }}
               >
                 Create New File
@@ -195,7 +256,41 @@ export function Logging() {
                 onClick={async () => {
                   const path = await openFileDialog();
                   if (!path) return;
-                  readJsonFile(path);
+                  const logObj = await readJsonFile(path);
+                  if (!logObj) {
+                    toaster.create({
+                      title: "Invalid File Path",
+                      description: "The file path is invalid.",
+                      type: "error",
+                    });
+                    setRecentLogFilePaths((prev) => {
+                      const newRecentFiles = prev.filter((prevFilePath) =>
+                        prevFilePath !== filePath()
+                      );
+                      return newRecentFiles;
+                    });
+                    return;
+                  }
+                  const isFileFormatMatch = compareFileFormat(
+                    logObj,
+                    logFormFileFormat(),
+                  );
+                  if (isFileFormatMatch) {
+                    setLogMode("file");
+                    setFileData(logObj, path);
+                    setRecentLogFilePaths((prev) => {
+                      const newRecentFiles = prev.filter((prevFilePath) =>
+                        prevFilePath !== path
+                      );
+                      return [path, ...newRecentFiles];
+                    });
+                  } else {
+                    toaster.create({
+                      title: "Invalid File",
+                      description: "File format is invalid.",
+                      type: "error",
+                    });
+                  }
                 }}
               >
                 Open File
@@ -204,40 +299,178 @@ export function Logging() {
                 variant="outline"
                 padding="4rem"
                 disabled={portId().length === 0}
-                onClick={() => {
-                  GetLogConfigFromPort();
+                onClick={async () => {
+                  const logConfigObj = await GetLogConfigFromPort();
+                  if (!logConfigObj) return;
+                  setFileName(portId());
+                  setLogConfigureFile(logConfigObj);
+                  setLogMode("port");
+                  setRenderLoggingForm(true);
                 }}
               >
                 Get From Port
               </Button>
             </Stack>
             <Show when={recentLogFilePaths().length !== 0}>
-              <Text size="xl" marginTop="2rem" fontWeight="bold">
+              <Text width="44rem" size="xl" marginTop="2rem" fontWeight="bold">
                 Recent
               </Text>
+              <Stack width="44rem" direction="row" marginTop="0.5rem">
+                <Text
+                  width="16rem"
+                  size="sm"
+                  fontWeight="light"
+                  opacity="50%"
+                >
+                  File
+                </Text>
+                <Text
+                  size="sm"
+                  fontWeight="light"
+                  opacity="50%"
+                >
+                  Path
+                </Text>
+              </Stack>
               <Stack
-                marginTop="0.5rem"
-                maxHeight="100%"
                 style={{ "overflow-y": "auto" }}
+                height="100%"
+                width="44rem"
+                gap="0"
+                marginLeft="-0.5rem"
+                borderTopWidth="1"
+                borderBottomWidth="1"
               >
                 <For each={recentLogFilePaths()}>
-                  {(path) => (
-                    <Text
-                      onClick={() => {
-                        readJsonFile(path);
+                  {(path, index) => (
+                    <Button
+                      width="100%"
+                      variant="ghost"
+                      padding="0.5rem"
+                      paddingTop="1rem"
+                      paddingBottom="1rem"
+                      onMouseEnter={() => {
+                        setIsButtonHoverd([true, index()]);
                       }}
-                      cursor="pointer"
-                      userSelect="none"
+                      onMouseLeave={() => {
+                        setIsButtonHoverd([false, null]);
+                      }}
+                      bgColor={isButtonHovered()[0] === true &&
+                          isButtonHovered()[1] === index()
+                        ? "bg.muted"
+                        : "bg.canvas"}
+                      gap="0"
                     >
-                      {path}
-                    </Text>
+                      <Text
+                        userSelect="none"
+                        onClick={async () => {
+                          const object = await readJsonFile(path);
+                          if (!object) {
+                            toaster.create({
+                              title: "Invalid File Path",
+                              description: "The file path is invalid.",
+                              type: "error",
+                            });
+                            setRecentLogFilePaths((prev) => {
+                              const newRecentFiles = prev.filter((
+                                prevFilePath,
+                              ) => prevFilePath !== path);
+                              return newRecentFiles;
+                            });
+                            return;
+                          }
+                          setFileData(object!, path);
+                          setIsButtonHoverd([false, null]);
+                        }}
+                        size="md"
+                        height="2rem"
+                        fontWeight="medium"
+                        style={{
+                          "white-space": "nowrap",
+                          "text-overflow": "ellipsis",
+                          "display": "block",
+                          "overflow": "hidden",
+                          "text-align": "left",
+                          "margin-top": "0.4rem",
+                          width: "15rem",
+                        }}
+                      >
+                        {path.match(/[^//]+$/)!.toString()}
+                      </Text>
+                      <Text
+                        userSelect="none"
+                        size="sm"
+                        fontWeight="light"
+                        marginLeft="0.5rem"
+                        opacity="70%"
+                        onClick={async () => {
+                          const object = await readJsonFile(path);
+                          if (!object) {
+                            toaster.create({
+                              title: "Invalid File Path",
+                              description: "The file path is invalid.",
+                              type: "error",
+                            });
+                            setRecentLogFilePaths((prev) => {
+                              const newRecentFiles = prev.filter((
+                                prevFilePath,
+                              ) => prevFilePath !== path);
+                              return newRecentFiles;
+                            });
+                            return;
+                          }
+                          setFileData(object!, path);
+                          setIsButtonHoverd([false, null]);
+                        }}
+                        style={{
+                          "white-space": "nowrap",
+                          "text-overflow": "ellipsis",
+                          "display": "block",
+                          "overflow": "hidden",
+                          "text-align": "left",
+                          width: `calc(100% - 17rem)`,
+                          "padding-left": "1rem",
+                        }}
+                      >
+                        {path.replace(
+                          path.match(/[^?!//]+$/)!.toString(),
+                          "",
+                        )}
+                      </Text>
+                      <Stack width="2rem">
+                        <Show
+                          when={isButtonHovered()[0] === true &&
+                            isButtonHovered()[1] === index()}
+                        >
+                          <IconButton
+                            padding="0"
+                            opacity="50%"
+                            variant="ghost"
+                            borderRadius="2rem"
+                            size="sm"
+                            width="1rem"
+                            marginRight="1rem"
+                            onClick={() => {
+                              setRecentLogFilePaths((prev) => {
+                                const updateFilePath = prev.filter((_, i) => {
+                                  return i !== index();
+                                });
+                                return updateFilePath;
+                              });
+                            }}
+                          >
+                            <IconX width="1rem" />
+                          </IconButton>
+                        </Show>
+                      </Stack>
+                    </Button>
                   )}
                 </For>
               </Stack>
             </Show>
           </Stack>
         </Show>
-      </div>
+      </Stack>
     </>
   );
 }

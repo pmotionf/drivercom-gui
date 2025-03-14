@@ -17,21 +17,30 @@ import { Command } from "@tauri-apps/plugin-shell";
 import { createStore } from "solid-js/store";
 import { Editable } from "~/components/ui/editable";
 import { IconButton } from "~/components/ui/icon-button";
-import { IconReload, IconX } from "@tabler/icons-solidjs";
+import { IconFileIsr, IconReload, IconX } from "@tabler/icons-solidjs";
 import { Menu } from "~/components/ui/menu";
 import { ErrorMessage } from "../LogViewer/LogViewerTabPageContent";
 import { createListCollection, Select } from "~/components/ui/select";
+import { Tooltip } from "~/components/ui/tooltip";
 
 export type LoggingFormProps = JSX.HTMLAttributes<Element> & {
   jsonfile: object;
   fileName: string;
+  onFileNameChange?: (fileName: string) => void;
+  mode?: "none" | "create" | "file" | "port";
+  filePath?: string;
+  onModeChange?: (
+    mode: "none" | "create" | "file" | "port",
+    filePath: string,
+  ) => void;
+  onReloadFile?: () => void;
+  onReloadPort?: () => void;
   onCancel?: () => void;
   onErrorMessage?: (message: ErrorMessage) => void;
 };
 
 export function LoggingForm(props: LoggingFormProps) {
   const logForm = props.jsonfile;
-  const [fileName, setFileName] = createSignal<string>(props.fileName);
 
   const [cyclesCompleted, setCyclesCompleted] = createSignal<number>(0);
   const [currentLogStatus, setCurrentLogStatus] = createSignal<string>("");
@@ -115,7 +124,7 @@ export function LoggingForm(props: LoggingFormProps) {
       }
 
       const path = await save({
-        defaultPath: `${fileName()}`,
+        defaultPath: `${props.fileName}`,
         filters: [
           {
             name: "CSV",
@@ -168,10 +177,21 @@ export function LoggingForm(props: LoggingFormProps) {
     await logStop.execute();
   }
 
-  async function saveLogAsFile() {
-    const json_str = JSON.stringify(logForm, null, "  ");
+  async function openSaveFileDialog(): Promise<string | null> {
+    const fileNameFromPath = props.filePath! && props.filePath.length !== 0
+      ? props.filePath.match(/[^?!//]+$/)!.toString()
+      : "";
+    const currentFilePath = props.filePath! && props.filePath.length !== 0
+      ? props.fileName === fileNameFromPath
+        ? props.filePath
+        : props.filePath.replace(
+          fileNameFromPath,
+          props.fileName,
+        )
+      : props.fileName;
+
     const path = await save({
-      defaultPath: `${fileName()}`,
+      defaultPath: `${currentFilePath}`,
       filters: [
         {
           name: "JSON",
@@ -180,27 +200,23 @@ export function LoggingForm(props: LoggingFormProps) {
       ],
     });
     if (!path) {
-      props.onErrorMessage?.({
-        title: "Invalid File Path",
-        description: "The specified file path is invalid.",
-        type: "error",
-      });
-      return;
-    }
-    const extension = path.split(".").pop();
-    if (extension != "json") {
-      props.onErrorMessage?.({
-        title: "Invalid File Extension",
-        description: "The specified file extension is invalid.",
-        type: "error",
-      });
-      return;
+      return null;
     }
 
+    const extension = path.split(".").pop();
+    if (extension != "json") {
+      return null;
+    }
+
+    return path;
+  }
+
+  async function saveLogAsFile(path: string, logForm: object) {
+    const json_str = JSON.stringify(logForm, null, "  ");
     await writeTextFile(path, json_str);
     setRecentLogFilePaths((prev) => {
       const parseFilePath = prev.filter((prevPath) => prevPath !== path);
-      return [path, ...parseFilePath];
+      return [path.replaceAll("\\", "/"), ...parseFilePath];
     });
   }
 
@@ -217,15 +233,55 @@ export function LoggingForm(props: LoggingFormProps) {
   }
 
   return (
-    <div style={{ width: "40rem", "margin-bottom": "3rem" }}>
+    <div style={{ width: "100%", "margin-bottom": "3rem" }}>
       <Card.Root padding="0.5rem">
-        <Card.Header paddingTop="3rem">
+        <Card.Header paddingTop="1rem">
+          <Stack
+            direction="row-reverse"
+            width="100%"
+            gap="1"
+            marginBottom="1rem"
+          >
+            <IconButton
+              onClick={() => props.onCancel?.()}
+              variant="ghost"
+              borderRadius="1rem"
+            >
+              <IconX />
+            </IconButton>
+            <Show when={props.mode !== "create"}>
+              <Tooltip.Root>
+                <Tooltip.Trigger>
+                  <IconButton
+                    onClick={() => {
+                      if (props.mode === "file") {
+                        props.onReloadFile?.();
+                      } else if (props.mode === "port") {
+                        props.onReloadPort?.();
+                      }
+                    }}
+                    variant="ghost"
+                    borderRadius="1rem"
+                  >
+                    <IconFileIsr />
+                  </IconButton>
+                </Tooltip.Trigger>
+                <Tooltip.Positioner>
+                  <Tooltip.Content backgroundColor="bg.default">
+                    <Text color="fg.default">
+                      Reload log from {`${props.mode}`}
+                    </Text>
+                  </Tooltip.Content>
+                </Tooltip.Positioner>
+              </Tooltip.Root>
+            </Show>
+          </Stack>
           <Editable.Root
             placeholder="File name"
-            defaultValue={fileName()}
+            defaultValue={props.fileName}
             activationMode="dblclick"
             onValueCommit={(e) => {
-              setFileName(e.value);
+              props.onFileNameChange?.(e.value);
             }}
             fontWeight="bold"
             fontSize="2xl"
@@ -235,19 +291,11 @@ export function LoggingForm(props: LoggingFormProps) {
               <Editable.Preview />
             </Editable.Area>
           </Editable.Root>
-          <IconButton
-            onClick={() => props.onCancel?.()}
-            variant="ghost"
-            borderRadius="1rem"
-            width="1rem"
-            style={{ position: "absolute", top: "1.5rem", right: "1.5rem" }}
-            padding="0"
-          >
-            <IconX />
-          </IconButton>
         </Card.Header>
-        <Card.Body gap={1.5}>
-          <LogConfigFieldSet object={logForm} />
+        <Card.Body>
+          <div style={{ "margin-top": "2rem" }}>
+            <LogConfigFieldSet object={logForm} />
+          </div>
         </Card.Body>
         <Card.Footer marginTop="3rem" marginBottom="2rem">
           <Stack direction="row">
@@ -290,7 +338,6 @@ export function LoggingForm(props: LoggingFormProps) {
                 cyclesCompleted() === 0}
               onClick={async () => {
                 await saveLogCsvFile();
-                //await getCurrentLogStatus()
               }}
               variant="outline"
               loading={logGetBtnLoading()}
@@ -307,7 +354,24 @@ export function LoggingForm(props: LoggingFormProps) {
                 <Menu.Content width="8rem">
                   <Menu.Item
                     value="Save as file"
-                    onClick={() => saveLogAsFile()}
+                    onClick={async () => {
+                      const path = await openSaveFileDialog();
+                      if (!path) {
+                        props.onErrorMessage?.({
+                          title: "Invalid File Path",
+                          description: "The specified file path is invalid.",
+                          type: "error",
+                        });
+                        return;
+                      }
+                      if (props.mode === "create") {
+                        props.onModeChange?.(
+                          "file",
+                          path.replaceAll("\\", "/"),
+                        );
+                      }
+                      await saveLogAsFile(path, logForm);
+                    }}
                     userSelect="none"
                   >
                     Save as file
@@ -339,7 +403,6 @@ export type logConfigFieldSetProps = JSX.HTMLAttributes<Element> & {
   sectionName?: string;
 };
 
-// Component for parse log config to display log config field.
 export function LogConfigFieldSet(props: logConfigFieldSetProps) {
   const [obj, setObject] = createStore<object>(props.object);
 
@@ -381,107 +444,58 @@ export function LogConfigFieldSet(props: logConfigFieldSetProps) {
 
   return (
     <For each={Object.entries(obj)}>
-      {(key, index) => (
-        <>
-          <Show when={props.sectionName === undefined}>
-            <Text
-              fontWeight="bold"
-              marginTop="1rem"
-              opacity="50%"
-              size="lg"
-              userSelect="none"
-            >
-              {`${key[0][0].toUpperCase()}${key[0].slice(1, key[0].length)}`}
-            </Text>
-          </Show>
-          <Show when={typeof key[1] === "number" && key[0] !== "_"}>
-            <Stack direction="row">
-              <Show when={props.sectionName}>
-                <Text
-                  marginTop="0.3rem"
-                  width="30%"
-                  fontWeight="light"
-                  userSelect="none"
-                >
-                  {`${props.sectionName} ${Number(key[0]) + 1}`}
-                </Text>
-              </Show>
-              <Input
-                value={Number(key[1])}
-                type="number"
-                onChange={(e) => {
-                  setObject(
-                    key[0] as keyof typeof obj,
-                    // @ts-ignore : TSC unable to handle generic object type
-                    // in store
-                    Number(e.target.value),
-                  );
+      {(entry, index) => {
+        const key = entry[0];
+        const value = entry[1];
+        const keyArray = Array.from(key);
+        const upperCaseKey = keyArray.map((char, i) => {
+          if (i === 0) return char.toUpperCase();
+          else if (keyArray[i - 1] === "_") return char.toUpperCase();
+          else return char;
+        }).toString().replaceAll(",", "");
+
+        if (typeof value == "object") {
+          return (
+            <>
+              <fieldset
+                style={{
+                  "border-width": "1px",
+                  padding: "1rem",
+                  "padding-top": "0",
+                  "margin-bottom": "1rem",
+                  "border-radius": "0.5rem",
+                  "margin-top": "0.5rem",
                 }}
-              />
-            </Stack>
-          </Show>
-          <Show when={typeof key[1] === "string"}>
-            <Text
-              marginTop="0.3rem"
-              width="30%"
-              userSelect="none"
-              marginBottom="0.5rem"
-            >
-              {`${key[0][0].toUpperCase()}${key[0].slice(1, key[0].length)}`}
-            </Text>
-            <Select.Root
-              positioning={{ sameWidth: true }}
-              width="2xs"
-              collection={key[0].toString() === "kind"
-                ? logStartConditions
-                : logStartCombinators}
-              defaultValue={[key[1].toString()]}
-              onValueChange={(v) => {
-                setObject(
-                  key[0] as keyof typeof obj,
-                  // @ts-ignore : TSC unable to handle generic object type
-                  // in store
-                  Object.values(v.items)[0].label,
-                );
-              }}
-            >
-              <Select.Control>
-                <Select.Trigger>
-                  <Select.ValueText placeholder="Select a Framework" />
-                </Select.Trigger>
-              </Select.Control>
-              <Select.Positioner>
-                <Select.Content>
-                  <For
-                    each={key[0].toString() === "kind"
-                      ? logStartConditions.items
-                      : logStartCombinators.items}
+              >
+                <legend>
+                  <Text
+                    fontWeight="bold"
+                    opacity="50%"
+                    size="lg"
+                    userSelect="none"
                   >
-                    {(item) => (
-                      <Select.Item item={item}>
-                        <Select.ItemText>{item.label}</Select.ItemText>
-                        <Select.ItemIndicator>
-                        </Select.ItemIndicator>
-                      </Select.Item>
-                    )}
-                  </For>
-                </Select.Content>
-              </Select.Positioner>
-            </Select.Root>
-          </Show>
-          <Show when={typeof key[1] === "boolean"}>
+                    {upperCaseKey}
+                  </Text>
+                </legend>
+                <LogConfigFieldSet object={value} sectionName={key} />
+              </fieldset>
+            </>
+          );
+        }
+        if (typeof value == "boolean") {
+          return (
             <Checkbox
-              checked={obj[key[0] as keyof typeof obj]}
+              checked={obj[key as keyof typeof obj]}
               onCheckedChange={(e) => {
                 setObject(
-                  key[0] as keyof typeof obj,
+                  key as keyof typeof obj,
                   // @ts-ignore : TSC unable to handle generic object type
                   // in store
                   e.checked,
                 );
               }}
               onClick={(e) => {
-                if (key[1] as keyof typeof obj) {
+                if (value as keyof typeof obj) {
                   setPrevCheckBoxIndex(null);
                   return;
                 }
@@ -489,33 +503,112 @@ export function LogConfigFieldSet(props: logConfigFieldSetProps) {
                   ? setPrevCheckBoxIndex(index())
                   : checkBoxShiftClick(index());
               }}
+              style={{
+                "margin-top": "0.2rem",
+              }}
             >
               <Text fontWeight="light" userSelect="none">
-                {!isNaN(Number(key[0]))
-                  ? `${props.sectionName} ${Number(key[0]) + 1}`
-                  : key[0]}
+                {!isNaN(Number(key))
+                  ? `${props.sectionName} ${Number(key) + 1}`
+                  : key}
               </Text>
             </Checkbox>
-          </Show>
-          <Show when={typeof key[1] === "object"}>
-            <Show when={props.sectionName !== undefined}>
-              <Text
-                marginTop="0.2rem"
-                marginBottom="0.5rem"
-                fontWeight="medium"
-                userSelect="none"
+          );
+        }
+        if (typeof value === "number") {
+          if (key === "_") return;
+          return (
+            <>
+              <Stack
+                direction="row"
+                style={{
+                  "margin-top": "0.5rem",
+                }}
               >
-                {`${key[0][0].toUpperCase()}${key[0].slice(1, key[0].length)}`}
+                <Text
+                  marginTop="0.3rem"
+                  width="50%"
+                  fontWeight="light"
+                  userSelect="none"
+                  marginLeft="0.5rem"
+                >
+                  <Show
+                    when={props.sectionName}
+                    fallback={upperCaseKey}
+                  >
+                    {`${props.sectionName![0].toUpperCase()}${
+                      props.sectionName!.slice(1, props.sectionName!.length)
+                    } ${Number(key[0]) + 1}`}
+                  </Show>
+                </Text>
+                <Input
+                  value={Number(value)}
+                  type="number"
+                  onChange={(e) => {
+                    setObject(
+                      key as keyof typeof obj,
+                      // @ts-ignore : TSC unable to handle generic object type
+                      // in store
+                      Number(e.target.value),
+                    );
+                  }}
+                />
+              </Stack>
+            </>
+          );
+        }
+        if (typeof value == "string") {
+          return (
+            <>
+              <Text
+                marginTop="0.5rem"
+                marginLeft="0.2rem"
+                userSelect="none"
+                marginBottom="0.5rem"
+              >
+                {`${key[0].toUpperCase()}${key.slice(1, key.length)}`}
               </Text>
-            </Show>
-            <LogConfigFieldSet
-              object={key[1]}
-              sectionName={key[0]}
-              style={{ "margin-bottom": "0.5rem" }}
-            />
-          </Show>
-        </>
-      )}
+              <Select.Root
+                positioning={{ sameWidth: true }}
+                width="2xs"
+                collection={key === "kind"
+                  ? logStartConditions
+                  : logStartCombinators}
+                defaultValue={[value.toString()]}
+                onValueChange={(v) => {
+                  setObject(
+                    key as keyof typeof obj,
+                    v.items[0].label,
+                  );
+                }}
+              >
+                <Select.Control>
+                  <Select.Trigger>
+                    <Select.ValueText placeholder={`Select ${key}`} />
+                  </Select.Trigger>
+                </Select.Control>
+                <Select.Positioner>
+                  <Select.Content>
+                    <For
+                      each={key === "kind"
+                        ? logStartConditions.items
+                        : logStartCombinators.items}
+                    >
+                      {(item) => (
+                        <Select.Item item={item}>
+                          <Select.ItemText>{item.label}</Select.ItemText>
+                          <Select.ItemIndicator>
+                          </Select.ItemIndicator>
+                        </Select.Item>
+                      )}
+                    </For>
+                  </Select.Content>
+                </Select.Positioner>
+              </Select.Root>
+            </>
+          );
+        }
+      }}
     </For>
   );
 }
