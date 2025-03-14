@@ -28,6 +28,11 @@ export type LoggingFormProps = JSX.HTMLAttributes<Element> & {
   fileName: string;
   onFileNameChange?: (fileName: string) => void;
   mode?: "none" | "create" | "file" | "port";
+  filePath?: string;
+  onModeChange?: (
+    mode: "none" | "create" | "file" | "port",
+    filePath: string,
+  ) => void;
   onReadFile?: () => void;
   onReadPort?: () => void;
   onCancel?: () => void;
@@ -149,7 +154,7 @@ export function LoggingForm(props: LoggingFormProps) {
       }
 
       const csvFile = output.stdout;
-      await writeTextFile(`${path}.csv`, csvFile);
+      await writeTextFile(path, csvFile);
       setLogGetBtnLoading(false);
     }
   }
@@ -172,10 +177,21 @@ export function LoggingForm(props: LoggingFormProps) {
     await logStop.execute();
   }
 
-  async function saveLogAsFile() {
-    const json_str = JSON.stringify(logForm, null, "  ");
+  async function openSaveFileDialog(): Promise<string | null> {
+    const fileNameFromPath = props.filePath! && props.filePath.length !== 0
+      ? props.filePath.match(/[^?!//]+$/)!.toString()
+      : "";
+    const currentFilePath = props.filePath! && props.filePath.length !== 0
+      ? props.fileName === fileNameFromPath
+        ? props.filePath
+        : props.filePath.replace(
+          fileNameFromPath,
+          props.fileName,
+        )
+      : props.fileName;
+
     const path = await save({
-      defaultPath: `${props.fileName}`,
+      defaultPath: `${currentFilePath}`,
       filters: [
         {
           name: "JSON",
@@ -184,24 +200,20 @@ export function LoggingForm(props: LoggingFormProps) {
       ],
     });
     if (!path) {
-      props.onErrorMessage?.({
-        title: "Invalid File Path",
-        description: "The specified file path is invalid.",
-        type: "error",
-      });
-      return;
-    }
-    const extension = path.split(".").pop();
-    if (extension != "json") {
-      props.onErrorMessage?.({
-        title: "Invalid File Extension",
-        description: "The specified file extension is invalid.",
-        type: "error",
-      });
-      return;
+      return null;
     }
 
-    await writeTextFile(`${path}.json`, json_str);
+    const extension = path.split(".").pop();
+    if (extension != "json") {
+      return null;
+    }
+
+    return path;
+  }
+
+  async function saveLogAsFile(path: string, logForm: object) {
+    const json_str = JSON.stringify(logForm, null, "  ");
+    await writeTextFile(path, json_str);
     setRecentLogFilePaths((prev) => {
       const parseFilePath = prev.filter((prevPath) => prevPath !== path);
       return [path.replaceAll("\\", "/"), ...parseFilePath];
@@ -342,7 +354,21 @@ export function LoggingForm(props: LoggingFormProps) {
                 <Menu.Content width="8rem">
                   <Menu.Item
                     value="Save as file"
-                    onClick={() => saveLogAsFile()}
+                    onClick={async () => {
+                      const path = await openSaveFileDialog();
+                      if (!path) {
+                        props.onErrorMessage?.({
+                          title: "Invalid File Path",
+                          description: "The specified file path is invalid.",
+                          type: "error",
+                        });
+                        return;
+                      }
+                      if (props.mode === "create") {
+                        props.onModeChange?.("file", path);
+                      }
+                      await saveLogAsFile(path, logForm);
+                    }}
                     userSelect="none"
                   >
                     Save as file

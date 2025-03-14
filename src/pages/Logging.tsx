@@ -157,8 +157,16 @@ export function Logging() {
                 <LoggingForm
                   jsonfile={logConfigureFile()}
                   fileName={fileName()}
+                  filePath={filePath()}
                   onFileNameChange={(newFileName) => setFileName(newFileName)}
                   mode={logMode()}
+                  onModeChange={(currentMode, path) => {
+                    const parsePath = path.replaceAll("\\", "/").split("/")
+                      .pop();
+                    setFileName(parsePath!);
+                    setLogMode(currentMode);
+                    setFilePath(path);
+                  }}
                   onReadFile={async () => {
                     setRenderLoggingForm(false);
                     const logObj = await readJsonFile(filePath());
