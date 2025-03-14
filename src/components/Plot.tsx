@@ -21,11 +21,16 @@ import { IconButton } from "~/components/ui/icon-button";
 import {
   IconArrowsMove,
   IconCrosshair,
+  IconLocation,
+  IconLocationOff,
   IconZoomInArea,
   IconZoomReset,
 } from "@tabler/icons-solidjs";
 import { Stack } from "styled-system/jsx";
 import { Legend, LegendStroke } from "./Plot/Legend";
+import { Tooltip } from "./ui/tooltip";
+import { Text } from "./ui/text";
+import { Portal } from "solid-js/web";
 
 export type PlotProps = JSX.HTMLAttributes<HTMLDivElement> & {
   id: string;
@@ -45,6 +50,7 @@ export type PlotContext = {
   color: string[];
   palette: string[];
   style: LegendStroke[];
+  selected: boolean[];
 };
 
 enum CursorMode {
@@ -116,6 +122,11 @@ export function Plot(props: PlotProps) {
         props.header.map(() => true),
       );
     }
+
+    setContext()(
+      "selected",
+      props.header.map(() => false),
+    );
   });
 
   createEffect(() => {
@@ -459,9 +470,16 @@ export function Plot(props: PlotProps) {
     }
   `;
 
+  const [showLegendCheckBox, setShowLegendCheckBox] = createSignal<boolean>(
+    false,
+  );
+
   return (
     <>
-      <div {...rest} id={props.id + "-wrapper"}>
+      <div
+        {...rest}
+        id={props.id + "-wrapper"}
+      >
         <Heading
           size="lg"
           style={{
@@ -489,20 +507,32 @@ export function Plot(props: PlotProps) {
             "margin-top": "0.5rem",
           }}
         >
-          <IconButton
-            variant="outline"
-            disabled={zoomReset()}
-            onclick={() => {
-              uPlot.sync(group()).plots.forEach((up: uPlot) => {
-                const xMax = Number(up.data[0].length - 1);
-                up.setScale("x", { min: 0, max: xMax });
-                setXRange(xMax);
-                props.onXRangeChange?.([0, xMax]);
-              });
-            }}
-          >
-            <IconZoomReset />
-          </IconButton>
+          <Tooltip.Root>
+            <Tooltip.Trigger>
+              <IconButton
+                variant="outline"
+                disabled={zoomReset()}
+                onclick={() => {
+                  uPlot.sync(group()).plots.forEach((up: uPlot) => {
+                    const xMax = Number(up.data[0].length - 1);
+                    up.setScale("x", { min: 0, max: xMax });
+                    setXRange(xMax);
+                    props.onXRangeChange?.([0, xMax]);
+                  });
+                }}
+              >
+                <IconZoomReset />
+              </IconButton>
+            </Tooltip.Trigger>
+            <Tooltip.Positioner>
+              <Tooltip.Content backgroundColor="bg.default">
+                <Text color="fg.default">
+                  Zoom Reset
+                </Text>
+              </Tooltip.Content>
+            </Tooltip.Positioner>
+          </Tooltip.Root>
+
           <ToggleGroup.Root
             value={[CursorMode[lastCursorMode()]]}
             onValueChange={(details) => {
@@ -517,49 +547,121 @@ export function Plot(props: PlotProps) {
               }
             }}
           >
-            <ToggleGroup.Item
-              value={CursorMode[CursorMode.Pan]}
-              aria-label="Toggle Pan"
-              color={cursorMode() === CursorMode.Pan
-                ? "fg.default"
-                : "fg.muted"}
-              bgColor={cursorMode() === CursorMode.Pan
-                ? "bg.emphasized"
-                : lastCursorMode() === CursorMode.Pan
-                ? "bg.subtle"
-                : "bg.default"}
-            >
-              <IconArrowsMove />
-            </ToggleGroup.Item>
-            <ToggleGroup.Item
-              value={CursorMode[CursorMode.Zoom]}
-              aria-label="Toggle Selection Zoom"
-              color={cursorMode() === CursorMode.Zoom
-                ? "fg.default"
-                : "fg.muted"}
-              bgColor={cursorMode() === CursorMode.Zoom
-                ? "bg.emphasized"
-                : lastCursorMode() === CursorMode.Zoom
-                ? "bg.subtle"
-                : "bg.default"}
-            >
-              <IconZoomInArea />
-            </ToggleGroup.Item>
-            <ToggleGroup.Item
-              value={CursorMode[CursorMode.Lock]}
-              aria-label="Toggle Cursor Lock"
-              color={cursorMode() === CursorMode.Lock
-                ? "fg.default"
-                : "fg.muted"}
-              bgColor={cursorMode() === CursorMode.Lock
-                ? "bg.emphasized"
-                : lastCursorMode() === CursorMode.Lock
-                ? "bg.subtle"
-                : "bg.default"}
-            >
-              <IconCrosshair />
-            </ToggleGroup.Item>
+            <Tooltip.Root>
+              <Tooltip.Trigger>
+                <ToggleGroup.Item
+                  value={CursorMode[CursorMode.Pan]}
+                  aria-label="Toggle Pan"
+                  color={cursorMode() === CursorMode.Pan
+                    ? "fg.default"
+                    : "fg.muted"}
+                  bgColor={cursorMode() === CursorMode.Pan
+                    ? "bg.emphasized"
+                    : lastCursorMode() === CursorMode.Pan
+                    ? "bg.subtle"
+                    : "bg.default"}
+                >
+                  <IconArrowsMove />
+                </ToggleGroup.Item>
+              </Tooltip.Trigger>
+              <Portal>
+                <Tooltip.Positioner>
+                  <Tooltip.Content backgroundColor="bg.default">
+                    <Text color="fg.default">
+                      Plot Panning
+                    </Text>
+                  </Tooltip.Content>
+                </Tooltip.Positioner>
+              </Portal>
+            </Tooltip.Root>
+
+            <Tooltip.Root>
+              <Tooltip.Trigger>
+                <ToggleGroup.Item
+                  value={CursorMode[CursorMode.Zoom]}
+                  aria-label="Toggle Selection Zoom"
+                  color={cursorMode() === CursorMode.Zoom
+                    ? "fg.default"
+                    : "fg.muted"}
+                  bgColor={cursorMode() === CursorMode.Zoom
+                    ? "bg.emphasized"
+                    : lastCursorMode() === CursorMode.Zoom
+                    ? "bg.subtle"
+                    : "bg.default"}
+                >
+                  <IconZoomInArea />
+                </ToggleGroup.Item>
+              </Tooltip.Trigger>
+              <Portal>
+                <Tooltip.Positioner>
+                  <Tooltip.Content backgroundColor="bg.default">
+                    <Text color="fg.default">
+                      Selection Zoom
+                    </Text>
+                  </Tooltip.Content>
+                </Tooltip.Positioner>
+              </Portal>
+            </Tooltip.Root>
+
+            <Tooltip.Root>
+              <Tooltip.Trigger>
+                <ToggleGroup.Item
+                  value={CursorMode[CursorMode.Lock]}
+                  aria-label="Toggle Cursor Lock"
+                  color={cursorMode() === CursorMode.Lock
+                    ? "fg.default"
+                    : "fg.muted"}
+                  bgColor={cursorMode() === CursorMode.Lock
+                    ? "bg.emphasized"
+                    : lastCursorMode() === CursorMode.Lock
+                    ? "bg.subtle"
+                    : "bg.default"}
+                >
+                  <IconCrosshair />
+                </ToggleGroup.Item>
+              </Tooltip.Trigger>
+              <Portal>
+                <Tooltip.Positioner>
+                  <Tooltip.Content backgroundColor="bg.default">
+                    <Text color="fg.default">
+                      Cursor Lock
+                    </Text>
+                  </Tooltip.Content>
+                </Tooltip.Positioner>
+              </Portal>
+            </Tooltip.Root>
           </ToggleGroup.Root>
+
+          <Tooltip.Root>
+            <Tooltip.Trigger>
+              <IconButton
+                variant="outline"
+                onClick={() => {
+                  if (showLegendCheckBox()) {
+                    setContext()(
+                      "selected",
+                      props.header.map(() => false),
+                    );
+                  }
+                  setShowLegendCheckBox(!showLegendCheckBox());
+                }}
+              >
+                <Show
+                  when={showLegendCheckBox()}
+                  fallback={<IconLocationOff />}
+                >
+                  <IconLocation />
+                </Show>
+              </IconButton>
+            </Tooltip.Trigger>
+            <Tooltip.Positioner>
+              <Tooltip.Content backgroundColor="bg.default">
+                <Text color="fg.default">
+                  Select
+                </Text>
+              </Tooltip.Content>
+            </Tooltip.Positioner>
+          </Tooltip.Root>
         </Stack>
         <Show when={render()}>
           <Stack
@@ -588,6 +690,12 @@ export function Plot(props: PlotProps) {
                   group={group()}
                   series={header}
                   cursorIdx={props.cursorIdx}
+                  showSelectCheckBox={showLegendCheckBox()}
+                  selected={getContext().selected[index()]}
+                  onSelectChange={(isChecked) => {
+                    setContext()("selected", index(), isChecked);
+                    props.onContextChange?.(getContext());
+                  }}
                   visible={getContext().visible[index()]}
                   onVisibleChange={(new_visible) => {
                     setContext()("visible", index(), new_visible);

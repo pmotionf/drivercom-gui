@@ -6,13 +6,23 @@ import {
   JSX,
   onCleanup,
   onMount,
+  Show,
 } from "solid-js";
 import { createStore } from "solid-js/store";
 import { Plot, PlotContext } from "~/components/Plot";
-import { Button } from "~/components/ui/button";
 import { inferSchema, initParser } from "udsv";
 import { readTextFile } from "@tauri-apps/plugin-fs";
 import uPlot from "uplot";
+import { IconButton } from "~/components/ui/icon-button";
+import {
+  IconFold,
+  IconRotate2,
+  IconSeparatorHorizontal,
+} from "@tabler/icons-solidjs";
+import { Stack } from "styled-system/jsx";
+import { Text } from "~/components/ui/text";
+import { Checkbox } from "~/components/ui/checkbox";
+import { Tooltip } from "~/components/ui/tooltip";
 
 export type ErrorMessage = {
   title: string;
@@ -37,6 +47,7 @@ export type LogViewerTabPageContentProps =
 export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
   const [plots, setPlots] = createStore([{} as PlotContext]);
   const [splitIndex, setSplitIndex] = createSignal([] as number[][]);
+  const [mergePlotIndexes, setMergePlotIndexes] = createSignal<number[]>([]);
   const [header, setHeader] = createSignal<string[]>([]);
   const [series, setSeries] = createSignal<number[][]>([]);
 
@@ -105,18 +116,18 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
   }
 
   function splitPlot(plot_index: number) {
-    const hiddens = plots[plot_index].visible.reduce(
-      (filtered: number[], visible, index) => {
-        if (!visible) {
+    const nonSelectSeries = plots[plot_index].selected.reduce(
+      (filtered: number[], selected, index) => {
+        if (!selected) {
           filtered.push(splitIndex()[plot_index][index]);
         }
         return filtered;
       },
       [],
     );
-    const visibles = plots[plot_index].visible.reduce(
-      (filtered: number[], visible, index) => {
-        if (visible) {
+    const selectSeries = plots[plot_index].selected.reduce(
+      (filtered: number[], selected, index) => {
+        if (selected) {
           filtered.push(splitIndex()[plot_index][index]);
         }
         return filtered;
@@ -126,18 +137,39 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
 
     setSplitIndex((prev) => {
       const updated = [...prev];
-      updated.splice(plot_index, 1, visibles, hiddens);
+      updated.splice(plot_index, 1, nonSelectSeries, selectSeries);
       return updated;
     });
   }
 
-  const allVisible = (index: number) => {
-    trackStore(plots[index].visible);
-    return plots[index].visible.every((b) => b);
+  function mergePlot(plot_indexes: number[]) {
+    const prevPlot = [...splitIndex()];
+    let mergePlot: number[] = [];
+    let smallestIndex = plot_indexes[0];
+    plot_indexes.forEach((plot_index) => {
+      mergePlot = [...mergePlot, ...prevPlot[plot_index]];
+      smallestIndex = Math.min(smallestIndex, plot_index);
+    });
+
+    const newSplitIndex = prevPlot.filter(
+      (_, index) => !plot_indexes.includes(index),
+    );
+
+    const updatePlot = [
+      ...newSplitIndex.slice(0, smallestIndex),
+      mergePlot,
+      ...newSplitIndex.slice(smallestIndex, newSplitIndex.length),
+    ];
+    setSplitIndex(updatePlot);
+  }
+
+  const allSelected = (index: number) => {
+    trackStore(plots[index].selected);
+    return plots[index].selected.every((b) => b);
   };
-  const allInvisible = (index: number) => {
-    trackStore(plots[index].visible);
-    return plots[index].visible.every((b) => !b);
+  const allNotSelected = (index: number) => {
+    trackStore(plots[index].selected);
+    return plots[index].selected.every((b) => !b);
   };
 
   createEffect(() => {
@@ -194,17 +226,6 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
 
   return (
     <>
-      <Button
-        variant="ghost"
-        disabled={splitIndex().length <= 1}
-        onclick={() => resetChart()}
-        style={{
-          "margin-top": "0.5rem",
-          "margin-left": "1rem",
-        }}
-      >
-        Reset
-      </Button>
       <For each={plots && splitIndex()}>
         {(item, index) => {
           // Header and items need not be derived state, as they will not
@@ -232,20 +253,113 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
 
           return (
             <>
-              <Button
-                onClick={() => splitPlot(index())}
-                disabled={currentHeader.length <= 1 ||
-                  !plots[index()] ||
-                  !plots[index()].visible ||
-                  allVisible(index()) ||
-                  allInvisible(index())}
-                style={{
-                  "margin-left": "1rem",
-                  "margin-top": `${index() == 0 ? "0.5rem" : "0px"}`,
-                }}
+              <Stack
+                direction="row-reverse"
+                width="100%"
+                paddingTop="0.2rem"
+                paddingRight="1.6rem"
+                style={{ "overflow": "hidden" }}
               >
-                Split Plot
-              </Button>
+                <Tooltip.Root>
+                  <Tooltip.Trigger>
+                    <IconButton
+                      size="sm"
+                      onClick={() => {
+                        splitPlot(index());
+                        setMergePlotIndexes([]);
+                      }}
+                      disabled={currentHeader.length <= 1 ||
+                        !plots[index()] ||
+                        !plots[index()].selected ||
+                        allSelected(index()) ||
+                        allNotSelected(index())}
+                    >
+                      <IconSeparatorHorizontal />
+                    </IconButton>
+                  </Tooltip.Trigger>
+                  <Tooltip.Positioner>
+                    <Tooltip.Content backgroundColor="bg.default">
+                      <Text color="fg.default">
+                        Split
+                      </Text>
+                    </Tooltip.Content>
+                  </Tooltip.Positioner>
+                </Tooltip.Root>
+
+                <Tooltip.Root>
+                  <Tooltip.Trigger>
+                    <IconButton
+                      onClick={() => {
+                        mergePlot(mergePlotIndexes());
+                        setMergePlotIndexes([]);
+                      }}
+                      disabled={mergePlotIndexes().length < 2 ||
+                        mergePlotIndexes().indexOf(index()) === -1}
+                      size="sm"
+                    >
+                      <IconFold />
+                    </IconButton>
+                  </Tooltip.Trigger>
+                  <Tooltip.Positioner>
+                    <Tooltip.Content backgroundColor="bg.default">
+                      <Text color="fg.default">
+                        Merge
+                      </Text>
+                    </Tooltip.Content>
+                  </Tooltip.Positioner>
+                </Tooltip.Root>
+
+                <Checkbox
+                  width="8rem"
+                  checked={false}
+                  onCheckedChange={(checkBoxState) => {
+                    if (checkBoxState.checked === true) {
+                      setMergePlotIndexes((prev) => {
+                        return [...prev, index()];
+                      });
+                    } else {
+                      setMergePlotIndexes((prev) => {
+                        return prev.filter((graphIndex) =>
+                          graphIndex !== index()
+                        );
+                      });
+                    }
+                  }}
+                >
+                  <Text fontWeight="bold">
+                    Graph {index() + 1}
+                  </Text>
+                </Checkbox>
+                <Show when={index() === 0}>
+                  <Stack
+                    direction="row"
+                    width={`calc(100% - 16rem)`}
+                  >
+                    <Tooltip.Root>
+                      <Tooltip.Trigger>
+                        <IconButton
+                          variant="outline"
+                          disabled={splitIndex().length <= 1}
+                          onclick={() => {
+                            resetChart();
+                            setMergePlotIndexes([]);
+                          }}
+                          size="sm"
+                        >
+                          <IconRotate2 />
+                        </IconButton>
+                      </Tooltip.Trigger>
+                      <Tooltip.Positioner>
+                        <Tooltip.Content backgroundColor="bg.default">
+                          <Text color="fg.default">
+                            Reset
+                          </Text>
+                        </Tooltip.Content>
+                      </Tooltip.Positioner>
+                    </Tooltip.Root>
+                  </Stack>
+                </Show>
+              </Stack>
               <Plot
                 id={currentID()}
                 group={props.tabId}
@@ -263,8 +377,10 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
                 }}
                 style={{
                   width: "100%",
-                  height: `calc(100% / ${splitIndex().length} - 3rem`,
-                  "min-height": "18rem",
+                  height: `calc(100% / ${splitIndex().length} - 3rem)`,
+                  "min-height": "17rem",
+                  "padding-right": "0.5rem",
+                  "padding-left": "0.5rem",
                 }}
                 cursorIdx={cursorIdx()}
               />

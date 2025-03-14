@@ -27,6 +27,7 @@ import { Icon } from "../ui/icon";
 import { Heading } from "../ui/heading";
 import { Portal } from "solid-js/web";
 import { enumMappings, enumSeries } from "~/GlobalState";
+import { Checkbox } from "../ui/checkbox";
 
 export type LegendProps = Omit<StackProps, "stroke"> & {
   plot: uPlot;
@@ -42,6 +43,9 @@ export type LegendProps = Omit<StackProps, "stroke"> & {
   onStrokeChange?: (new_style: LegendStroke) => void;
   readonly?: boolean;
   cursorIdx?: number | null | undefined;
+  showSelectCheckBox?: boolean;
+  selected?: boolean;
+  onSelectChange?: (checkBoxValue: boolean) => void;
 };
 
 export enum LegendStroke {
@@ -62,6 +66,8 @@ export function Legend(props: LegendProps) {
     "stroke",
     "onStrokeChange",
     "readonly",
+    "selected",
+    "onSelectChange",
   ]);
 
   let seriesIndex: number = 0;
@@ -202,6 +208,21 @@ export function Legend(props: LegendProps) {
           </Icon>
         }
       >
+        <Show
+          when={!props.showSelectCheckBox}
+          fallback={
+            <Checkbox
+              disabled={!props.visible}
+              value={props.selected ? props.selected.toString() : "false"}
+              onCheckedChange={(e) =>
+                props.onSelectChange?.(
+                  e.checked.toString() === "true" ? true : false,
+                )}
+            />
+          }
+        >
+          <div></div>
+        </Show>
         <Dialog.Root
           open={configOpen()}
           onOpenChange={() => setConfigOpen(false)}

@@ -497,8 +497,9 @@ function App(props: RouteSectionProps) {
       <div
         style={{
           height: "100vh",
-          width: "calc(100vw - {sidebar_collapsed_width})",
+          width: `calc(100vw - ${sidebar_collapsed_width})`,
           "margin-left": sidebar_collapsed_width,
+          position: "fixed",
         }}
       >
         {props.children}
