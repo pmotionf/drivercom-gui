@@ -30,8 +30,8 @@ export function Logging() {
     false,
   );
 
-  async function GetLogConfigFromPort(): Promise<object | undefined> {
-    if (portId().length === 0) return undefined;
+  async function GetLogConfigFromPort(): Promise<object | null> {
+    if (portId().length === 0) return null;
     const sideCommand = Command.sidecar("binaries/drivercom", [
       `--port`,
       portId(),
@@ -40,7 +40,7 @@ export function Logging() {
     const output = await sideCommand.execute();
     const obj = JSON.parse(output.stdout);
 
-    if (output.stdout.length === 0) return undefined;
+    if (output.stdout.length === 0) return null;
     else return obj;
   }
 
@@ -49,7 +49,7 @@ export function Logging() {
     gap: 24,
   });
 
-  async function openFileDialog(): Promise<string | undefined> {
+  async function openFileDialog(): Promise<string | null> {
     const path = await open({
       multiple: false,
       filters: [
@@ -63,7 +63,7 @@ export function Logging() {
         description: "The file path is invalid.",
         type: "error",
       });
-      return undefined;
+      return null;
     }
 
     const extension = path.split(".").pop();
@@ -73,7 +73,7 @@ export function Logging() {
         description: "The file extension is invalid.",
         type: "error",
       });
-      return undefined;
+      return null;
     }
     return path.replaceAll("\\", "/");
   }
@@ -99,23 +99,13 @@ export function Logging() {
     return newFileObject === logFileObject;
   }
 
-  async function readJsonFile(path: string): Promise<object | undefined> {
+  async function readJsonFile(path: string): Promise<object | null> {
     try {
       const output = await readTextFile(path);
       const parseFileToObject = JSON.parse(output);
       return parseFileToObject;
     } catch {
-      toaster.create({
-        title: "Invalid File Path",
-        description: "The file path is invalid.",
-        type: "error",
-      });
-      setRecentLogFilePaths((prev) => {
-        const newRecentFiles = prev.filter((prevFilePath) =>
-          prevFilePath !== path
-        );
-        return newRecentFiles;
-      });
+      return null;
     }
   }
 
@@ -172,7 +162,20 @@ export function Logging() {
                   onReadFile={async () => {
                     setRenderLoggingForm(false);
                     const logObj = await readJsonFile(filePath());
-                    if (!logObj) return;
+                    if (!logObj) {
+                      toaster.create({
+                        title: "Invalid File Path",
+                        description: "The file path is invalid.",
+                        type: "error",
+                      });
+                      setRecentLogFilePaths((prev) => {
+                        const newRecentFiles = prev.filter((prevFilePath) =>
+                          prevFilePath !== filePath()
+                        );
+                        return newRecentFiles;
+                      });
+                      return;
+                    }
                     setLogConfigureFile(logObj);
                     setRenderLoggingForm(true);
                   }}
@@ -237,7 +240,20 @@ export function Logging() {
                   const path = await openFileDialog();
                   if (!path) return;
                   const logObj = await readJsonFile(path);
-                  if (!logObj) return;
+                  if (!logObj) {
+                    toaster.create({
+                      title: "Invalid File Path",
+                      description: "The file path is invalid.",
+                      type: "error",
+                    });
+                    setRecentLogFilePaths((prev) => {
+                      const newRecentFiles = prev.filter((prevFilePath) =>
+                        prevFilePath !== filePath()
+                      );
+                      return newRecentFiles;
+                    });
+                    return;
+                  }
                   const isFileFormatMatch = compareFileFormat(
                     logObj,
                     logFormFileFormat(),
@@ -333,6 +349,20 @@ export function Logging() {
                         userSelect="none"
                         onClick={async () => {
                           const object = await readJsonFile(path);
+                          if (!object) {
+                            toaster.create({
+                              title: "Invalid File Path",
+                              description: "The file path is invalid.",
+                              type: "error",
+                            });
+                            setRecentLogFilePaths((prev) => {
+                              const newRecentFiles = prev.filter((
+                                prevFilePath,
+                              ) => prevFilePath !== path);
+                              return newRecentFiles;
+                            });
+                            return;
+                          }
                           setFileData(object!, path);
                           setIsButtonHoverd([false, null]);
                         }}
@@ -359,6 +389,20 @@ export function Logging() {
                         opacity="70%"
                         onClick={async () => {
                           const object = await readJsonFile(path);
+                          if (!object) {
+                            toaster.create({
+                              title: "Invalid File Path",
+                              description: "The file path is invalid.",
+                              type: "error",
+                            });
+                            setRecentLogFilePaths((prev) => {
+                              const newRecentFiles = prev.filter((
+                                prevFilePath,
+                              ) => prevFilePath !== path);
+                              return newRecentFiles;
+                            });
+                            return;
+                          }
                           setFileData(object!, path);
                           setIsButtonHoverd([false, null]);
                         }}

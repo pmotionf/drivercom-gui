@@ -228,7 +228,7 @@ export function LoggingForm(props: LoggingFormProps) {
             direction="row-reverse"
             width="100%"
             gap="1"
-            marginBottom="2rem"
+            marginBottom="1rem"
           >
             <IconButton
               onClick={() => props.onCancel?.()}
