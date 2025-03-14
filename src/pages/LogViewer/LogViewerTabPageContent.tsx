@@ -293,7 +293,8 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
                         mergePlot(mergePlotIndexes());
                         setMergePlotIndexes([]);
                       }}
-                      disabled={mergePlotIndexes().length < 2}
+                      disabled={mergePlotIndexes().length < 2 ||
+                        mergePlotIndexes().indexOf(index()) === -1}
                       size="sm"
                     >
                       <IconFold />
@@ -332,7 +333,7 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
                 <Show when={index() === 0}>
                   <Stack
                     direction="row"
-                    width={`calc(100% - 15rem)`}
+                    width={`calc(100% - 16rem)`}
                   >
                     <Tooltip.Root>
                       <Tooltip.Trigger>
@@ -377,7 +378,7 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
                 style={{
                   width: "100%",
                   height: `calc(100% / ${splitIndex().length} - 3rem)`,
-                  "min-height": "18rem",
+                  "min-height": "17rem",
                   "padding-right": "0.5rem",
                   "padding-left": "0.5rem",
                 }}

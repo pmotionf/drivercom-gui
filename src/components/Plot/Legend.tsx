@@ -43,7 +43,7 @@ export type LegendProps = Omit<StackProps, "stroke"> & {
   onStrokeChange?: (new_style: LegendStroke) => void;
   readonly?: boolean;
   cursorIdx?: number | null | undefined;
-  showCheckBox?: boolean;
+  showSelectCheckBox?: boolean;
   selected?: boolean;
   onSelectChange?: (checkBoxValue: boolean) => void;
 };
@@ -209,7 +209,7 @@ export function Legend(props: LegendProps) {
         }
       >
         <Show
-          when={!props.showCheckBox}
+          when={!props.showSelectCheckBox}
           fallback={
             <Checkbox
               disabled={!props.visible}

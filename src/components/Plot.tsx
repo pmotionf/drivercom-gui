@@ -690,7 +690,7 @@ export function Plot(props: PlotProps) {
                   group={group()}
                   series={header}
                   cursorIdx={props.cursorIdx}
-                  showCheckBox={showLegendCheckBox()}
+                  showSelectCheckBox={showLegendCheckBox()}
                   selected={getContext().selected[index()]}
                   onSelectChange={(isChecked) => {
                     setContext()("selected", index(), isChecked);
