@@ -16,7 +16,7 @@ import uPlot from "uplot";
 import { IconButton } from "~/components/ui/icon-button";
 import {
   IconFold,
-  IconRotate2,
+  IconRestore,
   IconSeparatorHorizontal,
 } from "@tabler/icons-solidjs";
 import { Stack } from "styled-system/jsx";
@@ -346,7 +346,7 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
                           }}
                           size="sm"
                         >
-                          <IconRotate2 />
+                          <IconRestore />
                         </IconButton>
                       </Tooltip.Trigger>
                       <Tooltip.Positioner>
