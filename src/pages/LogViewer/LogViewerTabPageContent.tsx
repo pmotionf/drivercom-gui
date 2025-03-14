@@ -311,7 +311,7 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
 
                 <Checkbox
                   width="8rem"
-                  checked={false}
+                  checked={mergePlotIndexes().indexOf(index()) !== -1}
                   onCheckedChange={(checkBoxState) => {
                     if (checkBoxState.checked === true) {
                       setMergePlotIndexes((prev) => {

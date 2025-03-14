@@ -175,12 +175,18 @@ function LogViewer() {
           <Splitter.Root
             size={logViewerPanelSize()}
             gap="0.5"
-            onSizeChangeEnd={(value) => {
+            onSizeChange={(value) => {
               const parseSizeData = value.size.map((info) => {
                 return { id: info.id.toString(), size: Number(info.size) };
               });
               setLogViewPanelSize(parseSizeData);
             }}
+            /*onSizeChangeEnd={(value) => {
+              const parseSizeData = value.size.map((info) => {
+                return { id: info.id.toString(), size: Number(info.size) };
+              });
+              setLogViewPanelSize(parseSizeData);
+            }}*/
           >
             <For each={logViewerPanelSize() && logViewerPanelContexts()}>
               {(currentPanel, index) => (
@@ -329,9 +335,13 @@ function LogViewer() {
                         }}
                         onTabFocus={(currentfocusTabId) => {
                           setLogViewPanelContexts((prev) => {
-                            const updateTabList = [...prev];
-                            updateTabList[index()].focusedTab =
-                              currentfocusTabId;
+                            const updateTabList = [...prev].map((panel, i) => {
+                              if(index() === i){
+                                return {
+                                  ...panel, focusedTab : currentfocusTabId
+                                }
+                              }else return panel
+                            })
                             return updateTabList;
                           });
                         }}
