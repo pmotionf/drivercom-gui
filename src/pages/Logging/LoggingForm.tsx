@@ -223,7 +223,47 @@ export function LoggingForm(props: LoggingFormProps) {
   return (
     <div style={{ width: "100%", "margin-bottom": "3rem" }}>
       <Card.Root padding="0.5rem">
-        <Card.Header paddingTop="3rem">
+        <Card.Header paddingTop="1rem">
+          <Stack
+            direction="row-reverse"
+            width="100%"
+            gap="1"
+            marginBottom="2rem"
+          >
+            <IconButton
+              onClick={() => props.onCancel?.()}
+              variant="ghost"
+              borderRadius="1rem"
+            >
+              <IconX />
+            </IconButton>
+            <Show when={props.mode !== "create"}>
+              <Tooltip.Root>
+                <Tooltip.Trigger>
+                  <IconButton
+                    onClick={() => {
+                      if (props.mode === "file") {
+                        props.onReadFile?.();
+                      } else if (props.mode === "port") {
+                        props.onReadPort?.();
+                      }
+                    }}
+                    variant="ghost"
+                    borderRadius="1rem"
+                  >
+                    <IconFileIsr />
+                  </IconButton>
+                </Tooltip.Trigger>
+                <Tooltip.Positioner>
+                  <Tooltip.Content backgroundColor="bg.default">
+                    <Text color="fg.default">
+                      Reload log from {`${props.mode}`}
+                    </Text>
+                  </Tooltip.Content>
+                </Tooltip.Positioner>
+              </Tooltip.Root>
+            </Show>
+          </Stack>
           <Editable.Root
             placeholder="File name"
             defaultValue={props.fileName}
@@ -239,45 +279,6 @@ export function LoggingForm(props: LoggingFormProps) {
               <Editable.Preview />
             </Editable.Area>
           </Editable.Root>
-          <IconButton
-            onClick={() => props.onCancel?.()}
-            variant="ghost"
-            borderRadius="1rem"
-            width="1rem"
-            style={{ position: "absolute", top: "1.5rem", right: "1.5rem" }}
-            padding="0"
-          >
-            <IconX />
-          </IconButton>
-          <Show when={props.mode !== "create"}>
-            <Tooltip.Root>
-              <Tooltip.Trigger>
-                <IconButton
-                  onClick={() => {
-                    if (props.mode === "file") {
-                      props.onReadFile?.();
-                    } else if (props.mode === "port") {
-                      props.onReadPort?.();
-                    }
-                  }}
-                  variant="ghost"
-                  borderRadius="1rem"
-                  width="1rem"
-                  style={{ position: "absolute", top: "1.5rem", right: "4rem" }}
-                  padding="0"
-                >
-                  <IconFileIsr />
-                </IconButton>
-              </Tooltip.Trigger>
-              <Tooltip.Positioner>
-                <Tooltip.Content backgroundColor="bg.default">
-                  <Text color="fg.default">
-                    Reload log from {`${props.mode}`}
-                  </Text>
-                </Tooltip.Content>
-              </Tooltip.Positioner>
-            </Tooltip.Root>
-          </Show>
         </Card.Header>
         <Card.Body>
           <div style={{ "margin-top": "2rem" }}>
