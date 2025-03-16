@@ -181,12 +181,6 @@ function LogViewer() {
               });
               setLogViewPanelSize(parseSizeData);
             }}
-            /*onSizeChangeEnd={(value) => {
-              const parseSizeData = value.size.map((info) => {
-                return { id: info.id.toString(), size: Number(info.size) };
-              });
-              setLogViewPanelSize(parseSizeData);
-            }}*/
           >
             <For each={logViewerPanelSize() && logViewerPanelContexts()}>
               {(currentPanel, index) => (
@@ -336,12 +330,26 @@ function LogViewer() {
                         onTabFocus={(currentfocusTabId) => {
                           setLogViewPanelContexts((prev) => {
                             const updateTabList = [...prev].map((panel, i) => {
-                              if(index() === i){
+                              if (index() === i) {
                                 return {
-                                  ...panel, focusedTab : currentfocusTabId
-                                }
-                              }else return panel
-                            })
+                                  ...panel,
+                                  focusedTab: currentfocusTabId,
+                                };
+                              } else return panel;
+                            });
+                            return updateTabList;
+                          });
+                        }}
+                        onTabReorder={(reorderTab) => {
+                          setLogViewPanelContexts((prev) => {
+                            const updateTabList = [...prev].map((panel, i) => {
+                              if (index() === i) {
+                                return {
+                                  ...panel,
+                                  tabContext: reorderTab,
+                                };
+                              } else return panel;
+                            });
                             return updateTabList;
                           });
                         }}
