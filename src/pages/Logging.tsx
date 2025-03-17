@@ -137,7 +137,8 @@ export function Logging() {
           "padding-top": "4rem",
           "padding-bottom": "4rem",
           "height": "100%",
-          "width": `calc(100% - 3rem)`,
+          "width": `100% `,
+          "overflow-y": "auto",
         }}
       >
         <Toast.Toaster toaster={toaster}>
@@ -154,7 +155,7 @@ export function Logging() {
         <Show
           when={!isFileOpen()}
           fallback={
-            <Stack direction="row" width="42rem">
+            <Stack width="42rem">
               <Show
                 when={renderLoggingForm()}
                 fallback={<div></div>}
