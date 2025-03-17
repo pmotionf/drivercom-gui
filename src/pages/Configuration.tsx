@@ -208,7 +208,8 @@ function Configuration() {
           "padding-top": "4rem",
           "padding-bottom": "4rem",
           "height": "100%",
-          "width": `calc(100% - 3rem)`,
+          "width": `100%`,
+          "overflow-y": "auto",
         }}
       >
         <Toast.Toaster toaster={toaster}>
