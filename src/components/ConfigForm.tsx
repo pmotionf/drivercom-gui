@@ -1,4 +1,11 @@
-import { createSignal, For, JSX, splitProps } from "solid-js";
+import {
+  createEffect,
+  createSignal,
+  For,
+  JSX,
+  Show,
+  splitProps,
+} from "solid-js";
 import { createStore } from "solid-js/store";
 
 import { Accordion } from "~/components/ui/accordion";
@@ -9,7 +16,12 @@ import { Stack } from "styled-system/jsx";
 import { Text } from "./ui/text";
 import { Editable } from "./ui/editable";
 import { IconButton } from "./ui/icon-button";
-import { IconChevronDown, IconX } from "@tabler/icons-solidjs";
+import {
+  IconChevronDown,
+  IconLink,
+  IconLinkOff,
+  IconX,
+} from "@tabler/icons-solidjs";
 
 export type ConfigFormProps = JSX.HTMLAttributes<HTMLFormElement> & {
   label: string;
@@ -69,10 +81,17 @@ export function ConfigForm(props: ConfigFormProps) {
 type ConfigObjectProps = JSX.HTMLAttributes<HTMLDivElement> & {
   id_prefix: string;
   object: object;
+  onObjChange?: () => void;
 };
 
 function ConfigObject(props: ConfigObjectProps) {
   const [object, setObject] = createStore(props.object);
+
+  createEffect(() => {
+    const parseObject = JSON.stringify(object);
+    if (parseObject.length === 0) return;
+    props.onObjChange?.();
+  });
 
   return (
     <div>
@@ -177,6 +196,12 @@ function ConfigObject(props: ConfigObjectProps) {
                   placeholder={key}
                   value={object[key as keyof typeof object]}
                   onChange={(e) => {
+                    if (isNaN(Number(e.target.value))) {
+                      e.target.value = String(
+                        object[key as keyof typeof object],
+                      );
+                      return;
+                    }
                     setObject(
                       key as keyof typeof object,
                       // @ts-ignore: TSC unable to handle generic object type
@@ -198,16 +223,27 @@ type ConfigListProps = Accordion.RootProps & {
   id_prefix: string;
   label: string;
   list: object[];
+  onListChange?: (list: object[]) => void;
 };
 
 function ConfigList(props: ConfigListProps) {
   const [, rest] = splitProps(props, ["list"]);
 
-  const [list] = createStore(props.list);
+  const [list, setList] = createStore<object[]>(props.list);
 
   const [accordionValue, setAccordionValue] = createSignal<
     string[]
   >([]);
+
+  const [link, setLink] = createSignal<boolean>(false);
+  const [linkedObj, setLinkObj] = createSignal<string>("");
+
+  createEffect(() => {
+    const object = linkedObj();
+    if (link()) {
+      setList(Array.from({ length: list.length }, () => JSON.parse(object)));
+    }
+  });
 
   return (
     <Accordion.Root
@@ -222,27 +258,48 @@ function ConfigList(props: ConfigListProps) {
           const title = props.label + " " + (index() + 1).toString();
           return (
             <Accordion.Item value={title}>
-              <Accordion.ItemTrigger>
-                <Text fontWeight="bold" size="md" opacity="70%">
-                  {`${title[0].toUpperCase()}${
-                    Array.from(title.slice(1, title.length)).map(
-                      (char, index) => {
-                        if (title[index] === "_") {
-                          return char.toUpperCase();
-                        }
-                        return char;
-                      },
-                    ).toString().replaceAll(",", "")
-                  }`}
-                </Text>
-                <Accordion.ItemIndicator>
-                  <IconChevronDown />
-                </Accordion.ItemIndicator>
-              </Accordion.ItemTrigger>
+              <Stack direction="row">
+                <IconButton
+                  variant="ghost"
+                  onClick={() => {
+                    setLink(!link());
+                    if (!link()) return;
+                    setLinkObj(JSON.stringify(item));
+                  }}
+                  marginTop="0.5rem"
+                >
+                  <Show
+                    when={link()}
+                    fallback={<IconLinkOff />}
+                  >
+                    <IconLink />
+                  </Show>
+                </IconButton>
+                <Accordion.ItemTrigger>
+                  <Text fontWeight="bold" size="md" opacity="70%">
+                    {`${title[0].toUpperCase()}${
+                      Array.from(title.slice(1, title.length)).map(
+                        (char, index) => {
+                          if (title[index] === "_") {
+                            return char.toUpperCase();
+                          }
+                          return char;
+                        },
+                      ).toString().replaceAll(",", "")
+                    }`}
+                  </Text>
+                  <Accordion.ItemIndicator>
+                    <IconChevronDown />
+                  </Accordion.ItemIndicator>
+                </Accordion.ItemTrigger>
+              </Stack>
               <Accordion.ItemContent padding="0">
                 <ConfigObject
                   object={item}
                   id_prefix={props.id_prefix + title}
+                  onObjChange={() => {
+                    setLinkObj(JSON.stringify(item));
+                  }}
                 />
               </Accordion.ItemContent>
             </Accordion.Item>
