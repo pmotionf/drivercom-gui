@@ -22,6 +22,7 @@ import {
   IconLinkOff,
   IconX,
 } from "@tabler/icons-solidjs";
+import { Tooltip } from "./ui/tooltip";
 
 export type ConfigFormProps = JSX.HTMLAttributes<HTMLFormElement> & {
   label: string;
@@ -51,8 +52,8 @@ export function ConfigForm(props: ConfigFormProps) {
             width="90%"
             style={{
               "text-overflow": "ellipsis",
-              "display": "block",
-              "overflow": "hidden",
+              display: "block",
+              overflow: "hidden",
               "text-align": "left",
             }}
           />
@@ -69,10 +70,7 @@ export function ConfigForm(props: ConfigFormProps) {
         <IconX />
       </IconButton>
       <div style={{ "margin-top": "4rem", "margin-bottom": "2rem" }}>
-        <ConfigObject
-          object={config}
-          id_prefix={props.label}
-        />
+        <ConfigObject object={config} id_prefix={props.label} />
       </div>
     </div>
   );
@@ -135,19 +133,19 @@ function ConfigObject(props: ConfigObjectProps) {
                 }}
               >
                 <legend>
-                  <Text
-                    fontWeight="bold"
-                    opacity="70%"
-                  >
+                  <Text fontWeight="bold" opacity="70%">
                     {`${key[0].toUpperCase()}${
-                      Array.from(key.slice(1, key.length)).map(
-                        (char, index) => {
+                      Array.from(
+                        key.slice(1, key.length),
+                      )
+                        .map((char, index) => {
                           if (key[index] === "_") {
                             return char.toUpperCase();
                           }
                           return char;
-                        },
-                      ).toString().replaceAll(",", "")
+                        })
+                        .toString()
+                        .replaceAll(",", "")
                     }`}
                   </Text>
                 </legend>
@@ -197,10 +195,12 @@ function ConfigObject(props: ConfigObjectProps) {
                   value={object[key as keyof typeof object]}
                   onChange={(e) => {
                     if (isNaN(Number(e.target.value))) {
-                      e.target.value = String(
-                        object[key as keyof typeof object],
-                      );
-                      return;
+                      if (e.target.value.toLowerCase() !== "nan") {
+                        e.target.value = String(
+                          object[key as keyof typeof object],
+                        );
+                        return;
+                      }
                     }
                     setObject(
                       key as keyof typeof object,
@@ -231,9 +231,7 @@ function ConfigList(props: ConfigListProps) {
 
   const [list, setList] = createStore<object[]>(props.list);
 
-  const [accordionValue, setAccordionValue] = createSignal<
-    string[]
-  >([]);
+  const [accordionValue, setAccordionValue] = createSignal<string[]>([]);
 
   const [link, setLink] = createSignal<boolean>(false);
   const [linkedObj, setLinkObj] = createSignal<string>("");
@@ -244,6 +242,15 @@ function ConfigList(props: ConfigListProps) {
       setList(Array.from({ length: list.length }, () => JSON.parse(object)));
     }
   });
+
+  const parsePropsLabel = Array.from(props.label)
+    .map((char, i) => {
+      if (i === 0) return char.toUpperCase();
+      else if (props.label[i - 1] === "_") return char.toUpperCase();
+      else return char;
+    })
+    .toString()
+    .replaceAll(",", "");
 
   return (
     <Accordion.Root
@@ -259,33 +266,45 @@ function ConfigList(props: ConfigListProps) {
           return (
             <Accordion.Item value={title}>
               <Stack direction="row">
-                <IconButton
-                  variant="ghost"
-                  onClick={() => {
-                    setLink(!link());
-                    if (!link()) return;
-                    setLinkObj(JSON.stringify(item));
-                  }}
-                  marginTop="0.5rem"
-                >
-                  <Show
-                    when={link()}
-                    fallback={<IconLinkOff />}
-                  >
-                    <IconLink />
-                  </Show>
-                </IconButton>
+                <Tooltip.Root>
+                  <Tooltip.Trigger>
+                    <IconButton
+                      variant="ghost"
+                      onClick={() => {
+                        setLink(!link());
+                        if (!link()) return;
+                        setLinkObj(JSON.stringify(item));
+                      }}
+                      marginTop="0.5rem"
+                    >
+                      <Show when={link()} fallback={<IconLinkOff />}>
+                        <IconLink />
+                      </Show>
+                    </IconButton>
+                  </Tooltip.Trigger>
+
+                  <Tooltip.Positioner>
+                    <Tooltip.Content backgroundColor="bg.default">
+                      <Text color="fg.default">
+                        Link {`${parsePropsLabel}`}
+                      </Text>
+                    </Tooltip.Content>
+                  </Tooltip.Positioner>
+                </Tooltip.Root>
                 <Accordion.ItemTrigger>
                   <Text fontWeight="bold" size="md" opacity="70%">
                     {`${title[0].toUpperCase()}${
-                      Array.from(title.slice(1, title.length)).map(
-                        (char, index) => {
+                      Array.from(
+                        title.slice(1, title.length),
+                      )
+                        .map((char, index) => {
                           if (title[index] === "_") {
                             return char.toUpperCase();
                           }
                           return char;
-                        },
-                      ).toString().replaceAll(",", "")
+                        })
+                        .toString()
+                        .replaceAll(",", "")
                     }`}
                   </Text>
                   <Accordion.ItemIndicator>
