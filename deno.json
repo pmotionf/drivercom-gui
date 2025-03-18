@@ -36,6 +36,7 @@
   "nodeModulesDir": "auto",
   "imports": {
     "@pandacss/preset-base": "npm:@pandacss/preset-base@^0.53.1",
+    "@thisbeyond/solid-dnd": "npm:@thisbeyond/solid-dnd@^0.7.5",
     "lucide-solid": "npm:lucide-solid@^0.479.0",
     "unzipper": "npm:unzipper@^0.12.3",
     "~/": "./src/",
