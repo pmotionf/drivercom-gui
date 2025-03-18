@@ -17,12 +17,15 @@ import { IconButton } from "~/components/ui/icon-button";
 import {
   IconFold,
   IconRestore,
+  IconSearch,
   IconSeparatorHorizontal,
+  IconX,
 } from "@tabler/icons-solidjs";
 import { Stack } from "styled-system/jsx";
 import { Text } from "~/components/ui/text";
 import { Checkbox } from "~/components/ui/checkbox";
 import { Tooltip } from "~/components/ui/tooltip";
+import { Input } from "~/components/ui/input";
 
 export type ErrorMessage = {
   title: string;
@@ -252,6 +255,55 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
     });
   });
 
+  const [displaySearchBox, setDisplaySeachBox] = createSignal<boolean>(false);
+  const [inputValue, setInputValue] = createSignal<string>("");
+
+  const searchSeries = (inputText: string) => {
+    const searchResult = header().filter(
+      (legend) => legend.toLowerCase() === inputText.toLowerCase(),
+    )[0];
+    if (searchResult.length === 0) return;
+
+    const headerIndex = header().indexOf(searchResult);
+    let parentIndex: number = 0;
+    let childIndex: number = 0;
+
+    splitIndex().forEach((splitIndexes, i) => {
+      const findLegendIndex = splitIndexes.indexOf(headerIndex);
+      if (findLegendIndex !== -1) {
+        parentIndex = i;
+        childIndex = findLegendIndex;
+      }
+    });
+
+    setPlots((prev) => {
+      const updatePlotContext = prev.map((plot, i) => {
+        if (parentIndex === i) {
+          const updateVisible = plot.visible.map((_, j) => {
+            if (j == childIndex) return true;
+            else return false;
+          });
+          return {
+            color: plot.color,
+            palette: plot.palette,
+            style: plot.style,
+            selected: plot.selected,
+            visible: updateVisible,
+          };
+        } else {
+          return {
+            color: plot.color,
+            palette: plot.palette,
+            style: plot.style,
+            selected: plot.selected,
+            visible: plot.visible.map(() => false),
+          };
+        }
+      });
+      return updatePlotContext;
+    });
+  };
+
   return (
     <>
       <For each={plots && splitIndex()}>
@@ -269,8 +321,11 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
 
           createEffect(() => {
             if (
-              prevSplitIndex && splitIndex().length === prevSplitIndex.length
-            ) return;
+              prevSplitIndex &&
+              splitIndex().length === prevSplitIndex.length
+            ) {
+              return;
+            }
 
             setPlots(index(), {
               visible: item.map(() => true),
@@ -286,7 +341,7 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
                 width="100%"
                 paddingTop="0.2rem"
                 paddingRight="1.6rem"
-                style={{ "overflow": "hidden" }}
+                style={{ overflow: "hidden" }}
               >
                 <Tooltip.Root>
                   <Tooltip.Trigger>
@@ -307,9 +362,7 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
                   </Tooltip.Trigger>
                   <Tooltip.Positioner>
                     <Tooltip.Content backgroundColor="bg.default">
-                      <Text color="fg.default">
-                        Split
-                      </Text>
+                      <Text color="fg.default">Split</Text>
                     </Tooltip.Content>
                   </Tooltip.Positioner>
                 </Tooltip.Root>
@@ -330,9 +383,7 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
                   </Tooltip.Trigger>
                   <Tooltip.Positioner>
                     <Tooltip.Content backgroundColor="bg.default">
-                      <Text color="fg.default">
-                        Merge
-                      </Text>
+                      <Text color="fg.default">Merge</Text>
                     </Tooltip.Content>
                   </Tooltip.Positioner>
                 </Tooltip.Root>
@@ -347,22 +398,17 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
                       });
                     } else {
                       setMergePlotIndexes((prev) => {
-                        return prev.filter((graphIndex) =>
-                          graphIndex !== index()
+                        return prev.filter(
+                          (graphIndex) => graphIndex !== index(),
                         );
                       });
                     }
                   }}
                 >
-                  <Text fontWeight="bold">
-                    Graph {index() + 1}
-                  </Text>
+                  <Text fontWeight="bold">Graph {index() + 1}</Text>
                 </Checkbox>
                 <Show when={index() === 0}>
-                  <Stack
-                    direction="row"
-                    width={`calc(100% - 16rem)`}
-                  >
+                  <Stack direction="row" width={`calc(100% - 16rem)`}>
                     <Tooltip.Root>
                       <Tooltip.Trigger>
                         <IconButton
@@ -379,12 +425,17 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
                       </Tooltip.Trigger>
                       <Tooltip.Positioner>
                         <Tooltip.Content backgroundColor="bg.default">
-                          <Text color="fg.default">
-                            Reset
-                          </Text>
+                          <Text color="fg.default">Reset</Text>
                         </Tooltip.Content>
                       </Tooltip.Positioner>
                     </Tooltip.Root>
+                    <IconButton
+                      variant="outline"
+                      onclick={() => setDisplaySeachBox(true)}
+                      size="sm"
+                    >
+                      <IconSearch />
+                    </IconButton>
                   </Stack>
                 </Show>
               </Stack>
@@ -416,6 +467,37 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
           );
         }}
       </For>
+      <Show when={displaySearchBox()}>
+        <Stack
+          direction="row"
+          position="fixed"
+          backgroundColor="bg.default"
+          width="50%"
+          height="4rem"
+          top="3.5rem"
+          borderWidth="1px"
+          left="25%"
+          borderRadius="1rem"
+          padding="0.5rem"
+        >
+          <Input
+            id="search_input"
+            height="100%"
+            width={`calc(100% - 5rem)`}
+            style={{ "border-width": "0" }}
+            onInput={(e) => setInputValue(e.target.value)}
+          />
+          <IconButton
+            variant="ghost"
+            onClick={() => searchSeries(inputValue())}
+          >
+            <IconSearch />
+          </IconButton>
+          <IconButton variant="ghost" onClick={() => setDisplaySeachBox(false)}>
+            <IconX />
+          </IconButton>
+        </Stack>
+      </Show>
     </>
   );
 }
