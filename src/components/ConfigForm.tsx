@@ -1,4 +1,11 @@
-import { createSignal, For, JSX, splitProps } from "solid-js";
+import {
+  createEffect,
+  createSignal,
+  For,
+  JSX,
+  Show,
+  splitProps,
+} from "solid-js";
 import { createStore } from "solid-js/store";
 
 import { Accordion } from "~/components/ui/accordion";
@@ -9,7 +16,13 @@ import { Stack } from "styled-system/jsx";
 import { Text } from "./ui/text";
 import { Editable } from "./ui/editable";
 import { IconButton } from "./ui/icon-button";
-import { IconChevronDown, IconX } from "@tabler/icons-solidjs";
+import {
+  IconChevronDown,
+  IconLink,
+  IconLinkOff,
+  IconX,
+} from "@tabler/icons-solidjs";
+import { Tooltip } from "./ui/tooltip";
 
 export type ConfigFormProps = JSX.HTMLAttributes<HTMLFormElement> & {
   label: string;
@@ -39,8 +52,8 @@ export function ConfigForm(props: ConfigFormProps) {
             width="90%"
             style={{
               "text-overflow": "ellipsis",
-              "display": "block",
-              "overflow": "hidden",
+              display: "block",
+              overflow: "hidden",
               "text-align": "left",
             }}
           />
@@ -57,10 +70,7 @@ export function ConfigForm(props: ConfigFormProps) {
         <IconX />
       </IconButton>
       <div style={{ "margin-top": "4rem", "margin-bottom": "2rem" }}>
-        <ConfigObject
-          object={config}
-          id_prefix={props.label}
-        />
+        <ConfigObject object={config} id_prefix={props.label} />
       </div>
     </div>
   );
@@ -69,10 +79,17 @@ export function ConfigForm(props: ConfigFormProps) {
 type ConfigObjectProps = JSX.HTMLAttributes<HTMLDivElement> & {
   id_prefix: string;
   object: object;
+  onItemChange?: () => void;
 };
 
 function ConfigObject(props: ConfigObjectProps) {
   const [object, setObject] = createStore(props.object);
+
+  createEffect(() => {
+    const parseObject = JSON.stringify(object);
+    if (parseObject.length === 0) return;
+    props.onItemChange?.();
+  });
 
   return (
     <div>
@@ -96,7 +113,7 @@ function ConfigObject(props: ConfigObjectProps) {
                 >
                   <ConfigList
                     label={key}
-                    list={value}
+                    items={value}
                     id_prefix={props.id_prefix}
                   />
                 </Stack>
@@ -116,19 +133,19 @@ function ConfigObject(props: ConfigObjectProps) {
                 }}
               >
                 <legend>
-                  <Text
-                    fontWeight="bold"
-                    opacity="70%"
-                  >
+                  <Text fontWeight="bold" opacity="70%">
                     {`${key[0].toUpperCase()}${
-                      Array.from(key.slice(1, key.length)).map(
-                        (char, index) => {
+                      Array.from(
+                        key.slice(1, key.length),
+                      )
+                        .map((char, index) => {
                           if (key[index] === "_") {
                             return char.toUpperCase();
                           }
                           return char;
-                        },
-                      ).toString().replaceAll(",", "")
+                        })
+                        .toString()
+                        .replaceAll(",", "")
                     }`}
                   </Text>
                 </legend>
@@ -177,6 +194,14 @@ function ConfigObject(props: ConfigObjectProps) {
                   placeholder={key}
                   value={object[key as keyof typeof object]}
                   onChange={(e) => {
+                    if (isNaN(Number(e.target.value))) {
+                      if (e.target.value.toLowerCase() !== "nan") {
+                        e.target.value = String(
+                          object[key as keyof typeof object],
+                        );
+                        return;
+                      }
+                    }
                     setObject(
                       key as keyof typeof object,
                       // @ts-ignore: TSC unable to handle generic object type
@@ -197,52 +222,113 @@ function ConfigObject(props: ConfigObjectProps) {
 type ConfigListProps = Accordion.RootProps & {
   id_prefix: string;
   label: string;
-  list: object[];
+  items: object[];
 };
 
 function ConfigList(props: ConfigListProps) {
-  const [, rest] = splitProps(props, ["list"]);
+  const [, rest] = splitProps(props, ["items"]);
 
-  const [list] = createStore(props.list);
+  const [items, setItems] = createStore<object[]>(props.items);
 
-  const [accordionValue, setAccordionValue] = createSignal<
+  const [openedAccordionItems, setOpenedAccordionItems] = createSignal<
     string[]
   >([]);
+
+  const [linked, setLinked] = createSignal<boolean>(false);
+  // Store a deep copy string of the most recently edited item object. This is
+  // necessary over storing e.g. the item index, as the signal that sets other
+  // items to be a copy cannot depend on the `items` store itself. Depending
+  // directly on the `items` store will cause an infinite effects loop.
+  const [recentEditedItem, setRecentEditedItem] = createSignal<string>("");
+
+  createEffect(() => {
+    if (linked()) {
+      setItems(
+        Array.from(
+          { length: items.length },
+          () => JSON.parse(recentEditedItem()),
+        ),
+      );
+    }
+  });
+
+  // Converts label to have uppercase letters at the start of each word.
+  const prettifiedLabel = Array.from(props.label)
+    .map((char, i) => {
+      if (i === 0) return char.toUpperCase();
+      else if (props.label[i - 1] === "_") return char.toUpperCase();
+      else return char;
+    })
+    .toString()
+    .replaceAll(",", "");
 
   return (
     <Accordion.Root
       multiple
       {...rest}
       style={{ "border-bottom": "0", "border-top": "0" }}
-      value={accordionValue()}
-      onValueChange={(e) => setAccordionValue(e.value)}
+      value={openedAccordionItems()}
+      onValueChange={(e) => setOpenedAccordionItems(e.value)}
     >
-      <For each={list}>
+      <For each={items}>
         {(item, index) => {
           const title = props.label + " " + (index() + 1).toString();
           return (
             <Accordion.Item value={title}>
-              <Accordion.ItemTrigger>
-                <Text fontWeight="bold" size="md" opacity="70%">
-                  {`${title[0].toUpperCase()}${
-                    Array.from(title.slice(1, title.length)).map(
-                      (char, index) => {
-                        if (title[index] === "_") {
-                          return char.toUpperCase();
-                        }
-                        return char;
-                      },
-                    ).toString().replaceAll(",", "")
-                  }`}
-                </Text>
-                <Accordion.ItemIndicator>
-                  <IconChevronDown />
-                </Accordion.ItemIndicator>
-              </Accordion.ItemTrigger>
+              <Stack direction="row">
+                <Tooltip.Root>
+                  <Tooltip.Trigger>
+                    <IconButton
+                      variant="ghost"
+                      onClick={() => {
+                        setLinked(!linked());
+                        if (!linked()) return;
+                        setRecentEditedItem(JSON.stringify(item));
+                      }}
+                      marginTop="0.5rem"
+                    >
+                      <Show when={linked()} fallback={<IconLinkOff />}>
+                        <IconLink />
+                      </Show>
+                    </IconButton>
+                  </Tooltip.Trigger>
+
+                  <Tooltip.Positioner>
+                    <Tooltip.Content backgroundColor="bg.default">
+                      <Text color="fg.default">
+                        Link {`${prettifiedLabel}`}
+                      </Text>
+                    </Tooltip.Content>
+                  </Tooltip.Positioner>
+                </Tooltip.Root>
+                <Accordion.ItemTrigger>
+                  <Text fontWeight="bold" size="md" opacity="70%">
+                    {`${title[0].toUpperCase()}${
+                      Array.from(
+                        title.slice(1, title.length),
+                      )
+                        .map((char, index) => {
+                          if (title[index] === "_") {
+                            return char.toUpperCase();
+                          }
+                          return char;
+                        })
+                        .toString()
+                        .replaceAll(",", "")
+                    }`}
+                  </Text>
+                  <Accordion.ItemIndicator>
+                    <IconChevronDown />
+                  </Accordion.ItemIndicator>
+                </Accordion.ItemTrigger>
+              </Stack>
               <Accordion.ItemContent padding="0">
                 <ConfigObject
                   object={item}
                   id_prefix={props.id_prefix + title}
+                  onItemChange={() => {
+                    setRecentEditedItem(JSON.stringify(item));
+                  }}
                 />
               </Accordion.ItemContent>
             </Accordion.Item>
