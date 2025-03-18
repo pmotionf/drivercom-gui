@@ -79,7 +79,7 @@ export function ConfigForm(props: ConfigFormProps) {
 type ConfigObjectProps = JSX.HTMLAttributes<HTMLDivElement> & {
   id_prefix: string;
   object: object;
-  onObjChange?: () => void;
+  onItemChange?: () => void;
 };
 
 function ConfigObject(props: ConfigObjectProps) {
@@ -88,7 +88,7 @@ function ConfigObject(props: ConfigObjectProps) {
   createEffect(() => {
     const parseObject = JSON.stringify(object);
     if (parseObject.length === 0) return;
-    props.onObjChange?.();
+    props.onItemChange?.();
   });
 
   return (
@@ -113,7 +113,7 @@ function ConfigObject(props: ConfigObjectProps) {
                 >
                   <ConfigList
                     label={key}
-                    list={value}
+                    items={value}
                     id_prefix={props.id_prefix}
                   />
                 </Stack>
@@ -222,28 +222,38 @@ function ConfigObject(props: ConfigObjectProps) {
 type ConfigListProps = Accordion.RootProps & {
   id_prefix: string;
   label: string;
-  list: object[];
-  onListChange?: (list: object[]) => void;
+  items: object[];
 };
 
 function ConfigList(props: ConfigListProps) {
-  const [, rest] = splitProps(props, ["list"]);
+  const [, rest] = splitProps(props, ["items"]);
 
-  const [list, setList] = createStore<object[]>(props.list);
+  const [items, setItems] = createStore<object[]>(props.items);
 
-  const [accordionValue, setAccordionValue] = createSignal<string[]>([]);
+  const [openedAccordionItems, setOpenedAccordionItems] = createSignal<
+    string[]
+  >([]);
 
-  const [link, setLink] = createSignal<boolean>(false);
-  const [linkedObj, setLinkObj] = createSignal<string>("");
+  const [linked, setLinked] = createSignal<boolean>(false);
+  // Store a deep copy string of the most recently edited item object. This is
+  // necessary over storing e.g. the item index, as the signal that sets other
+  // items to be a copy cannot depend on the `items` store itself. Depending
+  // directly on the `items` store will cause an infinite effects loop.
+  const [recentEditedItem, setRecentEditedItem] = createSignal<string>("");
 
   createEffect(() => {
-    const object = linkedObj();
-    if (link()) {
-      setList(Array.from({ length: list.length }, () => JSON.parse(object)));
+    if (linked()) {
+      setItems(
+        Array.from(
+          { length: items.length },
+          () => JSON.parse(recentEditedItem()),
+        ),
+      );
     }
   });
 
-  const parsePropsLabel = Array.from(props.label)
+  // Converts label to have uppercase letters at the start of each word.
+  const prettifiedLabel = Array.from(props.label)
     .map((char, i) => {
       if (i === 0) return char.toUpperCase();
       else if (props.label[i - 1] === "_") return char.toUpperCase();
@@ -257,10 +267,10 @@ function ConfigList(props: ConfigListProps) {
       multiple
       {...rest}
       style={{ "border-bottom": "0", "border-top": "0" }}
-      value={accordionValue()}
-      onValueChange={(e) => setAccordionValue(e.value)}
+      value={openedAccordionItems()}
+      onValueChange={(e) => setOpenedAccordionItems(e.value)}
     >
-      <For each={list}>
+      <For each={items}>
         {(item, index) => {
           const title = props.label + " " + (index() + 1).toString();
           return (
@@ -271,13 +281,13 @@ function ConfigList(props: ConfigListProps) {
                     <IconButton
                       variant="ghost"
                       onClick={() => {
-                        setLink(!link());
-                        if (!link()) return;
-                        setLinkObj(JSON.stringify(item));
+                        setLinked(!linked());
+                        if (!linked()) return;
+                        setRecentEditedItem(JSON.stringify(item));
                       }}
                       marginTop="0.5rem"
                     >
-                      <Show when={link()} fallback={<IconLinkOff />}>
+                      <Show when={linked()} fallback={<IconLinkOff />}>
                         <IconLink />
                       </Show>
                     </IconButton>
@@ -286,7 +296,7 @@ function ConfigList(props: ConfigListProps) {
                   <Tooltip.Positioner>
                     <Tooltip.Content backgroundColor="bg.default">
                       <Text color="fg.default">
-                        Link {`${parsePropsLabel}`}
+                        Link {`${prettifiedLabel}`}
                       </Text>
                     </Tooltip.Content>
                   </Tooltip.Positioner>
@@ -316,8 +326,8 @@ function ConfigList(props: ConfigListProps) {
                 <ConfigObject
                   object={item}
                   id_prefix={props.id_prefix + title}
-                  onObjChange={() => {
-                    setLinkObj(JSON.stringify(item));
+                  onItemChange={() => {
+                    setRecentEditedItem(JSON.stringify(item));
                   }}
                 />
               </Accordion.ItemContent>
