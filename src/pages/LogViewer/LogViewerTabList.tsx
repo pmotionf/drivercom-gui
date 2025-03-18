@@ -5,6 +5,7 @@ import { IconPlus, IconX } from "@tabler/icons-solidjs";
 import { Editable } from "~/components/ui/editable";
 import { LogViewerTabPageContent } from "./LogViewerTabPageContent";
 import { LogViewerTabContext } from "../LogViewer";
+import { css } from "styled-system/css";
 
 export type LogViewerTabListProps = JSX.HTMLAttributes<HTMLDivElement> & {
   id: string;
@@ -53,7 +54,7 @@ export function LogViewerTabList(props: LogViewerTabListProps) {
   });
 
   const [clientX, setClientX] = createSignal<number | null>(null);
-  // Tab X cordinate relative to start of tab list, can extend beyond screen.
+  // Tab X coordinate relative to start of tab list, can extend beyond screen.
   const [prevPositionX, setPrevPositionX] = createSignal<number>(0);
   let scrollContainer: HTMLDivElement | undefined;
 
@@ -71,26 +72,13 @@ export function LogViewerTabList(props: LogViewerTabListProps) {
     scrollContainer.scrollLeft += e.deltaY;
   };
 
-  const scrollToTab = (scrollLeft: number) => {
-    if (!scrollContainer) return;
-    if (scrollContainer.offsetWidth !== scrollContainer.scrollWidth) {
-      scrollContainer.scrollTo(scrollLeft, 0);
+  createEffect(() => {
+    const focusedTab = props.focusedTab;
+    if (!focusedTab) return;
+    const currentTabTrigger = document.getElementById(focusedTab);
+    if (scrollContainer) {
+      scrollContainer.scrollTo({ left: currentTabTrigger!.offsetLeft });
     }
-  };
-
-  // Scroll automatically when scroll offset width is over scrollContainer width.
-  // Usally, If there is to many tabs in container,
-  // if its deleted or add, it scrolled automatically.
-  const [currentTabLeft, setCurrentTabLeft] = createSignal<number>(0);
-  let tabTrigger: HTMLButtonElement | undefined;
-  createEffect(() => {
-    const tabListLength = props.tabList.length;
-    if (tabListLength === 0) return;
-    setCurrentTabLeft(tabTrigger!.offsetLeft);
-  });
-
-  createEffect(() => {
-    scrollToTab(currentTabLeft());
   });
 
   return (
@@ -125,12 +113,10 @@ export function LogViewerTabList(props: LogViewerTabListProps) {
             <For each={props.tabList}>
               {(tab, index) => (
                 <Tabs.Trigger
+                  id={tab.id}
                   value={tab.id}
                   draggable
-                  ref={tabTrigger}
-                  paddingTop="1rem"
                   paddingRight="0"
-                  onClick={(e) => setCurrentTabLeft(e.currentTarget.offsetLeft)}
                   onDragStart={(e) => {
                     setDraggedTabIndex(index());
                     setPrevPositionX(e.currentTarget.scrollLeft);
@@ -148,6 +134,16 @@ export function LogViewerTabList(props: LogViewerTabListProps) {
                     setDraggedTabIndex(null);
                     setClientX(null);
                   }}
+                  // Use css for theme color
+                  class={css({
+                    "borderBottomWidth": props.focusedTab === tab.id
+                      ? "3px"
+                      : "0px",
+                    "marginTop": props.focusedTab === tab.id
+                      ? `calc(0.5rem + 1px)`
+                      : `0.5rem `,
+                    "borderBottomColor": "accent.emphasized",
+                  })}
                 >
                   <Editable.Root
                     defaultValue={tab.tabName.length === 0
@@ -192,7 +188,6 @@ export function LogViewerTabList(props: LogViewerTabListProps) {
               onDragOver={(e) => e.preventDefault()}
             >
             </div>
-            <Tabs.Indicator />
           </Tabs.List>
 
           <For each={props.tabList}>
