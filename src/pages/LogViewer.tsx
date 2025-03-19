@@ -246,21 +246,21 @@ function LogViewer() {
                           });
                         }}
                         onDeleteTab={(deleteTabId, deleteTabIdIndex) => {
-                          const deleteTab: LogViewerTabContext[] = currentPanel
-                            .tabContext.filter(
+                          const updatedTabContext: LogViewerTabContext[] =
+                            currentPanel.tabContext.filter(
                               (tab) => tab.id !== deleteTabId,
                             );
                           const nextFocusTabIndex: number =
                             deleteTabIdIndex === 0
                               ? 1
                               : deleteTabIdIndex - 1;
-                          const prevFocusTabIndex: number = deleteTab
+                          const prevFocusTabIndex: number = updatedTabContext
                             .map((tab) => tab.id)
                             .indexOf(currentPanel.focusedTab!);
                           const focusedTabId =
                             currentPanel.focusedTab === deleteTabId
                               ? currentPanel.tabContext[nextFocusTabIndex].id
-                              : deleteTab[prevFocusTabIndex].id;
+                              : updatedTabContext[prevFocusTabIndex].id;
 
                           setTimeout(() => {
                             setLogViewPanelContexts((prev) => {
@@ -268,8 +268,8 @@ function LogViewer() {
                                 if (i === index()) {
                                   return {
                                     ...tab,
-                                    tabContext: deleteTab,
-                                    ...(deleteTab.length !== 0 && {
+                                    tabContext: updatedTabContext,
+                                    ...(updatedTabContext.length !== 0 && {
                                       focusedTab: focusedTabId,
                                     }),
                                   };
