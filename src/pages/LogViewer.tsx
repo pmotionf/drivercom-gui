@@ -257,10 +257,6 @@ function LogViewer() {
                           const prevFocusTabIndex: number = updatedTabContext
                             .map((tab) => tab.id)
                             .indexOf(currentPanel.focusedTab!);
-                          const focusedTabId =
-                            currentPanel.focusedTab === deleteTabId
-                              ? currentPanel.tabContext[nextFocusTabIndex].id
-                              : updatedTabContext[prevFocusTabIndex].id;
 
                           setTimeout(() => {
                             setLogViewPanelContexts((prev) => {
@@ -269,9 +265,15 @@ function LogViewer() {
                                   return {
                                     ...tab,
                                     tabContext: updatedTabContext,
-                                    ...(updatedTabContext.length !== 0 && {
-                                      focusedTab: focusedTabId,
-                                    }),
+                                    focusedTab: updatedTabContext.length !== 0
+                                      ? currentPanel.focusedTab ===
+                                          deleteTabId
+                                        ? currentPanel.tabContext[
+                                          nextFocusTabIndex
+                                        ].id
+                                        : updatedTabContext[prevFocusTabIndex]
+                                          .id
+                                      : undefined,
                                   };
                                 }
                                 return tab;
