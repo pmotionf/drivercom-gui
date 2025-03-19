@@ -3,7 +3,7 @@ name = "drivercom-gui"
 version = "0.4.0"
 description = ""
 authors = [""]
-edition = "2021"
+edition = "2024"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -27,4 +27,3 @@ tauri-plugin-fs = "2"
 
 [target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
 tauri-plugin-window-state = "2"
-
