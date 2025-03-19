@@ -457,11 +457,7 @@ export function Plot(props: PlotProps) {
     }
   });
 
-  createEffect(() => {
-    setTimeout(() => {
-      createPlot();
-    }, 200);
-  });
+  createEffect(createPlot);
 
   const selection_css = `
     .u-select {
@@ -736,7 +732,7 @@ export function Plot(props: PlotProps) {
                     props.onContextChange?.(getContext());
                     setTimeout(() => {
                       plot.redraw();
-                    }, 0);
+                    }, 200);
                   }}
                 />
               )}
