@@ -458,9 +458,7 @@ export function Plot(props: PlotProps) {
   });
 
   createEffect(() => {
-    setTimeout(() => {
-      createPlot();
-    }, 200);
+    createPlot();
   });
 
   const selection_css = `
@@ -734,9 +732,7 @@ export function Plot(props: PlotProps) {
                     };
                     plot.addSeries(config, index() + 1);
                     props.onContextChange?.(getContext());
-                    setTimeout(() => {
-                      plot.redraw();
-                    }, 0);
+                    plot.redraw();
                   }}
                 />
               )}

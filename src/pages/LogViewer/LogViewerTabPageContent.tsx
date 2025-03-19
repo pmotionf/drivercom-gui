@@ -183,31 +183,29 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
     const splitIndexLength = splitIndex().length;
     if (splitIndexLength === 0) return;
 
-    setTimeout(() => {
-      const plotGroup: uPlot[] = uPlot.sync(props.tabId).plots;
+    const plotGroup: uPlot[] = uPlot.sync(props.tabId).plots;
 
-      plotGroup.forEach((plot) => {
-        plot.over.removeEventListener(
-          "mousemove",
-          () => setCursorIdx(plot.cursor.idx),
-        );
-        plot.over.removeEventListener(
-          "mouseleave",
-          () => setCursorIdx(plot.cursor.idx),
-        );
-      });
+    plotGroup.forEach((plot) => {
+      plot.over.removeEventListener(
+        "mousemove",
+        () => setCursorIdx(plot.cursor.idx),
+      );
+      plot.over.removeEventListener(
+        "mouseleave",
+        () => setCursorIdx(plot.cursor.idx),
+      );
+    });
 
-      plotGroup.forEach((plot) => {
-        plot.over.addEventListener(
-          "mousemove",
-          () => setCursorIdx(plot.cursor.idx),
-        );
-        plot.over.addEventListener(
-          "mouseleave",
-          () => setCursorIdx(plot.cursor.idx),
-        );
-      });
-    }, 300);
+    plotGroup.forEach((plot) => {
+      plot.over.addEventListener(
+        "mousemove",
+        () => setCursorIdx(plot.cursor.idx),
+      );
+      plot.over.addEventListener(
+        "mouseleave",
+        () => setCursorIdx(plot.cursor.idx),
+      );
+    });
   });
 
   onCleanup(() => {
