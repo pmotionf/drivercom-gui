@@ -278,7 +278,7 @@ function LogViewer() {
                               });
                               return updateList;
                             });
-                          }, 10);
+                          }, 200);
                         }}
                         onDraggedTabInfo={(tabContext) => {
                           setDraggedTabInfo(tabContext);
