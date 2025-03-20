@@ -94,7 +94,7 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
 
     return {
       header: local_header,
-      series: data,
+      series: data.slice(0, local_header.length),
       splitIndex: [indexArray],
     };
   }
@@ -104,12 +104,13 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
     const fileData = parseCsvFile(csv_str);
     if (!fileData) return;
 
+    setSeries(fileData.series);
     setHeader(fileData.header);
-    setSeries(fileData.series.slice(0, header().length));
 
-    const splitIndexArray: number[][] = props.splitPlotIndex!.length === 0
-      ? fileData.splitIndex
-      : [...props.splitPlotIndex!];
+    const splitIndexArray: number[][] =
+      !props.splitPlotIndex || props.splitPlotIndex!.length === 0
+        ? fileData.splitIndex
+        : [...props.splitPlotIndex!];
     setSplitIndex(splitIndexArray);
     props.onSplit?.(splitIndexArray);
 
@@ -218,7 +219,7 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
           () => setCursorIdx(plot.cursor.idx),
         );
       });
-    });
+    }, 300);
   });
 
   onCleanup(() => {
