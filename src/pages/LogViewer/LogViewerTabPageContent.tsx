@@ -51,16 +51,11 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
   const [header, setHeader] = createSignal<string[]>([]);
   const [series, setSeries] = createSignal<number[][]>([]);
 
-  onMount(() => {
-    openCsvFile(props.filePath);
-
-    if (props.plotContext && props.plotContext.length !== 0) {
-      setPlots(props.plotContext);
-    }
-  });
-
-  async function openCsvFile(path: string) {
-    const csv_str = await readTextFile(path);
+  function parseCsvFile(csv_str: string): {
+    header: string[];
+    series: number[][];
+    splitIndex: number[][];
+  } | null {
     const rows = csv_str.split("\n");
     if (rows.length < 2) {
       const errorMessage: ErrorMessage = {
@@ -69,7 +64,7 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
         type: "error",
       };
       props.onErrorMessage?.(errorMessage);
-      return;
+      return null;
     }
 
     const schema = inferSchema(csv_str);
@@ -89,7 +84,7 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
         type: "error",
       };
       props.onErrorMessage?.(errorMessage);
-      return;
+      return null;
     }
 
     const indexArray = Array.from(
@@ -97,15 +92,32 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
       (_, index) => index,
     );
 
-    setHeader(local_header);
-    setSeries(data.slice(0, local_header.length));
+    return {
+      header: local_header,
+      series: data.slice(0, local_header.length),
+      splitIndex: [indexArray],
+    };
+  }
 
-    const splitIndexArray: number[][] = props.splitPlotIndex!.length === 0
-      ? [indexArray]
-      : [...props.splitPlotIndex!];
+  onMount(async () => {
+    const csv_str = await readTextFile(props.filePath);
+    const fileData = parseCsvFile(csv_str);
+    if (!fileData) return;
+
+    setSeries(fileData.series);
+    setHeader(fileData.header);
+
+    const splitIndexArray: number[][] =
+      !props.splitPlotIndex || props.splitPlotIndex!.length === 0
+        ? fileData.splitIndex
+        : [...props.splitPlotIndex!];
     setSplitIndex(splitIndexArray);
     props.onSplit?.(splitIndexArray);
-  }
+
+    if (props.plotContext && props.plotContext.length !== 0) {
+      setPlots(props.plotContext);
+    }
+  });
 
   function resetChart() {
     const indexArray = Array.from(

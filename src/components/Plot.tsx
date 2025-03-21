@@ -247,6 +247,9 @@ export function Plot(props: PlotProps) {
         label: props.header[index],
         stroke: () => getContext().color[index],
         show: getContext().visible[index],
+        points : {
+          filter: checkDotFilter() ,
+        },
         ...{
           ...(getContext().style[index] === LegendStroke.Dash && {
             dash: [10, 5],
@@ -442,7 +445,7 @@ export function Plot(props: PlotProps) {
               height: entry.contentRect.height,
             });
           }
-        }, 200);
+        },);
       });
       resize.observe(document.getElementById(props.id)!);
     });
@@ -734,9 +737,7 @@ export function Plot(props: PlotProps) {
                     };
                     plot.addSeries(config, index() + 1);
                     props.onContextChange?.(getContext());
-                    setTimeout(() => {
-                      plot.redraw();
-                    }, 0);
+                    plot.redraw();
                   }}
                 />
               )}
