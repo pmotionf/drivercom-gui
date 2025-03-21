@@ -17,6 +17,7 @@
     "npm:@tauri-apps/plugin-fs@^2.2.0": "2.2.0",
     "npm:@tauri-apps/plugin-shell@^2.2.0": "2.2.0",
     "npm:@tauri-apps/plugin-window-state@^2.2.1": "2.2.1",
+    "npm:@thisbeyond/solid-dnd@~0.7.5": "0.7.5_solid-js@1.9.5__seroval@1.2.1",
     "npm:lucide-solid@0.479": "0.479.0_solid-js@1.9.5__seroval@1.2.1",
     "npm:solid-js@^1.9.5": "1.9.5_seroval@1.2.1",
     "npm:udsv@~0.7.1": "0.7.1",
@@ -889,6 +890,12 @@
       "integrity": "sha512-L7FhG/ocQNt8t+TMBkvl8eLhCU6I19t848unKMUgNHuvwHPaurzZr4knulNyKzqz7zVYSz9AdvgWy4915eq+AA==",
       "dependencies": [
         "@tauri-apps/api"
+      ]
+    },
+    "@thisbeyond/solid-dnd@0.7.5_solid-js@1.9.5__seroval@1.2.1": {
+      "integrity": "sha512-DfI5ff+yYGpK9M21LhYwIPlbP2msKxN2ARwuu6GF8tT1GgNVDTI8VCQvH4TJFoVApP9d44izmAcTh/iTCH2UUw==",
+      "dependencies": [
+        "solid-js"
       ]
     },
     "@ts-morph/common@0.25.0": {
@@ -3032,6 +3039,7 @@
       "npm:@tauri-apps/plugin-fs@^2.2.0",
       "npm:@tauri-apps/plugin-shell@^2.2.0",
       "npm:@tauri-apps/plugin-window-state@^2.2.1",
+      "npm:@thisbeyond/solid-dnd@~0.7.5",
       "npm:lucide-solid@0.479",
       "npm:solid-js@^1.9.5",
       "npm:udsv@~0.7.1",
