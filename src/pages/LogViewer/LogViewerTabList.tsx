@@ -70,41 +70,55 @@ export function LogViewerTabList(props: LogViewerTabListProps) {
     scrollContainer.scrollLeft += e.deltaY;
   };
 
-  createEffect(() => {
+  /*createEffect(() => {
     const focusedTab = props.focusedTab;
     if (!focusedTab) return;
     const currentTabTrigger = document.getElementById(focusedTab);
     if (scrollContainer) {
       scrollContainer.scrollTo({ left: currentTabTrigger!.offsetLeft });
     }
-  });
+  });*/
 
-  const [items, setItems] = createSignal<LogViewerTabContext[]>(props.tabList);
+  const [items, setItems] = createSignal<string[]>(props.tabList.map((tab) => tab.id));
   const [activeItem, setActiveItem] = createSignal(null);
   const ids = () =>
-    items().map((tab) => {
-      return tab.id;
-    });
+    items()
 
-  //@ts-ignore: For testing solid js dnd
-  const onDragStart = ({ draggable }) => setActiveItem(draggable.id);
+  /*createEffect(() => {
+    const tabListLength = props.tabList.length
+    if(tabListLength === 0) return;
+    if(tabListLength > items().length) {
+      const updateTab : string[]= [ ...items(), JSON.stringify(props.tabList[tabListLength -1].id).replaceAll("\"", "")]
+      setItems(updateTab)
+    } 
 
-  //@ts-ignore: For testing solid js dnd
+    console.log(items())
+  })*/ 
+  
+
+  const onDragStart = () => setActiveItem(draggable.id);
+
   const onDragEnd = ({ draggable, droppable }) => {
     if (draggable && droppable) {
-      const currentItems = items();
+      const currentItems = props.tabList;
       const fromIndex = currentItems.indexOf(draggable.id);
+      //console.log(fromIndex) == -1/  need to find out get the draggable in
       const toIndex = currentItems.indexOf(droppable.id);
-      let updatedItems = items();
+      //console.log(toIndex) == -1/ also same. It dosent reorder. it works when the Array is only string,
+      // And the rest of the drag event is not working also. 
+
+      console.log(clientX())
+      let updatedItems = props.tabList;
       if (fromIndex !== toIndex) {
         updatedItems = updatedItems.splice(
           toIndex,
           0,
           ...updatedItems.splice(fromIndex, 1),
         );
+        console.log(fromIndex, toIndex)
       }
-      setItems(updatedItems);
-      props.onTabReorder?.(items());
+      console.log(updatedItems)
+      props.onTabReorder?.(updatedItems)
     }
 
     setActiveItem(null);
@@ -149,7 +163,7 @@ export function LogViewerTabList(props: LogViewerTabListProps) {
                 <SortableProvider ids={ids()}>
                   <For each={items()}>
                     {(tab, index) => {
-                      const sortable = createSortable(tab.id);
+                      const sortable = createSortable(tab);
                       return (
                         <div
                           //@ts-ignore: For testing solid js dnd
@@ -160,8 +174,8 @@ export function LogViewerTabList(props: LogViewerTabListProps) {
                           }}
                         >
                           <Tabs.Trigger
-                            id={tab.id}
-                            value={tab.id}
+                            id={tab}
+                            value={tab}
                             paddingRight="0"
                             onDragStart={(e) => {
                               setDraggedTabIndex(index());
@@ -169,7 +183,7 @@ export function LogViewerTabList(props: LogViewerTabListProps) {
                               setClientX(e.clientX);
 
                               const changedTabContext = props.tabList.filter(
-                                (info) => info.id === tab.id,
+                                (info) => info.id === tab,
                               )[0];
                               props.onDraggedTabInfo?.(changedTabContext);
                             }}
@@ -177,16 +191,17 @@ export function LogViewerTabList(props: LogViewerTabListProps) {
                               reorderTabsOnDragOver(e, index());
                               dragOverScroll(e);
                             }}
-                            onDragEnd={() => {
+                            onDragEnd={(e) => {
+                              console.log(e)
                               setDraggedTabIndex(null);
                               setClientX(null);
                             }}
                             // Use css for theme color
                             class={css({
                               borderBottomWidth:
-                                props.focusedTab === tab.id ? "3px" : "0px",
+                                props.focusedTab === tab ? "3px" : "0px",
                               marginTop:
-                                props.focusedTab === tab.id
+                                props.focusedTab === tab
                                   ? `calc(0.5rem + 1px)`
                                   : `0.5rem `,
                               borderBottomColor: "accent.emphasized",
@@ -194,15 +209,15 @@ export function LogViewerTabList(props: LogViewerTabListProps) {
                           >
                             <Editable.Root
                               defaultValue={
-                                tab.tabName.length === 0
+                                props.tabList[index()].tabName.length === 0
                                   ? JSON.stringify(
-                                      tab.filePath.match(/[^?!//]+$/!),
+                                    props.tabList[index()].filePath.match(/[^?!//]+$/!),
                                     ).slice(2, -2) /*change to tabname*/
-                                  : tab.tabName
+                                  : props.tabList[index()].tabName
                               }
                               activationMode="dblclick"
                               onValueCommit={(tabName) => {
-                                const tabUpdate = tab;
+                                const tabUpdate = props.tabList[index()];
                                 tabUpdate.tabName = tabName.value;
                                 props.onTabContextChange?.(tabUpdate);
                               }}
@@ -216,7 +231,7 @@ export function LogViewerTabList(props: LogViewerTabListProps) {
                               variant="ghost"
                               size="sm"
                               onClick={() => {
-                                props.onDeleteTab?.(tab.id, index());
+                                props.onDeleteTab?.(tab, index());
                               }}
                               borderRadius="3rem"
                             >
