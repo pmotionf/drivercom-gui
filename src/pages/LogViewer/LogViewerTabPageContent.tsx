@@ -34,8 +34,7 @@ export type ErrorMessage = {
 };
 
 export type LogViewerTabPageContentProps =
-  & JSX.HTMLAttributes<HTMLDivElement>
-  & {
+  JSX.HTMLAttributes<HTMLDivElement> & {
     tabId: string;
     filePath: string;
     onErrorMessage?: (message: ErrorMessage) => void;
@@ -77,13 +76,12 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
       row.map((val) => {
         if (typeof val === "boolean") return val ? 1 : 0;
         return val;
-      })
+      }),
     );
     if (data.length < local_header.length) {
       const errorMessage: ErrorMessage = {
         title: "Invalid Log File",
-        description:
-          `Data has ${data.length} columns, while header has ${local_header.length} labels.`,
+        description: `Data has ${data.length} columns, while header has ${local_header.length} labels.`,
         type: "error",
       };
       props.onErrorMessage?.(errorMessage);
@@ -91,7 +89,8 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
     }
 
     // Parse Enum name-value array to avoid plot errors
-    const parsedSeriesForPlot: number[][] = data.slice(0, local_header.length)
+    const parsedSeriesForPlot: number[][] = data
+      .slice(0, local_header.length)
       .map((series) => {
         const parsedEnumForPlot = series.map((value) => {
           if (
@@ -218,24 +217,20 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
       const plotGroup: uPlot[] = uPlot.sync(props.tabId).plots;
 
       plotGroup.forEach((plot) => {
-        plot.over.removeEventListener(
-          "mousemove",
-          () => setCursorIdx(plot.cursor.idx),
+        plot.over.removeEventListener("mousemove", () =>
+          setCursorIdx(plot.cursor.idx),
         );
-        plot.over.removeEventListener(
-          "mouseleave",
-          () => setCursorIdx(plot.cursor.idx),
+        plot.over.removeEventListener("mouseleave", () =>
+          setCursorIdx(plot.cursor.idx),
         );
       });
 
       plotGroup.forEach((plot) => {
-        plot.over.addEventListener(
-          "mousemove",
-          () => setCursorIdx(plot.cursor.idx),
+        plot.over.addEventListener("mousemove", () =>
+          setCursorIdx(plot.cursor.idx),
         );
-        plot.over.addEventListener(
-          "mouseleave",
-          () => setCursorIdx(plot.cursor.idx),
+        plot.over.addEventListener("mouseleave", () =>
+          setCursorIdx(plot.cursor.idx),
         );
       });
     }, 300);
@@ -244,13 +239,11 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
   onCleanup(() => {
     const plotGroup: uPlot[] = uPlot.sync(props.tabId).plots;
     plotGroup.forEach((plot) => {
-      plot.over.removeEventListener(
-        "mousemove",
-        () => setCursorIdx(plot.cursor.idx),
+      plot.over.removeEventListener("mousemove", () =>
+        setCursorIdx(plot.cursor.idx),
       );
-      plot.over.removeEventListener(
-        "mouseleave",
-        () => setCursorIdx(plot.cursor.idx),
+      plot.over.removeEventListener("mouseleave", () =>
+        setCursorIdx(plot.cursor.idx),
       );
     });
   });
@@ -351,11 +344,13 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
                         splitPlot(index());
                         setMergePlotIndexes([]);
                       }}
-                      disabled={currentHeader.length <= 1 ||
+                      disabled={
+                        currentHeader.length <= 1 ||
                         !plots[index()] ||
                         !plots[index()].selected ||
                         allSelected(index()) ||
-                        allNotSelected(index())}
+                        allNotSelected(index())
+                      }
                     >
                       <IconSeparatorHorizontal />
                     </IconButton>
@@ -374,8 +369,10 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
                         mergePlot(mergePlotIndexes());
                         setMergePlotIndexes([]);
                       }}
-                      disabled={mergePlotIndexes().length < 2 ||
-                        mergePlotIndexes().indexOf(index()) === -1}
+                      disabled={
+                        mergePlotIndexes().length < 2 ||
+                        mergePlotIndexes().indexOf(index()) === -1
+                      }
                       size="sm"
                     >
                       <IconFold />
@@ -429,13 +426,6 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
                         </Tooltip.Content>
                       </Tooltip.Positioner>
                     </Tooltip.Root>
-                    <IconButton
-                      variant="outline"
-                      onclick={() => setDisplaySeachBox(true)}
-                      size="sm"
-                    >
-                      <IconSearch />
-                    </IconButton>
                   </Stack>
                 </Show>
               </Stack>
@@ -467,37 +457,6 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
           );
         }}
       </For>
-      <Show when={displaySearchBox()}>
-        <Stack
-          direction="row"
-          position="fixed"
-          backgroundColor="bg.default"
-          width="50%"
-          height="4rem"
-          top="3.5rem"
-          borderWidth="1px"
-          left="25%"
-          borderRadius="1rem"
-          padding="0.5rem"
-        >
-          <Input
-            id="search_input"
-            height="100%"
-            width={`calc(100% - 5rem)`}
-            style={{ "border-width": "0" }}
-            onInput={(e) => setInputValue(e.target.value)}
-          />
-          <IconButton
-            variant="ghost"
-            onClick={() => searchSeries(inputValue())}
-          >
-            <IconSearch />
-          </IconButton>
-          <IconButton variant="ghost" onClick={() => setDisplaySeachBox(false)}>
-            <IconX />
-          </IconButton>
-        </Stack>
-      </Show>
     </>
   );
 }

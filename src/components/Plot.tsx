@@ -23,6 +23,7 @@ import {
   IconCrosshair,
   IconLocation,
   IconLocationOff,
+  IconSearch,
   IconZoomInArea,
   IconZoomReset,
 } from "@tabler/icons-solidjs";
@@ -31,6 +32,9 @@ import { Legend, LegendStroke } from "./Plot/Legend";
 import { Tooltip } from "./ui/tooltip";
 import { Text } from "./ui/text";
 import { Portal } from "solid-js/web";
+import { Input } from "./ui/input";
+import { Positioner } from "./ui/styled/popover";
+import { Button } from "./ui/button";
 
 export type PlotProps = JSX.HTMLAttributes<HTMLDivElement> & {
   id: string;
@@ -92,7 +96,8 @@ export function Plot(props: PlotProps) {
     }
 
     if (
-      !getContext().color || getContext().color.length == 0 ||
+      !getContext().color ||
+      getContext().color.length == 0 ||
       getContext().color.length !== props.header.length
     ) {
       setContext()(
@@ -104,7 +109,8 @@ export function Plot(props: PlotProps) {
     }
 
     if (
-      !getContext().style || getContext().style.length == 0 ||
+      !getContext().style ||
+      getContext().style.length == 0 ||
       getContext().style.length !== props.header.length
     ) {
       setContext()(
@@ -114,7 +120,8 @@ export function Plot(props: PlotProps) {
     }
 
     if (
-      !getContext().visible || getContext().visible.length == 0 ||
+      !getContext().visible ||
+      getContext().visible.length == 0 ||
       getContext().visible.length !== props.header.length
     ) {
       setContext()(
@@ -201,17 +208,19 @@ export function Plot(props: PlotProps) {
   const [xRange, setXRange] = createSignal<number>(0);
 
   createEffect(() => {
-    const domainWidth: number =
-      document.getElementById(props.id + "-wrapper")!.offsetWidth;
+    const domainWidth: number = document.getElementById(
+      props.id + "-wrapper",
+    )!.offsetWidth;
     const scale: number = xRange() / domainWidth;
     const array: number[] = [];
 
     let i: number = 0;
     while (scale > 0.1) {
       array.push(i);
-      i += (Math.floor(scale) > 0
-        ? Math.floor(scale)
-        : parseFloat(scale.toFixed(1))) * 10;
+      i +=
+        (Math.floor(scale) > 0
+          ? Math.floor(scale)
+          : parseFloat(scale.toFixed(1))) * 10;
       if (i >= plot.data[0].length) {
         break;
       }
@@ -255,8 +264,7 @@ export function Plot(props: PlotProps) {
             dash: [0, 5],
             points: {
               show: true,
-              ...(dotFilter().length !== 0 &&
-                { filter: checkDotFilter() }),
+              ...(dotFilter().length !== 0 && { filter: checkDotFilter() }),
             },
           }),
         },
@@ -423,10 +431,7 @@ export function Plot(props: PlotProps) {
         ? props.header.map(() => true)
         : getContext().visible;
 
-    setContext()(
-      "visible",
-      visibleList,
-    );
+    setContext()("visible", visibleList);
   }
 
   onMount(() => {
@@ -466,16 +471,30 @@ export function Plot(props: PlotProps) {
     }
   `;
 
-  const [showLegendCheckBox, setShowLegendCheckBox] = createSignal<boolean>(
-    false,
-  );
+  const [showLegendCheckBox, setShowLegendCheckBox] =
+    createSignal<boolean>(false);
+
+  const [searchInputText, setSearchInputText] = createSignal<string>("");
+  const [searchResultList, setSearchResultList] = createSignal<string[]>([]);
+
+  createEffect(() => {
+    const inputValue = searchInputText();
+    if (inputValue.length === 0) return;
+
+    const resultList = props.header.filter((head) => {
+      return head.slice(0, inputValue.length) === inputValue;
+    });
+
+    setSearchResultList(resultList);
+  });
+
+  createEffect(() => {
+    console.log(searchResultList());
+  });
 
   return (
     <>
-      <div
-        {...rest}
-        id={props.id + "-wrapper"}
-      >
+      <div {...rest} id={props.id + "-wrapper"}>
         <Heading
           size="lg"
           style={{
@@ -493,8 +512,7 @@ export function Plot(props: PlotProps) {
             width: "calc(100% - 15rem)",
             height: "calc(100% - 0.5rem)",
           }}
-        >
-        </div>
+        ></div>
         <Stack
           direction="row"
           style={{
@@ -522,9 +540,7 @@ export function Plot(props: PlotProps) {
             </Tooltip.Trigger>
             <Tooltip.Positioner>
               <Tooltip.Content backgroundColor="bg.default">
-                <Text color="fg.default">
-                  Zoom Reset
-                </Text>
+                <Text color="fg.default">Zoom Reset</Text>
               </Tooltip.Content>
             </Tooltip.Positioner>
           </Tooltip.Root>
@@ -548,14 +564,16 @@ export function Plot(props: PlotProps) {
                 <ToggleGroup.Item
                   value={CursorMode[CursorMode.Pan]}
                   aria-label="Toggle Pan"
-                  color={cursorMode() === CursorMode.Pan
-                    ? "fg.default"
-                    : "fg.muted"}
-                  bgColor={cursorMode() === CursorMode.Pan
-                    ? "bg.emphasized"
-                    : lastCursorMode() === CursorMode.Pan
-                    ? "bg.subtle"
-                    : "bg.default"}
+                  color={
+                    cursorMode() === CursorMode.Pan ? "fg.default" : "fg.muted"
+                  }
+                  bgColor={
+                    cursorMode() === CursorMode.Pan
+                      ? "bg.emphasized"
+                      : lastCursorMode() === CursorMode.Pan
+                        ? "bg.subtle"
+                        : "bg.default"
+                  }
                 >
                   <IconArrowsMove />
                 </ToggleGroup.Item>
@@ -563,9 +581,7 @@ export function Plot(props: PlotProps) {
               <Portal>
                 <Tooltip.Positioner>
                   <Tooltip.Content backgroundColor="bg.default">
-                    <Text color="fg.default">
-                      Plot Panning
-                    </Text>
+                    <Text color="fg.default">Plot Panning</Text>
                   </Tooltip.Content>
                 </Tooltip.Positioner>
               </Portal>
@@ -576,14 +592,16 @@ export function Plot(props: PlotProps) {
                 <ToggleGroup.Item
                   value={CursorMode[CursorMode.Zoom]}
                   aria-label="Toggle Selection Zoom"
-                  color={cursorMode() === CursorMode.Zoom
-                    ? "fg.default"
-                    : "fg.muted"}
-                  bgColor={cursorMode() === CursorMode.Zoom
-                    ? "bg.emphasized"
-                    : lastCursorMode() === CursorMode.Zoom
-                    ? "bg.subtle"
-                    : "bg.default"}
+                  color={
+                    cursorMode() === CursorMode.Zoom ? "fg.default" : "fg.muted"
+                  }
+                  bgColor={
+                    cursorMode() === CursorMode.Zoom
+                      ? "bg.emphasized"
+                      : lastCursorMode() === CursorMode.Zoom
+                        ? "bg.subtle"
+                        : "bg.default"
+                  }
                 >
                   <IconZoomInArea />
                 </ToggleGroup.Item>
@@ -591,9 +609,7 @@ export function Plot(props: PlotProps) {
               <Portal>
                 <Tooltip.Positioner>
                   <Tooltip.Content backgroundColor="bg.default">
-                    <Text color="fg.default">
-                      Selection Zoom
-                    </Text>
+                    <Text color="fg.default">Selection Zoom</Text>
                   </Tooltip.Content>
                 </Tooltip.Positioner>
               </Portal>
@@ -604,14 +620,16 @@ export function Plot(props: PlotProps) {
                 <ToggleGroup.Item
                   value={CursorMode[CursorMode.Lock]}
                   aria-label="Toggle Cursor Lock"
-                  color={cursorMode() === CursorMode.Lock
-                    ? "fg.default"
-                    : "fg.muted"}
-                  bgColor={cursorMode() === CursorMode.Lock
-                    ? "bg.emphasized"
-                    : lastCursorMode() === CursorMode.Lock
-                    ? "bg.subtle"
-                    : "bg.default"}
+                  color={
+                    cursorMode() === CursorMode.Lock ? "fg.default" : "fg.muted"
+                  }
+                  bgColor={
+                    cursorMode() === CursorMode.Lock
+                      ? "bg.emphasized"
+                      : lastCursorMode() === CursorMode.Lock
+                        ? "bg.subtle"
+                        : "bg.default"
+                  }
                 >
                   <IconCrosshair />
                 </ToggleGroup.Item>
@@ -619,9 +637,7 @@ export function Plot(props: PlotProps) {
               <Portal>
                 <Tooltip.Positioner>
                   <Tooltip.Content backgroundColor="bg.default">
-                    <Text color="fg.default">
-                      Cursor Lock
-                    </Text>
+                    <Text color="fg.default">Cursor Lock</Text>
                   </Tooltip.Content>
                 </Tooltip.Positioner>
               </Portal>
@@ -652,13 +668,39 @@ export function Plot(props: PlotProps) {
             </Tooltip.Trigger>
             <Tooltip.Positioner>
               <Tooltip.Content backgroundColor="bg.default">
-                <Text color="fg.default">
-                  Select
-                </Text>
+                <Text color="fg.default">Select</Text>
               </Tooltip.Content>
             </Tooltip.Positioner>
           </Tooltip.Root>
         </Stack>
+
+        <Stack direction="row" width="15rem" paddingTop="1rem">
+          <Input
+            width="11rem"
+            onInput={(e) => setSearchInputText(e.currentTarget.value)}
+          />
+          <IconButton variant="outline">
+            <IconSearch />
+          </IconButton>
+        </Stack>
+        <Show when={searchResultList().length !== 0}>
+          <Stack
+            borderWidth="2px"
+            width="11rem"
+            maxHeight="12rem"
+            zIndex="1"
+            position="relative"
+          >
+            <For each={searchResultList()}>
+              {(result) => (
+                <Button width="11rem" height="3rem" variant="ghost">
+                  {result}
+                </Button>
+              )}
+            </For>
+          </Stack>
+        </Show>
+
         <Show when={render()}>
           <Stack
             style={{
@@ -666,7 +708,7 @@ export function Plot(props: PlotProps) {
               "padding-bottom": "0.5rem",
               float: "left",
               width: "15rem",
-              "max-height": "calc(100% - 1.5rem - 3rem)",
+              "max-height": "calc(100% - 1.5rem - 8rem)",
               "overflow-x": "auto",
               "overflow-y": "auto",
             }}
@@ -723,8 +765,9 @@ export function Plot(props: PlotProps) {
                         dash: [0, 5],
                         points: {
                           show: true,
-                          ...(dotFilter().length !== 0 &&
-                            { filter: checkDotFilter }),
+                          ...(dotFilter().length !== 0 && {
+                            filter: checkDotFilter,
+                          }),
                         },
                       }),
                     };
