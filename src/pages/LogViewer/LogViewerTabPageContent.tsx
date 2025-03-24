@@ -17,12 +17,15 @@ import { IconButton } from "~/components/ui/icon-button";
 import {
   IconFold,
   IconRestore,
+  IconSearch,
   IconSeparatorHorizontal,
+  IconX,
 } from "@tabler/icons-solidjs";
 import { Stack } from "styled-system/jsx";
 import { Text } from "~/components/ui/text";
 import { Checkbox } from "~/components/ui/checkbox";
 import { Tooltip } from "~/components/ui/tooltip";
+import { Input } from "~/components/ui/input";
 
 export type ErrorMessage = {
   title: string;
@@ -31,8 +34,7 @@ export type ErrorMessage = {
 };
 
 export type LogViewerTabPageContentProps =
-  & JSX.HTMLAttributes<HTMLDivElement>
-  & {
+  JSX.HTMLAttributes<HTMLDivElement> & {
     tabId: string;
     filePath: string;
     onErrorMessage?: (message: ErrorMessage) => void;
@@ -74,13 +76,12 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
       row.map((val) => {
         if (typeof val === "boolean") return val ? 1 : 0;
         return val;
-      })
+      }),
     );
     if (data.length < local_header.length) {
       const errorMessage: ErrorMessage = {
         title: "Invalid Log File",
-        description:
-          `Data has ${data.length} columns, while header has ${local_header.length} labels.`,
+        description: `Data has ${data.length} columns, while header has ${local_header.length} labels.`,
         type: "error",
       };
       props.onErrorMessage?.(errorMessage);
@@ -88,7 +89,8 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
     }
 
     // Parse Enum name-value array to avoid plot errors
-    const parsedSeriesForPlot: number[][] = data.slice(0, local_header.length)
+    const parsedSeriesForPlot: number[][] = data
+      .slice(0, local_header.length)
       .map((series) => {
         const parsedEnumForPlot = series.map((value) => {
           if (
@@ -215,24 +217,20 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
       const plotGroup: uPlot[] = uPlot.sync(props.tabId).plots;
 
       plotGroup.forEach((plot) => {
-        plot.over.removeEventListener(
-          "mousemove",
-          () => setCursorIdx(plot.cursor.idx),
+        plot.over.removeEventListener("mousemove", () =>
+          setCursorIdx(plot.cursor.idx),
         );
-        plot.over.removeEventListener(
-          "mouseleave",
-          () => setCursorIdx(plot.cursor.idx),
+        plot.over.removeEventListener("mouseleave", () =>
+          setCursorIdx(plot.cursor.idx),
         );
       });
 
       plotGroup.forEach((plot) => {
-        plot.over.addEventListener(
-          "mousemove",
-          () => setCursorIdx(plot.cursor.idx),
+        plot.over.addEventListener("mousemove", () =>
+          setCursorIdx(plot.cursor.idx),
         );
-        plot.over.addEventListener(
-          "mouseleave",
-          () => setCursorIdx(plot.cursor.idx),
+        plot.over.addEventListener("mouseleave", () =>
+          setCursorIdx(plot.cursor.idx),
         );
       });
     }, 300);
@@ -241,16 +239,63 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
   onCleanup(() => {
     const plotGroup: uPlot[] = uPlot.sync(props.tabId).plots;
     plotGroup.forEach((plot) => {
-      plot.over.removeEventListener(
-        "mousemove",
-        () => setCursorIdx(plot.cursor.idx),
+      plot.over.removeEventListener("mousemove", () =>
+        setCursorIdx(plot.cursor.idx),
       );
-      plot.over.removeEventListener(
-        "mouseleave",
-        () => setCursorIdx(plot.cursor.idx),
+      plot.over.removeEventListener("mouseleave", () =>
+        setCursorIdx(plot.cursor.idx),
       );
     });
   });
+
+  const [displaySearchBox, setDisplaySeachBox] = createSignal<boolean>(false);
+  const [inputValue, setInputValue] = createSignal<string>("");
+
+  const searchSeries = (inputText: string) => {
+    const searchResult = header().filter(
+      (legend) => legend.toLowerCase() === inputText.toLowerCase(),
+    )[0];
+    if (searchResult.length === 0) return;
+
+    const headerIndex = header().indexOf(searchResult);
+    let parentIndex: number = 0;
+    let childIndex: number = 0;
+
+    splitIndex().forEach((splitIndexes, i) => {
+      const findLegendIndex = splitIndexes.indexOf(headerIndex);
+      if (findLegendIndex !== -1) {
+        parentIndex = i;
+        childIndex = findLegendIndex;
+      }
+    });
+
+    setPlots((prev) => {
+      const updatePlotContext = prev.map((plot, i) => {
+        if (parentIndex === i) {
+          const updateVisible = plot.visible.map((_, j) => {
+            if (j == childIndex) return true;
+            else return false;
+          });
+          return {
+            color: plot.color,
+            palette: plot.palette,
+            style: plot.style,
+            selected: plot.selected,
+            visible: updateVisible,
+          };
+        } else {
+          return {
+            color: plot.color,
+            palette: plot.palette,
+            style: plot.style,
+            selected: plot.selected,
+            visible: plot.visible.map(() => false),
+          };
+        }
+      });
+      return updatePlotContext;
+    });
+  };
 
   return (
     <>
@@ -269,8 +314,11 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
 
           createEffect(() => {
             if (
-              prevSplitIndex && splitIndex().length === prevSplitIndex.length
-            ) return;
+              prevSplitIndex &&
+              splitIndex().length === prevSplitIndex.length
+            ) {
+              return;
+            }
 
             setPlots(index(), {
               visible: item.map(() => true),
@@ -286,7 +334,7 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
                 width="100%"
                 paddingTop="0.2rem"
                 paddingRight="1.6rem"
-                style={{ "overflow": "hidden" }}
+                style={{ overflow: "hidden" }}
               >
                 <Tooltip.Root>
                   <Tooltip.Trigger>
@@ -296,20 +344,20 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
                         splitPlot(index());
                         setMergePlotIndexes([]);
                       }}
-                      disabled={currentHeader.length <= 1 ||
+                      disabled={
+                        currentHeader.length <= 1 ||
                         !plots[index()] ||
                         !plots[index()].selected ||
                         allSelected(index()) ||
-                        allNotSelected(index())}
+                        allNotSelected(index())
+                      }
                     >
                       <IconSeparatorHorizontal />
                     </IconButton>
                   </Tooltip.Trigger>
                   <Tooltip.Positioner>
                     <Tooltip.Content backgroundColor="bg.default">
-                      <Text color="fg.default">
-                        Split
-                      </Text>
+                      <Text color="fg.default">Split</Text>
                     </Tooltip.Content>
                   </Tooltip.Positioner>
                 </Tooltip.Root>
@@ -321,8 +369,10 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
                         mergePlot(mergePlotIndexes());
                         setMergePlotIndexes([]);
                       }}
-                      disabled={mergePlotIndexes().length < 2 ||
-                        mergePlotIndexes().indexOf(index()) === -1}
+                      disabled={
+                        mergePlotIndexes().length < 2 ||
+                        mergePlotIndexes().indexOf(index()) === -1
+                      }
                       size="sm"
                     >
                       <IconFold />
@@ -330,9 +380,7 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
                   </Tooltip.Trigger>
                   <Tooltip.Positioner>
                     <Tooltip.Content backgroundColor="bg.default">
-                      <Text color="fg.default">
-                        Merge
-                      </Text>
+                      <Text color="fg.default">Merge</Text>
                     </Tooltip.Content>
                   </Tooltip.Positioner>
                 </Tooltip.Root>
@@ -347,22 +395,17 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
                       });
                     } else {
                       setMergePlotIndexes((prev) => {
-                        return prev.filter((graphIndex) =>
-                          graphIndex !== index()
+                        return prev.filter(
+                          (graphIndex) => graphIndex !== index(),
                         );
                       });
                     }
                   }}
                 >
-                  <Text fontWeight="bold">
-                    Graph {index() + 1}
-                  </Text>
+                  <Text fontWeight="bold">Graph {index() + 1}</Text>
                 </Checkbox>
                 <Show when={index() === 0}>
-                  <Stack
-                    direction="row"
-                    width={`calc(100% - 16rem)`}
-                  >
+                  <Stack direction="row" width={`calc(100% - 16rem)`}>
                     <Tooltip.Root>
                       <Tooltip.Trigger>
                         <IconButton
@@ -379,9 +422,7 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
                       </Tooltip.Trigger>
                       <Tooltip.Positioner>
                         <Tooltip.Content backgroundColor="bg.default">
-                          <Text color="fg.default">
-                            Reset
-                          </Text>
+                          <Text color="fg.default">Reset</Text>
                         </Tooltip.Content>
                       </Tooltip.Positioner>
                     </Tooltip.Root>
