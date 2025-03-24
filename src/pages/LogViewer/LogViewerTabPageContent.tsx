@@ -51,7 +51,7 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
   const [header, setHeader] = createSignal<string[]>([]);
   const [series, setSeries] = createSignal<number[][]>([]);
 
-  function parseCsvFile(csv_str: string): {
+  function parseCsvForPlot(csv_str: string): {
     header: string[];
     series: number[][];
     splitIndex: number[][];
@@ -69,8 +69,8 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
 
     const schema = inferSchema(csv_str);
     const parser = initParser(schema);
-    const local_header = rows[0].replace(/,\s*$/, "").split(",");
-    const data = parser.typedCols(csv_str).map((row) =>
+    const local_header: string[] = rows[0].replace(/,\s*$/, "").split(",");
+    const data: number[][] = parser.typedCols(csv_str).map((row) =>
       row.map((val) => {
         if (typeof val === "boolean") return val ? 1 : 0;
         return val;
@@ -87,6 +87,23 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
       return null;
     }
 
+    // Parse Enum name-value array to avoid plot errors
+    const parsedSeriesForPlot: number[][] = data.slice(0, local_header.length)
+      .map((series) => {
+        const parsedEnumForPlot = series.map((value) => {
+          if (
+            value.toString().indexOf("(") !== -1 &&
+            value.toString().indexOf(")") !== -1
+          ) {
+            const parseValue = value.toString().match(/\((\d+)\)/)![1];
+            return Number(parseValue);
+          } else {
+            return value;
+          }
+        });
+        return parsedEnumForPlot;
+      });
+
     const indexArray = Array.from(
       { length: local_header.length },
       (_, index) => index,
@@ -94,22 +111,21 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
 
     return {
       header: local_header,
-      series: data.slice(0, local_header.length),
+      series: parsedSeriesForPlot,
       splitIndex: [indexArray],
     };
   }
 
   onMount(async () => {
     const csv_str = await readTextFile(props.filePath);
-    const fileData = parseCsvFile(csv_str);
-    if (!fileData) return;
-
-    setSeries(fileData.series);
-    setHeader(fileData.header);
+    const dataForPlot = parseCsvForPlot(csv_str);
+    if (!dataForPlot) return;
+    setSeries(dataForPlot.series);
+    setHeader(dataForPlot.header);
 
     const splitIndexArray: number[][] =
       !props.splitPlotIndex || props.splitPlotIndex!.length === 0
-        ? fileData.splitIndex
+        ? dataForPlot.splitIndex
         : [...props.splitPlotIndex!];
     setSplitIndex(splitIndexArray);
     props.onSplit?.(splitIndexArray);
