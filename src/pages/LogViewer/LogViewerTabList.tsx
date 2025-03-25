@@ -10,9 +10,11 @@ import {
   createSortable,
   DragDropProvider,
   DragDropSensors,
+  DragOverlay,
   SortableProvider,
 } from "@thisbeyond/solid-dnd";
 import { Stack } from "styled-system/jsx";
+import { Text } from "~/components/ui/text";
 
 export type LogViewerTabListProps = JSX.HTMLAttributes<HTMLDivElement> & {
   id: string;
@@ -29,7 +31,23 @@ export type LogViewerTabListProps = JSX.HTMLAttributes<HTMLDivElement> & {
 };
 
 export function LogViewerTabList(props: LogViewerTabListProps) {
+  const [tabSelect, setTabSelect] = createSignal<boolean>(false);
+  const [prevClientX, setPrevClientX] = createSignal<number | null>(null);
+  const [prevPositionX, setPrevPositionX] = createSignal<number>(0);
   let scrollContainer: HTMLDivElement | undefined;
+
+  createEffect(() => {
+    if (tabSelect()) return;
+    props.onTabContextDrag?.(false);
+    setPrevClientX(null);
+  });
+
+  const dragScrollMouseMoveHandler = (e: MouseEvent) => {
+    if (!scrollContainer || !prevClientX()) return;
+
+    const movement = (e.clientX - prevClientX()! + prevPositionX()) * 0.05;
+    scrollContainer.scrollBy({ left: movement });
+  };
 
   const mouseWheelHandler = (e: WheelEvent) => {
     if (!scrollContainer) return;
@@ -73,6 +91,19 @@ export function LogViewerTabList(props: LogViewerTabListProps) {
             }}
             width="100%"
             marginRight="0"
+            onMouseDown={(e) => {
+              setPrevClientX(e.clientX);
+              setPrevPositionX(e.currentTarget.scrollLeft);
+            }}
+            onMouseMove={(e) => {
+              if (!tabSelect()) return;
+              if (e.clientY > e.currentTarget.offsetHeight) {
+                props.onTabContextDrag?.(true);
+              } else {
+                props.onTabContextDrag?.(false);
+              }
+              dragScrollMouseMoveHandler(e);
+            }}
           >
             <DraggableTabList
               tabIds={props.tabList.map((tab) => tab.id)}
@@ -102,6 +133,9 @@ export function LogViewerTabList(props: LogViewerTabListProps) {
                 });
                 props.onTabReorder?.(updatedTab);
               }}
+              onDragStart={(isDragStart) => setTabSelect(isDragStart)}
+              onDragFocusedId={(dragFocusedId) =>
+                props.onTabFocus?.(dragFocusedId)}
             />
             <IconButton
               variant="ghost"
@@ -118,13 +152,10 @@ export function LogViewerTabList(props: LogViewerTabListProps) {
               <Tabs.Content
                 value={tab.id}
                 height="100%"
-                width="100% "
+                width="100%"
                 style={{
                   "overflow-y": "auto",
                 }}
-                onDragOver={(e) => e.preventDefault()}
-                onDragEnter={() => props.onTabContextDrag?.(true)}
-                onDrop={() => props.onTabContextDrag?.(false)}
               >
                 <LogViewerTabPageContent
                   tabId={tab.id}
@@ -227,6 +258,7 @@ export type drggableTabListProps = {
   onTabNameChange?: (changedTabName: string, changedTabId: string) => void;
   onDeleteTab?: (deletedTabId: string, deleteTabIndex: number) => void;
   onReorderTab?: (tabIds: string[]) => void;
+  onDragStart?: (dragStatus: boolean) => void;
 };
 
 export const DraggableTabList = (props: drggableTabListProps) => {
@@ -235,7 +267,10 @@ export const DraggableTabList = (props: drggableTabListProps) => {
   const ids = () => items();
 
   //@ts-ignore: ts-ignore is necessary to use onDragStart event.
-  const onDragStart = ({ draggable }) => setActiveItem(draggable.id);
+  const onDragStart = ({ draggable }) => {
+    setActiveItem(draggable.id);
+    props.onDragStart?.(true);
+  };
 
   //@ts-ignore: ts-ignore is necessary to use onDragEnd event.
   const onDragEnd = ({ draggable, droppable }) => {
@@ -250,13 +285,11 @@ export const DraggableTabList = (props: drggableTabListProps) => {
         props.onReorderTab?.(items());
       }
     }
-    setActiveItem(null);
-  };
 
-  createEffect(() => {
-    if (activeItem() === null) return;
     props.onDragFocusedId?.(activeItem()!);
-  });
+    setActiveItem(null);
+    props.onDragStart?.(false);
+  };
 
   return (
     <DragDropProvider
@@ -277,7 +310,9 @@ export const DraggableTabList = (props: drggableTabListProps) => {
                     props.filePath[index()].match(/[^?!//]+$/!),
                   ).slice(2, -2) /*change to tabname*/
                   : props.tabNames[index()]}
-                focus={item === props.focusedId}
+                focus={activeItem()
+                  ? activeItem() === item
+                  : props.focusedId === item}
                 onTabNameChange={(changedTabName) => {
                   props.onTabNameChange?.(changedTabName, item);
                 }}
@@ -290,6 +325,34 @@ export const DraggableTabList = (props: drggableTabListProps) => {
           </For>
         </SortableProvider>
       </Stack>
+      <DragOverlay>
+        <Stack
+          borderBottomWidth="3px"
+          borderBottomColor="accent.9"
+          class="sortable"
+          padding="0.5rem"
+        >
+          <Text fontWeight="bold">
+            {props.tabNames[
+                activeItem()
+                  ? props.tabIds.indexOf(activeItem()!)
+                  : props.tabIds.indexOf(props.focusedId)
+              ].length === 0
+              ? JSON.stringify(
+                props.filePath[
+                  activeItem()
+                    ? props.tabIds.indexOf(activeItem()!)
+                    : props.tabIds.indexOf(props.focusedId)
+                ].match(/[^?!//]+$/!),
+              ).slice(2, -2) /*change to tabname*/
+              : props.tabNames[
+                activeItem()
+                  ? props.tabIds.indexOf(activeItem()!)
+                  : props.tabIds.indexOf(props.focusedId)
+              ]}
+          </Text>
+        </Stack>
+      </DragOverlay>
     </DragDropProvider>
   );
 };
