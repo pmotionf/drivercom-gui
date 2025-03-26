@@ -9,7 +9,7 @@ import {
   splitProps,
   useContext,
 } from "solid-js";
-import { createStore } from "solid-js/store";
+import { createStore, unwrap } from "solid-js/store";
 
 import uPlot, { AlignedData } from "uplot";
 import "uplot/dist/uPlot.min.css";
@@ -92,7 +92,8 @@ export function Plot(props: PlotProps) {
     }
 
     if (
-      !getContext().color || getContext().color.length == 0 ||
+      !getContext().color ||
+      getContext().color.length == 0 ||
       getContext().color.length !== props.header.length
     ) {
       setContext()(
@@ -104,7 +105,8 @@ export function Plot(props: PlotProps) {
     }
 
     if (
-      !getContext().style || getContext().style.length == 0 ||
+      !getContext().style ||
+      getContext().style.length == 0 ||
       getContext().style.length !== props.header.length
     ) {
       setContext()(
@@ -114,7 +116,8 @@ export function Plot(props: PlotProps) {
     }
 
     if (
-      !getContext().visible || getContext().visible.length == 0 ||
+      !getContext().visible ||
+      getContext().visible.length == 0 ||
       getContext().visible.length !== props.header.length
     ) {
       setContext()(
@@ -201,8 +204,9 @@ export function Plot(props: PlotProps) {
   const [xRange, setXRange] = createSignal<number>(0);
 
   createEffect(() => {
-    const domainWidth: number =
-      document.getElementById(props.id + "-wrapper")!.offsetWidth;
+    const domainWidth: number = document.getElementById(
+      props.id + "-wrapper",
+    )!.offsetWidth;
     const scale: number = xRange() / domainWidth;
     const array: number[] = [];
 
@@ -238,6 +242,7 @@ export function Plot(props: PlotProps) {
   function createPlot() {
     const plot_element = document.getElementById(props.id)!;
     plot_element.replaceChildren();
+    const oldContext: PlotContext = unwrap(getContext());
 
     let series: uPlot.Series[] = [
       {
@@ -245,18 +250,17 @@ export function Plot(props: PlotProps) {
       },
       ...props.header.map((_, index) => ({
         label: props.header[index],
-        stroke: () => getContext().color[index],
-        show: getContext().visible[index],
+        stroke: () => oldContext.color[index],
+        show: oldContext.visible[index],
         ...{
-          ...(getContext().style[index] === LegendStroke.Dash && {
+          ...(oldContext.style[index] === LegendStroke.Dash && {
             dash: [10, 5],
           }),
-          ...(getContext().style[index] === LegendStroke.Dot && {
+          ...(oldContext.style[index] === LegendStroke.Dot && {
             dash: [0, 5],
             points: {
               show: true,
-              ...(dotFilter().length !== 0 &&
-                { filter: checkDotFilter() }),
+              ...(dotFilter().length !== 0 && { filter: checkDotFilter() }),
             },
           }),
         },
@@ -417,16 +421,6 @@ export function Plot(props: PlotProps) {
         setXRange(xMax - xMin);
       });
     }
-
-    const visibleList =
-      !getContext().visible || getContext().visible.length === 0
-        ? props.header.map(() => true)
-        : getContext().visible;
-
-    setContext()(
-      "visible",
-      visibleList,
-    );
   }
 
   onMount(() => {
@@ -472,10 +466,7 @@ export function Plot(props: PlotProps) {
 
   return (
     <>
-      <div
-        {...rest}
-        id={props.id + "-wrapper"}
-      >
+      <div {...rest} id={props.id + "-wrapper"}>
         <Heading
           size="lg"
           style={{
@@ -522,9 +513,7 @@ export function Plot(props: PlotProps) {
             </Tooltip.Trigger>
             <Tooltip.Positioner>
               <Tooltip.Content backgroundColor="bg.default">
-                <Text color="fg.default">
-                  Zoom Reset
-                </Text>
+                <Text color="fg.default">Zoom Reset</Text>
               </Tooltip.Content>
             </Tooltip.Positioner>
           </Tooltip.Root>
@@ -563,9 +552,7 @@ export function Plot(props: PlotProps) {
               <Portal>
                 <Tooltip.Positioner>
                   <Tooltip.Content backgroundColor="bg.default">
-                    <Text color="fg.default">
-                      Plot Panning
-                    </Text>
+                    <Text color="fg.default">Plot Panning</Text>
                   </Tooltip.Content>
                 </Tooltip.Positioner>
               </Portal>
@@ -591,9 +578,7 @@ export function Plot(props: PlotProps) {
               <Portal>
                 <Tooltip.Positioner>
                   <Tooltip.Content backgroundColor="bg.default">
-                    <Text color="fg.default">
-                      Selection Zoom
-                    </Text>
+                    <Text color="fg.default">Selection Zoom</Text>
                   </Tooltip.Content>
                 </Tooltip.Positioner>
               </Portal>
@@ -619,9 +604,7 @@ export function Plot(props: PlotProps) {
               <Portal>
                 <Tooltip.Positioner>
                   <Tooltip.Content backgroundColor="bg.default">
-                    <Text color="fg.default">
-                      Cursor Lock
-                    </Text>
+                    <Text color="fg.default">Cursor Lock</Text>
                   </Tooltip.Content>
                 </Tooltip.Positioner>
               </Portal>
@@ -652,9 +635,7 @@ export function Plot(props: PlotProps) {
             </Tooltip.Trigger>
             <Tooltip.Positioner>
               <Tooltip.Content backgroundColor="bg.default">
-                <Text color="fg.default">
-                  Select
-                </Text>
+                <Text color="fg.default">Select</Text>
               </Tooltip.Content>
             </Tooltip.Positioner>
           </Tooltip.Root>
@@ -723,8 +704,9 @@ export function Plot(props: PlotProps) {
                         dash: [0, 5],
                         points: {
                           show: true,
-                          ...(dotFilter().length !== 0 &&
-                            { filter: checkDotFilter }),
+                          ...(dotFilter().length !== 0 && {
+                            filter: checkDotFilter,
+                          }),
                         },
                       }),
                     };
