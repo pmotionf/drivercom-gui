@@ -1,4 +1,4 @@
-import { createEffect, createSignal, For, JSX } from "solid-js";
+import { createEffect, createSignal, For, JSX, Show } from "solid-js";
 import { Tabs } from "~/components/ui/tabs";
 import { IconButton } from "~/components/ui/icon-button";
 import { IconPlus, IconX } from "@tabler/icons-solidjs";
@@ -6,15 +6,17 @@ import { Editable } from "~/components/ui/editable";
 import { LogViewerTabPageContent } from "./LogViewerTabPageContent";
 import { LogViewerTabContext } from "../LogViewer";
 import { css } from "styled-system/css";
+import { createDraggable } from "@neodrag/solid";
+import { Portal } from "solid-js/web";
+import { Stack } from "styled-system/jsx";
+import { Text } from "~/components/ui/text";
 
 export type LogViewerTabListProps = JSX.HTMLAttributes<HTMLDivElement> & {
   id: string;
   tabList: LogViewerTabContext[];
   onCreateTab?: () => void;
   onDeleteTab?: (deleteTabId: string, index: number) => void;
-  onDraggedTabInfo?: (
-    tabContext: LogViewerTabContext,
-  ) => void;
+  onDraggedTabInfo?: (tabContext: LogViewerTabContext) => void;
   onTabDrop?: () => void;
   onTabContextChange?: (tabContext: LogViewerTabContext) => void;
   onTabContextDrag?: (isTabContextDragEnter: boolean) => void;
@@ -44,8 +46,8 @@ export function LogViewerTabList(props: LogViewerTabListProps) {
   createEffect(() => {
     const index = draggedTabIndex();
     if (index === null) {
-      const newIndex = props.tabList.findIndex((tab) =>
-        tab.id === props.focusedTab
+      const newIndex = props.tabList.findIndex(
+        (tab) => tab.id === props.focusedTab,
       );
       if (newIndex !== -1) {
         setDraggedTabIndex(newIndex);
@@ -81,11 +83,16 @@ export function LogViewerTabList(props: LogViewerTabListProps) {
     }
   });
 
+  const { draggable: myCustomDraggable } = createDraggable();
+  const [draggingTabId, setDraggingTabId] = createSignal<string | null>();
+  const [currentTabPosition, setCurrentTabPosition] = createSignal<{
+    x: number;
+    y: number;
+  }>({ x: 0, y: 0 });
+
   return (
     <>
-      <div
-        style={{ "width": "100%", height: "100%" }}
-      >
+      <div style={{ width: "100%", height: "100%" }}>
         <Tabs.Root
           value={props.focusedTab!}
           onValueChange={(e) => {
@@ -110,71 +117,126 @@ export function LogViewerTabList(props: LogViewerTabListProps) {
             width="100%"
             marginRight="0"
           >
-            <For each={props.tabList}>
-              {(tab, index) => (
-                <Tabs.Trigger
-                  id={tab.id}
-                  value={tab.id}
-                  draggable
-                  paddingRight="0"
-                  onDragStart={(e) => {
-                    setDraggedTabIndex(index());
-                    setPrevPositionX(e.currentTarget.scrollLeft);
-                    setClientX(e.clientX);
+            <Stack direction="row">
+              <For each={props.tabList}>
+                {(tab, index) => (
+                  <div
+                    id={tab.id}
+                    onMouseDown={(e) => {
+                      console.log(e);
+                    }}
+                    /*use:myCustomDraggable={{
+                      cancel: ".cancel",
+                      bounds: "parent",
+                      onDragStart: (data) => {
+                        setDraggingTabId(tab.id);
+                        console.log(data.event.offsetX);
+                        setDraggedTabIndex(index());
+                        //console.log("Dragging started", data);
+                      },
+                      onDrag: (data) => {
+                        const currentTabTrigger =
+                          document.getElementById("radio-group:cl-1");
+                        console.log(currentTabTrigger!.offsetWidth);
+                        reorderTabsOnDragOver(index());
+                        setCurrentTabPosition(() => {
+                          return {
+                            x: data.event.clientX - 48,
 
-                    const changedTabContext =
-                      props.tabList.filter((info) => info.id === tab.id)[0];
-                    props.onDraggedTabInfo?.(changedTabContext);
-                  }}
-                  onDragOver={(e) => {
-                    reorderTabsOnDragOver(e, index());
-                    dragOverScroll(e);
-                  }}
-                  onDragEnd={() => {
-                    setDraggedTabIndex(null);
-                    setClientX(null);
-                  }}
-                  // Use css for theme color
-                  class={css({
-                    "borderBottomWidth": props.focusedTab === tab.id
-                      ? "3px"
-                      : "0px",
-                    "marginTop": props.focusedTab === tab.id
-                      ? `calc(0.5rem + 1px)`
-                      : `0.5rem `,
-                    "borderBottomColor": "accent.emphasized",
-                  })}
-                >
-                  <Editable.Root
-                    defaultValue={tab.tabName.length === 0
-                      ? JSON.stringify(tab.filePath.match((/[^?!//]+$/)!))
-                        .slice(2, -2) /*change to tabname*/
-                      : tab.tabName}
-                    activationMode="dblclick"
-                    onValueCommit={(tabName) => {
-                      const tabUpdate = tab;
-                      tabUpdate.tabName = tabName.value;
-                      props.onTabContextChange?.(tabUpdate);
-                    }}
+                            y: data.event.clientY,
+                          };
+                        });
+                        console.log(currentTabPosition());
+                        //console.log("Dragging", data);
+                      },
+                      onDragEnd: (data) => {
+                        setDraggingTabId(null);
+                        setDraggedTabIndex(null);
+                        //setCurrentTabPosition({ x: 0, y: 0 });
+                        //console.log("Dragging stopped", data);
+                      },
+                    }}*/
                   >
-                    <Editable.Area>
-                      <Editable.Input width="100%" />
-                      <Editable.Preview width="100%" />
-                    </Editable.Area>
-                  </Editable.Root>
-                  <IconButton
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => {
-                      props.onDeleteTab?.(tab.id, index());
-                    }}
-                    borderRadius="3rem"
-                  >
-                    <IconX />
-                  </IconButton>
-                </Tabs.Trigger>
-              )}
-            </For>
+                    <Tabs.Trigger
+                      value={tab.id}
+                      paddingRight="0"
+                      opacity={tab.id === draggingTabId() ? "30%" : "100%"}
+                      draggable
+                      onDragStart={(e) => {
+                        setDraggedTabIndex(index());
+                        setPrevPositionX(e.currentTarget.scrollLeft);
+                        setClientX(e.clientX);
+
+                        const changedTabContext = props.tabList.filter(
+                          (info) => info.id === tab.id,
+                        )[0];
+                        props.onDraggedTabInfo?.(changedTabContext);
+                      }}
+                      onDragOver={(e) => {
+                        reorderTabsOnDragOver(e, index());
+                        dragOverScroll(e);
+                      }}
+                      onDragEnd={() => {
+                        setDraggedTabIndex(null);
+                        setClientX(null);
+                      }}
+                      // Use css for theme color
+                      borderBottomWidth={
+                        props.focusedTab === tab.id ? "3px" : "0px"
+                      }
+                      marginTop={
+                        props.focusedTab === tab.id
+                          ? `calc(0.5rem + 1px)`
+                          : `0.5rem `
+                      }
+                      borderBottomColor="accent.emphasized"
+                      class={css({
+                        borderBottomWidth:
+                          props.focusedTab === tab.id ? "3px" : "0px",
+                        marginTop:
+                          props.focusedTab === tab.id
+                            ? `calc(0.5rem + 1px)`
+                            : `0.5rem `,
+                        borderBottomColor: "accent.emphasized",
+                      })}
+                    >
+                      <Editable.Root
+                        defaultValue={
+                          tab.tabName.length === 0
+                            ? JSON.stringify(
+                                tab.filePath.match(/[^?!//]+$/!),
+                              ).slice(2, -2) /*change to tabname*/
+                            : tab.tabName
+                        }
+                        activationMode="dblclick"
+                        onValueCommit={(tabName) => {
+                          const tabUpdate = tab;
+                          tabUpdate.tabName = tabName.value;
+                          props.onTabContextChange?.(tabUpdate);
+                        }}
+                      >
+                        <Editable.Area>
+                          <Editable.Input width="100%" />
+                          <Editable.Preview width="100%" />
+                        </Editable.Area>
+                      </Editable.Root>
+                      <div class="cancel">
+                        <IconButton
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            props.onDeleteTab?.(tab.id, index());
+                          }}
+                          borderRadius="3rem"
+                        >
+                          <IconX />
+                        </IconButton>
+                      </div>
+                    </Tabs.Trigger>
+                  </div>
+                )}
+              </For>
+            </Stack>
             <IconButton
               variant="ghost"
               onClick={() => props.onCreateTab?.()}
@@ -184,12 +246,10 @@ export function LogViewerTabList(props: LogViewerTabListProps) {
               <IconPlus />
             </IconButton>
             <div
-              style={{ "width": "100%" }}
+              style={{ width: "100%" }}
               onDragOver={(e) => e.preventDefault()}
-            >
-            </div>
+            ></div>
           </Tabs.List>
-
           <For each={props.tabList}>
             {(tab, index) => (
               <Tabs.Content
@@ -206,12 +266,10 @@ export function LogViewerTabList(props: LogViewerTabListProps) {
                 <LogViewerTabPageContent
                   tabId={tab.id}
                   plotContext={
-                    props.tabList[index()]
-                      .plotContext /*Plot context*/
+                    props.tabList[index()].plotContext /*Plot context*/
                   }
                   xRange={
-                    props.tabList[index()]
-                      .plotZoomState /*Plots's x range*/
+                    props.tabList[index()].plotZoomState /*Plots's x range*/
                   }
                   filePath={tab.filePath}
                   onSplit={(plotSplitIndex) => {
@@ -237,6 +295,49 @@ export function LogViewerTabList(props: LogViewerTabListProps) {
           </For>
         </Tabs.Root>
       </div>
+      {draggingTabId() && (
+        <Stack
+          backgroundColor={"bg.default"}
+          borderBottomWidth="2px"
+          borderBottomColor="accent.emphasized"
+          direction="row"
+          style={{
+            position: "absolute",
+            top: `${currentTabPosition().y}px`,
+            left: `${currentTabPosition().x}px`,
+            "padding-left": "0.5rem",
+          }}
+        >
+          <Text fontWeight="bold" color="fg.default" paddingTop="0.5rem">
+            {props.tabList[
+              props.tabList
+                .map((tab) => {
+                  return tab.id;
+                })
+                .indexOf(draggingTabId()!)
+            ].tabName.length !== 0
+              ? props.tabList[
+                  props.tabList
+                    .map((tab) => {
+                      return tab.id;
+                    })
+                    .indexOf(draggingTabId()!)
+                ].tabName
+              : JSON.stringify(
+                  props.tabList[
+                    props.tabList
+                      .map((tab) => {
+                        return tab.id;
+                      })
+                      .indexOf(draggingTabId()!)
+                  ].filePath.match(/[^?!//]+$/!),
+                ).slice(2, -2)}
+          </Text>
+          <IconButton disabled variant="ghost">
+            <IconX />
+          </IconButton>
+        </Stack>
+      )}
     </>
   );
 }
