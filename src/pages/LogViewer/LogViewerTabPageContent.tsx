@@ -46,6 +46,10 @@ export type LogViewerTabPageContentProps =
 
 export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
   const [plots, setPlots] = createStore([{} as PlotContext]);
+  if (props.plotContext && props.plotContext.length !== 0) {
+    setPlots(props.plotContext);
+  }
+
   const [splitIndex, setSplitIndex] = createSignal([] as number[][]);
   const [mergePlotIndexes, setMergePlotIndexes] = createSignal<number[]>([]);
   const [header, setHeader] = createSignal<string[]>([]);
@@ -88,7 +92,8 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
     }
 
     // Parse Enum name-value array to avoid plot errors
-    const parsedSeriesForPlot: number[][] = data.slice(0, local_header.length)
+    const parsedSeriesForPlot: number[][] = data
+      .slice(0, local_header.length)
       .map((series) => {
         const parsedEnumForPlot = series.map((value) => {
           if (
@@ -129,10 +134,6 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
         : [...props.splitPlotIndex!];
     setSplitIndex(splitIndexArray);
     props.onSplit?.(splitIndexArray);
-
-    if (props.plotContext && props.plotContext.length !== 0) {
-      setPlots(props.plotContext);
-    }
   });
 
   function resetChart() {
@@ -270,7 +271,9 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
           createEffect(() => {
             if (
               prevSplitIndex && splitIndex().length === prevSplitIndex.length
-            ) return;
+            ) {
+              return;
+            }
 
             setPlots(index(), {
               visible: item.map(() => true),
@@ -286,7 +289,7 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
                 width="100%"
                 paddingTop="0.2rem"
                 paddingRight="1.6rem"
-                style={{ "overflow": "hidden" }}
+                style={{ overflow: "hidden" }}
               >
                 <Tooltip.Root>
                   <Tooltip.Trigger>
@@ -307,9 +310,7 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
                   </Tooltip.Trigger>
                   <Tooltip.Positioner>
                     <Tooltip.Content backgroundColor="bg.default">
-                      <Text color="fg.default">
-                        Split
-                      </Text>
+                      <Text color="fg.default">Split</Text>
                     </Tooltip.Content>
                   </Tooltip.Positioner>
                 </Tooltip.Root>
@@ -330,9 +331,7 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
                   </Tooltip.Trigger>
                   <Tooltip.Positioner>
                     <Tooltip.Content backgroundColor="bg.default">
-                      <Text color="fg.default">
-                        Merge
-                      </Text>
+                      <Text color="fg.default">Merge</Text>
                     </Tooltip.Content>
                   </Tooltip.Positioner>
                 </Tooltip.Root>
@@ -347,22 +346,17 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
                       });
                     } else {
                       setMergePlotIndexes((prev) => {
-                        return prev.filter((graphIndex) =>
-                          graphIndex !== index()
+                        return prev.filter(
+                          (graphIndex) => graphIndex !== index(),
                         );
                       });
                     }
                   }}
                 >
-                  <Text fontWeight="bold">
-                    Graph {index() + 1}
-                  </Text>
+                  <Text fontWeight="bold">Graph {index() + 1}</Text>
                 </Checkbox>
                 <Show when={index() === 0}>
-                  <Stack
-                    direction="row"
-                    width={`calc(100% - 16rem)`}
-                  >
+                  <Stack direction="row" width={`calc(100% - 16rem)`}>
                     <Tooltip.Root>
                       <Tooltip.Trigger>
                         <IconButton
@@ -379,9 +373,7 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
                       </Tooltip.Trigger>
                       <Tooltip.Positioner>
                         <Tooltip.Content backgroundColor="bg.default">
-                          <Text color="fg.default">
-                            Reset
-                          </Text>
+                          <Text color="fg.default">Reset</Text>
                         </Tooltip.Content>
                       </Tooltip.Positioner>
                     </Tooltip.Root>
