@@ -6,10 +6,9 @@ import { Editable } from "~/components/ui/editable";
 import { LogViewerTabPageContent } from "./LogViewerTabPageContent";
 import { LogViewerTabContext } from "../LogViewer";
 import { css } from "styled-system/css";
-import { createDraggable } from "@neodrag/solid";
-import { Portal } from "solid-js/web";
 import { Stack } from "styled-system/jsx";
 import { Text } from "~/components/ui/text";
+import { createDraggable } from "@neodrag/solid";
 
 export type LogViewerTabListProps = JSX.HTMLAttributes<HTMLDivElement> & {
   id: string;
@@ -26,35 +25,6 @@ export type LogViewerTabListProps = JSX.HTMLAttributes<HTMLDivElement> & {
 };
 
 export function LogViewerTabList(props: LogViewerTabListProps) {
-  // Reorder tab
-  const [draggedTabIndex, setDraggedTabIndex] = createSignal<number | null>(
-    null,
-  );
-
-  const reorderTabsOnDragOver = (e: DragEvent, index: number) => {
-    e.preventDefault();
-    if (draggedTabIndex() !== null && draggedTabIndex() !== index) {
-      const updateTab = [...props.tabList];
-      const [draggedTab] = updateTab.splice(draggedTabIndex()!, 1);
-      updateTab.splice(index, 0, draggedTab);
-      props.onTabReorder?.([...updateTab]);
-      setDraggedTabIndex(index);
-    }
-  };
-
-  // Keep update the draggedTabIndex to reorder tab until the tab drag ends.
-  createEffect(() => {
-    const index = draggedTabIndex();
-    if (index === null) {
-      const newIndex = props.tabList.findIndex(
-        (tab) => tab.id === props.focusedTab,
-      );
-      if (newIndex !== -1) {
-        setDraggedTabIndex(newIndex);
-      }
-    }
-  });
-
   const [clientX, setClientX] = createSignal<number | null>(null);
   // Tab X coordinate relative to start of tab list, can extend beyond screen.
   const [prevPositionX, setPrevPositionX] = createSignal<number>(0);
@@ -83,16 +53,35 @@ export function LogViewerTabList(props: LogViewerTabListProps) {
     }
   });
 
+  //@ts-ignore it needs to available to use draggble event
   const { draggable: myCustomDraggable } = createDraggable();
   const [draggingTabId, setDraggingTabId] = createSignal<string | null>();
+  const [reorderTabIndex, setReorderTabIndex] = createSignal<number | null>();
   const [currentTabPosition, setCurrentTabPosition] = createSignal<{
     x: number;
     y: number;
   }>({ x: 0, y: 0 });
 
+  const reorderTabsOnDragEnd = (reorderIndex: number) => {
+    //e.preventDefault();
+    //if (draggedTabIndex() !== null && draggedTabIndex() !== index) {
+    const fromIndex = props.tabList
+      .map((tab) => {
+        return tab.id;
+      })
+      .indexOf(draggingTabId()!);
+    const nextIndex = reorderIndex;
+
+    if (fromIndex !== nextIndex) {
+      const updatedItems = props.tabList.slice();
+      updatedItems.splice(nextIndex, 0, ...updatedItems.splice(fromIndex, 1));
+      props.onTabReorder?.(updatedItems);
+    }
+  };
+
   return (
     <>
-      <div style={{ width: "100%", height: "100%" }}>
+      <div style={{ width: "100%", height: "100%" }} id="testDiv">
         <Tabs.Root
           value={props.focusedTab!}
           onValueChange={(e) => {
@@ -122,46 +111,62 @@ export function LogViewerTabList(props: LogViewerTabListProps) {
                 {(tab, index) => (
                   <div
                     id={tab.id}
-                    onMouseDown={(e) => {
-                      console.log(e);
+                    style={{
+                      width: "100%",
+                      height: "100%",
+                      position: "relative",
+                      "z-index": tab.id === draggingTabId() ? "0" : "10",
                     }}
-                    /*use:myCustomDraggable={{
+                    onMouseEnter={() => {
+                      if (draggingTabId()) {
+                        setReorderTabIndex(index());
+                      }
+                    }}
+                    onMouseLeave={() => setReorderTabIndex(null)}
+                    use:myCustomDraggable={{
                       cancel: ".cancel",
                       bounds: "parent",
                       onDragStart: (data) => {
                         setDraggingTabId(tab.id);
-                        console.log(data.event.offsetX);
-                        setDraggedTabIndex(index());
-                        //console.log("Dragging started", data);
+                        setPrevPositionX(
+                          document.getElementById(tab.id)!.scrollLeft,
+                        );
+                        setClientX(data.event.clientX);
                       },
                       onDrag: (data) => {
-                        const currentTabTrigger =
-                          document.getElementById("radio-group:cl-1");
-                        console.log(currentTabTrigger!.offsetWidth);
-                        reorderTabsOnDragOver(index());
                         setCurrentTabPosition(() => {
                           return {
-                            x: data.event.clientX - 48,
-
+                            x: data.event.screenX - 48,
                             y: data.event.clientY,
                           };
                         });
-                        console.log(currentTabPosition());
-                        //console.log("Dragging", data);
+
+                        if (
+                          data.event.clientY > data.currentNode.offsetHeight
+                        ) {
+                          props.onTabContextDrag?.(true);
+                        } else {
+                          props.onTabContextDrag?.(false);
+                        }
+
+                        dragOverScroll(data.event);
                       },
-                      onDragEnd: (data) => {
+                      onDragEnd: () => {
+                        props.onTabContextDrag?.(false);
+                        reorderTabsOnDragEnd(reorderTabIndex()!);
+                        props.onTabFocus?.(draggingTabId()!);
+
+                        setReorderTabIndex(null);
                         setDraggingTabId(null);
-                        setDraggedTabIndex(null);
-                        //setCurrentTabPosition({ x: 0, y: 0 });
-                        //console.log("Dragging stopped", data);
+                        setClientX(null);
                       },
-                    }}*/
+                    }}
                   >
                     <Tabs.Trigger
                       value={tab.id}
                       paddingRight="0"
-                      opacity={tab.id === draggingTabId() ? "30%" : "100%"}
-                      draggable
+                      opacity={tab.id === draggingTabId() ? "0%" : "100%"}
+                      /*draggable
                       onDragStart={(e) => {
                         setDraggedTabIndex(index());
                         setPrevPositionX(e.currentTarget.scrollLeft);
@@ -179,7 +184,7 @@ export function LogViewerTabList(props: LogViewerTabListProps) {
                       onDragEnd={() => {
                         setDraggedTabIndex(null);
                         setClientX(null);
-                      }}
+                      }}*/
                       // Use css for theme color
                       borderBottomWidth={
                         props.focusedTab === tab.id ? "3px" : "0px"
@@ -191,8 +196,13 @@ export function LogViewerTabList(props: LogViewerTabListProps) {
                       }
                       borderBottomColor="accent.emphasized"
                       class={css({
-                        borderBottomWidth:
-                          props.focusedTab === tab.id ? "3px" : "0px",
+                        borderBottomWidth: draggingTabId()
+                          ? draggingTabId() === tab.id
+                            ? "3px"
+                            : "0px"
+                          : props.focusedTab === tab.id
+                            ? "3px"
+                            : "0px",
                         marginTop:
                           props.focusedTab === tab.id
                             ? `calc(0.5rem + 1px)`
@@ -265,6 +275,10 @@ export function LogViewerTabList(props: LogViewerTabListProps) {
               >
                 <LogViewerTabPageContent
                   tabId={tab.id}
+                  style={{
+                    position: "relative",
+                    "z-index": 10,
+                  }}
                   plotContext={
                     props.tabList[index()].plotContext /*Plot context*/
                   }
@@ -297,7 +311,7 @@ export function LogViewerTabList(props: LogViewerTabListProps) {
       </div>
       {draggingTabId() && (
         <Stack
-          backgroundColor={"bg.default"}
+          backgroundColor="bg.default"
           borderBottomWidth="2px"
           borderBottomColor="accent.emphasized"
           direction="row"
