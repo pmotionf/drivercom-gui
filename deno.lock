@@ -3,6 +3,7 @@
   "specifiers": {
     "npm:@ark-ui/solid@^5.1.0": "5.1.0_solid-js@1.9.5__seroval@1.2.1_@internationalized+date@3.7.0",
     "npm:@deno/vite-plugin@^1.0.4": "1.0.4_vite@6.2.1",
+    "npm:@formkit/drag-and-drop@~0.4.2": "0.4.2",
     "npm:@pandacss/dev@0.53.1": "0.53.1",
     "npm:@pandacss/dev@~0.53.1": "0.53.1",
     "npm:@pandacss/preset-base@~0.53.1": "0.53.1",
@@ -467,6 +468,9 @@
     },
     "@floating-ui/utils@0.2.9": {
       "integrity": "sha512-MDWhGtE+eHw5JW7lq4qhc5yRLS11ERl1c7Z6Xd0a58DozHES6EnNNwUWbMiG4J9Cgj053Bhk8zvlhFYKVhULwg=="
+    },
+    "@formkit/drag-and-drop@0.4.2": {
+      "integrity": "sha512-AVyhGFrIg51SpG+tjYQYC0J5LXCv4qCfPUl3Brr2vccictNnxOEgfJ1xCZsT0G5ugOASNBgGoTBXyrN/HxOxNQ=="
     },
     "@internationalized/date@3.5.5": {
       "integrity": "sha512-H+CfYvOZ0LTJeeLOqm19E3uj/4YjrmOFtBufDHPfvtI80hFAMqtrp7oCACpe4Cil5l8S0Qu/9dYfZc/5lY8WQQ==",
@@ -3020,6 +3024,7 @@
     "dependencies": [
       "npm:@ark-ui/solid@^5.1.0",
       "npm:@deno/vite-plugin@^1.0.4",
+      "npm:@formkit/drag-and-drop@~0.4.2",
       "npm:@pandacss/dev@~0.53.1",
       "npm:@pandacss/preset-base@~0.53.1",
       "npm:@park-ui/panda-preset@~0.43.1",
