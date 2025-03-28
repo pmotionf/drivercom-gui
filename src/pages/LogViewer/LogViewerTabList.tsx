@@ -12,9 +12,7 @@ export type LogViewerTabListProps = JSX.HTMLAttributes<HTMLDivElement> & {
   tabList: LogViewerTabContext[];
   onCreateTab?: () => void;
   onDeleteTab?: (deleteTabId: string, index: number) => void;
-  onDraggedTabInfo?: (
-    tabContext: LogViewerTabContext,
-  ) => void;
+  onDraggedTabInfo?: (tabContext: LogViewerTabContext) => void;
   onTabDrop?: () => void;
   onTabContextChange?: (tabContext: LogViewerTabContext) => void;
   onTabContextDrag?: (isTabContextDragEnter: boolean) => void;
@@ -44,8 +42,8 @@ export function LogViewerTabList(props: LogViewerTabListProps) {
   createEffect(() => {
     const index = draggedTabIndex();
     if (index === null) {
-      const newIndex = props.tabList.findIndex((tab) =>
-        tab.id === props.focusedTab
+      const newIndex = props.tabList.findIndex(
+        (tab) => tab.id === props.focusedTab,
       );
       if (newIndex !== -1) {
         setDraggedTabIndex(newIndex);
@@ -83,9 +81,7 @@ export function LogViewerTabList(props: LogViewerTabListProps) {
 
   return (
     <>
-      <div
-        style={{ "width": "100%", height: "100%" }}
-      >
+      <div style={{ width: "100%", height: "100%" }}>
         <Tabs.Root
           value={props.focusedTab!}
           onValueChange={(e) => {
@@ -95,6 +91,7 @@ export function LogViewerTabList(props: LogViewerTabListProps) {
           height="100%"
           gap="0"
         >
+          <MyComponent />
           <Tabs.List
             ref={scrollContainer}
             style={{
@@ -122,8 +119,9 @@ export function LogViewerTabList(props: LogViewerTabListProps) {
                     setPrevPositionX(e.currentTarget.scrollLeft);
                     setClientX(e.clientX);
 
-                    const changedTabContext =
-                      props.tabList.filter((info) => info.id === tab.id)[0];
+                    const changedTabContext = props.tabList.filter(
+                      (info) => info.id === tab.id,
+                    )[0];
                     props.onDraggedTabInfo?.(changedTabContext);
                   }}
                   onDragOver={(e) => {
@@ -136,20 +134,23 @@ export function LogViewerTabList(props: LogViewerTabListProps) {
                   }}
                   // Use css for theme color
                   class={css({
-                    "borderBottomWidth": props.focusedTab === tab.id
-                      ? "3px"
-                      : "0px",
-                    "marginTop": props.focusedTab === tab.id
-                      ? `calc(0.5rem + 1px)`
-                      : `0.5rem `,
-                    "borderBottomColor": "accent.emphasized",
+                    borderBottomWidth:
+                      props.focusedTab === tab.id ? "3px" : "0px",
+                    marginTop:
+                      props.focusedTab === tab.id
+                        ? `calc(0.5rem + 1px)`
+                        : `0.5rem `,
+                    borderBottomColor: "accent.emphasized",
                   })}
                 >
                   <Editable.Root
-                    defaultValue={tab.tabName.length === 0
-                      ? JSON.stringify(tab.filePath.match((/[^?!//]+$/)!))
-                        .slice(2, -2) /*change to tabname*/
-                      : tab.tabName}
+                    defaultValue={
+                      tab.tabName.length === 0
+                        ? JSON.stringify(
+                            tab.filePath.match(/[^?!//]+$/!),
+                          ).slice(2, -2) /*change to tabname*/
+                        : tab.tabName
+                    }
                     activationMode="dblclick"
                     onValueCommit={(tabName) => {
                       const tabUpdate = tab;
@@ -184,10 +185,9 @@ export function LogViewerTabList(props: LogViewerTabListProps) {
               <IconPlus />
             </IconButton>
             <div
-              style={{ "width": "100%" }}
+              style={{ width: "100%" }}
               onDragOver={(e) => e.preventDefault()}
-            >
-            </div>
+            ></div>
           </Tabs.List>
 
           <For each={props.tabList}>
@@ -206,12 +206,10 @@ export function LogViewerTabList(props: LogViewerTabListProps) {
                 <LogViewerTabPageContent
                   tabId={tab.id}
                   plotContext={
-                    props.tabList[index()]
-                      .plotContext /*Plot context*/
+                    props.tabList[index()].plotContext /*Plot context*/
                   }
                   xRange={
-                    props.tabList[index()]
-                      .plotZoomState /*Plots's x range*/
+                    props.tabList[index()].plotZoomState /*Plots's x range*/
                   }
                   filePath={tab.filePath}
                   onSplit={(plotSplitIndex) => {
@@ -240,3 +238,28 @@ export function LogViewerTabList(props: LogViewerTabListProps) {
     </>
   );
 }
+
+import { useDragAndDrop } from "@formkit/drag-and-drop/solid";
+
+export const MyComponent = (): JSX.Element => {
+  const [parent, tapes] = useDragAndDrop<HTMLUListElement, string>([
+    "Depeche Mode",
+    "Duran Duran",
+    "Pet Shop Boys",
+    "Kraftwerk",
+    "Tears for Fears",
+    "Spandau Ballet",
+  ]);
+
+  return (
+    <ul ref={parent}>
+      <For each={tapes()}>
+        {(tape) => (
+          <li class="cassette" data-label={tape}>
+            {tape}
+          </li>
+        )}
+      </For>
+    </ul>
+  );
+};
