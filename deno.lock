@@ -3,6 +3,7 @@
   "specifiers": {
     "npm:@ark-ui/solid@^5.1.0": "5.1.0_solid-js@1.9.5__seroval@1.2.1_@internationalized+date@3.7.0",
     "npm:@deno/vite-plugin@^1.0.4": "1.0.4_vite@6.2.1",
+    "npm:@neodrag/solid@^2.3.0": "2.3.0_solid-js@1.9.5__seroval@1.2.1",
     "npm:@pandacss/dev@0.53.1": "0.53.1",
     "npm:@pandacss/dev@~0.53.1": "0.53.1",
     "npm:@pandacss/preset-base@~0.53.1": "0.53.1",
@@ -514,6 +515,12 @@
       "dependencies": [
         "@jridgewell/resolve-uri",
         "@jridgewell/sourcemap-codec"
+      ]
+    },
+    "@neodrag/solid@2.3.0_solid-js@1.9.5__seroval@1.2.1": {
+      "integrity": "sha512-j6EAqCx3NbFNv3NiutPLudLmYBfcRGZoezAvODwwmMtEl4BR+i3n5PhxQCbc5rsw8Zf6AoOW7TJ3onah291v8w==",
+      "dependencies": [
+        "solid-js"
       ]
     },
     "@pandacss/config@0.53.1": {
@@ -3020,6 +3027,7 @@
     "dependencies": [
       "npm:@ark-ui/solid@^5.1.0",
       "npm:@deno/vite-plugin@^1.0.4",
+      "npm:@neodrag/solid@^2.3.0",
       "npm:@pandacss/dev@~0.53.1",
       "npm:@pandacss/preset-base@~0.53.1",
       "npm:@park-ui/panda-preset@~0.43.1",
