@@ -13,6 +13,11 @@ export type GlobalState = {
   theme: Theme;
 };
 
+export type Port = {
+  id: string;
+  version: string;
+};
+
 export const GlobalStateContext = createContext<{
   globalState: GlobalState;
   setGlobalState: SetStoreFunction<GlobalState>;
@@ -22,7 +27,7 @@ export const [cliVersion, setCliVersion] = createSignal<string>("");
 export const [driverComVersion, setDriverComVersion] = createSignal<string>("");
 
 export const [portId, setPortId] = createSignal<string>("");
-export const [portList, setPortList] = createSignal<string[]>([]);
+export const [portList, setPortList] = createSignal<Port[]>([]);
 
 export const [enumSeries, setEnumSeries] = createSignal<[string, string][]>([]);
 export const [enumMappings, setEnumMappings] = createSignal<
