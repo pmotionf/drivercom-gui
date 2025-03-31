@@ -13,9 +13,7 @@ import { Dynamic } from "solid-js/web";
 
 function Connect() {
   async function detectPort() {
-    const drivercom = Command.sidecar("binaries/drivercom", [
-      "port.detect",
-    ]);
+    const drivercom = Command.sidecar("binaries/drivercom", ["port.detect"]);
     const output = await drivercom.execute();
 
     const portNames = output.stdout.split("\n").map(
@@ -24,7 +22,21 @@ function Connect() {
         return matched;
       },
     ).filter((e) => e !== null).map((e) => e[1]);
-    setPortList(portNames);
+    const ports = await Promise.all(portNames.map(async (id) => {
+      const version = await detectFirmwareVersion(id);
+      if (version !== null) {
+        return {
+          id: id,
+          version: version,
+        };
+      } else {
+        return {
+          id: id,
+          version: "",
+        };
+      }
+    }));
+    setPortList(ports);
 
     if (portNames.length == 0) {
       toaster.create({
@@ -35,6 +47,20 @@ function Connect() {
       return;
     }
     setPortId("");
+  }
+
+  async function detectFirmwareVersion(portId: string): Promise<string | null> {
+    const drivercom = Command.sidecar("binaries/drivercom", [
+      "--port",
+      portId,
+      "firmware",
+    ]);
+    const output = await drivercom.execute();
+    const splits = output.stdout.split(":");
+    if (splits.length < 2) return null;
+
+    const version_string = splits[1].trimStart().trimEnd();
+    return version_string;
   }
 
   const toaster = Toast.createToaster({
@@ -65,6 +91,9 @@ function Connect() {
           fontWeight="light"
           opacity="60%"
           marginTop="1rem"
+          textOverflow="ellipsis"
+          overflow="hidden"
+          whiteSpace="nowrap"
         >
           {portId().length > 0 ? portId() : "No port selected"}
         </Text>
@@ -125,37 +154,56 @@ function Connect() {
             <For each={portList()}>
               {(port) => (
                 <Accordion.Item
-                  value={port}
+                  value={port.id}
                   paddingTop="1rem"
                   paddingBottom="1rem"
                 >
-                  <Stack direction="row" width="100%">
+                  <Stack
+                    direction="row"
+                    width="100%"
+                    alignItems="center"
+                  >
                     <IconPlug
                       style={{
-                        "margin-top": "0.5rem",
-                        opacity: portId() === port ? "100%" : "30%",
+                        opacity: portId() === port.id ? "100%" : "30%",
                         width: "3rem",
                       }}
                     />
                     <Text
                       fontWeight="bold"
-                      width="10%"
-                      marginTop="0.5rem"
+                      width="20%"
+                      textOverflow="ellipsis"
+                      overflow="hidden"
+                      whiteSpace="nowrap"
                     >
-                      {port}
+                      {port.id}
                     </Text>
-                    <Button
-                      onClick={() => {
-                        setPortId(
-                          portId() === port ? "" : port,
-                        );
-                      }}
-                      width="7rem"
-                      marginLeft={`calc(100% - 10% - 7rem)`}
-                      variant={portId() === port ? "outline" : "solid"}
+                    <Stack
+                      direction="row"
+                      marginLeft="auto"
+                      alignItems="center"
                     >
-                      {portId() === port ? "Cancel" : "Select"}
-                    </Button>
+                      <Text
+                        opacity="60%"
+                        textOverflow="ellipsis"
+                        overflow="hidden"
+                        whiteSpace="nowrap"
+                        marginRight="1rem"
+                      >
+                        {port.version}
+                      </Text>
+                      <Button
+                        onClick={() => {
+                          setPortId(
+                            portId() === port.id ? "" : port.id,
+                          );
+                        }}
+                        width="7rem"
+                        variant={portId() === port.id ? "outline" : "solid"}
+                      >
+                        {portId() === port.id ? "Cancel" : "Select"}
+                      </Button>
+                    </Stack>
                   </Stack>
                 </Accordion.Item>
               )}
