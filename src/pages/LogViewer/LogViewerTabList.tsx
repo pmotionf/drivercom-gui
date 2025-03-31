@@ -92,7 +92,7 @@ export function LogViewerTabList(props: LogViewerTabListProps) {
 
   //@ts-ignore This draggable is needed to use neo-drag.
   // deno-lint-ignore no-unused-vars
-  const { draggable: myCustomDraggable } = createDraggable();
+  const { draggable: dragOptions } = createDraggable();
 
   // This signal is only used for UI.
   // It is necessary to avoid the tab focusing error.
@@ -143,7 +143,7 @@ export function LogViewerTabList(props: LogViewerTabListProps) {
                       }
                     }}
                     onMouseLeave={() => setNextOrderTabIndex(null)}
-                    use:myCustomDraggable={{
+                    use:dragOptions={{
                       cancel: ".cancel",
                       bounds: "parent",
                       onDragStart: (data) => {
