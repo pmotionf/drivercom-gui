@@ -21,6 +21,7 @@ export type LogViewerTabListProps = JSX.HTMLAttributes<HTMLDivElement> & {
   focusedTab?: string;
   onTabFocus?: (focusedTabId: string) => void;
   onTabReorder?: (reorderdTab: LogViewerTabContext[]) => void;
+  onTabDropOnSplitter?: () => void;
 };
 
 export function LogViewerTabList(props: LogViewerTabListProps) {
@@ -95,8 +96,16 @@ export function LogViewerTabList(props: LogViewerTabListProps) {
   const { draggable: dragOptions } = createDraggable();
 
   // This signal is only used for UI.
-  // It is necessary to avoid the tab focusing error.
+  // If the tab focusing on the drag start, then the tab dragging got canceled.
+  // For showing natural tab focusing, the tab focus change on the drag end
+  // But when reorder the other tab, it dosent show like the other tab is dragging.
+  // To display the tab is dragging this signal is necessary for UI.
   const [draggingTabId, setDraggingTabId] = createSignal<string | null>();
+
+  const [showTabSplitter, setShowTabSplitter] = createSignal<boolean>(false);
+  const [isTabDropOnSplitter, setIsTabDropOnSplitter] = createSignal<boolean>(
+    false,
+  );
 
   return (
     <>
@@ -109,6 +118,7 @@ export function LogViewerTabList(props: LogViewerTabListProps) {
           width="100%"
           height="100%"
           gap="0"
+          padding="0"
         >
           <Tabs.List
             ref={scrollContainer}
@@ -147,6 +157,7 @@ export function LogViewerTabList(props: LogViewerTabListProps) {
                       cancel: ".cancel",
                       bounds: "parent",
                       onDragStart: (data) => {
+                        props.onDraggedTabInfo?.(tab);
                         setDraggingTabId(tab.id);
                         setPrevPositionX(
                           document.getElementById(tab.id)!.scrollLeft,
@@ -159,13 +170,13 @@ export function LogViewerTabList(props: LogViewerTabListProps) {
                       },
                       onDrag: (data) => {
                         setCurrentMousePointerPosition(() => {
-                          const collapseSideBarWidth = document.getElementById(
+                          const collapsedSideBarWidth = document.getElementById(
                             "radio-group:collapsed_side_bar",
                           )!.offsetWidth;
                           return {
                             x: data.event.clientX -
                               mousePositionInsideComponent().x -
-                              collapseSideBarWidth,
+                              collapsedSideBarWidth,
                             y: data.event.clientY -
                               mousePositionInsideComponent().y,
                           };
@@ -174,10 +185,9 @@ export function LogViewerTabList(props: LogViewerTabListProps) {
                         if (
                           data.event.clientY > data.currentNode.offsetHeight
                         ) {
-                          props.onTabContextDrag?.(true);
-                          setNextOrderTabIndex(null);
+                          setShowTabSplitter(true);
                         } else {
-                          props.onTabContextDrag?.(false);
+                          setShowTabSplitter(false);
                         }
 
                         if (scrollContainer && prevClientX()) {
@@ -197,6 +207,15 @@ export function LogViewerTabList(props: LogViewerTabListProps) {
                         if (nextOrderTabIndex() !== null) {
                           reorderTabsOnDragEnd(index(), nextOrderTabIndex()!);
                           setNextOrderTabIndex(null);
+                        }
+
+                        if (isTabDropOnSplitter()) {
+                          console.log(true);
+                          props.onTabDropOnSplitter?.();
+                          setIsTabDropOnSplitter(false);
+                          setShowTabSplitter(false);
+                          props.onTabFocus?.(props.focusedTab!);
+                          return;
                         }
                         props.onTabFocus?.(tab.id);
                       },
@@ -276,59 +295,66 @@ export function LogViewerTabList(props: LogViewerTabListProps) {
             >
               <IconPlus />
             </IconButton>
-            <div
-              style={{ width: "100%" }}
-              onDragOver={(e) => e.preventDefault()}
-            >
-            </div>
+            <div style={{ width: "100%" }}></div>
           </Tabs.List>
           <For each={props.tabList}>
             {(tab, index) => (
-              <Tabs.Content
-                value={tab.id}
-                height="100%"
-                width="100% "
-                style={{
-                  "overflow-y": "auto",
-                }}
-                onDragOver={(e) => e.preventDefault()}
-                onDragEnter={() => props.onTabContextDrag?.(true)}
-                onDrop={() => props.onTabContextDrag?.(false)}
-              >
-                <LogViewerTabPageContent
-                  tabId={tab.id}
-                  style={{
-                    position: "relative",
-                    "z-index": 10,
+              <>
+                <Tabs.Content
+                  value={tab.id}
+                  height="100%"
+                  width={showTabSplitter() ? "50%" : "100%"}
+                  transition="width 1s"
+                >
+                  <LogViewerTabPageContent
+                    tabId={tab.id}
+                    plotContext={
+                      props.tabList[index()]
+                        .plotContext /*Plot context*/
+                    }
+                    xRange={
+                      props.tabList[index()]
+                        .plotZoomState /*Plots's x range*/
+                    }
+                    filePath={tab.filePath}
+                    onSplit={(plotSplitIndex) => {
+                      if (plotSplitIndex.length === 0) return;
+                      const tabUpdate = tab;
+                      tabUpdate.plotSplitIndex = plotSplitIndex;
+                      props.onTabContextChange?.(tabUpdate);
+                    }}
+                    splitPlotIndex={tab.plotSplitIndex}
+                    onContextChange={(changedPlotContext) => {
+                      const tabUpdate = tab;
+                      tabUpdate.plotContext = changedPlotContext;
+                      props.onTabContextChange?.(tabUpdate);
+                    }}
+                    onXRangeChange={(xRange) => {
+                      const tabUpdate = tab;
+                      tabUpdate.plotZoomState = xRange;
+                      props.onTabContextChange?.(tabUpdate);
+                    }}
+                  />
+                </Tabs.Content>
+                <Stack
+                  backgroundColor="fg.default"
+                  position="absolute"
+                  opacity={isTabDropOnSplitter() ? "30%" : "10%"}
+                  transition="width 1s"
+                  top="3rem"
+                  right={showTabSplitter() ? "0%" : "-50%"}
+                  width={showTabSplitter() ? "50%" : "0%"}
+                  height={`calc(100% - 3rem)`}
+                  onMouseEnter={() => {
+                    if (showTabSplitter()) {
+                      setIsTabDropOnSplitter(true);
+                    }
                   }}
-                  plotContext={
-                    props.tabList[index()]
-                      .plotContext /*Plot context*/
-                  }
-                  xRange={
-                    props.tabList[index()]
-                      .plotZoomState /*Plots's x range*/
-                  }
-                  filePath={tab.filePath}
-                  onSplit={(plotSplitIndex) => {
-                    if (plotSplitIndex.length === 0) return;
-                    const tabUpdate = tab;
-                    tabUpdate.plotSplitIndex = plotSplitIndex;
-                    props.onTabContextChange?.(tabUpdate);
-                  }}
-                  splitPlotIndex={tab.plotSplitIndex}
-                  onContextChange={(changedPlotContext) => {
-                    const tabUpdate = tab;
-                    tabUpdate.plotContext = changedPlotContext;
-                    props.onTabContextChange?.(tabUpdate);
-                  }}
-                  onXRangeChange={(xRange) => {
-                    const tabUpdate = tab;
-                    tabUpdate.plotZoomState = xRange;
-                    props.onTabContextChange?.(tabUpdate);
+                  onMouseLeave={() => {
+                    setIsTabDropOnSplitter(false);
                   }}
                 />
-              </Tabs.Content>
+              </>
             )}
           </For>
         </Tabs.Root>

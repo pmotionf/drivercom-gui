@@ -361,6 +361,7 @@ function LogViewer() {
                             return updateTabList;
                           });
                         }}
+                        onTabDropOnSplitter={() => moveTabOnSplitter(index())}
                       />
                     </div>
                     <Show
