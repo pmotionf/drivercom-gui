@@ -159,7 +159,9 @@ export function LogViewerTabList(props: LogViewerTabListProps) {
                       },
                       onDrag: (data) => {
                         setCurrentMousePointerPosition(() => {
-                          const collapseSideBarWidth = 48;
+                          const collapseSideBarWidth = document.getElementById(
+                            "radio-group:collapsed_side_bar",
+                          )!.offsetWidth;
                           return {
                             x: data.event.clientX -
                               mousePositionInsideComponent().x -
