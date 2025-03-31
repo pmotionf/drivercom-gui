@@ -5,7 +5,6 @@ import { IconPlus, IconX } from "@tabler/icons-solidjs";
 import { Editable } from "~/components/ui/editable";
 import { LogViewerTabPageContent } from "./LogViewerTabPageContent";
 import { LogViewerTabContext } from "../LogViewer";
-import { css } from "styled-system/css";
 import { Stack } from "styled-system/jsx";
 import { Text } from "~/components/ui/text";
 import { createDraggable } from "@neodrag/solid";
@@ -25,15 +24,20 @@ export type LogViewerTabListProps = JSX.HTMLAttributes<HTMLDivElement> & {
 };
 
 export function LogViewerTabList(props: LogViewerTabListProps) {
-  const [clientX, setClientX] = createSignal<number | null>(null);
+  // This signal is needed in dragover scroll to prevent the gap
+  // between scrolling before and after.
+  const [prevClientX, setPrevClientX] = createSignal<number | null>(null);
   // Tab X coordinate relative to start of tab list, can extend beyond screen.
   const [prevPositionX, setPrevPositionX] = createSignal<number>(0);
   let scrollContainer: HTMLDivElement | undefined;
 
-  const dragOverScroll = (e: MouseEvent) => {
-    if (!scrollContainer || !clientX()) return;
-
-    const movement = (e.clientX - clientX()! + prevPositionX()) * 0.05;
+  const dragOverScroll = (
+    currentClientX: number,
+    prevClientX: number,
+    prevPositionX: number,
+    scrollContainer: HTMLDivElement,
+  ) => {
+    const movement = (currentClientX - prevClientX + prevPositionX) * 0.05;
     scrollContainer.scrollBy({ left: movement });
   };
 
@@ -44,6 +48,7 @@ export function LogViewerTabList(props: LogViewerTabListProps) {
     scrollContainer.scrollLeft += e.deltaY;
   };
 
+  // This is a create effect for scrolling the tab list automatically.
   createEffect(() => {
     const focusedTab = props.focusedTab;
     if (!focusedTab) return;
@@ -53,23 +58,15 @@ export function LogViewerTabList(props: LogViewerTabListProps) {
     }
   });
 
-  //@ts-ignore it needs to available to use draggble event
-  const { draggable: myCustomDraggable } = createDraggable();
-  const [draggingTabId, setDraggingTabId] = createSignal<string | null>();
-  const [reorderTabIndex, setReorderTabIndex] = createSignal<number | null>();
-  const [currentTabPosition, setCurrentTabPosition] = createSignal<{
-    x: number;
-    y: number;
-  }>({ x: 0, y: 0 });
+  const [nextOrderTabIndex, setNextOrderTabIndex] = createSignal<
+    number | null
+  >();
 
-  const reorderTabsOnDragEnd = (reorderIndex: number) => {
-    //e.preventDefault();
-    //if (draggedTabIndex() !== null && draggedTabIndex() !== index) {
-    const fromIndex = props.tabList
-      .map((tab) => {
-        return tab.id;
-      })
-      .indexOf(draggingTabId()!);
+  const reorderTabsOnDragEnd = (
+    currentTabIndex: number,
+    reorderIndex: number,
+  ) => {
+    const fromIndex = currentTabIndex;
     const nextIndex = reorderIndex;
 
     if (fromIndex !== nextIndex) {
@@ -79,9 +76,31 @@ export function LogViewerTabList(props: LogViewerTabListProps) {
     }
   };
 
+  const [currentMousePointerPosition, setCurrentMousePointerPosition] =
+    createSignal<{
+      x: number;
+      y: number;
+    }>({ x: 0, y: 0 });
+
+  // This signal is for getting mouse offsetX, offsetY for UI.
+  // It gets the location of the mouse pointer in the tab trigger component.
+  const [mousePositionInsideComponent, setMousePositionInsideComponent] =
+    createSignal<{
+      x: number;
+      y: number;
+    }>({ x: 0, y: 0 });
+
+  //@ts-ignore This draggable is needed to use neo-drag.
+  // deno-lint-ignore no-unused-vars
+  const { draggable: myCustomDraggable } = createDraggable();
+
+  // This signal is only used for UI.
+  // It is necessary to avoid the tab focusing error.
+  const [draggingTabId, setDraggingTabId] = createSignal<string | null>();
+
   return (
     <>
-      <div style={{ width: "100%", height: "100%" }} id="testDiv">
+      <div style={{ width: "100%", height: "100%" }}>
         <Tabs.Root
           value={props.focusedTab!}
           onValueChange={(e) => {
@@ -96,9 +115,10 @@ export function LogViewerTabList(props: LogViewerTabListProps) {
             style={{
               background: "--colors-bg-muted",
               height: `3rem`,
+              "overflow-y": "hidden",
             }}
-            gap="0"
             onWheel={(e) => mouseWheelHandler(e)}
+            gap="0"
             onDrop={() => {
               props.onTabDrop?.();
               props.onTabContextDrag?.(false);
@@ -106,7 +126,7 @@ export function LogViewerTabList(props: LogViewerTabListProps) {
             width="100%"
             marginRight="0"
           >
-            <Stack direction="row">
+            <Stack direction="row" gap="0">
               <For each={props.tabList}>
                 {(tab, index) => (
                   <div
@@ -119,10 +139,10 @@ export function LogViewerTabList(props: LogViewerTabListProps) {
                     }}
                     onMouseEnter={() => {
                       if (draggingTabId()) {
-                        setReorderTabIndex(index());
+                        setNextOrderTabIndex(index());
                       }
                     }}
-                    onMouseLeave={() => setReorderTabIndex(null)}
+                    onMouseLeave={() => setNextOrderTabIndex(null)}
                     use:myCustomDraggable={{
                       cancel: ".cancel",
                       bounds: "parent",
@@ -131,13 +151,21 @@ export function LogViewerTabList(props: LogViewerTabListProps) {
                         setPrevPositionX(
                           document.getElementById(tab.id)!.scrollLeft,
                         );
-                        setClientX(data.event.clientX);
+                        setPrevClientX(data.event.clientX);
+                        setMousePositionInsideComponent({
+                          x: data.event.offsetX,
+                          y: data.event.offsetY,
+                        });
                       },
                       onDrag: (data) => {
-                        setCurrentTabPosition(() => {
+                        setCurrentMousePointerPosition(() => {
+                          const collapseSideBarWidth = 48;
                           return {
-                            x: data.event.screenX - 48,
-                            y: data.event.clientY,
+                            x: data.event.clientX -
+                              mousePositionInsideComponent().x -
+                              collapseSideBarWidth,
+                            y: data.event.clientY -
+                              mousePositionInsideComponent().y,
                           };
                         });
 
@@ -145,20 +173,30 @@ export function LogViewerTabList(props: LogViewerTabListProps) {
                           data.event.clientY > data.currentNode.offsetHeight
                         ) {
                           props.onTabContextDrag?.(true);
+                          setNextOrderTabIndex(null);
                         } else {
                           props.onTabContextDrag?.(false);
                         }
 
-                        dragOverScroll(data.event);
+                        if (scrollContainer && prevClientX()) {
+                          dragOverScroll(
+                            data.event.clientX,
+                            prevClientX()!,
+                            prevPositionX(),
+                            scrollContainer,
+                          );
+                        }
                       },
                       onDragEnd: () => {
                         props.onTabContextDrag?.(false);
-                        reorderTabsOnDragEnd(reorderTabIndex()!);
-                        props.onTabFocus?.(draggingTabId()!);
-
-                        setReorderTabIndex(null);
                         setDraggingTabId(null);
-                        setClientX(null);
+                        setPrevClientX(null);
+
+                        if (nextOrderTabIndex() !== null) {
+                          reorderTabsOnDragEnd(index(), nextOrderTabIndex()!);
+                          setNextOrderTabIndex(null);
+                        }
+                        props.onTabFocus?.(tab.id);
                       },
                     }}
                   >
@@ -166,58 +204,26 @@ export function LogViewerTabList(props: LogViewerTabListProps) {
                       value={tab.id}
                       paddingRight="0"
                       opacity={tab.id === draggingTabId() ? "0%" : "100%"}
-                      /*draggable
-                      onDragStart={(e) => {
-                        setDraggedTabIndex(index());
-                        setPrevPositionX(e.currentTarget.scrollLeft);
-                        setClientX(e.clientX);
-
-                        const changedTabContext = props.tabList.filter(
-                          (info) => info.id === tab.id,
-                        )[0];
-                        props.onDraggedTabInfo?.(changedTabContext);
-                      }}
-                      onDragOver={(e) => {
-                        reorderTabsOnDragOver(e, index());
-                        dragOverScroll(e);
-                      }}
-                      onDragEnd={() => {
-                        setDraggedTabIndex(null);
-                        setClientX(null);
-                      }}*/
-                      // Use css for theme color
-                      borderBottomWidth={
-                        props.focusedTab === tab.id ? "3px" : "0px"
-                      }
-                      marginTop={
-                        props.focusedTab === tab.id
+                      borderBottomWidth={draggingTabId()
+                        ? draggingTabId() === tab.id ? "3px" : "0px"
+                        : props.focusedTab === tab.id
+                        ? "3px"
+                        : "0px"}
+                      marginTop={draggingTabId()
+                        ? draggingTabId() === tab.id
                           ? `calc(0.5rem + 1px)`
-                          : `0.5rem `
-                      }
+                          : "0.5rem"
+                        : props.focusedTab === tab.id
+                        ? `calc(0.5rem + 1px)`
+                        : `0.5rem`}
                       borderBottomColor="accent.emphasized"
-                      class={css({
-                        borderBottomWidth: draggingTabId()
-                          ? draggingTabId() === tab.id
-                            ? "3px"
-                            : "0px"
-                          : props.focusedTab === tab.id
-                            ? "3px"
-                            : "0px",
-                        marginTop:
-                          props.focusedTab === tab.id
-                            ? `calc(0.5rem + 1px)`
-                            : `0.5rem `,
-                        borderBottomColor: "accent.emphasized",
-                      })}
                     >
                       <Editable.Root
-                        defaultValue={
-                          tab.tabName.length === 0
-                            ? JSON.stringify(
-                                tab.filePath.match(/[^?!//]+$/!),
-                              ).slice(2, -2) /*change to tabname*/
-                            : tab.tabName
-                        }
+                        defaultValue={tab.tabName.length === 0
+                          ? JSON.stringify(
+                            tab.filePath.match(/[^?!//]+$/!),
+                          ).slice(2, -2) /*change to tabname*/
+                          : tab.tabName}
                         activationMode="dblclick"
                         onValueCommit={(tabName) => {
                           const tabUpdate = tab;
@@ -226,7 +232,7 @@ export function LogViewerTabList(props: LogViewerTabListProps) {
                         }}
                       >
                         <Editable.Area>
-                          <Editable.Input width="100%" />
+                          <Editable.Input width="10rem" />
                           <Editable.Preview width="100%" />
                         </Editable.Area>
                       </Editable.Root>
@@ -243,6 +249,19 @@ export function LogViewerTabList(props: LogViewerTabListProps) {
                         </IconButton>
                       </div>
                     </Tabs.Trigger>
+                    <Show
+                      when={nextOrderTabIndex() === index() &&
+                        draggingTabId() !== tab.id}
+                    >
+                      <Stack
+                        width="100%"
+                        height="100% "
+                        position="absolute"
+                        top="0"
+                        background="fg.default"
+                        opacity="10%"
+                      />
+                    </Show>
                   </div>
                 )}
               </For>
@@ -258,7 +277,8 @@ export function LogViewerTabList(props: LogViewerTabListProps) {
             <div
               style={{ width: "100%" }}
               onDragOver={(e) => e.preventDefault()}
-            ></div>
+            >
+            </div>
           </Tabs.List>
           <For each={props.tabList}>
             {(tab, index) => (
@@ -280,10 +300,12 @@ export function LogViewerTabList(props: LogViewerTabListProps) {
                     "z-index": 10,
                   }}
                   plotContext={
-                    props.tabList[index()].plotContext /*Plot context*/
+                    props.tabList[index()]
+                      .plotContext /*Plot context*/
                   }
                   xRange={
-                    props.tabList[index()].plotZoomState /*Plots's x range*/
+                    props.tabList[index()]
+                      .plotZoomState /*Plots's x range*/
                   }
                   filePath={tab.filePath}
                   onSplit={(plotSplitIndex) => {
@@ -311,43 +333,51 @@ export function LogViewerTabList(props: LogViewerTabListProps) {
       </div>
       {draggingTabId() && (
         <Stack
-          backgroundColor="bg.default"
-          borderBottomWidth="2px"
-          borderBottomColor="accent.emphasized"
           direction="row"
+          borderBottomColor="accent.emphasized"
+          background="bg.default"
           style={{
             position: "absolute",
-            top: `${currentTabPosition().y}px`,
-            left: `${currentTabPosition().x}px`,
+            top: `${currentMousePointerPosition().y}px`,
+            left: `${currentMousePointerPosition().x}px`,
             "padding-left": "0.5rem",
+            "padding-bottom": "0.5rem",
+            "pointer-events": "none",
+            "z-index": "15",
+            "border-bottom-width": "2px",
           }}
         >
-          <Text fontWeight="bold" color="fg.default" paddingTop="0.5rem">
+          <Text
+            fontWeight="bold"
+            color="fg.default"
+            paddingTop="0.5rem"
+            whiteSpace="nowrap"
+          >
             {props.tabList[
-              props.tabList
-                .map((tab) => {
-                  return tab.id;
-                })
-                .indexOf(draggingTabId()!)
-            ].tabName.length !== 0
+                props.tabList
+                  .map((tab) => {
+                    return tab.id;
+                  })
+                  .indexOf(draggingTabId()!)
+              ].tabName.length !== 0
               ? props.tabList[
+                props.tabList
+                  .map((tab) => {
+                    return tab.id;
+                  })
+                  .indexOf(draggingTabId()!)
+              ].tabName
+              : JSON.stringify(
+                props.tabList[
                   props.tabList
                     .map((tab) => {
                       return tab.id;
                     })
                     .indexOf(draggingTabId()!)
-                ].tabName
-              : JSON.stringify(
-                  props.tabList[
-                    props.tabList
-                      .map((tab) => {
-                        return tab.id;
-                      })
-                      .indexOf(draggingTabId()!)
-                  ].filePath.match(/[^?!//]+$/!),
-                ).slice(2, -2)}
+                ].filePath.match(/[^?!//]+$/!),
+              ).slice(2, -2)}
           </Text>
-          <IconButton disabled variant="ghost">
+          <IconButton variant="ghost" size="sm" borderRadius="3rem">
             <IconX />
           </IconButton>
         </Stack>
