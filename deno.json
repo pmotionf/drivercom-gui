@@ -35,6 +35,7 @@
   },
   "nodeModulesDir": "auto",
   "imports": {
+    "@neodrag/solid": "npm:@neodrag/solid@^2.3.0",
     "@pandacss/preset-base": "npm:@pandacss/preset-base@^0.53.1",
     "lucide-solid": "npm:lucide-solid@^0.479.0",
     "unzipper": "npm:unzipper@^0.12.3",

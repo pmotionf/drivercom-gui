@@ -73,9 +73,7 @@ function App(props: RouteSectionProps) {
   });
 
   async function detectCliVersion() {
-    const drivercom = Command.sidecar("binaries/drivercom", [
-      "version",
-    ]);
+    const drivercom = Command.sidecar("binaries/drivercom", ["version"]);
     const output = await drivercom.execute();
     const outputSplit = output.stdout.split(/\s/);
 
@@ -95,18 +93,23 @@ function App(props: RouteSectionProps) {
 
     const outputLines = output.stdout.split("\n");
     const seriesMappingsLine = outputLines[0].trim();
-    const enumMappingsLines = outputLines.slice(1).map((line) => line.trim())
+    const enumMappingsLines = outputLines
+      .slice(1)
+      .map((line) => line.trim())
       .filter((line) => line.length > 0 && line[0] == "[");
 
-    const seriesMappings = seriesMappingsLine.split(",").filter((seriesChunk) =>
-      seriesChunk.length > 0
-    ).map((e) => {
-      return e.split(":");
-    });
-    setEnumSeries(seriesMappings.map((seriesMapping) => [
-      seriesMapping[0], // Series name
-      seriesMapping[1], // Series enum type name
-    ]));
+    const seriesMappings = seriesMappingsLine
+      .split(",")
+      .filter((seriesChunk) => seriesChunk.length > 0)
+      .map((e) => {
+        return e.split(":");
+      });
+    setEnumSeries(
+      seriesMappings.map((seriesMapping) => [
+        seriesMapping[0], // Series name
+        seriesMapping[1], // Series enum type name
+      ]),
+    );
 
     const enumTypeNames: string[] = enumMappingsLines.map((line) => {
       const closingBracketIndex = line.indexOf("]");
@@ -117,12 +120,12 @@ function App(props: RouteSectionProps) {
       (line) => {
         const equalsIndex = line.indexOf("=");
         const mappingsString = line.slice(equalsIndex + 1);
-        const mappingsList = mappingsString.split(",").filter((mappingString) =>
-          mappingString.length > 0
-        );
-        const mappingsSplitList = mappingsList.map((mappingString) =>
-          mappingString.split(":")
-        ).filter((mappingSplit) => mappingSplit.length == 2);
+        const mappingsList = mappingsString
+          .split(",")
+          .filter((mappingString) => mappingString.length > 0);
+        const mappingsSplitList = mappingsList
+          .map((mappingString) => mappingString.split(":"))
+          .filter((mappingSplit) => mappingSplit.length == 2);
         return mappingsSplitList.map((mappingSplit) => [
           Number(mappingSplit[0]), // Enum integer code
           mappingSplit[1], // Enum name
@@ -131,10 +134,10 @@ function App(props: RouteSectionProps) {
     );
 
     setEnumMappings(
-      enumTypeNames.map((
+      enumTypeNames.map((enumTypeName, index) => [
         enumTypeName,
-        index,
-      ) => [enumTypeName, enumCodeMappings[index]]),
+        enumCodeMappings[index],
+      ]),
     );
   }
 
@@ -148,9 +151,7 @@ function App(props: RouteSectionProps) {
   }
 
   async function buildEmptyDriverConfiguration() {
-    const configEmpty = Command.sidecar("binaries/drivercom", [
-      "config.empty",
-    ]);
+    const configEmpty = Command.sidecar("binaries/drivercom", ["config.empty"]);
     const output = await configEmpty.execute();
     const configFormatToJson = JSON.parse(output.stdout);
     setConfigFormFileFormat(configFormatToJson);
@@ -161,11 +162,13 @@ function App(props: RouteSectionProps) {
       `log.config.start.condition.list`,
     ]);
     const output = await logStartCondition.execute();
-    const parseOutput = output.stdout.replaceAll("[", "").replaceAll("]", "")
+    const parseOutput = output.stdout
+      .replaceAll("[", "")
+      .replaceAll("]", "")
       .split(":");
-    const startConditionList = parseOutput[1].split(",").filter((value) =>
-      value !== "\n"
-    );
+    const startConditionList = parseOutput[1]
+      .split(",")
+      .filter((value) => value !== "\n");
     setLogStartCoditionList(startConditionList);
   }
 
@@ -174,11 +177,13 @@ function App(props: RouteSectionProps) {
       `log.config.start.combinator.list`,
     ]);
     const output = await logStartCombinator.execute();
-    const parseOutput = output.stdout.replaceAll("[", "").replaceAll("]", "")
+    const parseOutput = output.stdout
+      .replaceAll("[", "")
+      .replaceAll("]", "")
       .split(":");
-    const startCombinatorList = parseOutput[1].split(",").filter((value) =>
-      value !== "\n"
-    );
+    const startCombinatorList = parseOutput[1]
+      .split(",")
+      .filter((value) => value !== "\n");
     setLogStartCombinatorList(startCombinatorList);
   }
 
@@ -456,6 +461,7 @@ function App(props: RouteSectionProps) {
           </Portal>
         </Drawer.Root>
         <SegmentGroup.Root
+          id="collapsed_side_bar"
           value={page()}
           onValueChange={(e) => {
             if (e != null) {
