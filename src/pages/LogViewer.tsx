@@ -12,6 +12,7 @@ import {
 } from "~/GlobalState";
 import { Spinner } from "~/components/ui/spinner";
 import { PlotContext } from "~/components/Plot";
+import { Stack } from "styled-system/jsx";
 
 export type LogViewerTabContext = {
   id: string;
@@ -77,9 +78,9 @@ function LogViewer() {
   const [draggedTabInfo, setDraggedTabInfo] = createSignal<LogViewerTabContext>(
     {} as LogViewerTabContext,
   );
-  const [draggedTabPanelIndex, setDraggedTabPanelIndex] = createSignal<number>(
-    0,
-  );
+  const [draggedInTabPanelIndex, setDraggedInTabPanelIndex] = createSignal<
+    number
+  >(0);
 
   // Move existing tab to create new tab panel.
   const moveTabOnSplitter = (index: number, direction: string) => {
@@ -147,6 +148,11 @@ function LogViewer() {
     return uuid;
   }
 
+  const [isDragging, setIsDragging] = createSignal<boolean>(false);
+  const [draggedOutTabPanelIndex, setDraggedOutTabPanelIndex] = createSignal<
+    number
+  >(0);
+
   return (
     <>
       <div style={{ "overflow-y": "hidden", width: `100%`, height: "100%" }}>
@@ -203,6 +209,14 @@ function LogViewer() {
                         width: "100%",
                         height: `100%`,
                         position: "relative",
+                      }}
+                      onMouseEnter={() => {
+                        if (!isDragging()) return;
+                        setDraggedInTabPanelIndex(index());
+                      }}
+                      onMouseLeave={() => {
+                        if (!isDragging()) return;
+                        //setDraggedInTabPanelIndex(null);
                       }}
                     >
                       <LogViewerTabList
@@ -282,39 +296,12 @@ function LogViewer() {
                         }}
                         onDraggedTabInfo={(tabContext) => {
                           setDraggedTabInfo(tabContext);
-                          setDraggedTabPanelIndex(index());
+                          setDraggedInTabPanelIndex(index());
+                          setDraggedOutTabPanelIndex(index());
+                          setIsDragging(true);
                         }}
                         onTabDrop={() => {
-                          if (draggedTabPanelIndex() === index()) return;
-                          setLogViewPanelContexts((prev) => {
-                            return prev.map((tabPanel, i) => {
-                              if (i === index()) {
-                                return {
-                                  ...tabPanel,
-                                  tabContext: [
-                                    ...tabPanel.tabContext,
-                                    draggedTabInfo(),
-                                  ],
-                                  focusedTab: draggedTabInfo().id,
-                                };
-                              } else if (i === draggedTabPanelIndex()) {
-                                const newTabContext = tabPanel.tabContext
-                                  .filter(
-                                    (ctx) => ctx.id !== draggedTabInfo().id,
-                                  );
-                                return {
-                                  id: tabPanel.id,
-                                  tabContext: newTabContext,
-                                  ...(newTabContext.length > 0 && {
-                                    focusedTab:
-                                      newTabContext[newTabContext.length - 1]
-                                        .id,
-                                  }),
-                                };
-                              }
-                              return tabPanel;
-                            });
-                          });
+                          if (draggedInTabPanelIndex() === index()) return;
                         }}
                         onTabContextChange={(
                           updatedTab: LogViewerTabContext,
@@ -357,14 +344,74 @@ function LogViewer() {
                           });
                         }}
                         onTabDragEnd={(draggingTabLocation) => {
+                          setIsDragging(false);
+
                           if (
                             draggingTabLocation === "leftSplitter" ||
                             draggingTabLocation === "rightSplitter"
                           ) {
                             moveTabOnSplitter(index(), draggingTabLocation);
                           }
+
+                          if (draggingTabLocation === "otherPanel") {
+                            if (index() === draggedInTabPanelIndex()) {
+                              return;
+                            }
+                            setLogViewPanelContexts((prev) => {
+                              return prev.map((tabPanel, i) => {
+                                if (i === draggedInTabPanelIndex()) {
+                                  return {
+                                    ...tabPanel,
+                                    tabContext: [
+                                      ...tabPanel.tabContext,
+                                      draggedTabInfo(),
+                                    ],
+                                    focusedTab: draggedTabInfo().id,
+                                  };
+                                } else if (i === index()) {
+                                  const newTabContext = tabPanel.tabContext
+                                    .filter(
+                                      (ctx) => ctx.id !== draggedTabInfo().id,
+                                    );
+                                  return {
+                                    id: tabPanel.id,
+                                    tabContext: newTabContext,
+                                    ...(newTabContext.length > 0 && {
+                                      focusedTab:
+                                        newTabContext[newTabContext.length - 1]
+                                          .id,
+                                    }),
+                                  };
+                                }
+                                return tabPanel;
+                              });
+                            });
+                          }
                         }}
                       />
+                      <Show when={isDragging()}>
+                        <Stack
+                          style={{
+                            width: `${
+                              document.getElementById(currentPanel.id)!
+                                .clientWidth
+                            }px`,
+                            "pointer-events": "none",
+                            opacity: draggedInTabPanelIndex() !==
+                                draggedOutTabPanelIndex()
+                              ? draggedInTabPanelIndex() === index()
+                                ? "10%"
+                                : draggedOutTabPanelIndex() === index()
+                                ? "10%"
+                                : "0%"
+                              : "0%",
+                          }}
+                          height="100%"
+                          position="absolute"
+                          top="0"
+                          backgroundColor="fg.default"
+                        />
+                      </Show>
                     </div>
                   </Splitter.Panel>
                 </>

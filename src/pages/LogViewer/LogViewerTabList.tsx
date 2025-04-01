@@ -185,16 +185,16 @@ export function LogViewerTabList(props: LogViewerTabListProps) {
                           };
                         });
 
+                        const tabListContainerLeft = document.getElementById(
+                          props.id,
+                        )!.offsetLeft;
+                        const tabListContainerWidth = document.getElementById(
+                          props.id,
+                        )!.offsetWidth;
+
                         if (
                           data.event.clientY > data.currentNode.offsetHeight
                         ) {
-                          const tabListContainerLeft = document.getElementById(
-                            props.id,
-                          )!.offsetLeft;
-                          const tabListContainerWidth = document.getElementById(
-                            props.id,
-                          )!.offsetWidth;
-
                           if (
                             data.event.clientX > tabListContainerLeft &&
                             data.event.clientX <
@@ -219,15 +219,6 @@ export function LogViewerTabList(props: LogViewerTabListProps) {
                               tabListContainerWidth + tabListContainerLeft
                           ) {
                             setDraggingTabLocation("rightSplitter");
-                          } else if (
-                            data.event.clientX >
-                              tabListContainerWidth + tabListContainerLeft
-                          ) {
-                            setDraggingTabLocation("otherPanel");
-                          } else if (
-                            data.event.clientX <= tabListContainerLeft
-                          ) {
-                            setDraggingTabLocation("otherPanel");
                           }
                         } else {
                           setDraggingTabLocation("tabList");
@@ -240,23 +231,29 @@ export function LogViewerTabList(props: LogViewerTabListProps) {
                             );
                           }
                         }
+
+                        if (
+                          data.event.clientX >
+                            tabListContainerWidth + tabListContainerLeft
+                        ) {
+                          setDraggingTabLocation("otherPanel");
+                        } else if (data.event.clientX <= tabListContainerLeft) {
+                          setDraggingTabLocation("otherPanel");
+                        }
                       },
                       onDragEnd: () => {
-                        //props.onTabContextDrag?.(false);
-                        setDraggingTabId(null);
-                        setPrevClientX(null);
-
                         if (nextOrderTabIndex() !== null) {
                           reorderTabsOnDragEnd(index(), nextOrderTabIndex()!);
+                          props.onTabFocus?.(draggingTabId()!);
                           setNextOrderTabIndex(null);
                         } else {
                           props.onTabFocus?.(tab.id);
                         }
 
-                        if (draggingTabLocation() !== "tabList") {
-                          props.onTabDragEnd?.(draggingTabLocation());
-                        }
+                        props.onTabDragEnd?.(draggingTabLocation());
 
+                        setDraggingTabId(null);
+                        setPrevClientX(null);
                         setDraggingTabLocation("none");
                       },
                     }}
@@ -339,44 +336,44 @@ export function LogViewerTabList(props: LogViewerTabListProps) {
           </Tabs.List>
           <For each={props.tabList}>
             {(tab, index) => (
-              <>
-                <Tabs.Content
-                  value={tab.id}
-                  height="100%"
-                  width="100%"
-                  transition="width 1s"
-                >
-                  <LogViewerTabPageContent
-                    tabId={tab.id}
-                    plotContext={
-                      props.tabList[index()]
-                        .plotContext /*Plot context*/
+              <Tabs.Content
+                value={tab.id}
+                width="100%"
+                height="100%"
+                overflowY="auto"
+              >
+                <LogViewerTabPageContent
+                  tabId={tab.id}
+                  plotContext={
+                    props.tabList[index()]
+                      .plotContext /*Plot context*/
+                  }
+                  xRange={
+                    props.tabList[index()]
+                      .plotZoomState /*Plots's x range*/
+                  }
+                  filePath={tab.filePath}
+                  onSplit={(plotSplitIndex) => {
+                    if (plotSplitIndex.length === 0) {
+                      return;
                     }
-                    xRange={
-                      props.tabList[index()]
-                        .plotZoomState /*Plots's x range*/
-                    }
-                    filePath={tab.filePath}
-                    onSplit={(plotSplitIndex) => {
-                      if (plotSplitIndex.length === 0) return;
-                      const tabUpdate = tab;
-                      tabUpdate.plotSplitIndex = plotSplitIndex;
-                      props.onTabContextChange?.(tabUpdate);
-                    }}
-                    splitPlotIndex={tab.plotSplitIndex}
-                    onContextChange={(changedPlotContext) => {
-                      const tabUpdate = tab;
-                      tabUpdate.plotContext = changedPlotContext;
-                      props.onTabContextChange?.(tabUpdate);
-                    }}
-                    onXRangeChange={(xRange) => {
-                      const tabUpdate = tab;
-                      tabUpdate.plotZoomState = xRange;
-                      props.onTabContextChange?.(tabUpdate);
-                    }}
-                  />
-                </Tabs.Content>
-              </>
+                    const tabUpdate = tab;
+                    tabUpdate.plotSplitIndex = plotSplitIndex;
+                    props.onTabContextChange?.(tabUpdate);
+                  }}
+                  splitPlotIndex={tab.plotSplitIndex}
+                  onContextChange={(changedPlotContext) => {
+                    const tabUpdate = tab;
+                    tabUpdate.plotContext = changedPlotContext;
+                    props.onTabContextChange?.(tabUpdate);
+                  }}
+                  onXRangeChange={(xRange) => {
+                    const tabUpdate = tab;
+                    tabUpdate.plotZoomState = xRange;
+                    props.onTabContextChange?.(tabUpdate);
+                  }}
+                />
+              </Tabs.Content>
             )}
           </For>
         </Tabs.Root>
