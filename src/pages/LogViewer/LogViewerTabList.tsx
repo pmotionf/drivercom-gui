@@ -8,6 +8,7 @@ import { LogViewerTabContext } from "../LogViewer";
 import { Stack } from "styled-system/jsx";
 import { Text } from "~/components/ui/text";
 import { createDraggable } from "@neodrag/solid";
+import { Portal } from "solid-js/web";
 
 export type LogViewerTabListProps = JSX.HTMLAttributes<HTMLDivElement> & {
   id: string;
@@ -21,7 +22,7 @@ export type LogViewerTabListProps = JSX.HTMLAttributes<HTMLDivElement> & {
   focusedTab?: string;
   onTabFocus?: (focusedTabId: string) => void;
   onTabReorder?: (reorderdTab: LogViewerTabContext[]) => void;
-  onTabDropOnSplitter?: () => void;
+  onTabDragEnd?: () => void;
 };
 
 export function LogViewerTabList(props: LogViewerTabListProps) {
@@ -102,11 +103,6 @@ export function LogViewerTabList(props: LogViewerTabListProps) {
   // To display the tab is dragging this signal is necessary for UI.
   const [draggingTabId, setDraggingTabId] = createSignal<string | null>();
 
-  const [showTabSplitter, setShowTabSplitter] = createSignal<boolean>(false);
-  const [isTabDropOnSplitter, setIsTabDropOnSplitter] = createSignal<boolean>(
-    false,
-  );
-
   return (
     <>
       <div style={{ width: "100%", height: "100%" }}>
@@ -185,9 +181,9 @@ export function LogViewerTabList(props: LogViewerTabListProps) {
                         if (
                           data.event.clientY > data.currentNode.offsetHeight
                         ) {
-                          setShowTabSplitter(true);
+                          props.onTabContextDrag?.(true);
                         } else {
-                          setShowTabSplitter(false);
+                          props.onTabContextDrag?.(false);
                         }
 
                         if (scrollContainer && prevClientX()) {
@@ -199,7 +195,7 @@ export function LogViewerTabList(props: LogViewerTabListProps) {
                           );
                         }
                       },
-                      onDragEnd: () => {
+                      onDragEnd: (e) => {
                         props.onTabContextDrag?.(false);
                         setDraggingTabId(null);
                         setPrevClientX(null);
@@ -207,17 +203,13 @@ export function LogViewerTabList(props: LogViewerTabListProps) {
                         if (nextOrderTabIndex() !== null) {
                           reorderTabsOnDragEnd(index(), nextOrderTabIndex()!);
                           setNextOrderTabIndex(null);
+                        } else {
+                          props.onTabFocus?.(tab.id);
                         }
 
-                        if (isTabDropOnSplitter()) {
-                          console.log(true);
-                          props.onTabDropOnSplitter?.();
-                          setIsTabDropOnSplitter(false);
-                          setShowTabSplitter(false);
-                          props.onTabFocus?.(props.focusedTab!);
-                          return;
+                        if (e.event.clientY > 48) {
+                          props.onTabDragEnd?.();
                         }
-                        props.onTabFocus?.(tab.id);
                       },
                     }}
                   >
@@ -303,7 +295,7 @@ export function LogViewerTabList(props: LogViewerTabListProps) {
                 <Tabs.Content
                   value={tab.id}
                   height="100%"
-                  width={showTabSplitter() ? "50%" : "100%"}
+                  width="100%"
                   transition="width 1s"
                 >
                   <LogViewerTabPageContent
@@ -336,80 +328,64 @@ export function LogViewerTabList(props: LogViewerTabListProps) {
                     }}
                   />
                 </Tabs.Content>
-                <Stack
-                  backgroundColor="fg.default"
-                  position="absolute"
-                  opacity={isTabDropOnSplitter() ? "30%" : "10%"}
-                  transition="width 1s"
-                  top="3rem"
-                  right={showTabSplitter() ? "0%" : "-50%"}
-                  width={showTabSplitter() ? "50%" : "0%"}
-                  height={`calc(100% - 3rem)`}
-                  onMouseEnter={() => {
-                    if (showTabSplitter()) {
-                      setIsTabDropOnSplitter(true);
-                    }
-                  }}
-                  onMouseLeave={() => {
-                    setIsTabDropOnSplitter(false);
-                  }}
-                />
               </>
             )}
           </For>
         </Tabs.Root>
       </div>
-      {draggingTabId() && (
-        <Stack
-          direction="row"
-          borderBottomColor="accent.emphasized"
-          background="bg.default"
-          style={{
-            position: "absolute",
-            top: `${currentMousePointerPosition().y}px`,
-            left: `${currentMousePointerPosition().x}px`,
-            "padding-left": "0.5rem",
-            "padding-bottom": "0.5rem",
-            "pointer-events": "none",
-            "z-index": "15",
-            "border-bottom-width": "2px",
-          }}
-        >
-          <Text
-            fontWeight="bold"
-            color="fg.default"
-            paddingTop="0.5rem"
-            whiteSpace="nowrap"
+      <Portal>
+        {draggingTabId() && (
+          <Stack
+            direction="row"
+            borderBottomColor="accent.emphasized"
+            background="bg.default"
+            style={{
+              position: "absolute",
+              top: `${currentMousePointerPosition().y}px`,
+              left: `${currentMousePointerPosition().x}px`,
+              "padding-left": "0.5rem",
+              "padding-bottom": "0.5rem",
+              "pointer-events": "none",
+              "z-index": "15",
+              "border-bottom-width": "2px",
+            }}
           >
-            {props.tabList[
-                props.tabList
-                  .map((tab) => {
-                    return tab.id;
-                  })
-                  .indexOf(draggingTabId()!)
-              ].tabName.length !== 0
-              ? props.tabList[
-                props.tabList
-                  .map((tab) => {
-                    return tab.id;
-                  })
-                  .indexOf(draggingTabId()!)
-              ].tabName
-              : JSON.stringify(
-                props.tabList[
+            <Text
+              fontWeight="bold"
+              color="fg.default"
+              paddingTop="0.5rem"
+              whiteSpace="nowrap"
+            >
+              {props.tabList[
                   props.tabList
                     .map((tab) => {
                       return tab.id;
                     })
                     .indexOf(draggingTabId()!)
-                ].filePath.match(/[^?!//]+$/!),
-              ).slice(2, -2)}
-          </Text>
-          <IconButton variant="ghost" size="sm" borderRadius="3rem">
-            <IconX />
-          </IconButton>
-        </Stack>
-      )}
+                ].tabName.length !== 0
+                ? props.tabList[
+                  props.tabList
+                    .map((tab) => {
+                      return tab.id;
+                    })
+                    .indexOf(draggingTabId()!)
+                ].tabName
+                : JSON.stringify(
+                  props.tabList[
+                    props.tabList
+                      .map((tab) => {
+                        return tab.id;
+                      })
+                      .indexOf(draggingTabId()!)
+                  ].filePath.match(/[^?!//]+$/!),
+                ).slice(2, -2)}
+            </Text>
+            <IconButton variant="ghost" size="sm" borderRadius="3rem">
+              <IconX />
+            </IconButton>
+          </Stack>
+        )}
+      </Portal>
     </>
   );
 }
