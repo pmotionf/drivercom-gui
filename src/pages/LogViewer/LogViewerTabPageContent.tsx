@@ -42,7 +42,6 @@ export type LogViewerTabPageContentProps =
     onContextChange?: (plotContext: PlotContext[]) => void;
     xRange?: [number, number];
     onXRangeChange?: (xRange: [number, number]) => void;
-    showSplitter?: boolean;
   };
 
 export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {

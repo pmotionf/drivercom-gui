@@ -78,7 +78,7 @@ function LogViewer() {
   const [draggedTabInfo, setDraggedTabInfo] = createSignal<LogViewerTabContext>(
     {} as LogViewerTabContext,
   );
-  const [draggedInTabPanelIndex, setDraggedInTabPanelIndex] = createSignal<
+  const [tabDraggedInPanelIndex, setTabDrggaedInPanelIndex] = createSignal<
     number
   >(0);
 
@@ -149,7 +149,7 @@ function LogViewer() {
   }
 
   const [isDragging, setIsDragging] = createSignal<boolean>(false);
-  const [draggedOutTabPanelIndex, setDraggedOutTabPanelIndex] = createSignal<
+  const [tabDraggedOutPanelIndex, setTabDraggedOutPanelIndex] = createSignal<
     number
   >(0);
 
@@ -212,11 +212,7 @@ function LogViewer() {
                       }}
                       onMouseEnter={() => {
                         if (!isDragging()) return;
-                        setDraggedInTabPanelIndex(index());
-                      }}
-                      onMouseLeave={() => {
-                        if (!isDragging()) return;
-                        //setDraggedInTabPanelIndex(null);
+                        setTabDrggaedInPanelIndex(index());
                       }}
                     >
                       <LogViewerTabList
@@ -294,14 +290,11 @@ function LogViewer() {
                             });
                           }, 200);
                         }}
-                        onDraggedTabInfo={(tabContext) => {
+                        onTabDrag={(tabContext) => {
                           setDraggedTabInfo(tabContext);
-                          setDraggedInTabPanelIndex(index());
-                          setDraggedOutTabPanelIndex(index());
+                          setTabDrggaedInPanelIndex(index());
+                          setTabDraggedOutPanelIndex(index());
                           setIsDragging(true);
-                        }}
-                        onTabDrop={() => {
-                          if (draggedInTabPanelIndex() === index()) return;
                         }}
                         onTabContextChange={(
                           updatedTab: LogViewerTabContext,
@@ -354,12 +347,12 @@ function LogViewer() {
                           }
 
                           if (draggingTabLocation === "otherPanel") {
-                            if (index() === draggedInTabPanelIndex()) {
+                            if (index() === tabDraggedInPanelIndex()) {
                               return;
                             }
                             setLogViewPanelContexts((prev) => {
                               return prev.map((tabPanel, i) => {
-                                if (i === draggedInTabPanelIndex()) {
+                                if (i === tabDraggedInPanelIndex()) {
                                   return {
                                     ...tabPanel,
                                     tabContext: [
@@ -397,11 +390,11 @@ function LogViewer() {
                                 .clientWidth
                             }px`,
                             "pointer-events": "none",
-                            opacity: draggedInTabPanelIndex() !==
-                                draggedOutTabPanelIndex()
-                              ? draggedInTabPanelIndex() === index()
+                            opacity: tabDraggedInPanelIndex() !==
+                                tabDraggedOutPanelIndex()
+                              ? tabDraggedInPanelIndex() === index()
                                 ? "10%"
-                                : draggedOutTabPanelIndex() === index()
+                                : tabDraggedOutPanelIndex() === index()
                                 ? "10%"
                                 : "0%"
                               : "0%",
