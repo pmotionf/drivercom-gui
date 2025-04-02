@@ -647,7 +647,7 @@ export function Plot(props: PlotProps) {
               "padding-bottom": "0.5rem",
               float: "left",
               width: "15rem",
-              "max-height": "calc(100% - 1.5rem - 3rem)",
+              "max-height": "calc(100% - 1.5rem - 4rem)",
               "overflow-x": "auto",
               "overflow-y": "auto",
             }}

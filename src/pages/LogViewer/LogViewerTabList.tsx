@@ -8,19 +8,27 @@ import { LogViewerTabContext } from "../LogViewer";
 import { Stack } from "styled-system/jsx";
 import { Text } from "~/components/ui/text";
 import { createDraggable } from "@neodrag/solid";
+import { Portal } from "solid-js/web";
+
+type tabLocation =
+  | "none"
+  | "rightSplitter"
+  | "leftSplitter"
+  | "otherPanel"
+  | "tabList"
+  | "centerSplitter";
 
 export type LogViewerTabListProps = JSX.HTMLAttributes<HTMLDivElement> & {
   id: string;
   tabList: LogViewerTabContext[];
   onCreateTab?: () => void;
   onDeleteTab?: (deleteTabId: string, index: number) => void;
-  onDraggedTabInfo?: (tabContext: LogViewerTabContext) => void;
-  onTabDrop?: () => void;
+  onTabDrag?: (tabContext: LogViewerTabContext) => void;
   onTabContextChange?: (tabContext: LogViewerTabContext) => void;
-  onTabContextDrag?: (isTabContextDragEnter: boolean) => void;
   focusedTab?: string;
   onTabFocus?: (focusedTabId: string) => void;
   onTabReorder?: (reorderdTab: LogViewerTabContext[]) => void;
+  onTabDragEnd?: (direction: tabLocation) => void;
 };
 
 export function LogViewerTabList(props: LogViewerTabListProps) {
@@ -58,9 +66,7 @@ export function LogViewerTabList(props: LogViewerTabListProps) {
     }
   });
 
-  const [nextOrderTabIndex, setNextOrderTabIndex] = createSignal<
-    number | null
-  >();
+  const [reorderTabIndex, setReorderTabIndex] = createSignal<number | null>();
 
   const reorderTabsOnDragEnd = (
     currentTabIndex: number,
@@ -94,9 +100,11 @@ export function LogViewerTabList(props: LogViewerTabListProps) {
   // deno-lint-ignore no-unused-vars
   const { draggable: dragOptions } = createDraggable();
 
-  // This signal is only used for UI.
-  // It is necessary to avoid the tab focusing error.
-  const [draggingTabId, setDraggingTabId] = createSignal<string | null>();
+  const [currentDraggingTabId, setCurrentDraggingTabId] = createSignal<
+    string | null
+  >();
+  const [currentDraggingTabLocation, setCurrentDraggingTabLocation] =
+    createSignal<tabLocation>("none");
 
   return (
     <>
@@ -109,6 +117,7 @@ export function LogViewerTabList(props: LogViewerTabListProps) {
           width="100%"
           height="100%"
           gap="0"
+          padding="0"
         >
           <Tabs.List
             ref={scrollContainer}
@@ -119,10 +128,6 @@ export function LogViewerTabList(props: LogViewerTabListProps) {
             }}
             onWheel={(e) => mouseWheelHandler(e)}
             gap="0"
-            onDrop={() => {
-              props.onTabDrop?.();
-              props.onTabContextDrag?.(false);
-            }}
             width="100%"
             marginRight="0"
           >
@@ -135,19 +140,20 @@ export function LogViewerTabList(props: LogViewerTabListProps) {
                       width: "100%",
                       height: "100%",
                       position: "relative",
-                      "z-index": tab.id === draggingTabId() ? "0" : "10",
+                      "z-index": tab.id === currentDraggingTabId() ? "0" : "10",
                     }}
                     onMouseEnter={() => {
-                      if (draggingTabId()) {
-                        setNextOrderTabIndex(index());
+                      if (currentDraggingTabId()) {
+                        setReorderTabIndex(index());
                       }
                     }}
-                    onMouseLeave={() => setNextOrderTabIndex(null)}
+                    onMouseLeave={() => setReorderTabIndex(null)}
                     use:dragOptions={{
                       cancel: ".cancel",
                       bounds: "parent",
                       onDragStart: (data) => {
-                        setDraggingTabId(tab.id);
+                        props.onTabDrag?.(tab);
+                        setCurrentDraggingTabId(tab.id);
                         setPrevPositionX(
                           document.getElementById(tab.id)!.scrollLeft,
                         );
@@ -158,61 +164,100 @@ export function LogViewerTabList(props: LogViewerTabListProps) {
                         });
                       },
                       onDrag: (data) => {
+                        const collapsedSideBarWidth = document.getElementById(
+                          "radio-group:collapsed_side_bar",
+                        )!.offsetWidth;
+
                         setCurrentMousePointerPosition(() => {
-                          const collapseSideBarWidth = document.getElementById(
-                            "radio-group:collapsed_side_bar",
-                          )!.offsetWidth;
                           return {
                             x: data.event.clientX -
                               mousePositionInsideComponent().x -
-                              collapseSideBarWidth,
+                              collapsedSideBarWidth,
                             y: data.event.clientY -
                               mousePositionInsideComponent().y,
                           };
                         });
 
-                        if (
-                          data.event.clientY > data.currentNode.offsetHeight
-                        ) {
-                          props.onTabContextDrag?.(true);
-                          setNextOrderTabIndex(null);
-                        } else {
-                          props.onTabContextDrag?.(false);
-                        }
+                        const tabListContainerStart = document.getElementById(
+                          props.id,
+                        )!.offsetLeft;
+                        const tabListContainerWidth = document.getElementById(
+                          props.id,
+                        )!.offsetWidth;
+                        const tabListContainerWidthQuarter =
+                          tabListContainerWidth * 0.25;
+                        const tabListContainerEnd = tabListContainerStart +
+                          tabListContainerWidth;
+                        const clientX = data.event.clientX;
 
-                        if (scrollContainer && prevClientX()) {
-                          dragOverScroll(
-                            data.event.clientX,
-                            prevClientX()!,
-                            prevPositionX(),
-                            scrollContainer,
-                          );
+                        if (clientX >= tabListContainerEnd) {
+                          setCurrentDraggingTabLocation("otherPanel");
+                        } else if (clientX <= tabListContainerStart) {
+                          setCurrentDraggingTabLocation("otherPanel");
+                        } else {
+                          if (
+                            data.event.clientY > data.currentNode.offsetHeight
+                          ) {
+                            clientX > tabListContainerStart &&
+                              clientX <
+                                tabListContainerWidthQuarter +
+                                  tabListContainerStart
+                              ? setCurrentDraggingTabLocation("leftSplitter")
+                              : clientX >=
+                                    tabListContainerWidthQuarter +
+                                      tabListContainerStart &&
+                                  clientX <=
+                                    tabListContainerEnd -
+                                      tabListContainerWidthQuarter
+                              ? setCurrentDraggingTabLocation(
+                                "centerSplitter",
+                              )
+                              : setCurrentDraggingTabLocation(
+                                "rightSplitter",
+                              );
+                          } else {
+                            setCurrentDraggingTabLocation("tabList");
+                            if (scrollContainer && prevClientX()) {
+                              dragOverScroll(
+                                data.event.clientX,
+                                prevClientX()!,
+                                prevPositionX(),
+                                scrollContainer,
+                              );
+                            }
+                          }
                         }
                       },
                       onDragEnd: () => {
-                        props.onTabContextDrag?.(false);
-                        setDraggingTabId(null);
-                        setPrevClientX(null);
-
-                        if (nextOrderTabIndex() !== null) {
-                          reorderTabsOnDragEnd(index(), nextOrderTabIndex()!);
-                          setNextOrderTabIndex(null);
+                        if (reorderTabIndex() !== null) {
+                          reorderTabsOnDragEnd(index(), reorderTabIndex()!);
+                          props.onTabFocus?.(currentDraggingTabId()!);
+                          setReorderTabIndex(null);
+                        } else {
+                          props.onTabFocus?.(tab.id);
                         }
-                        props.onTabFocus?.(tab.id);
+
+                        props.onTabDragEnd?.(currentDraggingTabLocation());
+
+                        setCurrentDraggingTabId(null);
+                        setPrevClientX(null);
+                        setCurrentDraggingTabLocation("none");
                       },
                     }}
                   >
                     <Tabs.Trigger
                       value={tab.id}
                       paddingRight="0"
-                      opacity={tab.id === draggingTabId() ? "0%" : "100%"}
-                      borderBottomWidth={draggingTabId()
-                        ? draggingTabId() === tab.id ? "3px" : "0px"
+                      opacity={tab.id === currentDraggingTabId()
+                        ? "0%"
+                        : "100%"}
+                      borderBottomWidth={currentDraggingTabId()
+                        ? currentDraggingTabId() === tab.id ? "3px" : "0px"
                         : props.focusedTab === tab.id
                         ? "3px"
                         : "0px"}
-                      marginTop={draggingTabId()
-                        ? draggingTabId() === tab.id
+                      marginTop={currentDraggingTabId()
+                        ? currentDraggingTabId() === tab.id
                           ? `calc(0.5rem + 1px)`
                           : "0.5rem"
                         : props.focusedTab === tab.id
@@ -224,7 +269,7 @@ export function LogViewerTabList(props: LogViewerTabListProps) {
                         defaultValue={tab.tabName.length === 0
                           ? JSON.stringify(
                             tab.filePath.match(/[^?!//]+$/!),
-                          ).slice(2, -2) /*change to tabname*/
+                          ).slice(2, -2)
                           : tab.tabName}
                         activationMode="dblclick"
                         onValueCommit={(tabName) => {
@@ -252,8 +297,8 @@ export function LogViewerTabList(props: LogViewerTabListProps) {
                       </div>
                     </Tabs.Trigger>
                     <Show
-                      when={nextOrderTabIndex() === index() &&
-                        draggingTabId() !== tab.id}
+                      when={reorderTabIndex() === index() &&
+                        currentDraggingTabId() !== tab.id}
                     >
                       <Stack
                         width="100%"
@@ -276,42 +321,25 @@ export function LogViewerTabList(props: LogViewerTabListProps) {
             >
               <IconPlus />
             </IconButton>
-            <div
-              style={{ width: "100%" }}
-              onDragOver={(e) => e.preventDefault()}
-            >
-            </div>
+            <div style={{ width: "100%" }}></div>
           </Tabs.List>
           <For each={props.tabList}>
             {(tab, index) => (
               <Tabs.Content
                 value={tab.id}
+                width="100%"
                 height="100%"
-                width="100% "
-                style={{
-                  "overflow-y": "auto",
-                }}
-                onDragOver={(e) => e.preventDefault()}
-                onDragEnter={() => props.onTabContextDrag?.(true)}
-                onDrop={() => props.onTabContextDrag?.(false)}
+                overflowY="auto"
               >
                 <LogViewerTabPageContent
                   tabId={tab.id}
-                  style={{
-                    position: "relative",
-                    "z-index": 10,
-                  }}
-                  plotContext={
-                    props.tabList[index()]
-                      .plotContext /*Plot context*/
-                  }
-                  xRange={
-                    props.tabList[index()]
-                      .plotZoomState /*Plots's x range*/
-                  }
+                  plotContext={props.tabList[index()].plotContext}
+                  xRange={props.tabList[index()].plotZoomState}
                   filePath={tab.filePath}
                   onSplit={(plotSplitIndex) => {
-                    if (plotSplitIndex.length === 0) return;
+                    if (plotSplitIndex.length === 0) {
+                      return;
+                    }
                     const tabUpdate = tab;
                     tabUpdate.plotSplitIndex = plotSplitIndex;
                     props.onTabContextChange?.(tabUpdate);
@@ -333,57 +361,81 @@ export function LogViewerTabList(props: LogViewerTabListProps) {
           </For>
         </Tabs.Root>
       </div>
-      {draggingTabId() && (
-        <Stack
-          direction="row"
-          borderBottomColor="accent.emphasized"
-          background="bg.default"
-          style={{
-            position: "absolute",
-            top: `${currentMousePointerPosition().y}px`,
-            left: `${currentMousePointerPosition().x}px`,
-            "padding-left": "0.5rem",
-            "padding-bottom": "0.5rem",
-            "pointer-events": "none",
-            "z-index": "15",
-            "border-bottom-width": "2px",
-          }}
-        >
-          <Text
-            fontWeight="bold"
-            color="fg.default"
-            paddingTop="0.5rem"
-            whiteSpace="nowrap"
+      <Portal>
+        {currentDraggingTabId() && (
+          <Stack
+            direction="row"
+            borderBottomColor="accent.emphasized"
+            background="bg.default"
+            style={{
+              position: "absolute",
+              top: `${currentMousePointerPosition().y}px`,
+              left: `${currentMousePointerPosition().x}px`,
+              "padding-left": "0.5rem",
+              "padding-bottom": "0.5rem",
+              "pointer-events": "none",
+              "z-index": "15",
+              "border-bottom-width": "2px",
+            }}
           >
-            {props.tabList[
-                props.tabList
-                  .map((tab) => {
-                    return tab.id;
-                  })
-                  .indexOf(draggingTabId()!)
-              ].tabName.length !== 0
-              ? props.tabList[
-                props.tabList
-                  .map((tab) => {
-                    return tab.id;
-                  })
-                  .indexOf(draggingTabId()!)
-              ].tabName
-              : JSON.stringify(
-                props.tabList[
+            <Text
+              fontWeight="bold"
+              color="fg.default"
+              paddingTop="0.5rem"
+              whiteSpace="nowrap"
+            >
+              {props.tabList[
                   props.tabList
                     .map((tab) => {
                       return tab.id;
                     })
-                    .indexOf(draggingTabId()!)
-                ].filePath.match(/[^?!//]+$/!),
-              ).slice(2, -2)}
-          </Text>
-          <IconButton variant="ghost" size="sm" borderRadius="3rem">
-            <IconX />
-          </IconButton>
-        </Stack>
-      )}
+                    .indexOf(currentDraggingTabId()!)
+                ].tabName.length !== 0
+                ? props.tabList[
+                  props.tabList
+                    .map((tab) => {
+                      return tab.id;
+                    })
+                    .indexOf(currentDraggingTabId()!)
+                ].tabName
+                : JSON.stringify(
+                  props.tabList[
+                    props.tabList
+                      .map((tab) => {
+                        return tab.id;
+                      })
+                      .indexOf(currentDraggingTabId()!)
+                  ].filePath.match(/[^?!//]+$/!),
+                ).slice(2, -2)}
+            </Text>
+            <IconButton variant="ghost" size="sm" borderRadius="3rem">
+              <IconX />
+            </IconButton>
+          </Stack>
+        )}
+      </Portal>
+      <Show
+        when={currentDraggingTabLocation().slice(
+              currentDraggingTabLocation().length - 8,
+              currentDraggingTabLocation().length,
+            ) === "Splitter" && props.tabList.length > 1}
+      >
+        <Stack
+          backgroundColor="fg.default"
+          style={{
+            width: currentDraggingTabLocation() === "centerSplitter"
+              ? `${document.getElementById(props.id)!.clientWidth}px`
+              : `${document.getElementById(props.id)!.clientWidth / 2}px`,
+            height: `${document.getElementById(props.id)!.clientHeight}px`,
+            position: "absolute",
+            top: "3rem",
+            left: currentDraggingTabLocation() === "rightSplitter"
+              ? `${document.getElementById(props.id)!.clientWidth / 2}px`
+              : "0px",
+            opacity: "10%",
+          }}
+        />
+      </Show>
     </>
   );
 }
