@@ -124,7 +124,12 @@ export function LoggingForm(props: LoggingFormProps) {
       }
 
       const path = await save({
-        defaultPath: `${props.fileName}`,
+        defaultPath: props.fileName.slice(
+            props.fileName.length - 4,
+            props.fileName.length,
+          ) === ".csv"
+          ? `${props.fileName}`
+          : `${props.fileName}.csv`,
         filters: [
           {
             name: "CSV",
@@ -191,7 +196,12 @@ export function LoggingForm(props: LoggingFormProps) {
       : props.fileName;
 
     const path = await save({
-      defaultPath: `${currentFilePath}`,
+      defaultPath: currentFilePath!.slice(
+          currentFilePath!.length - 5,
+          currentFilePath!.length,
+        ) === ".json"
+        ? `${currentFilePath}`
+        : `${currentFilePath}.json`,
       filters: [
         {
           name: "JSON",
