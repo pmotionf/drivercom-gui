@@ -139,10 +139,7 @@ function Configuration() {
       : fileName();
 
     const path = await save({
-      defaultPath: currentFilePath!.slice(
-          currentFilePath!.length - 5,
-          currentFilePath!.length,
-        ) === ".json"
+      defaultPath: currentFilePath!.split(".").pop()!.toLowerCase() === "json"
         ? `${currentFilePath}`
         : `${currentFilePath}.json`,
       filters: [
