@@ -21,6 +21,8 @@ import { IconButton } from "~/components/ui/icon-button";
 import {
   IconArrowsMove,
   IconCrosshair,
+  IconEye,
+  IconEyeOff,
   IconLocation,
   IconLocationOff,
   IconZoomInArea,
@@ -464,6 +466,10 @@ export function Plot(props: PlotProps) {
     false,
   );
 
+  const [isAllVisible, setIsAllVisible] = createSignal<boolean>(
+    getContext().visible ? getContext().visible.every((b) => b) : true,
+  );
+
   return (
     <>
       <div {...rest} id={props.id + "-wrapper"}>
@@ -652,14 +658,37 @@ export function Plot(props: PlotProps) {
               "overflow-y": "auto",
             }}
           >
-            <Legend
-              plot={plot!}
-              series="Cycle"
-              group={group()}
-              width="min-content"
-              cursorIdx={props.cursorIdx}
-              readonly
-            />
+            <Stack direction="row" gap="1.5">
+              <IconButton
+                size="sm"
+                variant="link"
+                onClick={() => {
+                  setIsAllVisible(!isAllVisible());
+                  setContext()(
+                    "visible",
+                    getContext().visible.map(() => isAllVisible()),
+                  );
+                  getContext().visible.forEach((val, i) => {
+                    plot.setSeries(i + 1, {
+                      show: val,
+                    });
+                  });
+                  props.onContextChange?.(getContext());
+                }}
+              >
+                <Show when={isAllVisible()} fallback={<IconEye />}>
+                  <IconEyeOff />
+                </Show>
+              </IconButton>
+              <Legend
+                plot={plot!}
+                series="Cycle"
+                group={group()}
+                width="min-content"
+                cursorIdx={props.cursorIdx}
+                readonly
+              />
+            </Stack>
             <For each={props.header}>
               {(header, index) => (
                 <Legend

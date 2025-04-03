@@ -23,7 +23,6 @@ import {
   IconPoint,
   IconX,
 } from "@tabler/icons-solidjs";
-import { Icon } from "../ui/icon";
 import { Heading } from "../ui/heading";
 import { Portal } from "solid-js/web";
 import { enumMappings, enumSeries } from "~/GlobalState";
@@ -96,13 +95,12 @@ export function Legend(props: LegendProps) {
     if (typeof props.plot.series[seriesIndex].stroke === "string") {
       new_color = props.plot.series[seriesIndex].stroke as string;
     } else if (typeof props.plot.series[seriesIndex].stroke === "function") {
-      new_color = (props.plot.series[seriesIndex].stroke as (
-        self: uPlot,
-        seriesIdx: number,
-      ) => CanvasRenderingContext2D["strokeStyle"])(
-        props.plot,
-        seriesIndex,
-      ) as string;
+      new_color = (
+        props.plot.series[seriesIndex].stroke as (
+          self: uPlot,
+          seriesIdx: number,
+        ) => CanvasRenderingContext2D["strokeStyle"]
+      )(props.plot, seriesIndex) as string;
     }
     props.onColorChange?.(new_color);
     setColor(new_color);
@@ -194,34 +192,18 @@ export function Legend(props: LegendProps) {
         : "30%"}
       {...rest}
     >
-      <Show
-        when={!props.readonly}
-        fallback={
-          <Icon
-            style={{
-              width: strokeIconSize,
-              padding: "0px",
-              margin: "0px",
-            }}
-          >
-            <StrokeIcon />
-          </Icon>
-        }
-      >
+      <Show when={!props.readonly}>
         <Show
-          when={!props.showSelectCheckBox}
-          fallback={
-            <Checkbox
-              disabled={!props.visible}
-              value={props.selected ? props.selected.toString() : "false"}
-              onCheckedChange={(e) =>
-                props.onSelectChange?.(
-                  e.checked.toString() === "true" ? true : false,
-                )}
-            />
-          }
+          when={props.showSelectCheckBox}
         >
-          <div></div>
+          <Checkbox
+            disabled={!props.visible}
+            value={props.selected ? props.selected.toString() : "false"}
+            onCheckedChange={(e) =>
+              props.onSelectChange?.(
+                e.checked.toString() === "true" ? true : false,
+              )}
+          />
         </Show>
         <Dialog.Root
           open={configOpen()}
