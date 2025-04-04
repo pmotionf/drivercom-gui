@@ -30,17 +30,17 @@ function Configuration() {
     gap: 24,
   });
 
-  async function getConfigFromPort() {
+  async function getConfigFromPort(): Promise<{
+    stdout: string;
+    stderr: string;
+  }> {
     const configGet = Command.sidecar("binaries/drivercom", [
       `--port`,
       portId(),
       `config.get`,
     ]);
     const output = await configGet.execute();
-    const parseConfigToObject = JSON.parse(output.stdout);
-    setFileName(portId());
-    setConfigureFile(parseConfigToObject);
-    setIsFileOpen(true);
+    return { stdout: output.stdout, stderr: output.stderr };
   }
 
   async function openFileDialog(): Promise<string | undefined> {
@@ -244,7 +244,7 @@ function Configuration() {
                   setIsFileOpen(true);
                 }}
               >
-                Create New File
+                Create New Config
               </Button>
               <Button
                 variant="outline"
@@ -274,9 +274,21 @@ function Configuration() {
                 variant="outline"
                 padding="4rem"
                 disabled={portId().length === 0}
-                onClick={() => {
+                onClick={async () => {
                   setFilePath(undefined);
-                  getConfigFromPort();
+                  const output = await getConfigFromPort();
+                  if (output.stderr.length !== 0) {
+                    toaster.create({
+                      title: "Communication Error",
+                      description: output.stderr,
+                      type: "error",
+                    });
+                  } else {
+                    const parseConfigToObject = JSON.parse(output.stdout);
+                    setFileName(portId());
+                    setConfigureFile(parseConfigToObject);
+                    setIsFileOpen(true);
+                  }
                 }}
               >
                 Get From Port
