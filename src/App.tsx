@@ -91,16 +91,31 @@ function App(props: RouteSectionProps) {
     ]);
     const output = await drivercom.execute();
 
-    const outputLines = output.stdout.split("\n");
-    const seriesMappingsLine = outputLines[0].trim();
-    const enumMappingsLines = outputLines
-      .slice(1)
+    const namedFieldsStr = "named fields:";
+    const namedFieldsIndex = output.stdout.search(
+      new RegExp(namedFieldsStr, "i"),
+    );
+
+    const namedFieldKindsStr = "named field kinds:";
+    const namedFieldKindsIndex = output.stdout.search(
+      new RegExp(namedFieldKindsStr, "i"),
+    );
+
+    const namedFieldsLine = output.stdout.slice(
+      namedFieldsIndex + namedFieldsStr.length,
+      namedFieldKindsIndex,
+    ).trim();
+    const namedFieldKindsLines = output.stdout.slice(
+      namedFieldKindsIndex + namedFieldKindsStr.length,
+    ).split("\n");
+
+    const enumMappingsLines = namedFieldKindsLines
       .map((line) => line.trim())
       .filter((line) => line.length > 0 && line[0] == "[");
 
-    const seriesMappings = seriesMappingsLine
+    const seriesMappings = namedFieldsLine
       .split(",")
-      .filter((seriesChunk) => seriesChunk.length > 0)
+      .filter((seriesChunk) => seriesChunk.length > 1)
       .map((e) => {
         return e.split(":");
       });
