@@ -17,9 +17,9 @@ import { readTextFile } from "@tauri-apps/plugin-fs";
 import { IconButton } from "~/components/ui/icon-button";
 
 export function Logging() {
-  const [isFileOpen, setIsFileOpen] = createSignal<boolean>(false);
-  const [logConfigureFile, setLogConfigureFile] = createSignal({});
-  const [fileName, setFileName] = createSignal<string>("");
+  const [isLogFormOpen, setLogFormOpen] = createSignal<boolean>(false);
+  const [logConfigure, setLogConfigure] = createSignal({});
+  const [formTitle, setFormTitle] = createSignal<string>("");
   const [filePath, setFilePath] = createSignal<string>("");
   const [logMode, setLogMode] = createSignal<
     "create" | "port" | "file" | "none"
@@ -32,21 +32,20 @@ export function Logging() {
 
   createEffect(() => {
     const currentMode = logMode();
-    currentMode === "none" ? setIsFileOpen(false) : setIsFileOpen(true);
+    currentMode === "none" ? setLogFormOpen(false) : setLogFormOpen(true);
   });
 
-  async function GetLogConfigFromPort(): Promise<object | null> {
-    if (portId().length === 0) return null;
+  async function GetLogConfigFromPort(): Promise<{
+    stdout: string;
+    stderr: string;
+  }> {
     const sideCommand = Command.sidecar("binaries/drivercom", [
       `--port`,
       portId(),
       `log.config.get`,
     ]);
     const output = await sideCommand.execute();
-    const obj = JSON.parse(output.stdout);
-
-    if (output.stdout.length === 0) return null;
-    else return obj;
+    return { stdout: output.stdout, stderr: output.stderr };
   }
 
   const toaster = Toast.createToaster({
@@ -57,9 +56,7 @@ export function Logging() {
   async function openFileDialog(): Promise<string | null> {
     const path = await open({
       multiple: false,
-      filters: [
-        { name: "JSON", extensions: ["json"] },
-      ],
+      filters: [{ name: "JSON", extensions: ["json"] }],
     });
 
     if (!path) {
@@ -114,9 +111,9 @@ export function Logging() {
     }
   }
 
-  function setFileData(file: object, path: string) {
-    setLogConfigureFile(file);
-    setFileName(path.split("/").pop()!);
+  function setLogFormData(form: object, path: string) {
+    setLogConfigure(form);
+    setFormTitle(path.split("/").pop()!);
     setFilePath(path);
     setRenderLoggingForm(true);
     setLogMode("file");
@@ -124,10 +121,7 @@ export function Logging() {
 
   const [isButtonHovered, setIsButtonHoverd] = createSignal<
     [boolean, number | null]
-  >([
-    false,
-    null,
-  ]);
+  >([false, null]);
 
   return (
     <>
@@ -136,8 +130,8 @@ export function Logging() {
         style={{
           "padding-top": "4rem",
           "padding-bottom": "4rem",
-          "height": "100%",
-          "width": `100% `,
+          height: "100%",
+          width: `100% `,
           "overflow-y": "auto",
         }}
       >
@@ -153,22 +147,19 @@ export function Logging() {
           )}
         </Toast.Toaster>
         <Show
-          when={!isFileOpen()}
+          when={!isLogFormOpen()}
           fallback={
             <Stack width="42rem">
-              <Show
-                when={renderLoggingForm()}
-                fallback={<div></div>}
-              >
+              <Show when={renderLoggingForm()} fallback={<div></div>}>
                 <LoggingForm
-                  jsonfile={logConfigureFile()}
-                  fileName={fileName()}
+                  formData={logConfigure()}
+                  formTitle={formTitle()}
                   filePath={filePath()}
-                  onFileNameChange={(newFileName) => setFileName(newFileName)}
+                  onFormTitleChange={(newFileName) => setFormTitle(newFileName)}
                   mode={logMode()}
                   onModeChange={(currentMode, path) => {
                     const parsePath = path.split("/").pop();
-                    setFileName(parsePath!);
+                    setFormTitle(parsePath!);
                     setLogMode(currentMode);
                     setFilePath(path);
                   }}
@@ -182,14 +173,14 @@ export function Logging() {
                         type: "error",
                       });
                       setRecentLogFilePaths((prev) => {
-                        const newRecentFiles = prev.filter((prevFilePath) =>
-                          prevFilePath !== filePath()
+                        const newRecentFiles = prev.filter(
+                          (prevFilePath) => prevFilePath !== filePath(),
                         );
                         return newRecentFiles;
                       });
                       return;
                     }
-                    setLogConfigureFile(logObj);
+                    setLogConfigure(logObj);
                     setRenderLoggingForm(true);
                   }}
                   onReloadPort={async () => {
@@ -203,12 +194,12 @@ export function Logging() {
                       });
                       return;
                     }
-                    setLogConfigureFile(logObj);
+                    setLogConfigure(logObj);
                     setRenderLoggingForm(true);
                   }}
                   onCancel={() => {
-                    setFileName("");
-                    setLogConfigureFile({});
+                    setFormTitle("");
+                    setLogConfigure({});
                     setLogMode("none");
                     setRenderLoggingForm(false);
                   }}
@@ -218,16 +209,8 @@ export function Logging() {
             </Stack>
           }
         >
-          <Stack
-            width="100%"
-            alignItems="center"
-            height="100%"
-          >
-            <Text
-              variant="heading"
-              size="2xl"
-              width="44rem"
-            >
+          <Stack width="100%" alignItems="center" height="100%">
+            <Text variant="heading" size="2xl" width="44rem">
               Logging
             </Text>
             <Stack
@@ -243,13 +226,13 @@ export function Logging() {
                   const newEmptyFile = JSON.parse(
                     JSON.stringify(logFormFileFormat()),
                   );
-                  setFileName("New File");
-                  setLogConfigureFile(newEmptyFile);
+                  setFormTitle("New File");
+                  setLogConfigure(newEmptyFile);
                   setLogMode("create");
                   setRenderLoggingForm(true);
                 }}
               >
-                Create New File
+                Create New Log
               </Button>
               <Button
                 variant="outline"
@@ -265,8 +248,8 @@ export function Logging() {
                       type: "error",
                     });
                     setRecentLogFilePaths((prev) => {
-                      const newRecentFiles = prev.filter((prevFilePath) =>
-                        prevFilePath !== filePath()
+                      const newRecentFiles = prev.filter(
+                        (prevFilePath) => prevFilePath !== filePath(),
                       );
                       return newRecentFiles;
                     });
@@ -278,10 +261,10 @@ export function Logging() {
                   );
                   if (isFileFormatMatch) {
                     setLogMode("file");
-                    setFileData(logObj, path);
+                    setLogFormData(logObj, path);
                     setRecentLogFilePaths((prev) => {
-                      const newRecentFiles = prev.filter((prevFilePath) =>
-                        prevFilePath !== path
+                      const newRecentFiles = prev.filter(
+                        (prevFilePath) => prevFilePath !== path,
                       );
                       return [path, ...newRecentFiles];
                     });
@@ -301,12 +284,20 @@ export function Logging() {
                 padding="4rem"
                 disabled={portId().length === 0}
                 onClick={async () => {
-                  const logConfigObj = await GetLogConfigFromPort();
-                  if (!logConfigObj) return;
-                  setFileName(portId());
-                  setLogConfigureFile(logConfigObj);
-                  setLogMode("port");
-                  setRenderLoggingForm(true);
+                  const output = await GetLogConfigFromPort();
+                  if (output.stderr.length !== 0) {
+                    toaster.create({
+                      title: "Communication Error",
+                      description: output.stderr,
+                      type: "error",
+                    });
+                    return;
+                  } else {
+                    setFormTitle(portId());
+                    setLogConfigure(JSON.parse(output.stdout));
+                    setLogMode("port");
+                    setRenderLoggingForm(true);
+                  }
                 }}
               >
                 Get From Port
@@ -317,19 +308,10 @@ export function Logging() {
                 Recent
               </Text>
               <Stack width="44rem" direction="row" marginTop="0.5rem">
-                <Text
-                  width="16rem"
-                  size="sm"
-                  fontWeight="light"
-                  opacity="50%"
-                >
+                <Text width="16rem" size="sm" fontWeight="light" opacity="50%">
                   File
                 </Text>
-                <Text
-                  size="sm"
-                  fontWeight="light"
-                  opacity="50%"
-                >
+                <Text size="sm" fontWeight="light" opacity="50%">
                   Path
                 </Text>
               </Stack>
@@ -373,14 +355,14 @@ export function Logging() {
                               type: "error",
                             });
                             setRecentLogFilePaths((prev) => {
-                              const newRecentFiles = prev.filter((
-                                prevFilePath,
-                              ) => prevFilePath !== path);
+                              const newRecentFiles = prev.filter(
+                                (prevFilePath) => prevFilePath !== path,
+                              );
                               return newRecentFiles;
                             });
                             return;
                           }
-                          setFileData(object!, path);
+                          setLogFormData(object!, path);
                           setIsButtonHoverd([false, null]);
                         }}
                         size="md"
@@ -389,8 +371,8 @@ export function Logging() {
                         style={{
                           "white-space": "nowrap",
                           "text-overflow": "ellipsis",
-                          "display": "block",
-                          "overflow": "hidden",
+                          display: "block",
+                          overflow: "hidden",
                           "text-align": "left",
                           "margin-top": "0.4rem",
                           width: "15rem",
@@ -413,30 +395,27 @@ export function Logging() {
                               type: "error",
                             });
                             setRecentLogFilePaths((prev) => {
-                              const newRecentFiles = prev.filter((
-                                prevFilePath,
-                              ) => prevFilePath !== path);
+                              const newRecentFiles = prev.filter(
+                                (prevFilePath) => prevFilePath !== path,
+                              );
                               return newRecentFiles;
                             });
                             return;
                           }
-                          setFileData(object!, path);
+                          setLogFormData(object!, path);
                           setIsButtonHoverd([false, null]);
                         }}
                         style={{
                           "white-space": "nowrap",
                           "text-overflow": "ellipsis",
-                          "display": "block",
-                          "overflow": "hidden",
+                          display: "block",
+                          overflow: "hidden",
                           "text-align": "left",
                           width: `calc(100% - 17rem)`,
                           "padding-left": "1rem",
                         }}
                       >
-                        {path.replace(
-                          path.match(/[^?!//]+$/)!.toString(),
-                          "",
-                        )}
+                        {path.replace(path.match(/[^?!//]+$/)!.toString(), "")}
                       </Text>
                       <Stack width="2rem">
                         <Show

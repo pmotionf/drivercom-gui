@@ -20,9 +20,9 @@ import { Card } from "~/components/ui/card";
 import { Menu } from "~/components/ui/menu";
 
 function Configuration() {
-  const [configureFile, setConfigureFile] = createSignal({});
-  const [fileName, setFileName] = createSignal<string>("");
-  const [isFileOpen, setIsFileOpen] = createSignal(false);
+  const [configure, setConfigure] = createSignal({});
+  const [formName, setFormName] = createSignal<string>("");
+  const [isFormOpen, setIsFormOpen] = createSignal(false);
   const [filePath, setFilePath] = createSignal<string | undefined>(undefined);
 
   const toaster = Toast.createToaster({
@@ -30,25 +30,23 @@ function Configuration() {
     gap: 24,
   });
 
-  async function getConfigFromPort() {
+  async function getConfigFromPort(): Promise<{
+    stdout: string;
+    stderr: string;
+  }> {
     const configGet = Command.sidecar("binaries/drivercom", [
       `--port`,
       portId(),
       `config.get`,
     ]);
     const output = await configGet.execute();
-    const parseConfigToObject = JSON.parse(output.stdout);
-    setFileName(portId());
-    setConfigureFile(parseConfigToObject);
-    setIsFileOpen(true);
+    return { stdout: output.stdout, stderr: output.stderr };
   }
 
   async function openFileDialog(): Promise<string | undefined> {
     const path = await open({
       multiple: false,
-      filters: [
-        { name: "JSON", extensions: ["json"] },
-      ],
+      filters: [{ name: "JSON", extensions: ["json"] }],
     });
 
     if (!path) {
@@ -84,8 +82,8 @@ function Configuration() {
         type: "error",
       });
       setRecentConfigFilePaths((prev) => {
-        const newRecentFiles = prev.filter((prevFilePath) =>
-          prevFilePath !== path
+        const newRecentFiles = prev.filter(
+          (prevFilePath) => prevFilePath !== path,
         );
         return newRecentFiles;
       });
@@ -113,30 +111,31 @@ function Configuration() {
     return newFileObject === configFileObject;
   }
 
-  function setFileData(file: object, path: string) {
-    setConfigureFile(file);
+  function setFormData(data: object, path: string) {
+    setConfigure(data);
     setFilePath(path);
-    setFileName(path.split("/").pop()!);
+    setFormName(path.split("/").pop()!);
     setRecentConfigFilePaths((prev) => {
-      const newRecentFiles = prev.filter((prevFilePath) =>
-        prevFilePath !== path
+      const newRecentFiles = prev.filter(
+        (prevFilePath) => prevFilePath !== path,
       );
       return [path, ...newRecentFiles];
     });
-    setIsFileOpen(true);
+    setIsFormOpen(true);
   }
 
   async function saveConfigAsFile() {
-    const json_str = JSON.stringify(configureFile(), null, "  ");
+    const json_str = JSON.stringify(configure(), null, "  ");
     const fileNameFromPath = filePath()
-      ? filePath()!.match(/[^?!//]+$/)!.toString()
+      ? filePath()!
+        .match(/[^?!//]+$/)!
+        .toString()
       : "";
     const currentFilePath = filePath()
-      ? fileName() === fileNameFromPath ? filePath() : filePath()!.replace(
-        fileNameFromPath,
-        fileName(),
-      )
-      : fileName();
+      ? formName() === fileNameFromPath
+        ? filePath()
+        : filePath()!.replace(fileNameFromPath, formName())
+      : formName();
 
     const path = await save({
       defaultPath: currentFilePath!.split(".").pop()!.toLowerCase() === "json"
@@ -171,37 +170,34 @@ function Configuration() {
       const parsePath = path.replaceAll("\\", "/");
       setFilePath(parsePath);
       const currentPathFileName = parsePath.match(/[^//]+$/)!.toString();
-      setFileName(currentPathFileName);
+      setFormName(currentPathFileName);
     }
 
     await writeTextFile(path, json_str);
     setRecentConfigFilePaths((prev) => {
-      const newRecentFiles = prev.filter((prevFilePath) =>
-        prevFilePath !== path
+      const newRecentFiles = prev.filter(
+        (prevFilePath) => prevFilePath !== path,
       );
       return [path.replaceAll("\\", "/"), ...newRecentFiles];
     });
   }
 
-  async function saveConfigToPort() {
-    if (portId().length === 0) return;
-    const json_str = JSON.stringify(configureFile(), null, "  ");
+  async function saveConfigToPort(): Promise<string> {
+    const json_str = JSON.stringify(configure(), null, "  ");
     const saveConfig = Command.sidecar("binaries/drivercom", [
       `--port`,
       portId(),
       `config.set`,
       json_str,
     ]);
-    await saveConfig.execute();
+    const output = await saveConfig.execute();
+    return output.stderr;
   }
 
   // Check recent file list item is hovered
   const [isButtonHovered, setIsButtonHoverd] = createSignal<
     [boolean, number | null]
-  >([
-    false,
-    null,
-  ]);
+  >([false, null]);
 
   return (
     <>
@@ -209,8 +205,8 @@ function Configuration() {
         style={{
           "padding-top": "4rem",
           "padding-bottom": "4rem",
-          "height": "100%",
-          "width": `100%`,
+          height: "100%",
+          width: `100%`,
           "overflow-y": "auto",
         }}
       >
@@ -230,15 +226,11 @@ function Configuration() {
           marginLeft={`calc((100% - 44rem) / 2)`}
           height="100%"
         >
-          <Show when={!isFileOpen()}>
+          <Show when={!isFormOpen()}>
             <Text variant="heading" size="2xl">
               Configuration
             </Text>
-            <Stack
-              direction="row"
-              marginTop="1.5rem"
-              gap="1.5rem"
-            >
+            <Stack direction="row" marginTop="1.5rem" gap="1.5rem">
               <Button
                 variant="outline"
                 padding="4rem"
@@ -246,13 +238,13 @@ function Configuration() {
                   const newEmptyFile = JSON.parse(
                     JSON.stringify(configFormFileFormat()),
                   );
-                  setFileName("New File");
-                  setConfigureFile(newEmptyFile);
+                  setFormName("New File");
+                  setConfigure(newEmptyFile);
                   setFilePath(undefined);
-                  setIsFileOpen(true);
+                  setIsFormOpen(true);
                 }}
               >
-                Create New File
+                Create New Config
               </Button>
               <Button
                 variant="outline"
@@ -273,7 +265,7 @@ function Configuration() {
                     });
                     return;
                   }
-                  setFileData(object!, path);
+                  setFormData(object!, path);
                 }}
               >
                 Open File
@@ -282,9 +274,21 @@ function Configuration() {
                 variant="outline"
                 padding="4rem"
                 disabled={portId().length === 0}
-                onClick={() => {
+                onClick={async () => {
                   setFilePath(undefined);
-                  getConfigFromPort();
+                  const output = await getConfigFromPort();
+                  if (output.stderr.length !== 0) {
+                    toaster.create({
+                      title: "Communication Error",
+                      description: output.stderr,
+                      type: "error",
+                    });
+                  } else {
+                    const parseConfigToObject = JSON.parse(output.stdout);
+                    setFormName(portId());
+                    setConfigure(parseConfigToObject);
+                    setIsFormOpen(true);
+                  }
                 }}
               >
                 Get From Port
@@ -295,19 +299,10 @@ function Configuration() {
                 Recent
               </Text>
               <Stack direction="row" width="100%" marginTop="0.5rem">
-                <Text
-                  width="16rem"
-                  size="sm"
-                  fontWeight="light"
-                  opacity="50%"
-                >
+                <Text width="16rem" size="sm" fontWeight="light" opacity="50%">
                   File
                 </Text>
-                <Text
-                  size="sm"
-                  fontWeight="light"
-                  opacity="50%"
-                >
+                <Text size="sm" fontWeight="light" opacity="50%">
                   Path
                 </Text>
               </Stack>
@@ -344,7 +339,7 @@ function Configuration() {
                         userSelect="none"
                         onClick={async () => {
                           const object = await readJsonFile(path);
-                          setFileData(object!, path);
+                          setFormData(object!, path);
                           setIsButtonHoverd([false, null]);
                         }}
                         size="md"
@@ -353,8 +348,8 @@ function Configuration() {
                         style={{
                           "white-space": "nowrap",
                           "text-overflow": "ellipsis",
-                          "display": "block",
-                          "overflow": "hidden",
+                          display: "block",
+                          overflow: "hidden",
                           "text-align": "left",
                           "margin-top": "0.4rem",
                           width: "15rem",
@@ -370,23 +365,20 @@ function Configuration() {
                         opacity="70%"
                         onClick={async () => {
                           const object = await readJsonFile(path);
-                          setFileData(object!, path);
+                          setFormData(object!, path);
                           setIsButtonHoverd([false, null]);
                         }}
                         style={{
                           "white-space": "nowrap",
                           "text-overflow": "ellipsis",
-                          "display": "block",
-                          "overflow": "hidden",
+                          display: "block",
+                          overflow: "hidden",
                           "text-align": "left",
                           width: `calc(100% - 17rem)`,
                           "padding-left": "1rem",
                         }}
                       >
-                        {path.replace(
-                          path.match(/[^?!//]+$/)!.toString(),
-                          "",
-                        )}
+                        {path.replace(path.match(/[^?!//]+$/)!.toString(), "")}
                       </Text>
                       <Stack width="2rem">
                         <Show
@@ -420,26 +412,20 @@ function Configuration() {
               </Stack>
             </Show>
           </Show>
-          <Show when={isFileOpen()}>
+          <Show when={isFormOpen()}>
             <div style={{ width: "40rem", "margin-left": "2rem" }}>
-              <Card.Root
-                padding="2rem"
-                paddingTop="3rem"
-                marginBottom="3rem"
-              >
+              <Card.Root padding="2rem" paddingTop="3rem" marginBottom="3rem">
                 <ConfigForm
-                  label={fileName()}
-                  onLabelChange={(e) => setFileName(e)}
-                  config={configureFile()}
-                  onCancel={() => setIsFileOpen(false)}
+                  label={formName()}
+                  onLabelChange={(e) => setFormName(e)}
+                  config={configure()}
+                  onCancel={() => setIsFormOpen(false)}
                 />
                 <Card.Footer padding={0}>
                   <Stack direction="row-reverse">
                     <Menu.Root>
                       <Menu.Trigger>
-                        <Button>
-                          Save
-                        </Button>
+                        <Button>Save</Button>
                       </Menu.Trigger>
                       <Menu.Positioner>
                         <Menu.Content width="8rem">
@@ -456,7 +442,23 @@ function Configuration() {
                           <Menu.Item
                             value="Save to port"
                             disabled={portId().length === 0}
-                            onClick={() => saveConfigToPort()}
+                            onClick={async () => {
+                              const outputError = await saveConfigToPort();
+                              if (outputError.length !== 0) {
+                                toaster.create({
+                                  title: "Communication Error",
+                                  description: outputError,
+                                  type: "error",
+                                });
+                                return;
+                              }
+                              toaster.create({
+                                title: "Communication Success",
+                                description:
+                                  "Configuration saved to port successfully.",
+                                type: "error",
+                              });
+                            }}
                             userSelect="none"
                           >
                             Save to port
