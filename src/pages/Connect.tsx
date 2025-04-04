@@ -16,26 +16,30 @@ function Connect() {
     const drivercom = Command.sidecar("binaries/drivercom", ["port.detect"]);
     const output = await drivercom.execute();
 
-    const portNames = output.stdout.split("\n").map(
-      (portName) => {
+    const portNames = output.stdout
+      .split("\n")
+      .map((portName) => {
         const matched = portName.match(/\(([^)]+)\)/);
         return matched;
-      },
-    ).filter((e) => e !== null).map((e) => e[1]);
-    const ports = await Promise.all(portNames.map(async (id) => {
-      const version = await detectFirmwareVersion(id);
-      if (version !== null) {
-        return {
-          id: id,
-          version: version,
-        };
-      } else {
-        return {
-          id: id,
-          version: "",
-        };
-      }
-    }));
+      })
+      .filter((e) => e !== null)
+      .map((e) => e[1]);
+    const ports = await Promise.all(
+      portNames.map(async (id) => {
+        const version = await detectFirmwareVersion(id);
+        if (version !== null) {
+          return {
+            id: id,
+            version: version,
+          };
+        } else {
+          return {
+            id: id,
+            version: "",
+          };
+        }
+      }),
+    );
     setPortList(ports);
 
     if (portNames.length == 0) {
@@ -69,22 +73,11 @@ function Connect() {
   });
 
   return (
-    <div
-      style={{ "padding": "3rem", "height": `100%`, "width": "100%" }}
-    >
-      <Text
-        variant="heading"
-        size="2xl"
-        marginLeft="0.2rem"
-      >
+    <div style={{ padding: "3rem", height: `100%`, width: "100%" }}>
+      <Text variant="heading" size="2xl" marginLeft="0.2rem">
         Ports
       </Text>
-      <Stack
-        width="100%"
-        direction="row"
-        minWidth="50rem"
-        marginLeft="0.2rem"
-      >
+      <Stack width="100%" direction="row" minWidth="50rem" marginLeft="0.2rem">
         <Text
           size="lg"
           width="20rem"
@@ -98,7 +91,10 @@ function Connect() {
           {portId().length > 0 ? portId() : "No port selected"}
         </Text>
         <Button
-          onClick={() => detectPort()}
+          onClick={() => {
+            detectPort();
+            setPortId("");
+          }}
           marginLeft={`calc(100% - 20rem - 5rem)`}
           marginRight="1rem"
           width="7rem"
@@ -116,9 +112,7 @@ function Connect() {
           "min-width": "50rem",
         }}
       >
-        <Show
-          when={portList().length == 0}
-        >
+        <Show when={portList().length == 0}>
           <div
             style={{
               width: "100%",
@@ -133,12 +127,7 @@ function Connect() {
               style={{ "margin-left": `calc(50% - 1rem)` }}
             />
 
-            <Text
-              variant="heading"
-              size="2xl"
-              marginTop="1rem"
-              opacity="70%"
-            >
+            <Text variant="heading" size="2xl" marginTop="1rem" opacity="70%">
               No ports Found
             </Text>
           </div>
@@ -158,11 +147,7 @@ function Connect() {
                   paddingTop="1rem"
                   paddingBottom="1rem"
                 >
-                  <Stack
-                    direction="row"
-                    width="100%"
-                    alignItems="center"
-                  >
+                  <Stack direction="row" width="100%" alignItems="center">
                     <IconPlug
                       style={{
                         opacity: portId() === port.id ? "100%" : "30%",
@@ -194,9 +179,7 @@ function Connect() {
                       </Text>
                       <Button
                         onClick={() => {
-                          setPortId(
-                            portId() === port.id ? "" : port.id,
-                          );
+                          setPortId(portId() === port.id ? "" : port.id);
                         }}
                         width="7rem"
                         variant={portId() === port.id ? "outline" : "solid"}

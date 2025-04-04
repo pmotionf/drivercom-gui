@@ -186,7 +186,10 @@ export function LoggingForm(props: LoggingFormProps) {
     const currentFilePath = props.filePath! && props.filePath.length !== 0
       ? props.fileName === fileNameFromPath
         ? props.filePath
-        : props.filePath.replace(fileNameFromPath, props.fileName)
+        : props.filePath.replace(
+          fileNameFromPath,
+          props.fileName,
+        )
       : props.fileName;
 
     const path = await save({
@@ -221,8 +224,7 @@ export function LoggingForm(props: LoggingFormProps) {
     });
   }
 
-  async function saveLogToPort(log: object) {
-    if (portId().length === 0) return;
+  async function saveLogToPort(log: object): Promise<string> {
     const json_str = JSON.stringify(log, null, "  ");
     const logSave = Command.sidecar("binaries/drivercom", [
       `--port`,
@@ -230,7 +232,8 @@ export function LoggingForm(props: LoggingFormProps) {
       `log.config.set`,
       json_str,
     ]);
-    await logSave.execute();
+    const output = await logSave.execute();
+    return output.stderr;
   }
 
   return (
@@ -308,11 +311,11 @@ export function LoggingForm(props: LoggingFormProps) {
               <IconReload />
             </IconButton>
             <Button
-              disabled={portId().length === 0 ||
-                logGetBtnLoading() ||
+              disabled={portId().length === 0 || logGetBtnLoading() ||
                 currentLogStatus() === "Log.Status.invalid" ||
                 currentLogStatus() === "Log.Status.started" ||
-                currentLogStatus() === "Log.Status.waiting"}
+                currentLogStatus() === "Log.Status.waiting"
+              }
               onClick={async () => {
                 await startLogging();
                 await getCurrentLogStatus();
@@ -322,9 +325,11 @@ export function LoggingForm(props: LoggingFormProps) {
               Log Start
             </Button>
             <Button
-              disabled={currentLogStatus() === "Log.Status.stopped" ||
+              disabled={
+                currentLogStatus() === "Log.Status.stopped" ||
                 currentLogStatus() === "Log.Status.invalid" ||
-                portId().length === 0}
+                portId().length === 0
+              }
               onClick={async () => {
                 await stopLogging();
                 await getCurrentLogStatus();
@@ -334,10 +339,13 @@ export function LoggingForm(props: LoggingFormProps) {
               Log Stop
             </Button>
             <Button
-              disabled={currentLogStatus() !== "Log.Status.stopped" ||
+              disabled={
+                currentLogStatus() !== "Log.Status.stopped" ||
                 portId().length === 0 ||
                 currentLogStatus() === "Log.Status.invalid" ||
-                cyclesCompleted() === 0}
+                cyclesCompleted() === 0 ||
+                portId().length === 0
+              }
               onClick={async () => {
                 await saveLogCsvFile();
               }}
@@ -381,7 +389,20 @@ export function LoggingForm(props: LoggingFormProps) {
                     value="Save to port"
                     disabled={portId().length === 0 || logGetBtnLoading()}
                     onClick={async () => {
-                      await saveLogToPort(logForm);
+                      const outputError = await saveLogToPort(logForm);
+                      if (outputError.length !== 0) {
+                        props.onErrorMessage?.({
+                          title: "Communication Error",
+                          description: outputError,
+                          type: "error",
+                        });
+                        return;
+                      }
+                      props.onErrorMessage?.({
+                        title: "Communication Success",
+                        description: "Log saved to port successfully.",
+                        type: "error",
+                      });
                       getCurrentLogStatus();
                     }}
                     userSelect="none"
@@ -535,12 +556,12 @@ export function LogConfigFieldSet(props: logConfigFieldSetProps) {
                   userSelect="none"
                   marginLeft="0.5rem"
                 >
-                  <Show when={props.sectionName} fallback={upperCaseKey}>
+                  <Show
+                    when={props.sectionName}
+                    fallback={upperCaseKey}
+                  >
                     {`${props.sectionName![0].toUpperCase()}${
-                      props.sectionName!.slice(
-                        1,
-                        props.sectionName!.length,
-                      )
+                      props.sectionName!.slice(1, props.sectionName!.length)
                     } ${Number(key[0]) + 1}`}
                   </Show>
                 </Text>
@@ -574,9 +595,9 @@ export function LogConfigFieldSet(props: logConfigFieldSetProps) {
               <Select.Root
                 positioning={{ sameWidth: true }}
                 width="2xs"
-                collection={key === "kind"
-                  ? logStartConditions
-                  : logStartCombinators}
+                collection={
+                  key === "kind" ? logStartConditions : logStartCombinators
+                }
                 defaultValue={[value.toString()]}
                 onValueChange={(v) => {
                   setObject(key as keyof typeof obj, v.items[0].label);
@@ -590,9 +611,11 @@ export function LogConfigFieldSet(props: logConfigFieldSetProps) {
                 <Select.Positioner>
                   <Select.Content>
                     <For
-                      each={key === "kind"
-                        ? logStartConditions.items
-                        : logStartCombinators.items}
+                      each={
+                        key === "kind"
+                          ? logStartConditions.items
+                          : logStartCombinators.items
+                      }
                     >
                       {(item) => (
                         <Select.Item item={item}>
