@@ -20,9 +20,9 @@ import { Card } from "~/components/ui/card";
 import { Menu } from "~/components/ui/menu";
 
 function Configuration() {
-  const [configureFile, setConfigureFile] = createSignal({});
-  const [fileName, setFileName] = createSignal<string>("");
-  const [isFileOpen, setIsFileOpen] = createSignal(false);
+  const [configure, setConfigure] = createSignal({});
+  const [formName, setFormName] = createSignal<string>("");
+  const [isFormOpen, setIsFormOpen] = createSignal(false);
   const [filePath, setFilePath] = createSignal<string | undefined>(undefined);
 
   const toaster = Toast.createToaster({
@@ -111,31 +111,31 @@ function Configuration() {
     return newFileObject === configFileObject;
   }
 
-  function setFileData(file: object, path: string) {
-    setConfigureFile(file);
+  function setFormData(data: object, path: string) {
+    setConfigure(data);
     setFilePath(path);
-    setFileName(path.split("/").pop()!);
+    setFormName(path.split("/").pop()!);
     setRecentConfigFilePaths((prev) => {
       const newRecentFiles = prev.filter(
         (prevFilePath) => prevFilePath !== path,
       );
       return [path, ...newRecentFiles];
     });
-    setIsFileOpen(true);
+    setIsFormOpen(true);
   }
 
   async function saveConfigAsFile() {
-    const json_str = JSON.stringify(configureFile(), null, "  ");
+    const json_str = JSON.stringify(configure(), null, "  ");
     const fileNameFromPath = filePath()
       ? filePath()!
         .match(/[^?!//]+$/)!
         .toString()
       : "";
     const currentFilePath = filePath()
-      ? fileName() === fileNameFromPath
+      ? formName() === fileNameFromPath
         ? filePath()
-        : filePath()!.replace(fileNameFromPath, fileName())
-      : fileName();
+        : filePath()!.replace(fileNameFromPath, formName())
+      : formName();
 
     const path = await save({
       defaultPath: currentFilePath!.split(".").pop()!.toLowerCase() === "json"
@@ -170,7 +170,7 @@ function Configuration() {
       const parsePath = path.replaceAll("\\", "/");
       setFilePath(parsePath);
       const currentPathFileName = parsePath.match(/[^//]+$/)!.toString();
-      setFileName(currentPathFileName);
+      setFormName(currentPathFileName);
     }
 
     await writeTextFile(path, json_str);
@@ -183,7 +183,7 @@ function Configuration() {
   }
 
   async function saveConfigToPort(): Promise<string> {
-    const json_str = JSON.stringify(configureFile(), null, "  ");
+    const json_str = JSON.stringify(configure(), null, "  ");
     const saveConfig = Command.sidecar("binaries/drivercom", [
       `--port`,
       portId(),
@@ -226,7 +226,7 @@ function Configuration() {
           marginLeft={`calc((100% - 44rem) / 2)`}
           height="100%"
         >
-          <Show when={!isFileOpen()}>
+          <Show when={!isFormOpen()}>
             <Text variant="heading" size="2xl">
               Configuration
             </Text>
@@ -238,10 +238,10 @@ function Configuration() {
                   const newEmptyFile = JSON.parse(
                     JSON.stringify(configFormFileFormat()),
                   );
-                  setFileName("New File");
-                  setConfigureFile(newEmptyFile);
+                  setFormName("New File");
+                  setConfigure(newEmptyFile);
                   setFilePath(undefined);
-                  setIsFileOpen(true);
+                  setIsFormOpen(true);
                 }}
               >
                 Create New Config
@@ -265,7 +265,7 @@ function Configuration() {
                     });
                     return;
                   }
-                  setFileData(object!, path);
+                  setFormData(object!, path);
                 }}
               >
                 Open File
@@ -285,9 +285,9 @@ function Configuration() {
                     });
                   } else {
                     const parseConfigToObject = JSON.parse(output.stdout);
-                    setFileName(portId());
-                    setConfigureFile(parseConfigToObject);
-                    setIsFileOpen(true);
+                    setFormName(portId());
+                    setConfigure(parseConfigToObject);
+                    setIsFormOpen(true);
                   }
                 }}
               >
@@ -339,7 +339,7 @@ function Configuration() {
                         userSelect="none"
                         onClick={async () => {
                           const object = await readJsonFile(path);
-                          setFileData(object!, path);
+                          setFormData(object!, path);
                           setIsButtonHoverd([false, null]);
                         }}
                         size="md"
@@ -365,7 +365,7 @@ function Configuration() {
                         opacity="70%"
                         onClick={async () => {
                           const object = await readJsonFile(path);
-                          setFileData(object!, path);
+                          setFormData(object!, path);
                           setIsButtonHoverd([false, null]);
                         }}
                         style={{
@@ -412,14 +412,14 @@ function Configuration() {
               </Stack>
             </Show>
           </Show>
-          <Show when={isFileOpen()}>
+          <Show when={isFormOpen()}>
             <div style={{ width: "40rem", "margin-left": "2rem" }}>
               <Card.Root padding="2rem" paddingTop="3rem" marginBottom="3rem">
                 <ConfigForm
-                  label={fileName()}
-                  onLabelChange={(e) => setFileName(e)}
-                  config={configureFile()}
-                  onCancel={() => setIsFileOpen(false)}
+                  label={formName()}
+                  onLabelChange={(e) => setFormName(e)}
+                  config={configure()}
+                  onCancel={() => setIsFormOpen(false)}
                 />
                 <Card.Footer padding={0}>
                   <Stack direction="row-reverse">

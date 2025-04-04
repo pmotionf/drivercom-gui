@@ -24,9 +24,9 @@ import { createListCollection, Select } from "~/components/ui/select";
 import { Tooltip } from "~/components/ui/tooltip";
 
 export type LoggingFormProps = JSX.HTMLAttributes<Element> & {
-  jsonfile: object;
-  fileName: string;
-  onFileNameChange?: (fileName: string) => void;
+  formData: object;
+  formTitle: string;
+  onFormTitleChange?: (fileName: string) => void;
   mode?: "none" | "create" | "file" | "port";
   filePath?: string;
   onModeChange?: (
@@ -40,7 +40,7 @@ export type LoggingFormProps = JSX.HTMLAttributes<Element> & {
 };
 
 export function LoggingForm(props: LoggingFormProps) {
-  const logForm = props.jsonfile;
+  const logForm = props.formData;
 
   const [cyclesCompleted, setCyclesCompleted] = createSignal<number>(0);
   const [currentLogStatus, setCurrentLogStatus] = createSignal<string>("");
@@ -124,9 +124,9 @@ export function LoggingForm(props: LoggingFormProps) {
       }
 
       const path = await save({
-        defaultPath: props.fileName!.split(".").pop()!.toLowerCase() === "csv"
-          ? `${props.fileName}`
-          : `${props.fileName}.csv`,
+        defaultPath: props.formTitle!.split(".").pop()!.toLowerCase() === "csv"
+          ? `${props.formTitle}`
+          : `${props.formTitle}.csv`,
         filters: [
           {
             name: "CSV",
@@ -184,13 +184,13 @@ export function LoggingForm(props: LoggingFormProps) {
       ? props.filePath.match(/[^?!//]+$/)!.toString()
       : "";
     const currentFilePath = props.filePath! && props.filePath.length !== 0
-      ? props.fileName === fileNameFromPath
+      ? props.formTitle === fileNameFromPath
         ? props.filePath
         : props.filePath.replace(
           fileNameFromPath,
-          props.fileName,
+          props.formTitle,
         )
-      : props.fileName;
+      : props.formTitle;
 
     const path = await save({
       defaultPath: currentFilePath!.split(".").pop()!.toLowerCase() === "json"
@@ -282,10 +282,10 @@ export function LoggingForm(props: LoggingFormProps) {
           </Stack>
           <Editable.Root
             placeholder="File name"
-            defaultValue={props.fileName}
+            defaultValue={props.formTitle}
             activationMode="dblclick"
             onValueCommit={(e) => {
-              props.onFileNameChange?.(e.value);
+              props.onFormTitleChange?.(e.value);
             }}
             fontWeight="bold"
             fontSize="2xl"
@@ -314,8 +314,7 @@ export function LoggingForm(props: LoggingFormProps) {
               disabled={portId().length === 0 || logGetBtnLoading() ||
                 currentLogStatus() === "Log.Status.invalid" ||
                 currentLogStatus() === "Log.Status.started" ||
-                currentLogStatus() === "Log.Status.waiting"
-              }
+                currentLogStatus() === "Log.Status.waiting"}
               onClick={async () => {
                 await startLogging();
                 await getCurrentLogStatus();
@@ -325,11 +324,9 @@ export function LoggingForm(props: LoggingFormProps) {
               Log Start
             </Button>
             <Button
-              disabled={
-                currentLogStatus() === "Log.Status.stopped" ||
+              disabled={currentLogStatus() === "Log.Status.stopped" ||
                 currentLogStatus() === "Log.Status.invalid" ||
-                portId().length === 0
-              }
+                portId().length === 0}
               onClick={async () => {
                 await stopLogging();
                 await getCurrentLogStatus();
@@ -339,13 +336,11 @@ export function LoggingForm(props: LoggingFormProps) {
               Log Stop
             </Button>
             <Button
-              disabled={
-                currentLogStatus() !== "Log.Status.stopped" ||
+              disabled={currentLogStatus() !== "Log.Status.stopped" ||
                 portId().length === 0 ||
                 currentLogStatus() === "Log.Status.invalid" ||
                 cyclesCompleted() === 0 ||
-                portId().length === 0
-              }
+                portId().length === 0}
               onClick={async () => {
                 await saveLogCsvFile();
               }}
@@ -595,9 +590,9 @@ export function LogConfigFieldSet(props: logConfigFieldSetProps) {
               <Select.Root
                 positioning={{ sameWidth: true }}
                 width="2xs"
-                collection={
-                  key === "kind" ? logStartConditions : logStartCombinators
-                }
+                collection={key === "kind"
+                  ? logStartConditions
+                  : logStartCombinators}
                 defaultValue={[value.toString()]}
                 onValueChange={(v) => {
                   setObject(key as keyof typeof obj, v.items[0].label);
@@ -611,11 +606,9 @@ export function LogConfigFieldSet(props: logConfigFieldSetProps) {
                 <Select.Positioner>
                   <Select.Content>
                     <For
-                      each={
-                        key === "kind"
-                          ? logStartConditions.items
-                          : logStartCombinators.items
-                      }
+                      each={key === "kind"
+                        ? logStartConditions.items
+                        : logStartCombinators.items}
                     >
                       {(item) => (
                         <Select.Item item={item}>
