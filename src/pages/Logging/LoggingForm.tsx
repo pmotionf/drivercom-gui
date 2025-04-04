@@ -99,9 +99,9 @@ export function LoggingForm(props: LoggingFormProps) {
     const output = await logGet.execute();
 
     if (output) {
-      const notEmptyLines = output.stdout.split("\n").filter((line) =>
-        line.length > 0
-      );
+      const notEmptyLines = output.stdout
+        .split("\n")
+        .filter((line) => line.length > 0);
 
       if (output.stderr.length > 0) {
         props.onErrorMessage?.({
@@ -124,7 +124,9 @@ export function LoggingForm(props: LoggingFormProps) {
       }
 
       const path = await save({
-        defaultPath: `${props.fileName}`,
+        defaultPath: props.fileName!.split(".").pop()!.toLowerCase() === "csv"
+          ? `${props.fileName}`
+          : `${props.fileName}.csv`,
         filters: [
           {
             name: "CSV",
@@ -184,14 +186,13 @@ export function LoggingForm(props: LoggingFormProps) {
     const currentFilePath = props.filePath! && props.filePath.length !== 0
       ? props.fileName === fileNameFromPath
         ? props.filePath
-        : props.filePath.replace(
-          fileNameFromPath,
-          props.fileName,
-        )
+        : props.filePath.replace(fileNameFromPath, props.fileName)
       : props.fileName;
 
     const path = await save({
-      defaultPath: `${currentFilePath}`,
+      defaultPath: currentFilePath!.split(".").pop()!.toLowerCase() === "json"
+        ? `${currentFilePath}`
+        : `${currentFilePath}.json`,
       filters: [
         {
           name: "JSON",
@@ -307,7 +308,8 @@ export function LoggingForm(props: LoggingFormProps) {
               <IconReload />
             </IconButton>
             <Button
-              disabled={portId().length === 0 || logGetBtnLoading() ||
+              disabled={portId().length === 0 ||
+                logGetBtnLoading() ||
                 currentLogStatus() === "Log.Status.invalid" ||
                 currentLogStatus() === "Log.Status.started" ||
                 currentLogStatus() === "Log.Status.waiting"}
@@ -346,9 +348,7 @@ export function LoggingForm(props: LoggingFormProps) {
             </Button>
             <Menu.Root>
               <Menu.Trigger>
-                <Button>
-                  Save
-                </Button>
+                <Button>Save</Button>
               </Menu.Trigger>
               <Menu.Positioner>
                 <Menu.Content width="8rem">
@@ -448,11 +448,14 @@ export function LogConfigFieldSet(props: logConfigFieldSetProps) {
         const key = entry[0];
         const value = entry[1];
         const keyArray = Array.from(key);
-        const upperCaseKey = keyArray.map((char, i) => {
-          if (i === 0) return char.toUpperCase();
-          else if (keyArray[i - 1] === "_") return char.toUpperCase();
-          else return char;
-        }).toString().replaceAll(",", "");
+        const upperCaseKey = keyArray
+          .map((char, i) => {
+            if (i === 0) return char.toUpperCase();
+            else if (keyArray[i - 1] === "_") return char.toUpperCase();
+            else return char;
+          })
+          .toString()
+          .replaceAll(",", "");
 
         if (typeof value == "object") {
           return (
@@ -532,12 +535,12 @@ export function LogConfigFieldSet(props: logConfigFieldSetProps) {
                   userSelect="none"
                   marginLeft="0.5rem"
                 >
-                  <Show
-                    when={props.sectionName}
-                    fallback={upperCaseKey}
-                  >
+                  <Show when={props.sectionName} fallback={upperCaseKey}>
                     {`${props.sectionName![0].toUpperCase()}${
-                      props.sectionName!.slice(1, props.sectionName!.length)
+                      props.sectionName!.slice(
+                        1,
+                        props.sectionName!.length,
+                      )
                     } ${Number(key[0]) + 1}`}
                   </Show>
                 </Text>
@@ -576,10 +579,7 @@ export function LogConfigFieldSet(props: logConfigFieldSetProps) {
                   : logStartCombinators}
                 defaultValue={[value.toString()]}
                 onValueChange={(v) => {
-                  setObject(
-                    key as keyof typeof obj,
-                    v.items[0].label,
-                  );
+                  setObject(key as keyof typeof obj, v.items[0].label);
                 }}
               >
                 <Select.Control>
@@ -597,8 +597,7 @@ export function LogConfigFieldSet(props: logConfigFieldSetProps) {
                       {(item) => (
                         <Select.Item item={item}>
                           <Select.ItemText>{item.label}</Select.ItemText>
-                          <Select.ItemIndicator>
-                          </Select.ItemIndicator>
+                          <Select.ItemIndicator></Select.ItemIndicator>
                         </Select.Item>
                       )}
                     </For>
