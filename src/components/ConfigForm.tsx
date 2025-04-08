@@ -29,6 +29,26 @@ export type ConfigFormProps = JSX.HTMLAttributes<HTMLFormElement> & {
   onLabelChange?: (label: string) => void;
   config: object;
   onCancel?: () => void;
+  accordionStatus?: string[];
+  onCurrentChange?: (
+    denominator: number,
+    axesIndex: number,
+    axis: object,
+    axesAccordionStatus?: string[],
+  ) => void;
+  onVelocityChange?: (
+    denominator: number,
+    denominator_pi: number,
+    axesIndex: number,
+    axis: object,
+    accordionStatus?: string[],
+  ) => void;
+  onPositionChange?: (
+    denominator: number,
+    axesIndex: number,
+    axis: object,
+    axesAccordionStatus?: string[],
+  ) => void;
 };
 
 export function ConfigForm(props: ConfigFormProps) {
@@ -70,7 +90,49 @@ export function ConfigForm(props: ConfigFormProps) {
         <IconX />
       </IconButton>
       <div style={{ "margin-top": "4rem", "margin-bottom": "2rem" }}>
-        <ConfigObject object={config} id_prefix={props.label} />
+        <ConfigObject
+          object={config}
+          id_prefix={props.label}
+          onCurrentChange={(
+            denominator,
+            axesIndex,
+            prevAxis,
+            axesAccordionStatus,
+          ) =>
+            props.onCurrentChange?.(
+              denominator,
+              axesIndex,
+              prevAxis,
+              axesAccordionStatus,
+            )}
+          onVelocityChange={(
+            denominator,
+            denominator_pi,
+            axesIndex,
+            prevAxis,
+            accordionStatus,
+          ) =>
+            props.onVelocityChange?.(
+              denominator,
+              denominator_pi,
+              axesIndex,
+              prevAxis,
+              accordionStatus,
+            )}
+          onPositionChange={(
+            denominator,
+            axesIndex,
+            prevAxis,
+            axesAccordionStatus,
+          ) =>
+            props.onPositionChange?.(
+              denominator,
+              axesIndex,
+              prevAxis,
+              axesAccordionStatus,
+            )}
+          accordionStatus={props.accordionStatus}
+        />
       </div>
     </div>
   );
@@ -79,7 +141,29 @@ export function ConfigForm(props: ConfigFormProps) {
 type ConfigObjectProps = JSX.HTMLAttributes<HTMLDivElement> & {
   id_prefix: string;
   object: object;
+  accordionStatus?: string[];
   onItemChange?: () => void;
+  onDenominatorChange?: (denominator: number, type?: string) => void;
+  onDenominatorPIChange?: (denominator_pi: number) => void;
+  onCurrentChange?: (
+    denominator: number,
+    axesIndex: number,
+    axis: object,
+    axesAccordionStatus?: string[],
+  ) => void;
+  onVelocityChange?: (
+    denominator: number,
+    denominator_pi: number,
+    axesIndex: number,
+    axis: object,
+    accordionStatus?: string[],
+  ) => void;
+  onPositionChange?: (
+    denominator: number,
+    axesIndex: number,
+    axis: object,
+    axesAccordionStatus?: string[],
+  ) => void;
 };
 
 function ConfigObject(props: ConfigObjectProps) {
@@ -115,6 +199,47 @@ function ConfigObject(props: ConfigObjectProps) {
                     label={key}
                     items={value}
                     id_prefix={props.id_prefix}
+                    onCurrentChange={(
+                      denominator,
+                      axesIndex,
+                      prevAxis,
+                      accordionStatus,
+                    ) =>
+                      props.onCurrentChange?.(
+                        denominator,
+                        axesIndex,
+                        prevAxis,
+                        accordionStatus,
+                      )}
+                    onVelocityChange={(
+                      denominator,
+                      denominator_pi,
+                      axesIndex,
+                      prevAxis,
+                      accordionStatus,
+                    ) =>
+                      props.onVelocityChange?.(
+                        denominator,
+                        denominator_pi,
+                        axesIndex,
+                        prevAxis,
+                        accordionStatus,
+                      )}
+                    accordionStatus={key === "axes"
+                      ? props.accordionStatus
+                      : []}
+                    onPositionChange={(
+                      denominator,
+                      axesIndex,
+                      prevAxis,
+                      accordionStatus,
+                    ) =>
+                      props.onPositionChange?.(
+                        denominator,
+                        axesIndex,
+                        prevAxis,
+                        accordionStatus,
+                      )}
                   />
                 </Stack>
               </>
@@ -153,6 +278,13 @@ function ConfigObject(props: ConfigObjectProps) {
                   object={value}
                   id_prefix={props.id_prefix + key}
                   style={{ "padding-left": "1rem" }}
+                  accordionStatus={props.accordionStatus}
+                  onDenominatorChange={(denominator, type) =>
+                    props.onDenominatorChange?.(denominator, type ? type : key)}
+                  onDenominatorPIChange={(denominator_pi) =>
+                    props.onDenominatorPIChange?.(
+                      denominator_pi,
+                    )}
                 />
               </fieldset>
             );
@@ -208,6 +340,12 @@ function ConfigObject(props: ConfigObjectProps) {
                       // in store
                       Number(e.target.value),
                     );
+                    if (key === "denominator") {
+                      props.onDenominatorChange?.(Number(e.target.value));
+                    }
+                    if (key === "denominator_pi") {
+                      props.onDenominatorPIChange?.(Number(e.target.value));
+                    }
                   }}
                 />
               </Stack>
@@ -223,6 +361,26 @@ type ConfigListProps = Accordion.RootProps & {
   id_prefix: string;
   label: string;
   items: object[];
+  accordionStatus?: string[];
+  onCurrentChange?: (
+    denominator: number,
+    axesIndex: number,
+    axis: object,
+    accordionStatus?: string[],
+  ) => void;
+  onVelocityChange?: (
+    denominator: number,
+    denominator_pi: number,
+    axesIndex: number,
+    axis: object,
+    accordionStatus?: string[],
+  ) => void;
+  onPositionChange?: (
+    denominator: number,
+    axesIndex: number,
+    axis: object,
+    accordionStatus?: string[],
+  ) => void;
 };
 
 function ConfigList(props: ConfigListProps) {
@@ -232,7 +390,7 @@ function ConfigList(props: ConfigListProps) {
 
   const [openedAccordionItems, setOpenedAccordionItems] = createSignal<
     string[]
-  >([]);
+  >(props.accordionStatus ? props.accordionStatus : []);
 
   const [linked, setLinked] = createSignal<boolean>(false);
   // Store a deep copy string of the most recently edited item object. This is
@@ -328,6 +486,72 @@ function ConfigList(props: ConfigListProps) {
                   id_prefix={props.id_prefix + title}
                   onItemChange={() => {
                     setRecentEditedItem(JSON.stringify(item));
+                  }}
+                  onDenominatorChange={(denominator, type) => {
+                    if (type === "current") {
+                      props.onCurrentChange?.(
+                        denominator,
+                        index(),
+                        item,
+                        openedAccordionItems(),
+                      );
+                    }
+                    if (type === "velocity") {
+                      const gain = Object.values(item)[0];
+                      if (typeof gain !== "object") return;
+                      const velocity =
+                        Object.entries(gain).filter((key) =>
+                          key[0] === "velocity"
+                        )[0][1];
+                      if (typeof velocity !== "object") return;
+                      const denominator_pi =
+                        Object.entries(velocity!).filter((key) =>
+                          key[0] === "denominator_pi"
+                        )[0][1];
+                      if (typeof denominator_pi !== "number") return;
+
+                      props.onVelocityChange?.(
+                        denominator,
+                        denominator_pi,
+                        index(),
+                        item,
+                        openedAccordionItems(),
+                      );
+                    }
+                    if (type === "position") {
+                      props.onPositionChange?.(
+                        denominator,
+                        index(),
+                        item,
+                        openedAccordionItems(),
+                      );
+                    }
+                  }}
+                  onDenominatorPIChange={(denominator_pi) => {
+                    const gain = Object.values(item)[0];
+                    if (typeof gain !== "object") return;
+                    const velocity = Object.entries(gain).filter((key) =>
+                      key[0] === "velocity"
+                    )[0][1];
+                    if (typeof velocity !== "object") {
+                      return;
+                    }
+
+                    const denominator =
+                      Object.entries(velocity!).filter((key) =>
+                        key[0] === "denominator"
+                      )[0][1];
+                    if (typeof denominator !== "number") {
+                      return;
+                    }
+
+                    props.onVelocityChange?.(
+                      denominator,
+                      denominator_pi,
+                      index(),
+                      item,
+                      openedAccordionItems(),
+                    );
                   }}
                 />
               </Accordion.ItemContent>

@@ -1,4 +1,4 @@
-import { createSignal, For, Show } from "solid-js";
+import { createEffect, createSignal, For, Show } from "solid-js";
 
 import { ConfigForm } from "~/components/ConfigForm";
 import { IconX } from "@tabler/icons-solidjs";
@@ -198,6 +198,138 @@ function Configuration() {
   const [isButtonHovered, setIsButtonHoverd] = createSignal<
     [boolean, number | null]
   >([false, null]);
+
+  function calcCurrentPGain(denominator: number, configure: object) {
+    const coil =
+      Object.entries(configure).filter((key) => key[0] === "coil").slice(
+        0,
+      )[0][1];
+    if (typeof coil !== "object") return;
+    const ls =
+      Object.entries(coil).filter((key) => key[0] === "ls").slice(0)[0][1];
+
+    if (typeof ls !== "number") return;
+
+    const wcc = 2.0 * Math.PI * (15000.0 / denominator);
+    const p = wcc * ls;
+    return p;
+  }
+
+  function calcCurrentIGain(denominator: number, configure: object) {
+    const coil =
+      Object.entries(configure).filter((key) => key[0] === "coil").slice(
+        0,
+      )[0][1];
+    if (typeof coil !== "object") return;
+    const rs =
+      Object.entries(coil).filter((key) => key[0] === "rs").slice(0)[0][1];
+
+    if (typeof rs !== "number") return;
+    const wcc = 2.0 * Math.PI * (15000.0 / denominator);
+    const i = wcc * rs;
+    return i;
+  }
+
+  // get Value function 따로 만들기
+  // 오브젝트 값 가져오는 단순한 함수
+
+  function calcVelocityPGain(
+    denominator: number,
+    denominator_pi: number,
+    currentDenominator: number,
+    configure: object,
+  ): { p: number; i: number } | null {
+    const wcc = 2.0 * Math.PI * (15000.0 / currentDenominator);
+
+    const magnet =
+      Object.entries(configure).filter((key) => key[0] === "magnet").slice(
+        0,
+      )[0][1];
+    if (typeof magnet !== "object") return null;
+    const pitch =
+      Object.entries(magnet).filter((key) => key[0] === "pitch").slice(0)[0][1];
+    if (typeof pitch !== "number") return null;
+    const radius = pitch / (2.0 * Math.PI);
+
+    const carrier =
+      Object.entries(configure).filter((key) => key[0] === "carrier").slice(
+        0,
+      )[0][1];
+    if (typeof carrier !== "object") return null;
+    const mass =
+      Object.entries(carrier).filter((key) => key[0] === "mass").slice(0)[0][1];
+    if (typeof mass !== "number") return null;
+    const inertia = (mass / 100) * radius * radius;
+
+    const coil =
+      Object.entries(configure).filter((key) => key[0] === "coil").slice(
+        0,
+      )[0][1];
+    if (typeof coil !== "object") return null;
+    const kf =
+      Object.entries(coil).filter((key) => key[0] === "kf").slice(0)[0][1];
+    if (typeof kf !== "number") return null;
+    const torque_constant = kf * radius;
+
+    const wsc = wcc / denominator;
+    const wpi = wsc / denominator_pi;
+    const p = (inertia * wsc) / torque_constant;
+
+    const i = p * wpi;
+
+    return {
+      p: p,
+      i: i,
+    };
+  }
+
+  function calcGainPosition(denominator: number, axisConfig: object) {
+    const gain = axisConfig["gain" as keyof typeof axisConfig];
+    const current =
+      Object.entries(gain).filter((key) => key[0] === "current").slice(
+        0,
+      )[0][1];
+    if (typeof current !== "object") return null;
+
+    const currentDenominator =
+      Object.entries(current!).filter((key) => key[0] === "denominator").slice(
+        0,
+      )[0][1];
+    if (typeof currentDenominator !== "number") return null;
+    const wcc = 2.0 * Math.PI * (15000.0 / currentDenominator);
+
+    const velocity =
+      Object.entries(gain).filter((key) => key[0] === "velocity").slice(
+        0,
+      )[0][1];
+    if (typeof velocity !== "object") return null;
+
+    const velocityDenominator =
+      Object.entries(velocity!).filter((key) => key[0] === "denominator").slice(
+        0,
+      )[0][1];
+    if (typeof velocityDenominator !== "number") return null;
+    const wsc = wcc / velocityDenominator;
+
+    const wpc = wsc / denominator;
+    const p = wpc;
+
+    return p;
+  }
+
+  const [refresh, setRefresh] = createSignal<boolean>(false);
+  const [isRender, setIsRender] = createSignal<boolean>(false);
+
+  createEffect(() => {
+    if (refresh()) {
+      setIsRender(false);
+      setRefresh(false);
+      return;
+    }
+    setIsRender(true);
+  });
+
+  const [accordionStatus, setAccordionStatus] = createSignal<string[]>([]);
 
   return (
     <>
@@ -414,61 +546,190 @@ function Configuration() {
           </Show>
           <Show when={isFormOpen()}>
             <div style={{ width: "40rem", "margin-left": "2rem" }}>
-              <Card.Root padding="2rem" paddingTop="3rem" marginBottom="3rem">
-                <ConfigForm
-                  label={formName()}
-                  onLabelChange={(e) => setFormName(e)}
-                  config={configure()}
-                  onCancel={() => setIsFormOpen(false)}
-                />
-                <Card.Footer padding={0}>
-                  <Stack direction="row-reverse">
-                    <Menu.Root>
-                      <Menu.Trigger>
-                        <Button>Save</Button>
-                      </Menu.Trigger>
-                      <Menu.Positioner>
-                        <Menu.Content width="8rem">
-                          <Menu.Item
-                            value="Save as file"
-                            onClick={() => {
-                              saveConfigAsFile();
-                            }}
-                            userSelect="none"
-                          >
-                            Save as file
-                          </Menu.Item>
-                          <Menu.Separator />
-                          <Menu.Item
-                            value="Save to port"
-                            disabled={portId().length === 0}
-                            onClick={async () => {
-                              const outputError = await saveConfigToPort();
-                              if (outputError.length !== 0) {
+              <Show when={isRender()}>
+                <Card.Root padding="2rem" paddingTop="3rem" marginBottom="3rem">
+                  <ConfigForm
+                    label={formName()}
+                    onLabelChange={(e) => setFormName(e)}
+                    accordionStatus={accordionStatus()}
+                    config={configure()}
+                    onCancel={() => {
+                      setIsFormOpen(false);
+                      setAccordionStatus([]);
+                    }}
+                    onCurrentChange={(
+                      denominator,
+                      axesIndex,
+                      prevAxis,
+                      accordionStatus,
+                    ) => {
+                      const config = configure();
+                      const axesValue: Array<object> =
+                        config["axes" as keyof typeof config];
+                      const newAxis = {
+                        gain: {
+                          ...Object.values(prevAxis).slice(0)[0],
+                          current: {
+                            p: calcCurrentPGain(denominator, configure()),
+                            i: calcCurrentIGain(denominator, configure()),
+                            denominator: denominator,
+                          },
+                        },
+                      };
+                      setConfigure({
+                        ...configure(),
+                        axes: axesValue.map((axis, i) => {
+                          if (i === axesIndex) return newAxis;
+                          else return axis;
+                        }),
+                      });
+                      setAccordionStatus(
+                        accordionStatus ? accordionStatus : [],
+                      );
+                      setRefresh(true);
+                    }}
+                    onVelocityChange={(
+                      denominator,
+                      denominator_pi,
+                      axesIndex,
+                      prevAxis,
+                      accordionStatus,
+                    ) => {
+                      const gain = Object.values(prevAxis).slice(0)[0];
+                      if (typeof gain !== "object") return;
+                      const current = Object.entries(gain).filter((key) =>
+                        key[0] === "current"
+                      )[0][1];
+                      if (typeof current !== "object") {
+                        return;
+                      }
+                      const currentDenominator =
+                        Object.entries(current!).filter((key) =>
+                          key[0] === "denominator"
+                        )[0][1];
+                      if (typeof denominator !== "number") {
+                        return;
+                      }
+
+                      const calcVelocity = calcVelocityPGain(
+                        denominator,
+                        denominator_pi,
+                        currentDenominator,
+                        configure(),
+                      );
+                      if (!calcVelocity) return;
+
+                      const config = configure();
+                      const axesValue: Array<object> =
+                        config["axes" as keyof typeof config];
+                      const newAxis = {
+                        gain: {
+                          ...Object.values(prevAxis).slice(0)[0],
+                          velocity: {
+                            p: calcVelocity.p,
+                            i: calcVelocity.i,
+                            denominator: denominator,
+                            denominator_pi: denominator_pi,
+                          },
+                        },
+                      };
+                      setConfigure({
+                        ...configure(),
+                        axes: axesValue.map((axis, i) => {
+                          if (i === axesIndex) return newAxis;
+                          else return axis;
+                        }),
+                      });
+
+                      setAccordionStatus(
+                        accordionStatus ? accordionStatus : [],
+                      );
+                      setRefresh(true);
+                    }}
+                    onPositionChange={(
+                      denominator,
+                      axesIndex,
+                      prevAxis,
+                      accordionStatus,
+                    ) => {
+                      const p = calcGainPosition(denominator, prevAxis);
+                      if (!p) return;
+
+                      const config = configure();
+                      const axesValue: Array<object> =
+                        config["axes" as keyof typeof config];
+                      const newAxis = {
+                        gain: {
+                          ...Object.values(prevAxis).slice(0)[0],
+                          position: {
+                            p: p,
+                            denominator: denominator,
+                          },
+                        },
+                      };
+
+                      setConfigure({
+                        ...configure(),
+                        axes: axesValue.map((axis, i) => {
+                          if (i === axesIndex) return newAxis;
+                          else return axis;
+                        }),
+                      });
+                      setAccordionStatus(
+                        accordionStatus ? accordionStatus : [],
+                      );
+                      setRefresh(true);
+                    }}
+                  />
+                  <Card.Footer padding={0}>
+                    <Stack direction="row-reverse">
+                      <Menu.Root>
+                        <Menu.Trigger>
+                          <Button>Save</Button>
+                        </Menu.Trigger>
+                        <Menu.Positioner>
+                          <Menu.Content width="8rem">
+                            <Menu.Item
+                              value="Save as file"
+                              onClick={() => {
+                                saveConfigAsFile();
+                              }}
+                              userSelect="none"
+                            >
+                              Save as file
+                            </Menu.Item>
+                            <Menu.Separator />
+                            <Menu.Item
+                              value="Save to port"
+                              disabled={portId().length === 0}
+                              onClick={async () => {
+                                const outputError = await saveConfigToPort();
+                                if (outputError.length !== 0) {
+                                  toaster.create({
+                                    title: "Communication Error",
+                                    description: outputError,
+                                    type: "error",
+                                  });
+                                  return;
+                                }
                                 toaster.create({
-                                  title: "Communication Error",
-                                  description: outputError,
+                                  title: "Communication Success",
+                                  description:
+                                    "Configuration saved to port successfully.",
                                   type: "error",
                                 });
-                                return;
-                              }
-                              toaster.create({
-                                title: "Communication Success",
-                                description:
-                                  "Configuration saved to port successfully.",
-                                type: "error",
-                              });
-                            }}
-                            userSelect="none"
-                          >
-                            Save to port
-                          </Menu.Item>
-                        </Menu.Content>
-                      </Menu.Positioner>
-                    </Menu.Root>
-                  </Stack>
-                </Card.Footer>
-              </Card.Root>
+                              }}
+                              userSelect="none"
+                            >
+                              Save to port
+                            </Menu.Item>
+                          </Menu.Content>
+                        </Menu.Positioner>
+                      </Menu.Root>
+                    </Stack>
+                  </Card.Footer>
+                </Card.Root>
+              </Show>
             </div>
           </Show>
         </Stack>
