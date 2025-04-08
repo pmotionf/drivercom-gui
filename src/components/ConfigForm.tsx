@@ -1,8 +1,11 @@
 import {
+  type Accessor,
   createEffect,
   createSignal,
   For,
   JSX,
+  on,
+  type Setter,
   Show,
   splitProps,
 } from "solid-js";
@@ -31,8 +34,274 @@ export type ConfigFormProps = JSX.HTMLAttributes<HTMLFormElement> & {
   onCancel?: () => void;
 };
 
+type AccordionStatuses = Map<string, [Accessor<string[]>, Setter<string[]>]>;
+
+type LinkedStatuses = Map<
+  string,
+  [Accessor<[boolean, number]>, Setter<[boolean, number]>]
+>;
+
 export function ConfigForm(props: ConfigFormProps) {
-  const [config] = createStore(props.config);
+  const [config, setConfig] = createStore(props.config);
+  const axes: object[] = config["axes" as keyof typeof config];
+  const accordionStatuses: AccordionStatuses = new Map();
+  const linkedStatuses: LinkedStatuses = new Map();
+
+  axes.forEach((_, index) => {
+    if (
+      !("axes" in config && Array.isArray(config.axes)) ||
+      !("gain" in config.axes[index]) ||
+      !("current" in config.axes[index].gain) ||
+      !("denominator" in config.axes[index].gain.current) ||
+      !("p" in config.axes[index].gain.current) ||
+      !("i" in config.axes[index].gain.current) ||
+      !("velocity" in config.axes[index].gain) ||
+      !("denominator" in config.axes[index].gain.velocity) ||
+      !("denominator_pi" in config.axes[index].gain.velocity) ||
+      !("p" in config.axes[index].gain.velocity) ||
+      !("i" in config.axes[index].gain.velocity) ||
+      !("position" in config.axes[index].gain) ||
+      !("denominator" in config.axes[index].gain.position) ||
+      !("p" in config.axes[index].gain.position) ||
+      !("coil" in config) ||
+      !("kf" in (config.coil as object)) ||
+      !("ls" in (config.coil as object)) ||
+      !("rs" in (config.coil as object)) ||
+      !("magnet" in config) ||
+      !("pitch" in (config.magnet as object)) ||
+      !("carrier" in config) ||
+      !("mass" in (config.carrier as object))
+    ) {
+      return;
+    }
+
+    // Current P
+    createEffect(
+      on(
+        [
+          //@ts-ignore Guaranteed to exist from above check
+          () => config.axes[index].gain.current.denominator,
+          //@ts-ignore Guaranteed to exist from above check
+          () => config.coil.ls,
+        ],
+        () => {
+          if (
+            linkedStatuses.get("axes")?.[0]()[0] &&
+            linkedStatuses.get("axes")?.[0]()[1] !== index
+          ) {
+            return;
+          }
+          const p = calcCurrentP(
+            //@ts-ignore Guaranteed to exist from above check
+            config.axes[index].gain.current.denominator,
+            //@ts-ignore Guaranteed to exist from above check
+            config.coil.ls,
+          );
+          //@ts-ignore Below fields guaranteed to exist due to above checks
+          setConfig("axes", index, "gain", "current", "p", p);
+        },
+        { defer: true },
+      ),
+    );
+
+    // Current I
+    createEffect(
+      on(
+        [
+          //@ts-ignore Guaranteed to exist from above check
+          () => config.axes[index].gain.current.denominator,
+          //@ts-ignore Guaranteed to exist from above check
+          () => config.coil.rs,
+        ],
+        () => {
+          if (
+            linkedStatuses.get("axes")?.[0]()[0] &&
+            linkedStatuses.get("axes")?.[0]()[1] !== index
+          ) {
+            return;
+          }
+          const i = calcCurrentI(
+            //@ts-ignore Guaranteed to exist from above check
+            config.axes[index].gain.current.denominator,
+            //@ts-ignore Guaranteed to exist from above check
+            config.coil.rs,
+          );
+          //@ts-ignore Below fields guaranteed to exist due to above checks
+          setConfig("axes", index, "gain", "current", "i", i);
+        },
+        { defer: true },
+      ),
+    );
+
+    // Velocity P
+    createEffect(
+      on(
+        [
+          //@ts-ignore Guaranteed to exist from above check
+          () => config.axes[index].gain.velocity.denominator,
+          //@ts-ignore Guaranteed to exist from above check
+          () => config.axes[index].gain.current.denominator,
+          //@ts-ignore Guaranteed to exist from above check
+          () => config.coil.kf,
+          //@ts-ignore Guaranteed to exist from above check
+          () => config.carrier.mass,
+          //@ts-ignore Guaranteed to exist from above check
+          () => config.magnet.pitch,
+        ],
+        () => {
+          if (
+            linkedStatuses.get("axes")?.[0]()[0] &&
+            linkedStatuses.get("axes")?.[0]()[1] !== index
+          ) {
+            return;
+          }
+          const p = calcVelocityP(
+            //@ts-ignore Guaranteed to exist from above check
+            config.axes[index].gain.velocity.denominator,
+            //@ts-ignore Guaranteed to exist from above check
+            config.axes[index].gain.current.denominator,
+            //@ts-ignore Guaranteed to exist from above check
+            config.magnet.pitch,
+            //@ts-ignore Guaranteed to exist from above check
+            config.carrier.mass,
+            //@ts-ignore Guaranteed to exist from above check
+            config.coil.kf,
+          );
+          //@ts-ignore Below fields guaranteed to exist due to above checks
+          setConfig("axes", index, "gain", "velocity", "p", p);
+        },
+        { defer: true },
+      ),
+    );
+
+    // Velocity I
+    createEffect(
+      on(
+        [
+          //@ts-ignore Guaranteed to exist from above check
+          () => config.axes[index].gain.velocity.denominator,
+          //@ts-ignore Guaranteed to exist from above check
+          () => config.axes[index].gain.velocity.denominator_pi,
+          //@ts-ignore Guaranteed to exist from above check
+          () => config.axes[index].gain.current.denominator,
+          //@ts-ignore Guaranteed to exist from above check
+          () => config.axes[index].gain.velocity.p,
+        ],
+        () => {
+          if (
+            linkedStatuses.get("axes")?.[0]()[0] &&
+            linkedStatuses.get("axes")?.[0]()[1] !== index
+          ) {
+            return;
+          }
+          const i = calcVelocityI(
+            //@ts-ignore Guaranteed to exist from above check
+            config.axes[index].gain.velocity.denominator,
+            //@ts-ignore Guaranteed to exist from above check
+            config.axes[index].gain.velocity.denominator_pi,
+            //@ts-ignore Guaranteed to exist from above check
+            config.axes[index].gain.current.denominator,
+            //@ts-ignore Guaranteed to exist from above check
+            config.axes[index].gain.velocity.p,
+          );
+          //@ts-ignore Below fields guaranteed to exist due to above checks
+          setConfig("axes", index, "gain", "velocity", "i", i);
+        },
+        { defer: true },
+      ),
+    );
+
+    // Position P
+    createEffect(
+      on(
+        [
+          //@ts-ignore Guaranteed to exist from above check
+          () => config.axes[index].gain.current.denominator,
+          //@ts-ignore Guaranteed to exist from above check
+          () => config.axes[index].gain.velocity.denominator,
+          //@ts-ignore Guaranteed to exist from above check
+          () => config.axes[index].gain.position.denominator,
+        ],
+        () => {
+          if (
+            linkedStatuses.get("axes")?.[0]()[0] &&
+            linkedStatuses.get("axes")?.[0]()[1] !== index
+          ) {
+            return;
+          }
+          const p = calcPositionP(
+            //@ts-ignore Guaranteed to exist from above check
+            config.axes[index].gain.current.denominator,
+            //@ts-ignore Guaranteed to exist from above check
+            config.axes[index].gain.velocity.denominator,
+            //@ts-ignore Guaranteed to exist from above check
+            config.axes[index].gain.position.denominator,
+          );
+          //@ts-ignore Below fields guaranteed to exist due to above checks
+          setConfig("axes", index, "gain", "position", "p", p);
+        },
+        { defer: true },
+      ),
+    );
+  });
+
+  function calcCurrentP(denominator: number, ls: number) {
+    const wcc = 2.0 * Math.PI * (15000.0 / denominator);
+    const p = wcc * ls;
+    return p;
+  }
+
+  function calcCurrentI(denominator: number, rs: number) {
+    const wcc = 2.0 * Math.PI * (15000.0 / denominator);
+    const i = wcc * rs;
+    return i;
+  }
+
+  function calcVelocityP(
+    denominator: number,
+    currentDenominator: number,
+    pitch: number,
+    mass: number,
+    kf: number,
+  ): number {
+    const wcc = 2.0 * Math.PI * (15000.0 / currentDenominator);
+    const radius = pitch / (2.0 * Math.PI);
+    const inertia = (mass / 100) * radius * radius;
+    const torque_constant = kf * radius;
+
+    const wsc = wcc / denominator;
+    const p = (inertia * wsc) / torque_constant;
+
+    return p;
+  }
+
+  function calcVelocityI(
+    denominator: number,
+    denominator_pi: number,
+    currentDenominator: number,
+    p: number,
+  ): number {
+    const wcc = 2.0 * Math.PI * (15000.0 / currentDenominator);
+    const wsc = wcc / denominator;
+    const wpi = wsc / denominator_pi;
+
+    const i = p * wpi;
+
+    return i;
+  }
+
+  function calcPositionP(
+    currentDenominator: number,
+    velocityDenominator: number,
+    positionDenominator: number,
+  ) {
+    const wcc = 2.0 * Math.PI * (15000.0 / currentDenominator);
+    const wsc = wcc / velocityDenominator;
+
+    const wpc = wsc / positionDenominator;
+    const p = wpc;
+    return p;
+  }
 
   return (
     <div style={{ width: "100%", "margin-bottom": "3rem" }}>
@@ -70,7 +339,12 @@ export function ConfigForm(props: ConfigFormProps) {
         <IconX />
       </IconButton>
       <div style={{ "margin-top": "4rem", "margin-bottom": "2rem" }}>
-        <ConfigObject object={config} id_prefix={props.label} />
+        <ConfigObject
+          object={config}
+          id_prefix={props.label}
+          accordionStatuses={accordionStatuses}
+          linkedStatuses={linkedStatuses}
+        />
       </div>
     </div>
   );
@@ -80,16 +354,12 @@ type ConfigObjectProps = JSX.HTMLAttributes<HTMLDivElement> & {
   id_prefix: string;
   object: object;
   onItemChange?: () => void;
+  accordionStatuses: AccordionStatuses;
+  linkedStatuses: LinkedStatuses;
 };
 
 function ConfigObject(props: ConfigObjectProps) {
   const [object, setObject] = createStore(props.object);
-
-  createEffect(() => {
-    const parseObject = JSON.stringify(object);
-    if (parseObject.length === 0) return;
-    props.onItemChange?.();
-  });
 
   return (
     <div>
@@ -98,6 +368,15 @@ function ConfigObject(props: ConfigObjectProps) {
           const key = entry[0];
           const value = entry[1];
           if (value.constructor === Array) {
+            if (!props.accordionStatuses.has(key)) {
+              props.accordionStatuses.set(key, createSignal<string[]>([]));
+            }
+            if (!props.linkedStatuses.has(key)) {
+              props.linkedStatuses.set(
+                key,
+                createSignal<[boolean, number]>([false, 0]),
+              );
+            }
             return (
               <>
                 <Stack
@@ -114,7 +393,10 @@ function ConfigObject(props: ConfigObjectProps) {
                   <ConfigList
                     label={key}
                     items={value}
+                    onItemChange={() => props.onItemChange?.()}
                     id_prefix={props.id_prefix}
+                    accordionStatuses={props.accordionStatuses}
+                    linkedStatuses={props.linkedStatuses}
                   />
                 </Stack>
               </>
@@ -153,6 +435,11 @@ function ConfigObject(props: ConfigObjectProps) {
                   object={value}
                   id_prefix={props.id_prefix + key}
                   style={{ "padding-left": "1rem" }}
+                  onItemChange={() => {
+                    props.onItemChange?.();
+                  }}
+                  accordionStatuses={props.accordionStatuses}
+                  linkedStatuses={props.linkedStatuses}
                 />
               </fieldset>
             );
@@ -178,7 +465,7 @@ function ConfigObject(props: ConfigObjectProps) {
               </Checkbox>
             );
           }
-          if (typeof value === "number") {
+          if (typeof value === "number" || value === "NaN") {
             return (
               <Stack
                 direction="row"
@@ -208,6 +495,7 @@ function ConfigObject(props: ConfigObjectProps) {
                       // in store
                       Number(e.target.value),
                     );
+                    props.onItemChange?.();
                   }}
                 />
               </Stack>
@@ -223,6 +511,9 @@ type ConfigListProps = Accordion.RootProps & {
   id_prefix: string;
   label: string;
   items: object[];
+  onItemChange?: () => void;
+  accordionStatuses: AccordionStatuses;
+  linkedStatuses: LinkedStatuses;
 };
 
 function ConfigList(props: ConfigListProps) {
@@ -230,27 +521,49 @@ function ConfigList(props: ConfigListProps) {
 
   const [items, setItems] = createStore<object[]>(props.items);
 
-  const [openedAccordionItems, setOpenedAccordionItems] = createSignal<
-    string[]
-  >([]);
-
-  const [linked, setLinked] = createSignal<boolean>(false);
   // Store a deep copy string of the most recently edited item object. This is
   // necessary over storing e.g. the item index, as the signal that sets other
   // items to be a copy cannot depend on the `items` store itself. Depending
   // directly on the `items` store will cause an infinite effects loop.
   const [recentEditedItem, setRecentEditedItem] = createSignal<string>("");
 
-  createEffect(() => {
-    if (linked()) {
-      setItems(
-        Array.from(
-          { length: items.length },
-          () => JSON.parse(recentEditedItem()),
-        ),
-      );
-    }
-  });
+  const changedItemIndex = props.linkedStatuses.get(props.label)?.[0]()[1];
+  if (changedItemIndex !== undefined) {
+    setRecentEditedItem(JSON.stringify(items[changedItemIndex]));
+  }
+
+  createEffect(
+    on(
+      () => JSON.stringify(items),
+      () => {
+        const index = props.linkedStatuses.get(props.label)?.[0]()[1]!;
+        setRecentEditedItem(JSON.stringify(items[index]));
+      },
+      { defer: true },
+    ),
+  );
+
+  createEffect(
+    on(
+      [
+        () => recentEditedItem(),
+        () => props.linkedStatuses.get(props.label)?.[0]()[0],
+      ],
+      () => {
+        if (!Array.isArray(items)) return;
+        if (props.linkedStatuses.get(props.label)?.[0]()[0]) {
+          items.forEach((_, index) => {
+            const item = JSON.parse(recentEditedItem().replaceAll("null", "0"));
+            if (index === props.linkedStatuses.get(props.label)?.[0]()[1]) {
+              return;
+            }
+            setItems(index, item);
+          });
+        }
+      },
+      { defer: true },
+    ),
+  );
 
   // Converts label to have uppercase letters at the start of each word.
   const prettifiedLabel = Array.from(props.label)
@@ -267,10 +580,12 @@ function ConfigList(props: ConfigListProps) {
       multiple
       {...rest}
       style={{ "border-bottom": "0", "border-top": "0" }}
-      value={openedAccordionItems()}
-      onValueChange={(e) => setOpenedAccordionItems(e.value)}
+      value={props.accordionStatuses.get(props.label)?.[0]()}
+      onValueChange={(e) => {
+        props.accordionStatuses.get(props.label)?.[1](e.value);
+      }}
     >
-      <For each={items}>
+      <For each={props.items}>
         {(item, index) => {
           const title = props.label + " " + (index() + 1).toString();
           return (
@@ -281,13 +596,22 @@ function ConfigList(props: ConfigListProps) {
                     <IconButton
                       variant="ghost"
                       onClick={() => {
-                        setLinked(!linked());
-                        if (!linked()) return;
+                        const linked = props.linkedStatuses.get(
+                          props.label,
+                        )?.[0]()[0];
+
+                        props.linkedStatuses.get(props.label)?.[1]([
+                          !linked,
+                          index(),
+                        ]);
                         setRecentEditedItem(JSON.stringify(item));
                       }}
                       marginTop="0.5rem"
                     >
-                      <Show when={linked()} fallback={<IconLinkOff />}>
+                      <Show
+                        when={props.linkedStatuses.get(props.label)?.[0]()[0]}
+                        fallback={<IconLinkOff />}
+                      >
                         <IconLink />
                       </Show>
                     </IconButton>
@@ -327,8 +651,19 @@ function ConfigList(props: ConfigListProps) {
                   object={item}
                   id_prefix={props.id_prefix + title}
                   onItemChange={() => {
-                    setRecentEditedItem(JSON.stringify(item));
+                    props.onItemChange?.();
+                    const linked = props.linkedStatuses.get(
+                      props.label,
+                    )?.[0]()[0];
+                    if (linked) {
+                      props.linkedStatuses.get(props.label)?.[1]([
+                        linked,
+                        index(),
+                      ]);
+                    }
                   }}
+                  accordionStatuses={props.accordionStatuses}
+                  linkedStatuses={props.linkedStatuses}
                 />
               </Accordion.ItemContent>
             </Accordion.Item>

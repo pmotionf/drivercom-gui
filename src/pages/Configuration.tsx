@@ -20,7 +20,7 @@ import { Card } from "~/components/ui/card";
 import { Menu } from "~/components/ui/menu";
 
 function Configuration() {
-  const [configure, setConfigure] = createSignal({});
+  const [config, setConfig] = createSignal({});
   const [formName, setFormName] = createSignal<string>("");
   const [isFormOpen, setIsFormOpen] = createSignal(false);
   const [filePath, setFilePath] = createSignal<string | undefined>(undefined);
@@ -112,7 +112,7 @@ function Configuration() {
   }
 
   function setFormData(data: object, path: string) {
-    setConfigure(data);
+    setConfig(data);
     setFilePath(path);
     setFormName(path.split("/").pop()!);
     setRecentConfigFilePaths((prev) => {
@@ -125,7 +125,7 @@ function Configuration() {
   }
 
   async function saveConfigAsFile() {
-    const json_str = JSON.stringify(configure(), null, "  ");
+    const json_str = JSON.stringify(config(), null, "  ");
     const fileNameFromPath = filePath()
       ? filePath()!
         .match(/[^?!//]+$/)!
@@ -183,7 +183,7 @@ function Configuration() {
   }
 
   async function saveConfigToPort(): Promise<string> {
-    const json_str = JSON.stringify(configure(), null, "  ");
+    const json_str = JSON.stringify(config(), null, "  ");
     const saveConfig = Command.sidecar("binaries/drivercom", [
       `--port`,
       portId(),
@@ -239,7 +239,7 @@ function Configuration() {
                     JSON.stringify(configFormFileFormat()),
                   );
                   setFormName("New File");
-                  setConfigure(newEmptyFile);
+                  setConfig(newEmptyFile);
                   setFilePath(undefined);
                   setIsFormOpen(true);
                 }}
@@ -286,7 +286,7 @@ function Configuration() {
                   } else {
                     const parseConfigToObject = JSON.parse(output.stdout);
                     setFormName(portId());
-                    setConfigure(parseConfigToObject);
+                    setConfig(parseConfigToObject);
                     setIsFormOpen(true);
                   }
                 }}
@@ -418,8 +418,10 @@ function Configuration() {
                 <ConfigForm
                   label={formName()}
                   onLabelChange={(e) => setFormName(e)}
-                  config={configure()}
-                  onCancel={() => setIsFormOpen(false)}
+                  config={config()}
+                  onCancel={() => {
+                    setIsFormOpen(false);
+                  }}
                 />
                 <Card.Footer padding={0}>
                   <Stack direction="row-reverse">
