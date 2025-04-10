@@ -29,6 +29,16 @@ export type ConfigFormProps = JSX.HTMLAttributes<HTMLFormElement> & {
   onLabelChange?: (label: string) => void;
   config: object;
   onCancel?: () => void;
+  linked?: {
+    axes: { isLinked: boolean; changedItemIndex: number };
+    hallSensor: { isLinked: boolean; changedItemIndex: number };
+  };
+  onLinkedChange?: (
+    status: {
+      axes: { isLinked: boolean; changedItemIndex: number };
+      hallSensor: { isLinked: boolean; changedItemIndex: number };
+    },
+  ) => void;
   accordionStatus?: { axes: string[]; hallSensor: string[] };
   onAccordionStatusChange?: (
     status: { axes: string[]; hallSensor: string[] },
@@ -79,6 +89,9 @@ export function ConfigForm(props: ConfigFormProps) {
           object={config}
           id_prefix={props.label}
           onItemChange={() => props.onConfigChange?.()}
+          linked={props.linked}
+          onLinkedChange={(linkedStatus) =>
+            props.onLinkedChange?.(linkedStatus)}
           accordionStatus={props.accordionStatus}
           onAccordionStatusChange={(accordionStatus) =>
             props.onAccordionStatusChange?.(accordionStatus)}
@@ -95,17 +108,21 @@ type ConfigObjectProps = JSX.HTMLAttributes<HTMLDivElement> & {
   onAccordionStatusChange?: (
     status: { axes: string[]; hallSensor: string[] },
   ) => void;
+  linked?: {
+    axes: { isLinked: boolean; changedItemIndex: number };
+    hallSensor: { isLinked: boolean; changedItemIndex: number };
+  };
+  onLinkedChange?: (
+    status: {
+      axes: { isLinked: boolean; changedItemIndex: number };
+      hallSensor: { isLinked: boolean; changedItemIndex: number };
+    },
+  ) => void;
   onItemChange?: () => void;
 };
 
 function ConfigObject(props: ConfigObjectProps) {
   const [object, setObject] = createStore(props.object);
-
-  createEffect(() => {
-    const parseObject = JSON.stringify(object);
-    if (parseObject.length === 0) return;
-    props.onItemChange?.();
-  });
 
   return (
     <div>
@@ -130,7 +147,47 @@ function ConfigObject(props: ConfigObjectProps) {
                   <ConfigList
                     label={key}
                     items={value}
+                    onItemChange={() => props.onItemChange?.()}
                     id_prefix={props.id_prefix}
+                    linked={props.linked
+                      ? key === "axes"
+                        ? props.linked.axes.isLinked
+                        : key === "hall_sensors"
+                        ? props.linked.hallSensor.isLinked
+                        : false
+                      : false}
+                    linkedItemIndex={props.linked
+                      ? key === "axes"
+                        ? props.linked.axes.changedItemIndex
+                        : key === "hall_sensors"
+                        ? props.linked.hallSensor.changedItemIndex
+                        : 0
+                      : 0}
+                    onLinkedChange={(linked, itemIndex) => {
+                      if (key === "axes") {
+                        props.onLinkedChange?.({
+                          axes: {
+                            isLinked: linked,
+                            changedItemIndex: itemIndex,
+                          },
+                          hallSensor: props.linked ? props.linked.hallSensor : {
+                            isLinked: false,
+                            changedItemIndex: 0,
+                          },
+                        });
+                      } else if (key === "hall_sensors") {
+                        props.onLinkedChange?.({
+                          axes: props.linked ? props.linked.axes : {
+                            isLinked: false,
+                            changedItemIndex: 0,
+                          },
+                          hallSensor: {
+                            isLinked: linked,
+                            changedItemIndex: itemIndex,
+                          },
+                        });
+                      }
+                    }}
                     accordionStatus={props.accordionStatus
                       ? key === "axes"
                         ? props.accordionStatus.axes
@@ -195,6 +252,9 @@ function ConfigObject(props: ConfigObjectProps) {
                   id_prefix={props.id_prefix + key}
                   style={{ "padding-left": "1rem" }}
                   accordionStatus={props.accordionStatus}
+                  onItemChange={() => {
+                    props.onItemChange?.();
+                  }}
                 />
               </fieldset>
             );
@@ -250,6 +310,7 @@ function ConfigObject(props: ConfigObjectProps) {
                       // in store
                       Number(e.target.value),
                     );
+                    props.onItemChange?.();
                   }}
                 />
               </Stack>
@@ -265,8 +326,12 @@ type ConfigListProps = Accordion.RootProps & {
   id_prefix: string;
   label: string;
   items: object[];
+  onItemChange?: () => void;
   accordionStatus?: string[];
   onAccordionStatusChange?: (accordionStatus: string[]) => void;
+  linked?: boolean;
+  linkedItemIndex?: number;
+  onLinkedChange?: (isLink: boolean, index: number) => void;
 };
 
 function ConfigList(props: ConfigListProps) {
@@ -274,19 +339,17 @@ function ConfigList(props: ConfigListProps) {
 
   const [items, setItems] = createStore<object[]>(props.items);
 
-  const [openedAccordionItems, setOpenedAccordionItems] = createSignal<
-    string[]
-  >(props.accordionStatus ? props.accordionStatus : []);
-
-  const [linked, setLinked] = createSignal<boolean>(false);
   // Store a deep copy string of the most recently edited item object. This is
   // necessary over storing e.g. the item index, as the signal that sets other
   // items to be a copy cannot depend on the `items` store itself. Depending
   // directly on the `items` store will cause an infinite effects loop.
-  const [recentEditedItem, setRecentEditedItem] = createSignal<string>("");
+  const [recentEditedItem, setRecentEditedItem] = createSignal<string>(
+    props.linkedItemIndex ? JSON.stringify(items[props.linkedItemIndex]) : "",
+  );
 
   createEffect(() => {
-    if (linked()) {
+    if (props.linked) {
+      if (recentEditedItem().length === 0) return;
       setItems(
         Array.from(
           { length: items.length },
@@ -311,13 +374,12 @@ function ConfigList(props: ConfigListProps) {
       multiple
       {...rest}
       style={{ "border-bottom": "0", "border-top": "0" }}
-      value={openedAccordionItems()}
+      value={props.accordionStatus ? props.accordionStatus : []}
       onValueChange={(e) => {
-        setOpenedAccordionItems(e.value);
         props.onAccordionStatusChange?.(e.value);
       }}
     >
-      <For each={items}>
+      <For each={props.items}>
         {(item, index) => {
           const title = props.label + " " + (index() + 1).toString();
           return (
@@ -328,13 +390,13 @@ function ConfigList(props: ConfigListProps) {
                     <IconButton
                       variant="ghost"
                       onClick={() => {
-                        setLinked(!linked());
-                        if (!linked()) return;
+                        props.onLinkedChange?.(!props.linked, index());
+                        if (!props.linked) return;
                         setRecentEditedItem(JSON.stringify(item));
                       }}
                       marginTop="0.5rem"
                     >
-                      <Show when={linked()} fallback={<IconLinkOff />}>
+                      <Show when={props.linked} fallback={<IconLinkOff />}>
                         <IconLink />
                       </Show>
                     </IconButton>
@@ -375,6 +437,11 @@ function ConfigList(props: ConfigListProps) {
                   id_prefix={props.id_prefix + title}
                   onItemChange={() => {
                     setRecentEditedItem(JSON.stringify(item));
+                    props.onLinkedChange?.(
+                      props.linked ? props.linked : false,
+                      index(),
+                    );
+                    props.onItemChange?.();
                   }}
                 />
               </Accordion.ItemContent>

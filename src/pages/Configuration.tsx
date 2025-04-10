@@ -215,6 +215,16 @@ function Configuration() {
     { axes: string[]; hallSensor: string[] }
   >({ axes: [], hallSensor: [] });
 
+  const [linkStatus, setLinkStatus] = createSignal<
+    {
+      axes: { isLinked: boolean; changedItemIndex: number };
+      hallSensor: { isLinked: boolean; changedItemIndex: number };
+    }
+  >({
+    axes: { isLinked: false, changedItemIndex: 0 },
+    hallSensor: { isLinked: false, changedItemIndex: 0 },
+  });
+
   function calcCurrentP(denominator: number, ls: number) {
     const wcc = 2.0 * Math.PI * (15000.0 / denominator);
     const p = wcc * ls;
@@ -228,29 +238,37 @@ function Configuration() {
     return i;
   }
 
-  function calcVelocity(
+  function calcVelocityP(
     denominator: number,
-    denominator_pi: number,
     currentDenominator: number,
     pitch: number,
     mass: number,
     kf: number,
-  ): { p: number; i: number } | null {
+  ): number {
     const wcc = 2.0 * Math.PI * (15000.0 / currentDenominator);
     const radius = pitch / (2.0 * Math.PI);
     const inertia = (mass / 100) * radius * radius;
     const torque_constant = kf * radius;
 
     const wsc = wcc / denominator;
-    const wpi = wsc / denominator_pi;
     const p = (inertia * wsc) / torque_constant;
+
+    return p;
+  }
+
+  function calcVelocityI(
+    denominator: number,
+    denominator_pi: number,
+    currentDenominator: number,
+    p: number,
+  ): number {
+    const wcc = 2.0 * Math.PI * (15000.0 / currentDenominator);
+    const wsc = wcc / denominator;
+    const wpi = wsc / denominator_pi;
 
     const i = p * wpi;
 
-    return {
-      p: p,
-      i: i,
-    };
+    return i;
   }
 
   function calcPositionP(
@@ -263,7 +281,6 @@ function Configuration() {
 
     const wpc = wsc / positionDenominator;
     const p = wpc;
-
     return p;
   }
 
@@ -272,32 +289,46 @@ function Configuration() {
     child: string,
     config: object,
   ): number | null {
-    const parentValue =
-      Object.entries(config).filter((key) => key[0] === parent).slice(
+    if (Object.keys(config).includes(parent)) {
+      const parentValue = Object.entries(config).filter((key) =>
+        key[0] === parent
+      ).slice(
         0,
       )[0][1];
-    if (typeof parentValue !== "object") return null;
+      if (typeof parentValue !== "object") return null;
 
-    const childValue =
-      Object.entries(parentValue!).filter((key) => key[0] === child).slice(
-        0,
-      )[0][1];
-    if (typeof childValue !== "number") return null;
-    return childValue;
+      if (Object.keys(parentValue).includes(child)) {
+        const childValue = Object.entries(parentValue!).filter((key) =>
+          key[0] === child
+        ).slice(
+          0,
+        )[0][1];
+        if (typeof childValue !== "number") return null;
+        return childValue;
+      }
+    }
+    return null;
   }
 
-  function updateAxesCurrent(rs: number, ls: number, axes: object[]): object[] {
+  function updateAxesCurrent(
+    rs: number | null,
+    ls: number | null,
+    axes: object[],
+  ): object[] {
     const updateAxes = axes.map((axis) => {
       const gain: object = axis["gain" as keyof typeof axis];
       const denominator = getValueFromObject("current", "denominator", gain);
+      const p = getValueFromObject("current", "p", gain);
+      const i = getValueFromObject("current", "i", gain);
+
       if (!denominator) return axis;
 
       return {
         gain: {
           ...gain,
           current: {
-            p: calcCurrentP(denominator, ls),
-            i: calcCurrentI(denominator, rs),
+            p: ls ? calcCurrentP(denominator, ls) : p ? p : 0,
+            i: rs ? calcCurrentI(denominator, rs) : i ? i : 0,
             denominator: denominator,
           },
         },
@@ -325,24 +356,22 @@ function Configuration() {
         "denominator",
         gain,
       );
-      if (!denominator || !denominator_pi || !currentDenominator) return axis;
 
-      const updatedVelocity = calcVelocity(
+      if (!denominator || !currentDenominator || !denominator_pi) return axis;
+      const p = calcVelocityP(denominator, currentDenominator, pitch, mass, kf);
+      const i = calcVelocityI(
         denominator,
         denominator_pi,
         currentDenominator,
-        pitch,
-        mass,
-        kf,
+        p,
       );
-      if (!updatedVelocity) return axes;
 
       return {
         gain: {
           ...gain,
           velocity: {
-            p: updatedVelocity.p,
-            i: updatedVelocity.i,
+            p: p,
+            i: i,
             denominator: denominator,
             denominator_pi: denominator_pi,
           },
@@ -374,6 +403,7 @@ function Configuration() {
       if (!currentDenominator || !velocityDenominator || !positionDenominator) {
         return axis;
       }
+
       return {
         gain: {
           ...gain,
@@ -612,6 +642,8 @@ function Configuration() {
                   <ConfigForm
                     label={formName()}
                     onLabelChange={(e) => setFormName(e)}
+                    linked={linkStatus()}
+                    onLinkedChange={(status) => setLinkStatus(status)}
                     accordionStatus={accordionStatus()}
                     onAccordionStatusChange={(newAccordionStatus) =>
                       setAccordionStatus(newAccordionStatus)}
@@ -619,7 +651,6 @@ function Configuration() {
                     onConfigChange={() => {
                       const rs = getValueFromObject("coil", "rs", configure());
                       const ls = getValueFromObject("coil", "ls", configure());
-
                       const pitch = getValueFromObject(
                         "magnet",
                         "pitch",
@@ -640,12 +671,17 @@ function Configuration() {
                         typeof axes === "object"
                       ) {
                         const newAxes: object[] = axes;
-                        const updatedCurrent = rs && ls
-                          ? updateAxesCurrent(rs, ls, newAxes)
-                          : newAxes;
-                        const updatedVelocity = pitch && mass && kf
-                          ? updateAxesVelocity(pitch, mass, kf, updatedCurrent)
-                          : newAxes;
+                        const updatedCurrent = updateAxesCurrent(
+                          rs,
+                          ls,
+                          newAxes,
+                        );
+                        const updatedVelocity = updateAxesVelocity(
+                          pitch ? pitch : 0,
+                          mass ? mass : 0,
+                          kf ? kf : 0,
+                          updatedCurrent,
+                        );
                         const updatedPosition = updateAxesPosition(
                           updatedVelocity,
                         );
@@ -666,6 +702,10 @@ function Configuration() {
                       setIsFormOpen(false);
                       setRefresh(false);
                       setAccordionStatus({ axes: [], hallSensor: [] });
+                      setLinkStatus({
+                        axes: { isLinked: false, changedItemIndex: 0 },
+                        hallSensor: { isLinked: false, changedItemIndex: 0 },
+                      });
                     }}
                   />
                   <Card.Footer padding={0}>
