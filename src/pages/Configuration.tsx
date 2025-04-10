@@ -211,7 +211,9 @@ function Configuration() {
     setIsRender(true);
   });
 
-  const [accordionStatus, setAccordionStatus] = createSignal<string[]>([]);
+  const [accordionStatus, setAccordionStatus] = createSignal<
+    { axes: string[]; hallSensor: string[] }
+  >({ axes: [], hallSensor: [] });
 
   function calcCurrentP(denominator: number, ls: number) {
     const wcc = 2.0 * Math.PI * (15000.0 / denominator);
@@ -611,6 +613,8 @@ function Configuration() {
                     label={formName()}
                     onLabelChange={(e) => setFormName(e)}
                     accordionStatus={accordionStatus()}
+                    onAccordionStatusChange={(newAccordionStatus) =>
+                      setAccordionStatus(newAccordionStatus)}
                     config={configure()}
                     onConfigChange={() => {
                       const rs = getValueFromObject("coil", "rs", configure());
@@ -661,7 +665,7 @@ function Configuration() {
                     onCancel={() => {
                       setIsFormOpen(false);
                       setRefresh(false);
-                      setAccordionStatus([]);
+                      setAccordionStatus({ axes: [], hallSensor: [] });
                     }}
                   />
                   <Card.Footer padding={0}>

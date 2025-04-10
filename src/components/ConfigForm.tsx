@@ -29,7 +29,10 @@ export type ConfigFormProps = JSX.HTMLAttributes<HTMLFormElement> & {
   onLabelChange?: (label: string) => void;
   config: object;
   onCancel?: () => void;
-  accordionStatus?: string[];
+  accordionStatus?: { axes: string[]; hallSensor: string[] };
+  onAccordionStatusChange?: (
+    status: { axes: string[]; hallSensor: string[] },
+  ) => void;
   onConfigChange?: () => void;
 };
 
@@ -77,6 +80,8 @@ export function ConfigForm(props: ConfigFormProps) {
           id_prefix={props.label}
           onItemChange={() => props.onConfigChange?.()}
           accordionStatus={props.accordionStatus}
+          onAccordionStatusChange={(accordionStatus) =>
+            props.onAccordionStatusChange?.(accordionStatus)}
         />
       </div>
     </div>
@@ -86,7 +91,10 @@ export function ConfigForm(props: ConfigFormProps) {
 type ConfigObjectProps = JSX.HTMLAttributes<HTMLDivElement> & {
   id_prefix: string;
   object: object;
-  accordionStatus?: string[];
+  accordionStatus?: { axes: string[]; hallSensor: string[] };
+  onAccordionStatusChange?: (
+    status: { axes: string[]; hallSensor: string[] },
+  ) => void;
   onItemChange?: () => void;
 };
 
@@ -123,6 +131,31 @@ function ConfigObject(props: ConfigObjectProps) {
                     label={key}
                     items={value}
                     id_prefix={props.id_prefix}
+                    accordionStatus={props.accordionStatus
+                      ? key === "axes"
+                        ? props.accordionStatus.axes
+                        : key === "hall_sensors"
+                        ? props.accordionStatus.hallSensor
+                        : []
+                      : []}
+                    onAccordionStatusChange={(status) => {
+                      if (key === "axes") {
+                        props.onAccordionStatusChange?.({
+                          axes: status,
+                          hallSensor: props.accordionStatus
+                            ? props.accordionStatus.hallSensor
+                            : [],
+                        });
+                      }
+                      if (key === "hall_sensors") {
+                        props.onAccordionStatusChange?.({
+                          axes: props.accordionStatus
+                            ? props.accordionStatus.axes
+                            : [],
+                          hallSensor: status,
+                        });
+                      }
+                    }}
                   />
                 </Stack>
               </>
@@ -233,6 +266,7 @@ type ConfigListProps = Accordion.RootProps & {
   label: string;
   items: object[];
   accordionStatus?: string[];
+  onAccordionStatusChange?: (accordionStatus: string[]) => void;
 };
 
 function ConfigList(props: ConfigListProps) {
@@ -278,7 +312,10 @@ function ConfigList(props: ConfigListProps) {
       {...rest}
       style={{ "border-bottom": "0", "border-top": "0" }}
       value={openedAccordionItems()}
-      onValueChange={(e) => setOpenedAccordionItems(e.value)}
+      onValueChange={(e) => {
+        setOpenedAccordionItems(e.value);
+        props.onAccordionStatusChange?.(e.value);
+      }}
     >
       <For each={items}>
         {(item, index) => {
