@@ -5,6 +5,7 @@ import {
   JSX,
   Show,
   splitProps,
+  type Accessor, type Setter,
 } from "solid-js";
 import { createStore } from "solid-js/store";
 
@@ -29,15 +30,303 @@ export type ConfigFormProps = JSX.HTMLAttributes<HTMLFormElement> & {
   onLabelChange?: (label: string) => void;
   config: object;
   onCancel?: () => void;
-  linked?: LinkedStatus;
-  onLinkedChange?: (linked: LinkedStatus) => void;
-  accordionStatus?: AccordionStatus;
-  onAccordionStatusChange?: (accordionStatus: AccordionStatus) => void;
-  onConfigChange?: () => void;
 };
 
+type AccordionStatuses = Map<string, [Accessor<string[]>, Setter<string[]>]>
+
+type LinkedStatuses = Map<string, [Accessor<[boolean, number]>, Setter<[boolean, number]>]>
+
 export function ConfigForm(props: ConfigFormProps) {
-  const [config] = createStore(props.config);
+  const [config, setConfig] = createStore(props.config);
+  createSignal
+
+  let accordionStatuses: AccordionStatuses = new Map()
+  let linkedStatuses : LinkedStatuses = new Map()
+  
+  createEffect(() => {
+    const axes = config["axes" as keyof typeof config]
+    const newAxes: object[] = axes
+
+    const rs = getValueFromObject(config, "coil", "rs")
+    const ls = getValueFromObject(config, "coil", "ls")
+
+    const pitch = getValueFromObject(config, "magnet", "pitch")
+    const mass = getValueFromObject(config, "carrier", "mass")
+    const kf = getValueFromObject(config, "coil", "kf")
+
+    const updatedCurrentPAxesArray = typeof ls === "number" ? updateAxesArrayCurrentP(ls, newAxes) : newAxes 
+    const updatedCurrentIAxesArray = typeof rs === "number" ? updateAxesArrayCurrentI(rs, updatedCurrentPAxesArray) : updatedCurrentPAxesArray
+    const updatedVelocityPAxesArray = typeof pitch === "number" && typeof mass === "number" && typeof kf === "number" ? updateAxesArrayVelocityP(pitch, mass ,kf, updatedCurrentIAxesArray) : updatedCurrentIAxesArray
+    const updatedVelocityIAxesArray = updateAxesArrayVelocityI(updatedVelocityPAxesArray)
+    const updatedPositionPAxesArray = updateAxesArrayPosition(updatedVelocityIAxesArray)
+
+    if(JSON.stringify(updatedPositionPAxesArray) !== JSON.stringify(newAxes)){
+      setConfig(
+        "axes" as keyof typeof config,
+        //@ts-ignore
+        updatedPositionPAxesArray
+      )
+    }
+  })
+
+
+  function getValueFromObject(
+    config: object,
+    parent: string,
+    child?: string,
+  ): object | number | null {
+    if (Object.keys(config).includes(parent)) {
+      const parentValue = Object.entries(config).filter((key) =>
+        key[0] === parent
+      ).pop()![1];
+
+      if (typeof parentValue === "object") {
+        return child ? getValueFromObject(parentValue, child) : parentValue;
+      } else if (typeof parentValue === "number") {
+        return parentValue;
+      } else {
+        return null;
+      }
+    }
+    return null;
+  }
+
+  function calcCurrentP(denominator: number, ls: number) {
+    const wcc = 2.0 * Math.PI * (15000.0 / denominator);
+    const p = wcc * ls;
+    return p;
+  }
+
+  function calcCurrentI(denominator: number, rs: number) {
+    const wcc = 2.0 * Math.PI * (15000.0 / denominator);
+    const i = wcc * rs;
+    return i;
+  }
+
+  function calcVelocityP(
+    denominator: number,
+    currentDenominator: number,
+    pitch: number,
+    mass: number,
+    kf: number,
+  ): number {
+    const wcc = 2.0 * Math.PI * (15000.0 / currentDenominator);
+    const radius = pitch / (2.0 * Math.PI);
+    const inertia = (mass / 100) * radius * radius;
+    const torque_constant = kf * radius;
+
+    const wsc = wcc / denominator;
+    const p = (inertia * wsc) / torque_constant;
+
+    return p;
+  }
+
+  function calcVelocityI(
+    denominator: number,
+    denominator_pi: number,
+    currentDenominator: number,
+    p: number,
+  ): number {
+    const wcc = 2.0 * Math.PI * (15000.0 / currentDenominator);
+    const wsc = wcc / denominator;
+    const wpi = wsc / denominator_pi;
+
+    const i = p * wpi;
+
+    return i;
+  }
+
+  function calcPositionP(
+    currentDenominator: number,
+    velocityDenominator: number,
+    positionDenominator: number,
+  ) {
+    const wcc = 2.0 * Math.PI * (15000.0 / currentDenominator);
+    const wsc = wcc / velocityDenominator;
+
+    const wpc = wsc / positionDenominator;
+    const p = wpc;
+    return p;
+  }
+
+  function updateAxesArrayCurrentI(
+    rs: number,
+    axes: object[],
+  ): object[] {
+    const updateAxes = axes.map((axis) => {
+      const gain: object = axis["gain" as keyof typeof axis];
+      const denominator = getValueFromObject(gain, "current", "denominator");
+      const p = getValueFromObject(gain, "current", "p");
+      if (!denominator || typeof denominator === "object") return axis;
+
+      return {
+        gain: {
+          ...gain,
+          current: {
+            p: p,
+            i: calcCurrentI(denominator, rs),
+            denominator: denominator,
+          },
+        },
+      };
+    });
+    return updateAxes;
+  }
+
+  function updateAxesArrayCurrentP(
+    ls: number,
+    axes: object[],
+  ): object[] {
+    const updateAxes = axes.map((axis) => {
+      const gain: object = axis["gain" as keyof typeof axis];
+      const denominator = getValueFromObject(gain, "current", "denominator");
+      const i = getValueFromObject(gain, "current", "i");
+
+      if (!denominator || typeof denominator === "object") return axis;
+
+      return {
+        gain: {
+          ...gain,
+          current: {
+            p: calcCurrentP(denominator, ls),
+            i: i,
+            denominator: denominator,
+          },
+        },
+      };
+    });
+    return updateAxes;
+  }
+
+  function updateAxesArrayVelocityP(
+    pitch: number,
+    mass: number,
+    kf: number,
+    axes: object[],
+  ): object[] {
+    const updateAxes = axes.map((axis) => {
+      const gain: object = axis["gain" as keyof typeof axis];
+      const denominator = getValueFromObject(gain, "velocity", "denominator");
+      const i = getValueFromObject(gain, "velocity", "i");
+      const denominator_pi = getValueFromObject(
+        gain,
+        "velocity",
+        "denominator_pi",
+      );
+      const currentDenominator = getValueFromObject(
+        gain,
+        "current",
+        "denominator",
+      );
+
+      if (!denominator || !currentDenominator || typeof denominator === "object" || typeof currentDenominator === "object") return axis;
+      const p = calcVelocityP(denominator, currentDenominator, pitch, mass, kf);
+
+      return {
+        gain: {
+          ...gain,
+          velocity: {
+            p: p,
+            i: i,
+            denominator: denominator,
+            denominator_pi: denominator_pi,
+          },
+        },
+      };
+    });
+    return updateAxes;
+  }
+
+  function updateAxesArrayVelocityI(
+    axes: object[],
+  ): object[] {
+    const updateAxes = axes.map((axis) => {
+      const gain: object = axis["gain" as keyof typeof axis];
+      const denominator = getValueFromObject(gain, "velocity", "denominator");
+      const denominator_pi = getValueFromObject(
+        gain,
+        "velocity",
+        "denominator_pi",
+      );
+      const currentDenominator = getValueFromObject(
+        gain,
+        "current",
+        "denominator",
+      );
+      const p = getValueFromObject(gain, "velocity", "p");
+
+      if (!denominator || !currentDenominator || !denominator_pi || !p) return axis;
+      if (
+        typeof denominator === "object" || typeof denominator_pi === "object" ||
+        typeof currentDenominator === "object" || typeof p === "object"
+      ) return axis;
+      const i = calcVelocityI(
+        denominator,
+        denominator_pi,
+        currentDenominator,
+        p,
+      );
+
+      return {
+        gain: {
+          ...gain,
+          velocity: {
+            p: p,
+            i: i,
+            denominator: denominator,
+            denominator_pi: denominator_pi,
+          },
+        },
+      };
+    });
+    return updateAxes;
+  }
+
+  function updateAxesArrayPosition(axes: object[]): object[] {
+    const updateAxes = axes.map((axis) => {
+      const gain: object = axis["gain" as keyof typeof axis];
+      const currentDenominator = getValueFromObject(
+        gain,
+        "current",
+        "denominator",
+      );
+      const velocityDenominator = getValueFromObject(
+        gain,
+        "velocity",
+        "denominator",
+      );
+      const positionDenominator = getValueFromObject(
+        gain,
+        "position",
+        "denominator",
+      );
+
+      if (!currentDenominator || !velocityDenominator || !positionDenominator) {
+        return axis;
+      }
+      if (
+        typeof currentDenominator === "object" ||
+        typeof velocityDenominator === "object" ||
+        typeof positionDenominator === "object"
+      ) return axis;
+
+      return {
+        gain: {
+          ...gain,
+          position: {
+            p: calcPositionP(
+              currentDenominator,
+              velocityDenominator,
+              positionDenominator,
+            ),
+            denominator: positionDenominator,
+          },
+        },
+      };
+    });
+
+    return updateAxes;
+  }
 
   return (
     <div style={{ width: "100%", "margin-bottom": "3rem" }}>
@@ -78,39 +367,20 @@ export function ConfigForm(props: ConfigFormProps) {
         <ConfigObject
           object={config}
           id_prefix={props.label}
-          onItemChange={() => props.onConfigChange?.()}
-          linked={props.linked}
-          onLinkedChange={(linkedStatus) =>
-            props.onLinkedChange?.(linkedStatus)}
-          accordionStatus={props.accordionStatus}
-          onAccordionStatusChange={(accordionStatus) =>
-            props.onAccordionStatusChange?.(accordionStatus)}
+          accordionStatuses={accordionStatuses}
+          linkedStatuses = {linkedStatuses}
         />
       </div>
     </div>
   );
 }
 
-export type AccordionStatus = {
-  axes: string[];
-  hallSensor: string[];
-};
-
-export type LinkedStatus = {
-  axes: { isLinked: boolean; changedItemIndex: number };
-  hallSensor: { isLinked: boolean; changedItemIndex: number };
-};
-
 type ConfigObjectProps = JSX.HTMLAttributes<HTMLDivElement> & {
   id_prefix: string;
   object: object;
-  accordionStatus?: AccordionStatus;
-  onAccordionStatusChange?: (
-    accordionStatus: AccordionStatus,
-  ) => void;
-  linked?: LinkedStatus;
-  onLinkedChange?: (linked: LinkedStatus) => void;
   onItemChange?: () => void;
+  accordionStatuses: AccordionStatuses
+  linkedStatuses: LinkedStatuses
 };
 
 function ConfigObject(props: ConfigObjectProps) {
@@ -123,6 +393,12 @@ function ConfigObject(props: ConfigObjectProps) {
           const key = entry[0];
           const value = entry[1];
           if (value.constructor === Array) {
+            if (!props.accordionStatuses.has(key)) {
+              props.accordionStatuses.set(key, createSignal<string[]>([]))
+            }
+            if(!props.linkedStatuses.has(key)) {
+              props.linkedStatuses.set(key, createSignal<[boolean, number]>([false, 0]))
+            }
             return (
               <>
                 <Stack
@@ -141,70 +417,8 @@ function ConfigObject(props: ConfigObjectProps) {
                     items={value}
                     onItemChange={() => props.onItemChange?.()}
                     id_prefix={props.id_prefix}
-                    linked={props.linked
-                      ? key === "axes"
-                        ? props.linked.axes.isLinked
-                        : key === "hall_sensors"
-                        ? props.linked.hallSensor.isLinked
-                        : false
-                      : false}
-                    linkedItemIndex={props.linked
-                      ? key === "axes"
-                        ? props.linked.axes.changedItemIndex
-                        : key === "hall_sensors"
-                        ? props.linked.hallSensor.changedItemIndex
-                        : 0
-                      : 0}
-                    onLinkedChange={(linked, itemIndex) => {
-                      if (key === "axes") {
-                        props.onLinkedChange?.({
-                          axes: {
-                            isLinked: linked,
-                            changedItemIndex: itemIndex,
-                          },
-                          hallSensor: props.linked ? props.linked.hallSensor : {
-                            isLinked: false,
-                            changedItemIndex: 0,
-                          },
-                        });
-                      } else if (key === "hall_sensors") {
-                        props.onLinkedChange?.({
-                          axes: props.linked ? props.linked.axes : {
-                            isLinked: false,
-                            changedItemIndex: 0,
-                          },
-                          hallSensor: {
-                            isLinked: linked,
-                            changedItemIndex: itemIndex,
-                          },
-                        });
-                      }
-                    }}
-                    accordionStatus={props.accordionStatus
-                      ? key === "axes"
-                        ? props.accordionStatus.axes
-                        : key === "hall_sensors"
-                        ? props.accordionStatus.hallSensor
-                        : []
-                      : []}
-                    onAccordionStatusChange={(status) => {
-                      if (key === "axes") {
-                        props.onAccordionStatusChange?.({
-                          axes: status,
-                          hallSensor: props.accordionStatus
-                            ? props.accordionStatus.hallSensor
-                            : [],
-                        });
-                      }
-                      if (key === "hall_sensors") {
-                        props.onAccordionStatusChange?.({
-                          axes: props.accordionStatus
-                            ? props.accordionStatus.axes
-                            : [],
-                          hallSensor: status,
-                        });
-                      }
-                    }}
+                    accordionStatuses={props.accordionStatuses}
+                    linkedStatuses = {props.linkedStatuses}
                   />
                 </Stack>
               </>
@@ -243,10 +457,11 @@ function ConfigObject(props: ConfigObjectProps) {
                   object={value}
                   id_prefix={props.id_prefix + key}
                   style={{ "padding-left": "1rem" }}
-                  accordionStatus={props.accordionStatus}
                   onItemChange={() => {
                     props.onItemChange?.();
                   }}
+                  accordionStatuses={props.accordionStatuses}
+                  linkedStatuses = {props.linkedStatuses}
                 />
               </fieldset>
             );
@@ -319,11 +534,8 @@ type ConfigListProps = Accordion.RootProps & {
   label: string;
   items: object[];
   onItemChange?: () => void;
-  accordionStatus?: string[];
-  onAccordionStatusChange?: (accordionStatus: string[]) => void;
-  linked?: boolean;
-  linkedItemIndex?: number;
-  onLinkedChange?: (isLink: boolean, index: number) => void;
+  accordionStatuses : AccordionStatuses
+  linkedStatuses: LinkedStatuses
 };
 
 function ConfigList(props: ConfigListProps) {
@@ -335,12 +547,16 @@ function ConfigList(props: ConfigListProps) {
   // necessary over storing e.g. the item index, as the signal that sets other
   // items to be a copy cannot depend on the `items` store itself. Depending
   // directly on the `items` store will cause an infinite effects loop.
-  const [recentEditedItem, setRecentEditedItem] = createSignal<string>(
-    props.linkedItemIndex ? JSON.stringify(items[props.linkedItemIndex]) : "",
-  );
+  const [recentEditedItem, setRecentEditedItem] = createSignal<string>("");
+
+  const changedItemIndex = props.linkedStatuses.get(props.label)?.[0]()[1]
+  if(changedItemIndex !== undefined) {
+    setRecentEditedItem(JSON.stringify(items[changedItemIndex]))
+  }
+  
 
   createEffect(() => {
-    if (props.linked) {
+    if (props.linkedStatuses.get(props.label)?.[0]()) {
       if (recentEditedItem().length === 0) return;
       setItems(
         Array.from(
@@ -366,9 +582,9 @@ function ConfigList(props: ConfigListProps) {
       multiple
       {...rest}
       style={{ "border-bottom": "0", "border-top": "0" }}
-      value={props.accordionStatus ? props.accordionStatus : []}
+      value={props.accordionStatuses.get(props.label)?.[0]()}
       onValueChange={(e) => {
-        props.onAccordionStatusChange?.(e.value);
+        props.accordionStatuses.get(props.label)?.[1](e.value)
       }}
     >
       <For each={props.items}>
@@ -382,13 +598,16 @@ function ConfigList(props: ConfigListProps) {
                     <IconButton
                       variant="ghost"
                       onClick={() => {
-                        props.onLinkedChange?.(!props.linked, index());
-                        if (!props.linked) return;
+                        const linked = props.linkedStatuses.get(props.label)?.[0]()[0]
+                        if(linked) {
+                          props.linkedStatuses.get(props.label)?.[1]([!linked, index()]);
+                        }
+                        if (!props.linkedStatuses.get(props.label)?.[0]()) return;
                         setRecentEditedItem(JSON.stringify(item));
                       }}
                       marginTop="0.5rem"
                     >
-                      <Show when={props.linked} fallback={<IconLinkOff />}>
+                      <Show when={props.linkedStatuses.get(props.label)?.[0]()[0]} fallback={<IconLinkOff />}>
                         <IconLink />
                       </Show>
                     </IconButton>
@@ -429,12 +648,14 @@ function ConfigList(props: ConfigListProps) {
                   id_prefix={props.id_prefix + title}
                   onItemChange={() => {
                     setRecentEditedItem(JSON.stringify(item));
-                    props.onLinkedChange?.(
-                      props.linked ? props.linked : false,
-                      index(),
-                    );
                     props.onItemChange?.();
+                    const linked = props.linkedStatuses.get(props.label)?.[0]()[0]
+                    if(linked) {
+                      props.linkedStatuses.get(props.label)?.[1]([linked, index()]);
+                    }
                   }}
+                  accordionStatuses={props.accordionStatuses}
+                  linkedStatuses = {props.linkedStatuses}
                 />
               </Accordion.ItemContent>
             </Accordion.Item>
