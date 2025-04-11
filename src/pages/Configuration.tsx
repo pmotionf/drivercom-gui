@@ -1,6 +1,10 @@
 import { createEffect, createSignal, For, Show } from "solid-js";
 
-import { ConfigForm } from "~/components/ConfigForm";
+import {
+  AccordionStatus,
+  ConfigForm,
+  LinkedStatus,
+} from "~/components/ConfigForm";
 import { IconX } from "@tabler/icons-solidjs";
 import { open, save } from "@tauri-apps/plugin-dialog";
 import { Toast } from "~/components/ui/toast";
@@ -20,7 +24,7 @@ import { Card } from "~/components/ui/card";
 import { Menu } from "~/components/ui/menu";
 
 function Configuration() {
-  const [configure, setConfigure] = createSignal({});
+  const [config, setConfig] = createSignal({});
   const [formName, setFormName] = createSignal<string>("");
   const [isFormOpen, setIsFormOpen] = createSignal(false);
   const [filePath, setFilePath] = createSignal<string | undefined>(undefined);
@@ -112,7 +116,7 @@ function Configuration() {
   }
 
   function setFormData(data: object, path: string) {
-    setConfigure(data);
+    setConfig(data);
     setFilePath(path);
     setFormName(path.split("/").pop()!);
     setRecentConfigFilePaths((prev) => {
@@ -125,7 +129,7 @@ function Configuration() {
   }
 
   async function saveConfigAsFile() {
-    const json_str = JSON.stringify(configure(), null, "  ");
+    const json_str = JSON.stringify(config(), null, "  ");
     const fileNameFromPath = filePath()
       ? filePath()!
         .match(/[^?!//]+$/)!
@@ -183,7 +187,7 @@ function Configuration() {
   }
 
   async function saveConfigToPort(): Promise<string> {
-    const json_str = JSON.stringify(configure(), null, "  ");
+    const json_str = JSON.stringify(config(), null, "  ");
     const saveConfig = Command.sidecar("binaries/drivercom", [
       `--port`,
       portId(),
@@ -211,15 +215,11 @@ function Configuration() {
     setIsRender(true);
   });
 
-  const [accordionStatus, setAccordionStatus] = createSignal<
-    { axes: string[]; hallSensor: string[] }
-  >({ axes: [], hallSensor: [] });
+  const [configFormAccordionStatus, setConfigFormAccordionStatus] =
+    createSignal<AccordionStatus>({ axes: [], hallSensor: [] });
 
-  const [linkStatus, setLinkStatus] = createSignal<
-    {
-      axes: { isLinked: boolean; changedItemIndex: number };
-      hallSensor: { isLinked: boolean; changedItemIndex: number };
-    }
+  const [configFormLinkedStatus, setConfigFormLinkedStatus] = createSignal<
+    LinkedStatus
   >({
     axes: { isLinked: false, changedItemIndex: 0 },
     hallSensor: { isLinked: false, changedItemIndex: 0 },
@@ -285,26 +285,21 @@ function Configuration() {
   }
 
   function getValueFromObject(
-    parent: string,
-    child: string,
     config: object,
-  ): number | null {
+    parent: string,
+    child?: string,
+  ): object | number | null {
     if (Object.keys(config).includes(parent)) {
       const parentValue = Object.entries(config).filter((key) =>
         key[0] === parent
-      ).slice(
-        0,
-      )[0][1];
-      if (typeof parentValue !== "object") return null;
+      ).pop()![1];
 
-      if (Object.keys(parentValue).includes(child)) {
-        const childValue = Object.entries(parentValue!).filter((key) =>
-          key[0] === child
-        ).slice(
-          0,
-        )[0][1];
-        if (typeof childValue !== "number") return null;
-        return childValue;
+      if (typeof parentValue === "object") {
+        return child ? getValueFromObject(parentValue, child) : parentValue;
+      } else if (typeof parentValue === "number") {
+        return parentValue;
+      } else {
+        return null;
       }
     }
     return null;
@@ -317,11 +312,11 @@ function Configuration() {
   ): object[] {
     const updateAxes = axes.map((axis) => {
       const gain: object = axis["gain" as keyof typeof axis];
-      const denominator = getValueFromObject("current", "denominator", gain);
-      const p = getValueFromObject("current", "p", gain);
-      const i = getValueFromObject("current", "i", gain);
+      const denominator = getValueFromObject(gain, "current", "denominator");
+      const p = getValueFromObject(gain, "current", "p");
+      const i = getValueFromObject(gain, "current", "i");
 
-      if (!denominator) return axis;
+      if (!denominator || typeof denominator === "object") return axis;
 
       return {
         gain: {
@@ -345,19 +340,23 @@ function Configuration() {
   ): object[] {
     const updateAxes = axes.map((axis) => {
       const gain: object = axis["gain" as keyof typeof axis];
-      const denominator = getValueFromObject("velocity", "denominator", gain);
+      const denominator = getValueFromObject(gain, "velocity", "denominator");
       const denominator_pi = getValueFromObject(
+        gain,
         "velocity",
         "denominator_pi",
-        gain,
       );
       const currentDenominator = getValueFromObject(
+        gain,
         "current",
         "denominator",
-        gain,
       );
 
       if (!denominator || !currentDenominator || !denominator_pi) return axis;
+      if (
+        typeof denominator === "object" || typeof denominator_pi === "object" ||
+        typeof currentDenominator === "object"
+      ) return axis;
       const p = calcVelocityP(denominator, currentDenominator, pitch, mass, kf);
       const i = calcVelocityI(
         denominator,
@@ -385,24 +384,29 @@ function Configuration() {
     const updateAxes = axes.map((axis) => {
       const gain: object = axis["gain" as keyof typeof axis];
       const currentDenominator = getValueFromObject(
+        gain,
         "current",
         "denominator",
-        gain,
       );
       const velocityDenominator = getValueFromObject(
+        gain,
         "velocity",
         "denominator",
-        gain,
       );
       const positionDenominator = getValueFromObject(
+        gain,
         "position",
         "denominator",
-        gain,
       );
 
       if (!currentDenominator || !velocityDenominator || !positionDenominator) {
         return axis;
       }
+      if (
+        typeof currentDenominator === "object" ||
+        typeof velocityDenominator === "object" ||
+        typeof positionDenominator === "object"
+      ) return axis;
 
       return {
         gain: {
@@ -462,7 +466,7 @@ function Configuration() {
                     JSON.stringify(configFormFileFormat()),
                   );
                   setFormName("New File");
-                  setConfigure(newEmptyFile);
+                  setConfig(newEmptyFile);
                   setFilePath(undefined);
                   setIsFormOpen(true);
                 }}
@@ -509,7 +513,7 @@ function Configuration() {
                   } else {
                     const parseConfigToObject = JSON.parse(output.stdout);
                     setFormName(portId());
-                    setConfigure(parseConfigToObject);
+                    setConfig(parseConfigToObject);
                     setIsFormOpen(true);
                   }
                 }}
@@ -642,46 +646,54 @@ function Configuration() {
                   <ConfigForm
                     label={formName()}
                     onLabelChange={(e) => setFormName(e)}
-                    linked={linkStatus()}
-                    onLinkedChange={(status) => setLinkStatus(status)}
-                    accordionStatus={accordionStatus()}
+                    linked={configFormLinkedStatus()}
+                    onLinkedChange={(status) =>
+                      setConfigFormLinkedStatus(status)}
+                    accordionStatus={configFormAccordionStatus()}
                     onAccordionStatusChange={(newAccordionStatus) =>
-                      setAccordionStatus(newAccordionStatus)}
-                    config={configure()}
+                      setConfigFormAccordionStatus(newAccordionStatus)}
+                    config={config()}
                     onConfigChange={() => {
-                      const rs = getValueFromObject("coil", "rs", configure());
-                      const ls = getValueFromObject("coil", "ls", configure());
+                      const rs = getValueFromObject(config(), "coil", "rs");
+                      const ls = getValueFromObject(config(), "coil", "ls");
                       const pitch = getValueFromObject(
+                        config(),
                         "magnet",
                         "pitch",
-                        configure(),
                       );
                       const mass = getValueFromObject(
+                        config(),
                         "carrier",
                         "mass",
-                        configure(),
                       );
-                      const kf = getValueFromObject("coil", "kf", configure());
+                      const kf = getValueFromObject(config(), "coil", "kf");
 
-                      const axes = Object.entries(configure()).filter((key) =>
-                        key[0] === "axes"
-                      )[0][1];
+                      const axes =
+                        Object.entries(config()).filter((key) =>
+                          key[0] === "axes"
+                        )[0][1];
                       if (
                         axes && axes.constructor === Array &&
                         typeof axes === "object"
                       ) {
                         const newAxes: object[] = axes;
-                        const updatedCurrent = updateAxesCurrent(
-                          rs,
-                          ls,
-                          newAxes,
-                        );
-                        const updatedVelocity = updateAxesVelocity(
-                          pitch ? pitch : 0,
-                          mass ? mass : 0,
-                          kf ? kf : 0,
-                          updatedCurrent,
-                        );
+                        const updatedCurrent =
+                          typeof rs === "number" && typeof ls === "number"
+                            ? updateAxesCurrent(
+                              rs,
+                              ls,
+                              newAxes,
+                            )
+                            : newAxes;
+                        const updatedVelocity = typeof pitch === "number" &&
+                            typeof mass === "number" && typeof kf === "number"
+                          ? updateAxesVelocity(
+                            pitch,
+                            mass,
+                            kf,
+                            updatedCurrent,
+                          )
+                          : updatedCurrent;
                         const updatedPosition = updateAxesPosition(
                           updatedVelocity,
                         );
@@ -690,8 +702,8 @@ function Configuration() {
                           JSON.stringify(newAxes) !==
                             JSON.stringify(updatedPosition)
                         ) {
-                          setConfigure({
-                            ...configure(),
+                          setConfig({
+                            ...config(),
                             axes: updatedPosition,
                           });
                           setRefresh(true);
@@ -701,8 +713,11 @@ function Configuration() {
                     onCancel={() => {
                       setIsFormOpen(false);
                       setRefresh(false);
-                      setAccordionStatus({ axes: [], hallSensor: [] });
-                      setLinkStatus({
+                      setConfigFormAccordionStatus({
+                        axes: [],
+                        hallSensor: [],
+                      });
+                      setConfigFormLinkedStatus({
                         axes: { isLinked: false, changedItemIndex: 0 },
                         hallSensor: { isLinked: false, changedItemIndex: 0 },
                       });

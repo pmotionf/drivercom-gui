@@ -29,20 +29,10 @@ export type ConfigFormProps = JSX.HTMLAttributes<HTMLFormElement> & {
   onLabelChange?: (label: string) => void;
   config: object;
   onCancel?: () => void;
-  linked?: {
-    axes: { isLinked: boolean; changedItemIndex: number };
-    hallSensor: { isLinked: boolean; changedItemIndex: number };
-  };
-  onLinkedChange?: (
-    status: {
-      axes: { isLinked: boolean; changedItemIndex: number };
-      hallSensor: { isLinked: boolean; changedItemIndex: number };
-    },
-  ) => void;
-  accordionStatus?: { axes: string[]; hallSensor: string[] };
-  onAccordionStatusChange?: (
-    status: { axes: string[]; hallSensor: string[] },
-  ) => void;
+  linked?: LinkedStatus;
+  onLinkedChange?: (linked: LinkedStatus) => void;
+  accordionStatus?: AccordionStatus;
+  onAccordionStatusChange?: (accordionStatus: AccordionStatus) => void;
   onConfigChange?: () => void;
 };
 
@@ -101,23 +91,25 @@ export function ConfigForm(props: ConfigFormProps) {
   );
 }
 
+export type AccordionStatus = {
+  axes: string[];
+  hallSensor: string[];
+};
+
+export type LinkedStatus = {
+  axes: { isLinked: boolean; changedItemIndex: number };
+  hallSensor: { isLinked: boolean; changedItemIndex: number };
+};
+
 type ConfigObjectProps = JSX.HTMLAttributes<HTMLDivElement> & {
   id_prefix: string;
   object: object;
-  accordionStatus?: { axes: string[]; hallSensor: string[] };
+  accordionStatus?: AccordionStatus;
   onAccordionStatusChange?: (
-    status: { axes: string[]; hallSensor: string[] },
+    accordionStatus: AccordionStatus,
   ) => void;
-  linked?: {
-    axes: { isLinked: boolean; changedItemIndex: number };
-    hallSensor: { isLinked: boolean; changedItemIndex: number };
-  };
-  onLinkedChange?: (
-    status: {
-      axes: { isLinked: boolean; changedItemIndex: number };
-      hallSensor: { isLinked: boolean; changedItemIndex: number };
-    },
-  ) => void;
+  linked?: LinkedStatus;
+  onLinkedChange?: (linked: LinkedStatus) => void;
   onItemChange?: () => void;
 };
 
