@@ -1,9 +1,7 @@
-import { createEffect, createSignal, For, Show } from "solid-js";
+import { createSignal, For, Show } from "solid-js";
 
 import {
-  AccordionStatus,
   ConfigForm,
-  LinkedStatus,
 } from "~/components/ConfigForm";
 import { IconX } from "@tabler/icons-solidjs";
 import { open, save } from "@tauri-apps/plugin-dialog";
@@ -99,12 +97,14 @@ function Configuration() {
       .map((line) => {
         const key = line[0];
         const value = line[1];
-        if (typeof value !== "object") return [key, typeof value];
+        if (typeof value !== "object") {return [key, typeof value]};
         const parseValue = checkFileFormat(value);
         return [key, parseValue];
       })
       .sort()
       .toString();
+
+      console.log(newFileFormat)
 
     return newFileFormat;
   }
@@ -202,229 +202,6 @@ function Configuration() {
   const [isButtonHovered, setIsButtonHoverd] = createSignal<
     [boolean, number | null]
   >([false, null]);
-
-  const [refresh, setRefresh] = createSignal<boolean>(false);
-  const [isRender, setIsRender] = createSignal<boolean>(false);
-
-  createEffect(() => {
-    if (refresh()) {
-      setIsRender(false);
-      setRefresh(false);
-      return;
-    }
-    setIsRender(true);
-  });
-
-  const [configFormAccordionStatus, setConfigFormAccordionStatus] =
-    createSignal<AccordionStatus>({ axes: [], hallSensor: [] });
-
-  const [configFormLinkedStatus, setConfigFormLinkedStatus] = createSignal<
-    LinkedStatus
-  >({
-    axes: { isLinked: false, changedItemIndex: 0 },
-    hallSensor: { isLinked: false, changedItemIndex: 0 },
-  });
-
-  function calcCurrentP(denominator: number, ls: number) {
-    const wcc = 2.0 * Math.PI * (15000.0 / denominator);
-    const p = wcc * ls;
-    return p;
-  }
-
-  function calcCurrentI(denominator: number, rs: number) {
-    if (typeof rs !== "number") return;
-    const wcc = 2.0 * Math.PI * (15000.0 / denominator);
-    const i = wcc * rs;
-    return i;
-  }
-
-  function calcVelocityP(
-    denominator: number,
-    currentDenominator: number,
-    pitch: number,
-    mass: number,
-    kf: number,
-  ): number {
-    const wcc = 2.0 * Math.PI * (15000.0 / currentDenominator);
-    const radius = pitch / (2.0 * Math.PI);
-    const inertia = (mass / 100) * radius * radius;
-    const torque_constant = kf * radius;
-
-    const wsc = wcc / denominator;
-    const p = (inertia * wsc) / torque_constant;
-
-    return p;
-  }
-
-  function calcVelocityI(
-    denominator: number,
-    denominator_pi: number,
-    currentDenominator: number,
-    p: number,
-  ): number {
-    const wcc = 2.0 * Math.PI * (15000.0 / currentDenominator);
-    const wsc = wcc / denominator;
-    const wpi = wsc / denominator_pi;
-
-    const i = p * wpi;
-
-    return i;
-  }
-
-  function calcPositionP(
-    currentDenominator: number,
-    velocityDenominator: number,
-    positionDenominator: number,
-  ) {
-    const wcc = 2.0 * Math.PI * (15000.0 / currentDenominator);
-    const wsc = wcc / velocityDenominator;
-
-    const wpc = wsc / positionDenominator;
-    const p = wpc;
-    return p;
-  }
-
-  function getValueFromObject(
-    config: object,
-    parent: string,
-    child?: string,
-  ): object | number | null {
-    if (Object.keys(config).includes(parent)) {
-      const parentValue = Object.entries(config).filter((key) =>
-        key[0] === parent
-      ).pop()![1];
-
-      if (typeof parentValue === "object") {
-        return child ? getValueFromObject(parentValue, child) : parentValue;
-      } else if (typeof parentValue === "number") {
-        return parentValue;
-      } else {
-        return null;
-      }
-    }
-    return null;
-  }
-
-  function updateAxesCurrent(
-    rs: number | null,
-    ls: number | null,
-    axes: object[],
-  ): object[] {
-    const updateAxes = axes.map((axis) => {
-      const gain: object = axis["gain" as keyof typeof axis];
-      const denominator = getValueFromObject(gain, "current", "denominator");
-      const p = getValueFromObject(gain, "current", "p");
-      const i = getValueFromObject(gain, "current", "i");
-
-      if (!denominator || typeof denominator === "object") return axis;
-
-      return {
-        gain: {
-          ...gain,
-          current: {
-            p: ls ? calcCurrentP(denominator, ls) : p ? p : 0,
-            i: rs ? calcCurrentI(denominator, rs) : i ? i : 0,
-            denominator: denominator,
-          },
-        },
-      };
-    });
-    return updateAxes;
-  }
-
-  function updateAxesVelocity(
-    pitch: number,
-    mass: number,
-    kf: number,
-    axes: object[],
-  ): object[] {
-    const updateAxes = axes.map((axis) => {
-      const gain: object = axis["gain" as keyof typeof axis];
-      const denominator = getValueFromObject(gain, "velocity", "denominator");
-      const denominator_pi = getValueFromObject(
-        gain,
-        "velocity",
-        "denominator_pi",
-      );
-      const currentDenominator = getValueFromObject(
-        gain,
-        "current",
-        "denominator",
-      );
-
-      if (!denominator || !currentDenominator || !denominator_pi) return axis;
-      if (
-        typeof denominator === "object" || typeof denominator_pi === "object" ||
-        typeof currentDenominator === "object"
-      ) return axis;
-      const p = calcVelocityP(denominator, currentDenominator, pitch, mass, kf);
-      const i = calcVelocityI(
-        denominator,
-        denominator_pi,
-        currentDenominator,
-        p,
-      );
-
-      return {
-        gain: {
-          ...gain,
-          velocity: {
-            p: p,
-            i: i,
-            denominator: denominator,
-            denominator_pi: denominator_pi,
-          },
-        },
-      };
-    });
-    return updateAxes;
-  }
-
-  function updateAxesPosition(axes: object[]): object[] {
-    const updateAxes = axes.map((axis) => {
-      const gain: object = axis["gain" as keyof typeof axis];
-      const currentDenominator = getValueFromObject(
-        gain,
-        "current",
-        "denominator",
-      );
-      const velocityDenominator = getValueFromObject(
-        gain,
-        "velocity",
-        "denominator",
-      );
-      const positionDenominator = getValueFromObject(
-        gain,
-        "position",
-        "denominator",
-      );
-
-      if (!currentDenominator || !velocityDenominator || !positionDenominator) {
-        return axis;
-      }
-      if (
-        typeof currentDenominator === "object" ||
-        typeof velocityDenominator === "object" ||
-        typeof positionDenominator === "object"
-      ) return axis;
-
-      return {
-        gain: {
-          ...gain,
-          position: {
-            p: calcPositionP(
-              currentDenominator,
-              velocityDenominator,
-              positionDenominator,
-            ),
-            denominator: positionDenominator,
-          },
-        },
-      };
-    });
-
-    return updateAxes;
-  }
 
   return (
     <>
@@ -641,86 +418,13 @@ function Configuration() {
           </Show>
           <Show when={isFormOpen()}>
             <div style={{ width: "40rem", "margin-left": "2rem" }}>
-              <Show when={isRender()}>
                 <Card.Root padding="2rem" paddingTop="3rem" marginBottom="3rem">
                   <ConfigForm
                     label={formName()}
                     onLabelChange={(e) => setFormName(e)}
-                    linked={configFormLinkedStatus()}
-                    onLinkedChange={(status) =>
-                      setConfigFormLinkedStatus(status)}
-                    accordionStatus={configFormAccordionStatus()}
-                    onAccordionStatusChange={(newAccordionStatus) =>
-                      setConfigFormAccordionStatus(newAccordionStatus)}
                     config={config()}
-                    onConfigChange={() => {
-                      const rs = getValueFromObject(config(), "coil", "rs");
-                      const ls = getValueFromObject(config(), "coil", "ls");
-                      const pitch = getValueFromObject(
-                        config(),
-                        "magnet",
-                        "pitch",
-                      );
-                      const mass = getValueFromObject(
-                        config(),
-                        "carrier",
-                        "mass",
-                      );
-                      const kf = getValueFromObject(config(), "coil", "kf");
-
-                      const axes =
-                        Object.entries(config()).filter((key) =>
-                          key[0] === "axes"
-                        )[0][1];
-                      if (
-                        axes && axes.constructor === Array &&
-                        typeof axes === "object"
-                      ) {
-                        const newAxes: object[] = axes;
-                        const updatedCurrent =
-                          typeof rs === "number" && typeof ls === "number"
-                            ? updateAxesCurrent(
-                              rs,
-                              ls,
-                              newAxes,
-                            )
-                            : newAxes;
-                        const updatedVelocity = typeof pitch === "number" &&
-                            typeof mass === "number" && typeof kf === "number"
-                          ? updateAxesVelocity(
-                            pitch,
-                            mass,
-                            kf,
-                            updatedCurrent,
-                          )
-                          : updatedCurrent;
-                        const updatedPosition = updateAxesPosition(
-                          updatedVelocity,
-                        );
-
-                        if (
-                          JSON.stringify(newAxes) !==
-                            JSON.stringify(updatedPosition)
-                        ) {
-                          setConfig({
-                            ...config(),
-                            axes: updatedPosition,
-                          });
-                          setRefresh(true);
-                        }
-                      }
-                    }}
                     onCancel={() => {
                       setIsFormOpen(false);
-                      setRefresh(false);
-                      setConfigFormAccordionStatus({
-                        axes: [],
-                        hallSensor: [],
-                      });
-                      setConfigFormLinkedStatus({
-                        axes: { isLinked: false, changedItemIndex: 0 },
-                        hallSensor: { isLinked: false, changedItemIndex: 0 },
-                      });
                     }}
                   />
                   <Card.Footer padding={0}>
@@ -771,7 +475,6 @@ function Configuration() {
                     </Stack>
                   </Card.Footer>
                 </Card.Root>
-              </Show>
             </div>
           </Show>
         </Stack>
