@@ -1,11 +1,12 @@
 import {
+  type Accessor,
   createEffect,
   createSignal,
   For,
   JSX,
+  type Setter,
   Show,
   splitProps,
-  type Accessor, type Setter,
 } from "solid-js";
 import { createStore } from "solid-js/store";
 
@@ -32,43 +33,56 @@ export type ConfigFormProps = JSX.HTMLAttributes<HTMLFormElement> & {
   onCancel?: () => void;
 };
 
-type AccordionStatuses = Map<string, [Accessor<string[]>, Setter<string[]>]>
+type AccordionStatuses = Map<string, [Accessor<string[]>, Setter<string[]>]>;
 
-type LinkedStatuses = Map<string, [Accessor<[boolean, number]>, Setter<[boolean, number]>]>
+type LinkedStatuses = Map<
+  string,
+  [Accessor<[boolean, number]>, Setter<[boolean, number]>]
+>;
 
 export function ConfigForm(props: ConfigFormProps) {
   const [config, setConfig] = createStore(props.config);
-  createSignal
+  createSignal;
 
-  let accordionStatuses: AccordionStatuses = new Map()
-  let linkedStatuses : LinkedStatuses = new Map()
-  
+  const accordionStatuses: AccordionStatuses = new Map();
+  const linkedStatuses: LinkedStatuses = new Map();
+
   createEffect(() => {
-    const axes = config["axes" as keyof typeof config]
-    const newAxes: object[] = axes
+    const axes = config["axes" as keyof typeof config];
+    const newAxes: object[] = axes;
 
-    const rs = getValueFromObject(config, "coil", "rs")
-    const ls = getValueFromObject(config, "coil", "ls")
+    const rs = getValueFromObject(config, "coil", "rs");
+    const ls = getValueFromObject(config, "coil", "ls");
 
-    const pitch = getValueFromObject(config, "magnet", "pitch")
-    const mass = getValueFromObject(config, "carrier", "mass")
-    const kf = getValueFromObject(config, "coil", "kf")
+    const pitch = getValueFromObject(config, "magnet", "pitch");
+    const mass = getValueFromObject(config, "carrier", "mass");
+    const kf = getValueFromObject(config, "coil", "kf");
 
-    const updatedCurrentPAxesArray = typeof ls === "number" ? updateAxesArrayCurrentP(ls, newAxes) : newAxes 
-    const updatedCurrentIAxesArray = typeof rs === "number" ? updateAxesArrayCurrentI(rs, updatedCurrentPAxesArray) : updatedCurrentPAxesArray
-    const updatedVelocityPAxesArray = typeof pitch === "number" && typeof mass === "number" && typeof kf === "number" ? updateAxesArrayVelocityP(pitch, mass ,kf, updatedCurrentIAxesArray) : updatedCurrentIAxesArray
-    const updatedVelocityIAxesArray = updateAxesArrayVelocityI(updatedVelocityPAxesArray)
-    const updatedPositionPAxesArray = updateAxesArrayPosition(updatedVelocityIAxesArray)
+    const updatedCurrentPAxesArray = typeof ls === "number"
+      ? updateAxesArrayCurrentP(ls, newAxes)
+      : newAxes;
+    const updatedCurrentIAxesArray = typeof rs === "number"
+      ? updateAxesArrayCurrentI(rs, updatedCurrentPAxesArray)
+      : updatedCurrentPAxesArray;
+    const updatedVelocityPAxesArray = typeof pitch === "number" &&
+        typeof mass === "number" &&
+        typeof kf === "number"
+      ? updateAxesArrayVelocityP(pitch, mass, kf, updatedCurrentIAxesArray)
+      : updatedCurrentIAxesArray;
+    const updatedVelocityIAxesArray = updateAxesArrayVelocityI(
+      updatedVelocityPAxesArray,
+    );
+    const updatedPositionPAxesArray = updateAxesArrayPosition(
+      updatedVelocityIAxesArray,
+    );
 
-    if(JSON.stringify(updatedPositionPAxesArray) !== JSON.stringify(newAxes)){
-      setConfig(
-        "axes" as keyof typeof config,
-        //@ts-ignore
-        updatedPositionPAxesArray
-      )
+    if (JSON.stringify(updatedPositionPAxesArray) !== JSON.stringify(newAxes)) {
+      setConfig({
+        ...config,
+        axes: updatedPositionPAxesArray,
+      });
     }
-  })
-
+  });
 
   function getValueFromObject(
     config: object,
@@ -76,9 +90,9 @@ export function ConfigForm(props: ConfigFormProps) {
     child?: string,
   ): object | number | null {
     if (Object.keys(config).includes(parent)) {
-      const parentValue = Object.entries(config).filter((key) =>
-        key[0] === parent
-      ).pop()![1];
+      const parentValue = Object.entries(config)
+        .filter((key) => key[0] === parent)
+        .pop()![1];
 
       if (typeof parentValue === "object") {
         return child ? getValueFromObject(parentValue, child) : parentValue;
@@ -149,22 +163,21 @@ export function ConfigForm(props: ConfigFormProps) {
     return p;
   }
 
-  function updateAxesArrayCurrentI(
-    rs: number,
-    axes: object[],
-  ): object[] {
+  function updateAxesArrayCurrentI(rs: number, axes: object[]): object[] {
     const updateAxes = axes.map((axis) => {
       const gain: object = axis["gain" as keyof typeof axis];
       const denominator = getValueFromObject(gain, "current", "denominator");
       const p = getValueFromObject(gain, "current", "p");
       if (!denominator || typeof denominator === "object") return axis;
 
+      const i = calcCurrentI(denominator, rs);
+
       return {
         gain: {
           ...gain,
           current: {
             p: p,
-            i: calcCurrentI(denominator, rs),
+            i: isNaN(i) ? "NaN" : i,
             denominator: denominator,
           },
         },
@@ -173,10 +186,7 @@ export function ConfigForm(props: ConfigFormProps) {
     return updateAxes;
   }
 
-  function updateAxesArrayCurrentP(
-    ls: number,
-    axes: object[],
-  ): object[] {
+  function updateAxesArrayCurrentP(ls: number, axes: object[]): object[] {
     const updateAxes = axes.map((axis) => {
       const gain: object = axis["gain" as keyof typeof axis];
       const denominator = getValueFromObject(gain, "current", "denominator");
@@ -184,11 +194,12 @@ export function ConfigForm(props: ConfigFormProps) {
 
       if (!denominator || typeof denominator === "object") return axis;
 
+      const p = calcCurrentP(denominator, ls);
       return {
         gain: {
           ...gain,
           current: {
-            p: calcCurrentP(denominator, ls),
+            p: isNaN(p) ? "NaN" : p,
             i: i,
             denominator: denominator,
           },
@@ -219,14 +230,22 @@ export function ConfigForm(props: ConfigFormProps) {
         "denominator",
       );
 
-      if (!denominator || !currentDenominator || typeof denominator === "object" || typeof currentDenominator === "object") return axis;
+      if (
+        !denominator ||
+        !currentDenominator ||
+        typeof denominator === "object" ||
+        typeof currentDenominator === "object"
+      ) {
+        return axis;
+      }
+
       const p = calcVelocityP(denominator, currentDenominator, pitch, mass, kf);
 
       return {
         gain: {
           ...gain,
           velocity: {
-            p: p,
+            p: isNaN(p) ? "NaN" : p,
             i: i,
             denominator: denominator,
             denominator_pi: denominator_pi,
@@ -237,9 +256,7 @@ export function ConfigForm(props: ConfigFormProps) {
     return updateAxes;
   }
 
-  function updateAxesArrayVelocityI(
-    axes: object[],
-  ): object[] {
+  function updateAxesArrayVelocityI(axes: object[]): object[] {
     const updateAxes = axes.map((axis) => {
       const gain: object = axis["gain" as keyof typeof axis];
       const denominator = getValueFromObject(gain, "velocity", "denominator");
@@ -255,11 +272,17 @@ export function ConfigForm(props: ConfigFormProps) {
       );
       const p = getValueFromObject(gain, "velocity", "p");
 
-      if (!denominator || !currentDenominator || !denominator_pi || !p) return axis;
+      if (!denominator || !currentDenominator || !denominator_pi || !p) {
+        return axis;
+      }
       if (
-        typeof denominator === "object" || typeof denominator_pi === "object" ||
-        typeof currentDenominator === "object" || typeof p === "object"
-      ) return axis;
+        typeof denominator === "object" ||
+        typeof denominator_pi === "object" ||
+        typeof currentDenominator === "object" ||
+        typeof p === "object"
+      ) {
+        return axis;
+      }
       const i = calcVelocityI(
         denominator,
         denominator_pi,
@@ -272,7 +295,7 @@ export function ConfigForm(props: ConfigFormProps) {
           ...gain,
           velocity: {
             p: p,
-            i: i,
+            i: isNaN(i) ? "NaN" : i,
             denominator: denominator,
             denominator_pi: denominator_pi,
           },
@@ -308,17 +331,21 @@ export function ConfigForm(props: ConfigFormProps) {
         typeof currentDenominator === "object" ||
         typeof velocityDenominator === "object" ||
         typeof positionDenominator === "object"
-      ) return axis;
+      ) {
+        return axis;
+      }
+
+      const p = calcPositionP(
+        currentDenominator,
+        velocityDenominator,
+        positionDenominator,
+      );
 
       return {
         gain: {
           ...gain,
           position: {
-            p: calcPositionP(
-              currentDenominator,
-              velocityDenominator,
-              positionDenominator,
-            ),
+            p: isNaN(p) ? "NaN" : p,
             denominator: positionDenominator,
           },
         },
@@ -368,7 +395,7 @@ export function ConfigForm(props: ConfigFormProps) {
           object={config}
           id_prefix={props.label}
           accordionStatuses={accordionStatuses}
-          linkedStatuses = {linkedStatuses}
+          linkedStatuses={linkedStatuses}
         />
       </div>
     </div>
@@ -379,8 +406,8 @@ type ConfigObjectProps = JSX.HTMLAttributes<HTMLDivElement> & {
   id_prefix: string;
   object: object;
   onItemChange?: () => void;
-  accordionStatuses: AccordionStatuses
-  linkedStatuses: LinkedStatuses
+  accordionStatuses: AccordionStatuses;
+  linkedStatuses: LinkedStatuses;
 };
 
 function ConfigObject(props: ConfigObjectProps) {
@@ -394,10 +421,13 @@ function ConfigObject(props: ConfigObjectProps) {
           const value = entry[1];
           if (value.constructor === Array) {
             if (!props.accordionStatuses.has(key)) {
-              props.accordionStatuses.set(key, createSignal<string[]>([]))
+              props.accordionStatuses.set(key, createSignal<string[]>([]));
             }
-            if(!props.linkedStatuses.has(key)) {
-              props.linkedStatuses.set(key, createSignal<[boolean, number]>([false, 0]))
+            if (!props.linkedStatuses.has(key)) {
+              props.linkedStatuses.set(
+                key,
+                createSignal<[boolean, number]>([false, 0]),
+              );
             }
             return (
               <>
@@ -418,7 +448,7 @@ function ConfigObject(props: ConfigObjectProps) {
                     onItemChange={() => props.onItemChange?.()}
                     id_prefix={props.id_prefix}
                     accordionStatuses={props.accordionStatuses}
-                    linkedStatuses = {props.linkedStatuses}
+                    linkedStatuses={props.linkedStatuses}
                   />
                 </Stack>
               </>
@@ -461,7 +491,7 @@ function ConfigObject(props: ConfigObjectProps) {
                     props.onItemChange?.();
                   }}
                   accordionStatuses={props.accordionStatuses}
-                  linkedStatuses = {props.linkedStatuses}
+                  linkedStatuses={props.linkedStatuses}
                 />
               </fieldset>
             );
@@ -487,7 +517,7 @@ function ConfigObject(props: ConfigObjectProps) {
               </Checkbox>
             );
           }
-          if (typeof value === "number") {
+          if (typeof value === "number" || value === "NaN") {
             return (
               <Stack
                 direction="row"
@@ -534,8 +564,8 @@ type ConfigListProps = Accordion.RootProps & {
   label: string;
   items: object[];
   onItemChange?: () => void;
-  accordionStatuses : AccordionStatuses
-  linkedStatuses: LinkedStatuses
+  accordionStatuses: AccordionStatuses;
+  linkedStatuses: LinkedStatuses;
 };
 
 function ConfigList(props: ConfigListProps) {
@@ -549,14 +579,13 @@ function ConfigList(props: ConfigListProps) {
   // directly on the `items` store will cause an infinite effects loop.
   const [recentEditedItem, setRecentEditedItem] = createSignal<string>("");
 
-  const changedItemIndex = props.linkedStatuses.get(props.label)?.[0]()[1]
-  if(changedItemIndex !== undefined) {
-    setRecentEditedItem(JSON.stringify(items[changedItemIndex]))
+  const changedItemIndex = props.linkedStatuses.get(props.label)?.[0]()[1];
+  if (changedItemIndex !== undefined) {
+    setRecentEditedItem(JSON.stringify(items[changedItemIndex]));
   }
-  
 
   createEffect(() => {
-    if (props.linkedStatuses.get(props.label)?.[0]()) {
+    if (props.linkedStatuses.get(props.label)?.[0]()[0]) {
       if (recentEditedItem().length === 0) return;
       setItems(
         Array.from(
@@ -584,7 +613,7 @@ function ConfigList(props: ConfigListProps) {
       style={{ "border-bottom": "0", "border-top": "0" }}
       value={props.accordionStatuses.get(props.label)?.[0]()}
       onValueChange={(e) => {
-        props.accordionStatuses.get(props.label)?.[1](e.value)
+        props.accordionStatuses.get(props.label)?.[1](e.value);
       }}
     >
       <For each={props.items}>
@@ -598,16 +627,26 @@ function ConfigList(props: ConfigListProps) {
                     <IconButton
                       variant="ghost"
                       onClick={() => {
-                        const linked = props.linkedStatuses.get(props.label)?.[0]()[0]
-                        if(linked) {
-                          props.linkedStatuses.get(props.label)?.[1]([!linked, index()]);
+                        const linked = props.linkedStatuses.get(
+                          props.label,
+                        )?.[0]()[0];
+
+                        props.linkedStatuses.get(props.label)?.[1]([
+                          !linked,
+                          index(),
+                        ]);
+
+                        if (!props.linkedStatuses.get(props.label)?.[0]()) {
+                          return;
                         }
-                        if (!props.linkedStatuses.get(props.label)?.[0]()) return;
                         setRecentEditedItem(JSON.stringify(item));
                       }}
                       marginTop="0.5rem"
                     >
-                      <Show when={props.linkedStatuses.get(props.label)?.[0]()[0]} fallback={<IconLinkOff />}>
+                      <Show
+                        when={props.linkedStatuses.get(props.label)?.[0]()[0]}
+                        fallback={<IconLinkOff />}
+                      >
                         <IconLink />
                       </Show>
                     </IconButton>
@@ -649,13 +688,18 @@ function ConfigList(props: ConfigListProps) {
                   onItemChange={() => {
                     setRecentEditedItem(JSON.stringify(item));
                     props.onItemChange?.();
-                    const linked = props.linkedStatuses.get(props.label)?.[0]()[0]
-                    if(linked) {
-                      props.linkedStatuses.get(props.label)?.[1]([linked, index()]);
+                    const linked = props.linkedStatuses.get(
+                      props.label,
+                    )?.[0]()[0];
+                    if (linked) {
+                      props.linkedStatuses.get(props.label)?.[1]([
+                        linked,
+                        index(),
+                      ]);
                     }
                   }}
                   accordionStatuses={props.accordionStatuses}
-                  linkedStatuses = {props.linkedStatuses}
+                  linkedStatuses={props.linkedStatuses}
                 />
               </Accordion.ItemContent>
             </Accordion.Item>

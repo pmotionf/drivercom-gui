@@ -1,8 +1,6 @@
 import { createSignal, For, Show } from "solid-js";
 
-import {
-  ConfigForm,
-} from "~/components/ConfigForm";
+import { ConfigForm } from "~/components/ConfigForm";
 import { IconX } from "@tabler/icons-solidjs";
 import { open, save } from "@tauri-apps/plugin-dialog";
 import { Toast } from "~/components/ui/toast";
@@ -97,14 +95,14 @@ function Configuration() {
       .map((line) => {
         const key = line[0];
         const value = line[1];
-        if (typeof value !== "object") {return [key, typeof value]};
+        if (typeof value !== "object") return [key, typeof value];
         const parseValue = checkFileFormat(value);
         return [key, parseValue];
       })
       .sort()
       .toString();
 
-      console.log(newFileFormat)
+    console.log(newFileFormat);
 
     return newFileFormat;
   }
@@ -418,63 +416,63 @@ function Configuration() {
           </Show>
           <Show when={isFormOpen()}>
             <div style={{ width: "40rem", "margin-left": "2rem" }}>
-                <Card.Root padding="2rem" paddingTop="3rem" marginBottom="3rem">
-                  <ConfigForm
-                    label={formName()}
-                    onLabelChange={(e) => setFormName(e)}
-                    config={config()}
-                    onCancel={() => {
-                      setIsFormOpen(false);
-                    }}
-                  />
-                  <Card.Footer padding={0}>
-                    <Stack direction="row-reverse">
-                      <Menu.Root>
-                        <Menu.Trigger>
-                          <Button>Save</Button>
-                        </Menu.Trigger>
-                        <Menu.Positioner>
-                          <Menu.Content width="8rem">
-                            <Menu.Item
-                              value="Save as file"
-                              onClick={() => {
-                                saveConfigAsFile();
-                              }}
-                              userSelect="none"
-                            >
-                              Save as file
-                            </Menu.Item>
-                            <Menu.Separator />
-                            <Menu.Item
-                              value="Save to port"
-                              disabled={portId().length === 0}
-                              onClick={async () => {
-                                const outputError = await saveConfigToPort();
-                                if (outputError.length !== 0) {
-                                  toaster.create({
-                                    title: "Communication Error",
-                                    description: outputError,
-                                    type: "error",
-                                  });
-                                  return;
-                                }
+              <Card.Root padding="2rem" paddingTop="3rem" marginBottom="3rem">
+                <ConfigForm
+                  label={formName()}
+                  onLabelChange={(e) => setFormName(e)}
+                  config={config()}
+                  onCancel={() => {
+                    setIsFormOpen(false);
+                  }}
+                />
+                <Card.Footer padding={0}>
+                  <Stack direction="row-reverse">
+                    <Menu.Root>
+                      <Menu.Trigger>
+                        <Button>Save</Button>
+                      </Menu.Trigger>
+                      <Menu.Positioner>
+                        <Menu.Content width="8rem">
+                          <Menu.Item
+                            value="Save as file"
+                            onClick={() => {
+                              saveConfigAsFile();
+                            }}
+                            userSelect="none"
+                          >
+                            Save as file
+                          </Menu.Item>
+                          <Menu.Separator />
+                          <Menu.Item
+                            value="Save to port"
+                            disabled={portId().length === 0}
+                            onClick={async () => {
+                              const outputError = await saveConfigToPort();
+                              if (outputError.length !== 0) {
                                 toaster.create({
-                                  title: "Communication Success",
-                                  description:
-                                    "Configuration saved to port successfully.",
+                                  title: "Communication Error",
+                                  description: outputError,
                                   type: "error",
                                 });
-                              }}
-                              userSelect="none"
-                            >
-                              Save to port
-                            </Menu.Item>
-                          </Menu.Content>
-                        </Menu.Positioner>
-                      </Menu.Root>
-                    </Stack>
-                  </Card.Footer>
-                </Card.Root>
+                                return;
+                              }
+                              toaster.create({
+                                title: "Communication Success",
+                                description:
+                                  "Configuration saved to port successfully.",
+                                type: "error",
+                              });
+                            }}
+                            userSelect="none"
+                          >
+                            Save to port
+                          </Menu.Item>
+                        </Menu.Content>
+                      </Menu.Positioner>
+                    </Menu.Root>
+                  </Stack>
+                </Card.Footer>
+              </Card.Root>
             </div>
           </Show>
         </Stack>
