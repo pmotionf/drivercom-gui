@@ -33,6 +33,8 @@ import { Legend, LegendStroke } from "./Plot/Legend";
 import { Tooltip } from "./ui/tooltip";
 import { Text } from "./ui/text";
 import { Portal } from "solid-js/web";
+import Fuse from "fuse.js";
+import { Input } from "~/components/ui/input.tsx";
 
 export type PlotProps = JSX.HTMLAttributes<HTMLDivElement> & {
   id: string;
@@ -443,7 +445,6 @@ export function Plot(props: PlotProps) {
       resize.observe(document.getElementById(props.id)!);
     });
   });
-
   createEffect(() => {
     if (globalState.theme !== theme) {
       theme = globalState.theme;
@@ -469,6 +470,27 @@ export function Plot(props: PlotProps) {
   const [isAllVisible, setIsAllVisible] = createSignal<boolean>(
     getContext().visible ? getContext().visible.every((b) => b) : true,
   );
+
+  const [searchResults, setSearchResults] = createSignal<string[]>(
+    props.header,
+  );
+  const [searchInput, setSearchInput] = createSignal<string>("");
+
+  createEffect(() => {
+    const searchInputValue = searchInput();
+    const fuzzySearch = new Fuse(props.header, {
+      useExtendedSearch: true,
+    });
+    const searchResults = fuzzySearch.search(searchInputValue);
+    const parseSearchResults: string[] = searchResults.map((result) => {
+      return result.item;
+    });
+    if (searchInputValue.length === 0) {
+      setSearchResults(props.header);
+    } else {
+      setSearchResults(parseSearchResults);
+    }
+  });
 
   return (
     <>
@@ -646,14 +668,36 @@ export function Plot(props: PlotProps) {
             </Tooltip.Positioner>
           </Tooltip.Root>
         </Stack>
+
+        <Stack width="14rem" paddingTop="1rem">
+          <Input
+            value={searchInput()}
+            onInput={(e) => {
+              setSearchInput(e.target.value);
+            }}
+            width="14rem"
+            placeholder="Search series"
+            height="2.5rem"
+            paddingLeft="1rem"
+            boderWidth="0"
+            borderRadius="2rem"
+            paddingRight="3rem"
+            whiteSpace="nowrap"
+            textOverflow="ellipsis"
+            display="block"
+            overflow="hidden"
+          />
+        </Stack>
+
         <Show when={render()}>
           <Stack
+            id="legend_container"
             style={{
               "margin-top": "1rem",
               "padding-bottom": "0.5rem",
               float: "left",
               width: "15rem",
-              "max-height": "calc(100% - 1.5rem - 4rem)",
+              "max-height": "calc(100% - 1.5rem - 8rem)",
               "overflow-x": "auto",
               "overflow-y": "auto",
             }}
@@ -691,61 +735,68 @@ export function Plot(props: PlotProps) {
             </Stack>
             <For each={props.header}>
               {(header, index) => (
-                <Legend
-                  plot={plot!}
-                  group={group()}
-                  series={header}
-                  cursorIdx={props.cursorIdx}
-                  showSelectCheckBox={showLegendCheckBox()}
-                  selected={getContext().selected[index()]}
-                  onSelectChange={(isChecked) => {
-                    setContext()("selected", index(), isChecked);
-                    props.onContextChange?.(getContext());
-                  }}
-                  visible={getContext().visible[index()]}
-                  onVisibleChange={(new_visible) => {
-                    setContext()("visible", index(), new_visible);
-                    // Index must add 1 to account for X-axis "Cycle" series
-                    plot.setSeries(index() + 1, {
-                      show: new_visible,
-                    });
-                    props.onContextChange?.(getContext());
-                  }}
-                  color={getContext().color[index()]}
-                  onColorChange={(new_color) => {
-                    setContext()("color", index(), new_color);
-                    props.onContextChange?.(getContext());
-                    plot.redraw();
-                  }}
-                  palette={getContext().palette}
-                  width="min-content"
-                  stroke={getContext().style[index()]}
-                  onStrokeChange={(new_style) => {
-                    setContext()("style", index(), new_style);
-                    plot.delSeries(index() + 1);
-                    const config = {
-                      stroke: getContext().color[index()],
-                      label: header,
-                      ...(getContext().style[index()] === LegendStroke.Dash && {
-                        dash: [10, 5],
-                      }),
-                      ...(getContext().style[index()] === LegendStroke.Dot && {
-                        dash: [0, 5],
-                        points: {
-                          show: true,
-                          ...(dotFilter().length !== 0 && {
-                            filter: checkDotFilter,
-                          }),
-                        },
-                      }),
-                    };
-                    plot.addSeries(config, index() + 1);
-                    props.onContextChange?.(getContext());
-                    setTimeout(() => {
+                <Show
+                  when={searchResults().length !== 0 &&
+                    searchResults().includes(header)}
+                >
+                  <Legend
+                    plot={plot!}
+                    group={group()}
+                    series={header}
+                    cursorIdx={props.cursorIdx}
+                    showSelectCheckBox={showLegendCheckBox()}
+                    selected={getContext().selected[index()]}
+                    onSelectChange={(isChecked) => {
+                      setContext()("selected", index(), isChecked);
+                      props.onContextChange?.(getContext());
+                    }}
+                    visible={getContext().visible[index()]}
+                    onVisibleChange={(new_visible) => {
+                      setContext()("visible", index(), new_visible);
+                      // Index must add 1 to account for X-axis "Cycle" series
+                      plot.setSeries(index() + 1, {
+                        show: new_visible,
+                      });
+                      props.onContextChange?.(getContext());
+                    }}
+                    color={getContext().color[index()]}
+                    onColorChange={(new_color) => {
+                      setContext()("color", index(), new_color);
+                      props.onContextChange?.(getContext());
                       plot.redraw();
-                    }, 200);
-                  }}
-                />
+                    }}
+                    palette={getContext().palette}
+                    width="min-content"
+                    stroke={getContext().style[index()]}
+                    onStrokeChange={(new_style) => {
+                      setContext()("style", index(), new_style);
+                      plot.delSeries(index() + 1);
+                      const config = {
+                        stroke: getContext().color[index()],
+                        label: header,
+                        ...(getContext().style[index()] ===
+                            LegendStroke.Dash && {
+                          dash: [10, 5],
+                        }),
+                        ...(getContext().style[index()] ===
+                            LegendStroke.Dot && {
+                          dash: [0, 5],
+                          points: {
+                            show: true,
+                            ...(dotFilter().length !== 0 && {
+                              filter: checkDotFilter,
+                            }),
+                          },
+                        }),
+                      };
+                      plot.addSeries(config, index() + 1);
+                      props.onContextChange?.(getContext());
+                      setTimeout(() => {
+                        plot.redraw();
+                      }, 200);
+                    }}
+                  />
+                </Show>
               )}
             </For>
           </Stack>
