@@ -42,7 +42,9 @@ type LinkedStatuses = Map<
 
 export function ConfigForm(props: ConfigFormProps) {
   const [config, setConfig] = createStore(props.config);
-  createSignal;
+  const [prevConfig, setPrevConfig] = createSignal<object>(
+    JSON.parse(JSON.stringify(config)),
+  );
 
   const accordionStatuses: AccordionStatuses = new Map();
   const linkedStatuses: LinkedStatuses = new Map();
@@ -76,13 +78,107 @@ export function ConfigForm(props: ConfigFormProps) {
       updatedVelocityIAxesArray,
     );
 
-    if (JSON.stringify(updatedPositionPAxesArray) !== JSON.stringify(newAxes)) {
+    const isConfigChange = compareConfig(config, prevConfig());
+    if (isConfigChange) {
       setConfig({
         ...config,
         axes: updatedPositionPAxesArray,
       });
+      setPrevConfig(JSON.parse(JSON.stringify(config)));
     }
   });
+
+  function compareConfig(prevConfig: object, currentConfig: object) {
+    const prevAxes = prevConfig["axes" as keyof typeof prevConfig];
+    const currentAxes = currentConfig["axes" as keyof typeof currentConfig];
+    const isDenominatorChange = compareAxesObjectArray(prevAxes, currentAxes);
+
+    const prevCoil = prevConfig["coil" as keyof typeof prevConfig];
+    const currentCoil = currentConfig["coil" as keyof typeof currentConfig];
+    const isCoilChange = compareCoilObject(prevCoil, currentCoil);
+
+    const isMagnetChange =
+      JSON.stringify(getValueFromObject(currentConfig, "magnet", "pitch")) !==
+        JSON.stringify(getValueFromObject(prevConfig, "magnet", "pitch"));
+
+    const isMassChange =
+      JSON.stringify(getValueFromObject(currentConfig, "carrier", "mass")) !==
+        JSON.stringify(getValueFromObject(prevConfig, "carrier", "mass"));
+
+    if (isDenominatorChange || isCoilChange || isMagnetChange || isMassChange) {
+      return true;
+    } else return false;
+  }
+
+  function compareCoilObject(prevCoil: object, currentCoil: object): boolean {
+    let isCoilChange: boolean = false;
+    if (
+      getValueFromObject(prevCoil, "ls") !==
+        getValueFromObject(currentCoil, "ls")
+    ) {
+      isCoilChange = true;
+    }
+
+    if (
+      getValueFromObject(prevCoil, "rs") !==
+        getValueFromObject(currentCoil, "rs")
+    ) {
+      isCoilChange = true;
+    }
+
+    if (
+      getValueFromObject(prevCoil, "kf") !==
+        getValueFromObject(currentCoil, "kf")
+    ) {
+      isCoilChange = true;
+    }
+
+    return isCoilChange;
+  }
+
+  function compareAxesObjectArray(
+    prevAxes: object[],
+    currentAxes: object[],
+  ): boolean {
+    let isDenominatorChange = false;
+    if (prevAxes.length === 0) return false;
+
+    currentAxes.forEach((axes, index) => {
+      const comparePrevAxes = prevAxes[index];
+
+      const currentAxesGain = axes["gain" as keyof typeof axes];
+      const prevAxesGain = comparePrevAxes["gain" as keyof typeof axes];
+
+      if (
+        getValueFromObject(currentAxesGain, "current", "denominator") !==
+          getValueFromObject(prevAxesGain, "current", "denominator")
+      ) {
+        isDenominatorChange = true;
+      }
+
+      if (
+        getValueFromObject(currentAxesGain, "velocity", "denominator") !==
+          getValueFromObject(prevAxesGain, "velocity", "denominator")
+      ) {
+        isDenominatorChange = true;
+      }
+
+      if (
+        getValueFromObject(currentAxesGain, "velocity", "denominator_pi") !==
+          getValueFromObject(prevAxesGain, "velocity", "denominator_pi")
+      ) {
+        isDenominatorChange = true;
+      }
+
+      if (
+        getValueFromObject(currentAxesGain, "position", "denominator") !==
+          getValueFromObject(prevAxesGain, "position", "denominator")
+      ) {
+        isDenominatorChange = true;
+      }
+    });
+    return isDenominatorChange;
+  }
 
   function getValueFromObject(
     config: object,
