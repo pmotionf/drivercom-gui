@@ -78,15 +78,13 @@ export function ConfigForm(props: ConfigFormProps) {
       updatedVelocityIAxesArray,
     );
 
-    if (JSON.stringify(updatedPositionPAxesArray) !== JSON.stringify(newAxes)) {
-      const isConfigChange = compareConfig(config, prevConfig());
-      if (isConfigChange) {
-        setConfig({
-          ...config,
-          axes: updatedPositionPAxesArray,
-        });
-        setPrevConfig(JSON.parse(JSON.stringify(config)));
-      }
+    const isConfigChange = compareConfig(config, prevConfig());
+    if (isConfigChange) {
+      setConfig({
+        ...config,
+        axes: updatedPositionPAxesArray,
+      });
+      setPrevConfig(JSON.parse(JSON.stringify(config)));
     }
   });
 
