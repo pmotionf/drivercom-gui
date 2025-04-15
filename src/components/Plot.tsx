@@ -474,18 +474,75 @@ export function Plot(props: PlotProps) {
     getContext().visible ? getContext().visible.every((b) => b) : true,
   );
 
-  const initialItems = props.header;
-  const [items, setItems] = createSignal(initialItems);
+  const [searchResults, setSearchResults] = createSignal(props.header);
 
-  const collection = createMemo(() => createListCollection({ items: items() }));
+  const legendList = createMemo(() =>
+    createListCollection({ items: searchResults() })
+  );
 
-  const handleInputChange = (details: Combobox.InputValueChangeDetails) => {
-    setItems(
-      initialItems.filter((item) =>
-        item.toLowerCase().includes(details.inputValue.toLowerCase())
-      ),
-    );
+  const handleSearchBoxInputChange = (
+    searchBoxData: Combobox.InputValueChangeDetails,
+  ) => {
+    const parseSearchInput = searchBoxData.inputValue.toLowerCase().split(" ");
+    const searchResult = searchLegends(parseSearchInput, props.header);
+
+    setSearchResults(searchResult);
   };
+
+  const searchLegends = (
+    searchString: string[],
+    headers: string[],
+  ): string[] => {
+    const parseHeaders = headers.map((legend) => {
+      return legend.toLowerCase().replaceAll("_", " ").replaceAll(".", " ");
+    });
+
+    const matchedHeaders = parseHeaders.map((str) => {
+      let num = 0;
+      searchString.forEach((splittedSearchInput) => {
+        if (str.includes(splittedSearchInput)) {
+          num = num + 1;
+        }
+      });
+      return num;
+    });
+
+    const searchResult = headers.filter(
+      (_, i) => matchedHeaders[i] === searchString.length,
+    );
+
+    return searchResult;
+  };
+
+  /*const fuzzySearch = (searchInput: string, legend: string): boolean => {
+    const splittedLegend = legend.split(" ");
+    let minNum: number = searchInput.length;
+
+    splittedLegend.forEach((word) => {
+      const levenShteinDistance = levenshteinDistance(searchInput, word);
+      minNum = Math.min(minNum, levenShteinDistance);
+    });
+
+    return minNum <= searchInput.length / 2;
+  };
+
+  const levenshteinDistance = (searchInput: string, legend: string): number => {
+    if (!searchInput.length) return legend.length;
+    if (!legend.length) return searchInput.length;
+    const arr = [];
+    for (let i = 0; i <= legend.length; i++) {
+      arr[i] = [i];
+      for (let j = 1; j <= searchInput.length; j++) {
+        arr[i][j] = i === 0 ? j : Math.min(
+          arr[i - 1][j] + 1,
+          arr[i][j - 1] + 1,
+          arr[i - 1][j - 1] +
+            (searchInput[j - 1] === legend[i - 1] ? 0 : 1),
+        );
+      }
+    }
+    return arr[legend.length][searchInput.length];
+    };*/
 
   return (
     <>
@@ -664,27 +721,52 @@ export function Plot(props: PlotProps) {
           </Tooltip.Root>
         </Stack>
 
-        <Stack width="15rem" height="3rem" paddingTop="1rem">
+        <Stack width="14rem" paddingTop="1rem">
           <Combobox.Root
-            collection={collection()}
-            onInputValueChange={handleInputChange}
-            onValueChange={(e) => console.log(e.value)}
+            collection={legendList()}
+            onInputValueChange={handleSearchBoxInputChange}
+            onValueChange={(e) => {
+              const searchIndex = props.header.indexOf(e.value[0]);
+              setContext()(
+                "visible",
+                getContext().visible.map((_, i) => i === searchIndex),
+              );
+              getContext().visible.forEach((val, i) => {
+                plot.setSeries(i + 1, {
+                  show: val,
+                });
+              });
+              props.onContextChange?.(getContext());
+            }}
           >
             <Combobox.Control>
-              <Combobox.Input width="11rem" height="2rem" />
-              <IconButton variant="ghost" padding="0" marginLeft="0.5rem">
-                <IconSearch />
-              </IconButton>
+              <Combobox.Input
+                width="14rem"
+                placeholder="Search series"
+                borderWidth="1px"
+                height="2.5rem"
+                paddingLeft="1rem"
+                borderRadius="2rem"
+                paddingRight="3rem"
+                whiteSpace="nowrap"
+                textOverflow="ellipsis"
+                display="block"
+                overflow="hidden"
+              />
+              <Combobox.Trigger style={{ "margin-left": "1rem" }}>
+                <IconButton variant="ghost" padding="0" borderRadius="2rem">
+                  <IconSearch />
+                </IconButton>
+              </Combobox.Trigger>
             </Combobox.Control>
             <Portal>
               <Combobox.Positioner>
-                <Combobox.Content maxHeight="20rem" overflowY="auto">
+                <Combobox.Content maxHeight="15rem" overflowY="auto">
                   <Combobox.ItemGroup>
-                    <For each={collection().items}>
+                    <For each={legendList().items}>
                       {(item) => (
                         <Combobox.Item item={item}>
                           <Combobox.ItemText>{item}</Combobox.ItemText>
-                          <Combobox.ItemIndicator>✓</Combobox.ItemIndicator>
                         </Combobox.Item>
                       )}
                     </For>
@@ -697,6 +779,7 @@ export function Plot(props: PlotProps) {
 
         <Show when={render()}>
           <Stack
+            id="legend_container"
             style={{
               "margin-top": "1rem",
               "padding-bottom": "0.5rem",
