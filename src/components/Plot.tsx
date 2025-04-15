@@ -1,5 +1,6 @@
 import {
   createEffect,
+  createMemo,
   createSignal,
   For,
   JSX,
@@ -34,9 +35,8 @@ import { Legend, LegendStroke } from "./Plot/Legend";
 import { Tooltip } from "./ui/tooltip";
 import { Text } from "./ui/text";
 import { Portal } from "solid-js/web";
-import { Input } from "./ui/input";
-import { Button } from "./ui/button";
-import { createListCollection, Select } from "./ui/select";
+import { createListCollection } from "./ui/select";
+import { Combobox } from "./ui/combobox";
 
 export type PlotProps = JSX.HTMLAttributes<HTMLDivElement> & {
   id: string;
@@ -219,10 +219,9 @@ export function Plot(props: PlotProps) {
     let i: number = 0;
     while (scale > 0.1) {
       array.push(i);
-      i +=
-        (Math.floor(scale) > 0
-          ? Math.floor(scale)
-          : parseFloat(scale.toFixed(1))) * 10;
+      i += (Math.floor(scale) > 0
+        ? Math.floor(scale)
+        : parseFloat(scale.toFixed(1))) * 10;
       if (i >= plot.data[0].length) {
         break;
       }
@@ -467,35 +466,26 @@ export function Plot(props: PlotProps) {
     }
   `;
 
-  const [showLegendCheckBox, setShowLegendCheckBox] =
-    createSignal<boolean>(false);
-
-  const [searchInputText, setSearchInputText] = createSignal<string>("");
-  const [searchResultList, setSearchResultList] = createSignal<string[]>([]);
-
-  createEffect(() => {
-    const inputValue = searchInputText();
-    if (inputValue.length === 0) return;
-
-    const resultList = props.header.filter((head) => {
-      return head.search(inputValue) !== -1;
-    });
-
-    setSearchResultList(resultList);
-  });
+  const [showLegendCheckBox, setShowLegendCheckBox] = createSignal<boolean>(
+    false,
+  );
 
   const [isAllVisible, setIsAllVisible] = createSignal<boolean>(
     getContext().visible ? getContext().visible.every((b) => b) : true,
   );
 
-  const collection = createListCollection({
-    items: [
-      { label: "React", value: "react" },
-      { label: "Solid", value: "solid" },
-      { label: "Svelte", value: "svelte", disabled: true },
-      { label: "Vue", value: "vue" },
-    ],
-  });
+  const initialItems = props.header;
+  const [items, setItems] = createSignal(initialItems);
+
+  const collection = createMemo(() => createListCollection({ items: items() }));
+
+  const handleInputChange = (details: Combobox.InputValueChangeDetails) => {
+    setItems(
+      initialItems.filter((item) =>
+        item.toLowerCase().includes(details.inputValue.toLowerCase())
+      ),
+    );
+  };
 
   return (
     <>
@@ -517,7 +507,8 @@ export function Plot(props: PlotProps) {
             width: "calc(100% - 15rem)",
             height: "calc(100% - 0.5rem)",
           }}
-        ></div>
+        >
+        </div>
         <Stack
           direction="row"
           style={{
@@ -569,16 +560,14 @@ export function Plot(props: PlotProps) {
                 <ToggleGroup.Item
                   value={CursorMode[CursorMode.Pan]}
                   aria-label="Toggle Pan"
-                  color={
-                    cursorMode() === CursorMode.Pan ? "fg.default" : "fg.muted"
-                  }
-                  bgColor={
-                    cursorMode() === CursorMode.Pan
-                      ? "bg.emphasized"
-                      : lastCursorMode() === CursorMode.Pan
-                        ? "bg.subtle"
-                        : "bg.default"
-                  }
+                  color={cursorMode() === CursorMode.Pan
+                    ? "fg.default"
+                    : "fg.muted"}
+                  bgColor={cursorMode() === CursorMode.Pan
+                    ? "bg.emphasized"
+                    : lastCursorMode() === CursorMode.Pan
+                    ? "bg.subtle"
+                    : "bg.default"}
                 >
                   <IconArrowsMove />
                 </ToggleGroup.Item>
@@ -597,16 +586,14 @@ export function Plot(props: PlotProps) {
                 <ToggleGroup.Item
                   value={CursorMode[CursorMode.Zoom]}
                   aria-label="Toggle Selection Zoom"
-                  color={
-                    cursorMode() === CursorMode.Zoom ? "fg.default" : "fg.muted"
-                  }
-                  bgColor={
-                    cursorMode() === CursorMode.Zoom
-                      ? "bg.emphasized"
-                      : lastCursorMode() === CursorMode.Zoom
-                        ? "bg.subtle"
-                        : "bg.default"
-                  }
+                  color={cursorMode() === CursorMode.Zoom
+                    ? "fg.default"
+                    : "fg.muted"}
+                  bgColor={cursorMode() === CursorMode.Zoom
+                    ? "bg.emphasized"
+                    : lastCursorMode() === CursorMode.Zoom
+                    ? "bg.subtle"
+                    : "bg.default"}
                 >
                   <IconZoomInArea />
                 </ToggleGroup.Item>
@@ -625,16 +612,14 @@ export function Plot(props: PlotProps) {
                 <ToggleGroup.Item
                   value={CursorMode[CursorMode.Lock]}
                   aria-label="Toggle Cursor Lock"
-                  color={
-                    cursorMode() === CursorMode.Lock ? "fg.default" : "fg.muted"
-                  }
-                  bgColor={
-                    cursorMode() === CursorMode.Lock
-                      ? "bg.emphasized"
-                      : lastCursorMode() === CursorMode.Lock
-                        ? "bg.subtle"
-                        : "bg.default"
-                  }
+                  color={cursorMode() === CursorMode.Lock
+                    ? "fg.default"
+                    : "fg.muted"}
+                  bgColor={cursorMode() === CursorMode.Lock
+                    ? "bg.emphasized"
+                    : lastCursorMode() === CursorMode.Lock
+                    ? "bg.subtle"
+                    : "bg.default"}
                 >
                   <IconCrosshair />
                 </ToggleGroup.Item>
@@ -679,38 +664,36 @@ export function Plot(props: PlotProps) {
           </Tooltip.Root>
         </Stack>
 
-        <Stack direction="row" width="15rem" paddingTop="1rem">
-          <Input
-            width="11rem"
-            onInput={(e) => setSearchInputText(e.currentTarget.value)}
-            id="search_box"
-          />
-          <IconButton variant="outline">
-            <IconSearch />
-          </IconButton>
+        <Stack width="15rem" height="3rem" paddingTop="1rem">
+          <Combobox.Root
+            collection={collection()}
+            onInputValueChange={handleInputChange}
+            onValueChange={(e) => console.log(e.value)}
+          >
+            <Combobox.Control>
+              <Combobox.Input width="11rem" height="2rem" />
+              <IconButton variant="ghost" padding="0" marginLeft="0.5rem">
+                <IconSearch />
+              </IconButton>
+            </Combobox.Control>
+            <Portal>
+              <Combobox.Positioner>
+                <Combobox.Content maxHeight="20rem" overflowY="auto">
+                  <Combobox.ItemGroup>
+                    <For each={collection().items}>
+                      {(item) => (
+                        <Combobox.Item item={item}>
+                          <Combobox.ItemText>{item}</Combobox.ItemText>
+                          <Combobox.ItemIndicator>✓</Combobox.ItemIndicator>
+                        </Combobox.Item>
+                      )}
+                    </For>
+                  </Combobox.ItemGroup>
+                </Combobox.Content>
+              </Combobox.Positioner>
+            </Portal>
+          </Combobox.Root>
         </Stack>
-
-        <Show when={searchResultList().length !== 0}>
-          <Portal>
-            <Stack
-              borderWidth="2px"
-              width="11rem"
-              maxHeight="12rem"
-              zIndex="1"
-              position="relative"
-              top={`${document.getElementById("search_box") ? document.getElementById("search_box")!.offsetTop : 0}px`}
-              left={document.getElementById("search_box")!.offsetLeft}
-            >
-              <For each={searchResultList()}>
-                {(result) => (
-                  <Button width="11rem" height="3rem" variant="ghost">
-                    {result} {document.getElementById("search_box")!.offsetTop}
-                  </Button>
-                )}
-              </For>
-            </Stack>
-          </Portal>
-        </Show>
 
         <Show when={render()}>
           <Stack
