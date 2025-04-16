@@ -4,6 +4,7 @@ import {
   createSignal,
   For,
   JSX,
+  on,
   type Setter,
   Show,
   splitProps,
@@ -42,203 +43,207 @@ type LinkedStatuses = Map<
 
 export function ConfigForm(props: ConfigFormProps) {
   const [config, setConfig] = createStore(props.config);
-  const [prevConfig, setPrevConfig] = createSignal<object>(
-    JSON.parse(JSON.stringify(config)),
-  );
-
+  const axes: object[] = config["axes" as keyof typeof config];
   const accordionStatuses: AccordionStatuses = new Map();
   const linkedStatuses: LinkedStatuses = new Map();
 
-  createEffect(() => {
-    const axes = config["axes" as keyof typeof config];
-    const newAxes: object[] = axes;
-
-    const coil = config["coil" as keyof typeof config];
-    const rs = coil["rs" as keyof typeof coil];
-    const ls = coil["ls" as keyof typeof coil];
-    const kf = coil["kf" as keyof typeof coil];
-
-    const magnet = config["magnet" as keyof typeof config];
-    const pitch = magnet["pitch" as keyof typeof magnet];
-
-    const carrier = config["carrier" as keyof typeof config];
-    const mass = carrier["mass" as keyof typeof carrier];
-
-    const updatedCurrentPAxesArray = typeof ls === "number"
-      ? updateAxesArrayCurrentP(ls, newAxes)
-      : newAxes;
-    const updatedCurrentIAxesArray = typeof rs === "number"
-      ? updateAxesArrayCurrentI(rs, updatedCurrentPAxesArray)
-      : updatedCurrentPAxesArray;
-    const updatedVelocityPAxesArray = typeof pitch === "number" &&
-        typeof mass === "number" &&
-        typeof kf === "number"
-      ? updateAxesArrayVelocityP(pitch, mass, kf, updatedCurrentIAxesArray)
-      : updatedCurrentIAxesArray;
-    const updatedVelocityIAxesArray = updateAxesArrayVelocityI(
-      updatedVelocityPAxesArray,
-    );
-    const updatedPositionPAxesArray = updateAxesArrayPosition(
-      updatedVelocityIAxesArray,
-    );
-
-    const isConfigChange = compareConfig(config, prevConfig());
-    if (isConfigChange) {
-      setConfig({
-        ...config,
-        axes: updatedPositionPAxesArray,
-      });
-      setPrevConfig(JSON.parse(JSON.stringify(config)));
+  axes.forEach((_, index) => {
+    if (
+      !("axes" in config && Array.isArray(config.axes)) ||
+      !("gain" in config.axes[index]) ||
+      !("current" in config.axes[index].gain) ||
+      !("denominator" in config.axes[index].gain.current) ||
+      !("p" in config.axes[index].gain.current) ||
+      !("i" in config.axes[index].gain.current) ||
+      !("velocity" in config.axes[index].gain) ||
+      !("denominator" in config.axes[index].gain.velocity) ||
+      !("denominator_pi" in config.axes[index].gain.velocity) ||
+      !("p" in config.axes[index].gain.velocity) ||
+      !("i" in config.axes[index].gain.velocity) ||
+      !("position" in config.axes[index].gain) ||
+      !("denominator" in config.axes[index].gain.position) ||
+      !("p" in config.axes[index].gain.position) ||
+      !("coil" in config) ||
+      !("kf" in (config.coil as object)) ||
+      !("ls" in (config.coil as object)) ||
+      !("rs" in (config.coil as object)) ||
+      !("magnet" in config) ||
+      !("pitch" in (config.magnet as object)) ||
+      !("carrier" in config) ||
+      !("mass" in (config.carrier as object))
+    ) {
+      return;
     }
+
+    // Current P
+    createEffect(
+      on(
+        [
+          //@ts-ignore Guaranteed to exist from above check
+          () => config.axes[index].gain.current.denominator,
+          //@ts-ignore Guaranteed to exist from above check
+          () => config.coil.ls,
+        ],
+        () => {
+          if (
+            linkedStatuses.get("axes")?.[0]()[0] &&
+            linkedStatuses.get("axes")?.[0]()[1] !== index
+          ) {
+            return;
+          }
+          const p = calcCurrentP(
+            //@ts-ignore Guaranteed to exist from above check
+            config.axes[index].gain.current.denominator,
+            //@ts-ignore Guaranteed to exist from above check
+            config.coil.ls,
+          );
+          //@ts-ignore Below fields guaranteed to exist due to above checks
+          setConfig("axes", index, "gain", "current", "p", p);
+        },
+        { defer: true },
+      ),
+    );
+
+    // Current I
+    createEffect(
+      on(
+        [
+          //@ts-ignore Guaranteed to exist from above check
+          () => config.axes[index].gain.current.denominator,
+          //@ts-ignore Guaranteed to exist from above check
+          () => config.coil.rs,
+        ],
+        () => {
+          if (
+            linkedStatuses.get("axes")?.[0]()[0] &&
+            linkedStatuses.get("axes")?.[0]()[1] !== index
+          ) {
+            return;
+          }
+          const i = calcCurrentI(
+            //@ts-ignore Guaranteed to exist from above check
+            config.axes[index].gain.current.denominator,
+            //@ts-ignore Guaranteed to exist from above check
+            config.coil.rs,
+          );
+          //@ts-ignore Below fields guaranteed to exist due to above checks
+          setConfig("axes", index, "gain", "current", "i", i);
+        },
+        { defer: true },
+      ),
+    );
+
+    // Velocity P
+    createEffect(
+      on(
+        [
+          //@ts-ignore Guaranteed to exist from above check
+          () => config.axes[index].gain.velocity.denominator,
+          //@ts-ignore Guaranteed to exist from above check
+          () => config.axes[index].gain.current.denominator,
+          //@ts-ignore Guaranteed to exist from above check
+          () => config.coil.kf,
+          //@ts-ignore Guaranteed to exist from above check
+          () => config.carrier.mass,
+          //@ts-ignore Guaranteed to exist from above check
+          () => config.magnet.pitch,
+        ],
+        () => {
+          if (
+            linkedStatuses.get("axes")?.[0]()[0] &&
+            linkedStatuses.get("axes")?.[0]()[1] !== index
+          ) {
+            return;
+          }
+          const p = calcVelocityP(
+            //@ts-ignore Guaranteed to exist from above check
+            config.axes[index].gain.velocity.denominator,
+            //@ts-ignore Guaranteed to exist from above check
+            config.axes[index].gain.current.denominator,
+            //@ts-ignore Guaranteed to exist from above check
+            config.magnet.pitch,
+            //@ts-ignore Guaranteed to exist from above check
+            config.carrier.mass,
+            //@ts-ignore Guaranteed to exist from above check
+            config.coil.kf,
+          );
+          //@ts-ignore Below fields guaranteed to exist due to above checks
+          setConfig("axes", index, "gain", "velocity", "p", p);
+        },
+        { defer: true },
+      ),
+    );
+
+    // Velocity I
+    createEffect(
+      on(
+        [
+          //@ts-ignore Guaranteed to exist from above check
+          () => config.axes[index].gain.velocity.denominator,
+          //@ts-ignore Guaranteed to exist from above check
+          () => config.axes[index].gain.velocity.denominator_pi,
+          //@ts-ignore Guaranteed to exist from above check
+          () => config.axes[index].gain.current.denominator,
+          //@ts-ignore Guaranteed to exist from above check
+          () => config.axes[index].gain.velocity.p,
+        ],
+        () => {
+          if (
+            linkedStatuses.get("axes")?.[0]()[0] &&
+            linkedStatuses.get("axes")?.[0]()[1] !== index
+          ) {
+            return;
+          }
+          const i = calcVelocityI(
+            //@ts-ignore Guaranteed to exist from above check
+            config.axes[index].gain.velocity.denominator,
+            //@ts-ignore Guaranteed to exist from above check
+            config.axes[index].gain.velocity.denominator_pi,
+            //@ts-ignore Guaranteed to exist from above check
+            config.axes[index].gain.current.denominator,
+            //@ts-ignore Guaranteed to exist from above check
+            config.axes[index].gain.velocity.p,
+          );
+          //@ts-ignore Below fields guaranteed to exist due to above checks
+          setConfig("axes", index, "gain", "velocity", "i", i);
+        },
+        { defer: true },
+      ),
+    );
+
+    // Position P
+    createEffect(
+      on(
+        [
+          //@ts-ignore Guaranteed to exist from above check
+          () => config.axes[index].gain.current.denominator,
+          //@ts-ignore Guaranteed to exist from above check
+          () => config.axes[index].gain.velocity.denominator,
+          //@ts-ignore Guaranteed to exist from above check
+          () => config.axes[index].gain.position.denominator,
+        ],
+        () => {
+          if (
+            linkedStatuses.get("axes")?.[0]()[0] &&
+            linkedStatuses.get("axes")?.[0]()[1] !== index
+          ) {
+            return;
+          }
+          const p = calcPositionP(
+            //@ts-ignore Guaranteed to exist from above check
+            config.axes[index].gain.current.denominator,
+            //@ts-ignore Guaranteed to exist from above check
+            config.axes[index].gain.velocity.denominator,
+            //@ts-ignore Guaranteed to exist from above check
+            config.axes[index].gain.position.denominator,
+          );
+          //@ts-ignore Below fields guaranteed to exist due to above checks
+          setConfig("axes", index, "gain", "position", "p", p);
+        },
+        { defer: true },
+      ),
+    );
   });
-
-  function compareConfig(prevConfig: object, currentConfig: object) {
-    const prevAxes: object[] = prevConfig["axes" as keyof typeof prevConfig];
-    const currentAxes: object[] =
-      currentConfig["axes" as keyof typeof currentConfig];
-    const isDenominatorChange = compareAxesObjectArray(prevAxes, currentAxes);
-
-    const prevCoil = prevConfig["coil" as keyof typeof prevConfig];
-    const currentCoil = currentConfig["coil" as keyof typeof currentConfig];
-    const isCoilChange = compareCoilObject(prevCoil, currentCoil);
-
-    const currentConfigMagnet =
-      currentConfig["magnet" as keyof typeof currentConfig];
-    const prevConfigMagnet = prevConfig["magnet" as keyof typeof prevConfig];
-
-    const isMagnetChange =
-      currentConfigMagnet["pitch" as keyof typeof currentConfigMagnet] !==
-        prevConfigMagnet["pitch" as keyof typeof prevConfigMagnet];
-
-    const currentConfigCarrier =
-      currentConfig["carrier" as keyof typeof currentConfig];
-    const prevConfigCarrier = prevConfig["carrier" as keyof typeof prevConfig];
-
-    const isMassChange =
-      currentConfigCarrier["mass" as keyof typeof currentConfigCarrier] !==
-        prevConfigCarrier["mass" as keyof typeof prevConfigCarrier];
-
-    if (isDenominatorChange || isCoilChange || isMagnetChange || isMassChange) {
-      return true;
-    } else return false;
-  }
-
-  function compareCoilObject(prevCoil: object, currentCoil: object): boolean {
-    let isCoilChange: boolean = false;
-
-    if (
-      currentCoil["ls" as keyof typeof currentCoil] !==
-        prevCoil["ls" as keyof typeof prevCoil]
-    ) {
-      isCoilChange = true;
-    }
-
-    if (
-      currentCoil["rs" as keyof typeof currentCoil] !==
-        prevCoil["rs" as keyof typeof prevCoil]
-    ) {
-      isCoilChange = true;
-    }
-
-    if (
-      currentCoil["kf" as keyof typeof currentCoil] !==
-        prevCoil["kf" as keyof typeof prevCoil]
-    ) {
-      isCoilChange = true;
-    }
-
-    return isCoilChange;
-  }
-
-  function compareAxesObjectArray(
-    prevAxes: object[],
-    currentAxes: object[],
-  ): boolean {
-    let isDenominatorChange = false;
-    if (prevAxes.length === 0) return false;
-
-    currentAxes.forEach((axes, index) => {
-      const comparePrevAxes = prevAxes[index];
-
-      const currentAxesGain: object = axes["gain" as keyof typeof axes];
-      const prevAxesGain: object = comparePrevAxes["gain" as keyof typeof axes];
-
-      if (
-        Object.keys(currentAxesGain).includes("current") &&
-        Object.keys(prevAxesGain).includes("current")
-      ) {
-        const currentAxesGainCurrent =
-          currentAxesGain["current" as keyof typeof currentAxesGain];
-        const prevAxesGainCurrent =
-          prevAxesGain["current" as keyof typeof prevAxesGain];
-
-        if (
-          currentAxesGainCurrent[
-            "denominator" as keyof typeof currentAxesGainCurrent
-          ] !==
-            prevAxesGainCurrent[
-              "denominator" as keyof typeof prevAxesGainCurrent
-            ]
-        ) {
-          isDenominatorChange = true;
-        }
-      }
-
-      if (
-        Object.keys(currentAxesGain).includes("velocity") &&
-        Object.keys(prevAxesGain).includes("velocity")
-      ) {
-        const currentAxesGainVelocity =
-          currentAxesGain["velocity" as keyof typeof currentAxesGain];
-        const prevAxesGainVelocity =
-          prevAxesGain["velocity" as keyof typeof prevAxesGain];
-
-        if (
-          currentAxesGainVelocity[
-            "denominator" as keyof typeof currentAxesGainVelocity
-          ] !==
-            prevAxesGainVelocity[
-              "denominator" as keyof typeof prevAxesGainVelocity
-            ]
-        ) {
-          isDenominatorChange = true;
-        }
-
-        if (
-          currentAxesGainVelocity[
-            "denominator_pi" as keyof typeof currentAxesGainVelocity
-          ] !==
-            prevAxesGainVelocity[
-              "denominator_pi" as keyof typeof prevAxesGainVelocity
-            ]
-        ) {
-          isDenominatorChange = true;
-        }
-      }
-
-      if (
-        Object.keys(currentAxesGain).includes("position") &&
-        Object.keys(prevAxesGain).includes("position")
-      ) {
-        const currentAxesGainPosition =
-          currentAxesGain["position" as keyof typeof currentAxesGain];
-        const prevAxesGainPosition =
-          prevAxesGain["position" as keyof typeof prevAxesGain];
-
-        if (
-          currentAxesGainPosition[
-            "denominator" as keyof typeof currentAxesGainPosition
-          ] !==
-            prevAxesGainPosition[
-              "denominator" as keyof typeof prevAxesGainPosition
-            ]
-        ) {
-          isDenominatorChange = true;
-        }
-      }
-    });
-    return isDenominatorChange;
-  }
 
   function calcCurrentP(denominator: number, ls: number) {
     const wcc = 2.0 * Math.PI * (15000.0 / denominator);
@@ -296,174 +301,6 @@ export function ConfigForm(props: ConfigFormProps) {
     const wpc = wsc / positionDenominator;
     const p = wpc;
     return p;
-  }
-
-  function updateAxesArrayCurrentI(rs: number, axes: object[]): object[] {
-    const updateAxes = axes.map((axis) => {
-      const gain: object = axis["gain" as keyof typeof axis];
-      const current = gain["current" as keyof typeof gain];
-      const denominator = current["denominator" as keyof typeof current];
-      const p = current["p" as keyof typeof current];
-
-      const i = calcCurrentI(denominator, rs);
-
-      return {
-        gain: {
-          ...gain,
-          current: {
-            p: p,
-            i: isNaN(i) ? "NaN" : i,
-            denominator: denominator,
-          },
-        },
-      };
-    });
-    return updateAxes;
-  }
-
-  function updateAxesArrayCurrentP(ls: number, axes: object[]): object[] {
-    const updateAxes = axes.map((axis) => {
-      const gain: object = axis["gain" as keyof typeof axis];
-      const current = gain["current" as keyof typeof gain];
-      const denominator = current["denominator" as keyof typeof current];
-      const i = current["i" as keyof typeof current];
-
-      const p = calcCurrentP(denominator, ls);
-      return {
-        gain: {
-          ...gain,
-          current: {
-            p: isNaN(p) ? "NaN" : p,
-            i: i,
-            denominator: denominator,
-          },
-        },
-      };
-    });
-    return updateAxes;
-  }
-
-  function updateAxesArrayVelocityP(
-    pitch: number,
-    mass: number,
-    kf: number,
-    axes: object[],
-  ): object[] {
-    const updateAxes = axes.map((axis) => {
-      const gain: object = axis["gain" as keyof typeof axis];
-      const velocity = gain["velocity" as keyof typeof gain];
-
-      const denominator = velocity["denominator" as keyof typeof velocity];
-      const denominator_pi =
-        velocity["denominator_pi" as keyof typeof velocity];
-      const i = velocity["i" as keyof typeof velocity];
-
-      const current = gain["current" as keyof typeof gain];
-      const currentDenominator = current["denominator" as keyof typeof current];
-
-      const p = calcVelocityP(denominator, currentDenominator, pitch, mass, kf);
-
-      return {
-        gain: {
-          ...gain,
-          velocity: {
-            p: isNaN(p) ? "NaN" : p,
-            i: i,
-            denominator: denominator,
-            denominator_pi: denominator_pi,
-          },
-        },
-      };
-    });
-    return updateAxes;
-  }
-
-  function updateAxesArrayVelocityI(axes: object[]): object[] {
-    const updateAxes = axes.map((axis) => {
-      const gain: object = axis["gain" as keyof typeof axis];
-
-      const velocity = gain["velocity" as keyof typeof gain];
-      const denominator = velocity["denominator" as keyof typeof velocity];
-      const denominator_pi =
-        velocity["denominator_pi" as keyof typeof velocity];
-      const p = velocity["p" as keyof typeof velocity];
-
-      const current = gain["current" as keyof typeof gain];
-      const currentDenominator = current["denominator" as keyof typeof current];
-
-      if (
-        typeof denominator === "object" ||
-        typeof denominator_pi === "object" ||
-        typeof currentDenominator === "object" ||
-        typeof p === "object"
-      ) {
-        return axis;
-      }
-      const i = calcVelocityI(
-        denominator,
-        denominator_pi,
-        currentDenominator,
-        p,
-      );
-
-      return {
-        gain: {
-          ...gain,
-          velocity: {
-            p: p,
-            i: isNaN(i) ? "NaN" : i,
-            denominator: denominator,
-            denominator_pi: denominator_pi,
-          },
-        },
-      };
-    });
-    return updateAxes;
-  }
-
-  function updateAxesArrayPosition(axes: object[]): object[] {
-    const updateAxes = axes.map((axis) => {
-      const gain: object = axis["gain" as keyof typeof axis];
-
-      const current = gain["current" as keyof typeof gain];
-      const currentDenominator = current["denominator" as keyof typeof current];
-
-      const velocity = gain["velocity" as keyof typeof gain];
-      const velocityDenominator =
-        velocity["denominator" as keyof typeof velocity];
-
-      const position = gain["position" as keyof typeof gain];
-      const positionDenominator = position["position" as keyof typeof position];
-
-      if (!currentDenominator || !velocityDenominator || !positionDenominator) {
-        return axis;
-      }
-      if (
-        typeof currentDenominator === "object" ||
-        typeof velocityDenominator === "object" ||
-        typeof positionDenominator === "object"
-      ) {
-        return axis;
-      }
-
-      const p = calcPositionP(
-        currentDenominator,
-        velocityDenominator,
-        positionDenominator,
-      );
-
-      return {
-        gain: {
-          ...gain,
-          position: {
-            p: isNaN(p) ? "NaN" : p,
-            denominator: positionDenominator,
-          },
-        },
-      };
-    });
-
-    return updateAxes;
   }
 
   return (
@@ -695,17 +532,38 @@ function ConfigList(props: ConfigListProps) {
     setRecentEditedItem(JSON.stringify(items[changedItemIndex]));
   }
 
-  createEffect(() => {
-    if (props.linkedStatuses.get(props.label)?.[0]()[0]) {
-      if (recentEditedItem().length === 0) return;
-      setItems(
-        Array.from(
-          { length: items.length },
-          () => JSON.parse(recentEditedItem()),
-        ),
-      );
-    }
-  });
+  createEffect(
+    on(
+      () => JSON.stringify(items),
+      () => {
+        const index = props.linkedStatuses.get(props.label)?.[0]()[1]!;
+        setRecentEditedItem(JSON.stringify(items[index]));
+      },
+      { defer: true },
+    ),
+  );
+
+  createEffect(
+    on(
+      [
+        () => recentEditedItem(),
+        () => props.linkedStatuses.get(props.label)?.[0]()[0],
+      ],
+      () => {
+        if (!Array.isArray(items)) return;
+        if (props.linkedStatuses.get(props.label)?.[0]()[0]) {
+          items.forEach((_, index) => {
+            const item = JSON.parse(recentEditedItem().replaceAll("null", "0"));
+            if (index === props.linkedStatuses.get(props.label)?.[0]()[1]) {
+              return;
+            }
+            setItems(index, item);
+          });
+        }
+      },
+      { defer: true },
+    ),
+  );
 
   // Converts label to have uppercase letters at the start of each word.
   const prettifiedLabel = Array.from(props.label)
@@ -746,10 +604,6 @@ function ConfigList(props: ConfigListProps) {
                           !linked,
                           index(),
                         ]);
-
-                        if (!props.linkedStatuses.get(props.label)?.[0]()) {
-                          return;
-                        }
                         setRecentEditedItem(JSON.stringify(item));
                       }}
                       marginTop="0.5rem"
@@ -797,7 +651,6 @@ function ConfigList(props: ConfigListProps) {
                   object={item}
                   id_prefix={props.id_prefix + title}
                   onItemChange={() => {
-                    setRecentEditedItem(JSON.stringify(item));
                     props.onItemChange?.();
                     const linked = props.linkedStatuses.get(
                       props.label,
