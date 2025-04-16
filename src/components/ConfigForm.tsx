@@ -53,12 +53,16 @@ export function ConfigForm(props: ConfigFormProps) {
     const axes = config["axes" as keyof typeof config];
     const newAxes: object[] = axes;
 
-    const rs = getValueFromObject(config, "coil", "rs");
-    const ls = getValueFromObject(config, "coil", "ls");
+    const coil = config["coil" as keyof typeof config];
+    const rs = coil["rs" as keyof typeof coil];
+    const ls = coil["ls" as keyof typeof coil];
+    const kf = coil["kf" as keyof typeof coil];
 
-    const pitch = getValueFromObject(config, "magnet", "pitch");
-    const mass = getValueFromObject(config, "carrier", "mass");
-    const kf = getValueFromObject(config, "coil", "kf");
+    const magnet = config["magnet" as keyof typeof config];
+    const pitch = magnet["pitch" as keyof typeof magnet];
+
+    const carrier = config["carrier" as keyof typeof config];
+    const mass = carrier["mass" as keyof typeof carrier];
 
     const updatedCurrentPAxesArray = typeof ls === "number"
       ? updateAxesArrayCurrentP(ls, newAxes)
@@ -89,21 +93,30 @@ export function ConfigForm(props: ConfigFormProps) {
   });
 
   function compareConfig(prevConfig: object, currentConfig: object) {
-    const prevAxes = prevConfig["axes" as keyof typeof prevConfig];
-    const currentAxes = currentConfig["axes" as keyof typeof currentConfig];
+    const prevAxes: object[] = prevConfig["axes" as keyof typeof prevConfig];
+    const currentAxes: object[] =
+      currentConfig["axes" as keyof typeof currentConfig];
     const isDenominatorChange = compareAxesObjectArray(prevAxes, currentAxes);
 
     const prevCoil = prevConfig["coil" as keyof typeof prevConfig];
     const currentCoil = currentConfig["coil" as keyof typeof currentConfig];
     const isCoilChange = compareCoilObject(prevCoil, currentCoil);
 
+    const currentConfigMagnet =
+      currentConfig["magnet" as keyof typeof currentConfig];
+    const prevConfigMagnet = prevConfig["magnet" as keyof typeof prevConfig];
+
     const isMagnetChange =
-      JSON.stringify(getValueFromObject(currentConfig, "magnet", "pitch")) !==
-        JSON.stringify(getValueFromObject(prevConfig, "magnet", "pitch"));
+      currentConfigMagnet["pitch" as keyof typeof currentConfigMagnet] !==
+        prevConfigMagnet["pitch" as keyof typeof prevConfigMagnet];
+
+    const currentConfigCarrier =
+      currentConfig["carrier" as keyof typeof currentConfig];
+    const prevConfigCarrier = prevConfig["carrier" as keyof typeof prevConfig];
 
     const isMassChange =
-      JSON.stringify(getValueFromObject(currentConfig, "carrier", "mass")) !==
-        JSON.stringify(getValueFromObject(prevConfig, "carrier", "mass"));
+      currentConfigCarrier["mass" as keyof typeof currentConfigCarrier] !==
+        prevConfigCarrier["mass" as keyof typeof prevConfigCarrier];
 
     if (isDenominatorChange || isCoilChange || isMagnetChange || isMassChange) {
       return true;
@@ -112,23 +125,24 @@ export function ConfigForm(props: ConfigFormProps) {
 
   function compareCoilObject(prevCoil: object, currentCoil: object): boolean {
     let isCoilChange: boolean = false;
+
     if (
-      getValueFromObject(prevCoil, "ls") !==
-        getValueFromObject(currentCoil, "ls")
+      currentCoil["ls" as keyof typeof currentCoil] !==
+        prevCoil["ls" as keyof typeof prevCoil]
     ) {
       isCoilChange = true;
     }
 
     if (
-      getValueFromObject(prevCoil, "rs") !==
-        getValueFromObject(currentCoil, "rs")
+      currentCoil["rs" as keyof typeof currentCoil] !==
+        prevCoil["rs" as keyof typeof prevCoil]
     ) {
       isCoilChange = true;
     }
 
     if (
-      getValueFromObject(prevCoil, "kf") !==
-        getValueFromObject(currentCoil, "kf")
+      currentCoil["kf" as keyof typeof currentCoil] !==
+        prevCoil["kf" as keyof typeof prevCoil]
     ) {
       isCoilChange = true;
     }
@@ -146,59 +160,84 @@ export function ConfigForm(props: ConfigFormProps) {
     currentAxes.forEach((axes, index) => {
       const comparePrevAxes = prevAxes[index];
 
-      const currentAxesGain = axes["gain" as keyof typeof axes];
-      const prevAxesGain = comparePrevAxes["gain" as keyof typeof axes];
+      const currentAxesGain: object = axes["gain" as keyof typeof axes];
+      const prevAxesGain: object = comparePrevAxes["gain" as keyof typeof axes];
 
       if (
-        getValueFromObject(currentAxesGain, "current", "denominator") !==
-          getValueFromObject(prevAxesGain, "current", "denominator")
+        Object.keys(currentAxesGain).includes("current") &&
+        Object.keys(prevAxesGain).includes("current")
       ) {
-        isDenominatorChange = true;
+        const currentAxesGainCurrent =
+          currentAxesGain["current" as keyof typeof currentAxesGain];
+        const prevAxesGainCurrent =
+          prevAxesGain["current" as keyof typeof prevAxesGain];
+
+        if (
+          currentAxesGainCurrent[
+            "denominator" as keyof typeof currentAxesGainCurrent
+          ] !==
+            prevAxesGainCurrent[
+              "denominator" as keyof typeof prevAxesGainCurrent
+            ]
+        ) {
+          isDenominatorChange = true;
+        }
       }
 
       if (
-        getValueFromObject(currentAxesGain, "velocity", "denominator") !==
-          getValueFromObject(prevAxesGain, "velocity", "denominator")
+        Object.keys(currentAxesGain).includes("velocity") &&
+        Object.keys(prevAxesGain).includes("velocity")
       ) {
-        isDenominatorChange = true;
+        const currentAxesGainVelocity =
+          currentAxesGain["velocity" as keyof typeof currentAxesGain];
+        const prevAxesGainVelocity =
+          prevAxesGain["velocity" as keyof typeof prevAxesGain];
+
+        if (
+          currentAxesGainVelocity[
+            "denominator" as keyof typeof currentAxesGainVelocity
+          ] !==
+            prevAxesGainVelocity[
+              "denominator" as keyof typeof prevAxesGainVelocity
+            ]
+        ) {
+          isDenominatorChange = true;
+        }
+
+        if (
+          currentAxesGainVelocity[
+            "denominator_pi" as keyof typeof currentAxesGainVelocity
+          ] !==
+            prevAxesGainVelocity[
+              "denominator_pi" as keyof typeof prevAxesGainVelocity
+            ]
+        ) {
+          isDenominatorChange = true;
+        }
       }
 
       if (
-        getValueFromObject(currentAxesGain, "velocity", "denominator_pi") !==
-          getValueFromObject(prevAxesGain, "velocity", "denominator_pi")
+        Object.keys(currentAxesGain).includes("position") &&
+        Object.keys(prevAxesGain).includes("position")
       ) {
-        isDenominatorChange = true;
-      }
+        const currentAxesGainPosition =
+          currentAxesGain["position" as keyof typeof currentAxesGain];
+        const prevAxesGainPosition =
+          prevAxesGain["position" as keyof typeof prevAxesGain];
 
-      if (
-        getValueFromObject(currentAxesGain, "position", "denominator") !==
-          getValueFromObject(prevAxesGain, "position", "denominator")
-      ) {
-        isDenominatorChange = true;
+        if (
+          currentAxesGainPosition[
+            "denominator" as keyof typeof currentAxesGainPosition
+          ] !==
+            prevAxesGainPosition[
+              "denominator" as keyof typeof prevAxesGainPosition
+            ]
+        ) {
+          isDenominatorChange = true;
+        }
       }
     });
     return isDenominatorChange;
-  }
-
-  function getValueFromObject(
-    config: object,
-    parent: string,
-    child?: string,
-  ): object | number | null {
-    if (Object.keys(config).includes(parent)) {
-      const parentValue = Object.entries(config)
-        .filter((key) => key[0] === parent)
-        .pop()![1];
-
-      if (typeof parentValue === "object") {
-        return child ? getValueFromObject(parentValue, child) : parentValue;
-      } else if (typeof parentValue === "number") {
-        return parentValue;
-      } else {
-        return null;
-      }
-    }
-    return null;
   }
 
   function calcCurrentP(denominator: number, ls: number) {
@@ -262,9 +301,9 @@ export function ConfigForm(props: ConfigFormProps) {
   function updateAxesArrayCurrentI(rs: number, axes: object[]): object[] {
     const updateAxes = axes.map((axis) => {
       const gain: object = axis["gain" as keyof typeof axis];
-      const denominator = getValueFromObject(gain, "current", "denominator");
-      const p = getValueFromObject(gain, "current", "p");
-      if (!denominator || typeof denominator === "object") return axis;
+      const current = gain["current" as keyof typeof gain];
+      const denominator = current["denominator" as keyof typeof current];
+      const p = current["p" as keyof typeof current];
 
       const i = calcCurrentI(denominator, rs);
 
@@ -285,10 +324,9 @@ export function ConfigForm(props: ConfigFormProps) {
   function updateAxesArrayCurrentP(ls: number, axes: object[]): object[] {
     const updateAxes = axes.map((axis) => {
       const gain: object = axis["gain" as keyof typeof axis];
-      const denominator = getValueFromObject(gain, "current", "denominator");
-      const i = getValueFromObject(gain, "current", "i");
-
-      if (!denominator || typeof denominator === "object") return axis;
+      const current = gain["current" as keyof typeof gain];
+      const denominator = current["denominator" as keyof typeof current];
+      const i = current["i" as keyof typeof current];
 
       const p = calcCurrentP(denominator, ls);
       return {
@@ -313,27 +351,15 @@ export function ConfigForm(props: ConfigFormProps) {
   ): object[] {
     const updateAxes = axes.map((axis) => {
       const gain: object = axis["gain" as keyof typeof axis];
-      const denominator = getValueFromObject(gain, "velocity", "denominator");
-      const i = getValueFromObject(gain, "velocity", "i");
-      const denominator_pi = getValueFromObject(
-        gain,
-        "velocity",
-        "denominator_pi",
-      );
-      const currentDenominator = getValueFromObject(
-        gain,
-        "current",
-        "denominator",
-      );
+      const velocity = gain["velocity" as keyof typeof gain];
 
-      if (
-        !denominator ||
-        !currentDenominator ||
-        typeof denominator === "object" ||
-        typeof currentDenominator === "object"
-      ) {
-        return axis;
-      }
+      const denominator = velocity["denominator" as keyof typeof velocity];
+      const denominator_pi =
+        velocity["denominator_pi" as keyof typeof velocity];
+      const i = velocity["i" as keyof typeof velocity];
+
+      const current = gain["current" as keyof typeof gain];
+      const currentDenominator = current["denominator" as keyof typeof current];
 
       const p = calcVelocityP(denominator, currentDenominator, pitch, mass, kf);
 
@@ -355,22 +381,16 @@ export function ConfigForm(props: ConfigFormProps) {
   function updateAxesArrayVelocityI(axes: object[]): object[] {
     const updateAxes = axes.map((axis) => {
       const gain: object = axis["gain" as keyof typeof axis];
-      const denominator = getValueFromObject(gain, "velocity", "denominator");
-      const denominator_pi = getValueFromObject(
-        gain,
-        "velocity",
-        "denominator_pi",
-      );
-      const currentDenominator = getValueFromObject(
-        gain,
-        "current",
-        "denominator",
-      );
-      const p = getValueFromObject(gain, "velocity", "p");
 
-      if (!denominator || !currentDenominator || !denominator_pi || !p) {
-        return axis;
-      }
+      const velocity = gain["velocity" as keyof typeof gain];
+      const denominator = velocity["denominator" as keyof typeof velocity];
+      const denominator_pi =
+        velocity["denominator_pi" as keyof typeof velocity];
+      const p = velocity["p" as keyof typeof velocity];
+
+      const current = gain["current" as keyof typeof gain];
+      const currentDenominator = current["denominator" as keyof typeof current];
+
       if (
         typeof denominator === "object" ||
         typeof denominator_pi === "object" ||
@@ -404,21 +424,16 @@ export function ConfigForm(props: ConfigFormProps) {
   function updateAxesArrayPosition(axes: object[]): object[] {
     const updateAxes = axes.map((axis) => {
       const gain: object = axis["gain" as keyof typeof axis];
-      const currentDenominator = getValueFromObject(
-        gain,
-        "current",
-        "denominator",
-      );
-      const velocityDenominator = getValueFromObject(
-        gain,
-        "velocity",
-        "denominator",
-      );
-      const positionDenominator = getValueFromObject(
-        gain,
-        "position",
-        "denominator",
-      );
+
+      const current = gain["current" as keyof typeof gain];
+      const currentDenominator = current["denominator" as keyof typeof current];
+
+      const velocity = gain["velocity" as keyof typeof gain];
+      const velocityDenominator =
+        velocity["denominator" as keyof typeof velocity];
+
+      const position = gain["position" as keyof typeof gain];
+      const positionDenominator = position["position" as keyof typeof position];
 
       if (!currentDenominator || !velocityDenominator || !positionDenominator) {
         return axis;

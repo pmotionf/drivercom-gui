@@ -102,8 +102,6 @@ function Configuration() {
       .sort()
       .toString();
 
-    console.log(newFileFormat);
-
     return newFileFormat;
   }
 
