@@ -1,5 +1,6 @@
 import {
   createEffect,
+  createMemo,
   createSignal,
   For,
   JSX,
@@ -25,6 +26,7 @@ import {
   IconEyeOff,
   IconLocation,
   IconLocationOff,
+  IconSearch,
   IconZoomInArea,
   IconZoomReset,
 } from "@tabler/icons-solidjs";
@@ -33,6 +35,8 @@ import { Legend, LegendStroke } from "./Plot/Legend";
 import { Tooltip } from "./ui/tooltip";
 import { Text } from "./ui/text";
 import { Portal } from "solid-js/web";
+import { createListCollection } from "./ui/select";
+import { Combobox } from "./ui/combobox";
 
 export type PlotProps = JSX.HTMLAttributes<HTMLDivElement> & {
   id: string;
@@ -470,6 +474,83 @@ export function Plot(props: PlotProps) {
     getContext().visible ? getContext().visible.every((b) => b) : true,
   );
 
+  const [searchResults, setSearchResults] = createSignal<string[]>(
+    props.header,
+  );
+
+  const legendList = createMemo(() =>
+    createListCollection({ items: searchResults() })
+  );
+
+  const handleSearchBoxInputChange = (
+    searchBoxData: Combobox.InputValueChangeDetails,
+  ) => {
+    const parseSearchInput = searchBoxData.inputValue.toLowerCase().split(" ");
+    const searchResult = searchLegends(parseSearchInput, props.header);
+    setOpen(true);
+    setSearchResults(searchResult);
+  };
+
+  const searchLegends = (
+    searchString: string[],
+    headers: string[],
+  ): string[] => {
+    const parseHeaders = headers.map((legend) => {
+      return legend.toLowerCase().replaceAll("_", " ").replaceAll(".", " ");
+    });
+
+    const matchedHeaders = parseHeaders.map((str) => {
+      let num = 0;
+      searchString.forEach((splittedSearchInput) => {
+        if (str.includes(splittedSearchInput)) {
+          num = num + 1;
+        } else if (fuzzySearch(splittedSearchInput, str)) {
+          num = num + 1;
+        }
+      });
+      return num;
+    });
+
+    const searchResult = headers.filter(
+      (_, i) => matchedHeaders[i] === searchString.length,
+    );
+
+    return searchResult;
+  };
+
+  const fuzzySearch = (searchInput: string, legend: string): boolean => {
+    const splittedLegend = legend.split(" ");
+    let minNum: number = searchInput.length;
+
+    splittedLegend.forEach((word) => {
+      const levenShteinDistance = levenshteinDistance(searchInput, word);
+      minNum = Math.min(minNum, levenShteinDistance);
+    });
+
+    return minNum <= searchInput.length / 2;
+  };
+
+  const levenshteinDistance = (searchInput: string, legend: string): number => {
+    if (!searchInput.length) return legend.length;
+    if (!legend.length) return searchInput.length;
+    const arr = [];
+    for (let i = 0; i <= legend.length; i++) {
+      arr[i] = [i];
+      for (let j = 1; j <= searchInput.length; j++) {
+        arr[i][j] = i === 0 ? j : Math.min(
+          arr[i - 1][j] + 1,
+          arr[i][j - 1] + 1,
+          arr[i - 1][j - 1] +
+            (searchInput[j - 1] === legend[i - 1] ? 0 : 1),
+        );
+      }
+    }
+    return arr[legend.length][searchInput.length];
+  };
+
+  const [open, setOpen] = createSignal<boolean>(false);
+  const [selectedLegends, setSelectedLegends] = createSignal<string[]>([]);
+
   return (
     <>
       <div {...rest} id={props.id + "-wrapper"}>
@@ -646,14 +727,95 @@ export function Plot(props: PlotProps) {
             </Tooltip.Positioner>
           </Tooltip.Root>
         </Stack>
+
+        <Stack width="14rem" paddingTop="1rem">
+          <Combobox.Root
+            multiple
+            openOnClick
+            onFocusOutside={() => setOpen(false)}
+            open={open()}
+            collection={legendList()}
+            selectionBehavior="preserve"
+            onInputValueChange={handleSearchBoxInputChange}
+            value={selectedLegends()}
+            onValueChange={(e) => {
+              setSelectedLegends([
+                ...selectedLegends(),
+                ...e.value.filter((val) => !selectedLegends().includes(val)),
+              ]);
+
+              const selectedLegendIndexes = selectedLegends().map((legend) => {
+                return props.header.indexOf(legend);
+              });
+
+              setContext()(
+                "visible",
+                getContext().visible.map((_, i) =>
+                  selectedLegendIndexes.includes(i)
+                ),
+              );
+              getContext().visible.forEach((val, i) => {
+                plot.setSeries(i + 1, {
+                  show: val,
+                });
+              });
+              props.onContextChange?.(getContext());
+            }}
+          >
+            <Combobox.Control>
+              <Combobox.Input
+                width="14rem"
+                placeholder="Search series"
+                borderWidth="1px"
+                height="2.5rem"
+                paddingLeft="1rem"
+                borderRadius="2rem"
+                paddingRight="3rem"
+                whiteSpace="nowrap"
+                textOverflow="ellipsis"
+                display="block"
+                overflow="hidden"
+              />
+              <Combobox.Trigger
+                style={{ "margin-left": "1rem" }}
+                onClick={() => setOpen(true)}
+              >
+                <IconButton variant="ghost" padding="0" borderRadius="2rem">
+                  <IconSearch />
+                </IconButton>
+              </Combobox.Trigger>
+            </Combobox.Control>
+            <Portal>
+              <Combobox.Positioner>
+                <Combobox.Content
+                  maxHeight="15rem"
+                  overflowY="auto"
+                  opacity={legendList().items.length === 0 ? "0" : "100"}
+                >
+                  <Combobox.ItemGroup>
+                    <For each={legendList().items}>
+                      {(item) => (
+                        <Combobox.Item item={item}>
+                          <Combobox.ItemText>{item}</Combobox.ItemText>
+                        </Combobox.Item>
+                      )}
+                    </For>
+                  </Combobox.ItemGroup>
+                </Combobox.Content>
+              </Combobox.Positioner>
+            </Portal>
+          </Combobox.Root>
+        </Stack>
+
         <Show when={render()}>
           <Stack
+            id="legend_container"
             style={{
               "margin-top": "1rem",
               "padding-bottom": "0.5rem",
               float: "left",
               width: "15rem",
-              "max-height": "calc(100% - 1.5rem - 4rem)",
+              "max-height": "calc(100% - 1.5rem - 8rem)",
               "overflow-x": "auto",
               "overflow-y": "auto",
             }}
@@ -673,6 +835,7 @@ export function Plot(props: PlotProps) {
                       show: val,
                     });
                   });
+                  setSelectedLegends([]);
                   props.onContextChange?.(getContext());
                 }}
               >
@@ -709,6 +872,16 @@ export function Plot(props: PlotProps) {
                     plot.setSeries(index() + 1, {
                       show: new_visible,
                     });
+                    if (!new_visible) {
+                      setSelectedLegends(
+                        selectedLegends().filter((_, i) => index() - 1 === i),
+                      );
+                    } else {
+                      setSelectedLegends([
+                        ...selectedLegends(),
+                        props.header[index() - 1],
+                      ]);
+                    }
                     props.onContextChange?.(getContext());
                   }}
                   color={getContext().color[index()]}
