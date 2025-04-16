@@ -477,8 +477,6 @@ export function Plot(props: PlotProps) {
   const [searchResults, setSearchResults] = createSignal<string[]>(
     props.header,
   );
-  //const [searchBoxInputValue, setSearchBoxInputValue] =
-  //  createSignal<string>("");
 
   const legendList = createMemo(() =>
     createListCollection({ items: searchResults() })
@@ -489,7 +487,7 @@ export function Plot(props: PlotProps) {
   ) => {
     const parseSearchInput = searchBoxData.inputValue.toLowerCase().split(" ");
     const searchResult = searchLegends(parseSearchInput, props.header);
-
+    setOpen(true);
     setSearchResults(searchResult);
   };
 
@@ -551,6 +549,7 @@ export function Plot(props: PlotProps) {
   };
 
   const [open, setOpen] = createSignal<boolean>(false);
+  const [selectedLegends, setSelectedLegends] = createSignal<string[]>([]);
 
   return (
     <>
@@ -731,17 +730,29 @@ export function Plot(props: PlotProps) {
 
         <Stack width="14rem" paddingTop="1rem">
           <Combobox.Root
+            multiple
             openOnClick
             onFocusOutside={() => setOpen(false)}
             open={open()}
             collection={legendList()}
             selectionBehavior="preserve"
             onInputValueChange={handleSearchBoxInputChange}
+            value={selectedLegends()}
             onValueChange={(e) => {
-              const searchIndex = props.header.indexOf(e.value[0]);
+              setSelectedLegends([
+                ...selectedLegends(),
+                ...e.value.filter((val) => !selectedLegends().includes(val)),
+              ]);
+
+              const selectedLegendIndexes = selectedLegends().map((legend) => {
+                return props.header.indexOf(legend);
+              });
+
               setContext()(
                 "visible",
-                getContext().visible.map((_, i) => i === searchIndex),
+                getContext().visible.map((_, i) =>
+                  selectedLegendIndexes.includes(i)
+                ),
               );
               getContext().visible.forEach((val, i) => {
                 plot.setSeries(i + 1, {
@@ -824,6 +835,7 @@ export function Plot(props: PlotProps) {
                       show: val,
                     });
                   });
+                  setSelectedLegends([]);
                   props.onContextChange?.(getContext());
                 }}
               >
@@ -860,6 +872,16 @@ export function Plot(props: PlotProps) {
                     plot.setSeries(index() + 1, {
                       show: new_visible,
                     });
+                    if (!new_visible) {
+                      setSelectedLegends(
+                        selectedLegends().filter((_, i) => index() - 1 === i),
+                      );
+                    } else {
+                      setSelectedLegends([
+                        ...selectedLegends(),
+                        props.header[index() - 1],
+                      ]);
+                    }
                     props.onContextChange?.(getContext());
                   }}
                   color={getContext().color[index()]}
