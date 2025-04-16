@@ -474,7 +474,11 @@ export function Plot(props: PlotProps) {
     getContext().visible ? getContext().visible.every((b) => b) : true,
   );
 
-  const [searchResults, setSearchResults] = createSignal(props.header);
+  const [searchResults, setSearchResults] = createSignal<string[]>(
+    props.header,
+  );
+  //const [searchBoxInputValue, setSearchBoxInputValue] =
+  //  createSignal<string>("");
 
   const legendList = createMemo(() =>
     createListCollection({ items: searchResults() })
@@ -502,6 +506,8 @@ export function Plot(props: PlotProps) {
       searchString.forEach((splittedSearchInput) => {
         if (str.includes(splittedSearchInput)) {
           num = num + 1;
+        } else if (fuzzySearch(splittedSearchInput, str)) {
+          num = num + 1;
         }
       });
       return num;
@@ -514,7 +520,7 @@ export function Plot(props: PlotProps) {
     return searchResult;
   };
 
-  /*const fuzzySearch = (searchInput: string, legend: string): boolean => {
+  const fuzzySearch = (searchInput: string, legend: string): boolean => {
     const splittedLegend = legend.split(" ");
     let minNum: number = searchInput.length;
 
@@ -542,7 +548,9 @@ export function Plot(props: PlotProps) {
       }
     }
     return arr[legend.length][searchInput.length];
-    };*/
+  };
+
+  const [open, setOpen] = createSignal<boolean>(false);
 
   return (
     <>
@@ -723,7 +731,11 @@ export function Plot(props: PlotProps) {
 
         <Stack width="14rem" paddingTop="1rem">
           <Combobox.Root
+            openOnClick
+            onFocusOutside={() => setOpen(false)}
+            open={open()}
             collection={legendList()}
+            selectionBehavior="preserve"
             onInputValueChange={handleSearchBoxInputChange}
             onValueChange={(e) => {
               const searchIndex = props.header.indexOf(e.value[0]);
@@ -753,7 +765,10 @@ export function Plot(props: PlotProps) {
                 display="block"
                 overflow="hidden"
               />
-              <Combobox.Trigger style={{ "margin-left": "1rem" }}>
+              <Combobox.Trigger
+                style={{ "margin-left": "1rem" }}
+                onClick={() => setOpen(true)}
+              >
                 <IconButton variant="ghost" padding="0" borderRadius="2rem">
                   <IconSearch />
                 </IconButton>
@@ -761,7 +776,11 @@ export function Plot(props: PlotProps) {
             </Combobox.Control>
             <Portal>
               <Combobox.Positioner>
-                <Combobox.Content maxHeight="15rem" overflowY="auto">
+                <Combobox.Content
+                  maxHeight="15rem"
+                  overflowY="auto"
+                  opacity={legendList().items.length === 0 ? "0" : "100"}
+                >
                   <Combobox.ItemGroup>
                     <For each={legendList().items}>
                       {(item) => (
