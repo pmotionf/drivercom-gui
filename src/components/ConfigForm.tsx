@@ -52,14 +52,18 @@ export function ConfigForm(props: ConfigFormProps) {
   createEffect(() => {
     const coil = config["coil" as keyof typeof config];
     const rs = coil["rs" as keyof typeof coil];
-    const axes = config["axes" as keyof typeof config];
+    const axes: object[] = config["axes" as keyof typeof config];
 
     const prevConfigValue = prevConfig();
     const prevConfigCoil =
       prevConfigValue["coil" as keyof typeof prevConfigValue];
 
     if (rs !== prevConfigCoil["rs" as keyof typeof prevConfigCoil]) {
-      const updatedCurrentIAxesArray = updateAxesArrayCurrentI(rs, axes);
+      const updatedCurrentIAxesArray = updateAxesArrayCurrentI(
+        rs,
+        axes,
+        Array.from({ length: axes.length }, () => true),
+      );
       setConfig({ ...config, axes: updatedCurrentIAxesArray });
       setPrevConfig(JSON.parse(JSON.stringify(config)));
     }
@@ -69,14 +73,66 @@ export function ConfigForm(props: ConfigFormProps) {
     const coil = config["coil" as keyof typeof config];
     const ls = coil["ls" as keyof typeof coil];
 
-    const axes = config["axes" as keyof typeof config];
+    const axes: object[] = config["axes" as keyof typeof config];
     const prevConfigValue = prevConfig();
     const prevConfigCoil =
       prevConfigValue["coil" as keyof typeof prevConfigValue];
 
     if (ls !== prevConfigCoil["ls" as keyof typeof prevConfigCoil]) {
-      const updatedCurrentPAxesArray = updateAxesArrayCurrentP(ls, axes);
+      const updatedCurrentPAxesArray = updateAxesArrayCurrentP(
+        ls,
+        axes,
+        Array.from({ length: axes.length }, () => true),
+      );
       setConfig({ ...config, axes: updatedCurrentPAxesArray });
+      setPrevConfig(JSON.parse(JSON.stringify(config)));
+    }
+  });
+
+  createEffect(() => {
+    const axes: object[] = config["axes" as keyof typeof config];
+    const prevConfigValue = prevConfig();
+    const prevConfigAxes: object[] =
+      prevConfigValue["axes" as keyof typeof prevConfigValue];
+    const isCurrentDenominatorChange = checkAxesCurrentDenominatorChange(
+      axes,
+      prevConfigAxes,
+    );
+
+    if (isCurrentDenominatorChange.includes(true)) {
+      const coil = config["coil" as keyof typeof config];
+      const rs = coil["rs" as keyof typeof coil];
+      const ls = coil["ls" as keyof typeof coil];
+
+      const kf = coil["kf" as keyof typeof coil];
+      const magnet = config["magnet" as keyof typeof config];
+      const pitch = magnet["pitch" as keyof typeof magnet];
+
+      const carrier = config["carrier" as keyof typeof config];
+      const mass = carrier["mass" as keyof typeof carrier];
+
+      const updatedCurrentPAxesArray = updateAxesArrayCurrentP(
+        ls,
+        axes,
+        isCurrentDenominatorChange,
+      );
+      const updatedCurrentIAxesArray = updateAxesArrayCurrentI(
+        rs,
+        updatedCurrentPAxesArray,
+        isCurrentDenominatorChange,
+      );
+      const updatedVelocityPAxesArray = updateAxesArrayVelocityP(
+        pitch,
+        mass,
+        kf,
+        updatedCurrentIAxesArray,
+        isCurrentDenominatorChange,
+      );
+      const updatedPositionPAxesArray = updateAxesArrayPosition(
+        updatedVelocityPAxesArray,
+        isCurrentDenominatorChange,
+      );
+      setConfig({ ...config, axes: updatedPositionPAxesArray });
       setPrevConfig(JSON.parse(JSON.stringify(config)));
     }
   });
@@ -84,103 +140,211 @@ export function ConfigForm(props: ConfigFormProps) {
   createEffect(() => {
     const coil = config["coil" as keyof typeof config];
     const kf = coil["kf" as keyof typeof coil];
-    const magnet = config["magnet" as keyof typeof config];
-    const pitch = magnet["pitch" as keyof typeof magnet];
-
-    const carrier = config["carrier" as keyof typeof config];
-    const mass = carrier["mass" as keyof typeof carrier];
-
-    const axes = config["axes" as keyof typeof config];
+    const axes: object[] = config["axes" as keyof typeof config];
 
     const prevConfigValue = prevConfig();
     const prevConfigCoil =
       prevConfigValue["coil" as keyof typeof prevConfigValue];
 
-    const prevConfigMagnet =
-      prevConfigValue["magnet" as keyof typeof prevConfigValue];
+    if (kf !== prevConfigCoil["kf" as keyof typeof prevConfigCoil]) {
+      const magnet = config["magnet" as keyof typeof config];
+      const pitch = magnet["pitch" as keyof typeof magnet];
 
-    const prevConfigCarrier =
-      prevConfigValue["carrier" as keyof typeof prevConfigValue];
-
-    if (
-      kf !== prevConfigCoil["kf" as keyof typeof prevConfigCoil] ||
-      pitch !== prevConfigMagnet["pitch" as keyof typeof prevConfigMagnet] ||
-      mass !== prevConfigCarrier["mass" as keyof typeof prevConfigCarrier]
-    ) {
+      const carrier = config["carrier" as keyof typeof config];
+      const mass = carrier["mass" as keyof typeof carrier];
       const updatedVelocityPAxesArray = updateAxesArrayVelocityP(
         pitch,
         mass,
         kf,
         axes,
+        Array.from({ length: axes.length }, () => true),
       );
-      setConfig({ ...config, axes: updatedVelocityPAxesArray });
+      const updatedVelocityIAxesArray = updateAxesArrayVelocityI(
+        updatedVelocityPAxesArray,
+        Array.from({ length: axes.length }, () => true),
+      );
+      setConfig({ ...config, axes: updatedVelocityIAxesArray });
       setPrevConfig(JSON.parse(JSON.stringify(config)));
     }
   });
 
   createEffect(() => {
-    const axes = config["axes" as keyof typeof config];
+    const axes: object[] = config["axes" as keyof typeof config];
     const prevConfigValue = prevConfig();
-    const prevAxes: object[] =
+    const prevConfigAxes: object[] =
       prevConfigValue["axes" as keyof typeof prevConfigValue];
 
-    const checkAxes = compareAxes(axes, prevAxes);
-    if (
-      checkAxes.isCurrentChange ||
-      checkAxes.isVelocityChange ||
-      checkAxes.isPositionChange
-    ) {
-      const coil = config["coil" as keyof typeof config];
-      const magnet = config["magnet" as keyof typeof config];
-      const carrier = config["carrier" as keyof typeof config];
+    const isVelocityPChange = checkAxesVelocityPChange(prevConfigAxes, axes);
 
-      const rs = coil["rs" as keyof typeof coil];
-      const ls = coil["ls" as keyof typeof coil];
-
-      const mass = carrier["mass" as keyof typeof carrier];
-      const pitch = magnet["pitch" as keyof typeof magnet];
-      const kf = coil["kf" as keyof typeof coil];
-
-      const updatedCurrentPAxesArray: object[] = checkAxes.isCurrentChange
-        ? updateAxesArrayCurrentP(ls, axes)
-        : axes;
-      const updatedCurrentIAxesArray: object[] = checkAxes.isCurrentChange
-        ? updateAxesArrayCurrentI(rs, updatedCurrentPAxesArray)
-        : updatedCurrentPAxesArray;
-      const updatedVelocityPAxesArray: object[] = checkAxes.isVelocityChange
-        ? updateAxesArrayVelocityP(pitch, mass, kf, updatedCurrentIAxesArray)
-        : updatedCurrentIAxesArray;
-      const updatedVelocityIAxesArray: object[] = checkAxes.isVelocityChange
-        ? updateAxesArrayVelocityI(updatedVelocityPAxesArray)
-        : updatedVelocityPAxesArray;
-      const updatedPositionPAxesArray: object[] = checkAxes.isPositionChange
-        ? updateAxesArrayPosition(updatedVelocityIAxesArray)
-        : updatedVelocityIAxesArray;
-
+    if (isVelocityPChange.includes(true)) {
+      // Infinite loop occur
+      /* const updatedVelocityIAxesArray = updateAxesArrayVelocityI(
+        axes,
+        isVelocityPChange,
+      );
       setConfig({
         ...config,
-        axes: updatedPositionPAxesArray,
+        axes: updatedVelocityIAxesArray,
       });
+      setPrevConfig(JSON.parse(JSON.stringify(config)));*/
+    }
+  });
+
+  createEffect(() => {
+    const magnet = config["magnet" as keyof typeof config];
+    const pitch = magnet["pitch" as keyof typeof magnet];
+    const axes: object[] = config["axes" as keyof typeof config];
+
+    const prevConfigValue = prevConfig();
+    const prevConfigMagnet =
+      prevConfigValue["magnet" as keyof typeof prevConfigValue];
+
+    if (pitch !== prevConfigMagnet["pitch" as keyof typeof prevConfigMagnet]) {
+      const coil = config["coil" as keyof typeof config];
+      const kf = coil["kf" as keyof typeof coil];
+
+      const carrier = config["carrier" as keyof typeof config];
+      const mass = carrier["mass" as keyof typeof carrier];
+
+      const updatedVelocityPAxesArray = updateAxesArrayVelocityP(
+        pitch,
+        mass,
+        kf,
+        axes,
+        Array.from({ length: axes.length }, () => true),
+      );
+      const updatedVelocityIAxesArray = updateAxesArrayVelocityI(
+        updatedVelocityPAxesArray,
+        Array.from({ length: axes.length }, () => true),
+      );
+      setConfig({ ...config, axes: updatedVelocityIAxesArray });
+      setPrevConfig(JSON.parse(JSON.stringify(config)));
+
+      console.log("pitch");
+    }
+  });
+
+  createEffect(() => {
+    const carrier = config["carrier" as keyof typeof config];
+    const mass = carrier["mass" as keyof typeof carrier];
+
+    const axes: object[] = config["axes" as keyof typeof config];
+
+    const prevConfigValue = prevConfig();
+    const prevConfigCarrier =
+      prevConfigValue["carrier" as keyof typeof prevConfigValue];
+
+    if (mass !== prevConfigCarrier["mass" as keyof typeof prevConfigCarrier]) {
+      const coil = config["coil" as keyof typeof config];
+      const kf = coil["kf" as keyof typeof coil];
+
+      const magnet = config["magnet" as keyof typeof config];
+      const pitch = magnet["pitch" as keyof typeof magnet];
+
+      const updatedVelocityPAxesArray = updateAxesArrayVelocityP(
+        pitch,
+        mass,
+        kf,
+        axes,
+        Array.from({ length: axes.length }, () => true),
+      );
+      const updatedVelocityIAxesArray = updateAxesArrayVelocityI(
+        updatedVelocityPAxesArray,
+        Array.from({ length: axes.length }, () => true),
+      );
+      setConfig({ ...config, axes: updatedVelocityIAxesArray });
+      setPrevConfig(JSON.parse(JSON.stringify(config)));
+      console.log("carrier");
+    }
+  });
+
+  createEffect(() => {
+    const axes: object[] = config["axes" as keyof typeof config];
+    const prevConfigValue = prevConfig();
+    const prevConfigAxes: object[] =
+      prevConfigValue["axes" as keyof typeof prevConfigValue];
+    const isVelocityDenominatorChange = checkAxesVelocityDenominatorChange(
+      prevConfigAxes,
+      axes,
+    );
+
+    if (isVelocityDenominatorChange.includes(true)) {
+      const coil = config["coil" as keyof typeof config];
+      const kf = coil["kf" as keyof typeof coil];
+      const magnet = config["magnet" as keyof typeof config];
+      const pitch = magnet["pitch" as keyof typeof magnet];
+
+      const carrier = config["carrier" as keyof typeof config];
+      const mass = carrier["mass" as keyof typeof carrier];
+
+      const updatedVelocityPAxesArray = updateAxesArrayVelocityP(
+        pitch,
+        mass,
+        kf,
+        axes,
+        isVelocityDenominatorChange,
+      );
+      const updatedVelocityIAxesArray = updateAxesArrayVelocityI(
+        updatedVelocityPAxesArray,
+        isVelocityDenominatorChange,
+      );
+      const updatedPositionPAxesArray = updateAxesArrayPosition(
+        updatedVelocityIAxesArray,
+        isVelocityDenominatorChange,
+      );
+      setConfig({ ...config, axes: updatedPositionPAxesArray });
       setPrevConfig(JSON.parse(JSON.stringify(config)));
     }
   });
 
-  const compareAxes = (
+  createEffect(() => {
+    const axes: object[] = config["axes" as keyof typeof config];
+    const prevConfigValue = prevConfig();
+    const prevConfigAxes: object[] =
+      prevConfigValue["axes" as keyof typeof prevConfigValue];
+    const isVelocityDenominatorPIChange = checkAxesVelocityDenominatorPIChange(
+      prevConfigAxes,
+      axes,
+    );
+
+    if (isVelocityDenominatorPIChange.includes(true)) {
+      const updatedVelocityIAxesArray = updateAxesArrayVelocityI(
+        axes,
+        isVelocityDenominatorPIChange,
+      );
+      setConfig({ ...config, axes: updatedVelocityIAxesArray });
+      setPrevConfig(JSON.parse(JSON.stringify(config)));
+    }
+  });
+
+  createEffect(() => {
+    const axes: object[] = config["axes" as keyof typeof config];
+    const prevConfigValue = prevConfig();
+    const prevConfigAxes: object[] =
+      prevConfigValue["axes" as keyof typeof prevConfigValue];
+    const isPositionDenominatorChange = checkAxesPositionDenominatorChange(
+      prevConfigAxes,
+      axes,
+    );
+
+    if (isPositionDenominatorChange.includes(true)) {
+      const updatedPositionPAxesArray = updateAxesArrayPosition(
+        axes,
+        isPositionDenominatorChange,
+      );
+      setConfig({ ...config, axes: updatedPositionPAxesArray });
+      setPrevConfig(JSON.parse(JSON.stringify(config)));
+    }
+  });
+
+  const checkAxesCurrentDenominatorChange = (
     axes: object[],
     prevAxes: object[],
-  ): {
-    isCurrentChange: boolean;
-    isVelocityChange: boolean;
-    isPositionChange: boolean;
-  } => {
-    let isCurrentChange: boolean = false;
-    let isVelocityChange: boolean = false;
-    let isPositionChange: boolean = false;
-
-    axes.forEach((axis, i) => {
-      const prevAxis = prevAxes[i];
-
+  ): boolean[] => {
+    const isCurrentDenominatorChange: boolean[] = [];
+    axes.forEach((axis, index) => {
       const axisGain = axis["gain" as keyof typeof axis];
+      const prevAxis = prevAxes[index];
       const prevAxisGain = prevAxis["gain" as keyof typeof prevAxis];
 
       const axisCurrent = axisGain["current" as keyof typeof axisGain];
@@ -191,10 +355,23 @@ export function ConfigForm(props: ConfigFormProps) {
         axisCurrent["denominator" as keyof typeof axisCurrent] !==
           prevAxisCurrent["denominator" as keyof typeof prevAxisCurrent]
       ) {
-        isCurrentChange = true;
-        isVelocityChange = true;
-        isPositionChange = true;
+        isCurrentDenominatorChange.push(true);
+      } else {
+        isCurrentDenominatorChange.push(false);
       }
+    });
+    return isCurrentDenominatorChange;
+  };
+
+  const checkAxesVelocityDenominatorChange = (
+    axes: object[],
+    prevAxes: object[],
+  ): boolean[] => {
+    const isVelocityDenominatorChange: boolean[] = [];
+    axes.forEach((axis, index) => {
+      const axisGain = axis["gain" as keyof typeof axis];
+      const prevAxis = prevAxes[index];
+      const prevAxisGain = prevAxis["gain" as keyof typeof prevAxis];
 
       const axisVelocity = axisGain["velocity" as keyof typeof axisGain];
       const prevAxisVelocity =
@@ -204,16 +381,75 @@ export function ConfigForm(props: ConfigFormProps) {
         axisVelocity["denominator" as keyof typeof axisVelocity] !==
           prevAxisVelocity["denominator" as keyof typeof prevAxisVelocity]
       ) {
-        isVelocityChange = true;
-        isPositionChange = true;
+        isVelocityDenominatorChange.push(true);
+      } else {
+        isVelocityDenominatorChange.push(false);
       }
+    });
+    return isVelocityDenominatorChange;
+  };
+
+  const checkAxesVelocityDenominatorPIChange = (
+    axes: object[],
+    prevAxes: object[],
+  ): boolean[] => {
+    const isVelocityDenominatorPIChange: boolean[] = [];
+    axes.forEach((axis, index) => {
+      const axisGain = axis["gain" as keyof typeof axis];
+      const prevAxis = prevAxes[index];
+      const prevAxisGain = prevAxis["gain" as keyof typeof prevAxis];
+
+      const axisVelocity = axisGain["velocity" as keyof typeof axisGain];
+      const prevAxisVelocity =
+        prevAxisGain["velocity" as keyof typeof prevAxisGain];
 
       if (
         axisVelocity["denominator_pi" as keyof typeof axisVelocity] !==
           prevAxisVelocity["denominator_pi" as keyof typeof prevAxisVelocity]
       ) {
-        isVelocityChange = true;
+        isVelocityDenominatorPIChange.push(true);
+      } else {
+        isVelocityDenominatorPIChange.push(false);
       }
+    });
+    return isVelocityDenominatorPIChange;
+  };
+
+  const checkAxesVelocityPChange = (
+    axes: object[],
+    prevAxes: object[],
+  ): boolean[] => {
+    const isVelocityPChange: boolean[] = [];
+    axes.forEach((axis, index) => {
+      const axisGain = axis["gain" as keyof typeof axis];
+      const prevAxis = prevAxes[index];
+      const prevAxisGain = prevAxis["gain" as keyof typeof prevAxis];
+
+      const axisVelocity = axisGain["velocity" as keyof typeof axisGain];
+      const prevAxisVelocity =
+        prevAxisGain["velocity" as keyof typeof prevAxisGain];
+
+      if (
+        axisVelocity["p" as keyof typeof axisVelocity] !==
+          prevAxisVelocity["p" as keyof typeof prevAxisVelocity]
+      ) {
+        isVelocityPChange.push(true);
+      } else {
+        isVelocityPChange.push(false);
+      }
+    });
+    return isVelocityPChange;
+  };
+
+  const checkAxesPositionDenominatorChange = (
+    axes: object[],
+    prevAxes: object[],
+  ): boolean[] => {
+    const isPositionDenominatorChange: boolean[] = [];
+    axes.forEach((axis, index) => {
+      const axisGain = axis["gain" as keyof typeof axis];
+      const prevAxis = prevAxes[index];
+      const prevAxisGain = prevAxis["gain" as keyof typeof prevAxis];
 
       const axisPosition = axisGain["position" as keyof typeof axisGain];
       const prevAxisPosition =
@@ -223,15 +459,12 @@ export function ConfigForm(props: ConfigFormProps) {
         axisPosition["denominator" as keyof typeof axisPosition] !==
           prevAxisPosition["denominator" as keyof typeof prevAxisPosition]
       ) {
-        isPositionChange = true;
+        isPositionDenominatorChange.push(true);
+      } else {
+        isPositionDenominatorChange.push(false);
       }
     });
-
-    return {
-      isCurrentChange: isCurrentChange,
-      isVelocityChange: isVelocityChange,
-      isPositionChange: isPositionChange,
-    };
+    return isPositionDenominatorChange;
   };
 
   function calcCurrentP(denominator: number, ls: number) {
@@ -292,8 +525,13 @@ export function ConfigForm(props: ConfigFormProps) {
     return p;
   }
 
-  function updateAxesArrayCurrentI(rs: number, axes: object[]): object[] {
-    const updateAxes = axes.map((axis) => {
+  function updateAxesArrayCurrentI(
+    rs: number,
+    axes: object[],
+    isAxesChange: boolean[],
+  ): object[] {
+    const updateAxes = axes.map((axis, index) => {
+      if (!isAxesChange[index]) return axis;
       const gain: object = axis["gain" as keyof typeof axis];
       const current = gain["current" as keyof typeof gain];
       const denominator = current["denominator" as keyof typeof current];
@@ -315,8 +553,13 @@ export function ConfigForm(props: ConfigFormProps) {
     return updateAxes;
   }
 
-  function updateAxesArrayCurrentP(ls: number, axes: object[]): object[] {
-    const updateAxes = axes.map((axis) => {
+  function updateAxesArrayCurrentP(
+    ls: number,
+    axes: object[],
+    isAxesChange: boolean[],
+  ): object[] {
+    const updateAxes = axes.map((axis, index) => {
+      if (!isAxesChange[index]) return axis;
       const gain: object = axis["gain" as keyof typeof axis];
       const current = gain["current" as keyof typeof gain];
       const denominator = current["denominator" as keyof typeof current];
@@ -342,8 +585,10 @@ export function ConfigForm(props: ConfigFormProps) {
     mass: number,
     kf: number,
     axes: object[],
+    isAxesChange: boolean[],
   ): object[] {
-    const updateAxes = axes.map((axis) => {
+    const updateAxes = axes.map((axis, index) => {
+      if (!isAxesChange[index]) return axis;
       const gain: object = axis["gain" as keyof typeof axis];
       const velocity = gain["velocity" as keyof typeof gain];
 
@@ -372,8 +617,12 @@ export function ConfigForm(props: ConfigFormProps) {
     return updateAxes;
   }
 
-  function updateAxesArrayVelocityI(axes: object[]): object[] {
-    const updateAxes = axes.map((axis) => {
+  function updateAxesArrayVelocityI(
+    axes: object[],
+    isAxesChange: boolean[],
+  ): object[] {
+    const updateAxes = axes.map((axis, index) => {
+      if (!isAxesChange[index]) return axis;
       const gain: object = axis["gain" as keyof typeof axis];
 
       const velocity = gain["velocity" as keyof typeof gain];
@@ -385,21 +634,12 @@ export function ConfigForm(props: ConfigFormProps) {
       const current = gain["current" as keyof typeof gain];
       const currentDenominator = current["denominator" as keyof typeof current];
 
-      if (
-        typeof denominator === "object" ||
-        typeof denominator_pi === "object" ||
-        typeof currentDenominator === "object" ||
-        typeof p === "object"
-      ) {
-        return axis;
-      }
       const i = calcVelocityI(
         denominator,
         denominator_pi,
         currentDenominator,
         p,
       );
-
       return {
         gain: {
           ...gain,
@@ -415,8 +655,12 @@ export function ConfigForm(props: ConfigFormProps) {
     return updateAxes;
   }
 
-  function updateAxesArrayPosition(axes: object[]): object[] {
-    const updateAxes = axes.map((axis) => {
+  function updateAxesArrayPosition(
+    axes: object[],
+    isAxesChange: boolean[],
+  ): object[] {
+    const updateAxes = axes.map((axis, index) => {
+      if (!isAxesChange[index]) return axis;
       const gain: object = axis["gain" as keyof typeof axis];
 
       const current = gain["current" as keyof typeof gain];
@@ -435,8 +679,6 @@ export function ConfigForm(props: ConfigFormProps) {
         velocityDenominator,
         positionDenominator,
       );
-
-      console.log(p);
 
       return {
         gain: {
