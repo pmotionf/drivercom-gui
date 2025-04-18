@@ -57,8 +57,18 @@ export function ConfigForm(props: ConfigFormProps) {
     const prevConfigValue = prevConfig();
     const prevConfigCoil =
       prevConfigValue["coil" as keyof typeof prevConfigValue];
+    const prevConfigAxes =
+      prevConfigValue["axes" as keyof typeof prevConfigValue];
 
-    if (rs !== prevConfigCoil["rs" as keyof typeof prevConfigCoil]) {
+    const isCurrentDenominatorChange = checkAxesCurrentDenominatorChange(
+      axes,
+      prevConfigAxes,
+    );
+
+    if (
+      rs !== prevConfigCoil["rs" as keyof typeof prevConfigCoil] ||
+      isCurrentDenominatorChange.includes(true)
+    ) {
       const updatedCurrentIAxesArray = updateAxesArrayCurrentI(
         rs,
         axes,
@@ -177,8 +187,8 @@ export function ConfigForm(props: ConfigFormProps) {
     const isVelocityPChange = checkAxesVelocityPChange(prevConfigAxes, axes);
 
     if (isVelocityPChange.includes(true)) {
-      // Infinite loop occur
-      /* const updatedVelocityIAxesArray = updateAxesArrayVelocityI(
+      console.log(axes, prevConfigAxes);
+      const updatedVelocityIAxesArray = updateAxesArrayVelocityI(
         axes,
         isVelocityPChange,
       );
@@ -186,7 +196,7 @@ export function ConfigForm(props: ConfigFormProps) {
         ...config,
         axes: updatedVelocityIAxesArray,
       });
-      setPrevConfig(JSON.parse(JSON.stringify(config)));*/
+      setPrevConfig(JSON.parse(JSON.stringify(config)));
     }
   });
 
