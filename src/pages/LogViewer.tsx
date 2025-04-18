@@ -1,18 +1,30 @@
-import { Splitter } from "~/components/ui/splitter";
+import { Splitter } from "~/components/ui/splitter.tsx";
 import { createEffect, createSignal, For, onMount, Show } from "solid-js";
-import { LogViewerTabList } from "./LogViewer/LogViewerTabList";
+import { LogViewerTabList } from "./LogViewer/LogViewerTabList.tsx";
 import { open } from "@tauri-apps/plugin-dialog";
-import { Toast } from "~/components/ui/toast";
+import { Toast } from "~/components/ui/toast.tsx";
 import { IconX } from "@tabler/icons-solidjs";
 import {
   logViewerPanelContexts,
   logViewerPanelSize,
   setLogViewPanelContexts,
   setLogViewPanelSize,
-} from "~/GlobalState";
-import { Spinner } from "~/components/ui/spinner";
-import { PlotContext } from "~/components/Plot";
-import { Stack } from "styled-system/jsx";
+} from "~/GlobalState.ts";
+import { Spinner } from "~/components/ui/spinner.tsx";
+import { PlotContext } from "~/components/Plot.tsx";
+import { Stack } from "styled-system/jsx/index.mjs";
+
+type PanelId = string | number;
+interface PanelSizeData {
+  id: PanelId;
+  size?: number | undefined;
+  minSize?: number | undefined;
+  maxSize?: number | undefined;
+}
+interface SizeChangeDetails {
+  size: PanelSizeData[];
+  activeHandleId: string | null;
+}
 
 export type LogViewerTabContext = {
   id: string;
@@ -157,7 +169,10 @@ function LogViewer() {
     <>
       <div style={{ "overflow-y": "hidden", width: `100%`, height: "100%" }}>
         <Toast.Toaster toaster={toaster}>
-          {(toast) => (
+          {(
+            //@ts-ignore Should change not to use ts-ignore
+            toast,
+          ) => (
             <Toast.Root>
               <Toast.Title>{toast().title}</Toast.Title>
               <Toast.Description>{toast().description}</Toast.Description>
@@ -171,8 +186,8 @@ function LogViewer() {
           <Splitter.Root
             size={logViewerPanelSize()}
             gap="0.5"
-            onSizeChange={(value) => {
-              const parseSizeData = value.size.map((info) => {
+            onSizeChange={(details: SizeChangeDetails) => {
+              const parseSizeData = details.size.map((info) => {
                 return { id: info.id.toString(), size: Number(info.size) };
               });
               setLogViewPanelSize(parseSizeData);
@@ -191,9 +206,11 @@ function LogViewer() {
                       opacity="0%"
                       transition="opacity 0.3s ease"
                       onMouseEnter={(
+                        //@ts-ignore Should change not to use ts-ignore
                         e,
                       ) => (e.currentTarget.style.opacity = "100%")}
                       onMouseLeave={(
+                        //@ts-ignore Should change not to use ts-ignore
                         e,
                       ) => (e.currentTarget.style.opacity = "0%")}
                     />

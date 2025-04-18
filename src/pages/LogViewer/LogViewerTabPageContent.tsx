@@ -9,20 +9,20 @@ import {
   Show,
 } from "solid-js";
 import { createStore } from "solid-js/store";
-import { Plot, PlotContext } from "~/components/Plot";
+import { Plot, PlotContext } from "~/components/Plot.tsx";
 import { inferSchema, initParser } from "udsv";
 import { readTextFile } from "@tauri-apps/plugin-fs";
 import uPlot from "uplot";
-import { IconButton } from "~/components/ui/icon-button";
+import { IconButton } from "~/components/ui/icon-button.tsx";
 import {
   IconFold,
   IconRestore,
   IconSeparatorHorizontal,
 } from "@tabler/icons-solidjs";
-import { Stack } from "styled-system/jsx";
-import { Text } from "~/components/ui/text";
-import { Checkbox } from "~/components/ui/checkbox";
-import { Tooltip } from "~/components/ui/tooltip";
+import { Stack } from "styled-system/jsx/index.mjs";
+import { Text } from "~/components/ui/text.tsx";
+import { Checkbox } from "~/components/ui/checkbox.tsx";
+import { Tooltip } from "~/components/ui/tooltip.tsx";
 
 export type ErrorMessage = {
   title: string;
@@ -331,11 +331,11 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
                   </Tooltip.Content>
                 </Tooltip.Positioner>
               </Tooltip.Root>
-
+              {/*@ts-ignore Should change not to use ts-ignore*/}
               <Checkbox
                 width="8rem"
                 checked={mergePlotIndexes().indexOf(index()) !== -1}
-                onCheckedChange={(checkBoxState) => {
+                onCheckedChange={(checkBoxState: { checked: boolean }) => {
                   if (checkBoxState.checked === true) {
                     setMergePlotIndexes((prev) => {
                       return [...prev, index()];
@@ -349,7 +349,7 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
                   }
                 }}
               >
-                <Text fontWeight="bold">Graph {index() + 1}</Text>
+                test
               </Checkbox>
               <Show when={index() === 0}>
                 <Stack direction="row" width={`calc(100% - 16rem)`}>

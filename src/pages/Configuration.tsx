@@ -1,23 +1,23 @@
 import { createSignal, For, Show } from "solid-js";
 
-import { ConfigForm } from "~/components/ConfigForm";
+import { ConfigForm } from "~/components/ConfigForm.tsx";
 import { IconX } from "@tabler/icons-solidjs";
 import { open, save } from "@tauri-apps/plugin-dialog";
-import { Toast } from "~/components/ui/toast";
+import { Toast } from "~/components/ui/toast.tsx";
 import { readTextFile, writeTextFile } from "@tauri-apps/plugin-fs";
-import { Stack } from "styled-system/jsx";
-import { Text } from "~/components/ui/text";
+import { Stack } from "styled-system/jsx/index.mjs";
+import { Text } from "~/components/ui/text.tsx";
 import {
   configFormFileFormat,
   portId,
   recentConfigFilePaths,
   setRecentConfigFilePaths,
-} from "~/GlobalState";
+} from "~/GlobalState.ts";
 import { Command } from "@tauri-apps/plugin-shell";
-import { IconButton } from "~/components/ui/icon-button";
-import { Button } from "~/components/ui/button";
-import { Card } from "~/components/ui/card";
-import { Menu } from "~/components/ui/menu";
+import { IconButton } from "~/components/ui/icon-button.tsx";
+import { Button } from "~/components/ui/button.tsx";
+import { Card } from "~/components/ui/card.tsx";
+import { Menu } from "~/components/ui/menu.tsx";
 
 function Configuration() {
   const [configure, setConfigure] = createSignal({});
@@ -211,6 +211,7 @@ function Configuration() {
         }}
       >
         <Toast.Toaster toaster={toaster}>
+          {/*@ts-ignore Should change not to use ts-ignore*/}
           {(toast) => (
             <Toast.Root>
               <Toast.Title>{toast().title}</Toast.Title>
@@ -231,6 +232,7 @@ function Configuration() {
               Configuration
             </Text>
             <Stack direction="row" marginTop="1.5rem" gap="1.5rem">
+              {/*@ts-ignore Should change not to use ts-ignore*/}
               <Button
                 variant="outline"
                 padding="4rem"
@@ -246,6 +248,7 @@ function Configuration() {
               >
                 Create New Config
               </Button>
+              {/*@ts-ignore Should change not to use ts-ignore*/}
               <Button
                 variant="outline"
                 padding="4rem"
@@ -270,6 +273,7 @@ function Configuration() {
               >
                 Open File
               </Button>
+              {/*@ts-ignore Should change not to use ts-ignore*/}
               <Button
                 variant="outline"
                 padding="4rem"
@@ -317,96 +321,102 @@ function Configuration() {
               >
                 <For each={recentConfigFilePaths()}>
                   {(path, index) => (
-                    <Button
-                      width="100%"
-                      variant="ghost"
-                      padding="0.5rem"
-                      paddingTop="1rem"
-                      paddingBottom="1rem"
-                      onMouseEnter={() => {
-                        setIsButtonHoverd([true, index()]);
-                      }}
-                      onMouseLeave={() => {
-                        setIsButtonHoverd([false, null]);
-                      }}
-                      bgColor={isButtonHovered()[0] === true &&
-                          isButtonHovered()[1] === index()
-                        ? "bg.muted"
-                        : "bg.canvas"}
-                      gap="0"
-                    >
-                      <Text
-                        userSelect="none"
-                        onClick={async () => {
-                          const object = await readJsonFile(path);
-                          setFormData(object!, path);
+                    <>
+                      {/*@ts-ignore Should change not to use ts-ignore*/}
+                      <Button
+                        width="100%"
+                        variant="ghost"
+                        padding="0.5rem"
+                        paddingTop="1rem"
+                        paddingBottom="1rem"
+                        onMouseEnter={() => {
+                          setIsButtonHoverd([true, index()]);
+                        }}
+                        onMouseLeave={() => {
                           setIsButtonHoverd([false, null]);
                         }}
-                        size="md"
-                        height="2rem"
-                        fontWeight="medium"
-                        style={{
-                          "white-space": "nowrap",
-                          "text-overflow": "ellipsis",
-                          display: "block",
-                          overflow: "hidden",
-                          "text-align": "left",
-                          "margin-top": "0.4rem",
-                          width: "15rem",
-                        }}
+                        bgColor={isButtonHovered()[0] === true &&
+                            isButtonHovered()[1] === index()
+                          ? "bg.muted"
+                          : "bg.canvas"}
+                        gap="0"
                       >
-                        {path.match(/[^//]+$/)!.toString()}
-                      </Text>
-                      <Text
-                        userSelect="none"
-                        size="sm"
-                        fontWeight="light"
-                        marginLeft="0.5rem"
-                        opacity="70%"
-                        onClick={async () => {
-                          const object = await readJsonFile(path);
-                          setFormData(object!, path);
-                          setIsButtonHoverd([false, null]);
-                        }}
-                        style={{
-                          "white-space": "nowrap",
-                          "text-overflow": "ellipsis",
-                          display: "block",
-                          overflow: "hidden",
-                          "text-align": "left",
-                          width: `calc(100% - 17rem)`,
-                          "padding-left": "1rem",
-                        }}
-                      >
-                        {path.replace(path.match(/[^?!//]+$/)!.toString(), "")}
-                      </Text>
-                      <Stack width="2rem">
-                        <Show
-                          when={isButtonHovered()[0] === true &&
-                            isButtonHovered()[1] === index()}
+                        <Text
+                          userSelect="none"
+                          onClick={async () => {
+                            const object = await readJsonFile(path);
+                            setFormData(object!, path);
+                            setIsButtonHoverd([false, null]);
+                          }}
+                          size="md"
+                          height="2rem"
+                          fontWeight="medium"
+                          style={{
+                            "white-space": "nowrap",
+                            "text-overflow": "ellipsis",
+                            display: "block",
+                            overflow: "hidden",
+                            "text-align": "left",
+                            "margin-top": "0.4rem",
+                            width: "15rem",
+                          }}
                         >
-                          <IconButton
-                            padding="0"
-                            opacity="50%"
-                            variant="ghost"
-                            borderRadius="2rem"
-                            size="sm"
-                            width="1rem"
-                            marginRight="1rem"
-                            onClick={() => {
-                              setRecentConfigFilePaths((prev) => {
-                                const updateFilePath = prev.filter((_, i) => {
-                                  return i !== index();
-                                });
-                                return updateFilePath;
-                              });
-                            }}
+                          {path.match(/[^//]+$/)!.toString()}
+                        </Text>
+                        <Text
+                          userSelect="none"
+                          size="sm"
+                          fontWeight="light"
+                          marginLeft="0.5rem"
+                          opacity="70%"
+                          onClick={async () => {
+                            const object = await readJsonFile(path);
+                            setFormData(object!, path);
+                            setIsButtonHoverd([false, null]);
+                          }}
+                          style={{
+                            "white-space": "nowrap",
+                            "text-overflow": "ellipsis",
+                            display: "block",
+                            overflow: "hidden",
+                            "text-align": "left",
+                            width: `calc(100% - 17rem)`,
+                            "padding-left": "1rem",
+                          }}
+                        >
+                          {path.replace(
+                            path.match(/[^?!//]+$/)!.toString(),
+                            "",
+                          )}
+                        </Text>
+                        <Stack width="2rem">
+                          <Show
+                            when={isButtonHovered()[0] === true &&
+                              isButtonHovered()[1] === index()}
                           >
-                            <IconX width="1rem" />
-                          </IconButton>
-                        </Show>
-                      </Stack>
-                    </Button>
+                            <IconButton
+                              padding="0"
+                              opacity="50%"
+                              variant="ghost"
+                              borderRadius="2rem"
+                              size="sm"
+                              width="1rem"
+                              marginRight="1rem"
+                              onClick={() => {
+                                setRecentConfigFilePaths((prev) => {
+                                  const updateFilePath = prev.filter((_, i) => {
+                                    return i !== index();
+                                  });
+                                  return updateFilePath;
+                                });
+                              }}
+                            >
+                              <IconX width="1rem" />
+                            </IconButton>
+                          </Show>
+                        </Stack>
+                      </Button>
+                    </>
                   )}
                 </For>
               </Stack>
@@ -425,6 +435,7 @@ function Configuration() {
                   <Stack direction="row-reverse">
                     <Menu.Root>
                       <Menu.Trigger>
+                        {/*@ts-ignore Should change not to use ts-ignore*/}
                         <Button>Save</Button>
                       </Menu.Trigger>
                       <Menu.Positioner>

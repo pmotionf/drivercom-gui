@@ -8,21 +8,26 @@ import {
 } from "solid-js";
 import { createStore } from "solid-js/store";
 
-import { Accordion } from "~/components/ui/accordion";
-import { Checkbox } from "~/components/ui/checkbox";
-import { Input } from "~/components/ui/input";
+import { Accordion } from "~/components/ui/accordion.tsx";
+import { Checkbox } from "~/components/ui/checkbox.tsx";
+import { Input } from "~/components/ui/input.tsx";
 
-import { Stack } from "styled-system/jsx";
-import { Text } from "./ui/text";
-import { Editable } from "./ui/editable";
-import { IconButton } from "./ui/icon-button";
+import { Stack } from "styled-system/jsx/index.mjs";
+import { Text } from "./ui/text.tsx";
+import { Editable } from "./ui/editable.tsx";
+import { IconButton } from "./ui/icon-button.tsx";
 import {
   IconChevronDown,
   IconLink,
   IconLinkOff,
   IconX,
 } from "@tabler/icons-solidjs";
-import { Tooltip } from "./ui/tooltip";
+import { Tooltip } from "./ui/tooltip.tsx";
+
+type CheckedState = boolean | "indeterminate";
+interface CheckedChangeDetails {
+  checked: CheckedState;
+}
 
 export type ConfigFormProps = JSX.HTMLAttributes<HTMLFormElement> & {
   label: string;
@@ -40,7 +45,7 @@ export function ConfigForm(props: ConfigFormProps) {
         placeholder="File name"
         defaultValue={props.label ? props.label : "New File"}
         activationMode="dblclick"
-        onValueCommit={(e) => {
+        onValueCommit={(e: { value: string }) => {
           props.onLabelChange?.(e.value);
         }}
         fontWeight="bold"
@@ -159,18 +164,17 @@ function ConfigObject(props: ConfigObjectProps) {
           }
           if (typeof value === "boolean") {
             return (
+              //@ts-ignore Need to change not use ts-ignore
               <Checkbox
                 id={props.id_prefix + key}
                 checked={object[key as keyof typeof object]}
-                onCheckedChange={(e) => {
-                  setObject(
-                    key as keyof typeof object,
-                    // @ts-ignore: TSC unable to handle generic object type
-                    // in store
-                    e.checked,
-                  );
+                onCheckedChange={(e: CheckedChangeDetails) => {
+                  setObject({
+                    ...object,
+                    [key]: e.checked,
+                  });
                 }}
-                marginTop="1rem"
+                style={{ "margin-top": "1rem" }}
               >
                 <Text fontWeight="light" userSelect="none">
                   {key}
@@ -193,7 +197,7 @@ function ConfigObject(props: ConfigObjectProps) {
                   width="50%"
                   placeholder={key}
                   value={object[key as keyof typeof object]}
-                  onChange={(e) => {
+                  onChange={(e: { target: { value: string } }) => {
                     if (isNaN(Number(e.target.value))) {
                       if (e.target.value.toLowerCase() !== "nan") {
                         e.target.value = String(
@@ -255,6 +259,8 @@ function ConfigList(props: ConfigListProps) {
   // Converts label to have uppercase letters at the start of each word.
   const prettifiedLabel = Array.from(props.label)
     .map((char, i) => {
+      if (typeof char !== "string") return char;
+
       if (i === 0) return char.toUpperCase();
       else if (props.label[i - 1] === "_") return char.toUpperCase();
       else return char;
@@ -268,7 +274,8 @@ function ConfigList(props: ConfigListProps) {
       {...rest}
       style={{ "border-bottom": "0", "border-top": "0" }}
       value={openedAccordionItems()}
-      onValueChange={(e) => setOpenedAccordionItems(e.value)}
+      onValueChange={(e: { value: string[] }) =>
+        setOpenedAccordionItems(e.value)}
     >
       <For each={items}>
         {(item, index) => {

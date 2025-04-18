@@ -1,14 +1,14 @@
-import { Button } from "~/components/ui/button";
+import { Button } from "~/components/ui/button.tsx";
 import { IconPlug, IconPlugOff, IconX } from "@tabler/icons-solidjs";
-import { Text } from "~/components/ui/text";
-import { Stack } from "styled-system/jsx";
-import { Card } from "~/components/ui/card";
+import { Text } from "~/components/ui/text.tsx";
+import { Stack } from "styled-system/jsx/index.mjs";
+import { Card } from "~/components/ui/card.tsx";
 
 import { Command } from "@tauri-apps/plugin-shell";
 import { For, Show } from "solid-js";
-import { Accordion } from "~/components/ui/accordion";
-import { Toast } from "~/components/ui/toast";
-import { portId, portList, setPortId, setPortList } from "~/GlobalState";
+import { Accordion } from "~/components/ui/accordion.tsx";
+import { Toast } from "~/components/ui/toast.tsx";
+import { portId, portList, setPortId, setPortList } from "~/GlobalState.ts";
 import { Dynamic } from "solid-js/web";
 
 function Connect() {
@@ -90,6 +90,7 @@ function Connect() {
         >
           {portId().length > 0 ? portId() : "No port selected"}
         </Text>
+        {/*@ts-ignore Should change not to use ts-ignore*/}
         <Button
           onClick={() => {
             detectPort();
@@ -177,6 +178,7 @@ function Connect() {
                       >
                         {port.version}
                       </Text>
+                      {/*@ts-ignore Should change not to use ts-ignore*/}
                       <Button
                         onClick={() => {
                           setPortId(portId() === port.id ? "" : port.id);
@@ -195,6 +197,7 @@ function Connect() {
         </Show>
       </Card.Root>
       <Toast.Toaster toaster={toaster}>
+        {/*@ts-ignore Should change not to use ts-ignore*/}
         {(toast) => (
           <Toast.Root>
             <Toast.Title>{toast().title}</Toast.Title>

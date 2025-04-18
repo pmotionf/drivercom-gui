@@ -1,12 +1,12 @@
 import { createEffect, createSignal, For, JSX, Show } from "solid-js";
-import { Tabs } from "~/components/ui/tabs";
-import { IconButton } from "~/components/ui/icon-button";
+import { Tabs } from "~/components/ui/tabs.tsx";
+import { IconButton } from "~/components/ui/icon-button.tsx";
 import { IconPlus, IconX } from "@tabler/icons-solidjs";
-import { Editable } from "~/components/ui/editable";
-import { LogViewerTabPageContent } from "./LogViewerTabPageContent";
-import { LogViewerTabContext } from "../LogViewer";
-import { Stack } from "styled-system/jsx";
-import { Text } from "~/components/ui/text";
+import { Editable } from "~/components/ui/editable.tsx";
+import { LogViewerTabPageContent } from "./LogViewerTabPageContent.tsx";
+import { LogViewerTabContext } from "../LogViewer.tsx";
+import { Stack } from "styled-system/jsx/index.mjs";
+import { Text } from "~/components/ui/text.tsx";
 import { createDraggable } from "@neodrag/solid";
 import { Portal } from "solid-js/web";
 
@@ -111,7 +111,7 @@ export function LogViewerTabList(props: LogViewerTabListProps) {
       <div style={{ width: "100%", height: "100%" }}>
         <Tabs.Root
           value={props.focusedTab!}
-          onValueChange={(e) => {
+          onValueChange={(e: { value: string }) => {
             props.onTabFocus?.(e.value);
           }}
           width="100%"
@@ -126,7 +126,7 @@ export function LogViewerTabList(props: LogViewerTabListProps) {
               height: `3rem`,
               "overflow-y": "hidden",
             }}
-            onWheel={(e) => mouseWheelHandler(e)}
+            onWheel={(e: WheelEvent) => mouseWheelHandler(e)}
             gap="0"
             width="100%"
             marginRight="0"
@@ -272,7 +272,7 @@ export function LogViewerTabList(props: LogViewerTabListProps) {
                           ).slice(2, -2)
                           : tab.tabName}
                         activationMode="dblclick"
-                        onValueCommit={(tabName) => {
+                        onValueCommit={(tabName: { value: string }) => {
                           const tabUpdate = tab;
                           tabUpdate.tabName = tabName.value;
                           props.onTabContextChange?.(tabUpdate);
