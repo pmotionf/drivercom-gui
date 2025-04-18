@@ -19,10 +19,16 @@ import {
   IconRestore,
   IconSeparatorHorizontal,
 } from "@tabler/icons-solidjs";
+//@ts-ignore test
 import { Stack } from "styled-system/jsx/index.mjs";
 import { Text } from "~/components/ui/text.tsx";
 import { Checkbox } from "~/components/ui/checkbox.tsx";
 import { Tooltip } from "~/components/ui/tooltip.tsx";
+
+type CheckedState = boolean | "indeterminate";
+interface CheckedChangeDetails {
+  checked: CheckedState;
+}
 
 export type ErrorMessage = {
   title: string;
@@ -335,7 +341,7 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
               <Checkbox
                 width="8rem"
                 checked={mergePlotIndexes().indexOf(index()) !== -1}
-                onCheckedChange={(checkBoxState: { checked: boolean }) => {
+                onCheckedChange={(checkBoxState: CheckedChangeDetails) => {
                   if (checkBoxState.checked === true) {
                     setMergePlotIndexes((prev) => {
                       return [...prev, index()];

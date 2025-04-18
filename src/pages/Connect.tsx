@@ -1,6 +1,7 @@
 import { Button } from "~/components/ui/button.tsx";
 import { IconPlug, IconPlugOff, IconX } from "@tabler/icons-solidjs";
 import { Text } from "~/components/ui/text.tsx";
+//@ts-ignore test
 import { Stack } from "styled-system/jsx/index.mjs";
 import { Card } from "~/components/ui/card.tsx";
 

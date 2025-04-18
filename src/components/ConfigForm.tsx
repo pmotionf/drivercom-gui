@@ -11,7 +11,7 @@ import { createStore } from "solid-js/store";
 import { Accordion } from "~/components/ui/accordion.tsx";
 import { Checkbox } from "~/components/ui/checkbox.tsx";
 import { Input } from "~/components/ui/input.tsx";
-
+//@ts-ignore test
 import { Stack } from "styled-system/jsx/index.mjs";
 import { Text } from "./ui/text.tsx";
 import { Editable } from "./ui/editable.tsx";

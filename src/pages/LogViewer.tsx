@@ -12,6 +12,7 @@ import {
 } from "~/GlobalState.ts";
 import { Spinner } from "~/components/ui/spinner.tsx";
 import { PlotContext } from "~/components/Plot.tsx";
+//@ts-ignore test
 import { Stack } from "styled-system/jsx/index.mjs";
 
 type PanelId = string | number;

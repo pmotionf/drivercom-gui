@@ -5,6 +5,7 @@ import { IconPlus, IconX } from "@tabler/icons-solidjs";
 import { Editable } from "~/components/ui/editable.tsx";
 import { LogViewerTabPageContent } from "./LogViewerTabPageContent.tsx";
 import { LogViewerTabContext } from "../LogViewer.tsx";
+//@ts-ignore test
 import { Stack } from "styled-system/jsx/index.mjs";
 import { Text } from "~/components/ui/text.tsx";
 import { createDraggable } from "@neodrag/solid";

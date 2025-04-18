@@ -297,6 +297,7 @@ function App(props: RouteSectionProps) {
                     <Drawer.Title style={{ "padding-top": "0px" }}>
                       Drivercom
                     </Drawer.Title>
+                    {/*@ts-ignore Should eliminate later */}
                     <Button
                       variant="ghost"
                       size="sm"
@@ -327,6 +328,7 @@ function App(props: RouteSectionProps) {
                           right: "0px",
                           padding: "0px",
                         }}
+                        onClick={() => console.log(typeof closeProps)}
                       >
                         <IconChevronLeftPipe />
                       </Button>
@@ -344,7 +346,7 @@ function App(props: RouteSectionProps) {
                 >
                   <SegmentGroup.Root
                     value={page()}
-                    onValueChange={(e) => {
+                    onValueChange={(e: { value: string | null }) => {
                       if (e != null) {
                         setPage(e.value!);
                         navigate("/" + e.value!.toLowerCase(), {
@@ -478,7 +480,7 @@ function App(props: RouteSectionProps) {
         <SegmentGroup.Root
           id="collapsed_side_bar"
           value={page()}
-          onValueChange={(e) => {
+          onValueChange={(e: { value: string | null }) => {
             if (e != null) {
               setPage(e.value!);
               navigate("/" + e.value!.toLowerCase(), { replace: true });

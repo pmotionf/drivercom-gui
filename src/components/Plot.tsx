@@ -28,11 +28,16 @@ import {
   IconZoomInArea,
   IconZoomReset,
 } from "@tabler/icons-solidjs";
+//@ts-ignore test
 import { Stack } from "styled-system/jsx/index.mjs";
 import { Legend, LegendStroke } from "./Plot/Legend.tsx";
 import { Tooltip } from "./ui/tooltip.tsx";
 import { Text } from "./ui/text.tsx";
 import { Portal } from "solid-js/web";
+
+interface ValueChangeDetails {
+  value: string[];
+}
 
 export type PlotProps = JSX.HTMLAttributes<HTMLDivElement> & {
   id: string;
@@ -526,8 +531,7 @@ export function Plot(props: PlotProps) {
 
           <ToggleGroup.Root
             value={[CursorMode[lastCursorMode()]]}
-            onValueChange={(details: { value: string }) => {
-              console.log(details.value);
+            onValueChange={(details: ValueChangeDetails) => {
               if (details.value.length > 0) {
                 setCursorMode(
                   CursorMode[details.value[0] as keyof typeof CursorMode],

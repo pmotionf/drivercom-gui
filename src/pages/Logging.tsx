@@ -1,3 +1,4 @@
+//@ts-ignore test
 import { Stack } from "styled-system/jsx/index.mjs";
 import { Button } from "~/components/ui/button.tsx";
 import { Text } from "~/components/ui/text.tsx";

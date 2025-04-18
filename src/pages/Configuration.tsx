@@ -5,6 +5,7 @@ import { IconX } from "@tabler/icons-solidjs";
 import { open, save } from "@tauri-apps/plugin-dialog";
 import { Toast } from "~/components/ui/toast.tsx";
 import { readTextFile, writeTextFile } from "@tauri-apps/plugin-fs";
+//@ts-ignore test
 import { Stack } from "styled-system/jsx/index.mjs";
 import { Text } from "~/components/ui/text.tsx";
 import {
