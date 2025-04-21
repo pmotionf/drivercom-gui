@@ -65,7 +65,7 @@ function App(props: RouteSectionProps) {
     setGlobalState("theme", theme_str);
 
     detectCliVersion();
-    parseEnumMappings();
+    updateEnumMapping();
     buildEmptyLogConfiguration();
     buildEmptyDriverConfiguration();
     getLogStartCombinator();
@@ -84,28 +84,42 @@ function App(props: RouteSectionProps) {
     setDriverComVersion(drivercomVersion);
   }
 
-  async function parseEnumMappings() {
+  async function getListCodes(): Promise<string> {
     const drivercom = Command.sidecar("binaries/drivercom", [
       "log.util.list_code_names",
       "--compact",
     ]);
     const output = await drivercom.execute();
+    return output.stdout;
+  }
 
+  const outputExample =
+    "Named Fields:\nDriverMessage driver.com_bwd_sent:DriverMessage\nNamed Field Kinds:\n[DriverMessage]=0:none,1:update";
+
+  console.log(parseEnumMapping(outputExample));
+
+  function parseEnumMapping(
+    output: string,
+  ): {
+    seriesMapping: string[][];
+    enumTypeNames: string[];
+    enumCodeMapping: [number, string][][];
+  } {
     const namedFieldsStr = "named fields:";
-    const namedFieldsIndex = output.stdout.search(
+    const namedFieldsIndex = output.search(
       new RegExp(namedFieldsStr, "i"),
     );
 
     const namedFieldKindsStr = "named field kinds:";
-    const namedFieldKindsIndex = output.stdout.search(
+    const namedFieldKindsIndex = output.search(
       new RegExp(namedFieldKindsStr, "i"),
     );
 
-    const namedFieldsLine = output.stdout.slice(
+    const namedFieldsLine = output.slice(
       namedFieldsIndex + namedFieldsStr.length,
       namedFieldKindsIndex,
     ).trim();
-    const namedFieldKindsLines = output.stdout.slice(
+    const namedFieldKindsLines = output.slice(
       namedFieldKindsIndex + namedFieldKindsStr.length,
     ).split("\n");
 
@@ -119,12 +133,6 @@ function App(props: RouteSectionProps) {
       .map((e) => {
         return e.split(":");
       });
-    setEnumSeries(
-      seriesMappings.map((seriesMapping) => [
-        seriesMapping[0], // Series name
-        seriesMapping[1], // Series enum type name
-      ]),
-    );
 
     const enumTypeNames: string[] = enumMappingsLines.map((line) => {
       const closingBracketIndex = line.indexOf("]");
@@ -148,10 +156,27 @@ function App(props: RouteSectionProps) {
       },
     );
 
+    return {
+      seriesMapping: seriesMappings,
+      enumTypeNames: enumTypeNames,
+      enumCodeMapping: enumCodeMappings,
+    };
+  }
+
+  async function updateEnumMapping() {
+    const listCodes = await getListCodes();
+    const parseEnum = parseEnumMapping(listCodes);
+
+    setEnumSeries(
+      parseEnum.seriesMapping.map((seriesMapping) => [
+        seriesMapping[0], // Series name
+        seriesMapping[1], // Series enum type name
+      ]),
+    );
     setEnumMappings(
-      enumTypeNames.map((enumTypeName, index) => [
+      parseEnum.enumTypeNames.map((enumTypeName, index) => [
         enumTypeName,
-        enumCodeMappings[index],
+        parseEnum.enumCodeMapping[index],
       ]),
     );
   }
