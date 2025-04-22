@@ -210,11 +210,12 @@ export function Plot(props: PlotProps) {
   const checkDotFilter = () => dotFilter();
   const [xRange, setXRange] = createSignal<number>(0);
 
-  createEffect(() => {
-    const domainWidth: number = document.getElementById(
-      props.id + "-wrapper",
-    )!.offsetWidth;
-    const scale: number = xRange() / domainWidth;
+  function calculateDotFilter(
+    domainWidth: number,
+    xRange: number,
+    seriesLength: number,
+  ): number[] {
+    const scale: number = xRange / domainWidth;
     const array: number[] = [];
 
     let i: number = 0;
@@ -223,12 +224,24 @@ export function Plot(props: PlotProps) {
       i += (Math.floor(scale) > 0
         ? Math.floor(scale)
         : parseFloat(scale.toFixed(1))) * 10;
-      if (i >= plot.data[0].length) {
+      if (i >= seriesLength) {
         break;
       }
     }
-
     if (scale <= 0.1) array.splice(0, array.length);
+    return array;
+  }
+
+  createEffect(() => {
+    const domainWidth: number = document.getElementById(
+      props.id + "-wrapper",
+    )!.offsetWidth;
+    const seriesLength = props.series[0].length;
+    const array: number[] = calculateDotFilter(
+      domainWidth,
+      xRange(),
+      seriesLength,
+    );
     setDotFilter(array);
   });
 

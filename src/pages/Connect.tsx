@@ -9,15 +9,26 @@ import { Command } from "@tauri-apps/plugin-shell";
 import { For, Show } from "solid-js";
 import { Accordion } from "~/components/ui/accordion.tsx";
 import { Toast } from "~/components/ui/toast.tsx";
-import { portId, portList, setPortId, setPortList } from "~/GlobalState.ts";
+import {
+  Port,
+  portId,
+  portList,
+  setPortId,
+  setPortList,
+} from "~/GlobalState.ts";
 import { Dynamic } from "solid-js/web";
 
 function Connect() {
   async function detectPort() {
     const drivercom = Command.sidecar("binaries/drivercom", ["port.detect"]);
     const output = await drivercom.execute();
+    const ports = await parsePortList(output.stdout);
+    setPortList(ports);
+    setPortId("");
+  }
 
-    const portNames = output.stdout
+  async function parsePortList(port: string): Promise<Port[]> {
+    const portNames = port
       .split("\n")
       .map((portName) => {
         const matched = portName.match(/\(([^)]+)\)/);
@@ -41,17 +52,8 @@ function Connect() {
         }
       }),
     );
-    setPortList(ports);
 
-    if (portNames.length == 0) {
-      toaster.create({
-        title: "No Ports Found",
-        description: "No driver serial ports were detected.",
-        type: "error",
-      });
-      return;
-    }
-    setPortId("");
+    return ports;
   }
 
   async function detectFirmwareVersion(portId: string): Promise<string | null> {

@@ -24,7 +24,7 @@ function Configuration() {
   const [configure, setConfigure] = createSignal({});
   const [formName, setFormName] = createSignal<string>("");
   const [isFormOpen, setIsFormOpen] = createSignal(false);
-  const [filePath, setFilePath] = createSignal<string | undefined>(undefined);
+  const [filePath, setFilePath] = createSignal<string | null>(null);
 
   const toaster = Toast.createToaster({
     placement: "top-end",
@@ -125,23 +125,33 @@ function Configuration() {
     setIsFormOpen(true);
   }
 
-  async function saveConfigAsFile() {
-    const json_str = JSON.stringify(configure(), null, "  ");
-    const fileNameFromPath = filePath()
-      ? filePath()!
+  function parseFilePath(
+    filePath: string | null,
+    formName: string,
+    extension: string,
+  ): string {
+    const fileNameFromPath = filePath
+      ? filePath!
         .match(/[^?!//]+$/)!
         .toString()
       : "";
-    const currentFilePath = filePath()
-      ? formName() === fileNameFromPath
-        ? filePath()
-        : filePath()!.replace(fileNameFromPath, formName())
-      : formName();
+    const currentFilePath = filePath
+      ? formName === fileNameFromPath
+        ? filePath
+        : filePath!.replace(fileNameFromPath, formName)
+      : formName;
+
+    return currentFilePath!.split(".").pop()!.toLowerCase() === extension
+      ? `${currentFilePath}`
+      : `${currentFilePath}.${extension}`;
+  }
+
+  async function saveConfigAsFile() {
+    const json_str = JSON.stringify(configure(), null, "  ");
+    const parsedFilePath = parseFilePath(filePath(), formName(), "json");
 
     const path = await save({
-      defaultPath: currentFilePath!.split(".").pop()!.toLowerCase() === "json"
-        ? `${currentFilePath}`
-        : `${currentFilePath}.json`,
+      defaultPath: parsedFilePath,
       filters: [
         {
           name: "JSON",
@@ -243,7 +253,7 @@ function Configuration() {
                   );
                   setFormName("New File");
                   setConfigure(newEmptyFile);
-                  setFilePath(undefined);
+                  setFilePath(null);
                   setIsFormOpen(true);
                 }}
               >
@@ -280,7 +290,7 @@ function Configuration() {
                 padding="4rem"
                 disabled={portId().length === 0}
                 onClick={async () => {
-                  setFilePath(undefined);
+                  setFilePath(null);
                   const output = await getConfigFromPort();
                   if (output.stderr.length !== 0) {
                     toaster.create({

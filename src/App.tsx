@@ -11,6 +11,7 @@ import {
   IconDeviceAnalytics,
   IconFileSettings,
   IconGraph,
+  IconH1,
   IconMenu,
   IconMoonFilled,
   IconPlugConnected,
@@ -51,7 +52,7 @@ type PageMeta = {
 
 function App(props: RouteSectionProps) {
   // Necessary for light/dark mode detection
-  onMount(() => {
+  onMount(async () => {
     const prefers_dark = globalThis.matchMedia(
       "(prefers-color-scheme: dark)",
     ).matches;
@@ -66,7 +67,7 @@ function App(props: RouteSectionProps) {
 
     detectCliVersion();
     updateEnumMapping();
-    buildEmptyLogConfiguration();
+    setLogFormFileFormat(await buildEmptyLogConfiguration());
     buildEmptyDriverConfiguration();
     getLogStartCombinator();
     getLogStartCondition();
@@ -92,11 +93,6 @@ function App(props: RouteSectionProps) {
     const output = await drivercom.execute();
     return output.stdout;
   }
-
-  const outputExample =
-    "Named Fields:\nDriverMessage driver.com_bwd_sent:DriverMessage\nNamed Field Kinds:\n[DriverMessage]=0:none,1:update";
-
-  console.log(parseEnumMapping(outputExample));
 
   function parseEnumMapping(
     output: string,
@@ -181,13 +177,13 @@ function App(props: RouteSectionProps) {
     );
   }
 
-  async function buildEmptyLogConfiguration() {
+  async function buildEmptyLogConfiguration(): Promise<object> {
     const logConfig = Command.sidecar("binaries/drivercom", [
       "log.config.empty",
     ]);
     const output = await logConfig.execute();
     const logFormatToJson = JSON.parse(output.stdout);
-    setLogFormFileFormat(logFormatToJson);
+    return logFormatToJson;
   }
 
   async function buildEmptyDriverConfiguration() {
@@ -197,18 +193,22 @@ function App(props: RouteSectionProps) {
     setConfigFormFileFormat(configFormatToJson);
   }
 
+  function parseLogStartField(output: string): string[] {
+    const parseOutput = output.replaceAll("[", "")
+      .replaceAll("]", "")
+      .split(":");
+    const logFields = parseOutput[1]
+      .split(",")
+      .filter((value) => value !== "\n");
+    return logFields;
+  }
+
   async function getLogStartCondition() {
     const logStartCondition = Command.sidecar("binaries/drivercom", [
       `log.config.start.condition.list`,
     ]);
     const output = await logStartCondition.execute();
-    const parseOutput = output.stdout
-      .replaceAll("[", "")
-      .replaceAll("]", "")
-      .split(":");
-    const startConditionList = parseOutput[1]
-      .split(",")
-      .filter((value) => value !== "\n");
+    const startConditionList = parseLogStartField(output.stdout);
     setLogStartCoditionList(startConditionList);
   }
 
@@ -217,13 +217,7 @@ function App(props: RouteSectionProps) {
       `log.config.start.combinator.list`,
     ]);
     const output = await logStartCombinator.execute();
-    const parseOutput = output.stdout
-      .replaceAll("[", "")
-      .replaceAll("]", "")
-      .split(":");
-    const startCombinatorList = parseOutput[1]
-      .split(",")
-      .filter((value) => value !== "\n");
+    const startCombinatorList = parseLogStartField(output.stdout);
     setLogStartCombinatorList(startCombinatorList);
   }
 
