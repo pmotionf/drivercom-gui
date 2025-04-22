@@ -1,3 +1,4 @@
+//@ts-ignore Needed for tsc error
 import { expect } from "jsr:@std/expect";
 import { inferSchema, initParser } from "udsv";
 import { readTextFile } from "@tauri-apps/plugin-fs";
@@ -67,6 +68,7 @@ function parseEnumMapping(
   };
 }
 
+//@ts-ignore Needed for tsc error
 Deno.test({
   name: "parseEnumMapping",
   fn: () => {
@@ -142,6 +144,7 @@ function parseCsvForPlot(csv_str: string): {
   };
 }
 
+//@ts-ignore Needed for tsc error
 Deno.test({
   name: "parseCsvForPlot",
   fn: () => {
@@ -178,6 +181,7 @@ function checkFileFormat(file: object): string {
   return newFileFormat;
 }
 
+//@ts-ignore Needed for tsc error
 Deno.test("checkFileFormat", () => {
   const exampleFile: { file: { name: string; desc: string } } = {
     file: { name: "a", desc: "b" },
@@ -192,6 +196,7 @@ function compareFileFormat(newFile: object, fileFormat: object): boolean {
   return newFileObject === configFileObject;
 }
 
+//@ts-ignore Needed for tsc error
 Deno.test("compareFileFormat", () => {
   const exampleFileA: { file: { name: string; desc: string } } = {
     file: { name: "a", desc: "b" },
@@ -212,6 +217,7 @@ function parseLogStartField(output: string): string[] {
   return logFields;
 }
 
+//@ts-ignore Needed for tsc error
 Deno.test("parseLogStartField", () => {
   const exampleString = "[field]:a,b,c";
   const result = ["a", "b", "c"];
@@ -228,6 +234,7 @@ async function readJsonFile(path: string): Promise<object | null> {
   }
 }
 
+//@ts-ignore Needed for tsc error
 Deno.test("readJsonFile", async () => {
   const exampleFilePath = "abcd";
   expect(await readJsonFile(exampleFilePath)).toBeNull();
@@ -255,6 +262,7 @@ function clamp(
   return [nMin, nMax];
 }
 
+//@ts-ignore Needed for tsc error
 Deno.test("clamp", () => {
   expect(clamp(5, 1, 1, 4, 1, 1)).toEqual([1, 1]);
 });
@@ -281,6 +289,7 @@ function calculateDotFilter(
   return array;
 }
 
+//@ts-ignore Needed for tsc error
 Deno.test("calculateDotFilter", () => {
   const result = [0, 1, 2, 3, 4];
   expect(calculateDotFilter(1719, 227, 5)).toEqual(result);
@@ -314,6 +323,7 @@ async function parsePortList(port: string): Promise<object[]> {
   return ports;
 }
 
+//@ts-ignore Needed for tsc error
 Deno.test("parsePortList", async () => {
   const result = [{ id: "a", version: "" }];
   expect(await parsePortList("(a)")).toEqual(result);
@@ -340,6 +350,7 @@ function parseFilePath(
     : `${currentFilePath}.${extension}`;
 }
 
+//@ts-ignore Needed for tsc error
 Deno.test("parseFilePath", () => {
   expect(parseFilePath("abc.json", "test", "json")).toEqual("test.json");
 });
