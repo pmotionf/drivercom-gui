@@ -12,16 +12,16 @@ import {
   logStartConditionList,
   portId,
   setRecentLogFilePaths,
-} from "~/GlobalState";
+} from "~/GlobalState.ts";
 import { Command } from "@tauri-apps/plugin-shell";
 import { createStore } from "solid-js/store";
-import { Editable } from "~/components/ui/editable";
-import { IconButton } from "~/components/ui/icon-button";
+import { Editable } from "~/components/ui/editable.tsx";
+import { IconButton } from "~/components/ui/icon-button.tsx";
 import { IconFileIsr, IconReload, IconX } from "@tabler/icons-solidjs";
-import { Menu } from "~/components/ui/menu";
-import { ErrorMessage } from "../LogViewer/LogViewerTabPageContent";
-import { createListCollection, Select } from "~/components/ui/select";
-import { Tooltip } from "~/components/ui/tooltip";
+import { Menu } from "~/components/ui/menu.tsx";
+import { ErrorMessage } from "../LogViewer/LogViewerTabPageContent.tsx";
+import { createListCollection, Select } from "~/components/ui/select.tsx";
+import { Tooltip } from "~/components/ui/tooltip.tsx";
 
 export type LoggingFormProps = JSX.HTMLAttributes<Element> & {
   formData: object;
@@ -38,6 +38,11 @@ export type LoggingFormProps = JSX.HTMLAttributes<Element> & {
   onCancel?: () => void;
   onErrorMessage?: (message: ErrorMessage) => void;
 };
+
+type CheckedState = boolean | "indeterminate";
+interface CheckedChangeDetails {
+  checked: CheckedState;
+}
 
 export function LoggingForm(props: LoggingFormProps) {
   const logForm = props.formData;
@@ -505,7 +510,7 @@ export function LogConfigFieldSet(props: logConfigFieldSetProps) {
           return (
             <Checkbox
               checked={obj[key as keyof typeof obj]}
-              onCheckedChange={(e) => {
+              onCheckedChange={(e: CheckedChangeDetails) => {
                 setObject(
                   key as keyof typeof obj,
                   // @ts-ignore : TSC unable to handle generic object type

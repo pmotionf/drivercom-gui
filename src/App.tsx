@@ -11,7 +11,6 @@ import {
   IconDeviceAnalytics,
   IconFileSettings,
   IconGraph,
-  IconH1,
   IconMenu,
   IconMoonFilled,
   IconPlugConnected,
@@ -347,7 +346,6 @@ function App(props: RouteSectionProps) {
                           right: "0px",
                           padding: "0px",
                         }}
-                        onClick={() => console.log(typeof closeProps)}
                       >
                         <IconChevronLeftPipe />
                       </Button>

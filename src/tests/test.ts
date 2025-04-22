@@ -1,7 +1,6 @@
 import { expect } from "jsr:@std/expect";
 import { inferSchema, initParser } from "udsv";
 import { readTextFile } from "@tauri-apps/plugin-fs";
-import { Command } from "@tauri-apps/plugin-shell";
 
 function parseEnumMapping(
   output: string,
