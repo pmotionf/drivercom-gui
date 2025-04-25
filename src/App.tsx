@@ -42,6 +42,7 @@ import { SegmentGroup } from "~/components/ui/segment-group.tsx";
 import { Text } from "~/components/ui/text.tsx";
 
 import { Command } from "@tauri-apps/plugin-shell";
+import { expect } from "@std/expect";
 
 type PageMeta = {
   icon: ValidComponent;
@@ -158,6 +159,36 @@ function App(props: RouteSectionProps) {
     };
   }
 
+  //@ts-ignore Needed for tsc error
+  Deno.test({
+    name: "parseEnumMapping",
+    fn: () => {
+      const outputExample =
+        "Named Fields:\nfield a:field\nNamed Field Kinds:\n[field]=0:zero,1:one";
+      const testResult = parseEnumMapping(outputExample);
+
+      const seriesMappingsExample = [[
+        "field a",
+        "field",
+      ]];
+      expect(testResult.seriesMapping).toEqual(
+        seriesMappingsExample,
+      );
+
+      const enumTypeNamesExample = ["field"];
+
+      expect(testResult.enumTypeNames).toEqual(
+        enumTypeNamesExample,
+      );
+
+      const enumCodeMappingsExample = [[[0, "zero"], [1, "one"]]];
+
+      expect(testResult.enumCodeMapping).toEqual(
+        enumCodeMappingsExample,
+      );
+    },
+  });
+
   async function updateEnumMapping() {
     const listCodes = await getListCodes();
     const parseEnum = parseEnumMapping(listCodes);
@@ -201,6 +232,13 @@ function App(props: RouteSectionProps) {
       .filter((value) => value !== "\n");
     return logFields;
   }
+
+  //@ts-ignore Needed for tsc error
+  Deno.test("parseLogStartField", () => {
+    const exampleString = "[field]:a,b,c";
+    const result = ["a", "b", "c"];
+    expect(parseLogStartField(exampleString)).toEqual(result);
+  });
 
   async function getLogStartCondition() {
     const logStartCondition = Command.sidecar("binaries/drivercom", [

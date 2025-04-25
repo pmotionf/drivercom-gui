@@ -34,6 +34,7 @@ import { Legend, LegendStroke } from "./Plot/Legend.tsx";
 import { Tooltip } from "./ui/tooltip.tsx";
 import { Text } from "./ui/text.tsx";
 import { Portal } from "solid-js/web";
+import { expect } from "@std/expect";
 
 interface ValueChangeDetails {
   value: string[];
@@ -231,6 +232,12 @@ export function Plot(props: PlotProps) {
     if (scale <= 0.1) array.splice(0, array.length);
     return array;
   }
+
+  //@ts-ignore Needed for tsc error
+  Deno.test("calculateDotFilter", () => {
+    const result = [0, 1, 2, 3, 4];
+    expect(calculateDotFilter(1719, 227, 5)).toEqual(result);
+  });
 
   createEffect(() => {
     const domainWidth: number = document.getElementById(
@@ -819,6 +826,11 @@ function wheelZoomPlugin(opts: WheelZoomPluginOpts) {
 
     return [nMin, nMax];
   }
+
+  //@ts-ignore Needed for tsc error
+  Deno.test("clamp", () => {
+    expect(clamp(5, 1, 1, 4, 1, 1)).toEqual([1, 1]);
+  });
 
   return {
     hooks: {

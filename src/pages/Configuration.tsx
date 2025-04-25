@@ -19,6 +19,7 @@ import { IconButton } from "~/components/ui/icon-button.tsx";
 import { Button } from "~/components/ui/button.tsx";
 import { Card } from "~/components/ui/card.tsx";
 import { Menu } from "~/components/ui/menu.tsx";
+import { expect } from "@std/expect";
 
 function Configuration() {
   const [configure, setConfigure] = createSignal({});
@@ -71,25 +72,21 @@ function Configuration() {
     return path.replaceAll("\\", "/");
   }
 
-  async function readJsonFile(path: string): Promise<object | undefined> {
+  async function readJsonFile(path: string): Promise<object | null> {
     try {
       const output = await readTextFile(path);
       const parseFileToObject = JSON.parse(output);
       return parseFileToObject;
     } catch {
-      toaster.create({
-        title: "Invalid File Path",
-        description: "The file path is invalid.",
-        type: "error",
-      });
-      setRecentConfigFilePaths((prev) => {
-        const newRecentFiles = prev.filter(
-          (prevFilePath) => prevFilePath !== path,
-        );
-        return newRecentFiles;
-      });
+      return null;
     }
   }
+
+  //@ts-ignore Needed for tsc error
+  Deno.test("readJsonFile", async () => {
+    const exampleFilePath = "abcd";
+    expect(await readJsonFile(exampleFilePath)).toBeNull();
+  });
 
   function checkFileFormat(file: object): string {
     const newFileFormat = Object.entries(file)
@@ -106,11 +103,31 @@ function Configuration() {
     return newFileFormat;
   }
 
+  //@ts-ignore Needed for tsc error
+  Deno.test("checkFileFormat", () => {
+    const exampleFile: { file: { name: string; desc: string } } = {
+      file: { name: "a", desc: "b" },
+    };
+    const result = "file,desc,string,name,string";
+    expect(checkFileFormat(exampleFile)).toEqual(result);
+  });
+
   function compareFileFormat(newFile: object, fileFormat: object): boolean {
     const newFileObject = checkFileFormat(newFile);
     const configFileObject = checkFileFormat(fileFormat);
     return newFileObject === configFileObject;
   }
+
+  //@ts-ignore Needed for tsc error
+  Deno.test("compareFileFormat", () => {
+    const exampleFileA: { file: { name: string; desc: string } } = {
+      file: { name: "a", desc: "b" },
+    };
+    const exampleFileB: { file: { name: string; desc: string } } = {
+      file: { name: "d", desc: "c" },
+    };
+    expect(compareFileFormat(exampleFileA, exampleFileB)).toEqual(true);
+  });
 
   function setFormData(data: object, path: string) {
     setConfigure(data);
@@ -145,6 +162,11 @@ function Configuration() {
       ? `${currentFilePath}`
       : `${currentFilePath}.${extension}`;
   }
+
+  //@ts-ignore Needed for tsc error
+  Deno.test("parseFilePath", () => {
+    expect(parseFilePath("abc.json", "test", "json")).toEqual("test.json");
+  });
 
   async function saveConfigAsFile() {
     const json_str = JSON.stringify(configure(), null, "  ");
@@ -267,6 +289,20 @@ function Configuration() {
                   const path = await openFileDialog();
                   if (!path) return;
                   const object = await readJsonFile(path);
+                  if (!object) {
+                    toaster.create({
+                      title: "Invalid File Path",
+                      description: "The file path is invalid.",
+                      type: "error",
+                    });
+                    setRecentConfigFilePaths((prev) => {
+                      const newRecentFiles = prev.filter(
+                        (prevFilePath) => prevFilePath !== path,
+                      );
+                      return newRecentFiles;
+                    });
+                    return;
+                  }
                   const checkObject = compareFileFormat(
                     object!,
                     configFormFileFormat(),
@@ -356,6 +392,20 @@ function Configuration() {
                           userSelect="none"
                           onClick={async () => {
                             const object = await readJsonFile(path);
+                            if (!object) {
+                              toaster.create({
+                                title: "Invalid File Path",
+                                description: "The file path is invalid.",
+                                type: "error",
+                              });
+                              setRecentConfigFilePaths((prev) => {
+                                const newRecentFiles = prev.filter(
+                                  (prevFilePath) => prevFilePath !== path,
+                                );
+                                return newRecentFiles;
+                              });
+                              return;
+                            }
                             setFormData(object!, path);
                             setIsButtonHoverd([false, null]);
                           }}
@@ -382,6 +432,20 @@ function Configuration() {
                           opacity="70%"
                           onClick={async () => {
                             const object = await readJsonFile(path);
+                            if (!object) {
+                              toaster.create({
+                                title: "Invalid File Path",
+                                description: "The file path is invalid.",
+                                type: "error",
+                              });
+                              setRecentConfigFilePaths((prev) => {
+                                const newRecentFiles = prev.filter(
+                                  (prevFilePath) => prevFilePath !== path,
+                                );
+                                return newRecentFiles;
+                              });
+                              return;
+                            }
                             setFormData(object!, path);
                             setIsButtonHoverd([false, null]);
                           }}

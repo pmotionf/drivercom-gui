@@ -17,6 +17,7 @@ import {
   setPortList,
 } from "~/GlobalState.ts";
 import { Dynamic } from "solid-js/web";
+import { expect } from "@std/expect";
 
 function Connect() {
   async function detectPort() {
@@ -55,6 +56,12 @@ function Connect() {
 
     return ports;
   }
+
+  //@ts-ignore Needed for tsc error
+  Deno.test("parsePortList", async () => {
+    const result = [{ id: "a", version: "" }];
+    expect(await parsePortList("(a)")).toEqual(result);
+  });
 
   async function detectFirmwareVersion(portId: string): Promise<string | null> {
     const drivercom = Command.sidecar("binaries/drivercom", [
