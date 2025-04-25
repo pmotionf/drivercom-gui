@@ -25,6 +25,8 @@ import {
   IconEyeOff,
   IconLocation,
   IconLocationOff,
+  IconSearch,
+  IconX,
   IconZoomInArea,
   IconZoomReset,
 } from "@tabler/icons-solidjs";
@@ -35,6 +37,7 @@ import { Text } from "./ui/text";
 import { Portal } from "solid-js/web";
 import Fuse from "fuse.js";
 import { Input } from "~/components/ui/input.tsx";
+import { relative } from "node:path/posix";
 
 export type PlotProps = JSX.HTMLAttributes<HTMLDivElement> & {
   id: string;
@@ -520,6 +523,7 @@ export function Plot(props: PlotProps) {
             float: "left",
             height: "2.5rem",
             "margin-top": "0.5rem",
+            "margin-bottom": "0.8rem",
           }}
         >
           <Tooltip.Root>
@@ -668,27 +672,45 @@ export function Plot(props: PlotProps) {
             </Tooltip.Positioner>
           </Tooltip.Root>
         </Stack>
-
-        <Stack width="14rem" paddingTop="1rem">
-          <Input
+        <Stack
+          width="14rem"
+          direction="row"
+          borderWidth="1px"
+          borderRadius="1rem"
+          paddingLeft="0.5rem"
+          padding="0.3rem"
+          gap="2"
+        >
+          <IconSearch />
+          <input
             value={searchInput()}
             onInput={(e) => {
               setSearchInput(e.target.value);
             }}
-            width="14rem"
+            width="10rem"
             placeholder="Search series"
+            style={{
+              "border": "none",
+              "outline": "none",
+              "white-space": "nowrap",
+              overflow: "hidden",
+              display: "block",
+              "text-overflow": "ellipsis",
+            }}
             height="2.5rem"
-            paddingLeft="1rem"
-            boderWidth="0"
-            borderRadius="2rem"
-            paddingRight="3rem"
-            whiteSpace="nowrap"
-            textOverflow="ellipsis"
-            display="block"
-            overflow="hidden"
           />
+          <IconButton
+            variant="ghost"
+            onClick={() => setSearchInput("")}
+            padding="0"
+            size="sm"
+            width="0.5rem"
+            height="1.5rem"
+            borderRadius="3rem"
+          >
+            <IconX />
+          </IconButton>
         </Stack>
-
         <Show when={render()}>
           <Stack
             id="legend_container"
@@ -736,8 +758,7 @@ export function Plot(props: PlotProps) {
             <For each={props.header}>
               {(header, index) => (
                 <Show
-                  when={searchResults().length !== 0 &&
-                    searchResults().includes(header)}
+                  when={searchResults().includes(header)}
                 >
                   <Legend
                     plot={plot!}
