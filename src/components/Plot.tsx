@@ -36,8 +36,6 @@ import { Tooltip } from "./ui/tooltip";
 import { Text } from "./ui/text";
 import { Portal } from "solid-js/web";
 import Fuse from "fuse.js";
-import { Input } from "~/components/ui/input.tsx";
-import { relative } from "node:path/posix";
 
 export type PlotProps = JSX.HTMLAttributes<HTMLDivElement> & {
   id: string;
@@ -481,13 +479,10 @@ export function Plot(props: PlotProps) {
 
   createEffect(() => {
     const searchInputValue = searchInput();
-    const fuzzySearch = new Fuse(props.header, {
-      useExtendedSearch: true,
-    });
-    const searchResults = fuzzySearch.search(searchInputValue);
-    const parseSearchResults: string[] = searchResults.map((result) => {
-      return result.item;
-    });
+    const parseSearchResults: string[] = fuzzySearch(
+      searchInputValue,
+      props.header,
+    );
     if (searchInputValue.length === 0) {
       setSearchResults(props.header);
     } else {
@@ -690,8 +685,8 @@ export function Plot(props: PlotProps) {
             width="10rem"
             placeholder="Search series"
             style={{
-              "border": "none",
-              "outline": "none",
+              border: "none",
+              outline: "none",
               "white-space": "nowrap",
               overflow: "hidden",
               display: "block",
@@ -757,9 +752,7 @@ export function Plot(props: PlotProps) {
             </Stack>
             <For each={props.header}>
               {(header, index) => (
-                <Show
-                  when={searchResults().includes(header)}
-                >
+                <Show when={searchResults().includes(header)}>
                   <Legend
                     plot={plot!}
                     group={group()}
@@ -933,3 +926,14 @@ const kelly_colors_hex = [
   "#F13A13", // Vivid Reddish Orange
   "#232C16", // Dark Olive Green
 ];
+
+function fuzzySearch(searchInputValue: string, headers: string[]): string[] {
+  const fuzzySearch = new Fuse(headers, {
+    useExtendedSearch: true,
+  });
+  const searchResults = fuzzySearch.search(searchInputValue);
+  const parseSearchResults: string[] = searchResults.map((result) => {
+    return result.item;
+  });
+  return parseSearchResults;
+}
