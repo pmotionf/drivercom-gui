@@ -200,15 +200,12 @@ function LogViewer() {
                   </Show>
                   <Splitter.Panel
                     id={currentPanel.id}
-                    width="100%"
-                    height="100%"
                   >
                     <div
                       id={currentPanel.id}
                       style={{
                         width: "100%",
                         height: `100%`,
-                        position: "relative",
                       }}
                       onMouseEnter={() => {
                         if (!isDragging()) return;

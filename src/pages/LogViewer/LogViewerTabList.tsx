@@ -430,8 +430,11 @@ export function LogViewerTabList(props: LogViewerTabListProps) {
             position: "absolute",
             top: "3rem",
             left: currentDraggingTabLocation() === "rightSplitter"
-              ? `${document.getElementById(props.id)!.clientWidth / 2}px`
-              : "0px",
+              ? `${
+                document.getElementById(props.id)!.offsetLeft +
+                (document.getElementById(props.id)!.clientWidth / 2)
+              }px`
+              : `${document.getElementById(props.id)!.offsetLeft}px`,
             opacity: "10%",
           }}
         />
