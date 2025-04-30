@@ -805,33 +805,6 @@ function wheelZoomPlugin(opts: WheelZoomPluginOpts) {
 
   let xMin: number, xMax: number, xRange: number;
 
-  function clamp(
-    nRange: number,
-    nMin: number,
-    nMax: number,
-    fRange: number,
-    fMin: number,
-    fMax: number,
-  ) {
-    if (nRange > fRange) {
-      nMin = fMin;
-      nMax = fMax;
-    } else if (nMin < fMin) {
-      nMin = fMin;
-      nMax = fMin + nRange;
-    } else if (nMax > fMax) {
-      nMax = fMax;
-      nMin = fMax - nRange;
-    }
-
-    return [nMin, nMax];
-  }
-
-  //@ts-ignore Needed for tsc error
-  Deno.test("clamp", () => {
-    expect(clamp(5, 1, 1, 4, 1, 1)).toEqual([1, 1]);
-  });
-
   return {
     hooks: {
       ready: (u: uPlot) => {
@@ -891,3 +864,30 @@ const kelly_colors_hex = [
   "#F13A13", // Vivid Reddish Orange
   "#232C16", // Dark Olive Green
 ];
+
+function clamp(
+  nRange: number,
+  nMin: number,
+  nMax: number,
+  fRange: number,
+  fMin: number,
+  fMax: number,
+) {
+  if (nRange > fRange) {
+    nMin = fMin;
+    nMax = fMax;
+  } else if (nMin < fMin) {
+    nMin = fMin;
+    nMax = fMin + nRange;
+  } else if (nMax > fMax) {
+    nMax = fMax;
+    nMin = fMax - nRange;
+  }
+
+  return [nMin, nMax];
+}
+
+//@ts-ignore Needed for tsc error
+Deno.test("clamp", () => {
+  expect(clamp(5, 1, 1, 4, 1, 1)).toEqual([1, 1]);
+});
