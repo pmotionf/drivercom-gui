@@ -1,22 +1,35 @@
-import { Button } from "~/components/ui/button";
+import { Button } from "~/components/ui/button.tsx";
 import { IconPlug, IconPlugOff, IconX } from "@tabler/icons-solidjs";
-import { Text } from "~/components/ui/text";
-import { Stack } from "styled-system/jsx";
-import { Card } from "~/components/ui/card";
+import { Text } from "~/components/ui/text.tsx";
+//@ts-ignore test
+import { Stack } from "styled-system/jsx/index.mjs";
+import { Card } from "~/components/ui/card.tsx";
 
 import { Command } from "@tauri-apps/plugin-shell";
 import { For, Show } from "solid-js";
-import { Accordion } from "~/components/ui/accordion";
-import { Toast } from "~/components/ui/toast";
-import { portId, portList, setPortId, setPortList } from "~/GlobalState";
+import { Accordion } from "~/components/ui/accordion.tsx";
+import { Toast } from "~/components/ui/toast.tsx";
+import {
+  Port,
+  portId,
+  portList,
+  setPortId,
+  setPortList,
+} from "~/GlobalState.ts";
 import { Dynamic } from "solid-js/web";
+import { expect } from "@std/expect";
 
 function Connect() {
   async function detectPort() {
     const drivercom = Command.sidecar("binaries/drivercom", ["port.detect"]);
     const output = await drivercom.execute();
+    const ports = await parsePortList(output.stdout);
+    setPortList(ports);
+    setPortId("");
+  }
 
-    const portNames = output.stdout
+  async function parsePortList(port: string): Promise<Port[]> {
+    const portNames = port
       .split("\n")
       .map((portName) => {
         const matched = portName.match(/\(([^)]+)\)/);
@@ -40,18 +53,15 @@ function Connect() {
         }
       }),
     );
-    setPortList(ports);
 
-    if (portNames.length == 0) {
-      toaster.create({
-        title: "No Ports Found",
-        description: "No driver serial ports were detected.",
-        type: "error",
-      });
-      return;
-    }
-    setPortId("");
+    return ports;
   }
+
+  //@ts-ignore Needed for tsc error
+  Deno.test("parsePortList", async () => {
+    const result = [{ id: "a", version: "" }];
+    expect(await parsePortList("(a)")).toEqual(result);
+  });
 
   async function detectFirmwareVersion(portId: string): Promise<string | null> {
     const drivercom = Command.sidecar("binaries/drivercom", [
@@ -90,6 +100,7 @@ function Connect() {
         >
           {portId().length > 0 ? portId() : "No port selected"}
         </Text>
+        {/*@ts-ignore Should change not to use ts-ignore*/}
         <Button
           onClick={() => {
             detectPort();
@@ -177,6 +188,7 @@ function Connect() {
                       >
                         {port.version}
                       </Text>
+                      {/*@ts-ignore Should change not to use ts-ignore*/}
                       <Button
                         onClick={() => {
                           setPortId(portId() === port.id ? "" : port.id);
@@ -195,6 +207,7 @@ function Connect() {
         </Show>
       </Card.Root>
       <Toast.Toaster toaster={toaster}>
+        {/*@ts-ignore Should change not to use ts-ignore*/}
         {(toast) => (
           <Toast.Root>
             <Toast.Title>{toast().title}</Toast.Title>

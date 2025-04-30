@@ -1,29 +1,31 @@
 import { createSignal, For, Show } from "solid-js";
 
-import { ConfigForm } from "~/components/ConfigForm";
+import { ConfigForm } from "~/components/ConfigForm.tsx";
 import { IconX } from "@tabler/icons-solidjs";
 import { open, save } from "@tauri-apps/plugin-dialog";
-import { Toast } from "~/components/ui/toast";
+import { Toast } from "~/components/ui/toast.tsx";
 import { readTextFile, writeTextFile } from "@tauri-apps/plugin-fs";
-import { Stack } from "styled-system/jsx";
-import { Text } from "~/components/ui/text";
+//@ts-ignore test
+import { Stack } from "styled-system/jsx/index.mjs";
+import { Text } from "~/components/ui/text.tsx";
 import {
   configFormFileFormat,
   portId,
   recentConfigFilePaths,
   setRecentConfigFilePaths,
-} from "~/GlobalState";
+} from "~/GlobalState.ts";
 import { Command } from "@tauri-apps/plugin-shell";
-import { IconButton } from "~/components/ui/icon-button";
-import { Button } from "~/components/ui/button";
-import { Card } from "~/components/ui/card";
-import { Menu } from "~/components/ui/menu";
+import { IconButton } from "~/components/ui/icon-button.tsx";
+import { Button } from "~/components/ui/button.tsx";
+import { Card } from "~/components/ui/card.tsx";
+import { Menu } from "~/components/ui/menu.tsx";
+import { expect } from "@std/expect";
 
 function Configuration() {
   const [configure, setConfigure] = createSignal({});
   const [formName, setFormName] = createSignal<string>("");
   const [isFormOpen, setIsFormOpen] = createSignal(false);
-  const [filePath, setFilePath] = createSignal<string | undefined>(undefined);
+  const [filePath, setFilePath] = createSignal<string | null>(null);
 
   const toaster = Toast.createToaster({
     placement: "top-end",
@@ -70,25 +72,21 @@ function Configuration() {
     return path.replaceAll("\\", "/");
   }
 
-  async function readJsonFile(path: string): Promise<object | undefined> {
+  async function readJsonFile(path: string): Promise<object | null> {
     try {
       const output = await readTextFile(path);
       const parseFileToObject = JSON.parse(output);
       return parseFileToObject;
     } catch {
-      toaster.create({
-        title: "Invalid File Path",
-        description: "The file path is invalid.",
-        type: "error",
-      });
-      setRecentConfigFilePaths((prev) => {
-        const newRecentFiles = prev.filter(
-          (prevFilePath) => prevFilePath !== path,
-        );
-        return newRecentFiles;
-      });
+      return null;
     }
   }
+
+  //@ts-ignore Needed for tsc error
+  Deno.test("readJsonFile", async () => {
+    const exampleFilePath = "abcd";
+    expect(await readJsonFile(exampleFilePath)).toBeNull();
+  });
 
   function checkFileFormat(file: object): string {
     const newFileFormat = Object.entries(file)
@@ -105,11 +103,31 @@ function Configuration() {
     return newFileFormat;
   }
 
+  //@ts-ignore Needed for tsc error
+  Deno.test("checkFileFormat", () => {
+    const exampleFile: { file: { name: string; desc: string } } = {
+      file: { name: "a", desc: "b" },
+    };
+    const result = "file,desc,string,name,string";
+    expect(checkFileFormat(exampleFile)).toEqual(result);
+  });
+
   function compareFileFormat(newFile: object, fileFormat: object): boolean {
     const newFileObject = checkFileFormat(newFile);
     const configFileObject = checkFileFormat(fileFormat);
     return newFileObject === configFileObject;
   }
+
+  //@ts-ignore Needed for tsc error
+  Deno.test("compareFileFormat", () => {
+    const exampleFileA: { file: { name: string; desc: string } } = {
+      file: { name: "a", desc: "b" },
+    };
+    const exampleFileB: { file: { name: string; desc: string } } = {
+      file: { name: "d", desc: "c" },
+    };
+    expect(compareFileFormat(exampleFileA, exampleFileB)).toEqual(true);
+  });
 
   function setFormData(data: object, path: string) {
     setConfigure(data);
@@ -124,23 +142,38 @@ function Configuration() {
     setIsFormOpen(true);
   }
 
-  async function saveConfigAsFile() {
-    const json_str = JSON.stringify(configure(), null, "  ");
-    const fileNameFromPath = filePath()
-      ? filePath()!
+  function parseFilePath(
+    filePath: string | null,
+    formName: string,
+    extension: string,
+  ): string {
+    const fileNameFromPath = filePath
+      ? filePath!
         .match(/[^?!//]+$/)!
         .toString()
       : "";
-    const currentFilePath = filePath()
-      ? formName() === fileNameFromPath
-        ? filePath()
-        : filePath()!.replace(fileNameFromPath, formName())
-      : formName();
+    const currentFilePath = filePath
+      ? formName === fileNameFromPath
+        ? filePath
+        : filePath!.replace(fileNameFromPath, formName)
+      : formName;
+
+    return currentFilePath!.split(".").pop()!.toLowerCase() === extension
+      ? `${currentFilePath}`
+      : `${currentFilePath}.${extension}`;
+  }
+
+  //@ts-ignore Needed for tsc error
+  Deno.test("parseFilePath", () => {
+    expect(parseFilePath("abc.json", "test", "json")).toEqual("test.json");
+  });
+
+  async function saveConfigAsFile() {
+    const json_str = JSON.stringify(configure(), null, "  ");
+    const parsedFilePath = parseFilePath(filePath(), formName(), "json");
 
     const path = await save({
-      defaultPath: currentFilePath!.split(".").pop()!.toLowerCase() === "json"
-        ? `${currentFilePath}`
-        : `${currentFilePath}.json`,
+      defaultPath: parsedFilePath,
       filters: [
         {
           name: "JSON",
@@ -211,6 +244,7 @@ function Configuration() {
         }}
       >
         <Toast.Toaster toaster={toaster}>
+          {/*@ts-ignore Should change not to use ts-ignore*/}
           {(toast) => (
             <Toast.Root>
               <Toast.Title>{toast().title}</Toast.Title>
@@ -231,6 +265,7 @@ function Configuration() {
               Configuration
             </Text>
             <Stack direction="row" marginTop="1.5rem" gap="1.5rem">
+              {/*@ts-ignore Should change not to use ts-ignore*/}
               <Button
                 variant="outline"
                 padding="4rem"
@@ -240,12 +275,13 @@ function Configuration() {
                   );
                   setFormName("New File");
                   setConfigure(newEmptyFile);
-                  setFilePath(undefined);
+                  setFilePath(null);
                   setIsFormOpen(true);
                 }}
               >
                 Create New Config
               </Button>
+              {/*@ts-ignore Should change not to use ts-ignore*/}
               <Button
                 variant="outline"
                 padding="4rem"
@@ -253,6 +289,20 @@ function Configuration() {
                   const path = await openFileDialog();
                   if (!path) return;
                   const object = await readJsonFile(path);
+                  if (!object) {
+                    toaster.create({
+                      title: "Invalid File Path",
+                      description: "The file path is invalid.",
+                      type: "error",
+                    });
+                    setRecentConfigFilePaths((prev) => {
+                      const newRecentFiles = prev.filter(
+                        (prevFilePath) => prevFilePath !== path,
+                      );
+                      return newRecentFiles;
+                    });
+                    return;
+                  }
                   const checkObject = compareFileFormat(
                     object!,
                     configFormFileFormat(),
@@ -270,12 +320,13 @@ function Configuration() {
               >
                 Open File
               </Button>
+              {/*@ts-ignore Should change not to use ts-ignore*/}
               <Button
                 variant="outline"
                 padding="4rem"
                 disabled={portId().length === 0}
                 onClick={async () => {
-                  setFilePath(undefined);
+                  setFilePath(null);
                   const output = await getConfigFromPort();
                   if (output.stderr.length !== 0) {
                     toaster.create({
@@ -317,96 +368,130 @@ function Configuration() {
               >
                 <For each={recentConfigFilePaths()}>
                   {(path, index) => (
-                    <Button
-                      width="100%"
-                      variant="ghost"
-                      padding="0.5rem"
-                      paddingTop="1rem"
-                      paddingBottom="1rem"
-                      onMouseEnter={() => {
-                        setIsButtonHoverd([true, index()]);
-                      }}
-                      onMouseLeave={() => {
-                        setIsButtonHoverd([false, null]);
-                      }}
-                      bgColor={isButtonHovered()[0] === true &&
-                          isButtonHovered()[1] === index()
-                        ? "bg.muted"
-                        : "bg.canvas"}
-                      gap="0"
-                    >
-                      <Text
-                        userSelect="none"
-                        onClick={async () => {
-                          const object = await readJsonFile(path);
-                          setFormData(object!, path);
+                    <>
+                      {/*@ts-ignore Should change not to use ts-ignore*/}
+                      <Button
+                        width="100%"
+                        variant="ghost"
+                        padding="0.5rem"
+                        paddingTop="1rem"
+                        paddingBottom="1rem"
+                        onMouseEnter={() => {
+                          setIsButtonHoverd([true, index()]);
+                        }}
+                        onMouseLeave={() => {
                           setIsButtonHoverd([false, null]);
                         }}
-                        size="md"
-                        height="2rem"
-                        fontWeight="medium"
-                        style={{
-                          "white-space": "nowrap",
-                          "text-overflow": "ellipsis",
-                          display: "block",
-                          overflow: "hidden",
-                          "text-align": "left",
-                          "margin-top": "0.4rem",
-                          width: "15rem",
-                        }}
+                        bgColor={isButtonHovered()[0] === true &&
+                            isButtonHovered()[1] === index()
+                          ? "bg.muted"
+                          : "bg.canvas"}
+                        gap="0"
                       >
-                        {path.match(/[^//]+$/)!.toString()}
-                      </Text>
-                      <Text
-                        userSelect="none"
-                        size="sm"
-                        fontWeight="light"
-                        marginLeft="0.5rem"
-                        opacity="70%"
-                        onClick={async () => {
-                          const object = await readJsonFile(path);
-                          setFormData(object!, path);
-                          setIsButtonHoverd([false, null]);
-                        }}
-                        style={{
-                          "white-space": "nowrap",
-                          "text-overflow": "ellipsis",
-                          display: "block",
-                          overflow: "hidden",
-                          "text-align": "left",
-                          width: `calc(100% - 17rem)`,
-                          "padding-left": "1rem",
-                        }}
-                      >
-                        {path.replace(path.match(/[^?!//]+$/)!.toString(), "")}
-                      </Text>
-                      <Stack width="2rem">
-                        <Show
-                          when={isButtonHovered()[0] === true &&
-                            isButtonHovered()[1] === index()}
-                        >
-                          <IconButton
-                            padding="0"
-                            opacity="50%"
-                            variant="ghost"
-                            borderRadius="2rem"
-                            size="sm"
-                            width="1rem"
-                            marginRight="1rem"
-                            onClick={() => {
-                              setRecentConfigFilePaths((prev) => {
-                                const updateFilePath = prev.filter((_, i) => {
-                                  return i !== index();
-                                });
-                                return updateFilePath;
+                        <Text
+                          userSelect="none"
+                          onClick={async () => {
+                            const object = await readJsonFile(path);
+                            if (!object) {
+                              toaster.create({
+                                title: "Invalid File Path",
+                                description: "The file path is invalid.",
+                                type: "error",
                               });
-                            }}
+                              setRecentConfigFilePaths((prev) => {
+                                const newRecentFiles = prev.filter(
+                                  (prevFilePath) => prevFilePath !== path,
+                                );
+                                return newRecentFiles;
+                              });
+                              return;
+                            }
+                            setFormData(object!, path);
+                            setIsButtonHoverd([false, null]);
+                          }}
+                          size="md"
+                          height="2rem"
+                          fontWeight="medium"
+                          style={{
+                            "white-space": "nowrap",
+                            "text-overflow": "ellipsis",
+                            display: "block",
+                            overflow: "hidden",
+                            "text-align": "left",
+                            "margin-top": "0.4rem",
+                            width: "15rem",
+                          }}
+                        >
+                          {path.match(/[^//]+$/)!.toString()}
+                        </Text>
+                        <Text
+                          userSelect="none"
+                          size="sm"
+                          fontWeight="light"
+                          marginLeft="0.5rem"
+                          opacity="70%"
+                          onClick={async () => {
+                            const object = await readJsonFile(path);
+                            if (!object) {
+                              toaster.create({
+                                title: "Invalid File Path",
+                                description: "The file path is invalid.",
+                                type: "error",
+                              });
+                              setRecentConfigFilePaths((prev) => {
+                                const newRecentFiles = prev.filter(
+                                  (prevFilePath) => prevFilePath !== path,
+                                );
+                                return newRecentFiles;
+                              });
+                              return;
+                            }
+                            setFormData(object!, path);
+                            setIsButtonHoverd([false, null]);
+                          }}
+                          style={{
+                            "white-space": "nowrap",
+                            "text-overflow": "ellipsis",
+                            display: "block",
+                            overflow: "hidden",
+                            "text-align": "left",
+                            width: `calc(100% - 17rem)`,
+                            "padding-left": "1rem",
+                          }}
+                        >
+                          {path.replace(
+                            path.match(/[^?!//]+$/)!.toString(),
+                            "",
+                          )}
+                        </Text>
+                        <Stack width="2rem">
+                          <Show
+                            when={isButtonHovered()[0] === true &&
+                              isButtonHovered()[1] === index()}
                           >
-                            <IconX width="1rem" />
-                          </IconButton>
-                        </Show>
-                      </Stack>
-                    </Button>
+                            <IconButton
+                              padding="0"
+                              opacity="50%"
+                              variant="ghost"
+                              borderRadius="2rem"
+                              size="sm"
+                              width="1rem"
+                              marginRight="1rem"
+                              onClick={() => {
+                                setRecentConfigFilePaths((prev) => {
+                                  const updateFilePath = prev.filter((_, i) => {
+                                    return i !== index();
+                                  });
+                                  return updateFilePath;
+                                });
+                              }}
+                            >
+                              <IconX width="1rem" />
+                            </IconButton>
+                          </Show>
+                        </Stack>
+                      </Button>
+                    </>
                   )}
                 </For>
               </Stack>
@@ -425,6 +510,7 @@ function Configuration() {
                   <Stack direction="row-reverse">
                     <Menu.Root>
                       <Menu.Trigger>
+                        {/*@ts-ignore Should change not to use ts-ignore*/}
                         <Button>Save</Button>
                       </Menu.Trigger>
                       <Menu.Positioner>

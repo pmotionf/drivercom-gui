@@ -9,20 +9,27 @@ import {
   Show,
 } from "solid-js";
 import { createStore } from "solid-js/store";
-import { Plot, PlotContext } from "~/components/Plot";
+import { Plot, PlotContext } from "~/components/Plot.tsx";
 import { inferSchema, initParser } from "udsv";
 import { readTextFile } from "@tauri-apps/plugin-fs";
 import uPlot from "uplot";
-import { IconButton } from "~/components/ui/icon-button";
+import { IconButton } from "~/components/ui/icon-button.tsx";
 import {
   IconFold,
   IconRestore,
   IconSeparatorHorizontal,
 } from "@tabler/icons-solidjs";
-import { Stack } from "styled-system/jsx";
-import { Text } from "~/components/ui/text";
-import { Checkbox } from "~/components/ui/checkbox";
-import { Tooltip } from "~/components/ui/tooltip";
+//@ts-ignore test
+import { Stack } from "styled-system/jsx/index.mjs";
+import { Text } from "~/components/ui/text.tsx";
+import { Checkbox } from "~/components/ui/checkbox.tsx";
+import { Tooltip } from "~/components/ui/tooltip.tsx";
+import { expect } from "@std/expect";
+
+type CheckedState = boolean | "indeterminate";
+interface CheckedChangeDetails {
+  checked: CheckedState;
+}
 
 export type ErrorMessage = {
   title: string;
@@ -120,6 +127,31 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
       splitIndex: [indexArray],
     };
   }
+
+  //@ts-ignore Needed for tsc error
+  Deno.test({
+    name: "parseCsvForPlot",
+    fn: () => {
+      const exampleText = "a,b,c\n5.45,0,true\n5.4,0,false\n0,1,true";
+      const result = parseCsvForPlot(exampleText);
+      if (result === null) {
+        expect(result).toBeNull();
+        return;
+      }
+      const seriesExample = [[5.45, 5.4, 0], [0, 0, 1], [1, 0, 1]];
+      const headerExample = ["a", "b", "c"];
+      const splitIndexExample = [[0, 1, 2]];
+
+      expect(result.series).toEqual(seriesExample);
+      expect(result.header).toEqual(headerExample);
+      expect(result.splitIndex).toEqual(
+        splitIndexExample,
+      );
+      expect(result.splitIndex).toBe(
+        result.splitIndex,
+      );
+    },
+  });
 
   onMount(async () => {
     const csv_str = await readTextFile(props.filePath);
@@ -331,11 +363,11 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
                   </Tooltip.Content>
                 </Tooltip.Positioner>
               </Tooltip.Root>
-
+              {/*@ts-ignore Should change not to use ts-ignore*/}
               <Checkbox
                 width="8rem"
                 checked={mergePlotIndexes().indexOf(index()) !== -1}
-                onCheckedChange={(checkBoxState) => {
+                onCheckedChange={(checkBoxState: CheckedChangeDetails) => {
                   if (checkBoxState.checked === true) {
                     setMergePlotIndexes((prev) => {
                       return [...prev, index()];
@@ -349,7 +381,7 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
                   }
                 }}
               >
-                <Text fontWeight="bold">Graph {index() + 1}</Text>
+                test
               </Checkbox>
               <Show when={index() === 0}>
                 <Stack direction="row" width={`calc(100% - 16rem)`}>

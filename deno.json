@@ -29,7 +29,7 @@
     "semiColons": true
   },
   "compilerOptions": {
-    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "lib": ["ES2022", "DOM", "DOM.Iterable", "deno.ns"],
     "jsx": "react-jsx",
     "jsxImportSource": "solid-js"
   },
@@ -37,6 +37,7 @@
   "imports": {
     "@neodrag/solid": "npm:@neodrag/solid@^2.3.0",
     "@pandacss/preset-base": "npm:@pandacss/preset-base@^0.53.1",
+    "@std/expect": "jsr:@std/expect@^1.0.15",
     "lucide-solid": "npm:lucide-solid@^0.479.0",
     "unzipper": "npm:unzipper@^0.12.3",
     "~/": "./src/",

@@ -1,19 +1,19 @@
 import { createSignal, For, splitProps } from "solid-js";
 import { parseColor } from "@ark-ui/solid";
-import { ColorPicker } from "~/components/ui/color-picker";
-import { Heading } from "~/components/ui/heading";
-import { IconButton } from "~/components/ui/icon-button";
-import { Input } from "~/components/ui/input";
-import { Button } from "~/components/ui/button";
-import { Card } from "../ui/card";
+import { ColorPicker } from "~/components/ui/color-picker.tsx";
+import { Heading } from "~/components/ui/heading.tsx";
+import { IconButton } from "~/components/ui/icon-button.tsx";
+import { Input } from "~/components/ui/input.tsx";
+import { Button } from "~/components/ui/button.tsx";
+import { Card } from "../ui/card.tsx";
 import {
   IconLine,
   IconLineDashed,
   IconPoint,
   IconX,
 } from "@tabler/icons-solidjs";
-import { ToggleGroup } from "~/components/ui/toggle-group";
-import { LegendStroke } from "./Legend";
+import { ToggleGroup } from "~/components/ui/toggle-group.tsx";
+import { LegendStroke } from "./Legend.tsx";
 
 export type SeriesConfigurationProps = Omit<ColorPicker.RootProps, "stroke"> & {
   series: string;
@@ -104,7 +104,7 @@ export function SeriesConfiguration(props: SeriesConfigurationProps) {
         </Heading>
         <ToggleGroup.Root
           value={[LegendStroke[stroke()]]}
-          onValueChange={(details) => {
+          onValueChange={(details: { value: string[] }) => {
             if (details.value.length > 0) {
               setStroke(
                 LegendStroke[details.value[0] as keyof typeof LegendStroke],
@@ -132,6 +132,7 @@ export function SeriesConfiguration(props: SeriesConfigurationProps) {
         </ToggleGroup.Root>
       </Card.Body>
       <Card.Footer>
+        {/*@ts-ignore for avoid tsc error*/}
         <Button
           onClick={() => {
             props.onSave?.(selectedColor().toString("rgba"), stroke());

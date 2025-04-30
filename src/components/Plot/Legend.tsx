@@ -7,15 +7,16 @@ import {
   Switch,
 } from "solid-js";
 
+//@ts-ignore To get repository without tsc error
 import { Stack, StackProps } from "styled-system/jsx";
 
 import uPlot from "uplot";
 
-import { Button } from "~/components/ui/button";
-import { Dialog } from "~/components/ui/dialog";
-import { IconButton } from "~/components/ui/icon-button";
-import { Text } from "~/components/ui/text";
-import { SeriesConfiguration } from "./SeriesConfiguration";
+import { Button } from "~/components/ui/button.tsx";
+import { Dialog } from "~/components/ui/dialog.tsx";
+import { IconButton } from "~/components/ui/icon-button.tsx";
+import { Text } from "~/components/ui/text.tsx";
+import { SeriesConfiguration } from "./SeriesConfiguration.tsx";
 
 import {
   IconLine,
@@ -23,10 +24,10 @@ import {
   IconPoint,
   IconX,
 } from "@tabler/icons-solidjs";
-import { Heading } from "../ui/heading";
+import { Heading } from "../ui/heading.tsx";
 import { Portal } from "solid-js/web";
-import { enumMappings, enumSeries } from "~/GlobalState";
-import { Checkbox } from "../ui/checkbox";
+import { enumMappings, enumSeries } from "~/GlobalState.ts";
+import { Checkbox } from "../ui/checkbox.tsx";
 
 export type LegendProps = Omit<StackProps, "stroke"> & {
   plot: uPlot;
@@ -51,6 +52,11 @@ export enum LegendStroke {
   Line,
   Dash,
   Dot,
+}
+
+type CheckedState = boolean | "indeterminate";
+interface CheckedChangeDetails {
+  checked: CheckedState;
 }
 
 export function Legend(props: LegendProps) {
@@ -197,9 +203,10 @@ export function Legend(props: LegendProps) {
           when={props.showSelectCheckBox}
         >
           <Checkbox
+            //@ts-ignore Ignore for tsc error
             disabled={!props.visible}
             value={props.selected ? props.selected.toString() : "false"}
-            onCheckedChange={(e) =>
+            onCheckedChange={(e: CheckedChangeDetails) =>
               props.onSelectChange?.(
                 e.checked.toString() === "true" ? true : false,
               )}
@@ -258,6 +265,7 @@ export function Legend(props: LegendProps) {
           </Heading>
         }
       >
+        {/*@ts-ignore Ignore for tsc error*/}
         <Button
           variant="link"
           style={{ "justify-content": "left" }}

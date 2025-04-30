@@ -42,6 +42,7 @@ import { SegmentGroup } from "~/components/ui/segment-group.tsx";
 import { Text } from "~/components/ui/text.tsx";
 
 import { Command } from "@tauri-apps/plugin-shell";
+import { expect } from "@std/expect";
 
 type PageMeta = {
   icon: ValidComponent;
@@ -51,7 +52,7 @@ type PageMeta = {
 
 function App(props: RouteSectionProps) {
   // Necessary for light/dark mode detection
-  onMount(() => {
+  onMount(async () => {
     const prefers_dark = globalThis.matchMedia(
       "(prefers-color-scheme: dark)",
     ).matches;
@@ -65,8 +66,8 @@ function App(props: RouteSectionProps) {
     setGlobalState("theme", theme_str);
 
     detectCliVersion();
-    parseEnumMappings();
-    buildEmptyLogConfiguration();
+    updateEnumMapping();
+    setLogFormFileFormat(await buildEmptyLogConfiguration());
     buildEmptyDriverConfiguration();
     getLogStartCombinator();
     getLogStartCondition();
@@ -84,28 +85,37 @@ function App(props: RouteSectionProps) {
     setDriverComVersion(drivercomVersion);
   }
 
-  async function parseEnumMappings() {
+  async function getListCodes(): Promise<string> {
     const drivercom = Command.sidecar("binaries/drivercom", [
       "log.util.list_code_names",
       "--compact",
     ]);
     const output = await drivercom.execute();
+    return output.stdout;
+  }
 
+  function parseEnumMapping(
+    output: string,
+  ): {
+    seriesMapping: string[][];
+    enumTypeNames: string[];
+    enumCodeMapping: [number, string][][];
+  } {
     const namedFieldsStr = "named fields:";
-    const namedFieldsIndex = output.stdout.search(
+    const namedFieldsIndex = output.search(
       new RegExp(namedFieldsStr, "i"),
     );
 
     const namedFieldKindsStr = "named field kinds:";
-    const namedFieldKindsIndex = output.stdout.search(
+    const namedFieldKindsIndex = output.search(
       new RegExp(namedFieldKindsStr, "i"),
     );
 
-    const namedFieldsLine = output.stdout.slice(
+    const namedFieldsLine = output.slice(
       namedFieldsIndex + namedFieldsStr.length,
       namedFieldKindsIndex,
     ).trim();
-    const namedFieldKindsLines = output.stdout.slice(
+    const namedFieldKindsLines = output.slice(
       namedFieldKindsIndex + namedFieldKindsStr.length,
     ).split("\n");
 
@@ -119,12 +129,6 @@ function App(props: RouteSectionProps) {
       .map((e) => {
         return e.split(":");
       });
-    setEnumSeries(
-      seriesMappings.map((seriesMapping) => [
-        seriesMapping[0], // Series name
-        seriesMapping[1], // Series enum type name
-      ]),
-    );
 
     const enumTypeNames: string[] = enumMappingsLines.map((line) => {
       const closingBracketIndex = line.indexOf("]");
@@ -148,21 +152,68 @@ function App(props: RouteSectionProps) {
       },
     );
 
+    return {
+      seriesMapping: seriesMappings,
+      enumTypeNames: enumTypeNames,
+      enumCodeMapping: enumCodeMappings,
+    };
+  }
+
+  //@ts-ignore Needed for tsc error
+  Deno.test({
+    name: "parseEnumMapping",
+    fn: () => {
+      const outputExample =
+        "Named Fields:\nfield a:field\nNamed Field Kinds:\n[field]=0:zero,1:one";
+      const testResult = parseEnumMapping(outputExample);
+
+      const seriesMappingsExample = [[
+        "field a",
+        "field",
+      ]];
+      expect(testResult.seriesMapping).toEqual(
+        seriesMappingsExample,
+      );
+
+      const enumTypeNamesExample = ["field"];
+
+      expect(testResult.enumTypeNames).toEqual(
+        enumTypeNamesExample,
+      );
+
+      const enumCodeMappingsExample = [[[0, "zero"], [1, "one"]]];
+
+      expect(testResult.enumCodeMapping).toEqual(
+        enumCodeMappingsExample,
+      );
+    },
+  });
+
+  async function updateEnumMapping() {
+    const listCodes = await getListCodes();
+    const parseEnum = parseEnumMapping(listCodes);
+
+    setEnumSeries(
+      parseEnum.seriesMapping.map((seriesMapping) => [
+        seriesMapping[0], // Series name
+        seriesMapping[1], // Series enum type name
+      ]),
+    );
     setEnumMappings(
-      enumTypeNames.map((enumTypeName, index) => [
+      parseEnum.enumTypeNames.map((enumTypeName, index) => [
         enumTypeName,
-        enumCodeMappings[index],
+        parseEnum.enumCodeMapping[index],
       ]),
     );
   }
 
-  async function buildEmptyLogConfiguration() {
+  async function buildEmptyLogConfiguration(): Promise<object> {
     const logConfig = Command.sidecar("binaries/drivercom", [
       "log.config.empty",
     ]);
     const output = await logConfig.execute();
     const logFormatToJson = JSON.parse(output.stdout);
-    setLogFormFileFormat(logFormatToJson);
+    return logFormatToJson;
   }
 
   async function buildEmptyDriverConfiguration() {
@@ -172,18 +223,29 @@ function App(props: RouteSectionProps) {
     setConfigFormFileFormat(configFormatToJson);
   }
 
+  function parseLogStartField(output: string): string[] {
+    const parseOutput = output.replaceAll("[", "")
+      .replaceAll("]", "")
+      .split(":");
+    const logFields = parseOutput[1]
+      .split(",")
+      .filter((value) => value !== "\n");
+    return logFields;
+  }
+
+  //@ts-ignore Needed for tsc error
+  Deno.test("parseLogStartField", () => {
+    const exampleString = "[field]:a,b,c";
+    const result = ["a", "b", "c"];
+    expect(parseLogStartField(exampleString)).toEqual(result);
+  });
+
   async function getLogStartCondition() {
     const logStartCondition = Command.sidecar("binaries/drivercom", [
       `log.config.start.condition.list`,
     ]);
     const output = await logStartCondition.execute();
-    const parseOutput = output.stdout
-      .replaceAll("[", "")
-      .replaceAll("]", "")
-      .split(":");
-    const startConditionList = parseOutput[1]
-      .split(",")
-      .filter((value) => value !== "\n");
+    const startConditionList = parseLogStartField(output.stdout);
     setLogStartCoditionList(startConditionList);
   }
 
@@ -192,13 +254,7 @@ function App(props: RouteSectionProps) {
       `log.config.start.combinator.list`,
     ]);
     const output = await logStartCombinator.execute();
-    const parseOutput = output.stdout
-      .replaceAll("[", "")
-      .replaceAll("]", "")
-      .split(":");
-    const startCombinatorList = parseOutput[1]
-      .split(",")
-      .filter((value) => value !== "\n");
+    const startCombinatorList = parseLogStartField(output.stdout);
     setLogStartCombinatorList(startCombinatorList);
   }
 
@@ -297,6 +353,7 @@ function App(props: RouteSectionProps) {
                     <Drawer.Title style={{ "padding-top": "0px" }}>
                       Drivercom
                     </Drawer.Title>
+                    {/*@ts-ignore Should eliminate later */}
                     <Button
                       variant="ghost"
                       size="sm"
@@ -344,7 +401,7 @@ function App(props: RouteSectionProps) {
                 >
                   <SegmentGroup.Root
                     value={page()}
-                    onValueChange={(e) => {
+                    onValueChange={(e: { value: string | null }) => {
                       if (e != null) {
                         setPage(e.value!);
                         navigate("/" + e.value!.toLowerCase(), {
@@ -478,7 +535,7 @@ function App(props: RouteSectionProps) {
         <SegmentGroup.Root
           id="collapsed_side_bar"
           value={page()}
-          onValueChange={(e) => {
+          onValueChange={(e: { value: string | null }) => {
             if (e != null) {
               setPage(e.value!);
               navigate("/" + e.value!.toLowerCase(), { replace: true });

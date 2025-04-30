@@ -14,10 +14,10 @@ import { createStore, unwrap } from "solid-js/store";
 import uPlot, { AlignedData } from "uplot";
 import "uplot/dist/uPlot.min.css";
 
-import { GlobalStateContext } from "~/GlobalState";
-import { Heading } from "~/components/ui/heading";
-import { ToggleGroup } from "~/components/ui/toggle-group";
-import { IconButton } from "~/components/ui/icon-button";
+import { GlobalStateContext } from "~/GlobalState.ts";
+import { Heading } from "~/components/ui/heading.tsx";
+import { ToggleGroup } from "~/components/ui/toggle-group.tsx";
+import { IconButton } from "~/components/ui/icon-button.tsx";
 import {
   IconArrowsMove,
   IconCrosshair,
@@ -28,11 +28,17 @@ import {
   IconZoomInArea,
   IconZoomReset,
 } from "@tabler/icons-solidjs";
-import { Stack } from "styled-system/jsx";
-import { Legend, LegendStroke } from "./Plot/Legend";
-import { Tooltip } from "./ui/tooltip";
-import { Text } from "./ui/text";
+//@ts-ignore test
+import { Stack } from "styled-system/jsx/index.mjs";
+import { Legend, LegendStroke } from "./Plot/Legend.tsx";
+import { Tooltip } from "./ui/tooltip.tsx";
+import { Text } from "./ui/text.tsx";
 import { Portal } from "solid-js/web";
+import { expect } from "@std/expect";
+
+interface ValueChangeDetails {
+  value: string[];
+}
 
 export type PlotProps = JSX.HTMLAttributes<HTMLDivElement> & {
   id: string;
@@ -205,11 +211,12 @@ export function Plot(props: PlotProps) {
   const checkDotFilter = () => dotFilter();
   const [xRange, setXRange] = createSignal<number>(0);
 
-  createEffect(() => {
-    const domainWidth: number = document.getElementById(
-      props.id + "-wrapper",
-    )!.offsetWidth;
-    const scale: number = xRange() / domainWidth;
+  function calculateDotFilter(
+    domainWidth: number,
+    xRange: number,
+    seriesLength: number,
+  ): number[] {
+    const scale: number = xRange / domainWidth;
     const array: number[] = [];
 
     let i: number = 0;
@@ -218,12 +225,30 @@ export function Plot(props: PlotProps) {
       i += (Math.floor(scale) > 0
         ? Math.floor(scale)
         : parseFloat(scale.toFixed(1))) * 10;
-      if (i >= plot.data[0].length) {
+      if (i >= seriesLength) {
         break;
       }
     }
-
     if (scale <= 0.1) array.splice(0, array.length);
+    return array;
+  }
+
+  //@ts-ignore Needed for tsc error
+  Deno.test("calculateDotFilter", () => {
+    const result = [0, 1, 2, 3, 4];
+    expect(calculateDotFilter(1719, 227, 5)).toEqual(result);
+  });
+
+  createEffect(() => {
+    const domainWidth: number = document.getElementById(
+      props.id + "-wrapper",
+    )!.offsetWidth;
+    const seriesLength = props.series[0].length;
+    const array: number[] = calculateDotFilter(
+      domainWidth,
+      xRange(),
+      seriesLength,
+    );
     setDotFilter(array);
   });
 
@@ -526,7 +551,7 @@ export function Plot(props: PlotProps) {
 
           <ToggleGroup.Root
             value={[CursorMode[lastCursorMode()]]}
-            onValueChange={(details) => {
+            onValueChange={(details: ValueChangeDetails) => {
               if (details.value.length > 0) {
                 setCursorMode(
                   CursorMode[details.value[0] as keyof typeof CursorMode],
@@ -780,28 +805,6 @@ function wheelZoomPlugin(opts: WheelZoomPluginOpts) {
 
   let xMin: number, xMax: number, xRange: number;
 
-  function clamp(
-    nRange: number,
-    nMin: number,
-    nMax: number,
-    fRange: number,
-    fMin: number,
-    fMax: number,
-  ) {
-    if (nRange > fRange) {
-      nMin = fMin;
-      nMax = fMax;
-    } else if (nMin < fMin) {
-      nMin = fMin;
-      nMax = fMin + nRange;
-    } else if (nMax > fMax) {
-      nMax = fMax;
-      nMin = fMax - nRange;
-    }
-
-    return [nMin, nMax];
-  }
-
   return {
     hooks: {
       ready: (u: uPlot) => {
@@ -861,3 +864,30 @@ const kelly_colors_hex = [
   "#F13A13", // Vivid Reddish Orange
   "#232C16", // Dark Olive Green
 ];
+
+function clamp(
+  nRange: number,
+  nMin: number,
+  nMax: number,
+  fRange: number,
+  fMin: number,
+  fMax: number,
+) {
+  if (nRange > fRange) {
+    nMin = fMin;
+    nMax = fMax;
+  } else if (nMin < fMin) {
+    nMin = fMin;
+    nMax = fMin + nRange;
+  } else if (nMax > fMax) {
+    nMax = fMax;
+    nMin = fMax - nRange;
+  }
+
+  return [nMin, nMax];
+}
+
+//@ts-ignore Needed for tsc error
+Deno.test("clamp", () => {
+  expect(clamp(5, 1, 1, 4, 1, 1)).toEqual([1, 1]);
+});

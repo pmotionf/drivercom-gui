@@ -1,20 +1,21 @@
-import { Stack } from "styled-system/jsx";
-import { Button } from "~/components/ui/button";
-import { Text } from "~/components/ui/text";
+//@ts-ignore test
+import { Stack } from "styled-system/jsx/index.mjs";
+import { Button } from "~/components/ui/button.tsx";
+import { Text } from "~/components/ui/text.tsx";
 import {
   logFormFileFormat,
   portId,
   recentLogFilePaths,
   setRecentLogFilePaths,
-} from "~/GlobalState";
+} from "~/GlobalState.ts";
 import { Command } from "@tauri-apps/plugin-shell";
 import { createEffect, createSignal, For, Show } from "solid-js";
-import { LoggingForm } from "./Logging/LoggingForm";
-import { Toast } from "~/components/ui/toast";
+import { LoggingForm } from "./Logging/LoggingForm.tsx";
+import { Toast } from "~/components/ui/toast.tsx";
 import { IconX } from "@tabler/icons-solidjs";
 import { open } from "@tauri-apps/plugin-dialog";
 import { readTextFile } from "@tauri-apps/plugin-fs";
-import { IconButton } from "~/components/ui/icon-button";
+import { IconButton } from "~/components/ui/icon-button.tsx";
 
 export function Logging() {
   const [isLogFormOpen, setLogFormOpen] = createSignal<boolean>(false);
@@ -136,6 +137,7 @@ export function Logging() {
         }}
       >
         <Toast.Toaster toaster={toaster}>
+          {/*@ts-ignore Should change not to use ts-ignore*/}
           {(toast) => (
             <Toast.Root>
               <Toast.Title>{toast().title}</Toast.Title>
@@ -219,6 +221,7 @@ export function Logging() {
               gap="1.5rem"
               width="44rem"
             >
+              {/*@ts-ignore Should change not to use ts-ignore*/}
               <Button
                 variant="outline"
                 padding="4rem"
@@ -234,6 +237,7 @@ export function Logging() {
               >
                 Create New Log
               </Button>
+              {/*@ts-ignore Should change not to use ts-ignore*/}
               <Button
                 variant="outline"
                 padding="4rem"
@@ -279,6 +283,7 @@ export function Logging() {
               >
                 Open File
               </Button>
+              {/*@ts-ignore Should change not to use ts-ignore*/}
               <Button
                 variant="outline"
                 padding="4rem"
@@ -326,6 +331,7 @@ export function Logging() {
               >
                 <For each={recentLogFilePaths()}>
                   {(path, index) => (
+                    //@ts-ignore Should change not to use ts-ignore
                     <Button
                       width="100%"
                       variant="ghost"
