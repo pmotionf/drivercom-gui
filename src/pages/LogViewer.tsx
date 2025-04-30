@@ -1,18 +1,18 @@
-import { Splitter } from "~/components/ui/splitter";
+import { Splitter } from "~/components/ui/splitter.tsx";
 import { createEffect, createSignal, For, onMount, Show } from "solid-js";
-import { LogViewerTabList } from "./LogViewer/LogViewerTabList";
+import { LogViewerTabList } from "./LogViewer/LogViewerTabList.tsx";
 import { open } from "@tauri-apps/plugin-dialog";
-import { Toast } from "~/components/ui/toast";
+import { Toast } from "~/components/ui/toast.tsx";
 import { IconX } from "@tabler/icons-solidjs";
 import {
   logViewerPanelContexts,
   logViewerPanelSize,
   setLogViewPanelContexts,
   setLogViewPanelSize,
-} from "~/GlobalState";
-import { Spinner } from "~/components/ui/spinner";
-import { PlotContext } from "~/components/Plot";
-import { Stack } from "styled-system/jsx";
+} from "~/GlobalState.ts";
+import { Spinner } from "~/components/ui/spinner.tsx";
+import { PlotContext } from "~/components/Plot.tsx";
+import { Stack } from "styled-system/jsx/stack.mjs";
 
 export type LogViewerTabContext = {
   id: string;

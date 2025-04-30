@@ -1,23 +1,23 @@
 import { createSignal, For, Show } from "solid-js";
 
-import { ConfigForm } from "~/components/ConfigForm";
+import { ConfigForm } from "~/components/ConfigForm.tsx";
 import { IconX } from "@tabler/icons-solidjs";
 import { open, save } from "@tauri-apps/plugin-dialog";
-import { Toast } from "~/components/ui/toast";
+import { Toast } from "~/components/ui/toast.tsx";
 import { readTextFile, writeTextFile } from "@tauri-apps/plugin-fs";
-import { Stack } from "styled-system/jsx";
-import { Text } from "~/components/ui/text";
+import { Stack } from "styled-system/jsx/stack.mjs";
+import { Text } from "~/components/ui/text.tsx";
 import {
   configFormFileFormat,
   portId,
   recentConfigFilePaths,
   setRecentConfigFilePaths,
-} from "~/GlobalState";
+} from "~/GlobalState.ts";
 import { Command } from "@tauri-apps/plugin-shell";
-import { IconButton } from "~/components/ui/icon-button";
-import { Button } from "~/components/ui/button";
-import { Card } from "~/components/ui/card";
-import { Menu } from "~/components/ui/menu";
+import { IconButton } from "~/components/ui/icon-button.tsx";
+import { Button } from "~/components/ui/button.tsx";
+import { Card } from "~/components/ui/card.tsx";
+import { Menu } from "~/components/ui/menu.tsx";
 
 function Configuration() {
   const [config, setConfig] = createSignal({});

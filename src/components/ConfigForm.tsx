@@ -11,21 +11,21 @@ import {
 } from "solid-js";
 import { createStore } from "solid-js/store";
 
-import { Accordion } from "~/components/ui/accordion";
-import { Checkbox } from "~/components/ui/checkbox";
-import { Input } from "~/components/ui/input";
+import { Accordion } from "~/components/ui/accordion.tsx";
+import { Checkbox } from "~/components/ui/checkbox.tsx";
+import { Input } from "~/components/ui/input.tsx";
 
-import { Stack } from "styled-system/jsx";
-import { Text } from "./ui/text";
-import { Editable } from "./ui/editable";
-import { IconButton } from "./ui/icon-button";
+import { Stack } from "styled-system/jsx/stack.mjs";
+import { Text } from "./ui/text.tsx";
+import { Editable } from "./ui/editable.tsx";
+import { IconButton } from "./ui/icon-button.tsx";
 import {
   IconChevronDown,
   IconLink,
   IconLinkOff,
   IconX,
 } from "@tabler/icons-solidjs";
-import { Tooltip } from "./ui/tooltip";
+import { Tooltip } from "./ui/tooltip.tsx";
 
 export type ConfigFormProps = JSX.HTMLAttributes<HTMLFormElement> & {
   label: string;

@@ -7,15 +7,15 @@ import {
   Switch,
 } from "solid-js";
 
-import { Stack, StackProps } from "styled-system/jsx";
+import { Stack, StackProps } from "styled-system/jsx/stack.mjs";
 
 import uPlot from "uplot";
 
-import { Button } from "~/components/ui/button";
-import { Dialog } from "~/components/ui/dialog";
-import { IconButton } from "~/components/ui/icon-button";
-import { Text } from "~/components/ui/text";
-import { SeriesConfiguration } from "./SeriesConfiguration";
+import { Button } from "~/components/ui/button.tsx";
+import { Dialog } from "~/components/ui/dialog.tsx";
+import { IconButton } from "~/components/ui/icon-button.tsx";
+import { Text } from "~/components/ui/text.tsx";
+import { SeriesConfiguration } from "./SeriesConfiguration.tsx";
 
 import {
   IconLine,
@@ -23,10 +23,10 @@ import {
   IconPoint,
   IconX,
 } from "@tabler/icons-solidjs";
-import { Heading } from "../ui/heading";
+import { Heading } from "../ui/heading.tsx";
 import { Portal } from "solid-js/web";
-import { enumMappings, enumSeries } from "~/GlobalState";
-import { Checkbox } from "../ui/checkbox";
+import { enumMappings, enumSeries } from "~/GlobalState.ts";
+import { Checkbox } from "../ui/checkbox.tsx";
 
 export type LegendProps = Omit<StackProps, "stroke"> & {
   plot: uPlot;
