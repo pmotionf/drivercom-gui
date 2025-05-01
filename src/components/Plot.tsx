@@ -35,7 +35,7 @@ import { Legend, LegendStroke } from "./Plot/Legend";
 import { Tooltip } from "./ui/tooltip";
 import { Text } from "./ui/text";
 import { Portal } from "solid-js/web";
-import Fuse from "fuse.js";
+import uFuzzy from "@leeoniya/ufuzzy";
 
 export type PlotProps = JSX.HTMLAttributes<HTMLDivElement> & {
   id: string;
@@ -928,12 +928,19 @@ const kelly_colors_hex = [
 ];
 
 function fuzzySearch(searchInputValue: string, headers: string[]): string[] {
-  const fuzzySearch = new Fuse(headers, {
-    useExtendedSearch: true,
-  });
-  const searchResults = fuzzySearch.search(searchInputValue);
-  const parseSearchResults: string[] = searchResults.map((result) => {
-    return result.item;
-  });
-  return parseSearchResults;
+  const uf = new uFuzzy({});
+  // Pre-filter
+  const idxs = uf.filter(headers, searchInputValue);
+
+  if (idxs != null && idxs.length > 0) {
+    const info = uf.info(idxs, headers, searchInputValue);
+    const order = uf.sort(info, headers, searchInputValue);
+    const result = [];
+    for (let i = 0; i < order.length; i++) {
+      result.push(headers[idxs[i]]);
+    }
+    return result;
+  } else {
+    return [];
+  }
 }

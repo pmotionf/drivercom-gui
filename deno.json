@@ -35,9 +35,9 @@
   },
   "nodeModulesDir": "auto",
   "imports": {
+    "@leeoniya/ufuzzy": "npm:@leeoniya/ufuzzy@^1.0.18",
     "@neodrag/solid": "npm:@neodrag/solid@^2.3.0",
     "@pandacss/preset-base": "npm:@pandacss/preset-base@^0.53.1",
-    "fuse.js": "npm:fuse.js@^7.1.0",
     "lucide-solid": "npm:lucide-solid@^0.479.0",
     "unzipper": "npm:unzipper@^0.12.3",
     "~/": "./src/",
