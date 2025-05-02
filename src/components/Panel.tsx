@@ -13,6 +13,7 @@ export function Panel(props: panelProps) {
   return (
     <div style={{ width: "100%", height: "100%" }}>
       <TabList
+        style={{ width: "100%", height: "100%" }}
         tabListContext={panelContext}
       />
     </div>

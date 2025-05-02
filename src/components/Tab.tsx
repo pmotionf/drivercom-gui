@@ -14,6 +14,7 @@ import { Text } from "./ui/text.tsx";
 export type tabProps = JSX.HTMLAttributes<HTMLDivElement> & {
   tabContext: object[];
   focusedTab: string;
+  onRefresh?: () => void;
   onCreateTab?: () => void;
   onDeleteTab?: (index: number) => void;
   onFocusTabChange?: (tabId: string) => void;
@@ -22,8 +23,6 @@ export type tabProps = JSX.HTMLAttributes<HTMLDivElement> & {
 };
 
 export function Tab(props: tabProps) {
-  const [render, setRender] = createSignal<boolean>(true);
-
   //@ts-ignore This draggable is needed to use neo-drag.
   // deno-lint-ignore no-unused-vars
   const { draggable: dragOptions } = createDraggable();
@@ -37,18 +36,17 @@ export function Tab(props: tabProps) {
   const reorderTabsOnDragEnd = (
     currentTabIndex: number,
     reorderIndex: number,
-  ) => {
+    tabContext: object[],
+  ): object[] => {
     const fromIndex = currentTabIndex;
     const nextIndex = reorderIndex;
 
     if (fromIndex !== nextIndex) {
-      const updatedItems = props.tabContext.slice();
+      const updatedItems = tabContext.slice();
       updatedItems.splice(nextIndex, 0, ...updatedItems.splice(fromIndex, 1));
-      props.onTabReorder?.(updatedItems);
-      props.onFocusTabChange?.(currentDraggingTabId());
+      return updatedItems;
     }
-
-    setReorderTabIndex(null);
+    return tabContext;
   };
 
   let scrollContainer: HTMLDivElement | undefined;
@@ -110,187 +108,180 @@ export function Tab(props: tabProps) {
         ref={scrollContainer}
         style={{ "overflow-y": "hidden", "overflow-x": "auto" }}
       >
-        <Show when={render()}>
-          <For each={props.tabContext}>
-            {(tab, tabIndex) => {
-              const tabId = tab["id" as keyof typeof tab];
-              const tabName = tab["tabName" as keyof typeof tab];
-              const filePath = tab["filePath" as keyof typeof tab];
-              return (
-                <div
-                  id={tabId}
-                  style={{
-                    opacity: currentDraggingTabId() === tabId ? "0%" : "100%",
-                    position: "relative",
-                    "z-index": tabId === currentDraggingTabId() ? "0" : "10",
-                  }}
-                  onWheel={(e) => mouseWheelHandler(e, scrollContainer)}
-                  onMouseEnter={() => {
-                    if (currentDraggingTabId()) {
-                      setReorderTabIndex(tabIndex());
+        <For each={props.tabContext}>
+          {(tab, tabIndex) => {
+            const tabId = tab["id" as keyof typeof tab];
+            const tabName = tab["tabName" as keyof typeof tab];
+            const filePath = tab["filePath" as keyof typeof tab];
+            return (
+              <div
+                id={tabId}
+                style={{
+                  opacity: currentDraggingTabId() === tabId ? "0%" : "100%",
+                  position: "relative",
+                  "z-index": tabId === currentDraggingTabId() ? "0" : "10",
+                }}
+                onWheel={(e) => mouseWheelHandler(e, scrollContainer)}
+                onMouseEnter={() => {
+                  if (currentDraggingTabId()) {
+                    setReorderTabIndex(tabIndex());
+                  }
+                }}
+                onMouseLeave={() => setReorderTabIndex(null)}
+                use:dragOptions={{
+                  cancel: ".cancel",
+                  bounds: "parent",
+                  onDragStart: (data) => {
+                    setCurrentDraggingTabId(tabId);
+                    setMousePositionInsideComponent({
+                      x: data.event.offsetX,
+                      y: data.event.offsetY,
+                    });
+                  },
+                  onDrag: (data) => {
+                    dragOverScroll(data.offsetX, scrollContainer);
+                    setCurrentDraggingTabId(currentDraggingTabId()!);
+
+                    const collapsedSideBarWidth = document.getElementById(
+                      "radio-group:collapsed_side_bar",
+                    )!.offsetWidth;
+                    setCurrentMousePointerPosition(() => {
+                      return {
+                        x:
+                          data.event.clientX -
+                          mousePositionInsideComponent().x -
+                          collapsedSideBarWidth,
+                        y:
+                          data.event.clientY - mousePositionInsideComponent().y,
+                      };
+                    });
+                  },
+                  onDragEnd: (data) => {
+                    if (reorderTabIndex() !== null) {
+                      const updatedItems = reorderTabsOnDragEnd(
+                        tabIndex(),
+                        reorderTabIndex()!,
+                        props.tabContext,
+                      );
+                      props.onTabReorder?.(updatedItems);
                     }
-                  }}
-                  onMouseLeave={() => setReorderTabIndex(null)}
-                  use:dragOptions={{
-                    cancel: ".cancel",
-                    bounds: "parent",
-                    onDragStart: (data) => {
-                      setCurrentDraggingTabId(tabId);
-                      setMousePositionInsideComponent({
-                        x: data.event.offsetX,
-                        y: data.event.offsetY,
-                      });
-                    },
-                    onDrag: (data) => {
-                      dragOverScroll(data.offsetX, scrollContainer);
-                      setCurrentDraggingTabId(currentDraggingTabId()!);
 
-                      const collapsedSideBarWidth = document.getElementById(
-                        "radio-group:collapsed_side_bar",
-                      )!.offsetWidth;
-                      setCurrentMousePointerPosition(() => {
-                        return {
-                          x:
-                            data.event.clientX -
-                            mousePositionInsideComponent().x -
-                            collapsedSideBarWidth,
-                          y:
-                            data.event.clientY -
-                            mousePositionInsideComponent().y,
-                        };
-                      });
-                    },
-                    onDragEnd: (data) => {
-                      if (reorderTabIndex() !== null) {
-                        reorderTabsOnDragEnd(tabIndex(), reorderTabIndex()!);
-                        props.onFocusTabChange?.(currentDraggingTabId()!);
-                        setReorderTabIndex(null);
-                      }
-                      setCurrentDraggingTabId("");
-
-                      // Needed to order tabs after dragging.
-                      setRender(false);
-                      setRender(true);
-                    },
-                  }}
+                    props.onRefresh?.();
+                    props.onFocusTabChange?.(currentDraggingTabId()!);
+                    setReorderTabIndex(null);
+                    setCurrentDraggingTabId("");
+                  },
+                }}
+              >
+                <Tabs.Trigger
+                  value={tabId}
+                  paddingRight="0rem"
+                  paddingLeft="0.5rem"
+                  borderBottomWidth={
+                    currentDraggingTabId().length > 0
+                      ? currentDraggingTabId() === tabId
+                        ? "3px"
+                        : "0px"
+                      : props.focusedTab === tabId
+                        ? "3px"
+                        : "0px"
+                  }
+                  marginTop={
+                    currentDraggingTabId().length > 0
+                      ? currentDraggingTabId() === tabId
+                        ? `calc(0.5rem + 1px)`
+                        : "0.5rem"
+                      : props.focusedTab === tabId
+                        ? `calc(0.5rem + 1px)`
+                        : `0.5rem`
+                  }
+                  borderBottomColor="accent.emphasized"
                 >
-                  <Tabs.Trigger
-                    value={tabId}
-                    paddingRight="0rem"
-                    paddingLeft="0.5rem"
-                    borderBottomWidth={
-                      currentDraggingTabId().length > 0
-                        ? currentDraggingTabId() === tabId
-                          ? "3px"
-                          : "0px"
-                        : props.focusedTab === tabId
-                          ? "3px"
-                          : "0px"
-                    }
-                    marginTop={
-                      currentDraggingTabId().length > 0
-                        ? currentDraggingTabId() === tabId
-                          ? `calc(0.5rem + 1px)`
-                          : "0.5rem"
-                        : props.focusedTab === tabId
-                          ? `calc(0.5rem + 1px)`
-                          : `0.5rem`
-                    }
-                    borderBottomColor="accent.emphasized"
+                  <Editable.Root
+                    defaultValue={parseTabName(tabName, filePath)}
+                    activationMode="dblclick"
+                    onValueCommit={(editableDetails: { value: string }) => {
+                      props.onTabNameChange?.(tabIndex, editableDetails.value);
+                    }}
                   >
-                    <Editable.Root
-                      defaultValue={parseTabName(tabName, filePath)}
-                      activationMode="dblclick"
-                      onValueCommit={(editableDetails: { value: string }) => {
-                        props.onTabNameChange?.(
-                          tabIndex,
-                          editableDetails.value,
-                        );
+                    <Editable.Area>
+                      <Editable.Input width="10rem" />
+                      <Editable.Preview width="100%" />
+                    </Editable.Area>
+                  </Editable.Root>
+                  <div class="cancel">
+                    <IconButton
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        props.onDeleteTab?.(tabIndex());
+                      }}
+                      borderRadius="3rem"
+                    >
+                      <IconX />
+                    </IconButton>
+                  </div>
+                </Tabs.Trigger>
+                <Show
+                  when={
+                    reorderTabIndex() === tabIndex() &&
+                    currentDraggingTabId().length > 0
+                  }
+                >
+                  <Stack
+                    width="100%"
+                    height="100% "
+                    position="absolute"
+                    top="0"
+                    background="fg.default"
+                    opacity="10%"
+                  />
+                </Show>
+                <Portal>
+                  {currentDraggingTabId() === tabId && (
+                    <Stack
+                      direction="row"
+                      borderBottomColor="accent.emphasized"
+                      background="bg.default"
+                      style={{
+                        position: "absolute",
+                        top: `${currentMousePointerPosition().y}px`,
+                        left: `${currentMousePointerPosition().x}px`,
+                        "padding-left": "0.5rem",
+                        "padding-bottom": "0.5rem",
+                        "pointer-events": "none",
+                        "z-index": "15",
+                        "border-bottom-width": "2px",
                       }}
                     >
-                      <Editable.Area>
-                        <Editable.Input width="10rem" />
-                        <Editable.Preview width="100%" />
-                      </Editable.Area>
-                    </Editable.Root>
-                    <div class="cancel">
-                      <IconButton
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => {
-                          props.onDeleteTab?.(tabIndex());
-                        }}
-                        borderRadius="3rem"
+                      <Text
+                        fontWeight="bold"
+                        color="fg.default"
+                        paddingTop="0.5rem"
+                        whiteSpace="nowrap"
                       >
+                        {parseTabName(tabName, filePath)}
+                      </Text>
+                      <IconButton variant="ghost" size="sm" borderRadius="3rem">
                         <IconX />
                       </IconButton>
-                    </div>
-                  </Tabs.Trigger>
-                  <Show
-                    when={
-                      reorderTabIndex() === tabIndex() &&
-                      currentDraggingTabId().length > 0
-                    }
-                  >
-                    <Stack
-                      width="100%"
-                      height="100% "
-                      position="absolute"
-                      top="0"
-                      background="fg.default"
-                      opacity="10%"
-                    />
-                  </Show>
-                  <Portal>
-                    {currentDraggingTabId() === tabId && (
-                      <Stack
-                        direction="row"
-                        borderBottomColor="accent.emphasized"
-                        background="bg.default"
-                        style={{
-                          position: "absolute",
-                          top: `${currentMousePointerPosition().y}px`,
-                          left: `${currentMousePointerPosition().x}px`,
-                          "padding-left": "0.5rem",
-                          "padding-bottom": "0.5rem",
-                          "pointer-events": "none",
-                          "z-index": "15",
-                          "border-bottom-width": "2px",
-                        }}
-                      >
-                        <Text
-                          fontWeight="bold"
-                          color="fg.default"
-                          paddingTop="0.5rem"
-                          whiteSpace="nowrap"
-                        >
-                          {parseTabName(tabName, filePath)}
-                        </Text>
-                        <IconButton
-                          variant="ghost"
-                          size="sm"
-                          borderRadius="3rem"
-                        >
-                          <IconX />
-                        </IconButton>
-                      </Stack>
-                    )}
-                  </Portal>
-                </div>
-              );
-            }}
-          </For>
-          <IconButton
-            variant={"ghost"}
-            borderRadius={"3rem"}
-            onClick={() => {
-              props.onCreateTab?.();
-            }}
-            marginTop={"0.2rem"}
-          >
-            <IconPlus />
-          </IconButton>
-        </Show>
+                    </Stack>
+                  )}
+                </Portal>
+              </div>
+            );
+          }}
+        </For>
+        <IconButton
+          variant={"ghost"}
+          borderRadius={"3rem"}
+          onClick={() => {
+            props.onCreateTab?.();
+          }}
+          marginTop={"0.2rem"}
+        >
+          <IconPlus />
+        </IconButton>
       </Tabs.List>
     </div>
   );

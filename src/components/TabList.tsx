@@ -1,9 +1,10 @@
-import { JSX } from "solid-js";
+import { createSignal, JSX, Show } from "solid-js";
 import { createStore } from "solid-js/store";
 import { Tabs } from "~/components/ui/tabs.tsx";
 import { Tab } from "~/components/Tab.tsx";
 import { For } from "solid-js/web";
 import { open } from "@tauri-apps/plugin-dialog";
+import { LogViewerTabPageContent } from "~/pages/LogViewer/LogViewerTabPageContent";
 
 export type tabListProps = JSX.HTMLAttributes<HTMLDivElement> & {
   tabListContext: object;
@@ -13,6 +14,7 @@ export type tabListProps = JSX.HTMLAttributes<HTMLDivElement> & {
 export function TabList(props: tabListProps) {
   const [tabListCtx, setTabListCtx] = createStore(props.tabListContext);
   if (!("tabContext" in tabListCtx)) return;
+  const [render, setRender] = createSignal<boolean>(true);
 
   const parseFocusedTab = (focusedTab: unknown): string => {
     const parseFocusedTab = focusedTab ? focusedTab : "";
@@ -109,84 +111,91 @@ export function TabList(props: tabListProps) {
         setTabListCtx("focusedTab", tabDetails.value);
       }}
     >
-      <Tab
-        tabContext={
-          tabListCtx["tabContext" as keyof typeof props.tabListContext]
-        }
-        focusedTab={parseFocusedTab(
-          tabListCtx["focusedTab" as keyof typeof tabListCtx],
-        )}
-        onCreateTab={async () => {
-          const newTabInfo = await openFileDialog();
-          if (!newTabInfo) {
-            /*toaster.create({
+      <Show when={render()}>
+        <Tab
+          style={{
+            height: "3rem",
+          }}
+          tabContext={
+            tabListCtx["tabContext" as keyof typeof props.tabListContext]
+          }
+          focusedTab={parseFocusedTab(
+            tabListCtx["focusedTab" as keyof typeof tabListCtx],
+          )}
+          onCreateTab={async () => {
+            const newTabInfo = await openFileDialog();
+            if (!newTabInfo) {
+              /*toaster.create({
               title: "Invalid File",
               description: "The file is invalid.",
               type: "error",
               });*/
-            return;
-          }
-          const newTab = {
-            id: newTabInfo.id,
-            filePath: newTabInfo.filePath,
-            plotSplitIndex: [],
-            plotContext: [],
-            tabName: "",
-            plotZoomState: [0, 0],
-          };
-          if (
-            !("tabContext" in tabListCtx) ||
-            typeof tabListCtx.tabContext !== "object"
-          )
-            return;
-          //@ts-ignore type check
-          setTabListCtx("tabContext", [...tabListCtx.tabContext, newTab]);
-          if (!("focusedTab" in tabListCtx)) {
-            setTabListCtx({ ...tabListCtx, focusedTab: newTab.id });
-          } else {
+              return;
+            }
+            const newTab = {
+              id: newTabInfo.id,
+              filePath: newTabInfo.filePath,
+              plotSplitIndex: [],
+              plotContext: [],
+              tabName: "",
+              plotZoomState: [0, 0],
+            };
+            if (
+              !("tabContext" in tabListCtx) ||
+              typeof tabListCtx.tabContext !== "object"
+            )
+              return;
             //@ts-ignore type check
-            setTabListCtx("focusedTab", newTab.id);
-          }
-        }}
-        onDeleteTab={(tabIndex) => {
-          const nextFocusTabId = getNextFocusTabId(
-            tabIndex,
-            parseFocusedTab(
-              tabListCtx["focusedTab" as keyof typeof tabListCtx],
-            ),
-            tabListCtx,
-          );
-          deleteTab(tabIndex, tabListCtx, nextFocusTabId);
-        }}
-        onTabReorder={(updateList) => {
-          if (!("tabContext" in tabListCtx)) return;
-          //@ts-ignore type check
-          setTabListCtx("tabContext", updateList);
-        }}
-        onFocusTabChange={(tabId) => {
-          if (!("focusedTab" in tabListCtx)) return;
-          //@ts-ignore type checked on above
-          setTabListCtx("focusedTab", tabId);
-        }}
-        onTabNameChange={(tabIndex, newName) => {
-          if (
-            !("tabContext" in tabListCtx) ||
-            !Array.isArray(tabListCtx.tabContext) ||
-            typeof tabListCtx.tabContext !== "object"
-          )
-            return;
+            setTabListCtx("tabContext", [...tabListCtx.tabContext, newTab]);
+            if (!("focusedTab" in tabListCtx)) {
+              setTabListCtx({ ...tabListCtx, focusedTab: newTab.id });
+            } else {
+              //@ts-ignore type check
+              setTabListCtx("focusedTab", newTab.id);
+            }
+          }}
+          onDeleteTab={(tabIndex) => {
+            const nextFocusTabId = getNextFocusTabId(
+              tabIndex,
+              parseFocusedTab(
+                tabListCtx["focusedTab" as keyof typeof tabListCtx],
+              ),
+              tabListCtx,
+            );
+            deleteTab(tabIndex, tabListCtx, nextFocusTabId);
+          }}
+          onTabReorder={(updateList) => {
+            if (!("tabContext" in tabListCtx)) return;
+            //@ts-ignore type check
+            setTabListCtx("tabContext", updateList);
+          }}
+          onFocusTabChange={(tabId) => {
+            if (!("focusedTab" in tabListCtx)) return;
+            //@ts-ignore type checked on above
+            setTabListCtx("focusedTab", tabId);
+          }}
+          onTabNameChange={(tabIndex, newName) => {
+            if (
+              !("tabContext" in tabListCtx) ||
+              !Array.isArray(tabListCtx.tabContext) ||
+              typeof tabListCtx.tabContext !== "object"
+            )
+              return;
 
-          console.log(tabListCtx.tabContext[tabIndex]);
-
-          if (
-            !("tabName" in tabListCtx.tabContext[tabIndex]) ||
-            typeof tabListCtx.tabContext[tabIndex].tabName !== "string"
-          )
-            return;
-          //@ts-ignore type checked in above
-          setTabListCtx("tabContext", tabIndex, "tabName", newName);
-        }}
-      />
+            if (
+              !("tabName" in tabListCtx.tabContext[tabIndex]) ||
+              typeof tabListCtx.tabContext[tabIndex].tabName !== "string"
+            )
+              return;
+            //@ts-ignore type checked in above
+            setTabListCtx("tabContext", tabIndex, "tabName", newName);
+          }}
+          onRefresh={() => {
+            setRender(false);
+            setRender(true);
+          }}
+        />
+      </Show>
       <For
         each={
           typeof tabListCtx.tabContext === "object" &&
@@ -197,10 +206,28 @@ export function TabList(props: tabListProps) {
       >
         {(tab) => {
           const tabId = tab["id" as keyof typeof tab];
+          const plotContext = tab["plotContext" as keyof typeof tab];
+          const plotZoomState = tab["plotZoomState" as keyof typeof tab];
+          const filePath = tab["filePath" as keyof typeof tab];
+          const plotSplitState = tab["plotSplitIndex" as keyof typeof tab];
+
           return (
-            <Tabs.Content value={tabId}>
-              Know {tabId}? Check out Solid!
-            </Tabs.Content>
+            <Show when={render()}>
+              <Tabs.Content
+                value={tabId}
+                width="100%"
+                height={`calc(100% - 3rem)`}
+                overflowY="auto"
+              >
+                <LogViewerTabPageContent
+                  tabId={tabId}
+                  plotContext={plotContext}
+                  xRange={plotZoomState}
+                  filePath={filePath}
+                  splitPlotIndex={plotSplitState}
+                />
+              </Tabs.Content>
+            </Show>
           );
         }}
       </For>
