@@ -25,6 +25,8 @@ import {
   IconEyeOff,
   IconLocation,
   IconLocationOff,
+  IconSearch,
+  IconX,
   IconZoomInArea,
   IconZoomReset,
 } from "@tabler/icons-solidjs";
@@ -33,6 +35,7 @@ import { Legend, LegendStroke } from "./Plot/Legend";
 import { Tooltip } from "./ui/tooltip";
 import { Text } from "./ui/text";
 import { Portal } from "solid-js/web";
+import uFuzzy from "@leeoniya/ufuzzy";
 
 export type PlotProps = JSX.HTMLAttributes<HTMLDivElement> & {
   id: string;
@@ -443,7 +446,6 @@ export function Plot(props: PlotProps) {
       resize.observe(document.getElementById(props.id)!);
     });
   });
-
   createEffect(() => {
     if (globalState.theme !== theme) {
       theme = globalState.theme;
@@ -469,6 +471,24 @@ export function Plot(props: PlotProps) {
   const [isAllVisible, setIsAllVisible] = createSignal<boolean>(
     getContext().visible ? getContext().visible.every((b) => b) : true,
   );
+
+  const [searchResults, setSearchResults] = createSignal<string[]>(
+    props.header,
+  );
+  const [searchInput, setSearchInput] = createSignal<string>("");
+
+  createEffect(() => {
+    const searchInputValue = searchInput();
+    const parseSearchResults: string[] = fuzzySearch(
+      searchInputValue,
+      props.header,
+    );
+    if (searchInputValue.length === 0) {
+      setSearchResults(props.header);
+    } else {
+      setSearchResults(parseSearchResults);
+    }
+  });
 
   return (
     <>
@@ -498,6 +518,7 @@ export function Plot(props: PlotProps) {
             float: "left",
             height: "2.5rem",
             "margin-top": "0.5rem",
+            "margin-bottom": "0.8rem",
           }}
         >
           <Tooltip.Root>
@@ -646,14 +667,54 @@ export function Plot(props: PlotProps) {
             </Tooltip.Positioner>
           </Tooltip.Root>
         </Stack>
+        <Stack
+          width="14rem"
+          direction="row"
+          borderWidth="1px"
+          borderRadius="1rem"
+          paddingLeft="0.5rem"
+          padding="0.3rem"
+          gap="2"
+        >
+          <IconSearch />
+          <input
+            value={searchInput()}
+            onInput={(e) => {
+              setSearchInput(e.target.value);
+            }}
+            width="10rem"
+            placeholder="Search series"
+            style={{
+              border: "none",
+              outline: "none",
+              "white-space": "nowrap",
+              overflow: "hidden",
+              display: "block",
+              "text-overflow": "ellipsis",
+            }}
+            height="2.5rem"
+          />
+          <IconButton
+            variant="ghost"
+            onClick={() => setSearchInput("")}
+            padding="0"
+            size="sm"
+            width="0.5rem"
+            height="1.5rem"
+            borderRadius="3rem"
+          >
+            <IconX />
+          </IconButton>
+        </Stack>
         <Show when={render()}>
           <Stack
+            id="legend_container"
             style={{
               "margin-top": "1rem",
               "padding-bottom": "0.5rem",
               float: "left",
               width: "15rem",
-              "max-height": "calc(100% - 1.5rem - 4rem)",
+              "max-height": "calc(100% - 1.5rem - 8rem)",
               "overflow-x": "auto",
               "overflow-y": "auto",
             }}
@@ -691,61 +752,65 @@ export function Plot(props: PlotProps) {
             </Stack>
             <For each={props.header}>
               {(header, index) => (
-                <Legend
-                  plot={plot!}
-                  group={group()}
-                  series={header}
-                  cursorIdx={props.cursorIdx}
-                  showSelectCheckBox={showLegendCheckBox()}
-                  selected={getContext().selected[index()]}
-                  onSelectChange={(isChecked) => {
-                    setContext()("selected", index(), isChecked);
-                    props.onContextChange?.(getContext());
-                  }}
-                  visible={getContext().visible[index()]}
-                  onVisibleChange={(new_visible) => {
-                    setContext()("visible", index(), new_visible);
-                    // Index must add 1 to account for X-axis "Cycle" series
-                    plot.setSeries(index() + 1, {
-                      show: new_visible,
-                    });
-                    props.onContextChange?.(getContext());
-                  }}
-                  color={getContext().color[index()]}
-                  onColorChange={(new_color) => {
-                    setContext()("color", index(), new_color);
-                    props.onContextChange?.(getContext());
-                    plot.redraw();
-                  }}
-                  palette={getContext().palette}
-                  width="min-content"
-                  stroke={getContext().style[index()]}
-                  onStrokeChange={(new_style) => {
-                    setContext()("style", index(), new_style);
-                    plot.delSeries(index() + 1);
-                    const config = {
-                      stroke: getContext().color[index()],
-                      label: header,
-                      ...(getContext().style[index()] === LegendStroke.Dash && {
-                        dash: [10, 5],
-                      }),
-                      ...(getContext().style[index()] === LegendStroke.Dot && {
-                        dash: [0, 5],
-                        points: {
-                          show: true,
-                          ...(dotFilter().length !== 0 && {
-                            filter: checkDotFilter,
-                          }),
-                        },
-                      }),
-                    };
-                    plot.addSeries(config, index() + 1);
-                    props.onContextChange?.(getContext());
-                    setTimeout(() => {
+                <Show when={searchResults().includes(header)}>
+                  <Legend
+                    plot={plot!}
+                    group={group()}
+                    series={header}
+                    cursorIdx={props.cursorIdx}
+                    showSelectCheckBox={showLegendCheckBox()}
+                    selected={getContext().selected[index()]}
+                    onSelectChange={(isChecked) => {
+                      setContext()("selected", index(), isChecked);
+                      props.onContextChange?.(getContext());
+                    }}
+                    visible={getContext().visible[index()]}
+                    onVisibleChange={(new_visible) => {
+                      setContext()("visible", index(), new_visible);
+                      // Index must add 1 to account for X-axis "Cycle" series
+                      plot.setSeries(index() + 1, {
+                        show: new_visible,
+                      });
+                      props.onContextChange?.(getContext());
+                    }}
+                    color={getContext().color[index()]}
+                    onColorChange={(new_color) => {
+                      setContext()("color", index(), new_color);
+                      props.onContextChange?.(getContext());
                       plot.redraw();
-                    }, 200);
-                  }}
-                />
+                    }}
+                    palette={getContext().palette}
+                    width="min-content"
+                    stroke={getContext().style[index()]}
+                    onStrokeChange={(new_style) => {
+                      setContext()("style", index(), new_style);
+                      plot.delSeries(index() + 1);
+                      const config = {
+                        stroke: getContext().color[index()],
+                        label: header,
+                        ...(getContext().style[index()] ===
+                            LegendStroke.Dash && {
+                          dash: [10, 5],
+                        }),
+                        ...(getContext().style[index()] ===
+                            LegendStroke.Dot && {
+                          dash: [0, 5],
+                          points: {
+                            show: true,
+                            ...(dotFilter().length !== 0 && {
+                              filter: checkDotFilter,
+                            }),
+                          },
+                        }),
+                      };
+                      plot.addSeries(config, index() + 1);
+                      props.onContextChange?.(getContext());
+                      setTimeout(() => {
+                        plot.redraw();
+                      }, 200);
+                    }}
+                  />
+                </Show>
               )}
             </For>
           </Stack>
@@ -861,3 +926,21 @@ const kelly_colors_hex = [
   "#F13A13", // Vivid Reddish Orange
   "#232C16", // Dark Olive Green
 ];
+
+function fuzzySearch(searchInputValue: string, headers: string[]): string[] {
+  const uf = new uFuzzy({});
+  // Pre-filter
+  const idxs = uf.filter(headers, searchInputValue);
+
+  if (idxs != null && idxs.length > 0) {
+    const info = uf.info(idxs, headers, searchInputValue);
+    const order = uf.sort(info, headers, searchInputValue);
+    const result = [];
+    for (let i = 0; i < order.length; i++) {
+      result.push(headers[idxs[i]]);
+    }
+    return result;
+  } else {
+    return [];
+  }
+}
