@@ -5,6 +5,7 @@ import { Splitter } from "~/components/ui/splitter.tsx";
 import { Panel } from "~/components/Panel.tsx";
 import { tabLocation } from "./TabList.tsx";
 import { createStore } from "solid-js/store";
+import { createEffect, on, onMount } from "solid-js";
 
 export type panelContext = {
   id: string;
@@ -21,33 +22,77 @@ export type panelLayoutProps = JSX.HTMLAttributes<HTMLDivElement> & {
 export function PanelLayout(props: panelLayoutProps) {
   const [panels, setPanels] = createStore<object[]>(props.panelContext);
   const [panelSize, setPanelSize] = createStore<panelContext[]>(props.size);
+
+  onMount(() => {
+    if (panels.length === 0) {
+      const uuid = getCryptoUUID();
+      setPanels([
+        {
+          id: uuid,
+          tabContext: [],
+        },
+      ]);
+      setPanelSize([{ id: uuid, size: 100 }]);
+    }
+  });
+
+  createEffect(
+    on(
+      () => panels.length,
+      () => {
+        const updatePanelSize: panelContext[] = panels.map((panel) => {
+          return {
+            id: panel["id" as keyof typeof panel],
+            size: 100 / panels.length,
+          };
+        });
+        setPanelSize(updatePanelSize);
+      },
+      { defer: true },
+    ),
+  );
+
   const splitTab = (
     location: tabLocation,
     index: number,
     draggedTab: object,
     panels: object[],
-  ): { updatePanel: object[]; updateSize: panelContext[] } => {
+  ): object[] => {
     const panelIndex = location === "rightSplitter" ? index + 1 : index;
     const uuid = getCryptoUUID();
-    const newPanel = [
-      {
-        id: uuid,
-        tabContext: draggedTab,
-        focusedTab: draggedTab["id" as keyof typeof draggedTab],
-      },
-    ];
+    const parseDraggedTab: object = Array.isArray(draggedTab)
+      ? draggedTab[0]
+      : draggedTab;
+    const newPanel = {
+      id: uuid,
+      tabContext: draggedTab,
+      focusedTab: parseDraggedTab["id" as keyof typeof parseDraggedTab],
+    };
     const deleteDraggedTab = panels.map((panel, i) => {
       if (index !== i) return panel;
       else {
-        const tabContext: object[] = ["tabContext" as keyof typeof panel];
+        const tabContext: object[] = panel["tabContext" as keyof typeof panel];
+        const deleteTabIndex = tabContext
+          .map((tab) => {
+            return tab["id" as keyof typeof tab];
+          })
+          .indexOf(parseDraggedTab["id" as keyof typeof parseDraggedTab]);
+        const updateTabContext: object[] = tabContext.filter(
+          (_, i) => i !== deleteTabIndex,
+        );
+        const nextFocusTab: object =
+          updateTabContext[
+            deleteTabIndex >= updateTabContext.length
+              ? deleteTabIndex - 1
+              : deleteTabIndex
+          ];
+        const nextFocusTabId: string =
+          nextFocusTab["id" as keyof typeof nextFocusTab];
+
         return {
           id: panel["id" as keyof typeof panel],
-          tabContext: tabContext.filter(
-            (ctx) =>
-              ctx["id" as keyof typeof ctx] !==
-              draggedTab["id" as keyof typeof draggedTab],
-          ),
-          focusedTab: draggedTab["id" as keyof typeof draggedTab],
+          tabContext: updateTabContext,
+          focusedTab: nextFocusTabId,
         };
       }
     });
@@ -57,22 +102,14 @@ export function PanelLayout(props: panelLayoutProps) {
       ...deleteDraggedTab.slice(panelIndex),
     ];
 
-    const updateSizes = updatePanels.map((panel) => {
-      const id = panel["id" as keyof typeof panel];
-      const size = 100 / updatePanels.length;
-      return {
-        id: id,
-        size: size,
-      };
-    });
-    console.log(newPanel);
-    return { updatePanel: updatePanels, updateSize: updateSizes };
+    return updatePanels;
   };
 
   function getCryptoUUID(): string {
     const uuid: string = crypto.randomUUID();
     return uuid;
   }
+
   return (
     <>
       <Splitter.Root
@@ -125,8 +162,7 @@ export function PanelLayout(props: panelLayoutProps) {
                           draggedTab,
                           props.panelContext,
                         );
-                        setPanels(updateTabs.updatePanel);
-                        setPanelSize(updateTabs.updateSize);
+                        setPanels(updateTabs);
                       }
                     }}
                   />
