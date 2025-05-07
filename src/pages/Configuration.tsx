@@ -206,7 +206,6 @@ function Configuration() {
           width: `100%`,
           "justify-content": "center",
           display: "flex",
-          //"padding-left": "6rem",
         }}
       >
         <Toast.Toaster toaster={toaster}>
@@ -220,7 +219,7 @@ function Configuration() {
             </Toast.Root>
           )}
         </Toast.Toaster>
-        <Stack width="40%" height="100%">
+        <Stack width="40%" height="100%" minWidth="30rem">
           <Show when={!isFormOpen()}>
             <div
               style={{

@@ -330,6 +330,7 @@ export function ConfigForm(props: ConfigFormProps) {
           }}
           fontWeight="bold"
           fontSize="2xl"
+          width={`calc(100% - 8rem)`}
         >
           <Editable.Area>
             <Editable.Input width="90%" />
@@ -346,7 +347,9 @@ export function ConfigForm(props: ConfigFormProps) {
         </Editable.Root>
         <Menu.Root>
           <Menu.Trigger>
-            <Button variant="outline">Save</Button>
+            <Button variant="outline" width="4rem">
+              Save
+            </Button>
           </Menu.Trigger>
           <Menu.Positioner>
             <Menu.Content width="8rem">
@@ -377,6 +380,7 @@ export function ConfigForm(props: ConfigFormProps) {
           variant="ghost"
           borderRadius="3rem"
           onClick={() => props.onCancel?.()}
+          width="3rem"
         >
           <IconX />
         </IconButton>
