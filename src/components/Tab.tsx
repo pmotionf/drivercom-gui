@@ -20,6 +20,7 @@ export type tabProps = JSX.HTMLAttributes<HTMLDivElement> & {
   onFocusTabChange?: (tabId: string) => void;
   onTabReorder?: (updateTabList: object[]) => void;
   onTabNameChange?: (tabIndex: number, changedName: string) => void;
+  onTabDragging?: (clientX: number, clientY: number, tabId: string) => void;
 };
 
 export function Tab(props: tabProps) {
@@ -115,7 +116,7 @@ export function Tab(props: tabProps) {
             const filePath = tab["filePath" as keyof typeof tab];
             return (
               <div
-                id={tabId}
+                id={`${tabId}`}
                 style={{
                   opacity: currentDraggingTabId() === tabId ? "0%" : "100%",
                   position: "relative",
@@ -155,6 +156,12 @@ export function Tab(props: tabProps) {
                           data.event.clientY - mousePositionInsideComponent().y,
                       };
                     });
+
+                    props.onTabDragging?.(
+                      data.event.clientX,
+                      data.event.clientY,
+                      tabId,
+                    );
                   },
                   onDragEnd: (data) => {
                     if (reorderTabIndex() !== null) {

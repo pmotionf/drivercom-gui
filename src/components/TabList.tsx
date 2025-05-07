@@ -4,16 +4,27 @@ import { Tabs } from "~/components/ui/tabs.tsx";
 import { Tab } from "~/components/Tab.tsx";
 import { For } from "solid-js/web";
 import { open } from "@tauri-apps/plugin-dialog";
-import { LogViewerTabPageContent } from "~/pages/LogViewer/LogViewerTabPageContent";
+import { LogViewerTabPageContent } from "~/pages/LogViewer/LogViewerTabPageContent.tsx";
+
+export type tabLocation =
+  | "none"
+  | "rightSplitter"
+  | "leftSplitter"
+  | "otherPanel"
+  | "tabList"
+  | "centerSplitter";
 
 export type tabListProps = JSX.HTMLAttributes<HTMLDivElement> & {
+  id: string;
   tabListContext: object;
-  onCreateTab?: () => void;
+  onDraggingTab?: (location: tabLocation, draggedTab: object) => void;
+  onDragEnd?: () => void;
 };
 
 export function TabList(props: tabListProps) {
   const [tabListCtx, setTabListCtx] = createStore(props.tabListContext);
   if (!("tabContext" in tabListCtx)) return;
+  console.log("TabLIst");
   const [render, setRender] = createSignal<boolean>(true);
 
   const parseFocusedTab = (focusedTab: unknown): string => {
@@ -98,8 +109,44 @@ export function TabList(props: tabListProps) {
     return uuid;
   }
 
+  const parseTabLocation = (
+    clientX: number,
+    clientY: number,
+    tabId: string,
+    tabListId: string,
+  ): tabLocation => {
+    const tabListContainerStart =
+      document.getElementById(tabListId)!.offsetLeft;
+    const tabListContainerWidth =
+      document.getElementById(tabListId)!.offsetWidth;
+    const tabListContainerWidthQuarter = tabListContainerWidth * 0.25;
+    const tabListContainerEnd = tabListContainerStart + tabListContainerWidth;
+
+    const tab = document.getElementById(tabId);
+    const tabHeight = tab!.offsetHeight;
+
+    if (clientX >= tabListContainerEnd) {
+      return "otherPanel";
+    } else if (clientX <= tabListContainerStart) {
+      return "otherPanel";
+    } else {
+      if (clientY > tabHeight) {
+        return clientX > tabListContainerStart &&
+          clientX < tabListContainerWidthQuarter + tabListContainerStart
+          ? "leftSplitter"
+          : clientX >= tabListContainerWidthQuarter + tabListContainerStart &&
+              clientX <= tabListContainerEnd - tabListContainerWidthQuarter
+            ? "centerSplitter"
+            : "rightSplitter";
+      } else {
+        return "tabList";
+      }
+    }
+  };
+
   return (
     <Tabs.Root
+      id={props.id}
       width="100%"
       height="100%"
       value={parseFocusedTab(
@@ -191,8 +238,28 @@ export function TabList(props: tabListProps) {
             setTabListCtx("tabContext", tabIndex, "tabName", newName);
           }}
           onRefresh={() => {
+            /*This is needed for UI */
             setRender(false);
             setRender(true);
+            props.onDragEnd?.();
+          }}
+          onTabDragging={(clientX, clientY, tabId) => {
+            const tabListId = `tabs:${parseFocusedTab(
+              tabListCtx["id" as keyof typeof tabListCtx],
+            )}`;
+            const tabLocation = parseTabLocation(
+              clientX,
+              clientY,
+              tabId,
+              tabListId,
+            );
+
+            const tabList: object[] =
+              tabListCtx["tabContext" as keyof typeof props.tabListContext];
+            const draggedTab = tabList.filter(
+              (tab) => tab["id" as keyof typeof tab] === tabId,
+            );
+            props.onDraggingTab?.(tabLocation, draggedTab);
           }}
         />
       </Show>
