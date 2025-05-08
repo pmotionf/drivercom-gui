@@ -5,6 +5,17 @@ import { Tab } from "~/components/Tab.tsx";
 import { For } from "solid-js/web";
 import { open } from "@tauri-apps/plugin-dialog";
 import { LogViewerTabPageContent } from "~/pages/LogViewer/LogViewerTabPageContent.tsx";
+import { PlotContext } from "./Plot.tsx";
+import { panelContext } from "./PanelLayout.tsx";
+
+export type tabContext = {
+  id: string;
+  tabName?: string;
+  filePath?: string;
+  plotSplitIndex?: number[][];
+  plotContext?: PlotContext[];
+  plotZoomState?: [number, number];
+};
 
 export type tabLocation =
   | "none"
@@ -15,22 +26,15 @@ export type tabLocation =
   | "centerSplitter";
 
 export type tabListProps = JSX.HTMLAttributes<HTMLDivElement> & {
-  id: string;
-  tabListContext: object;
-  onDraggingTab?: (location: tabLocation, draggedTab: object) => void;
+  tabListContext: panelContext;
+  onDraggingTab?: (location: tabLocation, draggedTab: tabContext) => void;
   onDragEnd?: () => void;
 };
 
 export function TabList(props: tabListProps) {
   const [tabListCtx, setTabListCtx] = createStore(props.tabListContext);
   if (!("tabContext" in tabListCtx)) return;
-  console.log("TabLIst");
   const [render, setRender] = createSignal<boolean>(true);
-
-  const parseFocusedTab = (focusedTab: unknown): string => {
-    const parseFocusedTab = focusedTab ? focusedTab : "";
-    return typeof parseFocusedTab === "string" ? parseFocusedTab : "";
-  };
 
   const deleteTab = (
     tabIndex: number,
@@ -60,18 +64,13 @@ export function TabList(props: tabListProps) {
   const getNextFocusTabId = (
     deleteTabIndex: number,
     focusedTab: string,
-    tabListCtx: object,
+    tabListCtx: panelContext,
   ): string => {
-    if (!("tabContext" in tabListCtx)) return "";
     const tabContext = tabListCtx.tabContext;
-    if (!Array.isArray(tabContext) || typeof tabContext !== "object") return "";
-    const parseTabContext: object[] = tabContext;
-
-    const tabIdList: string[] = parseTabContext.map((tabCtx) => {
-      if ("id" in tabCtx) {
-        return typeof tabCtx.id === "string" ? tabCtx.id : "";
-      } else return "";
+    const tabIdList: string[] = tabContext.map((tabCtx) => {
+      return tabCtx.id ? tabCtx.id : "";
     });
+
     const focusedTabIndex = tabIdList.indexOf(focusedTab);
     const nextFocusedTabIndex =
       deleteTabIndex !== focusedTabIndex
@@ -146,15 +145,11 @@ export function TabList(props: tabListProps) {
 
   return (
     <Tabs.Root
-      id={props.id}
+      id={props.tabListContext.id}
       width="100%"
       height="100%"
-      value={parseFocusedTab(
-        tabListCtx["focusedTab" as keyof typeof tabListCtx],
-      )}
+      value={tabListCtx.focusedTab}
       onValueChange={(tabDetails: { value: string }) => {
-        if (!("focusedTab" in tabListCtx)) return;
-        //@ts-ignore check above
         setTabListCtx("focusedTab", tabDetails.value);
       }}
     >
@@ -163,12 +158,8 @@ export function TabList(props: tabListProps) {
           style={{
             height: "3rem",
           }}
-          tabContext={
-            tabListCtx["tabContext" as keyof typeof props.tabListContext]
-          }
-          focusedTab={parseFocusedTab(
-            tabListCtx["focusedTab" as keyof typeof tabListCtx],
-          )}
+          tabContext={tabListCtx.tabContext}
+          focusedTab={tabListCtx.focusedTab ? tabListCtx.focusedTab : ""}
           onCreateTab={async () => {
             const newTabInfo = await openFileDialog();
             if (!newTabInfo) {
@@ -179,7 +170,7 @@ export function TabList(props: tabListProps) {
               });*/
               return;
             }
-            const newTab = {
+            const newTab: tabContext = {
               id: newTabInfo.id,
               filePath: newTabInfo.filePath,
               plotSplitIndex: [],
@@ -187,54 +178,25 @@ export function TabList(props: tabListProps) {
               tabName: "",
               plotZoomState: [0, 0],
             };
-            if (
-              !("tabContext" in tabListCtx) ||
-              typeof tabListCtx.tabContext !== "object"
-            )
-              return;
-            //@ts-ignore type check
+
             setTabListCtx("tabContext", [...tabListCtx.tabContext, newTab]);
-            if (!("focusedTab" in tabListCtx)) {
-              setTabListCtx({ ...tabListCtx, focusedTab: newTab.id });
-            } else {
-              //@ts-ignore type check
-              setTabListCtx("focusedTab", newTab.id);
-            }
+            setTabListCtx("focusedTab", newTab.id);
           }}
           onDeleteTab={(tabIndex) => {
             const nextFocusTabId = getNextFocusTabId(
               tabIndex,
-              parseFocusedTab(
-                tabListCtx["focusedTab" as keyof typeof tabListCtx],
-              ),
+              tabListCtx.focusedTab ? tabListCtx.focusedTab : "",
               tabListCtx,
             );
             deleteTab(tabIndex, tabListCtx, nextFocusTabId);
           }}
           onTabReorder={(updateList) => {
-            if (!("tabContext" in tabListCtx)) return;
-            //@ts-ignore type check
             setTabListCtx("tabContext", updateList);
           }}
           onFocusTabChange={(tabId) => {
-            if (!("focusedTab" in tabListCtx)) return;
-            //@ts-ignore type checked on above
             setTabListCtx("focusedTab", tabId);
           }}
           onTabNameChange={(tabIndex, newName) => {
-            if (
-              !("tabContext" in tabListCtx) ||
-              !Array.isArray(tabListCtx.tabContext) ||
-              typeof tabListCtx.tabContext !== "object"
-            )
-              return;
-
-            if (
-              !("tabName" in tabListCtx.tabContext[tabIndex]) ||
-              typeof tabListCtx.tabContext[tabIndex].tabName !== "string"
-            )
-              return;
-            //@ts-ignore type checked in above
             setTabListCtx("tabContext", tabIndex, "tabName", newName);
           }}
           onRefresh={() => {
@@ -244,9 +206,7 @@ export function TabList(props: tabListProps) {
             props.onDragEnd?.();
           }}
           onTabDragging={(clientX, clientY, tabId) => {
-            const tabListId = `tabs:${parseFocusedTab(
-              tabListCtx["id" as keyof typeof tabListCtx],
-            )}`;
+            const tabListId = `tabs:${tabListCtx.id}`;
             const tabLocation = parseTabLocation(
               clientX,
               clientY,
@@ -254,11 +214,8 @@ export function TabList(props: tabListProps) {
               tabListId,
             );
 
-            const tabList: object[] =
-              tabListCtx["tabContext" as keyof typeof props.tabListContext];
-            const draggedTab = tabList.filter(
-              (tab) => tab["id" as keyof typeof tab] === tabId,
-            );
+            const tabList = tabListCtx.tabContext;
+            const draggedTab = tabList.filter((tab) => tab.id === tabId)[0];
             props.onDraggingTab?.(tabLocation, draggedTab);
           }}
         />
@@ -272,26 +229,20 @@ export function TabList(props: tabListProps) {
         }
       >
         {(tab) => {
-          const tabId = tab["id" as keyof typeof tab];
-          const plotContext = tab["plotContext" as keyof typeof tab];
-          const plotZoomState = tab["plotZoomState" as keyof typeof tab];
-          const filePath = tab["filePath" as keyof typeof tab];
-          const plotSplitState = tab["plotSplitIndex" as keyof typeof tab];
-
           return (
             <Show when={render()}>
               <Tabs.Content
-                value={tabId}
+                value={tab.id}
                 width="100%"
                 height={`calc(100% - 3rem)`}
                 overflowY="auto"
               >
                 <LogViewerTabPageContent
-                  tabId={tabId}
-                  plotContext={plotContext}
-                  xRange={plotZoomState}
-                  filePath={filePath}
-                  splitPlotIndex={plotSplitState}
+                  tabId={tab.id ? tab.id : ""}
+                  plotContext={tab.plotContext ? tab.plotContext : []}
+                  xRange={tab.plotZoomState ? tab.plotZoomState : [0, 0]}
+                  filePath={tab.filePath ? tab.filePath : ""}
+                  splitPlotIndex={tab.plotSplitIndex ? tab.plotSplitIndex : []}
                 />
               </Tabs.Content>
             </Show>

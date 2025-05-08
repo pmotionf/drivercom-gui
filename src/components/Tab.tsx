@@ -10,15 +10,16 @@ import { createDraggable } from "@neodrag/solid";
 import { Stack } from "styled-system/jsx/index.mjs";
 import { createEffect } from "solid-js";
 import { Text } from "./ui/text.tsx";
+import { tabContext } from "./TabList.tsx";
 
 export type tabProps = JSX.HTMLAttributes<HTMLDivElement> & {
-  tabContext: object[];
+  tabContext: tabContext[];
   focusedTab: string;
   onRefresh?: () => void;
   onCreateTab?: () => void;
   onDeleteTab?: (index: number) => void;
   onFocusTabChange?: (tabId: string) => void;
-  onTabReorder?: (updateTabList: object[]) => void;
+  onTabReorder?: (updateTabList: tabContext[]) => void;
   onTabNameChange?: (tabIndex: number, changedName: string) => void;
   onTabDragging?: (clientX: number, clientY: number, tabId: string) => void;
 };
@@ -37,8 +38,8 @@ export function Tab(props: tabProps) {
   const reorderTabsOnDragEnd = (
     currentTabIndex: number,
     reorderIndex: number,
-    tabContext: object[],
-  ): object[] => {
+    tabContext: tabContext[],
+  ): tabContext[] => {
     const fromIndex = currentTabIndex;
     const nextIndex = reorderIndex;
 
@@ -111,16 +112,16 @@ export function Tab(props: tabProps) {
       >
         <For each={props.tabContext}>
           {(tab, tabIndex) => {
-            const tabId = tab["id" as keyof typeof tab];
-            const tabName = tab["tabName" as keyof typeof tab];
-            const filePath = tab["filePath" as keyof typeof tab];
+            //const tabId = tab["id" as keyof typeof tab];
+            //const tabName = tab["tabName" as keyof typeof tab];
+            //const filePath = tab["filePath" as keyof typeof tab];
             return (
               <div
-                id={`${tabId}`}
+                id={`${tab.id}`}
                 style={{
-                  opacity: currentDraggingTabId() === tabId ? "0%" : "100%",
+                  opacity: currentDraggingTabId() === tab.id ? "0%" : "100%",
                   position: "relative",
-                  "z-index": tabId === currentDraggingTabId() ? "0" : "10",
+                  "z-index": tab.id === currentDraggingTabId() ? "0" : "10",
                 }}
                 onWheel={(e) => mouseWheelHandler(e, scrollContainer)}
                 onMouseEnter={() => {
@@ -133,7 +134,7 @@ export function Tab(props: tabProps) {
                   cancel: ".cancel",
                   bounds: "parent",
                   onDragStart: (data) => {
-                    setCurrentDraggingTabId(tabId);
+                    setCurrentDraggingTabId(tab.id);
                     setMousePositionInsideComponent({
                       x: data.event.offsetX,
                       y: data.event.offsetY,
@@ -160,7 +161,7 @@ export function Tab(props: tabProps) {
                     props.onTabDragging?.(
                       data.event.clientX,
                       data.event.clientY,
-                      tabId,
+                      tab.id,
                     );
                   },
                   onDragEnd: (data) => {
@@ -181,34 +182,40 @@ export function Tab(props: tabProps) {
                 }}
               >
                 <Tabs.Trigger
-                  value={tabId}
+                  value={tab.id}
                   paddingRight="0rem"
                   paddingLeft="0.5rem"
                   borderBottomWidth={
                     currentDraggingTabId().length > 0
-                      ? currentDraggingTabId() === tabId
+                      ? currentDraggingTabId() === tab.id
                         ? "3px"
                         : "0px"
-                      : props.focusedTab === tabId
+                      : props.focusedTab === tab.id
                         ? "3px"
                         : "0px"
                   }
                   marginTop={
                     currentDraggingTabId().length > 0
-                      ? currentDraggingTabId() === tabId
+                      ? currentDraggingTabId() === tab.id
                         ? `calc(0.5rem + 1px)`
                         : "0.5rem"
-                      : props.focusedTab === tabId
+                      : props.focusedTab === tab.id
                         ? `calc(0.5rem + 1px)`
                         : `0.5rem`
                   }
                   borderBottomColor="accent.emphasized"
                 >
                   <Editable.Root
-                    defaultValue={parseTabName(tabName, filePath)}
+                    defaultValue={parseTabName(
+                      tab.tabName ? tab.tabName : "",
+                      tab.filePath ? tab.filePath : "",
+                    )}
                     activationMode="dblclick"
                     onValueCommit={(editableDetails: { value: string }) => {
-                      props.onTabNameChange?.(tabIndex, editableDetails.value);
+                      props.onTabNameChange?.(
+                        tabIndex(),
+                        editableDetails.value,
+                      );
                     }}
                   >
                     <Editable.Area>
@@ -245,7 +252,7 @@ export function Tab(props: tabProps) {
                   />
                 </Show>
                 <Portal>
-                  {currentDraggingTabId() === tabId && (
+                  {currentDraggingTabId() === tab.id && (
                     <Stack
                       direction="row"
                       borderBottomColor="accent.emphasized"
@@ -267,7 +274,10 @@ export function Tab(props: tabProps) {
                         paddingTop="0.5rem"
                         whiteSpace="nowrap"
                       >
-                        {parseTabName(tabName, filePath)}
+                        {parseTabName(
+                          tab.tabName ? tab.tabName : "",
+                          tab.filePath ? tab.filePath : "",
+                        )}
                       </Text>
                       <IconButton variant="ghost" size="sm" borderRadius="3rem">
                         <IconX />
@@ -280,12 +290,12 @@ export function Tab(props: tabProps) {
           }}
         </For>
         <IconButton
-          variant={"ghost"}
-          borderRadius={"3rem"}
+          variant="ghost"
+          borderRadius="3rem"
           onClick={() => {
             props.onCreateTab?.();
           }}
-          marginTop={"0.2rem"}
+          marginTop="0.2rem"
         >
           <IconPlus />
         </IconButton>
