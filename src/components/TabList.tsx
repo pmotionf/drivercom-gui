@@ -221,7 +221,7 @@ export function TabList(props: tabListProps) {
             : []
         }
       >
-        {(tab) => {
+        {(tab, tabIndex) => {
           return (
             <Show when={render()}>
               <Tabs.Content
@@ -233,9 +233,28 @@ export function TabList(props: tabListProps) {
                 <LogViewerTabPageContent
                   tabId={tab.id ? tab.id : ""}
                   plotContext={tab.plotContext ? tab.plotContext : []}
+                  onContextChange={(ctx) =>
+                    setTabListCtx("tabContext", tabIndex(), "plotContext", ctx)
+                  }
                   xRange={tab.plotZoomState ? tab.plotZoomState : [0, 0]}
+                  onXRangeChange={(xRange) => {
+                    setTabListCtx(
+                      "tabContext",
+                      tabIndex(),
+                      "plotZoomState",
+                      xRange,
+                    );
+                  }}
                   filePath={tab.filePath ? tab.filePath : ""}
                   splitPlotIndex={tab.plotSplitIndex ? tab.plotSplitIndex : []}
+                  onSplit={(splitIndex) => {
+                    setTabListCtx(
+                      "tabContext",
+                      tabIndex(),
+                      "plotSplitIndex",
+                      splitIndex,
+                    );
+                  }}
                 />
               </Tabs.Content>
             </Show>
