@@ -1,4 +1,4 @@
-import { createEffect, JSX } from "solid-js";
+import { JSX } from "solid-js";
 import { createStore } from "solid-js/store";
 import { tabContext, TabList, tabLocation } from "./TabList.tsx";
 import { createSignal } from "solid-js";
@@ -10,7 +10,11 @@ export type panelProps = JSX.HTMLAttributes<HTMLDivElement> & {
   id: string;
   panelContext: panelContext;
   onFocusTabChange?: (tabId: string) => void;
-  onSplitTab?: (location: tabLocation, draggedTab: tabContext) => void;
+  onSplitTab?: (
+    location: tabLocation,
+    draggedTab: tabContext,
+    clientX: number,
+  ) => void;
 };
 
 export function Panel(props: panelProps) {
@@ -32,10 +36,12 @@ export function Panel(props: panelProps) {
               setDraggedTab(draggedTab);
             }
           }}
-          onDragEnd={() => {
-            if (typeof draggedTab() === "object") {
-              props.onSplitTab?.(currentDraggingTabLocation(), draggedTab()!);
-            }
+          onTabDragEnd={(clientX) => {
+            props.onSplitTab?.(
+              currentDraggingTabLocation(),
+              draggedTab()!,
+              clientX,
+            );
             setCurrentDraggingTabLocation("none");
           }}
         />
