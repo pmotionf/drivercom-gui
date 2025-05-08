@@ -28,13 +28,11 @@ export type tabLocation =
 export type tabListProps = JSX.HTMLAttributes<HTMLDivElement> & {
   tabListContext: panelContext;
   onDraggingTab?: (location: tabLocation, draggedTab: tabContext) => void;
-  onDragEnd?: () => void;
+  onTabDragEnd?: (clientX: number) => void;
 };
 
 export function TabList(props: tabListProps) {
   const [tabListCtx, setTabListCtx] = createStore(props.tabListContext);
-  if (!("tabContext" in tabListCtx)) return;
-  const [render, setRender] = createSignal<boolean>(true);
 
   const deleteTab = (
     tabIndex: number,
@@ -49,14 +47,7 @@ export function TabList(props: tabListProps) {
       const updateTab = [
         ...tabContext.filter((_, index) => index !== tabIndex),
       ];
-
-      setTabListCtx(
-        //@ts-ignore check field above
-        "focusedTab",
-        nextFocusedTabId,
-      );
-
-      //@ts-ignore check field above
+      setTabListCtx("focusedTab", nextFocusedTabId);
       setTabListCtx("tabContext", updateTab);
     }, 200);
   };
@@ -143,6 +134,8 @@ export function TabList(props: tabListProps) {
     }
   };
 
+  const [render, setRender] = createSignal<boolean>(true);
+
   return (
     <Tabs.Root
       id={props.tabListContext.id}
@@ -199,11 +192,11 @@ export function TabList(props: tabListProps) {
           onTabNameChange={(tabIndex, newName) => {
             setTabListCtx("tabContext", tabIndex, "tabName", newName);
           }}
-          onRefresh={() => {
-            /*This is needed for UI */
+          onTabDragEnd={(clientX) => {
+            // Needed for UI
             setRender(false);
             setRender(true);
-            props.onDragEnd?.();
+            props.onTabDragEnd?.(clientX);
           }}
           onTabDragging={(clientX, clientY, tabId) => {
             const tabListId = `tabs:${tabListCtx.id}`;

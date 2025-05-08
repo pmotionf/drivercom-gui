@@ -15,7 +15,7 @@ import { tabContext } from "./TabList.tsx";
 export type tabProps = JSX.HTMLAttributes<HTMLDivElement> & {
   tabContext: tabContext[];
   focusedTab: string;
-  onRefresh?: () => void;
+  onTabDragEnd?: (clientX: number) => void;
   onCreateTab?: () => void;
   onDeleteTab?: (index: number) => void;
   onFocusTabChange?: (tabId: string) => void;
@@ -112,9 +112,6 @@ export function Tab(props: tabProps) {
       >
         <For each={props.tabContext}>
           {(tab, tabIndex) => {
-            //const tabId = tab["id" as keyof typeof tab];
-            //const tabName = tab["tabName" as keyof typeof tab];
-            //const filePath = tab["filePath" as keyof typeof tab];
             return (
               <div
                 id={`${tab.id}`}
@@ -174,7 +171,7 @@ export function Tab(props: tabProps) {
                       props.onTabReorder?.(updatedItems);
                     }
 
-                    props.onRefresh?.();
+                    props.onTabDragEnd?.(data.event.clientX);
                     props.onFocusTabChange?.(currentDraggingTabId()!);
                     setReorderTabIndex(null);
                     setCurrentDraggingTabId("");

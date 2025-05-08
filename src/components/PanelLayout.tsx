@@ -127,9 +127,6 @@ export function PanelLayout(props: panelLayoutProps) {
     return updatePanels;
   };
 
-  const [draggedInPanelIndex, setDraggedInPanelIndex] = createSignal<
-    number | null
-  >(null);
   const moveTabToOtherPanel = (
     draggedTab: tabContext,
     index: number,
@@ -196,7 +193,11 @@ export function PanelLayout(props: panelLayoutProps) {
                     <Panel
                       id={currentPanel.id}
                       panelContext={currentPanel}
-                      onSplitTab={(tabLocation: tabLocation, draggedTab) => {
+                      onSplitTab={(
+                        tabLocation: tabLocation,
+                        draggedTab,
+                        clientX,
+                      ) => {
                         if (
                           tabLocation === "leftSplitter" ||
                           tabLocation === "rightSplitter"
@@ -209,11 +210,28 @@ export function PanelLayout(props: panelLayoutProps) {
                           );
                           setPanels(updateTabs);
                         } else if (tabLocation === "otherPanel") {
-                          //if (typeof draggedInPanelIndex() !== "number") return;
+                          let draggedInTabIndex: number | null = null;
+                          panels.forEach((panel, index) => {
+                            const panelElement = document.getElementById(
+                              panel.id,
+                            );
+                            if (panelElement) {
+                              if (
+                                panelElement.offsetLeft < clientX &&
+                                clientX <
+                                  panelElement.offsetLeft +
+                                    panelElement.offsetWidth
+                              ) {
+                                draggedInTabIndex = index;
+                              }
+                            }
+                          });
+
+                          if (draggedInTabIndex === null) return;
                           const updatePanel = moveTabToOtherPanel(
                             draggedTab,
                             index(),
-                            1,
+                            draggedInTabIndex,
                             panels,
                           );
                           setPanels(updatePanel);
