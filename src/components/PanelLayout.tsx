@@ -28,8 +28,6 @@ export type panelLayoutProps = JSX.HTMLAttributes<HTMLDivElement> & {
 
 export function PanelLayout(props: panelLayoutProps) {
   const [panels, setPanels] = createStore<panelContext[]>(props.panelContext);
-  const [panelSize, setPanelSize] = createStore<panelSizeContext[]>(props.size);
-  const [render, setRender] = createSignal<boolean>(true);
 
   onMount(() => {
     if (panels.length === 0) {
@@ -40,11 +38,11 @@ export function PanelLayout(props: panelLayoutProps) {
           tabContext: [],
         },
       ]);
-      setPanelSize([{ id: uuid, size: 100 }]);
+      props.onSizeChange?.([{ id: uuid, size: 100 }]);
     }
   });
 
-  createEffect(async () => {
+  createEffect(() => {
     const tabList = panels;
     if (tabList.length === 1) return;
 
@@ -58,21 +56,16 @@ export function PanelLayout(props: panelLayoutProps) {
         parseList = parseList.filter((tab) => tab.id !== deletedTab.id);
       });
     }
-    setRender(false);
 
     setPanels(parseList);
 
-    if (parseList.length !== panelSize.length) {
-      await setPanelSize(() => {
-        const panelSize = 100 / parseList.length;
-        const updatePanelSize = parseList.map((panel) => {
-          return { id: panel.id, size: panelSize };
-        });
-        return updatePanelSize;
+    if (parseList.length !== props.size.length) {
+      const panelSize = 100 / parseList.length;
+      const updatePanelSize = parseList.map((panel) => {
+        return { id: panel.id, size: panelSize };
       });
+      props.onSizeChange?.(updatePanelSize);
     }
-
-    await setRender(true);
   });
 
   const splitTab = (
@@ -167,84 +160,96 @@ export function PanelLayout(props: panelLayoutProps) {
   }
 
   return (
-    <>
-      <Show when={render()}>
-        <Splitter.Root size={panelSize} gap="0.5">
-          <For each={panelSize && panels}>
-            {(currentPanel, index) => {
-              return (
-                <>
-                  <Show when={index() !== 0}>
-                    <Splitter.ResizeTrigger
-                      id={`${panels[index() - 1].id}:${currentPanel.id}`}
-                      width="4px"
-                      padding="0"
-                      opacity="0%"
-                      transition="opacity 0.3s ease"
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.opacity = "100%";
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.opacity = "0%";
-                      }}
-                    />
-                  </Show>
-                  <Splitter.Panel id={currentPanel.id}>
-                    <Panel
-                      id={currentPanel.id}
-                      panelContext={currentPanel}
-                      onSplitTab={(
-                        tabLocation: tabLocation,
+    <Splitter.Root
+      size={props.size}
+      gap="0.5"
+      onSizeChange={(details: { size: object[] }) => {
+        const parseDetails: panelSizeContext[] = details.size.map((info) => {
+          return {
+            id: info["id" as keyof typeof info],
+            size: info["size" as keyof typeof info],
+          } as panelSizeContext;
+        });
+        props.onSizeChange?.(parseDetails);
+      }}
+    >
+      <For each={props.size && panels}>
+        {(currentPanel, index) => {
+          return (
+            <>
+              <Show when={index() !== 0}>
+                <Splitter.ResizeTrigger
+                  id={`${panels[index() - 1].id}:${currentPanel.id}`}
+                  width="4px"
+                  padding="0"
+                  opacity="0%"
+                  transition="opacity 0.3s ease"
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.opacity = "100%";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.opacity = "0%";
+                  }}
+                />
+              </Show>
+              <Splitter.Panel
+                id={currentPanel.id}
+                style={{ width: "100%", height: "100%" }}
+              >
+                <Panel
+                  style={{
+                    width: "100%",
+                    height: "100%",
+                  }}
+                  id={currentPanel.id}
+                  panelContext={currentPanel}
+                  onSplitTab={(
+                    tabLocation: tabLocation,
+                    draggedTab,
+                    clientX,
+                  ) => {
+                    if (
+                      tabLocation === "leftSplitter" ||
+                      tabLocation === "rightSplitter"
+                    ) {
+                      const updateTabs = splitTab(
+                        tabLocation,
+                        index(),
                         draggedTab,
-                        clientX,
-                      ) => {
-                        if (
-                          tabLocation === "leftSplitter" ||
-                          tabLocation === "rightSplitter"
-                        ) {
-                          const updateTabs = splitTab(
-                            tabLocation,
-                            index(),
-                            draggedTab,
-                            props.panelContext,
-                          );
-                          setPanels(updateTabs);
-                        } else if (tabLocation === "otherPanel") {
-                          let draggedInTabIndex: number | null = null;
-                          panels.forEach((panel, index) => {
-                            const panelElement = document.getElementById(
-                              panel.id,
-                            );
-                            if (panelElement) {
-                              if (
-                                panelElement.offsetLeft < clientX &&
-                                clientX <
-                                  panelElement.offsetLeft +
-                                    panelElement.offsetWidth
-                              ) {
-                                draggedInTabIndex = index;
-                              }
-                            }
-                          });
-
-                          if (draggedInTabIndex === null) return;
-                          const updatePanel = moveTabToOtherPanel(
-                            draggedTab,
-                            index(),
-                            draggedInTabIndex,
-                            panels,
-                          );
-                          setPanels(updatePanel);
+                        props.panelContext,
+                      );
+                      setPanels(updateTabs);
+                    } else if (tabLocation === "otherPanel") {
+                      let draggedInTabIndex: number | null = null;
+                      panels.forEach((panel, index) => {
+                        const panelElement = document.getElementById(panel.id);
+                        if (panelElement) {
+                          if (
+                            panelElement.offsetLeft < clientX &&
+                            clientX <
+                              panelElement.offsetLeft + panelElement.offsetWidth
+                          ) {
+                            draggedInTabIndex = index;
+                          }
                         }
-                      }}
-                    />
-                  </Splitter.Panel>
-                </>
-              );
-            }}
-          </For>
-        </Splitter.Root>
-      </Show>
-    </>
+                      });
+
+                      if (draggedInTabIndex === null) return;
+                      const updatePanel = moveTabToOtherPanel(
+                        draggedTab,
+                        index(),
+                        draggedInTabIndex,
+                        panels,
+                      );
+                      setPanels(updatePanel);
+                    }
+                  }}
+                />
+              </Splitter.Panel>
+            </>
+          );
+        }}
+      </For>
+    </Splitter.Root>
   );
 }
