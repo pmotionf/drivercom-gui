@@ -1,6 +1,8 @@
-import { createContext, createSignal } from "solid-js";
-import { createStore, SetStoreFunction } from "solid-js/store";
+import { Accessor, createContext, createSignal, Setter } from "solid-js";
+import { createStore, SetStoreFunction, Store } from "solid-js/store";
 import { LogViewerPanelContext, LogViewerTabContext } from "./pages/LogViewer";
+import { PanelSizeContext } from "./components/PanelLayout";
+import { tabContext } from "./components/TabList";
 
 const [globalState, setGlobalState] = createStore({
   theme: "light",
@@ -51,6 +53,7 @@ export const [logStartCombinatorList, setLogStartCombinatorList] = createSignal<
   string[]
 >([]);
 
+// Probably should eliminate
 export const [logViewerPanelContexts, setLogViewPanelContexts] = createSignal<
   {
     id: string;
@@ -61,3 +64,15 @@ export const [logViewerPanelContexts, setLogViewPanelContexts] = createSignal<
 export const [logViewerPanelSize, setLogViewPanelSize] = createSignal<
   LogViewerPanelContext[]
 >([]);
+
+type PanelContexts = Map<
+  string,
+  [Accessor<PanelSizeContext[]>, Setter<PanelSizeContext[]>]
+>;
+export const panelContexts: PanelContexts = new Map();
+
+type TabContexts = Map<
+  string,
+  [Store<tabContext[]>, SetStoreFunction<tabContext[]>]
+>;
+export const tabContexts: TabContexts = new Map();
