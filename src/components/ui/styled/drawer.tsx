@@ -1,96 +1,74 @@
-import { ark, type Assign, Dialog, type PolymorphicProps } from "@ark-ui/solid";
-import type { ComponentProps } from "solid-js";
-import { drawer, type DrawerVariantProps } from "styled-system/recipes";
-import type { HTMLStyledProps } from "styled-system/types";
-import { createStyleContext } from "./utils/create-style-context";
+import { type Assign, Dialog, type PolymorphicProps, ark } from '@ark-ui/solid'
+import type { ComponentProps } from 'solid-js'
+import { type DrawerVariantProps, drawer } from 'styled-system/recipes'
+import type { HTMLStyledProps } from 'styled-system/types'
+import { createStyleContext } from './utils/create-style-context'
 
-const { withRootProvider, withContext } = createStyleContext(drawer);
+const { withRootProvider, withContext } = createStyleContext(drawer)
 
-export type RootProviderProps = ComponentProps<typeof RootProvider>;
-export const RootProvider = withRootProvider<
-  Assign<Dialog.RootProps, DrawerVariantProps>
->(Dialog.RootProvider);
+export type RootProviderProps = ComponentProps<typeof RootProvider>
+export const RootProvider = withRootProvider<Assign<Dialog.RootProps, DrawerVariantProps>>(Dialog.RootProvider)
 
-export type RootProps = ComponentProps<typeof Root>;
-export const Root = withRootProvider<
-  Assign<Dialog.RootProps, DrawerVariantProps>
->(Dialog.Root);
+export type RootProps = ComponentProps<typeof Root>
+export const Root = withRootProvider<Assign<Dialog.RootProps, DrawerVariantProps>>(Dialog.Root)
 
-export type BackdropProps = ComponentProps<typeof Backdrop>;
-export const Backdrop = withContext<
-  Assign<HTMLStyledProps<"div">, Dialog.BackdropProps>
->(
+export type BackdropProps = ComponentProps<typeof Backdrop>
+export const Backdrop = withContext<Assign<HTMLStyledProps<'div'>, Dialog.BackdropProps>>(
   Dialog.Backdrop,
-  "backdrop",
-);
+  'backdrop',
+)
 
-export type CloseTriggerProps = ComponentProps<typeof CloseTrigger>;
+export type CloseTriggerProps = ComponentProps<typeof CloseTrigger>
 export const CloseTrigger = withContext<
-  Assign<HTMLStyledProps<"button">, Dialog.CloseTriggerProps>
->(Dialog.CloseTrigger, "closeTrigger");
+  Assign<HTMLStyledProps<'button'>, Dialog.CloseTriggerProps>
+>(Dialog.CloseTrigger, 'closeTrigger')
 
-export type ContentProps = ComponentProps<typeof Content>;
-export const Content = withContext<
-  Assign<HTMLStyledProps<"div">, Dialog.ContentProps>
->(
+export type ContentProps = ComponentProps<typeof Content>
+export const Content = withContext<Assign<HTMLStyledProps<'div'>, Dialog.ContentProps>>(
   Dialog.Content,
-  "content",
-);
+  'content',
+)
 
-export type DescriptionProps = ComponentProps<typeof Description>;
-export const Description = withContext<
-  Assign<HTMLStyledProps<"div">, Dialog.DescriptionProps>
->(
+export type DescriptionProps = ComponentProps<typeof Description>
+export const Description = withContext<Assign<HTMLStyledProps<'div'>, Dialog.DescriptionProps>>(
   Dialog.Description,
-  "description",
-);
+  'description',
+)
 
-export type PositionerProps = ComponentProps<typeof Positioner>;
-export const Positioner = withContext<
-  Assign<HTMLStyledProps<"div">, Dialog.PositionerProps>
->(
+export type PositionerProps = ComponentProps<typeof Positioner>
+export const Positioner = withContext<Assign<HTMLStyledProps<'div'>, Dialog.PositionerProps>>(
   Dialog.Positioner,
-  "positioner",
-);
+  'positioner',
+)
 
-export type TitleProps = ComponentProps<typeof Title>;
-export const Title = withContext<
-  Assign<HTMLStyledProps<"h2">, Dialog.TitleProps>
->(
+export type TitleProps = ComponentProps<typeof Title>
+export const Title = withContext<Assign<HTMLStyledProps<'h2'>, Dialog.TitleProps>>(
   Dialog.Title,
-  "title",
-);
+  'title',
+)
 
-export type TriggerProps = ComponentProps<typeof Trigger>;
-export const Trigger = withContext<
-  Assign<HTMLStyledProps<"button">, Dialog.TriggerProps>
->(
+export type TriggerProps = ComponentProps<typeof Trigger>
+export const Trigger = withContext<Assign<HTMLStyledProps<'button'>, Dialog.TriggerProps>>(
   Dialog.Trigger,
-  "trigger",
-);
+  'trigger',
+)
 
-export const Header = withContext<
-  Assign<HTMLStyledProps<"div">, PolymorphicProps<"div">>
->(
+export const Header = withContext<Assign<HTMLStyledProps<'div'>, PolymorphicProps<'div'>>>(
   ark.div,
-  "header",
-);
+  'header',
+)
 
-export const Body = withContext<
-  Assign<HTMLStyledProps<"div">, PolymorphicProps<"div">>
->(
+export const Body = withContext<Assign<HTMLStyledProps<'div'>, PolymorphicProps<'div'>>>(
   ark.div,
-  "body",
-);
+  'body',
+)
 
-export const Footer = withContext<
-  Assign<HTMLStyledProps<"div">, PolymorphicProps<"div">>
->(
+export const Footer = withContext<Assign<HTMLStyledProps<'div'>, PolymorphicProps<'div'>>>(
   ark.div,
-  "footer",
-);
+  'footer',
+)
 
 export {
   DialogContext as Context,
   type DialogContextProps as ContextProps,
-} from "@ark-ui/solid";
+} from '@ark-ui/solid'
