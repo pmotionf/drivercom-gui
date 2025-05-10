@@ -1,61 +1,45 @@
-import { ark, type Assign, type PolymorphicProps } from "@ark-ui/solid";
-import type { ComponentProps } from "solid-js";
-import { table } from "styled-system/recipes";
-import type { HTMLStyledProps } from "styled-system/types";
-import { createStyleContext } from "./utils/create-style-context";
+import { type Assign, type PolymorphicProps, ark } from '@ark-ui/solid'
+import type { ComponentProps } from 'solid-js'
+import { table } from 'styled-system/recipes'
+import type { HTMLStyledProps } from 'styled-system/types'
+import { createStyleContext } from './utils/create-style-context'
 
-const { withProvider, withContext } = createStyleContext(table);
+const { withProvider, withContext } = createStyleContext(table)
 
-export type RootProps = ComponentProps<typeof Root>;
-export const Root = withProvider<
-  Assign<HTMLStyledProps<"table">, PolymorphicProps<"table">>
->(
+export type RootProps = ComponentProps<typeof Root>
+export const Root = withProvider<Assign<HTMLStyledProps<'table'>, PolymorphicProps<'table'>>>(
   ark.table,
-  "root",
-);
+  'root',
+)
 
-export const Body = withContext<
-  Assign<HTMLStyledProps<"tbody">, PolymorphicProps<"tbody">>
->(
+export const Body = withContext<Assign<HTMLStyledProps<'tbody'>, PolymorphicProps<'tbody'>>>(
   ark.tbody,
-  "body",
-);
+  'body',
+)
 
-export const Caption = withContext<
-  Assign<HTMLStyledProps<"caption">, PolymorphicProps<"caption">>
->(
+export const Caption = withContext<Assign<HTMLStyledProps<'caption'>, PolymorphicProps<'caption'>>>(
   ark.caption,
-  "caption",
-);
+  'caption',
+)
 
-export const Cell = withContext<
-  Assign<HTMLStyledProps<"td">, PolymorphicProps<"td">>
->(
+export const Cell = withContext<Assign<HTMLStyledProps<'td'>, PolymorphicProps<'td'>>>(
   ark.td,
-  "cell",
-);
+  'cell',
+)
 
-export const Foot = withContext<
-  Assign<HTMLStyledProps<"tfoot">, PolymorphicProps<"tfoot">>
->(
+export const Foot = withContext<Assign<HTMLStyledProps<'tfoot'>, PolymorphicProps<'tfoot'>>>(
   ark.tfoot,
-  "footer",
-);
+  'footer',
+)
 
-export const Head = withContext<
-  Assign<HTMLStyledProps<"head">, PolymorphicProps<"head">>
->(
+export const Head = withContext<Assign<HTMLStyledProps<'head'>, PolymorphicProps<'head'>>>(
   ark.thead,
-  "head",
-);
+  'head',
+)
 
-export const Header = withContext<
-  Assign<HTMLStyledProps<"th">, PolymorphicProps<"th">>
->(
+export const Header = withContext<Assign<HTMLStyledProps<'th'>, PolymorphicProps<'th'>>>(
   ark.th,
-  "header",
-);
+  'header',
+)
 
-export const Row = withContext<
-  Assign<HTMLStyledProps<"tr">, PolymorphicProps<"tr">>
->(ark.tr, "row");
+export const Row = withContext<Assign<HTMLStyledProps<'tr'>, PolymorphicProps<'tr'>>>(ark.tr, 'row')

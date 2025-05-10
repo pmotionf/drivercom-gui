@@ -1,50 +1,39 @@
-import { type Assign, Tabs } from "@ark-ui/solid";
-import type { ComponentProps } from "solid-js";
-import { tabs, type TabsVariantProps } from "styled-system/recipes";
-import type { HTMLStyledProps } from "styled-system/types";
-import { createStyleContext } from "./utils/create-style-context";
+import { type Assign, Tabs } from '@ark-ui/solid'
+import type { ComponentProps } from 'solid-js'
+import { type TabsVariantProps, tabs } from 'styled-system/recipes'
+import type { HTMLStyledProps } from 'styled-system/types'
+import { createStyleContext } from './utils/create-style-context'
 
-const { withProvider, withContext } = createStyleContext(tabs);
+const { withProvider, withContext } = createStyleContext(tabs)
 
-export type RootProviderProps = ComponentProps<typeof RootProvider>;
+export type RootProviderProps = ComponentProps<typeof RootProvider>
 export const RootProvider = withProvider<
-  Assign<
-    Assign<HTMLStyledProps<"div">, Tabs.RootProviderBaseProps>,
-    TabsVariantProps
-  >
->(Tabs.RootProvider, "root");
+  Assign<Assign<HTMLStyledProps<'div'>, Tabs.RootProviderBaseProps>, TabsVariantProps>
+>(Tabs.RootProvider, 'root')
 
-export type RootProps = ComponentProps<typeof Root>;
+export type RootProps = ComponentProps<typeof Root>
 export const Root = withProvider<
-  Assign<Assign<HTMLStyledProps<"div">, Tabs.RootBaseProps>, TabsVariantProps>
->(Tabs.Root, "root");
+  Assign<Assign<HTMLStyledProps<'div'>, Tabs.RootBaseProps>, TabsVariantProps>
+>(Tabs.Root, 'root')
 
-export const Content = withContext<
-  Assign<HTMLStyledProps<"div">, Tabs.ContentBaseProps>
->(
+export const Content = withContext<Assign<HTMLStyledProps<'div'>, Tabs.ContentBaseProps>>(
   Tabs.Content,
-  "content",
-);
+  'content',
+)
 
-export const Indicator = withContext<
-  Assign<HTMLStyledProps<"div">, Tabs.IndicatorBaseProps>
->(
+export const Indicator = withContext<Assign<HTMLStyledProps<'div'>, Tabs.IndicatorBaseProps>>(
   Tabs.Indicator,
-  "indicator",
-);
+  'indicator',
+)
 
-export const List = withContext<
-  Assign<HTMLStyledProps<"div">, Tabs.ListBaseProps>
->(
+export const List = withContext<Assign<HTMLStyledProps<'div'>, Tabs.ListBaseProps>>(
   Tabs.List,
-  "list",
-);
+  'list',
+)
 
-export const Trigger = withContext<
-  Assign<HTMLStyledProps<"button">, Tabs.TriggerBaseProps>
->(
+export const Trigger = withContext<Assign<HTMLStyledProps<'button'>, Tabs.TriggerBaseProps>>(
   Tabs.Trigger,
-  "trigger",
-);
+  'trigger',
+)
 
-export { TabsContext as Context } from "@ark-ui/solid";
+export { TabsContext as Context } from '@ark-ui/solid'

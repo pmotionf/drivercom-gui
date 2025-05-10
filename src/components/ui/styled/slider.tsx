@@ -1,84 +1,62 @@
-import { type Assign, Slider } from "@ark-ui/solid";
-import type { ComponentProps } from "solid-js";
-import { slider, type SliderVariantProps } from "styled-system/recipes";
-import type { HTMLStyledProps } from "styled-system/types";
-import { createStyleContext } from "./utils/create-style-context";
+import { type Assign, Slider } from '@ark-ui/solid'
+import type { ComponentProps } from 'solid-js'
+import { type SliderVariantProps, slider } from 'styled-system/recipes'
+import type { HTMLStyledProps } from 'styled-system/types'
+import { createStyleContext } from './utils/create-style-context'
 
-const { withProvider, withContext } = createStyleContext(slider);
+const { withProvider, withContext } = createStyleContext(slider)
 
-export type RootProviderProps = ComponentProps<typeof RootProvider>;
+export type RootProviderProps = ComponentProps<typeof RootProvider>
 export const RootProvider = withProvider<
-  Assign<
-    Assign<HTMLStyledProps<"div">, Slider.RootProviderBaseProps>,
-    SliderVariantProps
-  >
->(Slider.RootProvider, "root");
+  Assign<Assign<HTMLStyledProps<'div'>, Slider.RootProviderBaseProps>, SliderVariantProps>
+>(Slider.RootProvider, 'root')
 
-export type RootProps = ComponentProps<typeof Root>;
+export type RootProps = ComponentProps<typeof Root>
 export const Root = withProvider<
-  Assign<
-    Assign<HTMLStyledProps<"div">, Slider.RootBaseProps>,
-    SliderVariantProps
-  >
->(Slider.Root, "root");
+  Assign<Assign<HTMLStyledProps<'div'>, Slider.RootBaseProps>, SliderVariantProps>
+>(Slider.Root, 'root')
 
-export const Control = withContext<
-  Assign<HTMLStyledProps<"div">, Slider.ControlBaseProps>
->(
+export const Control = withContext<Assign<HTMLStyledProps<'div'>, Slider.ControlBaseProps>>(
   Slider.Control,
-  "control",
-);
+  'control',
+)
 
-export const Label = withContext<
-  Assign<HTMLStyledProps<"label">, Slider.LabelBaseProps>
->(
+export const Label = withContext<Assign<HTMLStyledProps<'label'>, Slider.LabelBaseProps>>(
   Slider.Label,
-  "label",
-);
+  'label',
+)
 
-export const MarkerGroup = withContext<
-  Assign<HTMLStyledProps<"div">, Slider.MarkerGroupBaseProps>
->(
+export const MarkerGroup = withContext<Assign<HTMLStyledProps<'div'>, Slider.MarkerGroupBaseProps>>(
   Slider.MarkerGroup,
-  "markerGroup",
-);
+  'markerGroup',
+)
 
-export const Marker = withContext<
-  Assign<HTMLStyledProps<"span">, Slider.MarkerBaseProps>
->(
+export const Marker = withContext<Assign<HTMLStyledProps<'span'>, Slider.MarkerBaseProps>>(
   Slider.Marker,
-  "marker",
-);
+  'marker',
+)
 
-export const Range = withContext<
-  Assign<HTMLStyledProps<"div">, Slider.RangeBaseProps>
->(
+export const Range = withContext<Assign<HTMLStyledProps<'div'>, Slider.RangeBaseProps>>(
   Slider.Range,
-  "range",
-);
+  'range',
+)
 
-export const Thumb = withContext<
-  Assign<HTMLStyledProps<"div">, Slider.ThumbBaseProps>
->(
+export const Thumb = withContext<Assign<HTMLStyledProps<'div'>, Slider.ThumbBaseProps>>(
   Slider.Thumb,
-  "thumb",
-);
+  'thumb',
+)
 
-export const Track = withContext<
-  Assign<HTMLStyledProps<"div">, Slider.TrackBaseProps>
->(
+export const Track = withContext<Assign<HTMLStyledProps<'div'>, Slider.TrackBaseProps>>(
   Slider.Track,
-  "track",
-);
+  'track',
+)
 
-export const ValueText = withContext<
-  Assign<HTMLStyledProps<"span">, Slider.ValueTextBaseProps>
->(
+export const ValueText = withContext<Assign<HTMLStyledProps<'span'>, Slider.ValueTextBaseProps>>(
   Slider.ValueText,
-  "valueText",
-);
+  'valueText',
+)
 
 export {
   SliderContext as Context,
   SliderHiddenInput as HiddenInput,
-} from "@ark-ui/solid";
+} from '@ark-ui/solid'

@@ -1,120 +1,94 @@
-import { type Assign, Combobox } from "@ark-ui/solid";
-import type { ComponentProps } from "solid-js";
-import { combobox, type ComboboxVariantProps } from "styled-system/recipes";
-import type { HTMLStyledProps } from "styled-system/types";
-import { createStyleContext } from "./utils/create-style-context";
+import { type Assign, Combobox } from '@ark-ui/solid'
+import type { ComponentProps } from 'solid-js'
+import { type ComboboxVariantProps, combobox } from 'styled-system/recipes'
+import type { HTMLStyledProps } from 'styled-system/types'
+import { createStyleContext } from './utils/create-style-context'
 
-const { withRootProvider, withContext } = createStyleContext(combobox);
+const { withRootProvider, withContext } = createStyleContext(combobox)
 
-export type RootProviderProps = ComponentProps<typeof RootProvider>;
+export type RootProviderProps = ComponentProps<typeof RootProvider>
 export const RootProvider = withRootProvider<
   Assign<
-    Assign<
-      HTMLStyledProps<"div">,
-      Combobox.RootProviderBaseProps<Combobox.CollectionItem>
-    >,
+    Assign<HTMLStyledProps<'div'>, Combobox.RootProviderBaseProps<Combobox.CollectionItem>>,
     ComboboxVariantProps
   >
->(Combobox.RootProvider);
+>(Combobox.RootProvider)
 
-export type RootProps = ComponentProps<typeof Root>;
+export type RootProps = ComponentProps<typeof Root>
 export const Root = withRootProvider<
   Assign<
-    Assign<
-      HTMLStyledProps<"div">,
-      Combobox.RootBaseProps<Combobox.CollectionItem>
-    >,
+    Assign<HTMLStyledProps<'div'>, Combobox.RootBaseProps<Combobox.CollectionItem>>,
     ComboboxVariantProps
   >
->(Combobox.Root);
+>(Combobox.Root)
 
 export const ClearTrigger = withContext<
-  Assign<HTMLStyledProps<"button">, Combobox.ClearTriggerBaseProps>
->(Combobox.ClearTrigger, "clearTrigger");
+  Assign<HTMLStyledProps<'button'>, Combobox.ClearTriggerBaseProps>
+>(Combobox.ClearTrigger, 'clearTrigger')
 
-export const Content = withContext<
-  Assign<HTMLStyledProps<"div">, Combobox.ContentBaseProps>
->(
+export const Content = withContext<Assign<HTMLStyledProps<'div'>, Combobox.ContentBaseProps>>(
   Combobox.Content,
-  "content",
-);
+  'content',
+)
 
-export const Control = withContext<
-  Assign<HTMLStyledProps<"div">, Combobox.ControlBaseProps>
->(
+export const Control = withContext<Assign<HTMLStyledProps<'div'>, Combobox.ControlBaseProps>>(
   Combobox.Control,
-  "control",
-);
+  'control',
+)
 
-export const Input = withContext<
-  Assign<HTMLStyledProps<"input">, Combobox.InputBaseProps>
->(
+export const Input = withContext<Assign<HTMLStyledProps<'input'>, Combobox.InputBaseProps>>(
   Combobox.Input,
-  "input",
-);
+  'input',
+)
 
 export const ItemGroupLabel = withContext<
-  Assign<HTMLStyledProps<"div">, Combobox.ItemGroupLabelBaseProps>
->(Combobox.ItemGroupLabel, "itemGroupLabel");
+  Assign<HTMLStyledProps<'div'>, Combobox.ItemGroupLabelBaseProps>
+>(Combobox.ItemGroupLabel, 'itemGroupLabel')
 
-export const ItemGroup = withContext<
-  Assign<HTMLStyledProps<"div">, Combobox.ItemGroupBaseProps>
->(
+export const ItemGroup = withContext<Assign<HTMLStyledProps<'div'>, Combobox.ItemGroupBaseProps>>(
   Combobox.ItemGroup,
-  "itemGroup",
-);
+  'itemGroup',
+)
 
 export const ItemIndicator = withContext<
-  Assign<HTMLStyledProps<"div">, Combobox.ItemIndicatorBaseProps>
->(Combobox.ItemIndicator, "itemIndicator");
+  Assign<HTMLStyledProps<'div'>, Combobox.ItemIndicatorBaseProps>
+>(Combobox.ItemIndicator, 'itemIndicator')
 
-export const Item = withContext<
-  Assign<HTMLStyledProps<"div">, Combobox.ItemBaseProps>
->(
+export const Item = withContext<Assign<HTMLStyledProps<'div'>, Combobox.ItemBaseProps>>(
   Combobox.Item,
-  "item",
-);
+  'item',
+)
 
-export const ItemText = withContext<
-  Assign<HTMLStyledProps<"span">, Combobox.ItemTextBaseProps>
->(
+export const ItemText = withContext<Assign<HTMLStyledProps<'span'>, Combobox.ItemTextBaseProps>>(
   Combobox.ItemText,
-  "itemText",
-);
+  'itemText',
+)
 
-export const Label = withContext<
-  Assign<HTMLStyledProps<"label">, Combobox.LabelBaseProps>
->(
+export const Label = withContext<Assign<HTMLStyledProps<'label'>, Combobox.LabelBaseProps>>(
   Combobox.Label,
-  "label",
-);
+  'label',
+)
 
-export const List = withContext<
-  Assign<HTMLStyledProps<"div">, Combobox.ListBaseProps>
->(
+export const List = withContext<Assign<HTMLStyledProps<'div'>, Combobox.ListBaseProps>>(
   Combobox.List,
-  "list",
-);
+  'list',
+)
 
-export const Positioner = withContext<
-  Assign<HTMLStyledProps<"div">, Combobox.PositionerBaseProps>
->(
+export const Positioner = withContext<Assign<HTMLStyledProps<'div'>, Combobox.PositionerBaseProps>>(
   Combobox.Positioner,
-  "positioner",
-);
+  'positioner',
+)
 
-export const Trigger = withContext<
-  Assign<HTMLStyledProps<"button">, Combobox.TriggerBaseProps>
->(
+export const Trigger = withContext<Assign<HTMLStyledProps<'button'>, Combobox.TriggerBaseProps>>(
   Combobox.Trigger,
-  "trigger",
-);
+  'trigger',
+)
 
-export { ComboboxContext as Context } from "@ark-ui/solid";
+export { ComboboxContext as Context } from '@ark-ui/solid'
 
 export type {
   ComboboxHighlightChangeDetails as HighlightChangeDetails,
   ComboboxInputValueChangeDetails as InputValueChangeDetails,
   ComboboxOpenChangeDetails as OpenChangeDetails,
   ComboboxValueChangeDetails as ValueChangeDetails,
-} from "@ark-ui/solid";
+} from '@ark-ui/solid'

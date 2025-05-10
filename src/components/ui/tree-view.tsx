@@ -1,11 +1,6 @@
-import {
-  CheckSquareIcon,
-  ChevronRightIcon,
-  FileIcon,
-  FolderIcon,
-} from "lucide-solid";
-import { For, Show } from "solid-js";
-import * as StyledTreeView from "./styled/tree-view";
+import { CheckSquareIcon, ChevronRightIcon, FileIcon, FolderIcon } from 'lucide-solid'
+import { For, Show } from 'solid-js'
+import * as StyledTreeView from './styled/tree-view'
 
 export const TreeView = (props: StyledTreeView.RootProps) => {
   return (
@@ -16,11 +11,11 @@ export const TreeView = (props: StyledTreeView.RootProps) => {
         </For>
       </StyledTreeView.Tree>
     </StyledTreeView.Root>
-  );
-};
+  )
+}
 
 const TreeNode = (props: StyledTreeView.NodeProviderProps) => {
-  const { node, indexPath } = props;
+  const { node, indexPath } = props
   return (
     <StyledTreeView.NodeProvider node={node} indexPath={indexPath}>
       <Show
@@ -49,13 +44,11 @@ const TreeNode = (props: StyledTreeView.NodeProviderProps) => {
           <StyledTreeView.BranchContent>
             <StyledTreeView.BranchIndentGuide />
             <For each={node.children}>
-              {(child, index) => (
-                <TreeNode node={child} indexPath={[...indexPath, index()]} />
-              )}
+              {(child, index) => <TreeNode node={child} indexPath={[...indexPath, index()]} />}
             </For>
           </StyledTreeView.BranchContent>
         </StyledTreeView.Branch>
       </Show>
     </StyledTreeView.NodeProvider>
-  );
-};
+  )
+}
