@@ -1,6 +1,9 @@
 import { createContext, createSignal } from "solid-js";
 import { createStore, SetStoreFunction } from "solid-js/store";
-import { LogViewerPanelContext, LogViewerTabContext } from "./pages/LogViewer";
+import {
+  LogViewerPanelContext,
+  LogViewerTabContext,
+} from "./pages/LogViewer.tsx";
 
 const [globalState, setGlobalState] = createStore({
   theme: "light",

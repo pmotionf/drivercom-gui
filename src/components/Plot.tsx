@@ -14,10 +14,10 @@ import { createStore, unwrap } from "solid-js/store";
 import uPlot, { AlignedData } from "uplot";
 import "uplot/dist/uPlot.min.css";
 
-import { GlobalStateContext } from "~/GlobalState";
-import { Heading } from "~/components/ui/heading";
-import { ToggleGroup } from "~/components/ui/toggle-group";
-import { IconButton } from "~/components/ui/icon-button";
+import { GlobalStateContext } from "~/GlobalState.ts";
+import { Heading } from "~/components/ui/heading.tsx";
+import { ToggleGroup } from "~/components/ui/toggle-group.tsx";
+import { IconButton } from "~/components/ui/icon-button.tsx";
 import {
   IconArrowsMove,
   IconCrosshair,
@@ -30,10 +30,10 @@ import {
   IconZoomInArea,
   IconZoomReset,
 } from "@tabler/icons-solidjs";
-import { Stack } from "styled-system/jsx";
-import { Legend, LegendStroke } from "./Plot/Legend";
-import { Tooltip } from "./ui/tooltip";
-import { Text } from "./ui/text";
+import { Stack } from "styled-system/jsx/stack.mjs";
+import { Legend, LegendStroke } from "./Plot/Legend.tsx";
+import { Tooltip } from "./ui/tooltip.tsx";
+import { Text } from "./ui/text.tsx";
 import { Portal } from "solid-js/web";
 import uFuzzy from "@leeoniya/ufuzzy";
 

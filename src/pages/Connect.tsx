@@ -1,14 +1,14 @@
-import { Button } from "~/components/ui/button";
+import { Button } from "~/components/ui/button.tsx";
 import { IconPlug, IconPlugOff, IconX } from "@tabler/icons-solidjs";
-import { Text } from "~/components/ui/text";
-import { Stack } from "styled-system/jsx";
-import { Card } from "~/components/ui/card";
+import { Text } from "~/components/ui/text.tsx";
+import { Stack } from "styled-system/jsx/stack.mjs";
+import { Card } from "~/components/ui/card.tsx";
 
 import { Command } from "@tauri-apps/plugin-shell";
 import { For, Show } from "solid-js";
-import { Accordion } from "~/components/ui/accordion";
-import { Toast } from "~/components/ui/toast";
-import { portId, portList, setPortId, setPortList } from "~/GlobalState";
+import { Accordion } from "~/components/ui/accordion.tsx";
+import { Toast } from "~/components/ui/toast.tsx";
+import { portId, portList, setPortId, setPortList } from "~/GlobalState.ts";
 import { Dynamic } from "solid-js/web";
 
 function Connect() {

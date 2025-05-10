@@ -1,27 +1,27 @@
 import { createSignal, For, JSX, onMount, Show } from "solid-js";
-import { Stack } from "styled-system/jsx";
-import { Button } from "~/components/ui/button";
-import { Checkbox } from "~/components/ui/checkbox";
-import { Text } from "~/components/ui/text";
+import { Stack } from "styled-system/jsx/stack.mjs";
+import { Button } from "~/components/ui/button.tsx";
+import { Checkbox } from "~/components/ui/checkbox.tsx";
+import { Text } from "~/components/ui/text.tsx";
 import { save } from "@tauri-apps/plugin-dialog";
 import { writeTextFile } from "@tauri-apps/plugin-fs";
-import { Card } from "~/components/ui/card";
-import { Input } from "~/components/ui/input";
+import { Card } from "~/components/ui/card.tsx";
+import { Input } from "~/components/ui/input.tsx";
 import {
   logStartCombinatorList,
   logStartConditionList,
   portId,
   setRecentLogFilePaths,
-} from "~/GlobalState";
+} from "~/GlobalState.ts";
 import { Command } from "@tauri-apps/plugin-shell";
 import { createStore } from "solid-js/store";
-import { Editable } from "~/components/ui/editable";
-import { IconButton } from "~/components/ui/icon-button";
+import { Editable } from "~/components/ui/editable.tsx";
+import { IconButton } from "~/components/ui/icon-button.tsx";
 import { IconFileIsr, IconReload, IconX } from "@tabler/icons-solidjs";
-import { Menu } from "~/components/ui/menu";
-import { ErrorMessage } from "../LogViewer/LogViewerTabPageContent";
-import { createListCollection, Select } from "~/components/ui/select";
-import { Tooltip } from "~/components/ui/tooltip";
+import { Menu } from "~/components/ui/menu.tsx";
+import { ErrorMessage } from "../LogViewer/LogViewerTabPageContent.tsx";
+import { createListCollection, Select } from "~/components/ui/select.tsx";
+import { Tooltip } from "~/components/ui/tooltip.tsx";
 
 export type LoggingFormProps = JSX.HTMLAttributes<Element> & {
   formData: object;
