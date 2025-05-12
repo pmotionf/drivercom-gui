@@ -5,9 +5,10 @@ import { Splitter } from "~/components/ui/splitter.tsx";
 import { Panel } from "~/components/Panel.tsx";
 import { TabLocation } from "./TabList.tsx";
 import { onMount } from "solid-js";
+import { panelContexts, tabContexts } from "~/GlobalState.ts";
+import { createStore } from "solid-js/store";
 import { TabListContext } from "./TabList.tsx";
-import { PanelContext } from "~/components/Panel.tsx";
-import { panelContexts } from "~/GlobalState.ts";
+import { TabContext } from "./Tab.tsx";
 
 export type PanelSizeContext = {
   id: string;
@@ -18,8 +19,6 @@ export type PanelLayoutProps = JSX.HTMLAttributes<HTMLDivElement> & {
   id: string;
 };
 
-// Global state data need to change as a dictionary
-// So panel layout has an id, to found the panel Context,
 export function PanelLayout(props: PanelLayoutProps) {
   if (!panelContexts.has(props.id)) return;
 
@@ -38,115 +37,35 @@ export function PanelLayout(props: PanelLayoutProps) {
     }
   });
 
-  /*createEffect(() => {
-    const tabList = panels;
-    if (tabList.length === 1) return;
-
-    let parseList = tabList;
-    const zeroTabList = tabList.filter((tab) => {
-      return tab.tabContext.length === 0;
-    });
-
-    if (zeroTabList.length !== 0) {
-      zeroTabList.forEach((deletedTab) => {
-        parseList = parseList.filter((tab) => tab.id !== deletedTab.id);
-      });
-    }
-
-    setPanels(parseList);
-
-    if (parseList.length !== getPanelContext(props.id).length) {
-      const panelSize = 100 / parseList.length;
-      const updatePanelSize = parseList.map((panel) => {
-        return { id: panel.id, size: panelSize };
-      });
-      setPanelContext(props.id, updatePanelSize);
-      }
-  });*/
-
   const splitTab = (
     location: TabLocation,
     index: number,
-    draggedTab: TabListContext,
-    panels: PanelContext[],
-  ): PanelContext[] => {
+    panels: PanelSizeContext[],
+  ): { panelContext: PanelSizeContext[]; nextTabListId: string } => {
     const panelIndex = location === "rightSplitter" ? index + 1 : index;
     const uuid = getCryptoUUID();
 
-    const newPanel: PanelContext = {
+    const currentLength = panels.length + 1;
+    const newSize = 100 / currentLength;
+
+    const newPanel: PanelSizeContext = {
       id: uuid,
-      tabContext: [draggedTab],
-      focusedTab: draggedTab.id,
+      size: newSize,
     };
 
-    const deleteDraggedTab: PanelContext[] = panels.map((panel, i) => {
-      if (index !== i) return panel;
-      else {
-        if (!panel.tabContext) return panel;
-        const tabContext: TabListContext[] = panel.tabContext;
-        const deleteTabIndex = tabContext
-          .map((tab) => {
-            return tab.id;
-          })
-          .indexOf(draggedTab.id);
-        const updateTabContext: TabListContext[] = tabContext.filter(
-          (_, i) => i !== deleteTabIndex,
-        );
-        const nextFocusTab: TabListContext = updateTabContext[
-          deleteTabIndex >= updateTabContext.length
-            ? deleteTabIndex - 1
-            : deleteTabIndex
-        ];
-        const nextFocusTabId: string = nextFocusTab.id ? nextFocusTab.id : "";
-
-        return {
-          id: panel.id,
-          tabContext: updateTabContext,
-          focusedTab: nextFocusTabId,
-        };
-      }
+    const newSizePanels = panels.map((panel) => {
+      return {
+        id: panel.id,
+        size: newSize,
+      };
     });
+
     const updatePanels = [
-      ...deleteDraggedTab.slice(0, panelIndex),
+      ...newSizePanels.slice(0, panelIndex),
       newPanel,
-      ...deleteDraggedTab.slice(panelIndex),
+      ...newSizePanels.slice(panelIndex),
     ];
-
-    return updatePanels;
-  };
-
-  const moveTabToOtherPanel = (
-    draggedTab: TabListContext,
-    index: number,
-    draggedInPanelIndex: number,
-    panelList: PanelContext[],
-  ): PanelContext[] => {
-    if (index === draggedInPanelIndex) return panelList;
-    const updatePanels = panelList.map((panel, i) => {
-      if (i === draggedInPanelIndex) {
-        return {
-          ...panel,
-          tabContext: [...panel.tabContext, draggedTab],
-          focusedTab: draggedTab.id,
-        };
-      } else if (i === index) {
-        const tabContext = panel.tabContext;
-        const newTabContext = tabContext.filter(
-          (ctx) => ctx.id !== draggedTab.id,
-        );
-
-        return {
-          ...panel,
-          tabContext: newTabContext,
-          ...(newTabContext.length > 0 && {
-            focusedTab: newTabContext[newTabContext.length - 1].id,
-          }),
-        };
-      }
-
-      return panel;
-    });
-    return updatePanels;
+    return { panelContext: updatePanels, nextTabListId: newPanel.id };
   };
 
   function getCryptoUUID(): string {
@@ -198,13 +117,71 @@ export function PanelLayout(props: PanelLayoutProps) {
                     width: "100%",
                     height: "100%",
                   }}
-                  id={props.id}
+                  id={currentPanel.id}
                   index={index()}
+                  onDeletePanel={() => {
+                    const currentPanel = getPanelContext(props.id);
+                    if (currentPanel.length > 1) {
+                      setPanelContext(
+                        props.id,
+                        currentPanel.filter((_, i) => i !== index()),
+                      );
+                    }
+                  }}
                   onSplitTab={(
                     tabLocation: TabLocation,
                     draggedTab,
-                    clientX,
-                  ) => {}}
+                    mouseX,
+                  ) => {
+                    if (
+                      tabLocation === "leftSplitter" ||
+                      tabLocation === "rightSplitter"
+                    ) {
+                      const newSplit = splitTab(
+                        tabLocation,
+                        index(),
+                        getPanelContext(props.id),
+                      );
+                      tabContexts.set(
+                        newSplit.nextTabListId,
+                        createStore<TabListContext>({
+                          tabContext: [draggedTab] as TabContext[],
+                          focusedTab: draggedTab.id,
+                        }),
+                      );
+                      setPanelContext(props.id, newSplit.panelContext);
+                    }
+
+                    if (tabLocation === "otherPanel") {
+                      let nextPanelIndex: number = 0;
+                      getPanelContext(props.id).forEach((panel, i) => {
+                        const panelElement = document.getElementById(
+                          `${panel.id}`,
+                        );
+
+                        if (
+                          panelElement!.offsetLeft < mouseX &&
+                          mouseX <
+                            panelElement!.offsetLeft + panelElement!.offsetWidth
+                        ) {
+                          nextPanelIndex = i;
+                        }
+                      });
+
+                      const nextPanelId = getPanelContext(props.id)[
+                        nextPanelIndex
+                      ].id;
+                      const prevTabContext = tabContexts.get(nextPanelId)?.[0];
+                      tabContexts.get(nextPanelId)?.[1]("tabContext", [
+                        ...prevTabContext!.tabContext,
+                        draggedTab,
+                      ]);
+                      tabContexts.get(nextPanelId)?.[1](
+                        "focusedTab",
+                        draggedTab.id,
+                      );
+                    }
+                  }}
                 />
               </Splitter.Panel>
             </>

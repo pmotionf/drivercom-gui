@@ -24,7 +24,7 @@ export type TabContext = {
 export type tabProps = JSX.HTMLAttributes<HTMLDivElement> & {
   tabContext: TabContext[];
   focusedTab: string;
-  onTabDragEnd?: (clientX: number) => void;
+  onTabDragEnd?: (clientX: number, clientY: number, tabId: string) => void;
   onCreateTab?: () => void;
   onDeleteTab?: (index: number) => void;
   onFocusTabChange?: (tabId: string) => void;
@@ -180,7 +180,11 @@ export function Tab(props: tabProps) {
                       props.onTabReorder?.(updatedItems);
                     }
 
-                    props.onTabDragEnd?.(data.event.clientX);
+                    props.onTabDragEnd?.(
+                      data.event.clientX,
+                      data.event.clientY,
+                      tab.id,
+                    );
                     props.onFocusTabChange?.(currentDraggingTabId()!);
                     setReorderTabIndex(null);
                     setCurrentDraggingTabId("");

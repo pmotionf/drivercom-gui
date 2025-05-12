@@ -60,6 +60,6 @@ export const panelContexts: PanelContexts = new Map();
 
 type TabContexts = Map<
   string,
-  [Store<TabListContext[]>, SetStoreFunction<TabListContext[]>]
+  [Store<TabListContext>, SetStoreFunction<TabListContext>]
 >;
 export const tabContexts: TabContexts = new Map();

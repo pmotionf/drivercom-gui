@@ -1,11 +1,9 @@
 import { createSignal } from "solid-js";
 import { Toast } from "~/components/ui/toast.tsx";
 import { IconX } from "@tabler/icons-solidjs";
-import { panelContexts, tabContexts } from "~/GlobalState.ts";
+import { panelContexts } from "~/GlobalState.ts";
 import { PlotContext } from "~/components/Plot.tsx";
 import { PanelLayout, PanelSizeContext } from "~/components/PanelLayout.tsx";
-import { createStore } from "solid-js/store";
-import { TabListContext } from "~/components/TabList.tsx";
 
 export type LogViewerTabContext = {
   id: string;
@@ -27,9 +25,8 @@ function LogViewer() {
     gap: 24,
   });
 
-  if (!panelContexts.has("LogViewer") || !tabContexts.has("LogViewer")) {
+  if (!panelContexts.has("LogViewer")) {
     panelContexts.set("LogViewer", createSignal<PanelSizeContext[]>([]));
-    tabContexts.set("LogViewer", createStore<TabListContext[]>([]));
   }
 
   return (

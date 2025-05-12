@@ -19,6 +19,7 @@ export type panelProps = JSX.HTMLAttributes<HTMLDivElement> & {
     draggedTab: TabContext,
     mouseX: number,
   ) => void;
+  onDeletePanel?: () => void;
 };
 
 export function Panel(props: panelProps) {
@@ -27,7 +28,7 @@ export function Panel(props: panelProps) {
   const [draggedTab, setDraggedTab] = createSignal<TabContext | null>(null);
 
   return (
-    <div style={{ width: "100%", height: "100%" }}>
+    <div style={{ width: "100%", height: "100%" }} id={props.id}>
       <TabList
         id={props.id}
         index={props.index}
@@ -46,27 +47,24 @@ export function Panel(props: panelProps) {
           );
           setCurrentDraggingTabLocation("none");
         }}
+        onDeleteTabList={() => {
+          props.onDeletePanel?.();
+        }}
       />
 
       <Show
-        when={
-          currentDraggingTabLocation() !== "none" &&
-          currentDraggingTabLocation() !== "tabList"
-        }
+        when={currentDraggingTabLocation() !== "none" &&
+          currentDraggingTabLocation() !== "tabList"}
       >
         <Stack
-          width={
-            currentDraggingTabLocation() === "otherPanel"
-              ? `100%`
-              : currentDraggingTabLocation() === "centerSplitter"
-                ? `50%`
-                : `50%`
-          }
-          height={
-            currentDraggingTabLocation() === "otherPanel"
-              ? "100%"
-              : `calc(100% - 3rem)`
-          }
+          width={currentDraggingTabLocation() === "otherPanel"
+            ? `100%`
+            : currentDraggingTabLocation() === "centerSplitter"
+            ? `50%`
+            : `50%`}
+          height={currentDraggingTabLocation() === "otherPanel"
+            ? "100%"
+            : `calc(100% - 3rem)`}
           backgroundColor="fg.default"
           position="absolute"
           top={currentDraggingTabLocation() === "otherPanel" ? "0" : "3rem"}
