@@ -10,16 +10,25 @@ import { createDraggable } from "@neodrag/solid";
 import { Stack } from "styled-system/jsx/index.mjs";
 import { createEffect } from "solid-js";
 import { Text } from "./ui/text.tsx";
-import { tabContext } from "./TabList.tsx";
+import { PlotContext } from "./Plot.tsx";
+
+export type TabContext = {
+  id: string;
+  tabName?: string;
+  filePath?: string;
+  plotSplitIndex?: number[][];
+  plotContext?: PlotContext[];
+  plotZoomState?: [number, number];
+};
 
 export type tabProps = JSX.HTMLAttributes<HTMLDivElement> & {
-  tabContext: tabContext[];
+  tabContext: TabContext[];
   focusedTab: string;
   onTabDragEnd?: (clientX: number) => void;
   onCreateTab?: () => void;
   onDeleteTab?: (index: number) => void;
   onFocusTabChange?: (tabId: string) => void;
-  onTabReorder?: (updateTabList: tabContext[]) => void;
+  onTabReorder?: (updateTabList: TabContext[]) => void;
   onTabNameChange?: (tabIndex: number, changedName: string) => void;
   onTabDragging?: (clientX: number, clientY: number, tabId: string) => void;
 };
@@ -29,8 +38,9 @@ export function Tab(props: tabProps) {
   // deno-lint-ignore no-unused-vars
   const { draggable: dragOptions } = createDraggable();
   //reorder
-  const [currentDraggingTabId, setCurrentDraggingTabId] =
-    createSignal<string>("");
+  const [currentDraggingTabId, setCurrentDraggingTabId] = createSignal<string>(
+    "",
+  );
   const [reorderTabIndex, setReorderTabIndex] = createSignal<number | null>(
     null,
   );
@@ -38,8 +48,8 @@ export function Tab(props: tabProps) {
   const reorderTabsOnDragEnd = (
     currentTabIndex: number,
     reorderIndex: number,
-    tabContext: tabContext[],
-  ): tabContext[] => {
+    tabContext: TabContext[],
+  ): TabContext[] => {
     const fromIndex = currentTabIndex;
     const nextIndex = reorderIndex;
 
@@ -146,12 +156,11 @@ export function Tab(props: tabProps) {
                     )!.offsetWidth;
                     setCurrentMousePointerPosition(() => {
                       return {
-                        x:
-                          data.event.clientX -
+                        x: data.event.clientX -
                           mousePositionInsideComponent().x -
                           collapsedSideBarWidth,
-                        y:
-                          data.event.clientY - mousePositionInsideComponent().y,
+                        y: data.event.clientY -
+                          mousePositionInsideComponent().y,
                       };
                     });
 
@@ -182,24 +191,18 @@ export function Tab(props: tabProps) {
                   value={tab.id}
                   paddingRight="0rem"
                   paddingLeft="0.5rem"
-                  borderBottomWidth={
-                    currentDraggingTabId().length > 0
-                      ? currentDraggingTabId() === tab.id
-                        ? "3px"
-                        : "0px"
-                      : props.focusedTab === tab.id
-                        ? "3px"
-                        : "0px"
-                  }
-                  marginTop={
-                    currentDraggingTabId().length > 0
-                      ? currentDraggingTabId() === tab.id
-                        ? `calc(0.5rem + 1px)`
-                        : "0.5rem"
-                      : props.focusedTab === tab.id
-                        ? `calc(0.5rem + 1px)`
-                        : `0.5rem`
-                  }
+                  borderBottomWidth={currentDraggingTabId().length > 0
+                    ? currentDraggingTabId() === tab.id ? "3px" : "0px"
+                    : props.focusedTab === tab.id
+                    ? "3px"
+                    : "0px"}
+                  marginTop={currentDraggingTabId().length > 0
+                    ? currentDraggingTabId() === tab.id
+                      ? `calc(0.5rem + 1px)`
+                      : "0.5rem"
+                    : props.focusedTab === tab.id
+                    ? `calc(0.5rem + 1px)`
+                    : `0.5rem`}
                   borderBottomColor="accent.emphasized"
                 >
                   <Editable.Root
@@ -234,10 +237,8 @@ export function Tab(props: tabProps) {
                   </div>
                 </Tabs.Trigger>
                 <Show
-                  when={
-                    reorderTabIndex() === tabIndex() &&
-                    currentDraggingTabId().length > 0
-                  }
+                  when={reorderTabIndex() === tabIndex() &&
+                    currentDraggingTabId().length > 0}
                 >
                   <Stack
                     width="100%"

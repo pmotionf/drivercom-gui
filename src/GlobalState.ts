@@ -1,6 +1,7 @@
-import { createContext, createSignal } from "solid-js";
-import { createStore, SetStoreFunction } from "solid-js/store";
-import { LogViewerPanelContext, LogViewerTabContext } from "./pages/LogViewer";
+import { Accessor, createContext, createSignal, Setter } from "solid-js";
+import { createStore, SetStoreFunction, Store } from "solid-js/store";
+import { PanelSizeContext } from "./components/PanelLayout.tsx";
+import { TabListContext } from "./components/TabList.tsx";
 
 const [globalState, setGlobalState] = createStore({
   theme: "light",
@@ -51,13 +52,14 @@ export const [logStartCombinatorList, setLogStartCombinatorList] = createSignal<
   string[]
 >([]);
 
-export const [logViewerPanelContexts, setLogViewPanelContexts] = createSignal<
-  {
-    id: string;
-    tabContext: LogViewerTabContext[];
-    focusedTab?: string;
-  }[]
->([]);
-export const [logViewerPanelSize, setLogViewPanelSize] = createSignal<
-  LogViewerPanelContext[]
->([]);
+type PanelContexts = Map<
+  string,
+  [Accessor<PanelSizeContext[]>, Setter<PanelSizeContext[]>]
+>;
+export const panelContexts: PanelContexts = new Map();
+
+type TabContexts = Map<
+  string,
+  [Store<TabListContext[]>, SetStoreFunction<TabListContext[]>]
+>;
+export const tabContexts: TabContexts = new Map();

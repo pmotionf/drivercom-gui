@@ -3,46 +3,42 @@ import { Show } from "solid-js/web";
 import { For } from "solid-js/web";
 import { Splitter } from "~/components/ui/splitter.tsx";
 import { Panel } from "~/components/Panel.tsx";
-import { tabLocation } from "./TabList.tsx";
-import { createStore } from "solid-js/store";
-import { createEffect, createSignal, onMount } from "solid-js";
-import { tabContext } from "./TabList.tsx";
+import { TabLocation } from "./TabList.tsx";
+import { onMount } from "solid-js";
+import { TabListContext } from "./TabList.tsx";
+import { PanelContext } from "~/components/Panel.tsx";
+import { panelContexts } from "~/GlobalState.ts";
 
-export type panelSizeContext = {
+export type PanelSizeContext = {
   id: string;
   size: number;
 };
 
-export type panelContext = {
+export type PanelLayoutProps = JSX.HTMLAttributes<HTMLDivElement> & {
   id: string;
-  tabContext: tabContext[];
-  focusedTab?: string;
 };
 
-export type panelLayoutProps = JSX.HTMLAttributes<HTMLDivElement> & {
-  size: panelSizeContext[];
-  onSizeChange?: (size: panelSizeContext[]) => void;
-  panelContext: panelContext[];
-  onPanelContextChange?: (newContext: object[]) => void;
-};
+// Global state data need to change as a dictionary
+// So panel layout has an id, to found the panel Context,
+export function PanelLayout(props: PanelLayoutProps) {
+  if (!panelContexts.has(props.id)) return;
 
-export function PanelLayout(props: panelLayoutProps) {
-  const [panels, setPanels] = createStore<panelContext[]>(props.panelContext);
+  const setPanelContext = (key: string, updateContext: PanelSizeContext[]) => {
+    panelContexts.get(key)?.[1](updateContext);
+  };
+  const getPanelContext = (key: string): PanelSizeContext[] => {
+    const panelContext = panelContexts.get(key)![0]();
+    return panelContext;
+  };
 
   onMount(() => {
-    if (panels.length === 0) {
+    if (getPanelContext(props.id).length === 0) {
       const uuid = getCryptoUUID();
-      setPanels([
-        {
-          id: uuid,
-          tabContext: [],
-        },
-      ]);
-      props.onSizeChange?.([{ id: uuid, size: 100 }]);
+      setPanelContext(props.id, [{ id: uuid, size: 100 }]);
     }
   });
 
-  createEffect(() => {
+  /*createEffect(() => {
     const tabList = panels;
     if (tabList.length === 1) return;
 
@@ -59,49 +55,48 @@ export function PanelLayout(props: panelLayoutProps) {
 
     setPanels(parseList);
 
-    if (parseList.length !== props.size.length) {
+    if (parseList.length !== getPanelContext(props.id).length) {
       const panelSize = 100 / parseList.length;
       const updatePanelSize = parseList.map((panel) => {
         return { id: panel.id, size: panelSize };
       });
-      props.onSizeChange?.(updatePanelSize);
-    }
-  });
+      setPanelContext(props.id, updatePanelSize);
+      }
+  });*/
 
   const splitTab = (
-    location: tabLocation,
+    location: TabLocation,
     index: number,
-    draggedTab: tabContext,
-    panels: panelContext[],
-  ): panelContext[] => {
+    draggedTab: TabListContext,
+    panels: PanelContext[],
+  ): PanelContext[] => {
     const panelIndex = location === "rightSplitter" ? index + 1 : index;
     const uuid = getCryptoUUID();
 
-    const newPanel: panelContext = {
+    const newPanel: PanelContext = {
       id: uuid,
       tabContext: [draggedTab],
       focusedTab: draggedTab.id,
     };
 
-    const deleteDraggedTab: panelContext[] = panels.map((panel, i) => {
+    const deleteDraggedTab: PanelContext[] = panels.map((panel, i) => {
       if (index !== i) return panel;
       else {
         if (!panel.tabContext) return panel;
-        const tabContext: tabContext[] = panel.tabContext;
+        const tabContext: TabListContext[] = panel.tabContext;
         const deleteTabIndex = tabContext
           .map((tab) => {
             return tab.id;
           })
           .indexOf(draggedTab.id);
-        const updateTabContext: tabContext[] = tabContext.filter(
+        const updateTabContext: TabListContext[] = tabContext.filter(
           (_, i) => i !== deleteTabIndex,
         );
-        const nextFocusTab: tabContext =
-          updateTabContext[
-            deleteTabIndex >= updateTabContext.length
-              ? deleteTabIndex - 1
-              : deleteTabIndex
-          ];
+        const nextFocusTab: TabListContext = updateTabContext[
+          deleteTabIndex >= updateTabContext.length
+            ? deleteTabIndex - 1
+            : deleteTabIndex
+        ];
         const nextFocusTabId: string = nextFocusTab.id ? nextFocusTab.id : "";
 
         return {
@@ -121,11 +116,11 @@ export function PanelLayout(props: panelLayoutProps) {
   };
 
   const moveTabToOtherPanel = (
-    draggedTab: tabContext,
+    draggedTab: TabListContext,
     index: number,
     draggedInPanelIndex: number,
-    panelList: panelContext[],
-  ): panelContext[] => {
+    panelList: PanelContext[],
+  ): PanelContext[] => {
     if (index === draggedInPanelIndex) return panelList;
     const updatePanels = panelList.map((panel, i) => {
       if (i === draggedInPanelIndex) {
@@ -161,25 +156,27 @@ export function PanelLayout(props: panelLayoutProps) {
 
   return (
     <Splitter.Root
-      size={props.size}
+      size={getPanelContext(props.id)}
       gap="0.5"
       onSizeChange={(details: { size: object[] }) => {
-        const parseDetails: panelSizeContext[] = details.size.map((info) => {
+        const parseDetails: PanelSizeContext[] = details.size.map((info) => {
           return {
             id: info["id" as keyof typeof info],
             size: info["size" as keyof typeof info],
-          } as panelSizeContext;
+          } as PanelSizeContext;
         });
-        props.onSizeChange?.(parseDetails);
+        setPanelContext(props.id, parseDetails);
       }}
     >
-      <For each={props.size && panels}>
+      <For each={getPanelContext(props.id)}>
         {(currentPanel, index) => {
           return (
             <>
               <Show when={index() !== 0}>
                 <Splitter.ResizeTrigger
-                  id={`${panels[index() - 1].id}:${currentPanel.id}`}
+                  id={`${
+                    getPanelContext(props.id)[index() - 1].id
+                  }:${currentPanel.id}`}
                   width="4px"
                   padding="0"
                   opacity="0%"
@@ -201,49 +198,13 @@ export function PanelLayout(props: panelLayoutProps) {
                     width: "100%",
                     height: "100%",
                   }}
-                  id={currentPanel.id}
-                  panelContext={currentPanel}
+                  id={props.id}
+                  index={index()}
                   onSplitTab={(
-                    tabLocation: tabLocation,
+                    tabLocation: TabLocation,
                     draggedTab,
                     clientX,
-                  ) => {
-                    if (
-                      tabLocation === "leftSplitter" ||
-                      tabLocation === "rightSplitter"
-                    ) {
-                      const updateTabs = splitTab(
-                        tabLocation,
-                        index(),
-                        draggedTab,
-                        props.panelContext,
-                      );
-                      setPanels(updateTabs);
-                    } else if (tabLocation === "otherPanel") {
-                      let draggedInTabIndex: number | null = null;
-                      panels.forEach((panel, index) => {
-                        const panelElement = document.getElementById(panel.id);
-                        if (panelElement) {
-                          if (
-                            panelElement.offsetLeft < clientX &&
-                            clientX <
-                              panelElement.offsetLeft + panelElement.offsetWidth
-                          ) {
-                            draggedInTabIndex = index;
-                          }
-                        }
-                      });
-
-                      if (draggedInTabIndex === null) return;
-                      const updatePanel = moveTabToOtherPanel(
-                        draggedTab,
-                        index(),
-                        draggedInTabIndex,
-                        panels,
-                      );
-                      setPanels(updatePanel);
-                    }
-                  }}
+                  ) => {}}
                 />
               </Splitter.Panel>
             </>

@@ -1,79 +1,78 @@
 import { JSX } from "solid-js";
-import { createStore } from "solid-js/store";
-import { tabContext, TabList, tabLocation } from "./TabList.tsx";
+import { TabList, TabListContext, TabLocation } from "./TabList.tsx";
 import { createSignal } from "solid-js";
 import { Show } from "solid-js";
 import { Stack } from "styled-system/jsx/stack";
-import { panelContext } from "./PanelLayout.tsx";
+import { TabContext } from "./Tab.tsx";
+
+export type PanelContext = {
+  id: string;
+  tabContext: TabListContext[];
+  focusedTab?: string;
+};
 
 export type panelProps = JSX.HTMLAttributes<HTMLDivElement> & {
   id: string;
-  panelContext: panelContext;
-  onFocusTabChange?: (tabId: string) => void;
+  index: number;
   onSplitTab?: (
-    location: tabLocation,
-    draggedTab: tabContext,
-    clientX: number,
+    location: TabLocation,
+    draggedTab: TabContext,
+    mouseX: number,
   ) => void;
 };
 
 export function Panel(props: panelProps) {
-  const [panelContext] = createStore<panelContext>(props.panelContext);
   const [currentDraggingTabLocation, setCurrentDraggingTabLocation] =
-    createSignal<tabLocation>("none");
-  const [draggedTab, setDraggedTab] = createSignal<tabContext | null>(null);
+    createSignal<TabLocation>("none");
+  const [draggedTab, setDraggedTab] = createSignal<TabContext | null>(null);
 
   return (
-    <>
-      <div style={{ width: "100%", height: "100%" }} id={props.id}>
-        <TabList
-          id={props.panelContext.id}
-          style={{ width: "100%", height: "100%" }}
-          tabListContext={panelContext}
-          onDraggingTab={(tabLocation, draggedTab) => {
-            if (tabLocation !== currentDraggingTabLocation()) {
-              setCurrentDraggingTabLocation(tabLocation);
-              setDraggedTab(draggedTab);
-            }
-          }}
-          onTabDragEnd={(clientX) => {
-            props.onSplitTab?.(
-              currentDraggingTabLocation(),
-              draggedTab()!,
-              clientX,
-            );
-            setCurrentDraggingTabLocation("none");
-          }}
-        />
-        <Show
-          when={
-            currentDraggingTabLocation() !== "none" &&
-            currentDraggingTabLocation() !== "tabList" &&
-            panelContext.tabContext.length > 1
+    <div style={{ width: "100%", height: "100%" }}>
+      <TabList
+        id={props.id}
+        index={props.index}
+        style={{ width: "100%", height: "100%" }}
+        onDraggingTab={(tabLocation, draggedTab) => {
+          if (tabLocation !== currentDraggingTabLocation()) {
+            setCurrentDraggingTabLocation(tabLocation);
+            setDraggedTab(draggedTab);
           }
-        >
-          <Stack
-            width={
-              currentDraggingTabLocation() === "centerSplitter" ||
-              currentDraggingTabLocation() === "otherPanel"
-                ? `100%`
+        }}
+        onTabDragEnd={(clientX) => {
+          props.onSplitTab?.(
+            currentDraggingTabLocation(),
+            draggedTab()!,
+            clientX,
+          );
+          setCurrentDraggingTabLocation("none");
+        }}
+      />
+
+      <Show
+        when={
+          currentDraggingTabLocation() !== "none" &&
+          currentDraggingTabLocation() !== "tabList"
+        }
+      >
+        <Stack
+          width={
+            currentDraggingTabLocation() === "otherPanel"
+              ? `100%`
+              : currentDraggingTabLocation() === "centerSplitter"
+                ? `50%`
                 : `50%`
-            }
-            height={
-              currentDraggingTabLocation() === "otherPanel"
-                ? "100%"
-                : `calc(100% - 3rem)`
-            }
-            backgroundColor="fg.default"
-            position="absolute"
-            left={
-              currentDraggingTabLocation() === "rightSplitter" ? "50%" : "0"
-            }
-            top={currentDraggingTabLocation() === "otherPanel" ? "0" : "3rem"}
-            opacity="10%"
-          />
-        </Show>
-      </div>
-    </>
+          }
+          height={
+            currentDraggingTabLocation() === "otherPanel"
+              ? "100%"
+              : `calc(100% - 3rem)`
+          }
+          backgroundColor="fg.default"
+          position="absolute"
+          top={currentDraggingTabLocation() === "otherPanel" ? "0" : "3rem"}
+          opacity="10%"
+        />
+      </Show>
+    </div>
   );
 }
