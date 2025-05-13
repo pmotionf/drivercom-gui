@@ -30,6 +30,11 @@ export function PanelLayout(props: PanelLayoutProps) {
     return panelContext;
   };
 
+  const getPanelId = (): string[] =>
+    getPanelContext(props.id).map((panel) => {
+      return panel.id;
+    });
+
   onMount(() => {
     if (getPanelContext(props.id).length === 0) {
       const uuid = getCryptoUUID();
@@ -87,15 +92,13 @@ export function PanelLayout(props: PanelLayoutProps) {
         setPanelContext(props.id, parseDetails);
       }}
     >
-      <For each={getPanelContext(props.id)}>
+      <For each={getPanelId()}>
         {(currentPanel, index) => {
           return (
             <>
               <Show when={index() !== 0}>
                 <Splitter.ResizeTrigger
-                  id={`${
-                    getPanelContext(props.id)[index() - 1].id
-                  }:${currentPanel.id}`}
+                  id={`${getPanelId()[index() - 1]}:${currentPanel}`}
                   width="4px"
                   padding="0"
                   opacity="0%"
@@ -113,7 +116,7 @@ export function PanelLayout(props: PanelLayoutProps) {
                   width: "100%",
                   height: "100%",
                 }}
-                id={currentPanel.id}
+                id={currentPanel}
                 key={props.id}
                 index={index()}
                 onDeletePanel={() => {
