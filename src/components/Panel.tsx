@@ -4,6 +4,8 @@ import { createSignal } from "solid-js";
 import { Show } from "solid-js";
 import { Stack } from "styled-system/jsx/stack";
 import { TabContext } from "./Tab.tsx";
+import { panelContexts } from "~/GlobalState.ts";
+import { Splitter } from "./ui/splitter.tsx";
 
 export type PanelContext = {
   id: string;
@@ -13,6 +15,7 @@ export type PanelContext = {
 
 export type panelProps = JSX.HTMLAttributes<HTMLDivElement> & {
   id: string;
+  key: string;
   index: number;
   onSplitTab?: (
     location: TabLocation,
@@ -23,16 +26,27 @@ export type panelProps = JSX.HTMLAttributes<HTMLDivElement> & {
 };
 
 export function Panel(props: panelProps) {
+  if (!panelContexts.has(props.key)) return;
   const [currentDraggingTabLocation, setCurrentDraggingTabLocation] =
     createSignal<TabLocation>("none");
   const [draggedTab, setDraggedTab] = createSignal<TabContext | null>(null);
 
+  const getPanelSize = (currentPanelId: string): number => {
+    const panels = panelContexts.get(props.key)?.[0]()!;
+    const index = panels
+      .map((panel) => {
+        return panel.id;
+      })
+      .indexOf(currentPanelId);
+    return Math.floor(panels[index].size);
+  };
+
   return (
-    <div style={{ width: "100%", height: "100%" }} id={props.id}>
+    <Splitter.Panel id={props.id}>
       <TabList
         id={props.id}
         index={props.index}
-        style={{ width: "100%", height: "100%" }}
+        style={{ width: "100%", height: "100%", position: "relative" }}
         onDraggingTab={(tabLocation, draggedTab) => {
           if (tabLocation !== currentDraggingTabLocation()) {
             setCurrentDraggingTabLocation(tabLocation);
@@ -71,6 +85,6 @@ export function Panel(props: panelProps) {
           opacity="10%"
         />
       </Show>
-    </div>
+    </Splitter.Panel>
   );
 }

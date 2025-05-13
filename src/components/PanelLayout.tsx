@@ -108,82 +108,74 @@ export function PanelLayout(props: PanelLayoutProps) {
                   }}
                 />
               </Show>
-              <Splitter.Panel
+              <Panel
+                style={{
+                  width: "100%",
+                  height: "100%",
+                }}
                 id={currentPanel.id}
-                style={{ width: "100%", height: "100%" }}
-              >
-                <Panel
-                  style={{
-                    width: "100%",
-                    height: "100%",
-                  }}
-                  id={currentPanel.id}
-                  index={index()}
-                  onDeletePanel={() => {
-                    const currentPanel = getPanelContext(props.id);
-                    if (currentPanel.length > 1) {
-                      setPanelContext(
-                        props.id,
-                        currentPanel.filter((_, i) => i !== index()),
-                      );
-                    }
-                  }}
-                  onSplitTab={(
-                    tabLocation: TabLocation,
-                    draggedTab,
-                    mouseX,
-                  ) => {
-                    if (
-                      tabLocation === "leftSplitter" ||
-                      tabLocation === "rightSplitter"
-                    ) {
-                      const newSplit = splitTab(
-                        tabLocation,
-                        index(),
-                        getPanelContext(props.id),
-                      );
-                      tabContexts.set(
-                        newSplit.nextTabListId,
-                        createStore<TabListContext>({
-                          tabContext: [draggedTab] as TabContext[],
-                          focusedTab: draggedTab.id,
-                        }),
-                      );
-                      setPanelContext(props.id, newSplit.panelContext);
-                    }
+                key={props.id}
+                index={index()}
+                onDeletePanel={() => {
+                  const currentPanel = getPanelContext(props.id);
+                  if (currentPanel.length > 1) {
+                    setPanelContext(
+                      props.id,
+                      currentPanel.filter((_, i) => i !== index()),
+                    );
+                  }
+                }}
+                onSplitTab={(tabLocation: TabLocation, draggedTab, mouseX) => {
+                  if (
+                    tabLocation === "leftSplitter" ||
+                    tabLocation === "rightSplitter"
+                  ) {
+                    const newSplit = splitTab(
+                      tabLocation,
+                      index(),
+                      getPanelContext(props.id),
+                    );
+                    tabContexts.set(
+                      newSplit.nextTabListId,
+                      createStore<TabListContext>({
+                        tabContext: [draggedTab] as TabContext[],
+                        focusedTab: draggedTab.id,
+                      }),
+                    );
+                    setPanelContext(props.id, newSplit.panelContext);
+                  }
 
-                    if (tabLocation === "otherPanel") {
-                      let nextPanelIndex: number = 0;
-                      getPanelContext(props.id).forEach((panel, i) => {
-                        const panelElement = document.getElementById(
-                          `${panel.id}`,
-                        );
-
-                        if (
-                          panelElement!.offsetLeft < mouseX &&
-                          mouseX <
-                            panelElement!.offsetLeft + panelElement!.offsetWidth
-                        ) {
-                          nextPanelIndex = i;
-                        }
-                      });
-
-                      const nextPanelId = getPanelContext(props.id)[
-                        nextPanelIndex
-                      ].id;
-                      const prevTabContext = tabContexts.get(nextPanelId)?.[0];
-                      tabContexts.get(nextPanelId)?.[1]("tabContext", [
-                        ...prevTabContext!.tabContext,
-                        draggedTab,
-                      ]);
-                      tabContexts.get(nextPanelId)?.[1](
-                        "focusedTab",
-                        draggedTab.id,
+                  if (tabLocation === "otherPanel") {
+                    let nextPanelIndex: number = 0;
+                    getPanelContext(props.id).forEach((panel, i) => {
+                      const panelElement = document.getElementById(
+                        `${panel.id}`,
                       );
-                    }
-                  }}
-                />
-              </Splitter.Panel>
+
+                      if (
+                        panelElement!.offsetLeft < mouseX &&
+                        mouseX <
+                          panelElement!.offsetLeft + panelElement!.offsetWidth
+                      ) {
+                        nextPanelIndex = i;
+                      }
+                    });
+
+                    const nextPanelId = getPanelContext(props.id)[
+                      nextPanelIndex
+                    ].id;
+                    const prevTabContext = tabContexts.get(nextPanelId)?.[0];
+                    tabContexts.get(nextPanelId)?.[1]("tabContext", [
+                      ...prevTabContext!.tabContext,
+                      draggedTab,
+                    ]);
+                    tabContexts.get(nextPanelId)?.[1](
+                      "focusedTab",
+                      draggedTab.id,
+                    );
+                  }
+                }}
+              />
             </>
           );
         }}
