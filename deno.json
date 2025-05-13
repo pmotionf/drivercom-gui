@@ -15,12 +15,20 @@
     "serve": "deno run -A --node-modules-dir npm:vite preview",
     "tauri": {
       "command": "deno task prepare && tauri",
-      "dependencies": ["unpack-drivercom"]
+      "dependencies": ["unpack-mmc-cli"]
     },
-    "fetch-drivercom": "mkdir -p src-tauri/binaries && cd src-tauri/binaries && gh release download -R pmotionf/drivercom-cli -p '*-drivercom-cli-*.zip' --clobber",
+    "fetch-drivercom": "mkdir -p src-tauri/binaries/drivercom && cd src-tauri/binaries && gh release download -R pmotionf/drivercom-cli -p '*-drivercom-cli-*.zip' --clobber",
     "unpack-drivercom": {
       "command": "deno run -A unpack-drivercom.js",
       "dependencies": ["fetch-drivercom"]
+    },
+    "fetch-mmc-cli": {
+      "command": "mkdir -p src-tauri/binaries/mmc-cli && cd src-tauri/binaries && gh release download -R pmotionf/mmc-cli -p '*-mmc-cli-*.zip' --clobber",
+      "dependencies": ["unpack-drivercom"]
+    },
+    "unpack-mmc-cli": {
+      "command": "deno run -A unpack-mmc.js",
+      "dependencies": ["fetch-mmc-cli"]
     }
   },
   "fmt": {
