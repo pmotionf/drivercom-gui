@@ -104,7 +104,6 @@ export function Tab(props: tabProps) {
       y: number;
     }>({ x: 0, y: 0 });
 
-  //parsing
   const parseTabName = (tabName: string, filePath: string): string => {
     if (tabName.length === 0) {
       return JSON.stringify(filePath.match(/[^?!//]+$/!)).slice(2, -2);
