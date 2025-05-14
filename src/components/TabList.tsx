@@ -6,6 +6,8 @@ import { open } from "@tauri-apps/plugin-dialog";
 import { LogViewerTabPageContent } from "~/pages/LogViewer/LogViewerTabPageContent.tsx";
 import { tabContexts } from "~/GlobalState.ts";
 import { createStore } from "solid-js/store";
+import { Toast } from "./ui/toast.tsx";
+import { IconX } from "@tabler/icons-solidjs";
 
 export type TabListContext = {
   focusedTab: string;
@@ -68,12 +70,10 @@ export function TabList(props: tabListProps) {
     return uuid;
   }
 
-  async function openFileDialog(): Promise<
-    {
-      id: string;
-      filePath: string;
-    } | null
-  > {
+  async function openFileDialog(): Promise<{
+    id: string;
+    filePath: string;
+  } | null> {
     const path = await open({
       multiple: false,
       filters: [{ name: "CSV", extensions: ["csv"] }],
@@ -102,11 +102,12 @@ export function TabList(props: tabListProps) {
     });
 
     const focusedTabIndex = tabIdList.indexOf(focusedTab);
-    const nextFocusedTabIndex = deleteTabIndex !== focusedTabIndex
-      ? focusedTabIndex
-      : deleteTabIndex === 0
-      ? deleteTabIndex + 1
-      : deleteTabIndex - 1;
+    const nextFocusedTabIndex =
+      deleteTabIndex !== focusedTabIndex
+        ? focusedTabIndex
+        : deleteTabIndex === 0
+          ? deleteTabIndex + 1
+          : deleteTabIndex - 1;
     return tabIdList[nextFocusedTabIndex];
   };
 
@@ -146,135 +147,148 @@ export function TabList(props: tabListProps) {
     } else {
       if (clientY > tabHeight) {
         return clientX > tabListContainerStart &&
-            clientX < tabListContainerWidthQuarter + tabListContainerStart
+          clientX < tabListContainerWidthQuarter + tabListContainerStart
           ? "leftSplitter"
           : clientX >= tabListContainerWidthQuarter + tabListContainerStart &&
               clientX <= tabListContainerEnd - tabListContainerWidthQuarter
-          ? "centerSplitter"
-          : "rightSplitter";
+            ? "centerSplitter"
+            : "rightSplitter";
       } else {
         return "tabList";
       }
     }
   };
 
-  //const [render, setRender] = createSignal<boolean>(true);
+  const toaster = Toast.createToaster({
+    placement: "top-end",
+    gap: 24,
+  });
 
   return (
-    <Tabs.Root
-      id={props.id}
-      width="100%"
-      height="100%"
-      value={getTabContexts().focusedTab ? getTabContexts().focusedTab : ""}
-      onValueChange={(tabDetails: { value: string }) => {
-        setFocusTab(tabDetails.value);
-      }}
-    >
-      <Tab
-        key={props.id}
-        style={{
-          height: "3rem",
+    <>
+      <Tabs.Root
+        id={props.id}
+        width="100%"
+        height="100%"
+        value={getTabContexts().focusedTab ? getTabContexts().focusedTab : ""}
+        onValueChange={(tabDetails: { value: string }) => {
+          setFocusTab(tabDetails.value);
         }}
-        onCreateTab={async () => {
-          const newTabInfo = await openFileDialog();
-          if (!newTabInfo) {
-            /*toaster.create({
-              title: "Invalid File",
-              description: "The file is invalid.",
-              type: "error",
-              });*/
-            return;
-          }
-          const newTab: TabContext = {
-            id: newTabInfo.id,
-            filePath: newTabInfo.filePath,
-            plotSplitIndex: [],
-            plotContext: [],
-            tabName: "",
-            plotZoomState: [0, 0],
-          };
+      >
+        <Tab
+          key={props.id}
+          style={{
+            height: "3rem",
+          }}
+          onCreateTab={async () => {
+            const newTabInfo = await openFileDialog();
+            if (!newTabInfo) {
+              toaster.create({
+                title: "Invalid File",
+                description: "The file is invalid.",
+                type: "error",
+              });
+              return;
+            }
+            const newTab: TabContext = {
+              id: newTabInfo.id,
+              filePath: newTabInfo.filePath,
+              plotSplitIndex: [],
+              plotContext: [],
+              tabName: "",
+              plotZoomState: [0, 0],
+            };
 
-          setTabContexts([...getTabContexts().tabContext, newTab]);
-          setFocusTab(newTab.id);
-        }}
-        onDeleteTab={(tabIndex) => {
-          const nextFocusTabId = getNextFocusTabId(
-            tabIndex,
-            getTabContexts().focusedTab,
-            getTabContexts().tabContext,
-          );
-          deleteTab(tabIndex, getTabContexts().tabContext, nextFocusTabId);
-        }}
-        onTabDragEnd={(mouseX: number, mouseY: number, tabId: string) => {
-          // Needed for UI
-          //setRender(false);
-          //setRender(true);
-          const tabListId = `tabs:${props.id}`;
-          const tabLocation = parseTabLocation(
-            mouseX,
-            mouseY,
-            tabId,
-            tabListId,
-          );
-
-          if (
-            tabLocation === "rightSplitter" ||
-            tabLocation === "leftSplitter" ||
-            tabLocation === "otherPanel"
-          ) {
-            const deleteTabIndex = getTabContexts()
-              .tabContext.map((tab) => {
-                return tab.id;
-              })
-              .indexOf(tabId);
+            setTabContexts([...getTabContexts().tabContext, newTab]);
+            setFocusTab(newTab.id);
+          }}
+          onDeleteTab={(tabIndex) => {
             const nextFocusTabId = getNextFocusTabId(
-              deleteTabIndex,
+              tabIndex,
               getTabContexts().focusedTab,
               getTabContexts().tabContext,
             );
-            deleteTab(
-              deleteTabIndex,
-              getTabContexts().tabContext,
-              nextFocusTabId,
+            deleteTab(tabIndex, getTabContexts().tabContext, nextFocusTabId);
+          }}
+          onTabDragEnd={(mouseX: number, mouseY: number, tabId: string) => {
+            const tabListId = `tabs:${props.id}`;
+            const tabLocation = parseTabLocation(
+              mouseX,
+              mouseY,
+              tabId,
+              tabListId,
             );
-          }
 
-          props.onTabDragEnd?.(mouseX);
-        }}
-        onTabDragging={(mouseX: number, mouseY: number, tabId: string) => {
-          const tabListId = `tabs:${props.id}`;
-          const tabLocation = parseTabLocation(
-            mouseX,
-            mouseY,
-            tabId,
-            tabListId,
-          );
+            if (
+              tabLocation === "rightSplitter" ||
+              tabLocation === "leftSplitter" ||
+              tabLocation === "otherPanel"
+            ) {
+              const deleteTabIndex = getTabContexts()
+                .tabContext.map((tab) => {
+                  return tab.id;
+                })
+                .indexOf(tabId);
+              const nextFocusTabId = getNextFocusTabId(
+                deleteTabIndex,
+                getTabContexts().focusedTab,
+                getTabContexts().tabContext,
+              );
+              deleteTab(
+                deleteTabIndex,
+                getTabContexts().tabContext,
+                nextFocusTabId,
+              );
+            }
 
-          const tabList = getTabContexts().tabContext;
-          const updateTabLocation =
-            (tabLocation === "rightSplitter" && tabList.length <= 1) ||
+            props.onTabDragEnd?.(mouseX);
+          }}
+          onTabDragging={(mouseX: number, mouseY: number, tabId: string) => {
+            const tabListId = `tabs:${props.id}`;
+            const tabLocation = parseTabLocation(
+              mouseX,
+              mouseY,
+              tabId,
+              tabListId,
+            );
+
+            const tabList = getTabContexts().tabContext;
+            const updateTabLocation =
+              (tabLocation === "rightSplitter" && tabList.length <= 1) ||
               (tabLocation === "leftSplitter" && tabList.length <= 1)
-              ? "centerSplitter"
-              : tabLocation;
+                ? "centerSplitter"
+                : tabLocation;
 
-          const draggedTab = tabList.filter((tab) => tab.id === tabId)[0];
-          props.onDraggingTab?.(updateTabLocation, draggedTab, mouseX);
-        }}
-      />
-      <For each={getTabContexts().tabContext}>
-        {(tab) => {
-          return (
-            <Tabs.Content
-              value={tab.id}
-              width="100%"
-              height={`calc(100% - 3rem)`}
-              overflowY="auto"
-            >
-              <LogViewerTabPageContent key={props.id} tabId={tab.id} />
-            </Tabs.Content>
-          );
-        }}
-      </For>
-    </Tabs.Root>
+            const draggedTab = tabList.filter((tab) => tab.id === tabId)[0];
+            props.onDraggingTab?.(updateTabLocation, draggedTab, mouseX);
+          }}
+        />
+        <For each={getTabContexts().tabContext}>
+          {(tab) => {
+            return (
+              <Tabs.Content
+                value={tab.id}
+                width="100%"
+                height={`calc(100% - 3rem)`}
+                overflowY="auto"
+              >
+                <LogViewerTabPageContent key={props.id} tabId={tab.id} />
+              </Tabs.Content>
+            );
+          }}
+        </For>
+      </Tabs.Root>
+      <Toast.Toaster toaster={toaster}>
+        {(toast) => (
+          <Toast.Root>
+            <Toast.Title>{toast().title}</Toast.Title>
+            <Toast.Description>{toast().description}</Toast.Description>
+            <Toast.CloseTrigger>
+              <IconX />
+            </Toast.CloseTrigger>
+          </Toast.Root>
+        )}
+      </Toast.Toaster>
+    </>
   );
 }
