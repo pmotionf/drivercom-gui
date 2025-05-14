@@ -22,7 +22,11 @@ export type TabLocation =
 
 export type tabListProps = JSX.HTMLAttributes<HTMLDivElement> & {
   id: string;
-  onDraggingTab?: (location: TabLocation, draggedTab: TabContext) => void;
+  onDraggingTab?: (
+    location: TabLocation,
+    draggedTab: TabContext,
+    mouseX: number,
+  ) => void;
   onTabDragEnd?: (clientX: number) => void;
   onDeleteTabList?: () => void;
 };
@@ -268,8 +272,14 @@ export function TabList(props: tabListProps) {
             );
 
             const tabList = getTabContexts().tabContext;
+            const updateTabLocation =
+              (tabLocation === "rightSplitter" && tabList.length <= 1) ||
+                (tabLocation === "leftSplitter" && tabList.length <= 1)
+                ? "centerSplitter"
+                : tabLocation;
+
             const draggedTab = tabList.filter((tab) => tab.id === tabId)[0];
-            props.onDraggingTab?.(tabLocation, draggedTab);
+            props.onDraggingTab?.(updateTabLocation, draggedTab, mouseX);
           }}
         />
       </Show>
