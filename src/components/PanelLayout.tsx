@@ -151,7 +151,7 @@ export function PanelLayout(props: PanelLayoutProps) {
                     let nextPanelIndex: number = 0;
                     getPanelContext(props.id).forEach((panel, i) => {
                       const panelElement = document.getElementById(
-                        `${panel.id}`,
+                        `tabs:${panel.id}`,
                       );
 
                       if (
