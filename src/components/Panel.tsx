@@ -16,7 +16,6 @@ export type PanelContext = {
 export type panelProps = JSX.HTMLAttributes<HTMLDivElement> & {
   id: string;
   key: string;
-  index: number;
   onSplitTab?: (
     location: TabLocation,
     draggedTab: TabContext,
@@ -30,22 +29,10 @@ export function Panel(props: panelProps) {
   const [currentDraggingTabLocation, setCurrentDraggingTabLocation] =
     createSignal<TabLocation>("none");
   const [draggedTab, setDraggedTab] = createSignal<TabContext | null>(null);
-
-  const getPanelSize = (currentPanelId: string): number => {
-    const panels = panelContexts.get(props.key)?.[0]()!;
-    const index = panels
-      .map((panel) => {
-        return panel.id;
-      })
-      .indexOf(currentPanelId);
-    return Math.floor(panels[index].size);
-  };
-
   return (
     <Splitter.Panel id={props.id}>
       <TabList
         id={props.id}
-        index={props.index}
         style={{ width: "100%", height: "100%", position: "relative" }}
         onDraggingTab={(tabLocation, draggedTab) => {
           if (tabLocation !== currentDraggingTabLocation()) {
@@ -66,25 +53,34 @@ export function Panel(props: panelProps) {
         }}
       />
 
-      <Show
-        when={currentDraggingTabLocation() !== "none" &&
-          currentDraggingTabLocation() !== "tabList"}
+      {
+        /*<Show
+        when={
+          currentDraggingTabLocation() !== "none" &&
+          currentDraggingTabLocation() !== "tabList"
+        }
       >
-        <Stack
-          width={currentDraggingTabLocation() === "otherPanel"
-            ? `100%`
-            : currentDraggingTabLocation() === "centerSplitter"
-            ? `50%`
-            : `50%`}
-          height={currentDraggingTabLocation() === "otherPanel"
-            ? "100%"
-            : `calc(100% - 3rem)`}
+         <Stack
+          width={
+            currentDraggingTabLocation() === "otherPanel"
+              ? `100%`
+              : currentDraggingTabLocation() === "centerSplitter"
+                ? `50%`
+                : `50%`
+          }
+          height={
+            currentDraggingTabLocation() === "otherPanel"
+              ? "100%"
+              : `calc(100% - 3rem)`
+          }
           backgroundColor="fg.default"
           position="absolute"
           top={currentDraggingTabLocation() === "otherPanel" ? "0" : "3rem"}
           opacity="10%"
         />
-      </Show>
+
+        </Show>*/
+      }
     </Splitter.Panel>
   );
 }

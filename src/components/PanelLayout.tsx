@@ -118,7 +118,6 @@ export function PanelLayout(props: PanelLayoutProps) {
                 }}
                 id={currentPanel}
                 key={props.id}
-                index={index()}
                 onDeletePanel={() => {
                   const currentPanel = getPanelContext(props.id);
                   if (currentPanel.length > 1) {

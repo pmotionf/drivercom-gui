@@ -5,7 +5,6 @@ import { For } from "solid-js/web";
 import { open } from "@tauri-apps/plugin-dialog";
 import { LogViewerTabPageContent } from "~/pages/LogViewer/LogViewerTabPageContent.tsx";
 import { tabContexts } from "~/GlobalState.ts";
-import { PlotContext } from "./Plot.tsx";
 import { createStore } from "solid-js/store";
 
 export type TabListContext = {
@@ -23,7 +22,6 @@ export type TabLocation =
 
 export type tabListProps = JSX.HTMLAttributes<HTMLDivElement> & {
   id: string;
-  index: number;
   onDraggingTab?: (location: TabLocation, draggedTab: TabContext) => void;
   onTabDragEnd?: (clientX: number) => void;
   onDeleteTabList?: () => void;
@@ -170,7 +168,7 @@ export function TabList(props: tabListProps) {
   return (
     <div style={{ width: "100%", height: "100%" }} id={props.id}>
       <Tabs.Root
-        id={`${props.id}:${props.index}`}
+        id={`${props.id}`}
         width="100%"
         height="100%"
         value={getTabContexts().focusedTab ? getTabContexts().focusedTab : ""}
@@ -227,7 +225,7 @@ export function TabList(props: tabListProps) {
               setTabName(tabIndex, newName);
             }}
             onTabDragEnd={(mouseX: number, mouseY: number, tabId: string) => {
-              const tabListId = `tabs:${props.id}:${props.index}`;
+              const tabListId = props.id;
               const tabLocation = parseTabLocation(
                 mouseX,
                 mouseY,
@@ -262,7 +260,7 @@ export function TabList(props: tabListProps) {
               props.onTabDragEnd?.(mouseX);
             }}
             onTabDragging={(mouseX: number, mouseY: number, tabId: string) => {
-              const tabListId = `tabs:${props.id}:${props.index}`;
+              const tabListId = props.id;
               const tabLocation = parseTabLocation(
                 mouseX,
                 mouseY,
@@ -286,13 +284,7 @@ export function TabList(props: tabListProps) {
                   height={`calc(100% - 3rem)`}
                   overflowY="auto"
                 >
-                  <LogViewerTabPageContent
-                    key={props.id}
-                    tabId={tab.id ? tab.id : ""}
-                    splitPlotIndex={tab.plotSplitIndex
-                      ? tab.plotSplitIndex
-                      : []}
-                  />
+                  <LogViewerTabPageContent key={props.id} tabId={tab.id} />
                 </Tabs.Content>
               </Show>
             );
