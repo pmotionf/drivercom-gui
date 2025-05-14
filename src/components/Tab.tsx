@@ -11,6 +11,7 @@ import { Stack } from "styled-system/jsx/index.mjs";
 import { createEffect } from "solid-js";
 import { Text } from "./ui/text.tsx";
 import { PlotContext } from "./Plot.tsx";
+import { tabContexts } from "~/GlobalState.ts";
 
 export type TabContext = {
   id: string;
@@ -22,18 +23,41 @@ export type TabContext = {
 };
 
 export type tabProps = JSX.HTMLAttributes<HTMLDivElement> & {
-  tabContext: TabContext[];
-  focusedTab: string;
+  key: string;
+  onTabDragging?: (clientX: number, clientY: number, tabId: string) => void;
   onTabDragEnd?: (clientX: number, clientY: number, tabId: string) => void;
   onCreateTab?: () => void;
   onDeleteTab?: (index: number) => void;
-  onFocusTabChange?: (tabId: string) => void;
-  onTabReorder?: (updateTabList: TabContext[]) => void;
-  onTabNameChange?: (tabIndex: number, changedName: string) => void;
-  onTabDragging?: (clientX: number, clientY: number, tabId: string) => void;
 };
 
 export function Tab(props: tabProps) {
+  if (!tabContexts.has(props.key)) return;
+
+  const getTabContexts = (): TabContext[] => {
+    return tabContexts.get(props.key)?.[0].tabContext!;
+  };
+
+  const getFocusId = (): string => {
+    return tabContexts.get(props.key)?.[0].focusedTab!;
+  };
+
+  const setFocusId = (newFocus: string) => {
+    return tabContexts.get(props.key)?.[1]("focusedTab", newFocus);
+  };
+
+  const setTabName = (tabIndex: number, newName: string) => {
+    return tabContexts.get(props.key)?.[1](
+      "tabContext",
+      tabIndex,
+      "tabName",
+      newName,
+    );
+  };
+
+  const setTabContext = (newContext: TabContext[]) => {
+    return tabContexts.get(props.key)?.[1]("tabContext", newContext);
+  };
+
   //@ts-ignore This draggable is needed to use neo-drag.
   // deno-lint-ignore no-unused-vars
   const { draggable: dragOptions } = createDraggable();
@@ -83,7 +107,7 @@ export function Tab(props: tabProps) {
 
   // This is a create effect for scrolling the tab list automatically.
   createEffect(() => {
-    const focusedTab = props.focusedTab;
+    const focusedTab = getFocusId();
     if (!focusedTab) return;
     const currentTabTrigger = document.getElementById(focusedTab);
     if (scrollContainer) {
@@ -110,16 +134,22 @@ export function Tab(props: tabProps) {
     } else return tabName;
   };
 
+  const [render, setRender] = createSignal<boolean>(true);
+  const refreshUI = () => {
+    setRender(false);
+    setRender(true);
+  };
+
   return (
-    <div>
-      <Tabs.List
-        height="3rem"
-        gap="0"
-        width="100%"
-        ref={scrollContainer}
-        style={{ "overflow-y": "hidden", "overflow-x": "auto" }}
-      >
-        <For each={props.tabContext}>
+    <Tabs.List
+      height="3rem"
+      gap="0"
+      width="100%"
+      ref={scrollContainer}
+      style={{ "overflow-y": "hidden", "overflow-x": "auto" }}
+    >
+      <Show when={render()}>
+        <For each={getTabContexts()}>
           {(tab, tabIndex) => {
             return (
               <div
@@ -174,9 +204,9 @@ export function Tab(props: tabProps) {
                       const updatedItems = reorderTabsOnDragEnd(
                         tabIndex(),
                         reorderTabIndex()!,
-                        props.tabContext,
+                        getTabContexts(),
                       );
-                      props.onTabReorder?.(updatedItems);
+                      setTabContext(updatedItems);
                     }
 
                     props.onTabDragEnd?.(
@@ -184,9 +214,10 @@ export function Tab(props: tabProps) {
                       data.event.clientY,
                       tab.id,
                     );
-                    props.onFocusTabChange?.(currentDraggingTabId()!);
+                    setFocusId(currentDraggingTabId()!);
                     setReorderTabIndex(null);
                     setCurrentDraggingTabId("");
+                    refreshUI();
                   },
                 }}
               >
@@ -196,14 +227,14 @@ export function Tab(props: tabProps) {
                   paddingLeft="0.5rem"
                   borderBottomWidth={currentDraggingTabId().length > 0
                     ? currentDraggingTabId() === tab.id ? "3px" : "0px"
-                    : props.focusedTab === tab.id
+                    : getFocusId() === tab.id
                     ? "3px"
                     : "0px"}
                   marginTop={currentDraggingTabId().length > 0
                     ? currentDraggingTabId() === tab.id
                       ? `calc(0.5rem + 1px)`
                       : "0.5rem"
-                    : props.focusedTab === tab.id
+                    : getFocusId() === tab.id
                     ? `calc(0.5rem + 1px)`
                     : `0.5rem`}
                   borderBottomColor="accent.emphasized"
@@ -215,10 +246,7 @@ export function Tab(props: tabProps) {
                     )}
                     activationMode="dblclick"
                     onValueCommit={(editableDetails: { value: string }) => {
-                      props.onTabNameChange?.(
-                        tabIndex(),
-                        editableDetails.value,
-                      );
+                      setTabName(tabIndex(), editableDetails.value);
                     }}
                   >
                     <Editable.Area>
@@ -290,17 +318,17 @@ export function Tab(props: tabProps) {
             );
           }}
         </For>
-        <IconButton
-          variant="ghost"
-          borderRadius="3rem"
-          onClick={() => {
-            props.onCreateTab?.();
-          }}
-          marginTop="0.2rem"
-        >
-          <IconPlus />
-        </IconButton>
-      </Tabs.List>
-    </div>
+      </Show>
+      <IconButton
+        variant="ghost"
+        borderRadius="3rem"
+        onClick={() => {
+          props.onCreateTab?.();
+        }}
+        marginTop="0.2rem"
+      >
+        <IconPlus />
+      </IconButton>
+    </Tabs.List>
   );
 }
