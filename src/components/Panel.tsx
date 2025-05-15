@@ -2,6 +2,7 @@ import { JSX } from "solid-js";
 import { TabList, TabListContext, TabLocation } from "./TabList.tsx";
 import { createSignal } from "solid-js";
 import { Show } from "solid-js";
+//@ts-ignore Has an Any type error
 import { Stack } from "styled-system/jsx/stack.mjs";
 import { TabContext } from "./Tab.tsx";
 import { panelContexts } from "~/GlobalState.ts";
@@ -112,7 +113,8 @@ export function Panel(props: panelProps) {
             }px`,
             top: currentDraggingTabLocation() !== "otherPanel"
               ? `${
-                document.getElementById(`tabs:${props.id}:list`)!.offsetHeight
+                document.getElementById(`tabs:${props.id}:list`)!
+                  .offsetHeight
               }px`
               : `${
                 document.getElementById(`tabs:${props.id}:list`)!.offsetTop

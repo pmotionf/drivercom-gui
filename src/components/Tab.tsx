@@ -7,7 +7,8 @@ import { createSignal } from "solid-js";
 import { Editable } from "./ui/editable.tsx";
 import { Show } from "solid-js/web";
 import { createDraggable } from "@neodrag/solid";
-import { Stack } from "styled-system/jsx/index.mjs";
+//@ts-ignore Has an Any type error
+import { Stack } from "styled-system/jsx/stack.mjs";
 import { createEffect } from "solid-js";
 import { Text } from "./ui/text.tsx";
 import { PlotContext } from "./Plot.tsx";
