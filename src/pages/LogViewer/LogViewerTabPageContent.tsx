@@ -39,7 +39,6 @@ export type LogViewerTabPageContentProps =
     key: string;
     tabId: string;
     onErrorMessage?: (message: ErrorMessage) => void;
-    //splitPlotIndex?: number[][];
   };
 
 export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
@@ -88,6 +87,26 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
       newXRange,
     );
   };
+
+  const setSplitterSize = (
+    tabIndex: number,
+    newSize: { id: string; size: number }[],
+  ) => {
+    return tabContexts.get(props.key)?.[1](
+      "tabContext",
+      tabIndex,
+      "plotSplitterSize",
+      newSize,
+    );
+  };
+
+  if (!getTabContext(props.tabId).tabCtx.plotSplitterSize) {
+    const tabIndex = getTabContext(props.tabId).currentIndex;
+    setSplitterSize(tabIndex, [
+      { id: "A", size: 100 },
+      { id: "B", size: 0 },
+    ]);
+  }
 
   const [plots, setPlots] = createStore<PlotContext[]>(
     getTabContext(props.tabId).tabCtx.plotContext
@@ -451,6 +470,13 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
               xRange={getTabContext(props.tabId).tabCtx.plotZoomState}
               onXRangeChange={(xRange) => {
                 setXRange(getTabContext(props.tabId).currentIndex, xRange);
+              }}
+              splitterSize={getTabContext(props.tabId).tabCtx.plotSplitterSize}
+              onSplitterSizeChange={(newSize) => {
+                setSplitterSize(
+                  getTabContext(props.tabId).currentIndex,
+                  newSize,
+                );
               }}
               style={{
                 width: "100%",
