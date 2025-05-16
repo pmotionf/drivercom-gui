@@ -446,6 +446,13 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
               context={plots[index()]}
               onContextChange={(ctx) => {
                 setPlots(index(), ctx);
+                if (ctx.splitterSize) {
+                  plots.forEach((_, plotIndex) => {
+                    if (plotIndex !== index()) {
+                      setPlots(plotIndex, "splitterSize", ctx.splitterSize);
+                    }
+                  });
+                }
                 setPlotContext(getTabContext(props.tabId).currentIndex, plots);
               }}
               xRange={getTabContext(props.tabId).tabCtx.plotZoomState}
