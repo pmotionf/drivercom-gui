@@ -48,6 +48,10 @@ export type PlotProps = JSX.HTMLAttributes<HTMLDivElement> & {
   onContextChange?: (context: PlotContext) => void;
   xRange?: [number, number];
   onXRangeChange?: (xRange: [number, number]) => void;
+  splitterSize?: { id: string; size: number }[];
+  onSplitterSizeChange?: (
+    updatePanelData: { id: string; size: number }[],
+  ) => void;
   cursorIdx?: number | null | undefined;
   shrink?: boolean;
 };
@@ -58,7 +62,6 @@ export type PlotContext = {
   palette: string[];
   style: LegendStroke[];
   selected: boolean[];
-  splitterSize?: { id: string; size: number }[];
 };
 
 enum CursorMode {
@@ -132,13 +135,6 @@ export function Plot(props: PlotProps) {
         "visible",
         props.header.map(() => true),
       );
-    }
-
-    if (!getContext().splitterSize) {
-      setContext()("splitterSize", [
-        { id: "A", size: 100 },
-        { id: "B", size: 0 },
-      ]);
     }
 
     setContext()(
@@ -504,16 +500,10 @@ export function Plot(props: PlotProps) {
     <>
       <div {...rest} id={props.id + "-wrapper"}>
         <Splitter.Root
-          size={getContext().splitterSize
+          size={props.splitterSize
             ? [
-              {
-                id: getContext().splitterSize![0].id,
-                size: getContext().splitterSize![0].size,
-              },
-              {
-                id: getContext().splitterSize![1].id,
-                size: getContext().splitterSize![1].size,
-              },
+              { id: "A", size: props.splitterSize[0].size },
+              { id: "B", size: props.splitterSize[1].size },
             ]
             : [
               { id: "A", size: 100 },
@@ -524,13 +514,12 @@ export function Plot(props: PlotProps) {
             const parseSize: { id: string; size: number }[] = details.size.map(
               (panel) => {
                 return {
-                  id: panel.id.toString(),
-                  size: typeof panel.size === "number" ? panel.size : 0,
+                  id: panel.id as string,
+                  size: panel.size as number,
                 };
               },
             );
-            setContext()("splitterSize", parseSize);
-            props.onContextChange?.(getContext());
+            props.onSplitterSizeChange?.(parseSize);
           }}
         >
           <Splitter.Context>
@@ -594,6 +583,7 @@ export function Plot(props: PlotProps) {
                         "margin-top": "0.5rem",
                       }}
                     >
+                      <div style={{ width: `calc(100% - 15rem)` }} />
                       <Tooltip.Root>
                         <Tooltip.Trigger>
                           <IconButton
