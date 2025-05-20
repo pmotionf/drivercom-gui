@@ -11,7 +11,7 @@ import {
 import { createStore } from "solid-js/store";
 import { Plot, PlotContext } from "~/components/Plot";
 import { inferSchema, initParser } from "udsv";
-import { readTextFile, size } from "@tauri-apps/plugin-fs";
+import { readTextFile } from "@tauri-apps/plugin-fs";
 import uPlot from "uplot";
 import { IconButton } from "~/components/ui/icon-button";
 import {
@@ -26,7 +26,6 @@ import { Tooltip } from "~/components/ui/tooltip";
 import { tabContexts } from "~/GlobalState.ts";
 import { TabContext } from "~/components/Tab";
 import { on } from "solid-js";
-import { PanelContext } from "~/components/Panel";
 import { PanelSizeContext } from "~/components/PanelLayout";
 
 export type ErrorMessage = {
@@ -36,7 +35,8 @@ export type ErrorMessage = {
 };
 
 export type LogViewerTabPageContentProps =
-  JSX.HTMLAttributes<HTMLDivElement> & {
+  & JSX.HTMLAttributes<HTMLDivElement>
+  & {
     key: string;
     tabId: string;
     onErrorMessage?: (message: ErrorMessage) => void;
@@ -176,12 +176,13 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
       row.map((val) => {
         if (typeof val === "boolean") return val ? 1 : 0;
         return val;
-      }),
+      })
     );
     if (data.length < local_header.length) {
       const errorMessage: ErrorMessage = {
         title: "Invalid Log File",
-        description: `Data has ${data.length} columns, while header has ${local_header.length} labels.`,
+        description:
+          `Data has ${data.length} columns, while header has ${local_header.length} labels.`,
         type: "error",
       };
       props.onErrorMessage?.(errorMessage);
@@ -231,7 +232,7 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
       if (getTabContext(props.tabId).tabCtx) {
         if (
           typeof getTabContext(props.tabId).tabCtx.plotSplitIndex! !==
-          "undefined"
+            "undefined"
         ) {
           setSplitIndex([...getTabContext(props.tabId).tabCtx.plotSplitIndex!]);
         }
@@ -318,20 +319,24 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
       const plotGroup: uPlot[] = uPlot.sync(props.tabId).plots;
 
       plotGroup.forEach((plot) => {
-        plot.over.removeEventListener("mousemove", () =>
-          setCursorIdx(plot.cursor.idx),
+        plot.over.removeEventListener(
+          "mousemove",
+          () => setCursorIdx(plot.cursor.idx),
         );
-        plot.over.removeEventListener("mouseleave", () =>
-          setCursorIdx(plot.cursor.idx),
+        plot.over.removeEventListener(
+          "mouseleave",
+          () => setCursorIdx(plot.cursor.idx),
         );
       });
 
       plotGroup.forEach((plot) => {
-        plot.over.addEventListener("mousemove", () =>
-          setCursorIdx(plot.cursor.idx),
+        plot.over.addEventListener(
+          "mousemove",
+          () => setCursorIdx(plot.cursor.idx),
         );
-        plot.over.addEventListener("mouseleave", () =>
-          setCursorIdx(plot.cursor.idx),
+        plot.over.addEventListener(
+          "mouseleave",
+          () => setCursorIdx(plot.cursor.idx),
         );
       });
     }, 300);
@@ -340,11 +345,13 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
   onCleanup(() => {
     const plotGroup: uPlot[] = uPlot.sync(props.tabId).plots;
     plotGroup.forEach((plot) => {
-      plot.over.removeEventListener("mousemove", () =>
-        setCursorIdx(plot.cursor.idx),
+      plot.over.removeEventListener(
+        "mousemove",
+        () => setCursorIdx(plot.cursor.idx),
       );
-      plot.over.removeEventListener("mouseleave", () =>
-        setCursorIdx(plot.cursor.idx),
+      plot.over.removeEventListener(
+        "mouseleave",
+        () => setCursorIdx(plot.cursor.idx),
       );
     });
   });
@@ -354,19 +361,19 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
   >(
     getTabContext(props.tabId).tabCtx.legendSplitterSize
       ? [
-          {
-            id: "A",
-            size: getTabContext(props.tabId).tabCtx.legendSplitterSize![0].size,
-          },
-          {
-            id: "B",
-            size: getTabContext(props.tabId).tabCtx.legendSplitterSize![1].size,
-          },
-        ]
+        {
+          id: "A",
+          size: getTabContext(props.tabId).tabCtx.legendSplitterSize![0].size,
+        },
+        {
+          id: "B",
+          size: getTabContext(props.tabId).tabCtx.legendSplitterSize![1].size,
+        },
+      ]
       : [
-          { id: "A", size: 100 },
-          { id: "B", size: 0 },
-        ],
+        { id: "A", size: 100 },
+        { id: "B", size: 0 },
+      ],
   );
 
   createEffect(
@@ -376,6 +383,25 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
         setLegendSplitter(
           getTabContext(props.tabId).currentIndex,
           legendSplitterSize(),
+        );
+      },
+      { defer: true },
+    ),
+  );
+
+  const [isLegendShrink, setIsLegendShrink] = createSignal<boolean>(
+    getTabContext(props.tabId).tabCtx.legendShrink
+      ? getTabContext(props.tabId).tabCtx.legendShrink!
+      : false,
+  );
+
+  createEffect(
+    on(
+      () => isLegendShrink(),
+      () => {
+        setLegendShrink(
+          getTabContext(props.tabId).currentIndex,
+          isLegendShrink(),
         );
       },
       { defer: true },
@@ -434,13 +460,11 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
                         splitPlot(index());
                         setMergePlotIndexes([]);
                       }}
-                      disabled={
-                        currentHeader.length <= 1 ||
+                      disabled={currentHeader.length <= 1 ||
                         !plots[index()] ||
                         !plots[index()].selected ||
                         allSelected(index()) ||
-                        allNotSelected(index())
-                      }
+                        allNotSelected(index())}
                     >
                       <IconSeparatorHorizontal />
                     </IconButton>
@@ -459,10 +483,8 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
                         mergePlot(mergePlotIndexes());
                         setMergePlotIndexes([]);
                       }}
-                      disabled={
-                        mergePlotIndexes().length < 2 ||
-                        mergePlotIndexes().indexOf(index()) === -1
-                      }
+                      disabled={mergePlotIndexes().length < 2 ||
+                        mergePlotIndexes().indexOf(index()) === -1}
                       size="sm"
                     >
                       <IconFold />
@@ -541,21 +563,16 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
                     setPlotZoomState(xRange);
                   }
                 }}
-                legendShrink={
-                  getTabContext(props.tabId).tabCtx.legendShrink
-                    ? getTabContext(props.tabId).tabCtx.legendShrink
-                    : false
-                }
-                onLegendShirnkChange={(newState) => {
-                  setLegendShrink(
-                    getTabContext(props.tabId).currentIndex,
-                    newState,
-                  );
-                  if (newState) {
-                    setLegendSplitterSize([
-                      { id: "A", size: 100 },
-                      { id: "B", size: 0 },
-                    ]);
+                legendShrink={isLegendShrink()}
+                onLegendShrinkChange={(newState) => {
+                  if (newState !== undefined && newState !== isLegendShrink()) {
+                    setIsLegendShrink(newState);
+                    if (newState === true) {
+                      setLegendSplitterSize([
+                        { id: "A", size: 100 },
+                        { id: "B", size: 0 },
+                      ]);
+                    }
                   }
                 }}
                 style={{
