@@ -517,6 +517,7 @@ export function Plot(props: PlotProps) {
     <>
       <div {...rest} id={props.id + "-wrapper"}>
         <Splitter.Root
+          style={{ width: "100%", height: "100%" }}
           size={props.legendSplitterSize}
           onSizeChange={(details) => {
             const parseSize = details.size.map((panel) => {
@@ -572,6 +573,11 @@ export function Plot(props: PlotProps) {
               <Splitter.ResizeTrigger
                 id="A:B"
                 opacity="0%"
+                style={{
+                  "max-width": props.legendShrink
+                    ? "100%"
+                    : `calc( 100% - ${panelMinWidth()})`,
+                }}
                 onMouseEnter={(e) => (e.currentTarget.style.opacity = "100%")}
                 onMouseLeave={(e) => (e.currentTarget.style.opacity = "0%")}
               />

@@ -409,185 +409,180 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
   );
 
   return (
-    <Show when={splitIndex().length !== 0}>
-      <For each={plots && splitIndex()}>
-        {(item, index) => {
-          // Header and items need not be derived state, as they will not
-          // change within a plot.
-          const currentHeader = item.map((i) => header()[i]);
-          const currentItems = item.map((i) => series()[i]);
+    <For each={plots && splitIndex()}>
+      {(item, index) => {
+        // Header and items need not be derived state, as they will not
+        // change within a plot.
+        const currentHeader = item.map((i) => header()[i]);
+        const currentItems = item.map((i) => series()[i]);
 
-          // Current ID must be derived state as index can change based on
-          // added/merged plots.
-          const currentID = () => props.tabId + index();
+        // Current ID must be derived state as index can change based on
+        // added/merged plots.
+        const currentID = () => props.tabId + index();
 
-          let prevSplitIndex = getTabContext(props.tabId).tabCtx.plotSplitIndex;
+        let prevSplitIndex = getTabContext(props.tabId).tabCtx.plotSplitIndex;
 
-          createEffect(() => {
-            if (
-              prevSplitIndex &&
-              splitIndex().length === prevSplitIndex.length
-            ) {
-              return;
-            }
+        createEffect(() => {
+          if (prevSplitIndex && splitIndex().length === prevSplitIndex.length) {
+            return;
+          }
 
-            setPlots(index(), {
-              visible: item.map(() => true),
-            } as PlotContext);
+          setPlots(index(), {
+            visible: item.map(() => true),
+          } as PlotContext);
 
-            prevSplitIndex = splitIndex();
-          });
+          prevSplitIndex = splitIndex();
+        });
 
-          return (
-            <div
-              style={{
-                height: `calc(100% / ${splitIndex().length})`,
-                width: "100%",
-              }}
+        return (
+          <div
+            style={{
+              height: `calc(100% / ${splitIndex().length})`,
+              width: "100%",
+            }}
+          >
+            <Stack
+              direction="row-reverse"
+              width="100%"
+              paddingRight="1.6rem"
+              style={{ overflow: "hidden" }}
+              height="3rem"
             >
-              <Stack
-                direction="row-reverse"
-                width="100%"
-                paddingRight="1.6rem"
-                style={{ overflow: "hidden" }}
-                height="3rem"
+              <Tooltip.Root>
+                <Tooltip.Trigger>
+                  <IconButton
+                    size="sm"
+                    onClick={() => {
+                      splitPlot(index());
+                      setMergePlotIndexes([]);
+                    }}
+                    disabled={currentHeader.length <= 1 ||
+                      !plots[index()] ||
+                      !plots[index()].selected ||
+                      allSelected(index()) ||
+                      allNotSelected(index())}
+                  >
+                    <IconSeparatorHorizontal />
+                  </IconButton>
+                </Tooltip.Trigger>
+                <Tooltip.Positioner>
+                  <Tooltip.Content backgroundColor="bg.default">
+                    <Text color="fg.default">Split</Text>
+                  </Tooltip.Content>
+                </Tooltip.Positioner>
+              </Tooltip.Root>
+
+              <Tooltip.Root>
+                <Tooltip.Trigger>
+                  <IconButton
+                    onClick={() => {
+                      mergePlot(mergePlotIndexes());
+                      setMergePlotIndexes([]);
+                    }}
+                    disabled={mergePlotIndexes().length < 2 ||
+                      mergePlotIndexes().indexOf(index()) === -1}
+                    size="sm"
+                  >
+                    <IconFold />
+                  </IconButton>
+                </Tooltip.Trigger>
+                <Tooltip.Positioner>
+                  <Tooltip.Content backgroundColor="bg.default">
+                    <Text color="fg.default">Merge</Text>
+                  </Tooltip.Content>
+                </Tooltip.Positioner>
+              </Tooltip.Root>
+
+              <Checkbox
+                width="8rem"
+                checked={mergePlotIndexes().indexOf(index()) !== -1}
+                onCheckedChange={(checkBoxState) => {
+                  if (checkBoxState.checked === true) {
+                    setMergePlotIndexes((prev) => {
+                      return [...prev, index()];
+                    });
+                  } else {
+                    setMergePlotIndexes((prev) => {
+                      return prev.filter(
+                        (graphIndex) => graphIndex !== index(),
+                      );
+                    });
+                  }
+                }}
               >
-                <Tooltip.Root>
-                  <Tooltip.Trigger>
-                    <IconButton
-                      size="sm"
-                      onClick={() => {
-                        splitPlot(index());
-                        setMergePlotIndexes([]);
-                      }}
-                      disabled={currentHeader.length <= 1 ||
-                        !plots[index()] ||
-                        !plots[index()].selected ||
-                        allSelected(index()) ||
-                        allNotSelected(index())}
-                    >
-                      <IconSeparatorHorizontal />
-                    </IconButton>
-                  </Tooltip.Trigger>
-                  <Tooltip.Positioner>
-                    <Tooltip.Content backgroundColor="bg.default">
-                      <Text color="fg.default">Split</Text>
-                    </Tooltip.Content>
-                  </Tooltip.Positioner>
-                </Tooltip.Root>
-
-                <Tooltip.Root>
-                  <Tooltip.Trigger>
-                    <IconButton
-                      onClick={() => {
-                        mergePlot(mergePlotIndexes());
-                        setMergePlotIndexes([]);
-                      }}
-                      disabled={mergePlotIndexes().length < 2 ||
-                        mergePlotIndexes().indexOf(index()) === -1}
-                      size="sm"
-                    >
-                      <IconFold />
-                    </IconButton>
-                  </Tooltip.Trigger>
-                  <Tooltip.Positioner>
-                    <Tooltip.Content backgroundColor="bg.default">
-                      <Text color="fg.default">Merge</Text>
-                    </Tooltip.Content>
-                  </Tooltip.Positioner>
-                </Tooltip.Root>
-
-                <Checkbox
-                  width="8rem"
-                  checked={mergePlotIndexes().indexOf(index()) !== -1}
-                  onCheckedChange={(checkBoxState) => {
-                    if (checkBoxState.checked === true) {
-                      setMergePlotIndexes((prev) => {
-                        return [...prev, index()];
-                      });
-                    } else {
-                      setMergePlotIndexes((prev) => {
-                        return prev.filter(
-                          (graphIndex) => graphIndex !== index(),
-                        );
-                      });
-                    }
-                  }}
-                >
-                  <Text fontWeight="bold">Graph {index() + 1}</Text>
-                </Checkbox>
-                <Show when={index() === 0}>
-                  <Stack direction="row" width={`calc(100% - 16rem)`}>
-                    <Tooltip.Root>
-                      <Tooltip.Trigger>
-                        <IconButton
-                          variant="outline"
-                          disabled={splitIndex().length <= 1}
-                          onclick={() => {
-                            resetChart();
-                            setMergePlotIndexes([]);
-                          }}
-                          size="sm"
-                        >
-                          <IconRestore />
-                        </IconButton>
-                      </Tooltip.Trigger>
-                      <Tooltip.Positioner>
-                        <Tooltip.Content backgroundColor="bg.default">
-                          <Text color="fg.default">Reset</Text>
-                        </Tooltip.Content>
-                      </Tooltip.Positioner>
-                    </Tooltip.Root>
-                  </Stack>
-                </Show>
-              </Stack>
-              <Plot
-                id={currentID()}
-                group={props.tabId}
-                name=""
-                header={currentHeader}
-                series={currentItems}
-                context={plots[index()]}
-                legendSplitterSize={legendSplitterSize()}
-                onLegendSplitterSizeChange={(size) => {
-                  setLegendSplitterSize(size);
-                }}
-                onContextChange={(ctx) => {
-                  if (JSON.stringify(ctx) !== JSON.stringify(plots[index()])) {
-                    setPlots(index(), ctx);
+                <Text fontWeight="bold">Graph {index() + 1}</Text>
+              </Checkbox>
+              <Show when={index() === 0}>
+                <Stack direction="row" width={`calc(100% - 16rem)`}>
+                  <Tooltip.Root>
+                    <Tooltip.Trigger>
+                      <IconButton
+                        variant="outline"
+                        disabled={splitIndex().length <= 1}
+                        onclick={() => {
+                          resetChart();
+                          setMergePlotIndexes([]);
+                        }}
+                        size="sm"
+                      >
+                        <IconRestore />
+                      </IconButton>
+                    </Tooltip.Trigger>
+                    <Tooltip.Positioner>
+                      <Tooltip.Content backgroundColor="bg.default">
+                        <Text color="fg.default">Reset</Text>
+                      </Tooltip.Content>
+                    </Tooltip.Positioner>
+                  </Tooltip.Root>
+                </Stack>
+              </Show>
+            </Stack>
+            <Plot
+              id={currentID()}
+              group={props.tabId}
+              name=""
+              header={currentHeader}
+              series={currentItems}
+              context={plots[index()]}
+              legendSplitterSize={legendSplitterSize()}
+              onLegendSplitterSizeChange={(size) => {
+                setLegendSplitterSize(size);
+              }}
+              onContextChange={(ctx) => {
+                if (JSON.stringify(ctx) !== JSON.stringify(plots[index()])) {
+                  setPlots(index(), ctx);
+                }
+              }}
+              xRange={getTabContext(props.tabId).tabCtx.plotZoomState}
+              onXRangeChange={(xRange) => {
+                if (plotZoomState() !== xRange) {
+                  setPlotZoomState(xRange);
+                }
+              }}
+              legendShrink={isLegendShrink()}
+              onLegendShrinkChange={(newState) => {
+                if (newState !== undefined && newState !== isLegendShrink()) {
+                  setIsLegendShrink(newState);
+                  if (newState === true) {
+                    setLegendSplitterSize([
+                      { id: "A", size: 100 },
+                      { id: "B", size: 0 },
+                    ]);
                   }
-                }}
-                xRange={getTabContext(props.tabId).tabCtx.plotZoomState}
-                onXRangeChange={(xRange) => {
-                  if (plotZoomState() !== xRange) {
-                    setPlotZoomState(xRange);
-                  }
-                }}
-                legendShrink={isLegendShrink()}
-                onLegendShrinkChange={(newState) => {
-                  if (newState !== undefined && newState !== isLegendShrink()) {
-                    setIsLegendShrink(newState);
-                    if (newState === true) {
-                      setLegendSplitterSize([
-                        { id: "A", size: 100 },
-                        { id: "B", size: 0 },
-                      ]);
-                    }
-                  }
-                }}
-                style={{
-                  width: "100%",
-                  height: `calc(100% - 3rem)`,
-                  "min-height": "17rem",
-                  "padding-right": "0.5rem",
-                  "padding-left": "0.5rem",
-                }}
-                cursorIdx={cursorIdx()}
-              />
-            </div>
-          );
-        }}
-      </For>
-    </Show>
+                }
+              }}
+              style={{
+                width: "100%",
+                height: `calc(100% - 3rem)`,
+                "min-height": "17rem",
+                "padding-right": "0.5rem",
+                "padding-left": "0.5rem",
+              }}
+              cursorIdx={cursorIdx()}
+            />
+          </div>
+        );
+      }}
+    </For>
   );
 }
