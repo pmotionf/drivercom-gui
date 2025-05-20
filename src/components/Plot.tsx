@@ -506,8 +506,10 @@ export function Plot(props: PlotProps) {
   // Needed for legend panel min-width.
   createEffect(() => {
     if (!render()) return;
-    if (document.getElementById("toolBox")) {
-      setPanelMinWidth(`${document.getElementById("toolBox")!.offsetWidth}px`);
+    if (document.getElementById(`toolBox:${props.id}`)) {
+      setPanelMinWidth(
+        `${document.getElementById(`toolBox:${props.id}`)!.offsetWidth}px`,
+      );
     }
   });
 
@@ -592,7 +594,7 @@ export function Plot(props: PlotProps) {
               >
                 <Stack
                   direction="row"
-                  id="toolBox"
+                  id={`toolBox:${props.id}`}
                   width="15rem"
                   paddingRight="1rem"
                 >
