@@ -21,6 +21,7 @@ import { IconButton } from "~/components/ui/icon-button";
 import {
   IconArrowsMove,
   IconChevronLeftPipe,
+  IconChevronRightPipe,
   IconCrosshair,
   IconEye,
   IconEyeOff,
@@ -50,8 +51,10 @@ export type PlotProps = JSX.HTMLAttributes<HTMLDivElement> & {
   onContextChange?: (context: PlotContext) => void;
   xRange?: [number, number];
   onXRangeChange?: (xRange: [number, number]) => void;
-  LegendSplitterSize?: PanelSizeContext[];
+  legendSplitterSize?: PanelSizeContext[];
   onLegendSplitterSizeChange?: (size: PanelSizeContext[]) => void;
+  legendShrink?: boolean;
+  onLegendShirnkChange?: (isShrink: boolean) => void;
   cursorIdx?: number | null | undefined;
 };
 
@@ -503,7 +506,7 @@ export function Plot(props: PlotProps) {
     <>
       <div {...rest} id={props.id + "-wrapper"}>
         <Splitter.Root
-          size={props.LegendSplitterSize}
+          size={props.legendSplitterSize}
           onSizeChange={(details) => {
             const parseSize = details.size.map((panel) => {
               return {
@@ -534,27 +537,48 @@ export function Plot(props: PlotProps) {
             ></div>
           </Splitter.Panel>
           <Stack direction="row" height="100%" gap="0">
-            <IconButton size="sm" padding="0" variant="ghost">
-              <IconChevronLeftPipe />
+            <IconButton
+              size="sm"
+              padding="0"
+              variant="ghost"
+              onClick={() => {
+                props.onLegendShirnkChange?.(
+                  props.legendShrink !== undefined
+                    ? !props.legendShrink
+                    : false,
+                );
+              }}
+            >
+              <Show
+                when={props.legendShrink}
+                fallback={<IconChevronRightPipe />}
+              >
+                <IconChevronLeftPipe />
+              </Show>
             </IconButton>
-            <Splitter.ResizeTrigger
-              id="A:B"
-              opacity="0%"
-              onMouseEnter={(e) => (e.currentTarget.style.opacity = "100%")}
-              onMouseLeave={(e) => (e.currentTarget.style.opacity = "0%")}
-            />
+            <Show when={!props.legendShrink}>
+              <Splitter.ResizeTrigger
+                id="A:B"
+                opacity="0%"
+                onMouseEnter={(e) => (e.currentTarget.style.opacity = "100%")}
+                onMouseLeave={(e) => (e.currentTarget.style.opacity = "0%")}
+              />
+            </Show>
           </Stack>
-          <Splitter.Panel id="B" borderWidth="0">
+          <Splitter.Panel
+            id="B"
+            borderWidth="0"
+            minWidth={props.legendShrink ? "0rem" : "15rem"}
+          >
             <Stack width="100%" height="100%">
               <Stack
                 direction="row-reverse"
                 style={{
                   height: "2.5rem",
-                  "padding-right": "1rem",
                   width: "100%",
                 }}
               >
-                <Stack direction="row">
+                <Stack direction="row" id="toolBox" width="15rem">
                   <Tooltip.Root>
                     <Tooltip.Trigger>
                       <IconButton

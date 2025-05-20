@@ -11,7 +11,7 @@ import {
 import { createStore } from "solid-js/store";
 import { Plot, PlotContext } from "~/components/Plot";
 import { inferSchema, initParser } from "udsv";
-import { readTextFile } from "@tauri-apps/plugin-fs";
+import { readTextFile, size } from "@tauri-apps/plugin-fs";
 import uPlot from "uplot";
 import { IconButton } from "~/components/ui/icon-button";
 import {
@@ -95,6 +95,15 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
       tabIndex,
       "legendSplitterSize",
       newSize,
+    );
+  };
+
+  const setLegendShrink = (tabIndex: number, newStatus: boolean) => {
+    return tabContexts.get(props.key)?.[1](
+      "tabContext",
+      tabIndex,
+      "legendShrink",
+      newStatus,
     );
   };
 
@@ -355,8 +364,8 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
           },
         ]
       : [
-          { id: "A", size: 80 },
-          { id: "B", size: 20 },
+          { id: "A", size: 100 },
+          { id: "B", size: 0 },
         ],
   );
 
@@ -517,7 +526,7 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
                 header={currentHeader}
                 series={currentItems}
                 context={plots[index()]}
-                LegendSplitterSize={legendSplitterSize()}
+                legendSplitterSize={legendSplitterSize()}
                 onLegendSplitterSizeChange={(size) => {
                   setLegendSplitterSize(size);
                 }}
@@ -530,6 +539,23 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
                 onXRangeChange={(xRange) => {
                   if (plotZoomState() !== xRange) {
                     setPlotZoomState(xRange);
+                  }
+                }}
+                legendShrink={
+                  getTabContext(props.tabId).tabCtx.legendShrink
+                    ? getTabContext(props.tabId).tabCtx.legendShrink
+                    : false
+                }
+                onLegendShirnkChange={(newState) => {
+                  setLegendShrink(
+                    getTabContext(props.tabId).currentIndex,
+                    newState,
+                  );
+                  if (newState) {
+                    setLegendSplitterSize([
+                      { id: "A", size: 100 },
+                      { id: "B", size: 0 },
+                    ]);
                   }
                 }}
                 style={{
