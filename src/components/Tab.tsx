@@ -13,6 +13,7 @@ import { createEffect } from "solid-js";
 import { Text } from "./ui/text.tsx";
 import { PlotContext } from "./Plot.tsx";
 import { tabContexts } from "~/GlobalState.ts";
+import { PanelSizeContext } from "./PanelLayout.tsx";
 
 export type TabContext = {
   id: string;
@@ -21,6 +22,7 @@ export type TabContext = {
   plotSplitIndex?: number[][];
   plotContext?: PlotContext[];
   plotZoomState?: [number, number];
+  legendSplitterSize?: PanelSizeContext[];
 };
 
 export type tabProps = JSX.HTMLAttributes<HTMLDivElement> & {
@@ -63,9 +65,8 @@ export function Tab(props: tabProps) {
   // deno-lint-ignore no-unused-vars
   const { draggable: dragOptions } = createDraggable();
   //reorder
-  const [currentDraggingTabId, setCurrentDraggingTabId] = createSignal<string>(
-    "",
-  );
+  const [currentDraggingTabId, setCurrentDraggingTabId] =
+    createSignal<string>("");
   const [reorderTabIndex, setReorderTabIndex] = createSignal<number | null>(
     null,
   );
@@ -186,11 +187,12 @@ export function Tab(props: tabProps) {
                     )!.offsetWidth;
                     setCurrentMousePointerPosition(() => {
                       return {
-                        x: data.event.clientX -
+                        x:
+                          data.event.clientX -
                           mousePositionInsideComponent().x -
                           collapsedSideBarWidth,
-                        y: data.event.clientY -
-                          mousePositionInsideComponent().y,
+                        y:
+                          data.event.clientY - mousePositionInsideComponent().y,
                       };
                     });
 
@@ -226,18 +228,24 @@ export function Tab(props: tabProps) {
                   value={tab.id}
                   paddingRight="0rem"
                   paddingLeft="0.5rem"
-                  borderBottomWidth={currentDraggingTabId().length > 0
-                    ? currentDraggingTabId() === tab.id ? "3px" : "0px"
-                    : getFocusId() === tab.id
-                    ? "3px"
-                    : "0px"}
-                  marginTop={currentDraggingTabId().length > 0
-                    ? currentDraggingTabId() === tab.id
-                      ? `calc(0.5rem + 1px)`
-                      : "0.5rem"
-                    : getFocusId() === tab.id
-                    ? `calc(0.5rem + 1px)`
-                    : `0.5rem`}
+                  borderBottomWidth={
+                    currentDraggingTabId().length > 0
+                      ? currentDraggingTabId() === tab.id
+                        ? "3px"
+                        : "0px"
+                      : getFocusId() === tab.id
+                        ? "3px"
+                        : "0px"
+                  }
+                  marginTop={
+                    currentDraggingTabId().length > 0
+                      ? currentDraggingTabId() === tab.id
+                        ? `calc(0.5rem + 1px)`
+                        : "0.5rem"
+                      : getFocusId() === tab.id
+                        ? `calc(0.5rem + 1px)`
+                        : `0.5rem`
+                  }
                   borderBottomColor="accent.emphasized"
                 >
                   <Editable.Root
@@ -269,8 +277,10 @@ export function Tab(props: tabProps) {
                   </div>
                 </Tabs.Trigger>
                 <Show
-                  when={reorderTabIndex() === tabIndex() &&
-                    currentDraggingTabId().length > 0}
+                  when={
+                    reorderTabIndex() === tabIndex() &&
+                    currentDraggingTabId().length > 0
+                  }
                 >
                   <Stack
                     width="100%"
