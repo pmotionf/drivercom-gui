@@ -22,7 +22,10 @@
       "command": "deno run -A unpack-drivercom.js",
       "dependencies": ["fetch-drivercom"]
     },
-    "fetch-protobuf": "mkdir -p src-tauri/binaries/proto-cal && cd src-tauri/binaries/proto-cal && gh codespace cp gh:pmotionf/mmc-config/proto-cal/all.proto --clobber"
+    "fetch-protobuf": {
+      "command": "wget https://raw.githubusercontent.com/pmotionf/mmc-config/refs/heads/main/protocol/ -o all.proto",
+      "dependencies": ["unpack-drivercom"]
+    }
   },
   "fmt": {
     "useTabs": false,
