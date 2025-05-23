@@ -35,8 +35,7 @@ export type ErrorMessage = {
 };
 
 export type LogViewerTabPageContentProps =
-  & JSX.HTMLAttributes<HTMLDivElement>
-  & {
+  JSX.HTMLAttributes<HTMLDivElement> & {
     key: string;
     tabId: string;
     onErrorMessage?: (message: ErrorMessage) => void;
@@ -85,8 +84,7 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
   );
 
   const [plotZoomState, setPlotZoomState] = createSignal<[number, number]>([
-    0,
-    0,
+    0, 0,
   ]);
   if (getTabContext(props.tabId).tabCtx.plotZoomState) {
     setPlotZoomState(getTabContext(props.tabId).tabCtx.plotZoomState!);
@@ -108,7 +106,9 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
     on(
       () => splitIndex(),
       () => {
-        setSplitPlot(getTabContext(props.tabId).currentIndex, splitIndex());
+        setTimeout(() => {
+          setSplitPlot(getTabContext(props.tabId).currentIndex, splitIndex());
+        }, 200);
       },
       { defer: true },
     ),
@@ -141,13 +141,12 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
       row.map((val) => {
         if (typeof val === "boolean") return val ? 1 : 0;
         return val;
-      })
+      }),
     );
     if (data.length < local_header.length) {
       const errorMessage: ErrorMessage = {
         title: "Invalid Log File",
-        description:
-          `Data has ${data.length} columns, while header has ${local_header.length} labels.`,
+        description: `Data has ${data.length} columns, while header has ${local_header.length} labels.`,
         type: "error",
       };
       props.onErrorMessage?.(errorMessage);
@@ -197,7 +196,7 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
       if (getTabContext(props.tabId).tabCtx) {
         if (
           typeof getTabContext(props.tabId).tabCtx.plotSplitIndex! !==
-            "undefined"
+          "undefined"
         ) {
           setSplitIndex([...getTabContext(props.tabId).tabCtx.plotSplitIndex!]);
         }
@@ -284,24 +283,20 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
       const plotGroup: uPlot[] = uPlot.sync(props.tabId).plots;
 
       plotGroup.forEach((plot) => {
-        plot.over.removeEventListener(
-          "mousemove",
-          () => setCursorIdx(plot.cursor.idx),
+        plot.over.removeEventListener("mousemove", () =>
+          setCursorIdx(plot.cursor.idx),
         );
-        plot.over.removeEventListener(
-          "mouseleave",
-          () => setCursorIdx(plot.cursor.idx),
+        plot.over.removeEventListener("mouseleave", () =>
+          setCursorIdx(plot.cursor.idx),
         );
       });
 
       plotGroup.forEach((plot) => {
-        plot.over.addEventListener(
-          "mousemove",
-          () => setCursorIdx(plot.cursor.idx),
+        plot.over.addEventListener("mousemove", () =>
+          setCursorIdx(plot.cursor.idx),
         );
-        plot.over.addEventListener(
-          "mouseleave",
-          () => setCursorIdx(plot.cursor.idx),
+        plot.over.addEventListener("mouseleave", () =>
+          setCursorIdx(plot.cursor.idx),
         );
       });
     }, 300);
@@ -310,18 +305,16 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
   onCleanup(() => {
     const plotGroup: uPlot[] = uPlot.sync(props.tabId).plots;
     plotGroup.forEach((plot) => {
-      plot.over.removeEventListener(
-        "mousemove",
-        () => setCursorIdx(plot.cursor.idx),
+      plot.over.removeEventListener("mousemove", () =>
+        setCursorIdx(plot.cursor.idx),
       );
-      plot.over.removeEventListener(
-        "mouseleave",
-        () => setCursorIdx(plot.cursor.idx),
+      plot.over.removeEventListener("mouseleave", () =>
+        setCursorIdx(plot.cursor.idx),
       );
     });
   });
 
-  const prevPlots: Map<number, { color: string; style: LegendStroke }> =
+  /*const prevPlots: Map<number, { color: string; style: LegendStroke }> =
     new Map();
   createEffect(
     on(
@@ -360,6 +353,66 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
       },
       { defer: true },
     ),
+    );*/
+
+  createEffect(
+    on(
+      () => splitIndex(),
+      () => {
+        if (plots.length === 0 || plots.length === splitIndex().length) return;
+
+        /*let plotColors: string[] = [];
+        const prevPlotContext: Map<number, string> = new Map();
+        plots.forEach((ctx) => {
+          plotColors = [...plotColors, ...ctx.color];
+        });
+
+        let startIndex: number = 0;
+        const prevSplitIndex: number[][] = getTabContext(props.tabId).tabCtx
+          .plotSplitIndex!;
+        prevSplitIndex.forEach((nums) => {
+          nums.forEach((i, index) => {
+            prevPlotContext.set(i, plotColors[index + startIndex]);
+          });
+          startIndex = startIndex + nums.length;
+        });
+
+        splitIndex().forEach((item, index) => {
+          setPlots(index, {
+            visible: item.map(() => true),
+            color: item.map((num) => prevPlotContext.get(num)),
+            //style: item.map((num) => prevPlots.get(num)!.style),
+          } as PlotContext);
+          startIndex = startIndex + item.length + 1;
+          });*/
+
+        const prevSplit: number[][] = getTabContext(props.tabId).tabCtx
+          .plotSplitIndex!;
+        let changedPlotIndex: number = -1;
+        let newPlotIndex: number = -1;
+        splitIndex().forEach((nums, index) => {
+          if (nums !== prevSplit[index]) {
+            changedPlotIndex = index;
+            newPlotIndex = index + 1;
+          }
+          setPlots(index, {
+            visible: nums.map(() => true),
+            selected: nums.map(() => false),
+          } as PlotContext);
+        });
+
+        const changedIndexes = splitIndex()[newPlotIndex].map((i) =>
+          splitIndex()[changedPlotIndex].indexOf(i),
+        );
+        const updatePlots = plots.map((ctx, ctxIndex) => {
+          if (ctxIndex === changedPlotIndex) {
+          }
+        });
+
+        console.log(changedPlotIndex, newPlotIndex);
+      },
+      { defer: true },
+    ),
   );
 
   return (
@@ -386,12 +439,6 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
               visible: item.map(() => true),
               selected: item.map(() => false),
             } as PlotContext);
-          } else {
-            setPlots(index(), {
-              visible: item.map(() => true),
-              color: item.map((num) => prevPlots.get(num)!.color),
-              style: item.map((num) => prevPlots.get(num)!.style),
-            } as PlotContext);
           }
 
           prevSplitIndex = splitIndex();
@@ -413,11 +460,13 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
                       splitPlot(index());
                       setMergePlotIndexes([]);
                     }}
-                    disabled={currentHeader.length <= 1 ||
+                    disabled={
+                      currentHeader.length <= 1 ||
                       !plots[index()] ||
                       !plots[index()].selected ||
                       allSelected(index()) ||
-                      allNotSelected(index())}
+                      allNotSelected(index())
+                    }
                   >
                     <IconSeparatorHorizontal />
                   </IconButton>
@@ -436,8 +485,10 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
                       mergePlot(mergePlotIndexes());
                       setMergePlotIndexes([]);
                     }}
-                    disabled={mergePlotIndexes().length < 2 ||
-                      mergePlotIndexes().indexOf(index()) === -1}
+                    disabled={
+                      mergePlotIndexes().length < 2 ||
+                      mergePlotIndexes().indexOf(index()) === -1
+                    }
                     size="sm"
                   >
                     <IconFold />
