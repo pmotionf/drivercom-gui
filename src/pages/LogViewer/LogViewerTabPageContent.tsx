@@ -26,7 +26,6 @@ import { Tooltip } from "~/components/ui/tooltip";
 import { tabContexts } from "~/GlobalState.ts";
 import { TabContext } from "~/components/Tab";
 import { on } from "solid-js";
-import { PanelSizeContext } from "~/components/PanelLayout";
 
 export type ErrorMessage = {
   title: string;
@@ -89,11 +88,11 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
     );
   };
 
-  const setLegendSplitter = (tabIndex: number, newSize: PanelSizeContext[]) => {
+  const setLegendSplitter = (tabIndex: number, newSize: number) => {
     return tabContexts.get(props.key)?.[1](
       "tabContext",
       tabIndex,
-      "legendSplitterSize",
+      "legendPanelSize",
       newSize,
     );
   };
@@ -356,24 +355,10 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
     });
   });
 
-  const [legendSplitterSize, setLegendSplitterSize] = createSignal<
-    PanelSizeContext[]
-  >(
-    getTabContext(props.tabId).tabCtx.legendSplitterSize
-      ? [
-        {
-          id: "A",
-          size: getTabContext(props.tabId).tabCtx.legendSplitterSize![0].size,
-        },
-        {
-          id: "B",
-          size: getTabContext(props.tabId).tabCtx.legendSplitterSize![1].size,
-        },
-      ]
-      : [
-        { id: "A", size: 100 },
-        { id: "B", size: 0 },
-      ],
+  const [legendSplitterSize, setLegendSplitterSize] = createSignal<number>(
+    getTabContext(props.tabId).tabCtx.legendPanelSize
+      ? getTabContext(props.tabId).tabCtx.legendPanelSize!
+      : 0,
   );
 
   createEffect(
@@ -544,8 +529,8 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
               header={currentHeader}
               series={currentItems}
               context={plots[index()]}
-              legendSplitterSize={legendSplitterSize()}
-              onLegendSplitterSizeChange={(size) => {
+              legendPanelSize={legendSplitterSize()}
+              onLegendPanelSize={(size) => {
                 setLegendSplitterSize(size);
               }}
               onContextChange={(ctx) => {
@@ -561,15 +546,7 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
               }}
               legendShrink={isLegendShrink()}
               onLegendShrinkChange={(newState) => {
-                if (newState !== undefined && newState !== isLegendShrink()) {
-                  setIsLegendShrink(newState);
-                  if (newState === true) {
-                    setLegendSplitterSize([
-                      { id: "A", size: 100 },
-                      { id: "B", size: 0 },
-                    ]);
-                  }
-                }
+                setIsLegendShrink(newState);
               }}
               style={{
                 width: "100%",

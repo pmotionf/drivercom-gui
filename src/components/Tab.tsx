@@ -13,7 +13,6 @@ import { createEffect } from "solid-js";
 import { Text } from "./ui/text.tsx";
 import { PlotContext } from "./Plot.tsx";
 import { tabContexts } from "~/GlobalState.ts";
-import { PanelSizeContext } from "./PanelLayout.tsx";
 
 export type TabContext = {
   id: string;
@@ -22,7 +21,7 @@ export type TabContext = {
   plotSplitIndex?: number[][];
   plotContext?: PlotContext[];
   plotZoomState?: [number, number];
-  legendSplitterSize?: PanelSizeContext[];
+  legendPanelSize?: number;
   legendShrink?: boolean;
 };
 

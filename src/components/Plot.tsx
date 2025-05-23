@@ -38,7 +38,6 @@ import { Tooltip } from "./ui/tooltip";
 import { Text } from "./ui/text";
 import { Portal } from "solid-js/web";
 import uFuzzy from "@leeoniya/ufuzzy";
-import { PanelSizeContext } from "./PanelLayout";
 import { Splitter } from "./ui/splitter";
 
 export type PlotProps = JSX.HTMLAttributes<HTMLDivElement> & {
@@ -51,8 +50,8 @@ export type PlotProps = JSX.HTMLAttributes<HTMLDivElement> & {
   onContextChange?: (context: PlotContext) => void;
   xRange?: [number, number];
   onXRangeChange?: (xRange: [number, number]) => void;
-  legendSplitterSize?: PanelSizeContext[];
-  onLegendSplitterSizeChange?: (size: PanelSizeContext[]) => void;
+  legendPanelSize?: number;
+  onLegendPanelSize?: (size: number) => void;
   legendShrink?: boolean;
   onLegendShrinkChange?: (isShrink: boolean) => void;
   cursorIdx?: number | null | undefined;
@@ -518,7 +517,16 @@ export function Plot(props: PlotProps) {
       <div {...rest} id={props.id + "-wrapper"}>
         <Splitter.Root
           style={{ width: "100%", height: "100%" }}
-          size={props.legendSplitterSize}
+          size={[
+            {
+              id: `plot-${props.id}`,
+              size: 100 - (props.legendPanelSize ? props.legendPanelSize : 0),
+            },
+            {
+              id: `legend-${props.id}`,
+              size: props.legendPanelSize,
+            },
+          ]}
           onSizeChange={(details) => {
             const parseSize = details.size.map((panel) => {
               return {
@@ -526,10 +534,10 @@ export function Plot(props: PlotProps) {
                 size: Number(panel.size)!,
               };
             });
-            props.onLegendSplitterSizeChange?.(parseSize);
+            props.onLegendPanelSize?.(parseSize[1].size);
           }}
         >
-          <Splitter.Panel id="A" borderWidth="0">
+          <Splitter.Panel id={`plot-${props.id}`} borderWidth="0">
             <Heading
               size="lg"
               style={{
@@ -571,7 +579,7 @@ export function Plot(props: PlotProps) {
             </IconButton>
             <Show when={!props.legendShrink}>
               <Splitter.ResizeTrigger
-                id="A:B"
+                id={`plot-${props.id}:legend-${props.id}`}
                 opacity="0%"
                 style={{
                   "max-width": props.legendShrink
@@ -584,7 +592,7 @@ export function Plot(props: PlotProps) {
             </Show>
           </Stack>
           <Splitter.Panel
-            id="B"
+            id={`legend-${props.id}`}
             borderWidth="0"
             style={{
               "min-width": props.legendShrink ? "0rem" : panelMinWidth(),
