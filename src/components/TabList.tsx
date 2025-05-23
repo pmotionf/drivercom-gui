@@ -1,4 +1,4 @@
-import { createEffect, JSX, on } from "solid-js";
+import { createEffect, createSignal, JSX, on, Show } from "solid-js";
 import { Tabs } from "~/components/ui/tabs.tsx";
 import { Tab, TabContext } from "~/components/Tab.tsx";
 import { For } from "solid-js/web";
@@ -165,6 +165,8 @@ export function TabList(props: tabListProps) {
     gap: 24,
   });
 
+  const [tabContextRender, setTabContextRender] = createSignal<boolean>(true);
+
   return (
     <>
       <Tabs.Root
@@ -243,6 +245,8 @@ export function TabList(props: tabListProps) {
             }
 
             props.onTabDragEnd?.(mouseX);
+            setTabContextRender(false);
+            setTabContextRender(true);
           }}
           onTabDragging={(mouseX: number, mouseY: number, tabId: string) => {
             const tabListId = `tabs:${props.id}`;
@@ -264,20 +268,22 @@ export function TabList(props: tabListProps) {
             props.onDraggingTab?.(updateTabLocation, draggedTab, mouseX);
           }}
         />
-        <For each={getTabContexts().tabContext}>
-          {(tab) => {
-            return (
-              <Tabs.Content
-                value={tab.id}
-                width="100%"
-                height={`calc(100% - 3rem)`}
-                overflowY="auto"
-              >
-                <LogViewerTabPageContent key={props.id} tabId={tab.id} />
-              </Tabs.Content>
-            );
-          }}
-        </For>
+        <Show when={tabContextRender()}>
+          <For each={getTabContexts().tabContext}>
+            {(tab) => {
+              return (
+                <Tabs.Content
+                  value={tab.id}
+                  width="100%"
+                  height={`calc(100% - 3rem)`}
+                  overflowY="auto"
+                >
+                  <LogViewerTabPageContent key={props.id} tabId={tab.id} />
+                </Tabs.Content>
+              );
+            }}
+          </For>
+        </Show>
       </Tabs.Root>
       <Toast.Toaster toaster={toaster}>
         {(toast) => (
