@@ -21,6 +21,8 @@ export type TabContext = {
   plotSplitIndex?: number[][];
   plotContext?: PlotContext[];
   plotZoomState?: [number, number];
+  legendPanelSize?: number;
+  legendShrink?: boolean;
 };
 
 export type tabProps = JSX.HTMLAttributes<HTMLDivElement> & {

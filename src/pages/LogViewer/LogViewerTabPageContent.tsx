@@ -39,7 +39,6 @@ export type LogViewerTabPageContentProps =
     key: string;
     tabId: string;
     onErrorMessage?: (message: ErrorMessage) => void;
-    //splitPlotIndex?: number[][];
   };
 
 export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
@@ -89,14 +88,67 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
     );
   };
 
+  const setLegendSplitter = (tabIndex: number, newSize: number) => {
+    return tabContexts.get(props.key)?.[1](
+      "tabContext",
+      tabIndex,
+      "legendPanelSize",
+      newSize,
+    );
+  };
+
+  const setLegendShrink = (tabIndex: number, newStatus: boolean) => {
+    return tabContexts.get(props.key)?.[1](
+      "tabContext",
+      tabIndex,
+      "legendShrink",
+      newStatus,
+    );
+  };
+
   const [plots, setPlots] = createStore<PlotContext[]>(
     getTabContext(props.tabId).tabCtx.plotContext
       ? getTabContext(props.tabId).tabCtx.plotContext!
       : [{} as PlotContext],
   );
 
+  const [plotZoomState, setPlotZoomState] = createSignal<[number, number]>(
+    getTabContext(props.tabId).tabCtx.plotZoomState!,
+  );
+  createEffect(
+    on(
+      () => plotZoomState(),
+      () => {
+        setTimeout(() => {
+          setXRange(getTabContext(props.tabId).currentIndex, plotZoomState());
+        }, 20);
+      },
+      { defer: true },
+    ),
+  );
+
   const [splitIndex, setSplitIndex] = createSignal([] as number[][]);
   const [mergePlotIndexes, setMergePlotIndexes] = createSignal<number[]>([]);
+
+  createEffect(
+    on(
+      () => splitIndex(),
+      () => {
+        setSplitPlot(getTabContext(props.tabId).currentIndex, splitIndex());
+      },
+      { defer: true },
+    ),
+  );
+
+  createEffect(
+    on(
+      () => plots,
+      () => {
+        setPlotContext(getTabContext(props.tabId).currentIndex, plots);
+      },
+    ),
+  );
+
   const [header, setHeader] = createSignal<string[]>([]);
   const [series, setSeries] = createSignal<number[][]>([]);
 
@@ -256,17 +308,6 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
     return plots[index].selected.every((b) => !b);
   };
 
-  createEffect(
-    on(
-      [() => splitIndex(), () => plots],
-      () => {
-        setSplitPlot(getTabContext(props.tabId).currentIndex, splitIndex());
-        setPlotContext(getTabContext(props.tabId).currentIndex, plots);
-      },
-      { defer: true },
-    ),
-  );
-
   const [cursorIdx, setCursorIdx] = createSignal<number | null | undefined>(0);
 
   createEffect(() => {
@@ -314,6 +355,44 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
     });
   });
 
+  const [legendSplitterSize, setLegendSplitterSize] = createSignal<number>(
+    getTabContext(props.tabId).tabCtx.legendPanelSize
+      ? getTabContext(props.tabId).tabCtx.legendPanelSize!
+      : 0,
+  );
+
+  createEffect(
+    on(
+      () => legendSplitterSize(),
+      () => {
+        setLegendSplitter(
+          getTabContext(props.tabId).currentIndex,
+          legendSplitterSize(),
+        );
+      },
+      { defer: true },
+    ),
+  );
+
+  const [isLegendShrink, setIsLegendShrink] = createSignal<boolean>(
+    getTabContext(props.tabId).tabCtx.legendShrink
+      ? getTabContext(props.tabId).tabCtx.legendShrink!
+      : false,
+  );
+
+  createEffect(
+    on(
+      () => isLegendShrink(),
+      () => {
+        setLegendShrink(
+          getTabContext(props.tabId).currentIndex,
+          isLegendShrink(),
+        );
+      },
+      { defer: true },
+    ),
+  );
+
   return (
     <For each={plots && splitIndex()}>
       {(item, index) => {
@@ -341,12 +420,18 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
         });
 
         return (
-          <>
+          <div
+            style={{
+              height: `calc(100% / ${splitIndex().length})`,
+              width: "100%",
+            }}
+          >
             <Stack
               direction="row-reverse"
               width="100%"
               paddingRight="1.6rem"
               style={{ overflow: "hidden" }}
+              height="3rem"
             >
               <Tooltip.Root>
                 <Tooltip.Trigger>
@@ -444,24 +529,35 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
               header={currentHeader}
               series={currentItems}
               context={plots[index()]}
+              legendPanelSize={legendSplitterSize()}
+              onLegendPanelSize={(size) => {
+                setLegendSplitterSize(size);
+              }}
               onContextChange={(ctx) => {
-                setPlots(index(), ctx);
-                setPlotContext(getTabContext(props.tabId).currentIndex, plots);
+                if (JSON.stringify(ctx) !== JSON.stringify(plots[index()])) {
+                  setPlots(index(), ctx);
+                }
               }}
               xRange={getTabContext(props.tabId).tabCtx.plotZoomState}
               onXRangeChange={(xRange) => {
-                setXRange(getTabContext(props.tabId).currentIndex, xRange);
+                if (plotZoomState() !== xRange) {
+                  setPlotZoomState(xRange);
+                }
+              }}
+              legendShrink={isLegendShrink()}
+              onLegendShrinkChange={(newState) => {
+                setIsLegendShrink(newState);
               }}
               style={{
                 width: "100%",
-                height: `calc(100% / ${splitIndex().length} - 3rem)`,
+                height: `calc(100% - 3rem)`,
                 "min-height": "17rem",
                 "padding-right": "0.5rem",
                 "padding-left": "0.5rem",
               }}
               cursorIdx={cursorIdx()}
             />
-          </>
+          </div>
         );
       }}
     </For>
