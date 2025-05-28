@@ -39,6 +39,7 @@
   },
   "nodeModulesDir": "auto",
   "imports": {
+    "@kuyoonjo/tauri-plugin-tcp": "npm:@kuyoonjo/tauri-plugin-tcp@^0.1.1",
     "@leeoniya/ufuzzy": "npm:@leeoniya/ufuzzy@^1.0.18",
     "@neodrag/solid": "npm:@neodrag/solid@^2.3.0",
     "@pandacss/preset-base": "npm:@pandacss/preset-base@^0.53.1",
