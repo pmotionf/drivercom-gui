@@ -26,6 +26,7 @@ import { Tooltip } from "~/components/ui/tooltip";
 import { tabContexts } from "~/GlobalState.ts";
 import { TabContext } from "~/components/Tab";
 import { on } from "solid-js";
+import { LegendStroke } from "~/components/Plot/Legend";
 
 export type ErrorMessage = {
   title: string;
@@ -57,17 +58,6 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
       tabCtx: tabContexts.get(props.key)?.[0].tabContext[index]!,
       currentIndex: index,
     };
-  };
-
-  if (!getTabContext(props.tabId).tabCtx) return;
-
-  const setPlotContext = (tabIndex: number, newPlot: PlotContext[]) => {
-    return tabContexts.get(props.key)?.[1](
-      "tabContext",
-      tabIndex,
-      "plotContext",
-      newPlot,
-    );
   };
 
   const setSplitPlot = (tabIndex: number, newSplit: number[][]) => {
@@ -112,9 +102,14 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
       : [{} as PlotContext],
   );
 
-  const [plotZoomState, setPlotZoomState] = createSignal<[number, number]>(
-    getTabContext(props.tabId).tabCtx.plotZoomState!,
-  );
+  const [plotZoomState, setPlotZoomState] = createSignal<[number, number]>([
+    0,
+    0,
+  ]);
+  if (getTabContext(props.tabId).tabCtx.plotZoomState) {
+    setPlotZoomState(getTabContext(props.tabId).tabCtx.plotZoomState!);
+  }
+
   createEffect(
     on(
       () => plotZoomState(),
@@ -128,6 +123,19 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
   );
 
   const [splitIndex, setSplitIndex] = createSignal([] as number[][]);
+
+  createEffect(
+    on(
+      () => splitIndex(),
+      () => {
+        setTimeout(() => {
+          setSplitPlot(getTabContext(props.tabId).currentIndex, splitIndex());
+        }, 200);
+      },
+      { defer: true },
+    ),
+  );
+
   const [mergePlotIndexes, setMergePlotIndexes] = createSignal<number[]>([]);
 
   createEffect(
@@ -137,15 +145,6 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
         setSplitPlot(getTabContext(props.tabId).currentIndex, splitIndex());
       },
       { defer: true },
-    ),
-  );
-
-  createEffect(
-    on(
-      () => plots,
-      () => {
-        setPlotContext(getTabContext(props.tabId).currentIndex, plots);
-      },
     ),
   );
 
@@ -393,6 +392,47 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
     ),
   );
 
+  const [prevSplitIndex, setPrevSplitIndex] = createSignal<number[][]>(
+    [] as number[][],
+  );
+  createEffect(
+    on(
+      () => splitIndex(),
+      () => {
+        if (plots.length === 0) {
+          setPlots([{} as PlotContext]);
+          return;
+        }
+
+        if (plots.length === splitIndex().length) return;
+        const prevPlot: Map<
+          number,
+          { color: string; style: LegendStroke; visible: boolean }
+        > = new Map();
+        prevSplitIndex().forEach((nums, index) => {
+          nums.forEach((num, i) => {
+            prevPlot.set(num, {
+              color: plots[index].color[i],
+              style: plots[index].style[i],
+              visible: plots[index].visible[i],
+            });
+          });
+        });
+
+        const updatePlot = splitIndex().map((nums) => {
+          return {
+            color: nums.map((num) => prevPlot.get(num)!.color),
+            style: nums.map((num) => prevPlot.get(num)!.style),
+            visible: nums.map((num) => prevPlot.get(num)!.visible),
+          } as PlotContext;
+        });
+
+        setPlots(updatePlot);
+      },
+      { defer: true },
+    ),
+  );
+
   return (
     <For each={plots && splitIndex()}>
       {(item, index) => {
@@ -404,20 +444,6 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
         // Current ID must be derived state as index can change based on
         // added/merged plots.
         const currentID = () => props.tabId + index();
-
-        let prevSplitIndex = getTabContext(props.tabId).tabCtx.plotSplitIndex;
-
-        createEffect(() => {
-          if (prevSplitIndex && splitIndex().length === prevSplitIndex.length) {
-            return;
-          }
-
-          setPlots(index(), {
-            visible: item.map(() => true),
-          } as PlotContext);
-
-          prevSplitIndex = splitIndex();
-        });
 
         return (
           <div
@@ -438,6 +464,7 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
                   <IconButton
                     size="sm"
                     onClick={() => {
+                      setPrevSplitIndex(splitIndex());
                       splitPlot(index());
                       setMergePlotIndexes([]);
                     }}
@@ -461,6 +488,7 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
                 <Tooltip.Trigger>
                   <IconButton
                     onClick={() => {
+                      setPrevSplitIndex(splitIndex());
                       mergePlot(mergePlotIndexes());
                       setMergePlotIndexes([]);
                     }}
@@ -505,6 +533,7 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
                         variant="outline"
                         disabled={splitIndex().length <= 1}
                         onclick={() => {
+                          setPrevSplitIndex(splitIndex());
                           resetChart();
                           setMergePlotIndexes([]);
                         }}
@@ -538,7 +567,7 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
                   setPlots(index(), ctx);
                 }
               }}
-              xRange={getTabContext(props.tabId).tabCtx.plotZoomState}
+              xRange={plotZoomState()}
               onXRangeChange={(xRange) => {
                 if (plotZoomState() !== xRange) {
                   setPlotZoomState(xRange);
