@@ -1,4 +1,3 @@
-import { onMount } from "solid-js";
 import { Button } from "~/components/ui/styled/button.tsx";
 import { Stack } from "styled-system/jsx";
 import { Text } from "~/components/ui/text";
@@ -11,25 +10,30 @@ import {
 } from "@tabler/icons-solidjs";
 import { css } from "styled-system/css/css";
 import { Show } from "solid-js/web";
+import { createStore } from "solid-js/store";
+import { For } from "solid-js/web";
+import { Accordion } from "~/components/ui/accordion.tsx";
+import { ChevronDownIcon } from "lucide-solid";
+
+export type SystemConfig = {
+  line: string;
+};
 
 function Monitoring() {
   const pageId = crypto.randomUUID();
   const [showSideBar, setShowSideBar] = createSignal<boolean>(true);
   const [panelSize, setPanelSize] = createSignal<number>(100);
-  onMount(() => {
-    /*const client = crypto.randomUUID();
-    const host = "192.168.0.7";
-    const port = 9001;
 
-    const ser = handler(host, port);
-    console.log(ser);
+  const [systemConfig, setSystemConfig] = createStore<SystemConfig[]>(
+    [] as SystemConfig[],
+  );
+  const inputValues: Map<string, string> = new Map();
 
-    const con = await connect(client, `${host}:${port}`);
-    console.log(con);
-    await listen((x) => {
-      console.log(x.payload!.event!.message!.data);
-    });*/
-  });
+  const [inputRender, setInputRender] = createSignal<boolean>(true);
+  const refreshInput = () => {
+    setInputRender(false);
+    setInputRender(true);
+  };
 
   return (
     <Splitter.Root
@@ -46,37 +50,64 @@ function Monitoring() {
         }
       }}
       gap="0"
+      width="100%"
+      height="100%"
     >
       <Splitter.Panel
         id={`${pageId}-panel`}
         borderWidth="0"
         backgroundColor="transparent"
       >
-      </Splitter.Panel>
-      <Stack direction="row" gap="0">
-        <IconButton
-          size="sm"
-          variant="ghost"
-          onClick={() => setShowSideBar(!showSideBar())}
+        <Accordion.Root
+          width="100%"
+          height="100%"
+          padding="1rem"
+          paddingTop="1rem"
+          multiple
         >
-          <Show when={!showSideBar()} fallback={<IconChevronRightPipe />}>
-            <IconChevronLeftPipe />
-          </Show>
-        </IconButton>
-        <Show when={showSideBar()}>
-          <Splitter.ResizeTrigger
-            id={`${pageId}-panel:${pageId}-sidebar`}
-            class={css({ borderInlineColor: "bg.default" })}
-            style={{
-              width: "1px",
-              "border-radius": "0",
-              padding: "0",
-              margin: "0",
-              "border-inline-width": "2px",
-            }}
-          />
+          <For each={systemConfig}>
+            {(config) => (
+              <Accordion.Item value={config.line}>
+                <Accordion.ItemTrigger>
+                  {config.line}
+                  <Accordion.ItemIndicator>
+                    <ChevronDownIcon />
+                  </Accordion.ItemIndicator>
+                </Accordion.ItemTrigger>
+                <Accordion.ItemContent>Example</Accordion.ItemContent>
+              </Accordion.Item>
+            )}
+          </For>
+        </Accordion.Root>
+      </Splitter.Panel>
+
+      {/* Resize trigger */}
+      <IconButton
+        size="sm"
+        variant="ghost"
+        onClick={() => setShowSideBar(!showSideBar())}
+        position="absolute"
+        right="0.5rem"
+      >
+        <Show when={!showSideBar()} fallback={<IconChevronRightPipe />}>
+          <IconChevronLeftPipe />
         </Show>
-      </Stack>
+      </IconButton>
+
+      {/* Side bar */}
+      <Show when={showSideBar()}>
+        <Splitter.ResizeTrigger
+          id={`${pageId}-panel:${pageId}-sidebar`}
+          class={css({ borderInlineColor: "bg.default" })}
+          style={{
+            width: "1px",
+            "border-radius": "0",
+            padding: "0",
+            margin: "0",
+            "border-inline-width": "2px",
+          }}
+        />
+      </Show>
 
       <Show when={showSideBar()}>
         <Splitter.Panel
@@ -112,22 +143,44 @@ function Monitoring() {
                   borderRadius="0.5rem"
                   height="2rem"
                 >
-                  <input
-                    style={{
-                      width: "100%",
-                      height: "100%",
-                      border: "none",
-                      outline: "none",
-                      "white-space": "nowrap",
-                      overflow: "hidden",
-                      display: "block",
-                      "text-overflow": "ellipsis",
-                      "padding-left": "0.5rem",
-                    }}
-                  />
+                  <Show when={inputRender()}>
+                    <input
+                      value={inputValues.get("lineID")
+                        ? inputValues.get("lineID")
+                        : ""}
+                      onInput={(e) => inputValues.set("lineID", e.target.value)}
+                      style={{
+                        width: "100%",
+                        height: "100%",
+                        border: "none",
+                        outline: "none",
+                        "white-space": "nowrap",
+                        overflow: "hidden",
+                        display: "block",
+                        "text-overflow": "ellipsis",
+                        "padding-left": "0.5rem",
+                      }}
+                    />
+                  </Show>
                 </Stack>
               </Stack>
-              <Button>Save</Button>
+              <Button
+                onClick={() => {
+                  const lineID = inputValues.get("lineID");
+                  if (typeof lineID === "string") {
+                    const lines = systemConfig.map((config) => config.line);
+                    if (lines.includes(lineID)) {
+                      // Need error message
+                      return;
+                    }
+                    setSystemConfig([...systemConfig, { line: lineID }]);
+                  }
+                  inputValues.set("lineID", "");
+                  refreshInput();
+                }}
+              >
+                Save
+              </Button>
             </Stack>
             {/* Connect Area */}
             <Stack padding="1rem" width="100%" borderBottomWidth="2px">
