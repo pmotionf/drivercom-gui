@@ -11,14 +11,18 @@ import {
 import { css } from "styled-system/css/css";
 import { Show } from "solid-js/web";
 import { createStore } from "solid-js/store";
-import { For } from "solid-js/web";
-import { Accordion } from "~/components/ui/accordion.tsx";
-import { ChevronDownIcon } from "lucide-solid";
-import { connect, disconnect } from "@kuyoonjo/tauri-plugin-tcp";
+import { connect, disconnect, listen } from "@kuyoonjo/tauri-plugin-tcp";
 import { onCleanup } from "solid-js";
 
+import { load } from "protobufjs"; // respectively "./node_modules/protobufjs"
+import { Buffer } from "buffer";
+import { createEffect } from "solid-js";
+import { on } from "solid-js";
+
 export type SystemConfig = {
-  line: string;
+  lineConfig: {
+    lines: { axes: number; name: string }[];
+  };
 };
 
 function Monitoring() {
@@ -26,21 +30,45 @@ function Monitoring() {
   const [showSideBar, setShowSideBar] = createSignal<boolean>(true);
   const [panelSize, setPanelSize] = createSignal<number>(100);
 
-  const [systemConfig, setSystemConfig] = createStore<SystemConfig[]>(
-    [] as SystemConfig[],
+  const [systemConfig, setSystemConfig] = createStore<SystemConfig>(
+    {} as SystemConfig,
   );
   const inputValues: Map<string, string> = new Map();
 
-  const [inputRender, setInputRender] = createSignal<boolean>(true);
-  const refreshInput = () => {
-    setInputRender(false);
-    setInputRender(true);
-  };
-
   const [isServerConnect, setIsServerConnect] = createSignal<boolean>(false);
 
+  createEffect(
+    on(
+      () => isServerConnect(),
+      () => {
+        if (!isServerConnect()) return;
+        listen((x) => {
+          if (x.payload.id === pageId && x.payload.event.message) {
+            const buffer = Buffer.from(x.payload.event.message.data);
+            load("resources/all.proto", function (err, root) {
+              if (err) throw err;
+              if (!root) return;
+              const proto = root.lookupType("mmc.Response");
+
+              if (!proto) return;
+              const response = proto.decode(buffer).toJSON();
+              if (!response) return;
+              try {
+                setSystemConfig(response);
+              } catch {
+                return;
+              }
+            });
+          }
+        });
+      },
+    ),
+  );
+
   onCleanup(() => {
-    disconnect(pageId);
+    if (isServerConnect()) {
+      disconnect(pageId);
+    }
   });
 
   return (
@@ -65,29 +93,7 @@ function Monitoring() {
         id={`${pageId}-panel`}
         borderWidth="0"
         backgroundColor="transparent"
-      >
-        <Accordion.Root
-          width="100%"
-          height="100%"
-          padding="1rem"
-          paddingTop="1rem"
-          multiple
-        >
-          <For each={systemConfig}>
-            {(config) => (
-              <Accordion.Item value={config.line}>
-                <Accordion.ItemTrigger>
-                  {config.line}
-                  <Accordion.ItemIndicator>
-                    <ChevronDownIcon />
-                  </Accordion.ItemIndicator>
-                </Accordion.ItemTrigger>
-                <Accordion.ItemContent>Example</Accordion.ItemContent>
-              </Accordion.Item>
-            )}
-          </For>
-        </Accordion.Root>
-      </Splitter.Panel>
+      ></Splitter.Panel>
 
       {/* Resize trigger */}
       <IconButton
@@ -125,71 +131,6 @@ function Monitoring() {
           backgroundColor="transparent"
         >
           <Stack direction="column" width="100%" height="100%">
-            <Stack
-              width="100%"
-              borderBottomWidth="2px"
-              padding="1rem"
-              direction="column"
-            >
-              {/* Line Area */}
-              <Text fontWeight="bold" size="lg">
-                Line
-              </Text>
-              <Stack direction="row" width="100%">
-                <Text
-                  size="sm"
-                  width="20%"
-                  color="fg.muted"
-                  marginRight="0.5rem"
-                  marginTop="0.4rem"
-                >
-                  ID
-                </Text>
-                <Stack
-                  background="bg.muted"
-                  width="80%"
-                  borderRadius="0.5rem"
-                  height="2rem"
-                >
-                  <Show when={inputRender()}>
-                    <input
-                      value={inputValues.get("lineID")
-                        ? inputValues.get("lineID")
-                        : ""}
-                      onInput={(e) => inputValues.set("lineID", e.target.value)}
-                      style={{
-                        width: "100%",
-                        height: "100%",
-                        border: "none",
-                        outline: "none",
-                        "white-space": "nowrap",
-                        overflow: "hidden",
-                        display: "block",
-                        "text-overflow": "ellipsis",
-                        "padding-left": "0.5rem",
-                      }}
-                    />
-                  </Show>
-                </Stack>
-              </Stack>
-              <Button
-                onClick={() => {
-                  const lineID = inputValues.get("lineID");
-                  if (typeof lineID === "string") {
-                    const lines = systemConfig.map((config) => config.line);
-                    if (lines.includes(lineID)) {
-                      // Need error message
-                      return;
-                    }
-                    setSystemConfig([...systemConfig, { line: lineID }]);
-                  }
-                  inputValues.set("lineID", "");
-                  refreshInput();
-                }}
-              >
-                Save
-              </Button>
-            </Stack>
             {/* Connect Area */}
             <Stack padding="1rem" width="100%" borderBottomWidth="2px">
               <Text size="lg" fontWeight="bold">
@@ -249,9 +190,9 @@ function Monitoring() {
                     height="2rem"
                   >
                     <input
-                      value={inputValues.get("port")
-                        ? inputValues.get("port")
-                        : ""}
+                      value={
+                        inputValues.get("port") ? inputValues.get("port") : ""
+                      }
                       onInput={(e) => {
                         if (typeof e.target.value === "string") {
                           inputValues.set("port", e.target.value);
@@ -285,11 +226,11 @@ function Monitoring() {
 
                   if (typeof serverIp == "string" && typeof port == "string") {
                     const address = `${serverIp}:${port}`;
+                    const cid = pageId;
                     try {
-                      await connect(pageId, address);
+                      await connect(cid, address);
                       setIsServerConnect(true);
                     } catch {
-                      // Need Error Message
                       return;
                     }
                   }
