@@ -14,8 +14,11 @@ import { createStore } from "solid-js/store";
 import { For } from "solid-js/web";
 import { Accordion } from "~/components/ui/accordion.tsx";
 import { ChevronDownIcon } from "lucide-solid";
-import { connect, disconnect } from "@kuyoonjo/tauri-plugin-tcp";
+import { connect, disconnect, listen, send } from "@kuyoonjo/tauri-plugin-tcp";
 import { onCleanup } from "solid-js";
+
+import { load } from "protobufjs"; // respectively "./node_modules/protobufjs"
+import { Buffer } from "buffer";
 
 export type SystemConfig = {
   line: string;
@@ -31,13 +34,46 @@ function Monitoring() {
   );
   const inputValues: Map<string, string> = new Map();
 
-  const [inputRender, setInputRender] = createSignal<boolean>(true);
-  const refreshInput = () => {
-    setInputRender(false);
-    setInputRender(true);
+  const [isServerConnect, setIsServerConnect] = createSignal<boolean>(false);
+
+  const listenServer = (cid: string) => {
+    try {
+      listen((x) => {
+        if (x.payload.id === cid && x.payload.event.message) {
+          const buffer = Buffer.from(x.payload.event.message.data);
+          let str = Buffer.from(x.payload.event.message.data).toString();
+          //console.log(buffer.toString());
+          load("resources/all.proto", function (err, root) {
+            if (err) throw err;
+            if (!root) return;
+            const proto = root.lookupType("mmc.Response.LineConfig");
+
+            try {
+              if (!proto) return;
+              const parseBuffer: Uint8Array = proto.encode(buffer).finish();
+              if (!parseBuffer) return;
+              const response = proto.decode(buffer);
+              if (response) {
+                console.log(response);
+              }
+            } catch (e) {
+              console.log(e);
+            }
+          });
+        }
+      });
+    } catch (e) {
+      console.log(e);
+    }
   };
 
-  const [isServerConnect, setIsServerConnect] = createSignal<boolean>(false);
+  const sendServer = (cid: string, cmd: string) => {
+    try {
+      send(cid, cmd);
+    } catch (e) {
+      console.log(e);
+    }
+  };
 
   onCleanup(() => {
     disconnect(pageId);
@@ -125,71 +161,6 @@ function Monitoring() {
           backgroundColor="transparent"
         >
           <Stack direction="column" width="100%" height="100%">
-            <Stack
-              width="100%"
-              borderBottomWidth="2px"
-              padding="1rem"
-              direction="column"
-            >
-              {/* Line Area */}
-              <Text fontWeight="bold" size="lg">
-                Line
-              </Text>
-              <Stack direction="row" width="100%">
-                <Text
-                  size="sm"
-                  width="20%"
-                  color="fg.muted"
-                  marginRight="0.5rem"
-                  marginTop="0.4rem"
-                >
-                  ID
-                </Text>
-                <Stack
-                  background="bg.muted"
-                  width="80%"
-                  borderRadius="0.5rem"
-                  height="2rem"
-                >
-                  <Show when={inputRender()}>
-                    <input
-                      value={inputValues.get("lineID")
-                        ? inputValues.get("lineID")
-                        : ""}
-                      onInput={(e) => inputValues.set("lineID", e.target.value)}
-                      style={{
-                        width: "100%",
-                        height: "100%",
-                        border: "none",
-                        outline: "none",
-                        "white-space": "nowrap",
-                        overflow: "hidden",
-                        display: "block",
-                        "text-overflow": "ellipsis",
-                        "padding-left": "0.5rem",
-                      }}
-                    />
-                  </Show>
-                </Stack>
-              </Stack>
-              <Button
-                onClick={() => {
-                  const lineID = inputValues.get("lineID");
-                  if (typeof lineID === "string") {
-                    const lines = systemConfig.map((config) => config.line);
-                    if (lines.includes(lineID)) {
-                      // Need error message
-                      return;
-                    }
-                    setSystemConfig([...systemConfig, { line: lineID }]);
-                  }
-                  inputValues.set("lineID", "");
-                  refreshInput();
-                }}
-              >
-                Save
-              </Button>
-            </Stack>
             {/* Connect Area */}
             <Stack padding="1rem" width="100%" borderBottomWidth="2px">
               <Text size="lg" fontWeight="bold">
@@ -249,9 +220,9 @@ function Monitoring() {
                     height="2rem"
                   >
                     <input
-                      value={inputValues.get("port")
-                        ? inputValues.get("port")
-                        : ""}
+                      value={
+                        inputValues.get("port") ? inputValues.get("port") : ""
+                      }
                       onInput={(e) => {
                         if (typeof e.target.value === "string") {
                           inputValues.set("port", e.target.value);
@@ -274,7 +245,7 @@ function Monitoring() {
               </Stack>
               <Button
                 variant={isServerConnect() ? "outline" : "solid"}
-                onClick={async () => {
+                onClick={() => {
                   if (isServerConnect()) {
                     disconnect(pageId);
                     setIsServerConnect(false);
@@ -286,12 +257,16 @@ function Monitoring() {
                   if (typeof serverIp == "string" && typeof port == "string") {
                     const address = `${serverIp}:${port}`;
                     try {
-                      await connect(pageId, address);
+                      connect(pageId, address);
                       setIsServerConnect(true);
                     } catch {
                       // Need Error Message
                       return;
                     }
+                    //sendServer(pageId, "hello");
+                    listenServer(pageId);
+                    sendServer(pageId, "help");
+                    listenServer(pageId);
                   }
                 }}
               >
