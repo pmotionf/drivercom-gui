@@ -23,7 +23,7 @@
       "dependencies": ["fetch-drivercom"]
     },
     "fetch-protobuf": {
-      "command": "mkdir -p resources && cd ./resources && wget https://raw.githubusercontent.com/pmotionf/mmc-config/refs/heads/main/protocol/all.proto -O all.proto",
+      "command": "mkdir -p ./resources && cd ./resources && wget https://raw.githubusercontent.com/pmotionf/mmc-config/refs/heads/main/protocol/all.proto -O all.proto",
       "dependencies": ["unpack-drivercom"]
     }
   },
