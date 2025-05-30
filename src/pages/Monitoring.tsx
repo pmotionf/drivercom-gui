@@ -14,6 +14,8 @@ import { createStore } from "solid-js/store";
 import { For } from "solid-js/web";
 import { Accordion } from "~/components/ui/accordion.tsx";
 import { ChevronDownIcon } from "lucide-solid";
+import { connect, disconnect } from "@kuyoonjo/tauri-plugin-tcp";
+import { onCleanup } from "solid-js";
 
 export type SystemConfig = {
   line: string;
@@ -34,6 +36,12 @@ function Monitoring() {
     setInputRender(false);
     setInputRender(true);
   };
+
+  const [isServerConnect, setIsServerConnect] = createSignal<boolean>(false);
+
+  onCleanup(() => {
+    disconnect(pageId);
+  });
 
   return (
     <Splitter.Root
@@ -204,6 +212,12 @@ function Monitoring() {
                     height="2rem"
                   >
                     <input
+                      value={inputValues.get("IP") ? inputValues.get("IP") : ""}
+                      onInput={(e) => {
+                        if (typeof e.target.value === "string") {
+                          inputValues.set("IP", e.target.value);
+                        }
+                      }}
                       style={{
                         width: "100%",
                         height: "100%",
@@ -235,6 +249,14 @@ function Monitoring() {
                     height="2rem"
                   >
                     <input
+                      value={inputValues.get("port")
+                        ? inputValues.get("port")
+                        : ""}
+                      onInput={(e) => {
+                        if (typeof e.target.value === "string") {
+                          inputValues.set("port", e.target.value);
+                        }
+                      }}
                       style={{
                         width: "100%",
                         height: "100%",
@@ -250,7 +272,31 @@ function Monitoring() {
                   </Stack>
                 </Stack>
               </Stack>
-              <Button>Connect</Button>
+              <Button
+                variant={isServerConnect() ? "outline" : "solid"}
+                onClick={async () => {
+                  if (isServerConnect()) {
+                    disconnect(pageId);
+                    setIsServerConnect(false);
+                    return;
+                  }
+                  const serverIp = inputValues.get("IP");
+                  const port = inputValues.get("port");
+
+                  if (typeof serverIp == "string" && typeof port == "string") {
+                    const address = `${serverIp}:${port}`;
+                    try {
+                      await connect(pageId, address);
+                      setIsServerConnect(true);
+                    } catch {
+                      // Need Error Message
+                      return;
+                    }
+                  }
+                }}
+              >
+                {isServerConnect() ? "Cancel" : "Connect"}
+              </Button>
             </Stack>
           </Stack>
         </Splitter.Panel>
