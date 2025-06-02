@@ -48,28 +48,44 @@ type LinkedStatuses = Map<
 
 export function ConfigForm(props: ConfigFormProps) {
   const [config, setConfig] = createStore(props.config);
-  const axes: object[] = config["axes" as keyof typeof config];
   const accordionStatuses: AccordionStatuses = new Map();
   const linkedStatuses: LinkedStatuses = new Map();
 
-  axes.forEach((_, index) => {
+  const dynamic = ["center", "between"];
+
+  // Center gain
+  dynamic.forEach((dynPos) => {
     if (
-      !("axes" in config && Array.isArray(config.axes)) ||
-      !("gain" in config.axes[index]) ||
-      !("current" in config.axes[index].gain) ||
-      !("denominator" in config.axes[index].gain.current) ||
-      !("p" in config.axes[index].gain.current) ||
-      !("i" in config.axes[index].gain.current) ||
-      !("velocity" in config.axes[index].gain) ||
-      !("denominator" in config.axes[index].gain.velocity) ||
-      !("denominator_pi" in config.axes[index].gain.velocity) ||
-      !("p" in config.axes[index].gain.velocity) ||
-      !("i" in config.axes[index].gain.velocity) ||
-      !("position" in config.axes[index].gain) ||
-      !("denominator" in config.axes[index].gain.position) ||
-      !("p" in config.axes[index].gain.position) ||
-      !("coil" in config) ||
-      !("kf" in (config.coil as object)) ||
+      !("axis" in config) || !(dynPos in (config.axis as object)) ||
+      //@ts-ignore dynPos guaranteed to exist from above check
+      !("gain" in config.axis[dynPos]) ||
+      //@ts-ignore dynPos guaranteed to exist from above check
+      !("current" in config.axis[dynPos].gain) ||
+      //@ts-ignore dynPos guaranteed to exist from above check
+      !("denominator" in config.axis[dynPos].gain.current) ||
+      //@ts-ignore dynPos guaranteed to exist from above check
+      !("p" in config.axis[dynPos].gain.current) ||
+      //@ts-ignore dynPos guaranteed to exist from above check
+      !("i" in config.axis[dynPos].gain.current) ||
+      //@ts-ignore dynPos guaranteed to exist from above check
+      !("velocity" in config.axis[dynPos].gain) ||
+      //@ts-ignore dynPos guaranteed to exist from above check
+      !("denominator" in config.axis[dynPos].gain.velocity) ||
+      //@ts-ignore dynPos guaranteed to exist from above check
+      !("denominator_pi" in config.axis[dynPos].gain.velocity) ||
+      //@ts-ignore dynPos guaranteed to exist from above check
+      !("p" in config.axis[dynPos].gain.velocity) ||
+      //@ts-ignore dynPos guaranteed to exist from above check
+      !("i" in config.axis[dynPos].gain.velocity) ||
+      //@ts-ignore dynPos guaranteed to exist from above check
+      !("position" in config.axis[dynPos].gain) ||
+      //@ts-ignore dynPos guaranteed to exist from above check
+      !("denominator" in config.axis[dynPos].gain.position) ||
+      //@ts-ignore dynPos guaranteed to exist from above check
+      !("p" in config.axis[dynPos].gain.position) ||
+      !("coil" in config) || !(dynPos in (config.coil as object)) ||
+      //@ts-ignore dynPos guaranteed to exist from above check
+      !("kf" in (config.coil[dynPos] as object)) ||
       !("ls" in (config.coil as object)) ||
       !("rs" in (config.coil as object)) ||
       !("magnet" in config) ||
@@ -85,25 +101,19 @@ export function ConfigForm(props: ConfigFormProps) {
       on(
         [
           //@ts-ignore Guaranteed to exist from above check
-          () => config.axes[index].gain.current.denominator,
+          () => config.axis[dynPos].gain.current.denominator,
           //@ts-ignore Guaranteed to exist from above check
           () => config.coil.ls,
         ],
         () => {
-          if (
-            linkedStatuses.get("axes")?.[0]()[0] &&
-            linkedStatuses.get("axes")?.[0]()[1] !== index
-          ) {
-            return;
-          }
           const p = calcCurrentP(
             //@ts-ignore Guaranteed to exist from above check
-            config.axes[index].gain.current.denominator,
+            config.axis[dynPos].gain.current.denominator,
             //@ts-ignore Guaranteed to exist from above check
             config.coil.ls,
           );
           //@ts-ignore Below fields guaranteed to exist due to above checks
-          setConfig("axes", index, "gain", "current", "p", p);
+          setConfig("axis", dynPos, "gain", "current", "p", p);
         },
         { defer: true },
       ),
@@ -114,25 +124,19 @@ export function ConfigForm(props: ConfigFormProps) {
       on(
         [
           //@ts-ignore Guaranteed to exist from above check
-          () => config.axes[index].gain.current.denominator,
+          () => config.axis[dynPos].gain.current.denominator,
           //@ts-ignore Guaranteed to exist from above check
           () => config.coil.rs,
         ],
         () => {
-          if (
-            linkedStatuses.get("axes")?.[0]()[0] &&
-            linkedStatuses.get("axes")?.[0]()[1] !== index
-          ) {
-            return;
-          }
           const i = calcCurrentI(
             //@ts-ignore Guaranteed to exist from above check
-            config.axes[index].gain.current.denominator,
+            config.axis[dynPos].gain.current.denominator,
             //@ts-ignore Guaranteed to exist from above check
             config.coil.rs,
           );
           //@ts-ignore Below fields guaranteed to exist due to above checks
-          setConfig("axes", index, "gain", "current", "i", i);
+          setConfig("axis", dynPos, "gain", "current", "i", i);
         },
         { defer: true },
       ),
@@ -143,37 +147,31 @@ export function ConfigForm(props: ConfigFormProps) {
       on(
         [
           //@ts-ignore Guaranteed to exist from above check
-          () => config.axes[index].gain.velocity.denominator,
+          () => config.axis[dynPos].gain.velocity.denominator,
           //@ts-ignore Guaranteed to exist from above check
-          () => config.axes[index].gain.current.denominator,
+          () => config.axis[dynPos].gain.current.denominator,
           //@ts-ignore Guaranteed to exist from above check
-          () => config.coil.kf,
+          () => config.coil[dynPos].kf,
           //@ts-ignore Guaranteed to exist from above check
           () => config.carrier.mass,
           //@ts-ignore Guaranteed to exist from above check
           () => config.magnet.pitch,
         ],
         () => {
-          if (
-            linkedStatuses.get("axes")?.[0]()[0] &&
-            linkedStatuses.get("axes")?.[0]()[1] !== index
-          ) {
-            return;
-          }
           const p = calcVelocityP(
             //@ts-ignore Guaranteed to exist from above check
-            config.axes[index].gain.velocity.denominator,
+            config.axis[dynPos].gain.velocity.denominator,
             //@ts-ignore Guaranteed to exist from above check
-            config.axes[index].gain.current.denominator,
+            config.axis[dynPos].gain.current.denominator,
             //@ts-ignore Guaranteed to exist from above check
             config.magnet.pitch,
             //@ts-ignore Guaranteed to exist from above check
             config.carrier.mass,
             //@ts-ignore Guaranteed to exist from above check
-            config.coil.kf,
+            config.coil[dynPos].kf,
           );
           //@ts-ignore Below fields guaranteed to exist due to above checks
-          setConfig("axes", index, "gain", "velocity", "p", p);
+          setConfig("axis", dynPos, "gain", "velocity", "p", p);
         },
         { defer: true },
       ),
@@ -184,33 +182,27 @@ export function ConfigForm(props: ConfigFormProps) {
       on(
         [
           //@ts-ignore Guaranteed to exist from above check
-          () => config.axes[index].gain.velocity.denominator,
+          () => config.axis[dynPos].gain.velocity.denominator,
           //@ts-ignore Guaranteed to exist from above check
-          () => config.axes[index].gain.velocity.denominator_pi,
+          () => config.axis[dynPos].gain.velocity.denominator_pi,
           //@ts-ignore Guaranteed to exist from above check
-          () => config.axes[index].gain.current.denominator,
+          () => config.axis[dynPos].gain.current.denominator,
           //@ts-ignore Guaranteed to exist from above check
-          () => config.axes[index].gain.velocity.p,
+          () => config.axis[dynPos].gain.velocity.p,
         ],
         () => {
-          if (
-            linkedStatuses.get("axes")?.[0]()[0] &&
-            linkedStatuses.get("axes")?.[0]()[1] !== index
-          ) {
-            return;
-          }
           const i = calcVelocityI(
             //@ts-ignore Guaranteed to exist from above check
-            config.axes[index].gain.velocity.denominator,
+            config.axis[dynPos].gain.velocity.denominator,
             //@ts-ignore Guaranteed to exist from above check
-            config.axes[index].gain.velocity.denominator_pi,
+            config.axis[dynPos].gain.velocity.denominator_pi,
             //@ts-ignore Guaranteed to exist from above check
-            config.axes[index].gain.current.denominator,
+            config.axis[dynPos].gain.current.denominator,
             //@ts-ignore Guaranteed to exist from above check
-            config.axes[index].gain.velocity.p,
+            config.axis[dynPos].gain.velocity.p,
           );
           //@ts-ignore Below fields guaranteed to exist due to above checks
-          setConfig("axes", index, "gain", "velocity", "i", i);
+          setConfig("axis", dynPos, "gain", "velocity", "i", i);
         },
         { defer: true },
       ),
@@ -221,29 +213,23 @@ export function ConfigForm(props: ConfigFormProps) {
       on(
         [
           //@ts-ignore Guaranteed to exist from above check
-          () => config.axes[index].gain.current.denominator,
+          () => config.axis[dynPos].gain.current.denominator,
           //@ts-ignore Guaranteed to exist from above check
-          () => config.axes[index].gain.velocity.denominator,
+          () => config.axis[dynPos].gain.velocity.denominator,
           //@ts-ignore Guaranteed to exist from above check
-          () => config.axes[index].gain.position.denominator,
+          () => config.axis[dynPos].gain.position.denominator,
         ],
         () => {
-          if (
-            linkedStatuses.get("axes")?.[0]()[0] &&
-            linkedStatuses.get("axes")?.[0]()[1] !== index
-          ) {
-            return;
-          }
           const p = calcPositionP(
             //@ts-ignore Guaranteed to exist from above check
-            config.axes[index].gain.current.denominator,
+            config.axis[dynPos].gain.current.denominator,
             //@ts-ignore Guaranteed to exist from above check
-            config.axes[index].gain.velocity.denominator,
+            config.axis[dynPos].gain.velocity.denominator,
             //@ts-ignore Guaranteed to exist from above check
-            config.axes[index].gain.position.denominator,
+            config.axis[dynPos].gain.position.denominator,
           );
           //@ts-ignore Below fields guaranteed to exist due to above checks
-          setConfig("axes", index, "gain", "position", "p", p);
+          setConfig("axis", dynPos, "gain", "position", "p", p);
         },
         { defer: true },
       ),
