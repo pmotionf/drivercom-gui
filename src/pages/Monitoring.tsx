@@ -18,6 +18,7 @@ import { load } from "protobufjs"; // respectively "./node_modules/protobufjs"
 import { Buffer } from "buffer";
 import { createEffect } from "solid-js";
 import { on } from "solid-js";
+import { System } from "~/components/System/System.tsx";
 
 export type SystemConfig = {
   lineConfig: {
@@ -30,9 +31,9 @@ function Monitoring() {
   const [showSideBar, setShowSideBar] = createSignal<boolean>(true);
   const [panelSize, setPanelSize] = createSignal<number>(100);
 
-  const [systemConfig, setSystemConfig] = createStore<SystemConfig>(
-    {} as SystemConfig,
-  );
+  const [systemConfig, setSystemConfig] = createStore<SystemConfig>({
+    lineConfig: { lines: [] },
+  });
   const inputValues: Map<string, string> = new Map();
 
   const [isServerConnect, setIsServerConnect] = createSignal<boolean>(false);
@@ -41,7 +42,10 @@ function Monitoring() {
     on(
       () => isServerConnect(),
       () => {
-        if (!isServerConnect()) return;
+        if (!isServerConnect()) {
+          setSystemConfig("lineConfig", "lines", []);
+          return;
+        }
         listen((x) => {
           if (x.payload.id === pageId && x.payload.event.message) {
             const buffer = Buffer.from(x.payload.event.message.data);
@@ -62,6 +66,7 @@ function Monitoring() {
           }
         });
       },
+      { defer: true },
     ),
   );
 
@@ -93,7 +98,13 @@ function Monitoring() {
         id={`${pageId}-panel`}
         borderWidth="0"
         backgroundColor="transparent"
-      ></Splitter.Panel>
+      >
+        <Show when={systemConfig.lineConfig.lines.length > 0}>
+          <div style={{ width: "100%", height: "100%" }}>
+            <System lineConfig={systemConfig.lineConfig.lines} />
+          </div>
+        </Show>
+      </Splitter.Panel>
 
       {/* Resize trigger */}
       <IconButton
@@ -215,7 +226,7 @@ function Monitoring() {
               </Stack>
               <Button
                 variant={isServerConnect() ? "outline" : "solid"}
-                onClick={async () => {
+                onClick={() => {
                   if (isServerConnect()) {
                     disconnect(pageId);
                     setIsServerConnect(false);
@@ -228,11 +239,12 @@ function Monitoring() {
                     const address = `${serverIp}:${port}`;
                     const cid = pageId;
                     try {
-                      await connect(cid, address);
-                      setIsServerConnect(true);
+                      connect(cid, address);
                     } catch {
+                      setIsServerConnect(false);
                       return;
                     }
+                    setIsServerConnect(true);
                   }
                 }}
               >
