@@ -40,6 +40,9 @@ function Monitoring() {
 
   const [isServerConnect, setIsServerConnect] = createSignal<boolean>(false);
 
+  const [responseMsg, setResponseMsg] = createSignal<number[]>([]);
+  const [sendMsg, setSendMsg] = createSignal<number[]>([]);
+
   createEffect(
     on(
       () => isServerConnect(),
@@ -48,81 +51,98 @@ function Monitoring() {
           setSystemConfig("lineConfig", "lines", []);
           return;
         }
+
         listen((x) => {
           if (x.payload.id === pageId && x.payload.event.message) {
-            const buffer = Buffer.from(x.payload.event.message.data);
-            console.log(x);
-            load("resources/all.proto", function (err, root) {
-              if (err) throw err;
-              if (!root) return;
-              const proto = root.lookupType("mmc.Response");
-
-              if (!proto) return;
-              const response = proto.decode(buffer).toJSON();
-              if (!response) return;
-              const lineConfigKey = Object.keys(response).indexOf("lineConfig");
-              if (lineConfigKey !== -1) {
-                const lineConfig = Object.values(response)[lineConfigKey];
-                try {
-                  setSystemConfig("lineConfig", lineConfig);
-                } catch {
-                  return;
-                }
-              }
-            });
+            setResponseMsg(x.payload.event.message.data);
           }
         });
-
-        if (createMsg()) {
-          listen((x) => {
-            console.log(x);
-            x.event;
-          });
-        }
       },
       { defer: true },
     ),
   );
 
-  const createMsg = (): number[] | null => {
-    protobuf.load("resources/all.proto").then((root) => {
-      if (!root) return;
-      const proto = root.lookupType("mmc.SendCommand");
-      console.log(root.toJSON());
+  createEffect(
+    on(
+      () => sendMsg(),
+      () => {
+        listen((x) => {
+          if (x.payload.id === pageId && x.payload.event.message) {
+            setResponseMsg(x.payload.event.message.data);
+            console.log(x.payload.event.message.data);
+          }
+        });
+      },
+    ),
+  );
+
+  createEffect(
+    on(
+      () => responseMsg(),
+      () => {
+        console.log(responseMsg());
+        const buffer = Buffer.from(responseMsg());
+        load("resources/all.proto", function (err, root) {
+          if (err) throw err;
+          if (!root) return;
+          const proto = root.lookupType("mmc.Response");
+
+          if (!proto) return;
+          const response = proto.decode(buffer!).toJSON();
+          console.log(response);
+          if (!response) return;
+          const lineConfigKey = Object.keys(response).indexOf("lineConfig");
+          if (lineConfigKey !== -1) {
+            const lineConfig = Object.values(response)[lineConfigKey];
+            try {
+              setSystemConfig("lineConfig", lineConfig);
+              const sendMessage = root.lookupType("mmc.SendCommand");
+              const payLoad = {
+                getHallStatus: {
+                  lineIdx: 1,
+                  axisIdx: 1,
+                },
+              };
+
+              const message = sendMessage.create(payLoad);
+              const command = sendMessage.encode(message).finish();
+              const parseCmd = JSON.stringify(Object.values(command))
+                .slice(1, -1)
+                .split(",")
+                .map((str) => Number(str));
+              setSendMsg(parseCmd);
+            } catch {
+              return;
+            }
+            //send msg
+          }
+        });
+      },
+      { defer: true },
+    ),
+  );
+
+  /*const createMsg = (): number[] => {
+    load("resources/all.proto", function (_, root) {
+      if (!root) return [];
+      const sendMessage = root.lookupType("mmc.SendCommand");
       const payLoad = {
-        get_hall_status: {
-          line_idx: 1,
-          axis_idx: 1,
+        getHallStatus: {
+          lineIdx: 1,
+          axisIdx: 1,
         },
       };
 
-      const message = proto.create(payLoad);
-      const command = proto.encode(message).finish();
-      console.log(proto);
-
-      console.log(proto.toObject(message));
-      console.log(command);
-      return command;
+      const message = sendMessage.create(payLoad);
+      const command = sendMessage.encode(message).finish();
+      const parseCmd = JSON.stringify(Object.values(command))
+        .slice(1, -1)
+        .split(",")
+        .map((str) => Number(str));
+      return parseCmd;
     });
-    return null;
-    /*load("resources/all.proto", function (err, root) {
-      if (err) throw err;
-      if (!root) return;
-      const proto = root.lookupType("mmc.SendCommand");
-
-      if (!proto) return;
-      const payLoad = {
-        GetHallStatus: { line: "front", axes: "1" },
-      };
-
-      const message = proto.create(payLoad);
-      const command = proto.encode(message).finish();
-      console.log(`command = ${Array.prototype.toString.call(command)}`);
-      return command;
-    });*/
-  };
-
-  createMsg();
+    return [];
+  };*/
 
   onCleanup(() => {
     if (isServerConnect()) {
