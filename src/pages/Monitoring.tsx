@@ -24,7 +24,7 @@ import protobuf from "protobufjs";
 
 export type SystemConfig = {
   lineConfig: {
-    lines: { axes: number; name: string }[];
+    lines: { axes: number; name: string; hallStatus?: boolean[] }[];
   };
 };
 
@@ -88,23 +88,19 @@ function Monitoring() {
     protobuf.load("resources/all.proto").then((root) => {
       if (!root) return;
       const proto = root.lookupType("mmc.SendCommand");
+      console.log(root.toJSON());
       const payLoad = {
-        command_kind: {
-          get_hall_status: {
-            line_idx: 1,
-            axis_idx: 1,
-          },
+        get_hall_status: {
+          line_idx: 1,
+          axis_idx: 1,
         },
       };
 
-      if (proto.verify(payLoad)) {
-        console.log(proto.verify(payLoad));
-      }
-
       const message = proto.create(payLoad);
-
       const command = proto.encode(message).finish();
-      console.log(message);
+      console.log(proto);
+
+      console.log(proto.toObject(message));
       console.log(command);
       return command;
     });
@@ -259,9 +255,9 @@ function Monitoring() {
                     height="2rem"
                   >
                     <input
-                      value={inputValues.get("port")
-                        ? inputValues.get("port")
-                        : ""}
+                      value={
+                        inputValues.get("port") ? inputValues.get("port") : ""
+                      }
                       onInput={(e) => {
                         if (typeof e.target.value === "string") {
                           inputValues.set("port", e.target.value);
