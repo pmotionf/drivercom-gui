@@ -11,7 +11,7 @@ import {
 import { css } from "styled-system/css/css";
 import { Show } from "solid-js/web";
 import { createStore } from "solid-js/store";
-import { connect, disconnect, listen } from "@kuyoonjo/tauri-plugin-tcp";
+import { connect, disconnect, listen, send } from "@kuyoonjo/tauri-plugin-tcp";
 import { onCleanup } from "solid-js";
 
 import { load } from "protobufjs"; // respectively "./node_modules/protobufjs"
@@ -19,6 +19,8 @@ import { Buffer } from "buffer";
 import { createEffect } from "solid-js";
 import { on } from "solid-js";
 import { System } from "~/components/System/System.tsx";
+
+import protobuf from "protobufjs";
 
 export type SystemConfig = {
   lineConfig: {
@@ -49,6 +51,7 @@ function Monitoring() {
         listen((x) => {
           if (x.payload.id === pageId && x.payload.event.message) {
             const buffer = Buffer.from(x.payload.event.message.data);
+            console.log(x);
             load("resources/all.proto", function (err, root) {
               if (err) throw err;
               if (!root) return;
@@ -57,18 +60,73 @@ function Monitoring() {
               if (!proto) return;
               const response = proto.decode(buffer).toJSON();
               if (!response) return;
-              try {
-                setSystemConfig(response);
-              } catch {
-                return;
+              const lineConfigKey = Object.keys(response).indexOf("lineConfig");
+              if (lineConfigKey !== -1) {
+                const lineConfig = Object.values(response)[lineConfigKey];
+                try {
+                  setSystemConfig("lineConfig", lineConfig);
+                } catch {
+                  return;
+                }
               }
             });
           }
         });
+
+        if (createMsg()) {
+          listen((x) => {
+            console.log(x);
+            x.event;
+          });
+        }
       },
       { defer: true },
     ),
   );
+
+  const createMsg = (): number[] | null => {
+    protobuf.load("resources/all.proto").then((root) => {
+      if (!root) return;
+      const proto = root.lookupType("mmc.SendCommand");
+      const payLoad = {
+        command_kind: {
+          get_hall_status: {
+            line_idx: 1,
+            axis_idx: 1,
+          },
+        },
+      };
+
+      if (proto.verify(payLoad)) {
+        console.log(proto.verify(payLoad));
+      }
+
+      const message = proto.create(payLoad);
+
+      const command = proto.encode(message).finish();
+      console.log(message);
+      console.log(command);
+      return command;
+    });
+    return null;
+    /*load("resources/all.proto", function (err, root) {
+      if (err) throw err;
+      if (!root) return;
+      const proto = root.lookupType("mmc.SendCommand");
+
+      if (!proto) return;
+      const payLoad = {
+        GetHallStatus: { line: "front", axes: "1" },
+      };
+
+      const message = proto.create(payLoad);
+      const command = proto.encode(message).finish();
+      console.log(`command = ${Array.prototype.toString.call(command)}`);
+      return command;
+    });*/
+  };
+
+  createMsg();
 
   onCleanup(() => {
     if (isServerConnect()) {
@@ -201,9 +259,9 @@ function Monitoring() {
                     height="2rem"
                   >
                     <input
-                      value={
-                        inputValues.get("port") ? inputValues.get("port") : ""
-                      }
+                      value={inputValues.get("port")
+                        ? inputValues.get("port")
+                        : ""}
                       onInput={(e) => {
                         if (typeof e.target.value === "string") {
                           inputValues.set("port", e.target.value);
@@ -245,6 +303,14 @@ function Monitoring() {
                       return;
                     }
                     setIsServerConnect(true);
+
+                    /*if (sendMsg()) {
+                      send(pageId, sendMsg()!);
+                      listen((x) => {
+                        console.log(x);
+                        x.event
+                      });
+                      }*/
                   }
                 }}
               >
