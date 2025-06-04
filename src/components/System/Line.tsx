@@ -8,23 +8,16 @@ export type LineProps = JSX.HTMLAttributes<HTMLDivElement> & {
   lines: { axes: number; name: string }[];
 };
 
-export const LineContext = createContext<number[][]>();
+export const LineContext = createContext<{
+  axesIds: number[][];
+  hallStatus: boolean[];
+}>();
 
 export type lines = { axes: number; name: string }[];
 
 export function Line(props: LineProps) {
-  const axesArray = (axisLength: number, axesArray: number[]): number[][] => {
-    let startIndex: number = 1;
-    if (axesArray.length > 0) {
-      axesArray.forEach((axes: number) => {
-        startIndex = startIndex + axes;
-      });
-    }
-
-    const prevAxes = Array.from(
-      { length: axisLength },
-      (_, i) => startIndex + i,
-    );
+  const axesArray = (axisLength: number): number[][] => {
+    const prevAxes = Array.from({ length: axisLength }, (_, i) => i + 1);
 
     const newAxes = Array.from(
       { length: axisLength / 3 },
@@ -44,7 +37,7 @@ export function Line(props: LineProps) {
       }}
     >
       <For each={props.lines}>
-        {(line, index) => (
+        {(line) => (
           <Accordion.Item value={line.name}>
             <Accordion.ItemTrigger
               padding="0.6rem"
@@ -62,10 +55,10 @@ export function Line(props: LineProps) {
               paddingRight="1rem"
             >
               <LineContext.Provider
-                value={axesArray(
-                  line.axes,
-                  props.lines.map((ctx) => ctx.axes).slice(0, index()),
-                )}
+                value={{
+                  axesIds: axesArray(line.axes),
+                  hallStatus: Array.from({ length: line.axes }, () => false),
+                }}
               >
                 {props.children}
               </LineContext.Provider>
