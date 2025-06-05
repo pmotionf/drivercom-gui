@@ -20,11 +20,13 @@ import { createEffect } from "solid-js";
 import { on } from "solid-js";
 import { System } from "~/components/System/System.tsx";
 
-import protobuf from "protobufjs";
-
 export type SystemConfig = {
   lineConfig: {
-    lines: { axes: number; name: string; hallStatus?: boolean[] }[];
+    lines: {
+      axes: number;
+      name: string;
+      hallStatus?: { front?: boolean; back?: boolean }[];
+    }[];
   };
 };
 
@@ -43,6 +45,12 @@ function Monitoring() {
   const [responseMsg, setResponseMsg] = createSignal<number[]>([]);
   const [sendMsg, setSendMsg] = createSignal<number[]>([]);
 
+  const [sendMsgArray, setSendMsgArray] = createSignal<
+    { msg: number[]; axisIdx?: { lineIdx: number; axisIdx: number } }[]
+  >([]);
+
+  const [isSending, setIsSending] = createSignal<boolean>(true);
+
   createEffect(
     on(
       () => isServerConnect(),
@@ -54,7 +62,48 @@ function Monitoring() {
 
         listen((x) => {
           if (x.payload.id === pageId && x.payload.event.message) {
-            setResponseMsg(x.payload.event.message.data);
+            const buffer = Buffer.from(x.payload.event.message.data);
+            load("resources/all.proto", function (err, root) {
+              if (err) throw err;
+              if (!root) return;
+
+              const response = root.lookupType("mmc.Response");
+              const msg = response.decode(buffer).toJSON();
+              setSystemConfig(msg);
+              console.log(msg);
+
+              const sendMessage = root.lookupType("mmc.SendCommand");
+
+              let commands: {
+                msg: number[];
+                axisIdx?: { lineIdx: number; axisIdx: number };
+              }[] = [];
+              /*systemConfig.lineConfig.lines.forEach((line, lineIdx) => {
+                const axes = Array.from({ length: line.axes }, (_, i) => i);
+                axes.forEach((axis) => {
+                  const payLoad = {
+                    getHallStatus: {
+                      lineIdx: lineIdx,
+                      axisIdx: axis,
+                    },
+                  };
+                  const message = sendMessage.create(payLoad);
+                  const command = sendMessage.encode(message).finish();
+                  const parseCmd = JSON.stringify(Object.values(command))
+                    .slice(1, -1)
+                    .split(",")
+                    .map((str) => Number(str));
+                  commands = [
+                    ...commands,
+                    {
+                      msg: parseCmd,
+                      axisIdx: { lineIdx: lineIdx, axisIdx: axis },
+                    },
+                  ];
+                });
+              });*/
+              //setSendMsgArray(commands);
+            });
           }
         });
       },
@@ -64,13 +113,12 @@ function Monitoring() {
 
   createEffect(
     on(
-      () => sendMsg(),
+      () => sendMsgArray(),
       () => {
-        listen((x) => {
-          if (x.payload.id === pageId && x.payload.event.message) {
-            setResponseMsg(x.payload.event.message.data);
-            console.log(x.payload.event.message.data);
-          }
+        if (sendMsgArray().length === 0) return;
+        sendMsgArray().forEach((msg, i) => {
+          setSendMsg(msg.msg);
+          console.log(msg);
         });
       },
     ),
@@ -78,9 +126,53 @@ function Monitoring() {
 
   createEffect(
     on(
+      () => sendMsg(),
+      () => {
+        console.log(sendMsg());
+        /*send(pageId, sendMsg());
+        listen((x) => {
+          if (x.payload.id === pageId && x.payload.event.message) {
+            console.log(x.payload.event.message.data);
+          }
+        });*/
+      },
+    ),
+  );
+
+  /*createEffect(
+    on(
+      () => JSON.stringify(systemConfig),
+      () => {
+        setIsSending(false);
+      },
+      { defer: true },
+    ),
+  );
+
+  createEffect(
+    on(
+      () => isSending(),
+      () => {
+        if (sendMsgArray().length === 0) return;
+        if (isSending()) return;
+        console.log("Test");
+        send(pageId, sendMsgArray()[0].msg);
+        listen((x) => {
+          if (x.payload.id === pageId && x.payload.event.message) {
+            //setResponseMsg(x.payload.event.message.data);
+          }
+        });
+        setTimeout(() => {
+          setSendMsgArray(sendMsgArray().slice(1, sendMsgArray().length));
+        }, 200);
+      },
+    ),
+  );*/
+
+  createEffect(
+    on(
       () => responseMsg(),
       () => {
-        console.log(responseMsg());
         const buffer = Buffer.from(responseMsg());
         load("resources/all.proto", function (err, root) {
           if (err) throw err;
@@ -89,60 +181,28 @@ function Monitoring() {
 
           if (!proto) return;
           const response = proto.decode(buffer!).toJSON();
-          console.log(response);
-          if (!response) return;
-          const lineConfigKey = Object.keys(response).indexOf("lineConfig");
-          if (lineConfigKey !== -1) {
-            const lineConfig = Object.values(response)[lineConfigKey];
-            try {
-              setSystemConfig("lineConfig", lineConfig);
-              const sendMessage = root.lookupType("mmc.SendCommand");
-              const payLoad = {
-                getHallStatus: {
-                  lineIdx: 1,
-                  axisIdx: 1,
-                },
-              };
 
-              const message = sendMessage.create(payLoad);
-              const command = sendMessage.encode(message).finish();
-              const parseCmd = JSON.stringify(Object.values(command))
-                .slice(1, -1)
-                .split(",")
-                .map((str) => Number(str));
-              setSendMsg(parseCmd);
-            } catch {
-              return;
-            }
-            //send msg
+          if (!response) return;
+          const hallIndex = Object.keys(response).indexOf("hall");
+          if (hallIndex !== -1) {
+            const hallStatus: { front?: boolean; back?: boolean } =
+              Object.values(response)[hallIndex];
+            const axis = sendMsgArray()[0].axisIdx!;
+
+            setSystemConfig(
+              "lineConfig",
+              "lines",
+              axis.lineIdx,
+              "hallStatus",
+              axis.axisIdx,
+              hallStatus,
+            );
           }
         });
       },
       { defer: true },
     ),
   );
-
-  /*const createMsg = (): number[] => {
-    load("resources/all.proto", function (_, root) {
-      if (!root) return [];
-      const sendMessage = root.lookupType("mmc.SendCommand");
-      const payLoad = {
-        getHallStatus: {
-          lineIdx: 1,
-          axisIdx: 1,
-        },
-      };
-
-      const message = sendMessage.create(payLoad);
-      const command = sendMessage.encode(message).finish();
-      const parseCmd = JSON.stringify(Object.values(command))
-        .slice(1, -1)
-        .split(",")
-        .map((str) => Number(str));
-      return parseCmd;
-    });
-    return [];
-  };*/
 
   onCleanup(() => {
     if (isServerConnect()) {
@@ -275,9 +335,9 @@ function Monitoring() {
                     height="2rem"
                   >
                     <input
-                      value={
-                        inputValues.get("port") ? inputValues.get("port") : ""
-                      }
+                      value={inputValues.get("port")
+                        ? inputValues.get("port")
+                        : ""}
                       onInput={(e) => {
                         if (typeof e.target.value === "string") {
                           inputValues.set("port", e.target.value);
