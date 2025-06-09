@@ -186,10 +186,7 @@ export function LoggingForm(props: LoggingFormProps) {
     const currentFilePath = props.filePath! && props.filePath.length !== 0
       ? props.formTitle === fileNameFromPath
         ? props.filePath
-        : props.filePath.replace(
-          fileNameFromPath,
-          props.formTitle,
-        )
+        : props.filePath.replace(fileNameFromPath, props.formTitle)
       : props.formTitle;
 
     const path = await save({
@@ -237,14 +234,15 @@ export function LoggingForm(props: LoggingFormProps) {
   }
 
   return (
-    <div style={{ width: "100%", "margin-bottom": "3rem" }}>
-      <Card.Root padding="0.5rem">
+    <div style={{ width: "100%", height: "100%" }}>
+      <Card.Root padding="0.5rem" height={`100%`}>
         <Card.Header paddingTop="1rem">
           <Stack
             direction="row-reverse"
             width="100%"
-            gap="1"
+            gap="2"
             marginBottom="1rem"
+            minWidth="30rem"
           >
             <IconButton
               onClick={() => props.onCancel?.()}
@@ -253,31 +251,152 @@ export function LoggingForm(props: LoggingFormProps) {
             >
               <IconX />
             </IconButton>
-            <Show when={props.mode !== "create"}>
+
+            <Stack direction="row">
               <Tooltip.Root>
                 <Tooltip.Trigger>
                   <IconButton
-                    onClick={() => {
-                      if (props.mode === "file") {
-                        props.onReloadFile?.();
-                      } else if (props.mode === "port") {
-                        props.onReloadPort?.();
-                      }
-                    }}
+                    disabled={portId().length === 0 || logGetBtnLoading()}
+                    onClick={() => getCurrentLogStatus()}
                     variant="ghost"
-                    borderRadius="1rem"
                   >
-                    <IconFileIsr />
+                    <IconReload />
                   </IconButton>
                 </Tooltip.Trigger>
                 <Tooltip.Positioner>
                   <Tooltip.Content backgroundColor="bg.default">
-                    <Text color="fg.default">
-                      Reload log from {`${props.mode}`}
-                    </Text>
+                    <Text color="fg.default">Reset log status</Text>
                   </Tooltip.Content>
                 </Tooltip.Positioner>
               </Tooltip.Root>
+
+              <Button
+                disabled={portId().length === 0 ||
+                  logGetBtnLoading() ||
+                  currentLogStatus() === "Log.Status.invalid" ||
+                  currentLogStatus() === "Log.Status.started" ||
+                  currentLogStatus() === "Log.Status.waiting"}
+                onClick={async () => {
+                  await startLogging();
+                  await getCurrentLogStatus();
+                }}
+                variant="outline"
+              >
+                Log Start
+              </Button>
+              <Button
+                disabled={currentLogStatus() === "Log.Status.stopped" ||
+                  currentLogStatus() === "Log.Status.invalid" ||
+                  portId().length === 0}
+                onClick={async () => {
+                  await stopLogging();
+                  await getCurrentLogStatus();
+                }}
+                variant="outline"
+              >
+                Log Stop
+              </Button>
+              <Button
+                disabled={currentLogStatus() !== "Log.Status.stopped" ||
+                  portId().length === 0 ||
+                  currentLogStatus() === "Log.Status.invalid" ||
+                  cyclesCompleted() === 0 ||
+                  portId().length === 0}
+                onClick={async () => {
+                  await saveLogCsvFile();
+                }}
+                variant="outline"
+                loading={logGetBtnLoading()}
+              >
+                Log Get
+              </Button>
+              <Menu.Root>
+                <Menu.Trigger>
+                  <Button variant="outline">Save</Button>
+                </Menu.Trigger>
+                <Menu.Positioner>
+                  <Menu.Content width="8rem">
+                    <Menu.Item
+                      value="Save as file"
+                      onClick={async () => {
+                        const path = await openSaveFileDialog();
+                        if (!path) {
+                          props.onErrorMessage?.({
+                            title: "Invalid File Path",
+                            description: "The specified file path is invalid.",
+                            type: "error",
+                          });
+                          return;
+                        }
+                        if (props.mode === "create") {
+                          props.onModeChange?.(
+                            "file",
+                            path.replaceAll("\\", "/"),
+                          );
+                        }
+                        await saveLogAsFile(path, logForm);
+                      }}
+                      userSelect="none"
+                    >
+                      Save as file
+                    </Menu.Item>
+                    <Menu.Separator />
+                    <Menu.Item
+                      value="Save to port"
+                      disabled={portId().length === 0 || logGetBtnLoading()}
+                      onClick={async () => {
+                        const outputError = await saveLogToPort(logForm);
+                        if (outputError.length !== 0) {
+                          props.onErrorMessage?.({
+                            title: "Communication Error",
+                            description: outputError,
+                            type: "error",
+                          });
+                          return;
+                        }
+                        props.onErrorMessage?.({
+                          title: "Communication Success",
+                          description: "Log saved to port successfully.",
+                          type: "error",
+                        });
+                        getCurrentLogStatus();
+                      }}
+                      userSelect="none"
+                    >
+                      Save to port
+                    </Menu.Item>
+                  </Menu.Content>
+                </Menu.Positioner>
+              </Menu.Root>
+            </Stack>
+            <Show when={props.mode !== "create"}>
+              <div style={{ width: "100%" }}>
+                <Tooltip.Root>
+                  <Tooltip.Trigger>
+                    <IconButton
+                      width="100%"
+                      onClick={() => {
+                        if (props.mode === "file") {
+                          props.onReloadFile?.();
+                        } else if (props.mode === "port") {
+                          props.onReloadPort?.();
+                        }
+                      }}
+                      variant="outline"
+                      borderRadius="1rem"
+                    >
+                      <IconFileIsr />
+                    </IconButton>
+                  </Tooltip.Trigger>
+                  <Tooltip.Positioner>
+                    <Tooltip.Content backgroundColor="bg.default">
+                      <Text color="fg.default">
+                        Reload log from {`${props.mode}`}
+                      </Text>
+                    </Tooltip.Content>
+                  </Tooltip.Positioner>
+                </Tooltip.Root>
+              </div>
             </Show>
           </Stack>
           <Editable.Root
@@ -289,126 +408,19 @@ export function LoggingForm(props: LoggingFormProps) {
             }}
             fontWeight="bold"
             fontSize="2xl"
+            width="100%"
+            paddingLeft="0.5rem"
+            paddingRight="0.5rem"
           >
             <Editable.Area>
-              <Editable.Input width="90%" />
+              <Editable.Input width="100%" />
               <Editable.Preview />
             </Editable.Area>
           </Editable.Root>
         </Card.Header>
-        <Card.Body>
-          <div style={{ "margin-top": "2rem" }}>
-            <LogConfigFieldSet object={logForm} />
-          </div>
+        <Card.Body overflowY="auto" marginBottom="1rem">
+          <LogConfigFieldSet object={logForm} />
         </Card.Body>
-        <Card.Footer marginTop="3rem" marginBottom="2rem">
-          <Stack direction="row">
-            <IconButton
-              disabled={portId().length === 0 || logGetBtnLoading()}
-              onClick={() => getCurrentLogStatus()}
-              variant="ghost"
-            >
-              <IconReload />
-            </IconButton>
-            <Button
-              disabled={portId().length === 0 || logGetBtnLoading() ||
-                currentLogStatus() === "Log.Status.invalid" ||
-                currentLogStatus() === "Log.Status.started" ||
-                currentLogStatus() === "Log.Status.waiting"}
-              onClick={async () => {
-                await startLogging();
-                await getCurrentLogStatus();
-              }}
-              variant="outline"
-            >
-              Log Start
-            </Button>
-            <Button
-              disabled={currentLogStatus() === "Log.Status.stopped" ||
-                currentLogStatus() === "Log.Status.invalid" ||
-                portId().length === 0}
-              onClick={async () => {
-                await stopLogging();
-                await getCurrentLogStatus();
-              }}
-              variant="outline"
-            >
-              Log Stop
-            </Button>
-            <Button
-              disabled={currentLogStatus() !== "Log.Status.stopped" ||
-                portId().length === 0 ||
-                currentLogStatus() === "Log.Status.invalid" ||
-                cyclesCompleted() === 0 ||
-                portId().length === 0}
-              onClick={async () => {
-                await saveLogCsvFile();
-              }}
-              variant="outline"
-              loading={logGetBtnLoading()}
-            >
-              Log Get
-            </Button>
-            <Menu.Root>
-              <Menu.Trigger>
-                <Button>Save</Button>
-              </Menu.Trigger>
-              <Menu.Positioner>
-                <Menu.Content width="8rem">
-                  <Menu.Item
-                    value="Save as file"
-                    onClick={async () => {
-                      const path = await openSaveFileDialog();
-                      if (!path) {
-                        props.onErrorMessage?.({
-                          title: "Invalid File Path",
-                          description: "The specified file path is invalid.",
-                          type: "error",
-                        });
-                        return;
-                      }
-                      if (props.mode === "create") {
-                        props.onModeChange?.(
-                          "file",
-                          path.replaceAll("\\", "/"),
-                        );
-                      }
-                      await saveLogAsFile(path, logForm);
-                    }}
-                    userSelect="none"
-                  >
-                    Save as file
-                  </Menu.Item>
-                  <Menu.Separator />
-                  <Menu.Item
-                    value="Save to port"
-                    disabled={portId().length === 0 || logGetBtnLoading()}
-                    onClick={async () => {
-                      const outputError = await saveLogToPort(logForm);
-                      if (outputError.length !== 0) {
-                        props.onErrorMessage?.({
-                          title: "Communication Error",
-                          description: outputError,
-                          type: "error",
-                        });
-                        return;
-                      }
-                      props.onErrorMessage?.({
-                        title: "Communication Success",
-                        description: "Log saved to port successfully.",
-                        type: "error",
-                      });
-                      getCurrentLogStatus();
-                    }}
-                    userSelect="none"
-                  >
-                    Save to port
-                  </Menu.Item>
-                </Menu.Content>
-              </Menu.Positioner>
-            </Menu.Root>
-          </Stack>
-        </Card.Footer>
       </Card.Root>
     </div>
   );
@@ -551,12 +563,12 @@ export function LogConfigFieldSet(props: logConfigFieldSetProps) {
                   userSelect="none"
                   marginLeft="0.5rem"
                 >
-                  <Show
-                    when={props.sectionName}
-                    fallback={upperCaseKey}
-                  >
+                  <Show when={props.sectionName} fallback={upperCaseKey}>
                     {`${props.sectionName![0].toUpperCase()}${
-                      props.sectionName!.slice(1, props.sectionName!.length)
+                      props.sectionName!.slice(
+                        1,
+                        props.sectionName!.length,
+                      )
                     } ${Number(key[0]) + 1}`}
                   </Show>
                 </Text>
