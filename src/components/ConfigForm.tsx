@@ -56,7 +56,8 @@ export function ConfigForm(props: ConfigFormProps) {
   // Center gain
   dynamic.forEach((dynPos) => {
     if (
-      !("axis" in config) || !(dynPos in (config.axis as object)) ||
+      !("axis" in config) ||
+      !(dynPos in (config.axis as object)) ||
       //@ts-ignore dynPos guaranteed to exist from above check
       !("gain" in config.axis[dynPos]) ||
       //@ts-ignore dynPos guaranteed to exist from above check
@@ -83,7 +84,8 @@ export function ConfigForm(props: ConfigFormProps) {
       !("denominator" in config.axis[dynPos].gain.position) ||
       //@ts-ignore dynPos guaranteed to exist from above check
       !("p" in config.axis[dynPos].gain.position) ||
-      !("coil" in config) || !(dynPos in (config.coil as object)) ||
+      !("coil" in config) ||
+      !(dynPos in (config.coil as object)) ||
       //@ts-ignore dynPos guaranteed to exist from above check
       !("kf" in (config.coil[dynPos] as object)) ||
       !("ls" in (config.coil as object)) ||
@@ -149,7 +151,7 @@ export function ConfigForm(props: ConfigFormProps) {
           //@ts-ignore Guaranteed to exist from above check
           () => config.axis[dynPos].gain.velocity.denominator,
           //@ts-ignore Guaranteed to exist from above check
-          () => config.axis[dynPos].gain.current.denominator,
+          () => config.axis[dynPos].gain.current.p,
           //@ts-ignore Guaranteed to exist from above check
           () => config.coil[dynPos].kf,
           //@ts-ignore Guaranteed to exist from above check
@@ -158,11 +160,16 @@ export function ConfigForm(props: ConfigFormProps) {
           () => config.magnet.pitch,
         ],
         () => {
+          const wcc = calcWcc(
+            //@ts-ignore Guaranteed to exist from above check
+            config.axis[dynPos].gain.current.p,
+            //@ts-ignore Guaranteed to exist from above check
+            config.coil.ls,
+          );
           const p = calcVelocityP(
             //@ts-ignore Guaranteed to exist from above check
             config.axis[dynPos].gain.velocity.denominator,
-            //@ts-ignore Guaranteed to exist from above check
-            config.axis[dynPos].gain.current.denominator,
+            wcc,
             //@ts-ignore Guaranteed to exist from above check
             config.magnet.pitch,
             //@ts-ignore Guaranteed to exist from above check
@@ -213,18 +220,23 @@ export function ConfigForm(props: ConfigFormProps) {
       on(
         [
           //@ts-ignore Guaranteed to exist from above check
-          () => config.axis[dynPos].gain.current.denominator,
-          //@ts-ignore Guaranteed to exist from above check
-          () => config.axis[dynPos].gain.velocity.denominator,
-          //@ts-ignore Guaranteed to exist from above check
           () => config.axis[dynPos].gain.position.denominator,
+          //@ts-ignore Guaranteed to exist from above check
+          () => config.axis[dynPos].gain.velocity.p,
         ],
         () => {
+          const wsc = calcWsc(
+            //@ts-ignore Guaranteed to exist from above check
+            config.axis[dynPos].gain.velocity.p,
+            //@ts-ignore Guaranteed to exist from above check
+            config.magnet.pitch,
+            //@ts-ignore Guaranteed to exist from above check
+            config.carrier.mass,
+            //@ts-ignore Guaranteed to exist from above check
+            config.coil[dynPos].kf,
+          );
           const p = calcPositionP(
-            //@ts-ignore Guaranteed to exist from above check
-            config.axis[dynPos].gain.current.denominator,
-            //@ts-ignore Guaranteed to exist from above check
-            config.axis[dynPos].gain.velocity.denominator,
+            wsc,
             //@ts-ignore Guaranteed to exist from above check
             config.axis[dynPos].gain.position.denominator,
           );
@@ -248,14 +260,18 @@ export function ConfigForm(props: ConfigFormProps) {
     return i;
   }
 
+  function calcWcc(currentP: number, ls: number): number {
+    const wcc = currentP / ls;
+    return wcc;
+  }
+
   function calcVelocityP(
     denominator: number,
-    currentDenominator: number,
+    wcc: number,
     pitch: number,
     mass: number,
     kf: number,
   ): number {
-    const wcc = 2.0 * Math.PI * (15000.0 / currentDenominator);
     const radius = pitch / (2.0 * Math.PI);
     const inertia = (mass / 100) * radius * radius;
     const torque_constant = kf * radius;
@@ -281,14 +297,17 @@ export function ConfigForm(props: ConfigFormProps) {
     return i;
   }
 
-  function calcPositionP(
-    currentDenominator: number,
-    velocityDenominator: number,
-    positionDenominator: number,
-  ) {
-    const wcc = 2.0 * Math.PI * (15000.0 / currentDenominator);
-    const wsc = wcc / velocityDenominator;
+  function calcWsc(velocityP: number, pitch: number, mass: number, kf: number) {
+    const radius = pitch / (2.0 * Math.PI);
+    const inertia = (mass / 100) * radius * radius;
+    const torque_constant = kf * radius;
 
+    const inertiaWsc = velocityP * torque_constant;
+    const wsc = inertiaWsc / inertia;
+    return wsc;
+  }
+
+  function calcPositionP(wsc: number, positionDenominator: number) {
     const wpc = wsc / positionDenominator;
     const p = wpc;
     return p;
