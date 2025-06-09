@@ -22,12 +22,14 @@ import { System } from "~/components/System/System.tsx";
 
 export type SystemConfig = {
   lineConfig: {
-    lines: {
-      axes: number;
-      name: string;
-      hallStatus?: { front?: boolean; back?: boolean }[];
-    }[];
+    lines: Line[];
   };
+};
+
+export type Line = {
+  axes: number;
+  name: string;
+  hallStatus?: { front?: boolean; back?: boolean }[];
 };
 
 function Monitoring() {
@@ -70,15 +72,14 @@ function Monitoring() {
               const response = root.lookupType("mmc.Response");
               const msg = response.decode(buffer).toJSON();
               setSystemConfig(msg);
-              console.log(msg);
 
               const sendMessage = root.lookupType("mmc.SendCommand");
-
               let commands: {
                 msg: number[];
                 axisIdx?: { lineIdx: number; axisIdx: number };
               }[] = [];
-              /*systemConfig.lineConfig.lines.forEach((line, lineIdx) => {
+
+              msg.lineConfig.lines.forEach((line: Line, lineIdx: number) => {
                 const axes = Array.from({ length: line.axes }, (_, i) => i);
                 axes.forEach((axis) => {
                   const payLoad = {
@@ -101,8 +102,8 @@ function Monitoring() {
                     },
                   ];
                 });
-              });*/
-              //setSendMsgArray(commands);
+              });
+              setSendMsgArray(commands);
             });
           }
         });
@@ -322,7 +323,7 @@ function Monitoring() {
                   <Text
                     size="sm"
                     width="100%"
-                    color="fg.muted"
+                    color="fg.default"
                     marginRight="0.5rem"
                     marginTop="0.4rem"
                   >
@@ -335,9 +336,9 @@ function Monitoring() {
                     height="2rem"
                   >
                     <input
-                      value={inputValues.get("port")
-                        ? inputValues.get("port")
-                        : ""}
+                      value={
+                        inputValues.get("port") ? inputValues.get("port") : ""
+                      }
                       onInput={(e) => {
                         if (typeof e.target.value === "string") {
                           inputValues.set("port", e.target.value);

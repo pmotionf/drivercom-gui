@@ -39,18 +39,10 @@ export function Axis() {
                     height="5rem"
                     borderRadius="0.5rem"
                     borderWidth="1px"
-                    borderRightWidth={axesContext.hallStatus[index() * 2]
-                      ? "3px"
-                      : undefined}
-                    borderLeftWidth={axesContext.hallStatus[index() * 2 + 1]
-                      ? "3px"
-                      : undefined}
-                    borderRightColor={axesContext.hallStatus[index() * 2]
-                      ? "accent.default"
-                      : "bg.default"}
-                    borderLeftColor={axesContext.hallStatus[index() * 2]
-                      ? "accent.default"
-                      : "bg.default"}
+                    borderRightWidth="3px"
+                    borderLeftWidth={"3px"}
+                    borderRightColor="greenyellow"
+                    borderLeftColor={"lime"}
                     backgroundColor="bg.default"
                   >
                     <Text fontWeight="bold" padding="0.5rem">
