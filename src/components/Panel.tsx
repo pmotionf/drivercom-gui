@@ -57,7 +57,13 @@ export function Panel(props: panelProps) {
 
   return (
     <>
-      <Splitter.Panel id={props.id}>
+      <Splitter.Panel
+        id={props.id}
+        style={{
+          width: "100%",
+          height: "100%",
+        }}
+      >
         <TabList
           id={props.id}
           style={{ width: "100%", height: "100%" }}

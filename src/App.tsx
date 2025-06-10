@@ -101,13 +101,12 @@ function App(props: RouteSectionProps) {
       new RegExp(namedFieldKindsStr, "i"),
     );
 
-    const namedFieldsLine = output.stdout.slice(
-      namedFieldsIndex + namedFieldsStr.length,
-      namedFieldKindsIndex,
-    ).trim();
-    const namedFieldKindsLines = output.stdout.slice(
-      namedFieldKindsIndex + namedFieldKindsStr.length,
-    ).split("\n");
+    const namedFieldsLine = output.stdout
+      .slice(namedFieldsIndex + namedFieldsStr.length, namedFieldKindsIndex)
+      .trim();
+    const namedFieldKindsLines = output.stdout
+      .slice(namedFieldKindsIndex + namedFieldKindsStr.length)
+      .split("\n");
 
     const enumMappingsLines = namedFieldKindsLines
       .map((line) => line.trim())
@@ -526,7 +525,6 @@ function App(props: RouteSectionProps) {
           height: "100vh",
           width: `calc(100vw - ${sidebar_collapsed_width})`,
           "margin-left": sidebar_collapsed_width,
-          position: "fixed",
         }}
       >
         {props.children}
