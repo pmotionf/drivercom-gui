@@ -22,21 +22,13 @@ import { on } from "solid-js";
 import { System } from "~/components/System/System.tsx";
 
 import { deadline } from "@std/async/deadline";
-import { delay } from "@std/async/delay";
 import { Toast } from "~/components/ui/toast.tsx";
-
-let unlistenFn;
+import { Line } from "~/components/System/Line.tsx";
 
 export type SystemConfig = {
   lineConfig: {
     lines: Line[];
   };
-};
-
-export type Line = {
-  axes: number;
-  name: string;
-  hallAlarms?: { front?: boolean; back?: boolean }[];
 };
 
 function Monitoring() {
@@ -54,22 +46,18 @@ function Monitoring() {
       () => systemConfig.lineConfig.lines,
       () => {
         if (systemConfig.lineConfig.lines.length === 0) return;
-        //console.log("Start");
-        //load("resources/all.proto", sendGetAxisInfo);
+        load("resources/all.proto", sendGetAxisInfo);
       },
       { defer: true },
     ),
   );
 
-  let test = 0;
-  let stop = false;
-
   async function sendGetAxisInfo(err, root) {
-    if (stop) return;
     if (systemConfig.lineConfig.lines.length === 0) return;
     if (err) throw err;
     if (!root) return;
     const sendMessage = root.lookupType("mmc.SendCommand");
+    const response = root.lookupType("mmc.Response");
 
     for (const [lineIdx, line] of systemConfig.lineConfig.lines.entries()) {
       const payload = {
@@ -85,38 +73,41 @@ function Monitoring() {
         .split(",")
         .map((str) => Number(str));
 
-      await send(pageId, parseBuffer);
-      console.log(parseBuffer);
-      test = test + 1;
-      console.log(test);
-
       try {
-        if (unlistenFn) {
-          unlistenFn();
-        }
-        unlistenFn = await deadline(
-          listen((x) => {
-            console.log(x.payload);
-
-            if (x.payload.id === pageId && x.payload.event.message) {
-              console.log(x.payload.event.message.data);
-            } else {
-              setSystemConfig("lineConfig", "lines", []);
-              stop = true;
-            }
-          }),
-          1000,
+        await deadline(
+          send(pageId, parseBuffer).then(
+            await listen((x) => {
+              if (x.payload.id === pageId && x.payload.event.message) {
+                const buffer = Buffer.from(x.payload.event.message.data);
+                const msg = response.decode(buffer!).toJSON();
+                const axisInfo = msg["axisInfo" as keyof typeof msg];
+                const axes: {
+                  hallAlarms?: { front?: boolean; back?: boolean };
+                  moterEnables?: boolean;
+                  carrierId?: number;
+                }[] = axisInfo["axes" as keyof typeof axisInfo];
+                if (!axes) return;
+                setSystemConfig(
+                  "lineConfig",
+                  "lines",
+                  lineIdx,
+                  "axesInfo",
+                  axes,
+                );
+              } else {
+                setSystemConfig("lineConfig", "lines", []);
+              }
+            }),
+          ),
+          200,
         );
-      } catch (e) {
-        console.log(e);
+      } catch {
         setSystemConfig("lineConfig", "lines", []);
-        stop = true;
         return;
       }
     }
-    if (!stop) {
-      setTimeout(sendGetAxisInfo.bind(null, err, root), 1000);
-    }
+
+    setTimeout(sendGetAxisInfo.bind(null, err, root), 1000);
   }
 
   onCleanup(() => {
@@ -219,9 +210,9 @@ function Monitoring() {
                       height="2rem"
                     >
                       <input
-                        value={
-                          inputValues.get("IP") ? inputValues.get("IP") : ""
-                        }
+                        value={inputValues.get("IP")
+                          ? inputValues.get("IP")
+                          : ""}
                         onInput={(e) => {
                           if (typeof e.target.value === "string") {
                             inputValues.set("IP", e.target.value);
@@ -258,9 +249,9 @@ function Monitoring() {
                       height="2rem"
                     >
                       <input
-                        value={
-                          inputValues.get("port") ? inputValues.get("port") : ""
-                        }
+                        value={inputValues.get("port")
+                          ? inputValues.get("port")
+                          : ""}
                         onInput={(e) => {
                           if (typeof e.target.value === "string") {
                             inputValues.set("port", e.target.value);
@@ -282,11 +273,9 @@ function Monitoring() {
                   </Stack>
                 </Stack>
                 <Button
-                  variant={
-                    systemConfig.lineConfig.lines.length !== 0
-                      ? "outline"
-                      : "solid"
-                  }
+                  variant={systemConfig.lineConfig.lines.length !== 0
+                    ? "outline"
+                    : "solid"}
                   onClick={async () => {
                     if (systemConfig.lineConfig.lines.length !== 0) {
                       setSystemConfig("lineConfig", "lines", []);
@@ -326,8 +315,9 @@ function Monitoring() {
                                 if (err) throw err;
                                 if (!root) return;
 
-                                const response =
-                                  root.lookupType("mmc.Response");
+                                const response = root.lookupType(
+                                  "mmc.Response",
+                                );
                                 const msg = response.decode(buffer!).toJSON();
                                 setSystemConfig(msg);
                               });

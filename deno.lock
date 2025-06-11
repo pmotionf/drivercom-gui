@@ -1,6 +1,7 @@
 {
   "version": "5",
   "specifiers": {
+    "jsr:@std/async@^1.0.13": "1.0.13",
     "npm:@ark-ui/solid@^5.1.0": "5.1.0_solid-js@1.9.5__seroval@1.2.1_@internationalized+date@3.7.0",
     "npm:@deno/vite-plugin@^1.0.4": "1.0.4_vite@6.2.1_@types+node@22.12.0",
     "npm:@kuyoonjo/tauri-plugin-tcp@~0.1.1": "0.1.1",
@@ -32,6 +33,11 @@
     "npm:vite-tsconfig-paths@^5.1.4": "5.1.4_vite@6.2.1_@types+node@22.12.0",
     "npm:vite@*": "6.2.1_@types+node@22.12.0",
     "npm:vite@6.2.1": "6.2.1_@types+node@22.12.0"
+  },
+  "jsr": {
+    "@std/async@1.0.13": {
+      "integrity": "1d76ca5d324aef249908f7f7fe0d39aaf53198e5420604a59ab5c035adc97c96"
+    }
   },
   "npm": {
     "@ampproject/remapping@2.3.0": {
@@ -3408,6 +3414,7 @@
   },
   "workspace": {
     "dependencies": [
+      "jsr:@std/async@^1.0.13",
       "npm:@ark-ui/solid@^5.1.0",
       "npm:@deno/vite-plugin@^1.0.4",
       "npm:@kuyoonjo/tauri-plugin-tcp@~0.1.1",
