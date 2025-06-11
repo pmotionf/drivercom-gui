@@ -1,12 +1,26 @@
 import { useContext } from "solid-js";
-import { LineContext } from "./Line.tsx";
+import { LineContext, useLineContext } from "./Line.tsx";
 import { Stack } from "styled-system/jsx";
 import { For } from "solid-js/web";
 import { Text } from "../ui/text.tsx";
+import { createEffect } from "solid-js";
 
 export function Axis() {
   const axesContext = useContext(LineContext);
   if (!axesContext) return;
+
+  const axesArray = (axisLength: number): number[][] => {
+    const prevAxes = Array.from({ length: axisLength }, (_, i) => i);
+
+    const newAxes = Array.from({ length: axisLength / 3 }, (_, i) =>
+      Array.from({ length: 3 }, (_, index) => prevAxes[i * 3 + index]),
+    );
+    return newAxes;
+  };
+
+  createEffect(() => {
+    console.log(axesContext.axesInfo![0]);
+  });
 
   return (
     <div
@@ -18,7 +32,7 @@ export function Axis() {
       }}
     >
       <Stack direction="row" width="100%" gap="1rem">
-        <For each={axesContext.axesIds}>
+        <For each={axesArray(axesContext.axes)}>
           {(axes, index) => (
             <Stack
               width="17rem"
@@ -39,14 +53,14 @@ export function Axis() {
                     height="5rem"
                     borderRadius="0.5rem"
                     borderWidth="1px"
-                    borderRightWidth="3px"
-                    borderLeftWidth={"3px"}
-                    borderRightColor="greenyellow"
-                    borderLeftColor={"lime"}
+                    borderRightWidth={axesContext.axesInfo ? "3px" : "0px"}
+                    borderLeftWidth={axesContext.axesInfo ? "3px" : "0px"}
+                    borderRightColor="lime"
+                    borderLeftColor="lime"
                     backgroundColor="bg.default"
                   >
                     <Text fontWeight="bold" padding="0.5rem">
-                      Axis {axis}
+                      Axis{axis + 1}
                     </Text>
                   </Stack>
                 )}

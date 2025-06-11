@@ -3,29 +3,38 @@ import { For } from "solid-js/web";
 import { Accordion } from "../ui/accordion.tsx";
 import { ChevronDownIcon } from "lucide-solid";
 import { createContext } from "solid-js";
+import { createEffect } from "solid-js";
+import { createStore, Store } from "solid-js/store";
+import { on } from "solid-js";
+import { useContext } from "solid-js";
 
 export type LineProps = JSX.HTMLAttributes<HTMLDivElement> & {
-  lines: { axes: number; name: string }[];
+  lines: Line[];
 };
 
-export const LineContext = createContext<{
-  axesIds: number[][];
-  hallStatus: boolean[];
-}>();
+export const LineContext = createContext<Store<Line>>();
 
-export type lines = { axes: number; name: string }[];
+export const useLineContext = () => useContext(LineContext);
 
-export function Line(props: LineProps) {
-  const axesArray = (axisLength: number): number[][] => {
-    const prevAxes = Array.from({ length: axisLength }, (_, i) => i + 1);
+export type Line = {
+  axes: number;
+  name: string;
+  axesInfo?: {
+    hallAlarms?: { front?: boolean; back?: boolean };
+    moterEnables?: boolean;
+    carrierId?: number;
+  }[];
+};
 
-    const newAxes = Array.from(
-      { length: axisLength / 3 },
-      (_, i) =>
-        Array.from({ length: 3 }, (_, index) => prevAxes[i * 3 + index]),
-    );
-    return newAxes;
-  };
+export function Lines(props: LineProps) {
+  const [lineContexts] = createStore(props.lines);
+
+  createEffect(
+    on(
+      () => JSON.stringify(lineContexts),
+      () => {},
+    ),
+  );
 
   return (
     <Accordion.Root
@@ -36,35 +45,32 @@ export function Line(props: LineProps) {
         height: "100%",
       }}
     >
-      <For each={props.lines}>
-        {(line) => (
-          <Accordion.Item value={line.name}>
-            <Accordion.ItemTrigger
-              padding="0.6rem"
-              paddingLeft="1rem"
-              paddingRight="1rem"
-            >
-              {line.name}
-              <Accordion.ItemIndicator>
-                <ChevronDownIcon />
-              </Accordion.ItemIndicator>
-            </Accordion.ItemTrigger>
-            <Accordion.ItemContent
-              padding="0.5rem"
-              paddingLeft="1rem"
-              paddingRight="1rem"
-            >
-              <LineContext.Provider
-                value={{
-                  axesIds: axesArray(line.axes),
-                  hallStatus: Array.from({ length: line.axes }, () => false),
-                }}
+      <For each={lineContexts}>
+        {(line, lineIdx) => {
+          return (
+            <Accordion.Item value={line.name}>
+              <Accordion.ItemTrigger
+                padding="0.6rem"
+                paddingLeft="1rem"
+                paddingRight="1rem"
               >
-                {props.children}
-              </LineContext.Provider>
-            </Accordion.ItemContent>
-          </Accordion.Item>
-        )}
+                {line.name}
+                <Accordion.ItemIndicator>
+                  <ChevronDownIcon />
+                </Accordion.ItemIndicator>
+              </Accordion.ItemTrigger>
+              <Accordion.ItemContent
+                padding="0.5rem"
+                paddingLeft="1rem"
+                paddingRight="1rem"
+              >
+                <LineContext.Provider value={lineContexts[lineIdx()]}>
+                  {props.children}
+                </LineContext.Provider>
+              </Accordion.ItemContent>
+            </Accordion.Item>
+          );
+        }}
       </For>
     </Accordion.Root>
   );
