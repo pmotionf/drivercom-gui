@@ -184,20 +184,10 @@ export function Legend(props: LegendProps) {
 
   const strokeIconSize: string = "1.2rem";
   return (
-    <Stack
-      direction="row"
-      gap="1"
-      opacity={(props.visible != null ? props.visible : visible())
-        ? "100%"
-        : "30%"}
-      {...rest}
-    >
+    <Stack direction="row" gap="1" {...rest}>
       <Show when={!props.readonly}>
-        <Show
-          when={props.showSelectCheckBox}
-        >
+        <Show when={props.showSelectCheckBox}>
           <Checkbox
-            disabled={!props.visible}
             value={props.selected ? props.selected.toString() : "false"}
             onCheckedChange={(e) =>
               props.onSelectChange?.(
@@ -214,6 +204,9 @@ export function Legend(props: LegendProps) {
           <IconButton
             variant="link"
             disabled={!(props.visible != null ? props.visible : visible())}
+            opacity={(props.visible != null ? props.visible : visible())
+              ? "100%"
+              : "30%"}
             onClick={() => setConfigOpen(true)}
             style={{
               width: strokeIconSize,
@@ -261,6 +254,9 @@ export function Legend(props: LegendProps) {
         <Button
           variant="link"
           style={{ "justify-content": "left" }}
+          opacity={(props.visible != null ? props.visible : visible())
+            ? "100%"
+            : "30%"}
           onclick={() => {
             props.onVisibleChange?.(
               props.visible != null ? !props.visible : !visible(),
@@ -276,6 +272,9 @@ export function Legend(props: LegendProps) {
         style={{
           "white-space": "nowrap",
         }}
+        opacity={(props.visible != null ? props.visible : visible())
+          ? "100%"
+          : "30%"}
       >
         {value() != null ? value() : "--"}
       </Text>
