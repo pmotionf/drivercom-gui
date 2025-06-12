@@ -46,6 +46,7 @@ function Monitoring() {
       () => systemConfig.lineConfig.lines,
       () => {
         if (systemConfig.lineConfig.lines.length === 0) return;
+
         load("resources/all.proto", sendGetAxisInfo);
       },
       { defer: true },
@@ -210,9 +211,9 @@ function Monitoring() {
                       height="2rem"
                     >
                       <input
-                        value={inputValues.get("IP")
-                          ? inputValues.get("IP")
-                          : ""}
+                        value={
+                          inputValues.get("IP") ? inputValues.get("IP") : ""
+                        }
                         onInput={(e) => {
                           if (typeof e.target.value === "string") {
                             inputValues.set("IP", e.target.value);
@@ -249,9 +250,9 @@ function Monitoring() {
                       height="2rem"
                     >
                       <input
-                        value={inputValues.get("port")
-                          ? inputValues.get("port")
-                          : ""}
+                        value={
+                          inputValues.get("port") ? inputValues.get("port") : ""
+                        }
                         onInput={(e) => {
                           if (typeof e.target.value === "string") {
                             inputValues.set("port", e.target.value);
@@ -273,9 +274,11 @@ function Monitoring() {
                   </Stack>
                 </Stack>
                 <Button
-                  variant={systemConfig.lineConfig.lines.length !== 0
-                    ? "outline"
-                    : "solid"}
+                  variant={
+                    systemConfig.lineConfig.lines.length !== 0
+                      ? "outline"
+                      : "solid"
+                  }
                   onClick={async () => {
                     if (systemConfig.lineConfig.lines.length !== 0) {
                       setSystemConfig("lineConfig", "lines", []);
@@ -315,9 +318,8 @@ function Monitoring() {
                                 if (err) throw err;
                                 if (!root) return;
 
-                                const response = root.lookupType(
-                                  "mmc.Response",
-                                );
+                                const response =
+                                  root.lookupType("mmc.Response");
                                 const msg = response.decode(buffer!).toJSON();
                                 setSystemConfig(msg);
                               });

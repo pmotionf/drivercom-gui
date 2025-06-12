@@ -7,6 +7,7 @@ import { createEffect } from "solid-js";
 import { createStore, Store } from "solid-js/store";
 import { on } from "solid-js";
 import { useContext } from "solid-js";
+import { AxesInfo } from "./Axes.tsx";
 
 export type LineProps = JSX.HTMLAttributes<HTMLDivElement> & {
   lines: Line[];
@@ -19,11 +20,7 @@ export const useLineContext = () => useContext(LineContext);
 export type Line = {
   axes: number;
   name: string;
-  axesInfo?: {
-    hallAlarms?: { front?: boolean; back?: boolean };
-    moterEnables?: boolean;
-    carrierId?: number;
-  }[];
+  axesInfo?: AxesInfo[];
 };
 
 export function Lines(props: LineProps) {
