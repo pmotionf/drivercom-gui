@@ -23,11 +23,11 @@ import { System } from "~/components/System/System.tsx";
 
 import { deadline } from "@std/async/deadline";
 import { Toast } from "~/components/ui/toast.tsx";
-import { Line } from "~/components/System/Line.tsx";
+import { LineConfig } from "~/components/System/Line.tsx";
 
 export type SystemConfig = {
   lineConfig: {
-    lines: Line[];
+    lines: LineConfig[];
   };
 };
 
@@ -211,9 +211,9 @@ function Monitoring() {
                       height="2rem"
                     >
                       <input
-                        value={
-                          inputValues.get("IP") ? inputValues.get("IP") : ""
-                        }
+                        value={inputValues.get("IP")
+                          ? inputValues.get("IP")
+                          : ""}
                         onInput={(e) => {
                           if (typeof e.target.value === "string") {
                             inputValues.set("IP", e.target.value);
@@ -250,9 +250,9 @@ function Monitoring() {
                       height="2rem"
                     >
                       <input
-                        value={
-                          inputValues.get("port") ? inputValues.get("port") : ""
-                        }
+                        value={inputValues.get("port")
+                          ? inputValues.get("port")
+                          : ""}
                         onInput={(e) => {
                           if (typeof e.target.value === "string") {
                             inputValues.set("port", e.target.value);
@@ -274,11 +274,9 @@ function Monitoring() {
                   </Stack>
                 </Stack>
                 <Button
-                  variant={
-                    systemConfig.lineConfig.lines.length !== 0
-                      ? "outline"
-                      : "solid"
-                  }
+                  variant={systemConfig.lineConfig.lines.length !== 0
+                    ? "outline"
+                    : "solid"}
                   onClick={async () => {
                     if (systemConfig.lineConfig.lines.length !== 0) {
                       setSystemConfig("lineConfig", "lines", []);
@@ -318,8 +316,9 @@ function Monitoring() {
                                 if (err) throw err;
                                 if (!root) return;
 
-                                const response =
-                                  root.lookupType("mmc.Response");
+                                const response = root.lookupType(
+                                  "mmc.Response",
+                                );
                                 const msg = response.decode(buffer!).toJSON();
                                 setSystemConfig(msg);
                               });
