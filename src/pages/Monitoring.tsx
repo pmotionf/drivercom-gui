@@ -15,7 +15,7 @@ import { createStore } from "solid-js/store";
 import { connect, disconnect, listen, send } from "@kuyoonjo/tauri-plugin-tcp";
 import { onCleanup } from "solid-js";
 
-import { load } from "protobufjs"; // respectively "./node_modules/protobufjs"
+import { load, Root } from "protobufjs"; // respectively "./node_modules/protobufjs"
 import { Buffer } from "buffer";
 import { createEffect } from "solid-js";
 import { on } from "solid-js";
@@ -24,7 +24,6 @@ import { System } from "~/components/System/System.tsx";
 import { deadline } from "@std/async/deadline";
 import { Toast } from "~/components/ui/toast.tsx";
 import { LineConfig } from "~/components/System/Line.tsx";
-
 export type SystemConfig = {
   lineConfig: {
     lines: LineConfig[];
@@ -32,7 +31,7 @@ export type SystemConfig = {
 };
 
 function Monitoring() {
-  const pageId = crypto.randomUUID();
+  let pageId = crypto.randomUUID();
   const [showSideBar, setShowSideBar] = createSignal<boolean>(true);
   const [panelSize, setPanelSize] = createSignal<number>(100);
 
@@ -41,19 +40,73 @@ function Monitoring() {
   });
   const inputValues: Map<string, string> = new Map();
 
+  const connectServer = async (
+    clientId: string,
+    ipAddress: string,
+  ): Promise<string | null> => {
+    try {
+      await connect(clientId, ipAddress);
+    } catch (e) {
+      if (e) {
+        return e as string;
+      }
+    }
+    return null;
+  };
+
+  const disconnectServer = async (clientId: string): Promise<string | null> => {
+    try {
+      await disconnect(clientId);
+    } catch (e) {
+      if (e) {
+        return e as string;
+      }
+    }
+    return null;
+  };
+
+  const listenServer = async (
+    clientId: string,
+  ): Promise<null | Buffer<ArrayBufferLike>> => {
+    try {
+      await listen((x) => {
+        if (x.payload.id === clientId && x.payload.event.message) {
+          const buffer = Buffer.from(x.payload.event.message.data);
+          return buffer;
+        }
+      });
+    } catch {
+      return null;
+    }
+    return null;
+  };
+
   createEffect(
     on(
       () => systemConfig.lineConfig.lines,
-      () => {
-        if (systemConfig.lineConfig.lines.length === 0) return;
-
+      async () => {
+        if (systemConfig.lineConfig.lines.length === 0) {
+          await disconnectServer(pageId).then((result) => {
+            if (typeof result === "string") {
+              pageId = crypto.randomUUID();
+            } else {
+              toaster.create({
+                title: "Server Disconnected",
+                description: "Server is disconnected",
+                type: "success",
+              });
+            }
+          });
+          return;
+        }
+        //@ts-ignore Same type function
         load("resources/all.proto", sendGetAxisInfo);
       },
       { defer: true },
     ),
   );
 
-  async function sendGetAxisInfo(err, root) {
+  async function sendGetAxisInfo(err: Error, root: Root) {
     if (systemConfig.lineConfig.lines.length === 0) return;
     if (err) throw err;
     if (!root) return;
@@ -78,16 +131,27 @@ function Monitoring() {
         await deadline(
           send(pageId, parseBuffer).then(
             await listen((x) => {
+              console.log(x);
               if (x.payload.id === pageId && x.payload.event.message) {
                 const buffer = Buffer.from(x.payload.event.message.data);
+                console.log(buffer);
                 const msg = response.decode(buffer!).toJSON();
+                console.log(msg);
+
                 const axisInfo = msg["axisInfo" as keyof typeof msg];
+                if (!axisInfo) {
+                  const error = root.lookupType("mmc.error");
+                  return;
+                }
                 const axes: {
                   hallAlarms?: { front?: boolean; back?: boolean };
                   moterEnables?: boolean;
                   carrierId?: number;
                 }[] = axisInfo["axes" as keyof typeof axisInfo];
-                if (!axes) return;
+                if (!axes) {
+                  setSystemConfig("lineConfig", "lines", []);
+                  return;
+                }
                 setSystemConfig(
                   "lineConfig",
                   "lines",
@@ -96,6 +160,7 @@ function Monitoring() {
                   axes,
                 );
               } else {
+                console.log(x);
                 setSystemConfig("lineConfig", "lines", []);
               }
             }),
@@ -107,8 +172,7 @@ function Monitoring() {
         return;
       }
     }
-
-    setTimeout(sendGetAxisInfo.bind(null, err, root), 1000);
+    setTimeout(sendGetAxisInfo.bind(null, err, root), 100);
   }
 
   onCleanup(() => {
@@ -121,6 +185,8 @@ function Monitoring() {
     placement: "top-end",
     gap: 16,
   });
+
+  const [isConnecting, setIsConnecting] = createSignal<boolean>(false);
 
   return (
     <>
@@ -158,8 +224,6 @@ function Monitoring() {
           size="sm"
           variant="ghost"
           onClick={() => setShowSideBar(!showSideBar())}
-          position="absolute"
-          right="0.5rem"
         >
           <Show when={!showSideBar()} fallback={<IconChevronRightPipe />}>
             <IconChevronLeftPipe />
@@ -211,9 +275,9 @@ function Monitoring() {
                       height="2rem"
                     >
                       <input
-                        value={inputValues.get("IP")
-                          ? inputValues.get("IP")
-                          : ""}
+                        value={
+                          inputValues.get("IP") ? inputValues.get("IP") : ""
+                        }
                         onInput={(e) => {
                           if (typeof e.target.value === "string") {
                             inputValues.set("IP", e.target.value);
@@ -250,9 +314,9 @@ function Monitoring() {
                       height="2rem"
                     >
                       <input
-                        value={inputValues.get("port")
-                          ? inputValues.get("port")
-                          : ""}
+                        value={
+                          inputValues.get("port") ? inputValues.get("port") : ""
+                        }
                         onInput={(e) => {
                           if (typeof e.target.value === "string") {
                             inputValues.set("port", e.target.value);
@@ -274,13 +338,15 @@ function Monitoring() {
                   </Stack>
                 </Stack>
                 <Button
-                  variant={systemConfig.lineConfig.lines.length !== 0
-                    ? "outline"
-                    : "solid"}
+                  variant={
+                    systemConfig.lineConfig.lines.length !== 0
+                      ? "outline"
+                      : "solid"
+                  }
                   onClick={async () => {
                     if (systemConfig.lineConfig.lines.length !== 0) {
                       setSystemConfig("lineConfig", "lines", []);
-                      await disconnect(pageId);
+
                       return;
                     }
                     const serverIp = inputValues.get("IP");
@@ -292,6 +358,63 @@ function Monitoring() {
                     ) {
                       const address = `${serverIp}:${port}`;
                       const cid = pageId;
+
+                      /*await connectServer(cid, address).then(async (reply) => {
+                        setIsConnecting(false);
+                        if (typeof reply === "string") {
+                          toaster.create({
+                            title: "Connection Error",
+                            description: reply as string,
+                            type: "error",
+                          });
+                          return;
+                        } else {
+                          await listen((x) => {
+                            if (
+                              x.payload.id === pageId &&
+                              x.payload.event.message
+                            ) {
+                              const buffer = Buffer.from(
+                                x.payload.event.message.data,
+                              );
+                              load("resources/all.proto", function (err, root) {
+                                if (err) throw err;
+                                if (!root) return;
+
+                                const response =
+                                  root.lookupType("mmc.Response");
+                                const msg = response.decode(buffer!).toJSON();
+                                setSystemConfig(msg);
+                              });
+                            }
+                          });
+                        }
+                      });*/
+
+                      /*await connectServer(cid, address).then(
+                        async (response) => {
+                          if (typeof response === "string") {
+                            toaster.create({
+                              title: "Connection Error",
+                              description: response,
+                              type: "error",
+                            });
+                            return;
+                          } else {
+                            const listen = await listenServer(cid);
+                            console.log(listen);
+                            if (listen === null) return;
+                            load("resources/all.proto", function (err, root) {
+                              if (err) throw err;
+                              if (!root) return;
+
+                              const response = root.lookupType("mmc.Response");
+                              const msg = response.decode(listen).toJSON();
+                              setSystemConfig(msg);
+                            });
+                          }
+                        },
+                      );*/
                       await connect(cid, address)
                         .catch((error) => {
                           if (error) {
@@ -316,9 +439,8 @@ function Monitoring() {
                                 if (err) throw err;
                                 if (!root) return;
 
-                                const response = root.lookupType(
-                                  "mmc.Response",
-                                );
+                                const response =
+                                  root.lookupType("mmc.Response");
                                 const msg = response.decode(buffer!).toJSON();
                                 setSystemConfig(msg);
                               });
