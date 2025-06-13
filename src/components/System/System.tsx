@@ -21,10 +21,9 @@ export function System(props: SystemProps) {
     >
       <For each={props.lineConfig}>
         {(line) => {
-          const id = crypto.randomUUID();
           return (
-            <Line id={id} value={line}>
-              <Station id={id}>
+            <Line value={line}>
+              <Station>
                 <Axis />
               </Station>
             </Line>

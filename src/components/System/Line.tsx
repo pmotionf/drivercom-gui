@@ -3,18 +3,16 @@ import { For } from "solid-js/web";
 import { Accordion } from "../ui/accordion.tsx";
 import { ChevronDownIcon } from "lucide-solid";
 import { createContext } from "solid-js";
-import { createEffect } from "solid-js";
-import { createStore } from "solid-js/store";
 import { useContext } from "solid-js";
 import { AxesInfo } from "./Axes.tsx";
 import { Stack } from "styled-system/jsx/stack";
+import { Show } from "solid-js/web";
 
 export type LineProps = JSX.HTMLAttributes<HTMLDivElement> & {
   value: LineConfig;
-  id: string;
 };
 
-export const LineContext = createContext<AxesInfo[]>();
+export const LineContext = createContext<{ axes: AxesInfo[]; id: number }>();
 
 export const useLineContext = () => useContext(LineContext);
 
@@ -25,16 +23,14 @@ export type LineConfig = {
 };
 
 export function Line(props: LineProps) {
-  const [line] = createStore(props.value);
-
   return (
-    <Accordion.Item value={line.name}>
+    <Accordion.Item value={props.value.name}>
       <Accordion.ItemTrigger
         padding="0.6rem"
         paddingLeft="1rem"
         paddingRight="1rem"
       >
-        {line.name}
+        {props.value.name}
         <Accordion.ItemIndicator>
           <ChevronDownIcon />
         </Accordion.ItemIndicator>
@@ -51,28 +47,20 @@ export function Line(props: LineProps) {
           overflowX="auto"
           gap="1rem"
         >
-          <For each={Array.from({ length: line.axes / 3 }, (_, i) => i)}>
-            {(index) => {
-              const [axesInfo, setAxesInfo] = createStore<AxesInfo[]>([]);
-              createEffect(() => {
-                if (
-                  line.axesInfo &&
-                  line.axesInfo.slice(index * 3, index * 3 + 3)
-                ) {
-                  const currentAxesInfo = line.axesInfo.slice(
-                    index * 3,
-                    index * 3 + 3,
-                  );
-                  setAxesInfo(currentAxesInfo);
-                }
-              });
-              return (
-                <LineContext.Provider value={axesInfo}>
-                  {props.children}
-                </LineContext.Provider>
-              );
-            }}
-          </For>
+          <Show when={props.value.axesInfo}>
+            <For
+              each={Array.from({ length: props.value.axes / 3 }, (_, i) =>
+                props.value.axesInfo!.slice(i * 3, i * 3 + 3))}
+            >
+              {(axis, index) => {
+                return (
+                  <LineContext.Provider value={{ axes: axis, id: index() }}>
+                    {props.children}
+                  </LineContext.Provider>
+                );
+              }}
+            </For>
+          </Show>
         </Stack>
       </Accordion.ItemContent>
     </Accordion.Item>
