@@ -4,11 +4,12 @@ import { lazy } from "solid-js";
 import { render } from "solid-js/web";
 import { Route, Router } from "@solidjs/router";
 
-import App from "./App";
-const Configuration = lazy(() => import("./pages/Configuration"));
-const LogViewer = lazy(() => import("./pages/LogViewer"));
-const Connect = lazy(() => import("./pages/Connect"));
-const Logging = lazy(() => import("./pages/Logging"));
+import App from "./App.tsx";
+const Configuration = lazy(() => import("./pages/Configuration.tsx"));
+const LogViewer = lazy(() => import("./pages/LogViewer.tsx"));
+const Connect = lazy(() => import("./pages/Connect.tsx"));
+const Logging = lazy(() => import("./pages/Logging.tsx"));
+const Monitoring = lazy(() => import("./pages/Monitoring.tsx"));
 
 render(
   () => (
@@ -17,6 +18,7 @@ render(
       <Route path="/logviewer" component={LogViewer} />
       <Route path="/connect" component={Connect} />
       <Route path="/logging" component={Logging} />
+      <Route path="/monitoring" component={Monitoring} />
     </Router>
   ),
   document.getElementById("root") as HTMLElement,

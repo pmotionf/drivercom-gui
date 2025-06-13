@@ -15,6 +15,7 @@ import {
   IconMoonFilled,
   IconPlugConnected,
   IconPlugConnectedX,
+  IconReservedLine,
   IconSunFilled,
 } from "@tabler/icons-solidjs";
 
@@ -232,6 +233,11 @@ function App(props: RouteSectionProps) {
         </Show>
       ),
       label: "Connect",
+      disabled: false,
+    },
+    monitoring: {
+      icon: IconReservedLine,
+      label: "Monitoring",
       disabled: false,
     },
   };

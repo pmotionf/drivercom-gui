@@ -62,6 +62,7 @@ export default defineConfig({
             a10: { value: { base: "#002ab3c9", _dark: "#6ca8feac" } },
             a11: { value: { base: "#002cb7c6", _dark: "#9ec4fef4" } },
             a12: { value: { base: "#001347e2", _dark: "#d6ebff" } },
+            green: { value: { base: "#000000", _dark: "#FFFFFF" } },
             default: {
               value: {
                 _light: "{colors.accent.9}",
@@ -79,6 +80,12 @@ export default defineConfig({
               value: {
                 _light: "{colors.accent.a11}",
                 _dark: "{colors.accent.a11}",
+              },
+            },
+            Green: {
+              value: {
+                _light: "{colors.accent.green}",
+                _dark: "{colors.accent.green}",
               },
             },
           },
