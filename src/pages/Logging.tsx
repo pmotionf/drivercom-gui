@@ -125,87 +125,75 @@ export function Logging() {
 
   return (
     <>
-      <Stack
-        alignItems="center"
+      <div
         style={{
           "padding-top": "2rem",
           "padding-bottom": "2rem",
           height: "100%",
           width: `100% `,
+          "justify-content": "center",
+          "display": "flex",
         }}
       >
-        <Toast.Toaster toaster={toaster}>
-          {(toast) => (
-            <Toast.Root>
-              <Toast.Title>{toast().title}</Toast.Title>
-              <Toast.Description>{toast().description}</Toast.Description>
-              <Toast.CloseTrigger>
-                <IconX />
-              </Toast.CloseTrigger>
-            </Toast.Root>
-          )}
-        </Toast.Toaster>
         <Show
           when={!isLogFormOpen()}
           fallback={
-            <Stack width="40%" minWidth="30rem" height="100%">
-              <Show when={renderLoggingForm()}>
-                <LoggingForm
-                  formData={logConfigure()}
-                  formTitle={formTitle()}
-                  filePath={filePath()}
-                  onFormTitleChange={(newFileName) => setFormTitle(newFileName)}
-                  mode={logMode()}
-                  onModeChange={(currentMode, path) => {
-                    const parsePath = path.split("/").pop();
-                    setFormTitle(parsePath!);
-                    setLogMode(currentMode);
-                    setFilePath(path);
-                  }}
-                  onReloadFile={async () => {
-                    setRenderLoggingForm(false);
-                    const logObj = await readJsonFile(filePath());
-                    if (!logObj) {
-                      toaster.create({
-                        title: "Invalid File Path",
-                        description: "The file path is invalid.",
-                        type: "error",
-                      });
-                      setRecentLogFilePaths((prev) => {
-                        const newRecentFiles = prev.filter(
-                          (prevFilePath) => prevFilePath !== filePath(),
-                        );
-                        return newRecentFiles;
-                      });
-                      return;
-                    }
-                    setLogConfigure(logObj);
-                    setRenderLoggingForm(true);
-                  }}
-                  onReloadPort={async () => {
-                    setRenderLoggingForm(false);
-                    const logObj = await GetLogConfigFromPort();
-                    if (!logObj) {
-                      toaster.create({
-                        title: "Invalid Port",
-                        description: "The port is invalid.",
-                        type: "error",
-                      });
-                      return;
-                    }
-                    setLogConfigure(logObj);
-                    setRenderLoggingForm(true);
-                  }}
-                  onCancel={() => {
-                    setFormTitle("");
-                    setLogConfigure({});
-                    setLogMode("none");
-                    setRenderLoggingForm(false);
-                  }}
-                  onErrorMessage={(msg) => toaster.create(msg)}
-                />
-              </Show>
-            </Stack>
+            <Show when={renderLoggingForm()}>
+              <LoggingForm
+                formData={logConfigure()}
+                formTitle={formTitle()}
+                filePath={filePath()}
+                onFormTitleChange={(newFileName) => setFormTitle(newFileName)}
+                mode={logMode()}
+                onModeChange={(currentMode, path) => {
+                  const parsePath = path.split("/").pop();
+                  setFormTitle(parsePath!);
+                  setLogMode(currentMode);
+                  setFilePath(path);
+                }}
+                onReloadFile={async () => {
+                  setRenderLoggingForm(false);
+                  const logObj = await readJsonFile(filePath());
+                  if (!logObj) {
+                    toaster.create({
+                      title: "Invalid File Path",
+                      description: "The file path is invalid.",
+                      type: "error",
+                    });
+                    setRecentLogFilePaths((prev) => {
+                      const newRecentFiles = prev.filter(
+                        (prevFilePath) => prevFilePath !== filePath(),
+                      );
+                      return newRecentFiles;
+                    });
+                    return;
+                  }
+                  setLogConfigure(logObj);
+                  setRenderLoggingForm(true);
+                }}
+                onReloadPort={async () => {
+                  setRenderLoggingForm(false);
+                  const logObj = await GetLogConfigFromPort();
+                  if (!logObj) {
+                    toaster.create({
+                      title: "Invalid Port",
+                      description: "The port is invalid.",
+                      type: "error",
+                    });
+                    return;
+                  }
+                  setLogConfigure(logObj);
+                  setRenderLoggingForm(true);
+                }}
+                onCancel={() => {
+                  setFormTitle("");
+                  setLogConfigure({});
+                  setLogMode("none");
+                  setRenderLoggingForm(false);
+                }}
+                onErrorMessage={(msg) => toaster.create(msg)}
+              />
+            </Show>
           }
         >
           <Stack
@@ -463,7 +451,18 @@ export function Logging() {
             </Stack>
           </Stack>
         </Show>
-      </Stack>
+      </div>
+      <Toast.Toaster toaster={toaster}>
+        {(toast) => (
+          <Toast.Root>
+            <Toast.Title>{toast().title}</Toast.Title>
+            <Toast.Description>{toast().description}</Toast.Description>
+            <Toast.CloseTrigger>
+              <IconX />
+            </Toast.CloseTrigger>
+          </Toast.Root>
+        )}
+      </Toast.Toaster>
     </>
   );
 }
