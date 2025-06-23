@@ -9,7 +9,7 @@ import {
 } from "~/GlobalState";
 import { Command } from "@tauri-apps/plugin-shell";
 import { createSignal, For, Show } from "solid-js";
-import { LoggingForm } from "./Logging/LoggingForm";
+import { LoggingForm } from "~/components/LoggingForm.tsx";
 import { Toast } from "~/components/ui/toast";
 import {
   IconChevronRight,
@@ -26,6 +26,9 @@ import { onMount } from "solid-js";
 import { Editable } from "~/components/ui/editable";
 import { Tooltip } from "~/components/ui/tooltip";
 import { Menu } from "~/components/ui/menu";
+import { createEffect } from "solid-js";
+import { on } from "solid-js";
+import { Spinner } from "~/components/ui/styled/spinner";
 
 export function Logging() {
   const [logConfigure, setLogConfigure] = createSignal({});
@@ -37,9 +40,12 @@ export function Logging() {
     false,
   );
 
-  onMount(() => {
+  onMount(async () => {
     setLogConfigure(JSON.parse(JSON.stringify(logFormFileFormat())));
     setRenderLoggingForm(true);
+    const logState = await getCurrentLogStatus();
+    setCurrentLogStatus(logState ? logState.logStatus : null);
+    setCyclesCompleted(logState ? logState.cycle : null);
   });
 
   async function GetLogConfigFromPort(): Promise<{
@@ -55,34 +61,29 @@ export function Logging() {
     return { stdout: output.stdout, stderr: output.stderr };
   }
 
-  const toaster = Toast.createToaster({
-    placement: "top-end",
-    gap: 24,
-  });
-
-  async function openFileDialog(): Promise<string | null> {
+  async function openFileDialog(): Promise<
+    string | { title: string; description: string; type: string }
+  > {
     const path = await open({
       multiple: false,
       filters: [{ name: "JSON", extensions: ["json"] }],
     });
 
     if (!path) {
-      toaster.create({
+      return {
         title: "Invalid File Path",
         description: "The file path is invalid.",
         type: "error",
-      });
-      return null;
+      };
     }
 
     const extension = path.split(".").pop();
     if (extension != "json") {
-      toaster.create({
+      return {
         title: "Invalid File Extension",
         description: "The file extension is invalid.",
         type: "error",
-      });
-      return null;
+      };
     }
     return path.replaceAll("\\", "/");
   }
@@ -125,13 +126,33 @@ export function Logging() {
     refresh();
   }
 
-  const [cyclesCompleted, setCyclesCompleted] = createSignal<number>(0);
-  const [currentLogStatus, setCurrentLogStatus] = createSignal<string>("");
+  const [cyclesCompleted, setCyclesCompleted] = createSignal<number | null>(0);
+  const [currentLogStatus, setCurrentLogStatus] = createSignal<string | null>(
+    null,
+  );
+  createEffect(
+    on(
+      () => currentLogStatus(),
+      () => {
+        if (currentLogStatus() === "Log.Status.invalid") {
+          toaster.create({
+            title: "Invalid Log",
+            description: "The log is invalid.",
+            type: "error",
+          });
+        }
+      },
+      { defer: true },
+    ),
+  );
 
-  let firstStart: boolean = true;
-
-  async function getCurrentLogStatus() {
-    if (portId().length === 0) return;
+  async function getCurrentLogStatus(): Promise<
+    null | {
+      logStatus: string;
+      cycle: number;
+    }
+  > {
+    if (portId().length === 0) return null;
     const logStatus = Command.sidecar("binaries/drivercom", [
       `--port`,
       portId(),
@@ -144,34 +165,19 @@ export function Logging() {
     });
 
     const currentCompletedLogCycle = Number(currentLogStatusList[1][1]);
-    setCyclesCompleted(currentCompletedLogCycle);
-
     const currentLogState = currentLogStatusList[0][1];
-    if (!currentLogState) return;
-    setCurrentLogStatus(currentLogState);
-    if (currentLogState === "Log.Status.invalid") {
-      if (firstStart) {
-        firstStart = false;
-        return;
-      }
-      toaster.create({
-        title: "Invalid Log",
-        description: "The log is invalid.",
-        type: "error",
-      });
-    }
-  }
 
-  onMount(() => {
-    getCurrentLogStatus();
-  });
+    if (!currentLogState || isNaN(currentCompletedLogCycle)) return null;
+    return { logStatus: currentLogState, cycle: currentCompletedLogCycle };
+  }
 
   // Signal for display Log Get button loading while saving log.csv file.
   const [logGetBtnLoading, setLogGetBtnLoading] = createSignal(false);
 
   // Save log.csv file && Display `Log Get` button loading while saving log.csv file
-  async function saveLogCsvFile() {
-    setLogGetBtnLoading(true);
+  async function saveLogCsvFile(): Promise<
+    string | { title: string; description: string; type: string } | null
+  > {
     const logGet = Command.sidecar("binaries/drivercom", [
       `--port`,
       portId(),
@@ -187,61 +193,25 @@ export function Logging() {
         .filter((line) => line.length > 0);
 
       if (output.stderr.length > 0) {
-        toaster.create({
+        return {
           title: "Communication Failure",
           description: output.stderr,
           type: "error",
-        });
-        setLogGetBtnLoading(false);
-        return;
+        };
       }
 
       if (notEmptyLines.length <= 1) {
-        toaster.create({
+        return {
           title: "Invalid Log",
           description: "No log data found.",
           type: "error",
-        });
-        setLogGetBtnLoading(false);
-        return;
-      }
-
-      const path = await save({
-        defaultPath: formTitle().split(".").pop()!.toLowerCase() === "csv"
-          ? `${formTitle()}`
-          : `${formTitle()}.csv`,
-        filters: [
-          {
-            name: "CSV",
-            extensions: ["csv"],
-          },
-        ],
-      });
-
-      if (!path) {
-        toaster.create({
-          title: "Invalid File Path",
-          description: "The file path is invalid.",
-          type: "error",
-        });
-        setLogGetBtnLoading(false);
-        return;
-      }
-      const extension = path.split(".").pop();
-      if (extension != "csv") {
-        toaster.create({
-          title: "Invalid File Extension",
-          description: "The file extension is invalid.",
-          type: "error",
-        });
-        setLogGetBtnLoading(false);
-        return;
+        };
       }
 
       const csvFile = output.stdout;
-      await writeTextFile(path, csvFile);
-      setLogGetBtnLoading(false);
+      return csvFile;
     }
+    return null;
   }
 
   async function startLogging() {
@@ -322,6 +292,11 @@ export function Logging() {
     setRenderLoggingForm(false);
     setRenderLoggingForm(true);
   };
+
+  const toaster = Toast.createToaster({
+    placement: "top-end",
+    gap: 24,
+  });
 
   return (
     <>
@@ -422,7 +397,11 @@ export function Logging() {
                       value="Open"
                       onClick={async () => {
                         const path = await openFileDialog();
-                        if (!path) return;
+                        if (typeof path !== "string") {
+                          toaster.create(path);
+                          return;
+                        }
+
                         const logObj = await readJsonFile(path);
                         if (!logObj) {
                           toaster.create({
@@ -438,11 +417,7 @@ export function Logging() {
                           });
                           return;
                         }
-                        const isFileFormatMatch = compareFileFormat(
-                          logObj,
-                          logFormFileFormat(),
-                        );
-                        if (isFileFormatMatch) {
+                        if (compareFileFormat(logObj, logFormFileFormat())) {
                           setLogFormData(logObj, path);
                           setRecentLogFilePaths((prev) => {
                             const newRecentFiles = prev.filter(
@@ -681,7 +656,11 @@ export function Logging() {
                             description: "Log saved to port successfully.",
                             type: "error",
                           });
-                          getCurrentLogStatus();
+                          const logState = await getCurrentLogStatus();
+                          setCurrentLogStatus(
+                            logState ? logState.logStatus : null,
+                          );
+                          setCyclesCompleted(logState ? logState.cycle : null);
                         }}
                         userSelect="none"
                       >
@@ -704,7 +683,13 @@ export function Logging() {
                             currentLogStatus() === "Log.Status.waiting"}
                           onClick={async () => {
                             await startLogging();
-                            await getCurrentLogStatus();
+                            const logState = await getCurrentLogStatus();
+                            setCurrentLogStatus(
+                              logState ? logState.logStatus : null,
+                            );
+                            setCyclesCompleted(
+                              logState ? logState.cycle : null,
+                            );
                           }}
                           size="sm"
                           variant="ghost"
@@ -728,7 +713,11 @@ export function Logging() {
                           portId().length === 0}
                         onClick={async () => {
                           await stopLogging();
-                          await getCurrentLogStatus();
+                          const logState = await getCurrentLogStatus();
+                          setCurrentLogStatus(
+                            logState ? logState.logStatus : null,
+                          );
+                          setCyclesCompleted(logState ? logState.cycle : null);
                         }}
                         size="sm"
                         variant="ghost"
@@ -762,13 +751,60 @@ export function Logging() {
                             portId().length === 0}
                           onClick={async () => {
                             if (portId().length === 0) return;
-                            await saveLogCsvFile();
+                            const path = await save({
+                              defaultPath:
+                                formTitle().split(".").pop()!.toLowerCase() ===
+                                    "csv"
+                                  ? `${formTitle()}`
+                                  : `${formTitle()}.csv`,
+                              filters: [
+                                {
+                                  name: "CSV",
+                                  extensions: ["csv"],
+                                },
+                              ],
+                            });
+
+                            if (!path) {
+                              toaster.create({
+                                title: "Invalid File Path",
+                                description: "The file path is invalid.",
+                                type: "error",
+                              });
+                              setLogGetBtnLoading(false);
+                              return;
+                            }
+                            const extension = path.split(".").pop();
+                            if (extension != "csv") {
+                              toaster.create({
+                                title: "Invalid File Extension",
+                                description: "The file extension is invalid.",
+                                type: "error",
+                              });
+                              setLogGetBtnLoading(false);
+                              return;
+                            }
+                            setLogGetBtnLoading(true);
+                            const csvFile = await saveLogCsvFile();
+                            setLogGetBtnLoading(false);
+                            if (csvFile) {
+                              if (typeof csvFile === "string") {
+                                await writeTextFile(path, csvFile);
+                              } else {
+                                toaster.create(csvFile);
+                              }
+                            }
                           }}
                           variant="ghost"
                           userSelect="none"
                           size="sm"
                         >
-                          <IconFileDownload />
+                          <Show
+                            when={logGetBtnLoading()}
+                            fallback={<IconFileDownload />}
+                          >
+                            <Spinner size="sm" />
+                          </Show>
                         </IconButton>
                       </Tooltip.Trigger>
                       <Tooltip.Positioner>
@@ -784,7 +820,13 @@ export function Logging() {
                     <Tooltip.Trigger>
                       <IconButton
                         disabled={portId().length === 0 || logGetBtnLoading()}
-                        onClick={() => getCurrentLogStatus()}
+                        onClick={async () => {
+                          const logState = await getCurrentLogStatus();
+                          setCurrentLogStatus(
+                            logState ? logState.logStatus : null,
+                          );
+                          setCyclesCompleted(logState ? logState.cycle : null);
+                        }}
                         variant="ghost"
                         size="sm"
                       >
