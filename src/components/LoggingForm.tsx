@@ -6,6 +6,7 @@ import { Input } from "~/components/ui/input";
 import { logStartCombinatorList, logStartConditionList } from "~/GlobalState";
 import { createStore } from "solid-js/store";
 import { createListCollection, Select } from "~/components/ui/select";
+import { ListCollection } from "@ark-ui/solid/collection";
 
 export type LoggingFormProps = JSX.HTMLAttributes<Element> & {
   formData: object;
@@ -13,6 +14,22 @@ export type LoggingFormProps = JSX.HTMLAttributes<Element> & {
 
 export function LoggingForm(props: LoggingFormProps) {
   const logForm = props.formData;
+
+  // Log config start condition list for select component
+  const parseStartConditionList = logStartConditionList().map((condition) => {
+    return { label: condition, value: condition };
+  });
+  const logStartConditions: ListCollection = createListCollection({
+    items: parseStartConditionList,
+  });
+
+  // Log config start combinator list for select component
+  const parseCombinatorList = logStartCombinatorList().map((condition) => {
+    return { label: condition, value: condition };
+  });
+  const logStartCombinators = createListCollection({
+    items: parseCombinatorList,
+  });
 
   return (
     <div
@@ -23,7 +40,11 @@ export function LoggingForm(props: LoggingFormProps) {
         "padding-bottom": "0.5rem",
       }}
     >
-      <LogConfigFieldSet object={logForm} />
+      <LogConfigFieldSet
+        object={logForm}
+        logStartCombinators={logStartCombinators}
+        logStartConditions={logStartConditions}
+      />
     </div>
   );
 }
@@ -31,6 +52,8 @@ export function LoggingForm(props: LoggingFormProps) {
 export type logConfigFieldSetProps = JSX.HTMLAttributes<Element> & {
   object: object;
   sectionName?: string;
+  logStartConditions: ListCollection;
+  logStartCombinators: ListCollection;
 };
 
 export function LogConfigFieldSet(props: logConfigFieldSetProps) {
@@ -55,22 +78,6 @@ export function LogConfigFieldSet(props: logConfigFieldSetProps) {
       );
     });
   };
-
-  // Log config start condition list for select component
-  const parseStartConditionList = logStartConditionList().map((condition) => {
-    return { label: condition, value: condition };
-  });
-  const logStartConditions = createListCollection({
-    items: parseStartConditionList,
-  });
-
-  // Log config start combinator list for select component
-  const parseCombinatorList = logStartCombinatorList().map((condition) => {
-    return { label: condition, value: condition };
-  });
-  const logStartCombinators = createListCollection({
-    items: parseCombinatorList,
-  });
 
   return (
     <For each={Object.entries(obj)}>
@@ -109,7 +116,12 @@ export function LogConfigFieldSet(props: logConfigFieldSetProps) {
                     {upperCaseKey}
                   </Text>
                 </legend>
-                <LogConfigFieldSet object={value} sectionName={key} />
+                <LogConfigFieldSet
+                  object={value}
+                  sectionName={key}
+                  logStartCombinators={props.logStartCombinators}
+                  logStartConditions={props.logStartConditions}
+                />
               </fieldset>
             </>
           );
@@ -204,8 +216,8 @@ export function LogConfigFieldSet(props: logConfigFieldSetProps) {
                 positioning={{ sameWidth: true }}
                 width="2xs"
                 collection={key === "kind"
-                  ? logStartConditions
-                  : logStartCombinators}
+                  ? props.logStartConditions
+                  : props.logStartCombinators}
                 defaultValue={[value.toString()]}
                 onValueChange={(v) => {
                   setObject(key as keyof typeof obj, v.items[0].label);
@@ -220,8 +232,8 @@ export function LogConfigFieldSet(props: logConfigFieldSetProps) {
                   <Select.Content>
                     <For
                       each={key === "kind"
-                        ? logStartConditions.items
-                        : logStartCombinators.items}
+                        ? props.logStartConditions.items
+                        : props.logStartCombinators.items}
                     >
                       {(item) => (
                         <Select.Item item={item}>
