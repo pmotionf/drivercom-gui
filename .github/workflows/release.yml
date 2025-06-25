@@ -82,7 +82,16 @@ jobs:
           persist-credentials: false
 
       - uses: dtolnay/rust-toolchain@stable
-      - uses: denoland/setup-deno@v2
+
+      - name: Install deno on Windows
+        if: matrix.os == 'Windows'
+        uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.3.5
+
+      - name: Install deno on Linux
+        if: matrix.os == 'Linux'
+        uses: denoland/setup-deno@v2
         with:
           deno-version: vx.x.x
 
