@@ -360,9 +360,20 @@ export function Plot(props: PlotProps) {
 
                     const xUnitsPerPx = u.posToVal(1, "x") - u.posToVal(0, "x");
 
+                    const yMin = 0;
+                    const yMax = u.scales.y.max!;
+
+                    const top0 = e.clientY;
+
+                    const scYMin0 = u.scales.y.min!;
+                    const scYMax0 = u.scales.y.max!;
+
+                    const yUnitsPerPx = u.posToVal(1, "y") - u.posToVal(0, "y");
+
                     const onmove = (e: MouseEvent) => {
                       e.preventDefault();
 
+                      // Panning
                       const left1 = e.clientX;
                       const dx = xUnitsPerPx * (left1 - left0);
 
@@ -378,10 +389,31 @@ export function Plot(props: PlotProps) {
                         (scaleXMin = scXMin0), (scaleXMax = xMax);
                       }
 
+                      // Tilting (Vertical panning)
+                      const top1 = e.clientY;
+                      const topDx = yUnitsPerPx * (top1 - top0);
+
+                      const minYBoundary = scYMin0 - topDx;
+                      const maxYBoundary = scYMax0 - topDx;
+
+                      let scaleYMin = minYBoundary;
+                      let scaleYMax = maxYBoundary;
+
+                      if (yMin >= minYBoundary) {
+                        (scaleYMin = xMin), (scaleYMax = scXMax0);
+                      } else if (yMax <= maxYBoundary) {
+                        (scaleYMin = scYMin0), (scaleYMax = yMax);
+                      }
+
                       uPlot.sync(group()).plots.forEach((up) => {
                         up.setScale("x", {
                           min: scaleXMin,
                           max: scaleXMax,
+                        });
+
+                        up.setScale("y", {
+                          min: scaleYMin,
+                          max: scaleYMax,
                         });
                       });
                     };
@@ -617,7 +649,9 @@ export function Plot(props: PlotProps) {
                           onclick={() => {
                             uPlot.sync(group()).plots.forEach((up: uPlot) => {
                               const xMax = Number(up.data[0].length - 1);
+                              const yMax = up.scales.y.max!;
                               up.setScale("x", { min: 0, max: xMax });
+                              up.setScale("y", { min: 0, max: yMax });
                               setXRange(xMax);
                               props.onXRangeChange?.([0, xMax]);
                             });
@@ -937,7 +971,12 @@ type WheelZoomPluginOpts = {
 function wheelZoomPlugin(opts: WheelZoomPluginOpts) {
   const factor = opts.factor || 0.75;
 
-  let xMin: number, xMax: number, xRange: number;
+  let xMin: number,
+    xMax: number,
+    xRange: number,
+    yMin: number,
+    yMax: number,
+    yRange: number;
 
   function clamp(
     nRange: number,
@@ -969,6 +1008,10 @@ function wheelZoomPlugin(opts: WheelZoomPluginOpts) {
 
         xRange = xMax - xMin;
 
+        yMin = u.scales.y.min!;
+        yMax = u.scales.y.max!;
+        yRange = yMax - yMin;
+
         const over = u.over;
         const rect = over.getBoundingClientRect();
 
@@ -976,8 +1019,9 @@ function wheelZoomPlugin(opts: WheelZoomPluginOpts) {
         over.addEventListener("wheel", (e) => {
           e.preventDefault();
 
-          const { left } = u.cursor;
+          const { left, top } = u.cursor;
 
+          // x Zoom
           const leftPct = left! / rect.width;
           const xVal = u.posToVal(left!, "x");
           const oxRange = u.scales.x.max! - u.scales.x.min!;
@@ -987,8 +1031,19 @@ function wheelZoomPlugin(opts: WheelZoomPluginOpts) {
           let nxMax = nxMin + nxRange;
           [nxMin, nxMax] = clamp(nxRange, nxMin, nxMax, xRange, xMin, xMax);
 
+          // y Zoom
+          const btmPct = 1 - top! / rect.height;
+          const yVal = u.posToVal(top!, "y");
+          const oyRange = u.scales.y.max! - u.scales.y.min!;
+
+          const nyRange = e.deltaY < 0 ? oyRange * factor : oyRange / factor;
+          let nyMin = yVal - btmPct * nyRange;
+          let nyMax = nyMin + nyRange;
+          [nyMin, nyMax] = clamp(nyRange, nyMin, nyMax, yRange, yMin, yMax);
+
           uPlot.sync(opts.group).plots.forEach((up: uPlot) => {
             up.setScale("x", { min: nxMin, max: nxMax });
+            up.setScale("y", { min: nyMin, max: nyMax });
           });
         });
       },
