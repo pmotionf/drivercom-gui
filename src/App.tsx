@@ -13,8 +13,6 @@ import {
   IconGraph,
   IconMenu,
   IconMoonFilled,
-  IconPlugConnected,
-  IconPlugConnectedX,
   IconSunFilled,
 } from "@tabler/icons-solidjs";
 
@@ -23,7 +21,6 @@ import {
   driverComVersion,
   globalState,
   GlobalStateContext,
-  portId,
   setCliVersion,
   setConfigFormFileFormat,
   setDriverComVersion,
@@ -220,18 +217,6 @@ function App(props: RouteSectionProps) {
     logViewer: {
       icon: IconDeviceAnalytics,
       label: "Log Viewer",
-      disabled: false,
-    },
-    connect: {
-      icon: (iconProps) => (
-        <Show
-          when={portId().length > 0}
-          fallback={<IconPlugConnectedX {...iconProps} />}
-        >
-          <IconPlugConnected {...iconProps} />
-        </Show>
-      ),
-      label: "Connect",
       disabled: false,
     },
   };
