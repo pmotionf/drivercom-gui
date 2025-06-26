@@ -11,32 +11,19 @@ import {
 } from "solid-js";
 import { createStore } from "solid-js/store";
 
-import { Accordion } from "~/components/ui/accordion";
-import { Checkbox } from "~/components/ui/checkbox";
-import { Input } from "~/components/ui/input";
+import { Accordion } from "~/components/ui/accordion.tsx";
+import { Checkbox } from "~/components/ui/checkbox.tsx";
+import { Input } from "~/components/ui/input.tsx";
 
 import { Stack } from "styled-system/jsx";
-import { Text } from "./ui/text";
-import { Editable } from "./ui/editable";
-import { IconButton } from "./ui/icon-button";
-import {
-  IconChevronDown,
-  IconLink,
-  IconLinkOff,
-  IconX,
-} from "@tabler/icons-solidjs";
-import { Tooltip } from "./ui/tooltip";
-import { Menu } from "./ui/menu";
-import { Button } from "./ui/styled/button";
-import { portId } from "~/GlobalState";
+import { Text } from "./ui/text.tsx";
+import { IconButton } from "./ui/icon-button.tsx";
+import { IconChevronDown, IconLink, IconLinkOff } from "@tabler/icons-solidjs";
+import { Tooltip } from "./ui/tooltip.tsx";
 
 export type ConfigFormProps = JSX.HTMLAttributes<HTMLFormElement> & {
-  label: string;
-  onLabelChange?: (label: string) => void;
   config: object;
-  onCancel?: () => void;
-  onSaveConfigPort?: () => void;
-  onSaveConfigFile?: () => void;
+  label: string;
 };
 
 type AccordionStatuses = Map<string, [Accessor<string[]>, Setter<string[]>]>;
@@ -316,96 +303,19 @@ export function ConfigForm(props: ConfigFormProps) {
   return (
     <div
       style={{
+        "overflow-y": "auto",
         width: "100%",
-        height: "100%",
+        "border-top-width": "1px",
+        "border-bottom-width": "1px",
+        "padding-bottom": "0.5rem",
       }}
     >
-      <Stack
-        direction="row"
-        paddingRight="2rem"
-        paddingLeft="2rem"
-        paddingBottom="1rem"
-      >
-        <Editable.Root
-          placeholder="File name"
-          defaultValue={props.label ? props.label : "New File"}
-          activationMode="dblclick"
-          onValueCommit={(e) => {
-            props.onLabelChange?.(e.value);
-          }}
-          fontWeight="bold"
-          fontSize="2xl"
-          width={`calc(100% - 8rem)`}
-        >
-          <Editable.Area>
-            <Editable.Input width="90%" />
-            <Editable.Preview
-              width="90%"
-              style={{
-                "text-overflow": "ellipsis",
-                display: "block",
-                overflow: "hidden",
-                "text-align": "left",
-              }}
-            />
-          </Editable.Area>
-        </Editable.Root>
-        <Menu.Root>
-          <Menu.Trigger>
-            <Button variant="outline" width="4rem">
-              Save
-            </Button>
-          </Menu.Trigger>
-          <Menu.Positioner>
-            <Menu.Content width="8rem">
-              <Menu.Item
-                value="Save as file"
-                onClick={() => {
-                  props.onSaveConfigFile?.();
-                }}
-                userSelect="none"
-              >
-                Save as file
-              </Menu.Item>
-              <Menu.Separator />
-              <Menu.Item
-                value="Save to port"
-                disabled={portId().length === 0}
-                onClick={() => {
-                  props.onSaveConfigPort?.();
-                }}
-                userSelect="none"
-              >
-                Save to port
-              </Menu.Item>
-            </Menu.Content>
-          </Menu.Positioner>
-        </Menu.Root>
-        <IconButton
-          variant="ghost"
-          borderRadius="3rem"
-          onClick={() => props.onCancel?.()}
-          width="3rem"
-        >
-          <IconX />
-        </IconButton>
-      </Stack>
-      <div
-        style={{
-          "padding-right": "2rem",
-          "padding-left": "2rem",
-          "padding-bottom": "2rem",
-          "overflow-y": "auto",
-          height: `calc(100% - 4rem)`,
-        }}
-      >
-        <ConfigObject
-          object={config}
-          id_prefix={props.label}
-          accordionStatuses={accordionStatuses}
-          linkedStatuses={linkedStatuses}
-        />
-      </div>
+      <ConfigObject
+        object={config}
+        id_prefix={props.label}
+        accordionStatuses={accordionStatuses}
+        linkedStatuses={linkedStatuses}
+      />
     </div>
   );
 }
