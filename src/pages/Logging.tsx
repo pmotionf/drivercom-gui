@@ -39,13 +39,21 @@ export function Logging() {
     false,
   );
 
-  onMount(async () => {
+  onMount(() => {
     setLogConfigure(JSON.parse(JSON.stringify(logFormFileFormat())));
     setRenderLoggingForm(true);
-    const logState = await getCurrentLogStatus();
-    setCurrentLogStatus(logState ? logState.logStatus : null);
-    setCyclesCompleted(logState ? logState.cycle : null);
   });
+
+  createEffect(
+    on(
+      () => portId(),
+      async () => {
+        const logState = await getCurrentLogStatus();
+        setCurrentLogStatus(logState ? logState.logStatus : null);
+        setCyclesCompleted(logState ? logState.cycle : null);
+      },
+    ),
+  );
 
   async function GetLogConfigFromPort(): Promise<{
     stdout: string;
