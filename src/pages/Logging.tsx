@@ -28,6 +28,7 @@ import { on } from "solid-js";
 import { Spinner } from "~/components/ui/styled/spinner.tsx";
 import { FileMenu } from "~/components/FileMenu.tsx";
 import { PortMenu } from "~/components/PortMenu.tsx";
+import { ConnectButton } from "./Connect/ConnectButton.tsx";
 
 export function Logging() {
   const [logConfigure, setLogConfigure] = createSignal({});
@@ -692,7 +693,9 @@ export function Logging() {
           </Show>
         </Stack>
       </div>
-
+      <ConnectButton
+        style={{ position: "absolute", right: "0.5rem", top: "1rem" }}
+      />
       <Toast.Toaster toaster={toaster}>
         {(toast) => (
           <Toast.Root>
