@@ -91,16 +91,19 @@ export function PanelLayout(props: PanelLayoutProps) {
   return (
     <Show when={render()}>
       <Splitter.Root
-        size={getPanelContext(getPanelKey())}
+        size={getPanelContext(getPanelKey()).map((context) => context.size)}
         gap="0.5"
-        onSizeChange={(details: { size: object[] }) => {
-          const parseDetails: PanelSizeContext[] = details.size.map((info) => {
+        panels={[
+
+        ]}
+        onResizeEnd={(details) => {
+          const newContexts: PanelSizeContext[] = details.size.map((size, idx) => {
             return {
-              id: info["id" as keyof typeof info],
-              size: info["size" as keyof typeof info],
-            } as PanelSizeContext;
+              id: getPanelContext(getPanelKey())[idx].id,
+              size: size,
+            };
           });
-          setPanelContext(getPanelKey(), parseDetails);
+          setPanelContext(getPanelKey(), newContexts);
         }}
       >
         <For each={getPanelId(getPanelKey())}>

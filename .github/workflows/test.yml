@@ -29,14 +29,7 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Install deno on Windows
-        if: matrix.os == 'Windows'
-        uses: denoland/setup-deno@v2
-        with:
-          deno-version: v2.3.5
-
-      - name: Install deno on Linux
-        if: matrix.os == 'Linux'
+      - name: Install Deno
         uses: denoland/setup-deno@v2
         with:
           deno-version: vx.x.x
