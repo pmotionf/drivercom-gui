@@ -4,5 +4,6 @@ dist
 styled-system
 styled-system-studio
 .vite
+resources
 
 src-tauri/binaries
