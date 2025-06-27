@@ -20,6 +20,7 @@ import { ToggleGroup } from "~/components/ui/toggle-group";
 import { IconButton } from "~/components/ui/icon-button";
 import {
   IconArrowsMove,
+  IconArrowsMoveVertical,
   IconChevronLeftPipe,
   IconChevronRightPipe,
   IconCrosshair,
@@ -70,6 +71,7 @@ enum CursorMode {
   Pan,
   Zoom,
   Lock,
+  Vertical,
 }
 
 export function Plot(props: PlotProps) {
@@ -183,6 +185,8 @@ export function Plot(props: PlotProps) {
       setCursorMode(CursorMode.Zoom);
     } else if (event.key === "Alt") {
       // TODO: Handle alt click
+      setCursorMode(CursorMode.Vertical);
+      console.log(cursorMode() === CursorMode.Vertical);
     }
   };
   const cursorModeRelease = (event: KeyboardEvent) => {
@@ -190,8 +194,9 @@ export function Plot(props: PlotProps) {
       setCursorMode(lastCursorMode());
     } else if (event.key === "Shift" && cursorMode() === CursorMode.Zoom) {
       setCursorMode(lastCursorMode());
-    } else if (event.key === "Alt" && cursorMode() === CursorMode.None) {
+    } else if (event.key === "Alt" && cursorMode() === CursorMode.Vertical) {
       // TODO: Handle alt click
+      setCursorMode(lastCursorMode());
     }
   };
 
@@ -225,9 +230,10 @@ export function Plot(props: PlotProps) {
     let i: number = 0;
     while (scale > 0.1) {
       array.push(i);
-      i += (Math.floor(scale) > 0
-        ? Math.floor(scale)
-        : parseFloat(scale.toFixed(1))) * 10;
+      i +=
+        (Math.floor(scale) > 0
+          ? Math.floor(scale)
+          : parseFloat(scale.toFixed(1))) * 10;
       if (i >= plot.data[0].length) {
         break;
       }
@@ -384,9 +390,9 @@ export function Plot(props: PlotProps) {
                       let scaleXMax = maxXBoundary;
 
                       if (xMin >= minXBoundary) {
-                        (scaleXMin = xMin), (scaleXMax = scXMax0);
+                        ((scaleXMin = xMin), (scaleXMax = scXMax0));
                       } else if (xMax <= maxXBoundary) {
-                        (scaleXMin = scXMin0), (scaleXMax = xMax);
+                        ((scaleXMin = scXMin0), (scaleXMax = xMax));
                       }
 
                       // Tilting (Vertical panning)
@@ -400,9 +406,9 @@ export function Plot(props: PlotProps) {
                       let scaleYMax = maxYBoundary;
 
                       if (yMin >= minYBoundary) {
-                        (scaleYMin = xMin), (scaleYMax = scXMax0);
+                        ((scaleYMin = yMin), (scaleYMax = scYMax0));
                       } else if (yMax <= maxYBoundary) {
-                        (scaleYMin = scYMin0), (scaleYMax = yMax);
+                        ((scaleYMin = scYMin0), (scaleYMax = yMax));
                       }
 
                       uPlot.sync(group()).plots.forEach((up) => {
@@ -426,6 +432,50 @@ export function Plot(props: PlotProps) {
                     document.addEventListener("mousemove", onmove);
                     document.addEventListener("mouseup", onup);
                   }
+                } else if (cursorMode() === CursorMode.Vertical) {
+                  const yMin = 0;
+                  const yMax = u.scales.y.max!;
+
+                  const top0 = e.clientY;
+
+                  const scYMin0 = u.scales.y.min!;
+                  const scYMax0 = u.scales.y.max!;
+
+                  const yUnitsPerPx = u.posToVal(1, "y") - u.posToVal(0, "y");
+
+                  const onmove = (e: MouseEvent) => {
+                    e.preventDefault();
+                    // Tilting (Vertical panning)
+                    const top1 = e.clientY;
+                    const topDx = yUnitsPerPx * (top1 - top0);
+
+                    const minYBoundary = scYMin0 - topDx;
+                    const maxYBoundary = scYMax0 - topDx;
+
+                    let scaleYMin = minYBoundary;
+                    let scaleYMax = maxYBoundary;
+
+                    if (yMin >= minYBoundary) {
+                      ((scaleYMin = yMin), (scaleYMax = scYMax0));
+                    } else if (yMax <= maxYBoundary) {
+                      ((scaleYMin = scYMin0), (scaleYMax = yMax));
+                    }
+
+                    uPlot.sync(group()).plots.forEach((up) => {
+                      console.log(u.posToVal(1, "y"));
+                      up.setScale("y", {
+                        min: scaleYMin,
+                        max: scaleYMax,
+                      });
+                    });
+                  };
+                  const onup = () => {
+                    document.removeEventListener("mousemove", onmove);
+                    document.removeEventListener("mouseup", onup);
+                  };
+
+                  document.addEventListener("mousemove", onmove);
+                  document.addEventListener("mouseup", onup);
                 }
 
                 return null;
@@ -445,7 +495,9 @@ export function Plot(props: PlotProps) {
             },
           },
         },
-        plugins: [wheelZoomPlugin({ factor: 0.75, group: group() })],
+        plugins: [
+          wheelZoomPlugin({ factor: 0.75, group: group() }, cursorMode()),
+        ],
       },
       [
         [...Array(props.series[0].length).keys()],
@@ -507,9 +559,8 @@ export function Plot(props: PlotProps) {
     }
   `;
 
-  const [showLegendCheckBox, setShowLegendCheckBox] = createSignal<boolean>(
-    false,
-  );
+  const [showLegendCheckBox, setShowLegendCheckBox] =
+    createSignal<boolean>(false);
 
   const [isAllVisible, setIsAllVisible] = createSignal<boolean>(
     getContext().visible ? getContext().visible.every((b) => b) : true,
@@ -537,12 +588,84 @@ export function Plot(props: PlotProps) {
   // Needed for legend panel min-width.
   createEffect(() => {
     if (!render()) return;
-    if (document.getElementById(`toolBox:${props.id}`)) {
+    if (document.getElementById(`plotTitle:${props.id}`)) {
       setPanelMinWidth(
-        `${document.getElementById(`toolBox:${props.id}`)!.offsetWidth}px`,
+        `${document.getElementById(`plotTitle:${props.id}`)!.offsetWidth}px`,
       );
     }
   });
+
+  function wheelZoomPlugin(opts: WheelZoomPluginOpts) {
+    const factor = opts.factor || 0.75;
+
+    let xMin: number,
+      xMax: number,
+      xRange: number,
+      yMin: number,
+      yMax: number,
+      yRange: number;
+
+    return {
+      hooks: {
+        ready: (u: uPlot) => {
+          xMin = 0;
+          xMax = u.data[0].length - 1!;
+
+          xRange = xMax - xMin;
+
+          yMin = u.scales.y.min!;
+          yMax = u.scales.y.max!;
+          yRange = yMax - yMin;
+
+          const over = u.over;
+          const rect = over.getBoundingClientRect();
+
+          // wheel scroll zoom
+          over.addEventListener("wheel", (e) => {
+            e.preventDefault();
+
+            const { left, top } = u.cursor;
+
+            // x Zoom
+            const leftPct = left! / rect.width;
+            const xVal = u.posToVal(left!, "x");
+            const oxRange = u.scales.x.max! - u.scales.x.min!;
+
+            const nxRange = e.deltaY < 0 ? oxRange * factor : oxRange / factor;
+            let nxMin = xVal - leftPct * nxRange;
+            let nxMax = nxMin + nxRange;
+            [nxMin, nxMax] = clamp(nxRange, nxMin, nxMax, xRange, xMin, xMax);
+
+            // y Zoom
+            const btmPct = 1 - top! / rect.height;
+            const yVal = u.posToVal(top!, "y");
+            const oyRange = u.scales.y.max! - u.scales.y.min!;
+
+            const nyRange = e.deltaY < 0 ? oyRange * factor : oyRange / factor;
+            let nyMin = yVal - btmPct * nyRange;
+            let nyMax = nyMin + nyRange;
+            [nyMin, nyMax] = clamp(nyRange, nyMin, nyMax, yRange, yMin, yMax);
+
+            uPlot.sync(opts.group).plots.forEach((up: uPlot) => {
+              if (cursorMode() === CursorMode.Vertical) {
+                up.setScale("y", { min: nyMin, max: nyMax });
+                up.setScale("x", {
+                  min: up.scales.x.min!,
+                  max: up.scales.x.max!,
+                });
+              } else {
+                up.setScale("x", { min: nxMin, max: nxMax });
+                up.setScale("y", {
+                  min: up.scales.y.min!,
+                  max: up.scales.y.max!,
+                });
+              }
+            });
+          });
+        },
+      },
+    };
+  }
 
   return (
     <>
@@ -586,8 +709,7 @@ export function Plot(props: PlotProps) {
                 width: "100%",
                 height: "calc(100% - 0.5rem)",
               }}
-            >
-            </div>
+            ></div>
           </Splitter.Panel>
           <Stack direction="row" height="100%" gap="0">
             <IconButton
@@ -682,20 +804,25 @@ export function Plot(props: PlotProps) {
                           setCursorMode(lastCursorMode());
                         }
                       }}
+                      marginLeft="0.5rem"
                     >
                       <Tooltip.Root>
                         <Tooltip.Trigger>
                           <ToggleGroup.Item
                             value={CursorMode[CursorMode.Pan]}
                             aria-label="Toggle Pan"
-                            color={cursorMode() === CursorMode.Pan
-                              ? "fg.default"
-                              : "fg.muted"}
-                            bgColor={cursorMode() === CursorMode.Pan
-                              ? "bg.emphasized"
-                              : lastCursorMode() === CursorMode.Pan
-                              ? "bg.subtle"
-                              : "bg.default"}
+                            color={
+                              cursorMode() === CursorMode.Pan
+                                ? "fg.default"
+                                : "fg.muted"
+                            }
+                            bgColor={
+                              cursorMode() === CursorMode.Pan
+                                ? "bg.emphasized"
+                                : lastCursorMode() === CursorMode.Pan
+                                  ? "bg.subtle"
+                                  : "bg.default"
+                            }
                           >
                             <IconArrowsMove />
                           </ToggleGroup.Item>
@@ -714,14 +841,18 @@ export function Plot(props: PlotProps) {
                           <ToggleGroup.Item
                             value={CursorMode[CursorMode.Zoom]}
                             aria-label="Toggle Selection Zoom"
-                            color={cursorMode() === CursorMode.Zoom
-                              ? "fg.default"
-                              : "fg.muted"}
-                            bgColor={cursorMode() === CursorMode.Zoom
-                              ? "bg.emphasized"
-                              : lastCursorMode() === CursorMode.Zoom
-                              ? "bg.subtle"
-                              : "bg.default"}
+                            color={
+                              cursorMode() === CursorMode.Zoom
+                                ? "fg.default"
+                                : "fg.muted"
+                            }
+                            bgColor={
+                              cursorMode() === CursorMode.Zoom
+                                ? "bg.emphasized"
+                                : lastCursorMode() === CursorMode.Zoom
+                                  ? "bg.subtle"
+                                  : "bg.default"
+                            }
                           >
                             <IconZoomInArea />
                           </ToggleGroup.Item>
@@ -740,14 +871,18 @@ export function Plot(props: PlotProps) {
                           <ToggleGroup.Item
                             value={CursorMode[CursorMode.Lock]}
                             aria-label="Toggle Cursor Lock"
-                            color={cursorMode() === CursorMode.Lock
-                              ? "fg.default"
-                              : "fg.muted"}
-                            bgColor={cursorMode() === CursorMode.Lock
-                              ? "bg.emphasized"
-                              : lastCursorMode() === CursorMode.Lock
-                              ? "bg.subtle"
-                              : "bg.default"}
+                            color={
+                              cursorMode() === CursorMode.Lock
+                                ? "fg.default"
+                                : "fg.muted"
+                            }
+                            bgColor={
+                              cursorMode() === CursorMode.Lock
+                                ? "bg.emphasized"
+                                : lastCursorMode() === CursorMode.Lock
+                                  ? "bg.subtle"
+                                  : "bg.default"
+                            }
                           >
                             <IconCrosshair />
                           </ToggleGroup.Item>
@@ -760,76 +895,106 @@ export function Plot(props: PlotProps) {
                           </Tooltip.Positioner>
                         </Portal>
                       </Tooltip.Root>
-                    </ToggleGroup.Root>
-
-                    <Tooltip.Root>
-                      <Tooltip.Trigger>
-                        <IconButton
-                          variant="outline"
-                          onClick={() => {
-                            if (showLegendCheckBox()) {
-                              setContext()(
-                                "selected",
-                                props.header.map(() => false),
-                              );
+                      <Tooltip.Root>
+                        <Tooltip.Trigger>
+                          <ToggleGroup.Item
+                            value={CursorMode[CursorMode.Vertical]}
+                            aria-label="Vertical zoom"
+                            color={
+                              cursorMode() === CursorMode.Vertical
+                                ? "fg.default"
+                                : "fg.muted"
                             }
-                            setShowLegendCheckBox(!showLegendCheckBox());
-                          }}
-                        >
-                          <Show
-                            when={showLegendCheckBox()}
-                            fallback={<IconLocationOff />}
+                            bgColor={
+                              cursorMode() === CursorMode.Vertical
+                                ? "bg.emphasized"
+                                : lastCursorMode() === CursorMode.Vertical
+                                  ? "bg.subtle"
+                                  : "bg.default"
+                            }
                           >
-                            <IconLocation />
-                          </Show>
-                        </IconButton>
-                      </Tooltip.Trigger>
-                      <Tooltip.Positioner>
-                        <Tooltip.Content backgroundColor="bg.default">
-                          <Text color="fg.default">Select</Text>
-                        </Tooltip.Content>
-                      </Tooltip.Positioner>
-                    </Tooltip.Root>
+                            <IconArrowsMoveVertical />
+                          </ToggleGroup.Item>
+                        </Tooltip.Trigger>
+                        <Portal>
+                          <Tooltip.Positioner>
+                            <Tooltip.Content backgroundColor="bg.default">
+                              <Text color="fg.default">Vertical Zoom</Text>
+                            </Tooltip.Content>
+                          </Tooltip.Positioner>
+                        </Portal>
+                      </Tooltip.Root>
+                    </ToggleGroup.Root>
                   </Stack>
                 </Stack>
-                <Stack
-                  width="100%"
-                  direction="row"
-                  borderWidth="1px"
-                  borderRadius="1rem"
-                  paddingLeft="0.5rem"
-                  padding="0.3rem"
-                  gap="2"
-                >
-                  <IconSearch />
-                  <input
-                    value={searchInput()}
-                    onInput={(e) => {
-                      setSearchInput(e.target.value);
-                    }}
-                    placeholder="Search series"
-                    style={{
-                      border: "none",
-                      outline: "none",
-                      "white-space": "nowrap",
-                      overflow: "hidden",
-                      display: "block",
-                      "text-overflow": "ellipsis",
-                      width: `calc(100% - 3rem)`,
-                    }}
-                    height="2.5rem"
-                  />
-                  <IconButton
-                    variant="ghost"
-                    onClick={() => setSearchInput("")}
-                    padding="0"
-                    size="sm"
-                    width="3rem"
-                    height="1.5rem"
-                    borderRadius="3rem"
+                <Stack direction="row">
+                  <Stack
+                    width={`calc(100% - 4rem)`}
+                    direction="row"
+                    borderWidth="1px"
+                    borderRadius="1rem"
+                    paddingLeft="0.5rem"
+                    padding="0.3rem"
+                    gap="2"
                   >
-                    <IconX />
-                  </IconButton>
+                    <IconSearch />
+                    <input
+                      value={searchInput()}
+                      onInput={(e) => {
+                        setSearchInput(e.target.value);
+                      }}
+                      placeholder="Search series"
+                      style={{
+                        border: "none",
+                        outline: "none",
+                        "white-space": "nowrap",
+                        overflow: "hidden",
+                        display: "block",
+                        "text-overflow": "ellipsis",
+                        width: `calc(100% - 3rem)`,
+                      }}
+                      height="2.5rem"
+                    />
+                    <IconButton
+                      variant="ghost"
+                      onClick={() => setSearchInput("")}
+                      padding="0"
+                      size="sm"
+                      width="3rem"
+                      height="1.5rem"
+                      borderRadius="3rem"
+                    >
+                      <IconX />
+                    </IconButton>
+                  </Stack>
+                  <Tooltip.Root>
+                    <Tooltip.Trigger width="1rem" height="1rem" size="sm">
+                      <IconButton
+                        variant="outline"
+                        onClick={() => {
+                          if (showLegendCheckBox()) {
+                            setContext()(
+                              "selected",
+                              props.header.map(() => false),
+                            );
+                          }
+                          setShowLegendCheckBox(!showLegendCheckBox());
+                        }}
+                      >
+                        <Show
+                          when={showLegendCheckBox()}
+                          fallback={<IconLocationOff />}
+                        >
+                          <IconLocation />
+                        </Show>
+                      </IconButton>
+                    </Tooltip.Trigger>
+                    <Tooltip.Positioner>
+                      <Tooltip.Content backgroundColor="bg.default">
+                        <Text color="fg.default">Select</Text>
+                      </Tooltip.Content>
+                    </Tooltip.Positioner>
+                  </Tooltip.Root>
                 </Stack>
                 <Show when={render()}>
                   <Stack
@@ -913,11 +1078,11 @@ export function Plot(props: PlotProps) {
                                 stroke: getContext().color[index()],
                                 label: header,
                                 ...(getContext().style[index()] ===
-                                    LegendStroke.Dash && {
+                                  LegendStroke.Dash && {
                                   dash: [10, 5],
                                 }),
                                 ...(getContext().style[index()] ===
-                                    LegendStroke.Dot && {
+                                  LegendStroke.Dot && {
                                   dash: [0, 5],
                                   points: {
                                     show: true,
@@ -968,87 +1133,26 @@ type WheelZoomPluginOpts = {
   group: string;
 };
 
-function wheelZoomPlugin(opts: WheelZoomPluginOpts) {
-  const factor = opts.factor || 0.75;
-
-  let xMin: number,
-    xMax: number,
-    xRange: number,
-    yMin: number,
-    yMax: number,
-    yRange: number;
-
-  function clamp(
-    nRange: number,
-    nMin: number,
-    nMax: number,
-    fRange: number,
-    fMin: number,
-    fMax: number,
-  ) {
-    if (nRange > fRange) {
-      nMin = fMin;
-      nMax = fMax;
-    } else if (nMin < fMin) {
-      nMin = fMin;
-      nMax = fMin + nRange;
-    } else if (nMax > fMax) {
-      nMax = fMax;
-      nMin = fMax - nRange;
-    }
-
-    return [nMin, nMax];
+function clamp(
+  nRange: number,
+  nMin: number,
+  nMax: number,
+  fRange: number,
+  fMin: number,
+  fMax: number,
+) {
+  if (nRange > fRange) {
+    nMin = fMin;
+    nMax = fMax;
+  } else if (nMin < fMin) {
+    nMin = fMin;
+    nMax = fMin + nRange;
+  } else if (nMax > fMax) {
+    nMax = fMax;
+    nMin = fMax - nRange;
   }
 
-  return {
-    hooks: {
-      ready: (u: uPlot) => {
-        xMin = 0;
-        xMax = u.data[0].length - 1!;
-
-        xRange = xMax - xMin;
-
-        yMin = u.scales.y.min!;
-        yMax = u.scales.y.max!;
-        yRange = yMax - yMin;
-
-        const over = u.over;
-        const rect = over.getBoundingClientRect();
-
-        // wheel scroll zoom
-        over.addEventListener("wheel", (e) => {
-          e.preventDefault();
-
-          const { left, top } = u.cursor;
-
-          // x Zoom
-          const leftPct = left! / rect.width;
-          const xVal = u.posToVal(left!, "x");
-          const oxRange = u.scales.x.max! - u.scales.x.min!;
-
-          const nxRange = e.deltaY < 0 ? oxRange * factor : oxRange / factor;
-          let nxMin = xVal - leftPct * nxRange;
-          let nxMax = nxMin + nxRange;
-          [nxMin, nxMax] = clamp(nxRange, nxMin, nxMax, xRange, xMin, xMax);
-
-          // y Zoom
-          const btmPct = 1 - top! / rect.height;
-          const yVal = u.posToVal(top!, "y");
-          const oyRange = u.scales.y.max! - u.scales.y.min!;
-
-          const nyRange = e.deltaY < 0 ? oyRange * factor : oyRange / factor;
-          let nyMin = yVal - btmPct * nyRange;
-          let nyMax = nyMin + nyRange;
-          [nyMin, nyMax] = clamp(nyRange, nyMin, nyMax, yRange, yMin, yMax);
-
-          uPlot.sync(opts.group).plots.forEach((up: uPlot) => {
-            up.setScale("x", { min: nxMin, max: nxMax });
-            up.setScale("y", { min: nyMin, max: nyMax });
-          });
-        });
-      },
-    },
-  };
+  return [nMin, nMax];
 }
 
 const kelly_colors_hex = [
