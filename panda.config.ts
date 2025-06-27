@@ -81,6 +81,12 @@ export default defineConfig({
                 _dark: "{colors.accent.a11}",
               },
             },
+            customGreen: {
+              value: {
+                _light: "#61dc58",
+                _dark: "#54be4c",
+              },
+            },
           },
         },
       },
