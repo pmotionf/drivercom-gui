@@ -9,6 +9,7 @@ import { useNavigate } from "@solidjs/router";
 import {
   IconChevronLeftPipe,
   IconDeviceAnalytics,
+  IconDeviceDesktopSearch,
   IconFileSettings,
   IconGraph,
   IconMenu,
@@ -232,6 +233,11 @@ function App(props: RouteSectionProps) {
         </Show>
       ),
       label: "Connect",
+      disabled: false,
+    },
+    monitoring: {
+      icon: IconDeviceDesktopSearch,
+      label: "Monitoring",
       disabled: false,
     },
   };
