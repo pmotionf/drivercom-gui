@@ -1,6 +1,6 @@
 import { Button } from "~/components/ui/button.tsx";
 import { Stack } from "styled-system/jsx";
-import { Text } from "~/components/ui/text.tsx";
+import { Text } from "~/components/ui/text";
 import { createSignal } from "solid-js";
 import { Splitter } from "../components/ui/splitter.tsx";
 import { IconButton } from "~/components/ui/icon-button.tsx";
@@ -22,6 +22,8 @@ import { on } from "solid-js";
 import { System } from "~/components/System/System.tsx";
 import { Toast } from "~/components/ui/toast.tsx";
 import { LineConfig } from "~/components/System/Line.tsx";
+import { resolveResource } from "@tauri-apps/api/path";
+//import path from 'path'
 
 export type SystemConfig = {
   lineConfig: {
@@ -30,7 +32,7 @@ export type SystemConfig = {
 };
 
 function Monitoring() {
-  const [clientId, setClientId] = createSignal<string>(crypto.randomUUID());
+  const [clientId, setClientId] = createSignal<string>("clientID");
   const [showSideBar, setShowSideBar] = createSignal<boolean>(true);
   const [panelSize, setPanelSize] = createSignal<number>(100);
 
@@ -53,19 +55,9 @@ function Monitoring() {
   createEffect(
     on(
       () => systemConfig.lineConfig.lines,
-      async () => {
+      () => {
         if (systemConfig.lineConfig.lines.length === 0) {
-          await disconnectServer(clientId()).then((result) => {
-            if (typeof result !== "string") {
-              toaster.create({
-                title: "Server Disconnected",
-                description: "Server is disconnected",
-                type: "success",
-              });
-            }
-
-            setClientId(crypto.randomUUID());
-          });
+          setTestErr("no lines");
           return;
         }
         //@ts-ignore Same type function
@@ -117,6 +109,9 @@ function Monitoring() {
     setTimeout(sendRequestLoop.bind(null, err, root), 10);
   }
 
+  const [testErr, setTestErr] = createSignal("");
+  //const protoPath = path.resolve(new URL('.', import.meta.url).pathname, resources/proto/mmc.proto')
+
   createEffect(async () => {
     try {
       await listen((x) => {
@@ -125,9 +120,12 @@ function Monitoring() {
           x.payload.event.message &&
           x.payload.event.message.data
         ) {
-          load("resources/proto/mmc.proto", function (err, root) {
+          load("../src-tauri/proto/mmc.proto", function (err, root) {
+            setTestErr("error");
             if (err) throw err;
             if (!root) return;
+
+            setTestErr("no Error");
 
             const response = root.lookupType("mmc.Response");
             const msg = Buffer.from(x.payload.event.message!.data);
@@ -167,7 +165,16 @@ function Monitoring() {
         }
       });
     } catch {
-      setSystemConfig("lineConfig", "lines", []);
+      const disconnect = await disconnectServer(clientId());
+      if (typeof disconnect === "string") {
+        setClientId(crypto.randomUUID());
+      } else {
+        toaster.create({
+          title: "Server Disconnected",
+          description: "Server is disconnected",
+          type: "success",
+        });
+      }
     }
   });
 
@@ -177,12 +184,12 @@ function Monitoring() {
     }
   });
 
-  const [isConnecting, setIsConnecting] = createSignal<boolean>(false);
-
   const toaster = Toast.createToaster({
     placement: "top-end",
     gap: 16,
   });
+
+  const [isConnecting, setIsConnecting] = createSignal<boolean>(false);
 
   return (
     <>
@@ -252,7 +259,7 @@ function Monitoring() {
               {/* Connect Area */}
               <Stack padding="1rem" width="100%" borderBottomWidth="2px">
                 <Text size="lg" fontWeight="bold">
-                  Connect
+                  {testErr()}
                 </Text>
                 <Stack direction="row" width="100%">
                   <Stack width="50%">
@@ -342,22 +349,43 @@ function Monitoring() {
                   loading={isConnecting()}
                   onClick={async () => {
                     if (systemConfig.lineConfig.lines.length !== 0) {
-                      setSystemConfig("lineConfig", "lines", []);
+                      const disconnect = await disconnectServer(clientId());
+                      if (typeof disconnect === "string") {
+                        setClientId(crypto.randomUUID());
+                      } else {
+                        toaster.create({
+                          title: "Server Disconnected",
+                          description: "Server is disconnected",
+                          type: "success",
+                        });
+                      }
                       return;
                     }
                     const serverIp = inputValues.get("IP");
                     const port = inputValues.get("port");
+
+                    const resourcePath =
+                      await resolveResource("proto/mmc.proto");
+                    console.log();
 
                     if (
                       typeof serverIp == "string" &&
                       typeof port == "string"
                     ) {
                       setIsConnecting(true);
+                      setTestErr("start connecting");
 
                       const address = `${serverIp}:${port}`;
                       const cid = clientId();
 
-                      await connect(cid, address).catch((error) => {
+                      try {
+                        await connect(cid, address);
+                      } catch {
+                        setTestErr("connecting error");
+                      }
+
+                      /*await connect(cid, address).catch((error) => {
+                        setTestErr("connecting error");
                         if (error) {
                           toaster.create({
                             title: "Connection Error",
@@ -366,27 +394,27 @@ function Monitoring() {
                           });
                           return;
                         }
+                        });*/
+
+                      load(resourcePath, async function (err, root) {
+                        setTestErr("proto err");
+                        if (err) throw err;
+                        if (!root) return;
+                        setTestErr("not proto err");
+
+                        const sendMsg = root.lookupType("mmc.Request");
+                        const payload: object = {
+                          core: {
+                            kind: 3,
+                          },
+                        };
+                        const msg = sendMsg.create(payload);
+                        const request = Array.from(
+                          sendMsg.encode(msg).finish(),
+                        );
+                        await send(clientId(), request);
+                        setTestErr("send");
                       });
-
-                      load(
-                        "resources/proto/mmc.proto",
-                        async function (err, root) {
-                          if (err) throw err;
-                          if (!root) return;
-
-                          const sendMsg = root.lookupType("mmc.Request");
-                          const payload: object = {
-                            core: {
-                              kind: 3,
-                            },
-                          };
-                          const msg = sendMsg.create(payload);
-                          const request = Array.from(
-                            sendMsg.encode(msg).finish(),
-                          );
-                          await send(clientId(), request);
-                        },
-                      );
 
                       setIsConnecting(false);
                     } else {

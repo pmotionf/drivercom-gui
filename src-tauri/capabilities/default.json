@@ -19,6 +19,8 @@
     "dialog:default",
     "fs:default",
     "fs:write-all",
-    "tcp:default"
+    "tcp:default",
+    "fs:allow-read-text-file",
+    "fs:allow-resource-read-recursive"
   ]
 }
