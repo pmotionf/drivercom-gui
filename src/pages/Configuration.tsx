@@ -21,6 +21,7 @@ import { PortMenu } from "~/components/PortMenu.tsx";
 import { Tooltip } from "~/components/ui/tooltip.tsx";
 import { Text } from "~/components/ui/text";
 import { IconX } from "@tabler/icons-solidjs";
+import { ConnectButton } from "./Connect/ConnectButton.tsx";
 
 function Configuration() {
   const [config, setConfig] = createSignal({});
@@ -398,6 +399,9 @@ function Configuration() {
           </Show>
         </Stack>
       </div>
+      <ConnectButton
+        style={{ position: "absolute", right: "0.5rem", top: "1rem" }}
+      />
       <Toast.Toaster toaster={toaster}>
         {(toast) => (
           <Toast.Root>
