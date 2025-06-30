@@ -15,12 +15,20 @@
     "serve": "deno run -A --node-modules-dir npm:vite preview",
     "tauri": {
       "command": "deno task prepare && tauri",
-      "dependencies": ["unpack-drivercom"]
+      "dependencies": ["fetch-proto"]
     },
     "fetch-drivercom": "mkdir -p src-tauri/binaries && cd src-tauri/binaries && gh release download -R pmotionf/drivercom-cli -p '*-drivercom-cli-*.zip' --clobber",
     "unpack-drivercom": {
       "command": "deno run -A unpack-drivercom.js",
       "dependencies": ["fetch-drivercom"]
+    },
+    "fetch-mmc-proto": {
+      "command": "mkdir -p ./resources/proto && cd ./resources/proto && wget https://raw.githubusercontent.com/pmotionf/mmc-api/refs/heads/main/protocol/mmc.proto -O mmc.proto",
+      "dependencies": ["unpack-drivercom"]
+    },
+    "fetch-proto": {
+      "command": "cd ./resources/proto && mkdir -p ./mmc && cd ./mmc && wget https://raw.githubusercontent.com/pmotionf/mmc-api/refs/heads/main/protocol/mmc/command.proto -O command.proto && wget https://raw.githubusercontent.com/pmotionf/mmc-api/refs/heads/main/protocol/mmc/core.proto -O core.proto && wget https://raw.githubusercontent.com/pmotionf/mmc-api/refs/heads/main/protocol/mmc/info.proto -O info.proto",
+      "dependencies": ["fetch-mmc-proto"]
     }
   },
   "fmt": {
@@ -35,10 +43,14 @@
   },
   "nodeModulesDir": "auto",
   "imports": {
+    "@kuyoonjo/tauri-plugin-tcp": "npm:@kuyoonjo/tauri-plugin-tcp@^0.1.1",
     "@leeoniya/ufuzzy": "npm:@leeoniya/ufuzzy@^1.0.18",
     "@neodrag/solid": "npm:@neodrag/solid@^2.3.0",
     "@pandacss/preset-base": "npm:@pandacss/preset-base@^0.53.1",
+    "@std/async": "jsr:@std/async@^1.0.13",
+    "buffer": "npm:buffer@^6.0.3",
     "lucide-solid": "npm:lucide-solid@^0.509.0",
+    "protobufjs": "npm:protobufjs@^7.4.0",
     "unzipper": "npm:unzipper@^0.12.3",
     "~/": "./src/",
     "styled-system/": "./styled-system/",
