@@ -1,6 +1,6 @@
 import { Button } from "~/components/ui/button.tsx";
 import { Stack } from "styled-system/jsx";
-import { Text } from "~/components/ui/text.tsx";
+import { Text } from "~/components/ui/text";
 import { createSignal } from "solid-js";
 import { Splitter } from "../components/ui/splitter.tsx";
 import { IconButton } from "~/components/ui/icon-button.tsx";
@@ -22,6 +22,12 @@ import { on } from "solid-js";
 import { System } from "~/components/System/System.tsx";
 import { Toast } from "~/components/ui/toast.tsx";
 import { LineConfig } from "~/components/System/Line.tsx";
+import { resolveResource, resourceDir } from "@tauri-apps/api/path";
+import { exists, BaseDirectory, readTextFile } from "@tauri-apps/plugin-fs";
+import path from "node:path";
+import protobuf from "protobufjs";
+
+import * as mmc from "~/components/proto/mmc.js";
 
 export type SystemConfig = {
   lineConfig: {
@@ -30,7 +36,7 @@ export type SystemConfig = {
 };
 
 function Monitoring() {
-  const [clientId, setClientId] = createSignal<string>(crypto.randomUUID());
+  const [clientId, setClientId] = createSignal<string>("clientID");
   const [showSideBar, setShowSideBar] = createSignal<boolean>(true);
   const [panelSize, setPanelSize] = createSignal<number>(100);
 
@@ -55,21 +61,11 @@ function Monitoring() {
       () => systemConfig.lineConfig.lines,
       async () => {
         if (systemConfig.lineConfig.lines.length === 0) {
-          await disconnectServer(clientId()).then((result) => {
-            if (typeof result !== "string") {
-              toaster.create({
-                title: "Server Disconnected",
-                description: "Server is disconnected",
-                type: "success",
-              });
-            }
-
-            setClientId(crypto.randomUUID());
-          });
           return;
         }
-        //@ts-ignore Same type function
-        load("resources/proto/mmc.proto", sendRequestLoop);
+
+        //@ts-ignore
+        load("src-tauri/resources/proto/mmc.proto", sendRequestLoop);
       },
       { defer: true },
     ),
@@ -98,7 +94,7 @@ function Monitoring() {
     try {
       await send(clientId(), request);
     } catch {
-      setSystemConfig("lineConfig", "lines", []);
+      await disconnect(clientId());
       return;
     }
 
@@ -125,49 +121,63 @@ function Monitoring() {
           x.payload.event.message &&
           x.payload.event.message.data
         ) {
-          load("resources/proto/mmc.proto", function (err, root) {
-            if (err) throw err;
-            if (!root) return;
+          load(
+            "src-tauri/resources/proto/mmc.proto",
+            async function (err, root) {
+              if (err) throw err;
+              if (!root) return;
 
-            const response = root.lookupType("mmc.Response");
-            const msg = Buffer.from(x.payload.event.message!.data);
-            const decode = response.decode(msg).toJSON();
+              const response = root.lookupType("mmc.Response");
+              const msg = Buffer.from(x.payload.event.message!.data);
+              const decode = response.decode(msg).toJSON();
 
-            if ("core" in decode && typeof decode.core === "object") {
-              if (
-                "lineConfig" in decode.core &&
-                typeof decode.core.lineConfig === "object"
-              ) {
-                setSystemConfig("lineConfig", decode.core.lineConfig);
-              }
-            }
+              console.log(decode);
 
-            if ("info" in decode && typeof decode.info === "object") {
-              if (
-                "axis" in decode.info &&
-                "axes" in decode.info.axis &&
-                "lineId" in decode.info.axis
-              ) {
+              if ("core" in decode && typeof decode.core === "object") {
                 if (
-                  typeof decode.info.axis.lineId === "number" &&
-                  typeof decode.info.axis.axes === "object" &&
-                  systemConfig.lineConfig.lines.length !== 0
+                  "lineConfig" in decode.core &&
+                  typeof decode.core.lineConfig === "object"
                 ) {
-                  setSystemConfig(
-                    "lineConfig",
-                    "lines",
-                    decode.info.axis.lineId - 1,
-                    "axesInfo",
-                    decode.info.axis.axes,
-                  );
+                  setSystemConfig("lineConfig", decode.core.lineConfig);
                 }
+              } else if ("info" in decode && typeof decode.info === "object") {
+                if (
+                  "axis" in decode.info &&
+                  "axes" in decode.info.axis &&
+                  "lineId" in decode.info.axis
+                ) {
+                  if (
+                    typeof decode.info.axis.lineId === "number" &&
+                    typeof decode.info.axis.axes === "object" &&
+                    systemConfig.lineConfig.lines.length !== 0
+                  ) {
+                    setSystemConfig(
+                      "lineConfig",
+                      "lines",
+                      decode.info.axis.lineId - 1,
+                      "axesInfo",
+                      decode.info.axis.axes,
+                    );
+                  }
+                }
+              } else {
+                await disconnect(clientId());
               }
-            }
-          });
+            },
+          );
         }
       });
     } catch {
-      setSystemConfig("lineConfig", "lines", []);
+      const disconnect = await disconnectServer(clientId());
+      if (typeof disconnect === "string") {
+        setClientId(crypto.randomUUID());
+      } else {
+        toaster.create({
+          title: "Server Disconnected",
+          description: "Server is disconnected",
+          type: "success",
+        });
+      }
     }
   });
 
@@ -177,12 +187,12 @@ function Monitoring() {
     }
   });
 
-  const [isConnecting, setIsConnecting] = createSignal<boolean>(false);
-
   const toaster = Toast.createToaster({
     placement: "top-end",
     gap: 16,
   });
+
+  const [isConnecting, setIsConnecting] = createSignal<boolean>(false);
 
   return (
     <>
@@ -342,7 +352,16 @@ function Monitoring() {
                   loading={isConnecting()}
                   onClick={async () => {
                     if (systemConfig.lineConfig.lines.length !== 0) {
-                      setSystemConfig("lineConfig", "lines", []);
+                      const disconnect = await disconnectServer(clientId());
+                      if (typeof disconnect === "string") {
+                        setClientId(crypto.randomUUID());
+                      } else {
+                        toaster.create({
+                          title: "Server Disconnected",
+                          description: "Server is disconnected",
+                          type: "success",
+                        });
+                      }
                       return;
                     }
                     const serverIp = inputValues.get("IP");
@@ -357,27 +376,35 @@ function Monitoring() {
                       const address = `${serverIp}:${port}`;
                       const cid = clientId();
 
-                      await connect(cid, address).catch((error) => {
-                        if (error) {
-                          toaster.create({
-                            title: "Connection Error",
-                            description: error as string,
-                            type: "error",
-                          });
-                          return;
-                        }
-                      });
+                      try {
+                        await connect(cid, address);
+                      } catch (error) {
+                        toaster.create({
+                          title: "Connection Error",
+                          description: error.message,
+                          type: "error",
+                        });
+                      }
 
                       load(
                         "resources/proto/mmc.proto",
                         async function (err, root) {
-                          if (err) throw err;
-                          if (!root) return;
+                          if (err) {
+                            //console.log(err.stack);
+                            await disconnectServer(clientId());
+                            throw err;
+                          }
+                          if (!root) {
+                            await disconnectServer(clientId());
+                            return;
+                          }
+
+                          console.log(root);
 
                           const sendMsg = root.lookupType("mmc.Request");
                           const payload: object = {
                             core: {
-                              kind: 3,
+                              kind: "CORE_REQUEST_KIND_LINE_CONFIG",
                             },
                           };
                           const msg = sendMsg.create(payload);
