@@ -26,15 +26,16 @@ export type panelProps = JSX.HTMLAttributes<HTMLDivElement> & {
 };
 
 export function Panel(props: panelProps) {
-  if (!panelContexts.has(props.key)) return;
+  if (!panelContexts.get(props.key)) return;
   const [currentDraggingTabLocation, setCurrentDraggingTabLocation] =
     createSignal<TabLocation>("none");
   const [draggedTab, setDraggedTab] = createSignal<TabContext | null>(null);
   const [isDragging, setIsDragging] = createSignal<boolean>(false);
   const [nextPanel, setNextPanel] = createSignal<number | null>(null);
-  const getPanelIds = (key: string): string[] => {
-    const panelIds = panelContexts
-      .get(key)?.[0]()
+
+  const getPanelIds = (): string[] => {
+    const panelIds: string[] = panelContexts
+      .get(props.key)![0]()
       .map((panel) => {
         return panel.id;
       })!;
@@ -74,8 +75,8 @@ export function Panel(props: panelProps) {
               setIsDragging(true);
             }
 
-            if (nextPanel() !== getNextPanel(getPanelIds(props.key), mouseX)) {
-              setNextPanel(getNextPanel(getPanelIds(props.key), mouseX));
+            if (nextPanel() !== getNextPanel(getPanelIds(), mouseX)) {
+              setNextPanel(getNextPanel(getPanelIds(), mouseX));
             }
           }}
           onTabDragEnd={(clientX) => {
@@ -139,33 +140,28 @@ export function Panel(props: panelProps) {
           currentDraggingTabLocation() === "otherPanel" &&
           isDragging() &&
           nextPanel() !== null &&
-          document.getElementById(
-            `tabs:${getPanelIds(props.key)[nextPanel()!]}`,
-          )
+          document.getElementById(`tabs:${getPanelIds()[nextPanel()!]}`)
         }
       >
         <Stack
           style={{
             width: `${
-              document.getElementById(
-                `tabs:${getPanelIds(props.key)[nextPanel()!]}`,
-              )!.offsetWidth
+              document.getElementById(`tabs:${getPanelIds()[nextPanel()!]}`)!
+                .offsetWidth
             }px`,
             left: `${
-              document.getElementById(
-                `tabs:${getPanelIds(props.key)[nextPanel()!]}`,
-              )!.offsetLeft
+              document.getElementById(`tabs:${getPanelIds()[nextPanel()!]}`)!
+                .offsetLeft
             }px`,
             "border-radius": "0.5rem",
             opacity: "10%",
             height: `${
-              document.getElementById(
-                `tabs:${getPanelIds(props.key)[nextPanel()!]}`,
-              )!.offsetHeight
+              document.getElementById(`tabs:${getPanelIds()[nextPanel()!]}`)!
+                .offsetHeight
             }px`,
             top: `${
               document.getElementById(
-                `tabs:${getPanelIds(props.key)[nextPanel()!]}:list`,
+                `tabs:${getPanelIds()[nextPanel()!]}:list`,
               )!.offsetTop
             }px`,
             position: "absolute",

@@ -34,14 +34,14 @@ export type tabProps = JSX.HTMLAttributes<HTMLDivElement> & {
 };
 
 export function Tab(props: tabProps) {
-  if (!tabContexts.has(props.key)) return;
+  if (!tabContexts.get(props.key)) return;
 
   const getTabContexts = (): TabContext[] => {
-    return tabContexts.get(props.key)?.[0].tabContext!;
+    return tabContexts.get(props.key)![0].tabContext!;
   };
 
   const getFocusId = (): string => {
-    return tabContexts.get(props.key)?.[0].focusedTab!;
+    return tabContexts.get(props.key)![0].focusedTab!;
   };
 
   const setFocusId = (newFocus: string) => {
@@ -62,8 +62,8 @@ export function Tab(props: tabProps) {
   };
 
   //@ts-ignore This draggable is needed to use neo-drag.
-  // deno-lint-ignore no-unused-vars
   const { draggable: dragOptions } = createDraggable();
+
   //reorder
   const [currentDraggingTabId, setCurrentDraggingTabId] =
     createSignal<string>("");

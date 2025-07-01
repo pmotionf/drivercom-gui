@@ -143,9 +143,12 @@ export function LogConfigFieldSet(props: logConfigFieldSetProps) {
                   setPrevCheckBoxIndex(null);
                   return;
                 }
-                !e.shiftKey
-                  ? setPrevCheckBoxIndex(index())
-                  : checkBoxShiftClick(index());
+
+                if (!e.shiftKey) {
+                  setPrevCheckBoxIndex(index());
+                } else {
+                  checkBoxShiftClick(index());
+                }
               }}
               style={{
                 "margin-top": "0.2rem",

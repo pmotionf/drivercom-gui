@@ -504,8 +504,13 @@ function ConfigList(props: ConfigListProps) {
     on(
       () => JSON.stringify(items),
       () => {
-        const index = props.linkedStatuses.get(props.label)?.[0]()[1]!;
-        setRecentEditedItem(JSON.stringify(items[index]));
+        if (
+          props.linkedStatuses.get(props.label) &&
+          props.linkedStatuses.get(props.label)?.[0]()[1]
+        ) {
+          const index = props.linkedStatuses.get(props.label)![0]()[1];
+          setRecentEditedItem(JSON.stringify(items[index]));
+        }
       },
       { defer: true },
     ),

@@ -42,19 +42,19 @@ export type LogViewerTabPageContentProps =
   };
 
 export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
-  if (!tabContexts.has(props.key)) return;
+  if (!tabContexts.get(props.key)) return;
 
   const getTabContext = (
     tabId: string,
   ): { tabCtx: TabContext; currentIndex: number } => {
-    const tabs = tabContexts.get(props.key)?.[0]!;
+    const tabs = tabContexts.get(props.key)![0]!;
     const index = tabs.tabContext
       .map((tab) => {
         return tab.id;
       })
       .indexOf(tabId);
     return {
-      tabCtx: tabContexts.get(props.key)?.[0].tabContext[index]!,
+      tabCtx: tabContexts.get(props.key)![0].tabContext[index],
       currentIndex: index,
     };
   };

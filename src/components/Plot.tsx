@@ -97,7 +97,7 @@ export function Plot(props: PlotProps) {
     );
 
     setGetContext(ctx);
-    setSetContext((_) => setCtx);
+    setSetContext(() => setCtx);
 
     if (!getContext().palette || getContext().palette.length == 0) {
       setContext()("palette", kelly_colors_hex);
@@ -374,9 +374,11 @@ export function Plot(props: PlotProps) {
                       let scaleXMax = maxXBoundary;
 
                       if (xMin >= minXBoundary) {
-                        ((scaleXMin = xMin), (scaleXMax = scXMax0));
+                        scaleXMin = xMin;
+                        scaleXMax = scXMax0;
                       } else if (xMax <= maxXBoundary) {
-                        ((scaleXMin = scXMin0), (scaleXMax = xMax));
+                        scaleXMin = scXMin0;
+                        scaleXMax = xMax;
                       }
 
                       uPlot.sync(group()).plots.forEach((up) => {
@@ -517,24 +519,16 @@ export function Plot(props: PlotProps) {
       <div {...rest} id={props.id + "-wrapper"}>
         <Splitter.Root
           style={{ width: "100%", height: "100%" }}
-          size={[
-            {
-              id: `plot-${props.id}`,
-              size: 100 - (props.legendPanelSize ? props.legendPanelSize : 0),
-            },
-            {
-              id: `legend-${props.id}`,
-              size: props.legendPanelSize,
-            },
-          ]}
-          onSizeChange={(details) => {
-            const parseSize = details.size.map((panel) => {
-              return {
-                id: panel.id as string,
-                size: Number(panel.size)!,
-              };
-            });
-            props.onLegendPanelSize?.(parseSize[1].size);
+          panels={[{ id: `plot-${props.id}` }, { id: `legend-${props.id}` }]}
+          size={
+            props.legendPanelSize
+              ? [100 - props.legendPanelSize, props.legendPanelSize]
+              : [100, 0]
+          }
+          onResize={(details) => {
+            const size = details.size;
+            const updatedSize = size[1];
+            props.onLegendPanelSize?.(updatedSize);
           }}
         >
           <Splitter.Panel id={`plot-${props.id}`} borderWidth="0">

@@ -40,9 +40,10 @@ export function TabList(props: tabListProps) {
       createStore<TabListContext>({ tabContext: [], focusedTab: "" }),
     );
   }
+  if (!tabContexts.get(props.id)) return;
 
   const getTabContexts = () => {
-    return tabContexts.get(props.id)?.[0]!;
+    return tabContexts.get(props.id)![0];
   };
 
   createEffect(
