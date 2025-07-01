@@ -45,7 +45,7 @@ try {
   for (const name of files) {
     if (name.endsWith(".zip") && name.startsWith(platform)) {
       await Open.file(path.join(base_path, name)).then((d) =>
-        d.extract({ path: base_path })
+        d.extract({ path: base_path }),
       );
       unlink(path.join(base_path, name));
     } else {
