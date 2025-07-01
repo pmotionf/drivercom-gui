@@ -115,9 +115,11 @@ export function ConnectButton(props: ConnectButtonProps) {
                   width: "2rem",
                 }}
               >
-                {portId().length === 0
-                  ? <IconPlugConnectedX />
-                  : <IconPlugConnected />}
+                {portId().length === 0 ? (
+                  <IconPlugConnectedX />
+                ) : (
+                  <IconPlugConnected />
+                )}
               </div>
             </Tooltip.Trigger>
             <Show when={portId().length !== 0}>
