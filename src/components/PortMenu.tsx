@@ -12,15 +12,13 @@ export function PortMenu(props: PortMenuProps) {
   return (
     <Menu.Root positioning={{ placement: "bottom-start" }}>
       <Menu.Trigger disabled={props.disabled}>
-        {props.children
-          ? (
-            props.children
-          )
-          : (
-            <Button disabled={props.disabled} variant="ghost">
-              Port
-            </Button>
-          )}
+        {props.children ? (
+          props.children
+        ) : (
+          <Button disabled={props.disabled} variant="ghost">
+            Port
+          </Button>
+        )}
       </Menu.Trigger>
       <Menu.Positioner>
         <Menu.Content width="8rem">

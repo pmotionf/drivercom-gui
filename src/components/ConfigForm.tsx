@@ -386,19 +386,17 @@ function ConfigObject(props: ConfigObjectProps) {
               >
                 <legend>
                   <Text fontWeight="bold" opacity="70%">
-                    {`${key[0].toUpperCase()}${
-                      Array.from(
-                        key.slice(1, key.length),
-                      )
-                        .map((char, index) => {
-                          if (key[index] === "_") {
-                            return char.toUpperCase();
-                          }
-                          return char;
-                        })
-                        .toString()
-                        .replaceAll(",", "")
-                    }`}
+                    {`${key[0].toUpperCase()}${Array.from(
+                      key.slice(1, key.length),
+                    )
+                      .map((char, index) => {
+                        if (key[index] === "_") {
+                          return char.toUpperCase();
+                        }
+                        return char;
+                      })
+                      .toString()
+                      .replaceAll(",", "")}`}
                   </Text>
                 </legend>
                 <ConfigObject
@@ -506,8 +504,13 @@ function ConfigList(props: ConfigListProps) {
     on(
       () => JSON.stringify(items),
       () => {
-        const index = props.linkedStatuses.get(props.label)?.[0]()[1]!;
-        setRecentEditedItem(JSON.stringify(items[index]));
+        if (
+          props.linkedStatuses.get(props.label) &&
+          props.linkedStatuses.get(props.label)?.[0]()[1]
+        ) {
+          const index = props.linkedStatuses.get(props.label)![0]()[1];
+          setRecentEditedItem(JSON.stringify(items[index]));
+        }
       },
       { defer: true },
     ),
@@ -597,19 +600,17 @@ function ConfigList(props: ConfigListProps) {
                 </Tooltip.Root>
                 <Accordion.ItemTrigger>
                   <Text fontWeight="bold" size="md" opacity="70%">
-                    {`${title[0].toUpperCase()}${
-                      Array.from(
-                        title.slice(1, title.length),
-                      )
-                        .map((char, index) => {
-                          if (title[index] === "_") {
-                            return char.toUpperCase();
-                          }
-                          return char;
-                        })
-                        .toString()
-                        .replaceAll(",", "")
-                    }`}
+                    {`${title[0].toUpperCase()}${Array.from(
+                      title.slice(1, title.length),
+                    )
+                      .map((char, index) => {
+                        if (title[index] === "_") {
+                          return char.toUpperCase();
+                        }
+                        return char;
+                      })
+                      .toString()
+                      .replaceAll(",", "")}`}
                   </Text>
                   <Accordion.ItemIndicator>
                     <IconChevronDown />

@@ -21,19 +21,17 @@ export function FileMenu(props: FileMenuProps) {
   return (
     <Menu.Root positioning={{ placement: "bottom-start" }}>
       <Menu.Trigger>
-        {props.children
-          ? (
-            props.children
-          )
-          : (
-            <Button
-              variant="outline"
-              borderColor="bg.disabled"
-              borderRadius="0.4rem"
-            >
-              File
-            </Button>
-          )}
+        {props.children ? (
+          props.children
+        ) : (
+          <Button
+            variant="outline"
+            borderColor="bg.disabled"
+            borderRadius="0.4rem"
+          >
+            File
+          </Button>
+        )}
       </Menu.Trigger>
       <Menu.Positioner>
         <Menu.Content width="8rem">
@@ -54,80 +52,78 @@ export function FileMenu(props: FileMenuProps) {
           >
             Open
           </Menu.Item>
-          {props.recentFiles.length === 0
-            ? (
-              <Menu.Item value="disabled recent" disabled>
+          {props.recentFiles.length === 0 ? (
+            <Menu.Item value="disabled recent" disabled>
+              Open recent
+            </Menu.Item>
+          ) : (
+            <Menu.Root positioning={{ placement: "right-end" }}>
+              <Menu.TriggerItem>
                 Open recent
-              </Menu.Item>
-            )
-            : (
-              <Menu.Root positioning={{ placement: "right-end" }}>
-                <Menu.TriggerItem>
-                  Open recent
-                  <IconChevronRight />
-                </Menu.TriggerItem>
+                <IconChevronRight />
+              </Menu.TriggerItem>
 
-                <Menu.Positioner>
-                  <Menu.Content width="15rem">
-                    <For each={props.recentFiles}>
-                      {(filePath, index) => (
-                        <Menu.Item
-                          closeOnSelect={false}
-                          paddingRight="0.5rem"
-                          value={filePath}
+              <Menu.Positioner>
+                <Menu.Content width="15rem">
+                  <For each={props.recentFiles}>
+                    {(filePath, index) => (
+                      <Menu.Item
+                        closeOnSelect={false}
+                        paddingRight="0.5rem"
+                        value={filePath}
+                      >
+                        <div
+                          style={{
+                            width: `calc(100% - 2rem)`,
+                          }}
+                          onClick={() => {
+                            props.onOpenRecentFile?.(filePath);
+                          }}
                         >
-                          <div
+                          <Text
+                            width="100%"
                             style={{
-                              width: `calc(100% - 2rem)`,
-                            }}
-                            onClick={() => {
-                              props.onOpenRecentFile?.(filePath);
-                            }}
-                          >
-                            <Text
-                              width="100%"
-                              style={{
-                                "white-space": "nowrap",
-                                "text-overflow": "ellipsis",
-                                display: "block",
-                                overflow: "hidden",
-                              }}
-                            >
-                              {filePath.match(/[^//]+$/)!.toString()}
-                            </Text>
-                            <Text
-                              width="100%"
-                              style={{
-                                "white-space": "nowrap",
-                                "text-overflow": "ellipsis",
-                                display: "block",
-                                overflow: "hidden",
-                              }}
-                              color="fg.disabled"
-                            >
-                              {filePath.replace(
-                                filePath.match(/[^?!//]+$/)!.toString(),
-                                "",
-                              )}
-                            </Text>
-                          </div>
-                          <IconButton
-                            width="2rem"
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => {
-                              props.onDeleteRecentPath?.(index());
+                              "white-space": "nowrap",
+                              "text-overflow": "ellipsis",
+                              display: "block",
+                              overflow: "hidden",
                             }}
                           >
-                            <IconX />
-                          </IconButton>
-                        </Menu.Item>
-                      )}
-                    </For>
-                  </Menu.Content>
-                </Menu.Positioner>
-              </Menu.Root>
-            )}
+                            {filePath.match(/[^//]+$/)!.toString()}
+                          </Text>
+                          <Text
+                            width="100%"
+                            style={{
+                              "white-space": "nowrap",
+                              "text-overflow": "ellipsis",
+                              display: "block",
+                              overflow: "hidden",
+                            }}
+                            color="fg.disabled"
+                          >
+                            {filePath.replace(
+                              filePath.match(/[^?!//]+$/)!.toString(),
+                              "",
+                            )}
+                          </Text>
+                        </div>
+                        <IconButton
+                          width="2rem"
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => {
+                            props.onDeleteRecentPath?.(index());
+                          }}
+                        >
+                          <IconX />
+                        </IconButton>
+                      </Menu.Item>
+                    )}
+                  </For>
+                </Menu.Content>
+              </Menu.Positioner>
+            </Menu.Root>
+          )}
           <Menu.Separator />
           <Menu.Item
             value="Reload file"

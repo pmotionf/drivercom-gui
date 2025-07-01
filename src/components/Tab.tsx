@@ -34,14 +34,14 @@ export type tabProps = JSX.HTMLAttributes<HTMLDivElement> & {
 };
 
 export function Tab(props: tabProps) {
-  if (!tabContexts.has(props.key)) return;
+  if (!tabContexts.get(props.key)) return;
 
   const getTabContexts = (): TabContext[] => {
-    return tabContexts.get(props.key)?.[0].tabContext!;
+    return tabContexts.get(props.key)![0].tabContext!;
   };
 
   const getFocusId = (): string => {
-    return tabContexts.get(props.key)?.[0].focusedTab!;
+    return tabContexts.get(props.key)![0].focusedTab!;
   };
 
   const setFocusId = (newFocus: string) => {
@@ -62,12 +62,12 @@ export function Tab(props: tabProps) {
   };
 
   //@ts-ignore This draggable is needed to use neo-drag.
-  // deno-lint-ignore no-unused-vars
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { draggable: dragOptions } = createDraggable();
+
   //reorder
-  const [currentDraggingTabId, setCurrentDraggingTabId] = createSignal<string>(
-    "",
-  );
+  const [currentDraggingTabId, setCurrentDraggingTabId] =
+    createSignal<string>("");
   const [reorderTabIndex, setReorderTabIndex] = createSignal<number | null>(
     null,
   );
@@ -188,11 +188,12 @@ export function Tab(props: tabProps) {
                     )!.offsetWidth;
                     setCurrentMousePointerPosition(() => {
                       return {
-                        x: data.event.clientX -
+                        x:
+                          data.event.clientX -
                           mousePositionInsideComponent().x -
                           collapsedSideBarWidth,
-                        y: data.event.clientY -
-                          mousePositionInsideComponent().y,
+                        y:
+                          data.event.clientY - mousePositionInsideComponent().y,
                       };
                     });
 
@@ -228,18 +229,24 @@ export function Tab(props: tabProps) {
                   value={tab.id}
                   paddingRight="0rem"
                   paddingLeft="0.5rem"
-                  borderBottomWidth={currentDraggingTabId().length > 0
-                    ? currentDraggingTabId() === tab.id ? "3px" : "0px"
-                    : getFocusId() === tab.id
-                    ? "3px"
-                    : "0px"}
-                  marginTop={currentDraggingTabId().length > 0
-                    ? currentDraggingTabId() === tab.id
-                      ? `calc(0.5rem + 1px)`
-                      : "0.5rem"
-                    : getFocusId() === tab.id
-                    ? `calc(0.5rem + 1px)`
-                    : `0.5rem`}
+                  borderBottomWidth={
+                    currentDraggingTabId().length > 0
+                      ? currentDraggingTabId() === tab.id
+                        ? "3px"
+                        : "0px"
+                      : getFocusId() === tab.id
+                        ? "3px"
+                        : "0px"
+                  }
+                  marginTop={
+                    currentDraggingTabId().length > 0
+                      ? currentDraggingTabId() === tab.id
+                        ? `calc(0.5rem + 1px)`
+                        : "0.5rem"
+                      : getFocusId() === tab.id
+                        ? `calc(0.5rem + 1px)`
+                        : `0.5rem`
+                  }
                   borderBottomColor="accent.emphasized"
                 >
                   <Editable.Root
@@ -271,8 +278,10 @@ export function Tab(props: tabProps) {
                   </div>
                 </Tabs.Trigger>
                 <Show
-                  when={reorderTabIndex() === tabIndex() &&
-                    currentDraggingTabId().length > 0}
+                  when={
+                    reorderTabIndex() === tabIndex() &&
+                    currentDraggingTabId().length > 0
+                  }
                 >
                   <Stack
                     width="100%"

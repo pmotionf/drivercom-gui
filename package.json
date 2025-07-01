@@ -1,0 +1,57 @@
+{
+  "name": "drivercom-gui",
+  "type": "module",
+  "scripts": {
+    "prep": "bun panda codegen",
+    "dev": "bunx --bun vite",
+    "build": "bunx --bun vite build",
+    "serve": "bunx --bun vite preview",
+    "drivercom-prepare": "mkdir -p src-tauri/binaries",
+    "drivercom-fetch": "cd src-tauri/binaries && gh release download -R pmotionf/drivercom-cli -p '*-drivercom-cli-*.zip' --clobber",
+    "drivercom-unpack": "bun unpack-drivercom.js",
+    "drivercom": "bun run drivercom-prepare && bun run drivercom-fetch && bun run drivercom-unpack",
+    "pretauri": "bun run drivercom && bun run prep",
+    "tauri": "tauri",
+    "fmt": "bun prettier --write src",
+    "fmt-check": "bun prettier --version &&bun prettier --config .prettierrc.json --check src",
+    "precheck": "bun run prep",
+    "check": "bun eslint src && bun tsc"
+  },
+  "dependencies": {
+    "@ark-ui/solid": "^5.1.0",
+    "@leeoniya/ufuzzy": "^1.0.18",
+    "@neodrag/solid": "^2.3.1",
+    "@solid-primitives/deep": "^0.3.3",
+    "@solidjs/router": "^0.15.3",
+    "@tabler/icons-solidjs": "^3.34.0",
+    "@tauri-apps/api": "^2.6.0",
+    "@tauri-apps/plugin-dialog": "^2.3.0",
+    "@tauri-apps/plugin-fs": "^2.4.0",
+    "@tauri-apps/plugin-shell": "^2.3.0",
+    "lucide-solid": "^0.525.0",
+    "solid-js": "^1.9.5",
+    "udsv": "^0.7.2",
+    "uplot": "^1.6.32"
+  },
+  "devDependencies": {
+    "@eslint/css": "^0.9.0",
+    "@eslint/js": "^9.30.0",
+    "@eslint/json": "^0.12.0",
+    "@pandacss/dev": "^0.54.0",
+    "@park-ui/panda-preset": "^0.43.1",
+    "@types/bun": "latest",
+    "eslint": "^9.30.0",
+    "eslint-config-prettier": "^10.1.5",
+    "globals": "^16.2.0",
+    "prettier": "3.6.2",
+    "typescript-eslint": "^8.35.1",
+    "unzipper": "^0.12.3",
+    "vite-tsconfig-paths": "^5.1.4"
+  },
+  "peerDependencies": {
+    "typescript": "^5",
+    "vite": "^6.2.1",
+    "vite-plugin-solid": "^2.11.6",
+    "@tauri-apps/cli": "^2.3.1"
+  }
+}

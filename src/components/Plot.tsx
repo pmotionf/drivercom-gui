@@ -97,7 +97,7 @@ export function Plot(props: PlotProps) {
     );
 
     setGetContext(ctx);
-    setSetContext((_) => setCtx);
+    setSetContext(() => setCtx);
 
     if (!getContext().palette || getContext().palette.length == 0) {
       setContext()("palette", kelly_colors_hex);
@@ -225,9 +225,10 @@ export function Plot(props: PlotProps) {
     let i: number = 0;
     while (scale > 0.1) {
       array.push(i);
-      i += (Math.floor(scale) > 0
-        ? Math.floor(scale)
-        : parseFloat(scale.toFixed(1))) * 10;
+      i +=
+        (Math.floor(scale) > 0
+          ? Math.floor(scale)
+          : parseFloat(scale.toFixed(1))) * 10;
       if (i >= plot.data[0].length) {
         break;
       }
@@ -373,9 +374,11 @@ export function Plot(props: PlotProps) {
                       let scaleXMax = maxXBoundary;
 
                       if (xMin >= minXBoundary) {
-                        (scaleXMin = xMin), (scaleXMax = scXMax0);
+                        scaleXMin = xMin;
+                        scaleXMax = scXMax0;
                       } else if (xMax <= maxXBoundary) {
-                        (scaleXMin = scXMin0), (scaleXMax = xMax);
+                        scaleXMin = scXMin0;
+                        scaleXMax = xMax;
                       }
 
                       uPlot.sync(group()).plots.forEach((up) => {
@@ -475,9 +478,8 @@ export function Plot(props: PlotProps) {
     }
   `;
 
-  const [showLegendCheckBox, setShowLegendCheckBox] = createSignal<boolean>(
-    false,
-  );
+  const [showLegendCheckBox, setShowLegendCheckBox] =
+    createSignal<boolean>(false);
 
   const [isAllVisible, setIsAllVisible] = createSignal<boolean>(
     getContext().visible ? getContext().visible.every((b) => b) : true,
@@ -517,24 +519,16 @@ export function Plot(props: PlotProps) {
       <div {...rest} id={props.id + "-wrapper"}>
         <Splitter.Root
           style={{ width: "100%", height: "100%" }}
-          size={[
-            {
-              id: `plot-${props.id}`,
-              size: 100 - (props.legendPanelSize ? props.legendPanelSize : 0),
-            },
-            {
-              id: `legend-${props.id}`,
-              size: props.legendPanelSize,
-            },
-          ]}
-          onSizeChange={(details) => {
-            const parseSize = details.size.map((panel) => {
-              return {
-                id: panel.id as string,
-                size: Number(panel.size)!,
-              };
-            });
-            props.onLegendPanelSize?.(parseSize[1].size);
+          panels={[{ id: `plot-${props.id}` }, { id: `legend-${props.id}` }]}
+          size={
+            props.legendPanelSize
+              ? [100 - props.legendPanelSize, props.legendPanelSize]
+              : [100, 0]
+          }
+          onResize={(details) => {
+            const size = details.size;
+            const updatedSize = size[1];
+            props.onLegendPanelSize?.(updatedSize);
           }}
         >
           <Splitter.Panel id={`plot-${props.id}`} borderWidth="0">
@@ -554,8 +548,7 @@ export function Plot(props: PlotProps) {
                 width: "100%",
                 height: "calc(100% - 0.5rem)",
               }}
-            >
-            </div>
+            ></div>
           </Splitter.Panel>
           <Stack direction="row" height="100%" gap="0">
             <IconButton
@@ -654,14 +647,18 @@ export function Plot(props: PlotProps) {
                           <ToggleGroup.Item
                             value={CursorMode[CursorMode.Pan]}
                             aria-label="Toggle Pan"
-                            color={cursorMode() === CursorMode.Pan
-                              ? "fg.default"
-                              : "fg.muted"}
-                            bgColor={cursorMode() === CursorMode.Pan
-                              ? "bg.emphasized"
-                              : lastCursorMode() === CursorMode.Pan
-                              ? "bg.subtle"
-                              : "bg.default"}
+                            color={
+                              cursorMode() === CursorMode.Pan
+                                ? "fg.default"
+                                : "fg.muted"
+                            }
+                            bgColor={
+                              cursorMode() === CursorMode.Pan
+                                ? "bg.emphasized"
+                                : lastCursorMode() === CursorMode.Pan
+                                  ? "bg.subtle"
+                                  : "bg.default"
+                            }
                           >
                             <IconArrowsMove />
                           </ToggleGroup.Item>
@@ -680,14 +677,18 @@ export function Plot(props: PlotProps) {
                           <ToggleGroup.Item
                             value={CursorMode[CursorMode.Zoom]}
                             aria-label="Toggle Selection Zoom"
-                            color={cursorMode() === CursorMode.Zoom
-                              ? "fg.default"
-                              : "fg.muted"}
-                            bgColor={cursorMode() === CursorMode.Zoom
-                              ? "bg.emphasized"
-                              : lastCursorMode() === CursorMode.Zoom
-                              ? "bg.subtle"
-                              : "bg.default"}
+                            color={
+                              cursorMode() === CursorMode.Zoom
+                                ? "fg.default"
+                                : "fg.muted"
+                            }
+                            bgColor={
+                              cursorMode() === CursorMode.Zoom
+                                ? "bg.emphasized"
+                                : lastCursorMode() === CursorMode.Zoom
+                                  ? "bg.subtle"
+                                  : "bg.default"
+                            }
                           >
                             <IconZoomInArea />
                           </ToggleGroup.Item>
@@ -706,14 +707,18 @@ export function Plot(props: PlotProps) {
                           <ToggleGroup.Item
                             value={CursorMode[CursorMode.Lock]}
                             aria-label="Toggle Cursor Lock"
-                            color={cursorMode() === CursorMode.Lock
-                              ? "fg.default"
-                              : "fg.muted"}
-                            bgColor={cursorMode() === CursorMode.Lock
-                              ? "bg.emphasized"
-                              : lastCursorMode() === CursorMode.Lock
-                              ? "bg.subtle"
-                              : "bg.default"}
+                            color={
+                              cursorMode() === CursorMode.Lock
+                                ? "fg.default"
+                                : "fg.muted"
+                            }
+                            bgColor={
+                              cursorMode() === CursorMode.Lock
+                                ? "bg.emphasized"
+                                : lastCursorMode() === CursorMode.Lock
+                                  ? "bg.subtle"
+                                  : "bg.default"
+                            }
                           >
                             <IconCrosshair />
                           </ToggleGroup.Item>
@@ -879,11 +884,11 @@ export function Plot(props: PlotProps) {
                                 stroke: getContext().color[index()],
                                 label: header,
                                 ...(getContext().style[index()] ===
-                                    LegendStroke.Dash && {
+                                  LegendStroke.Dash && {
                                   dash: [10, 5],
                                 }),
                                 ...(getContext().style[index()] ===
-                                    LegendStroke.Dot && {
+                                  LegendStroke.Dot && {
                                   dash: [0, 5],
                                   points: {
                                     show: true,

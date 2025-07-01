@@ -143,9 +143,12 @@ export function LogConfigFieldSet(props: logConfigFieldSetProps) {
                   setPrevCheckBoxIndex(null);
                   return;
                 }
-                !e.shiftKey
-                  ? setPrevCheckBoxIndex(index())
-                  : checkBoxShiftClick(index());
+
+                if (!e.shiftKey) {
+                  setPrevCheckBoxIndex(index());
+                } else {
+                  checkBoxShiftClick(index());
+                }
               }}
               style={{
                 "margin-top": "0.2rem",
@@ -177,12 +180,10 @@ export function LogConfigFieldSet(props: logConfigFieldSetProps) {
                   marginLeft="0.5rem"
                 >
                   <Show when={props.sectionName} fallback={upperCaseKey}>
-                    {`${props.sectionName![0].toUpperCase()}${
-                      props.sectionName!.slice(
-                        1,
-                        props.sectionName!.length,
-                      )
-                    } ${Number(key[0]) + 1}`}
+                    {`${props.sectionName![0].toUpperCase()}${props.sectionName!.slice(
+                      1,
+                      props.sectionName!.length,
+                    )} ${Number(key[0]) + 1}`}
                   </Show>
                 </Text>
                 <Input
@@ -215,9 +216,11 @@ export function LogConfigFieldSet(props: logConfigFieldSetProps) {
               <Select.Root
                 positioning={{ sameWidth: true }}
                 width="2xs"
-                collection={key === "kind"
-                  ? props.logStartConditions
-                  : props.logStartCombinators}
+                collection={
+                  key === "kind"
+                    ? props.logStartConditions
+                    : props.logStartCombinators
+                }
                 defaultValue={[value.toString()]}
                 onValueChange={(v) => {
                   setObject(key as keyof typeof obj, v.items[0].label);
@@ -231,9 +234,11 @@ export function LogConfigFieldSet(props: logConfigFieldSetProps) {
                 <Select.Positioner>
                   <Select.Content>
                     <For
-                      each={key === "kind"
-                        ? props.logStartConditions.items
-                        : props.logStartCombinators.items}
+                      each={
+                        key === "kind"
+                          ? props.logStartConditions.items
+                          : props.logStartCombinators.items
+                      }
                     >
                       {(item) => (
                         <Select.Item item={item}>
