@@ -63,7 +63,7 @@ export function Tab(props: tabProps) {
 
   //@ts-ignore This draggable is needed to use neo-drag.
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const { draggable } = createDraggable();
+  const { draggable: dragOptions } = createDraggable();
 
   //reorder
   const [currentDraggingTabId, setCurrentDraggingTabId] =
