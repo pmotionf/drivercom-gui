@@ -29,32 +29,19 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Install deno on Windows
-        if: matrix.os == 'Windows'
-        uses: denoland/setup-deno@v2
+      - name: Install Bun
+        uses: oven-sh/setup-bun@v2
         with:
-          deno-version: v2.3.5
-
-      - name: Install deno on Linux
-        if: matrix.os == 'Linux'
-        uses: denoland/setup-deno@v2
-        with:
-          deno-version: vx.x.x
+          bun-version: latest
 
       - name: Install dependencies
-        run: deno i --frozen
+        run: bun i --frozen-lockfile
 
-      - name: Prepare `styled-system`
-        run: deno task prepare
+      - name: Check formatting
+        run: bun run fmt-check
 
-      - name: Run `deno fmt`
-        run: deno fmt --check
-
-      - name: Run `deno lint`
-        run: deno lint
-
-      - name: Run `tsc`
-        run: deno run -A npm:typescript/tsc
+      - name: Check lints and types
+        run: bun run check
 
       - uses: dtolnay/rust-toolchain@stable
         with:
@@ -69,7 +56,7 @@ jobs:
         run: cargo fmt --check
 
       - name: Cargo Build
-        run: deno task tauri build --verbose
+        run: bun run tauri build --verbose
         env:
           GH_TOKEN: ${{ secrets.DRIVERCOM_CLI_RELEASE_ACCESS_TOKEN }}
 

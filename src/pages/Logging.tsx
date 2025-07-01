@@ -36,9 +36,8 @@ export function Logging() {
   const [filePath, setFilePath] = createSignal<string>("");
 
   // This signal is needed in UI when reload the file or port.
-  const [renderLoggingForm, setRenderLoggingForm] = createSignal<boolean>(
-    false,
-  );
+  const [renderLoggingForm, setRenderLoggingForm] =
+    createSignal<boolean>(false);
 
   onMount(() => {
     setLogConfigure(JSON.parse(JSON.stringify(logFormFileFormat())));
@@ -154,12 +153,10 @@ export function Logging() {
     ),
   );
 
-  async function getCurrentLogStatus(): Promise<
-    null | {
-      logStatus: string;
-      cycle: number;
-    }
-  > {
+  async function getCurrentLogStatus(): Promise<null | {
+    logStatus: string;
+    cycle: number;
+  }> {
     if (portId().length === 0) return null;
     const logStatus = Command.sidecar("binaries/drivercom", [
       `--port`,
@@ -241,21 +238,24 @@ export function Logging() {
   }
 
   async function openSaveFileDialog(): Promise<string | null> {
-    const fileNameFromPath = filePath! && filePath.length !== 0
-      ? filePath()
-        .match(/[^?!//]+$/)!
-        .toString()
-      : "";
-    const currentFilePath = filePath! && filePath.length !== 0
-      ? formTitle() === fileNameFromPath
+    const fileNameFromPath =
+      filePath! && filePath.length !== 0
         ? filePath()
-        : filePath().replace(fileNameFromPath, formTitle)
-      : formTitle();
+            .match(/[^?!//]+$/)!
+            .toString()
+        : "";
+    const currentFilePath =
+      filePath! && filePath.length !== 0
+        ? formTitle() === fileNameFromPath
+          ? filePath()
+          : filePath().replace(fileNameFromPath, formTitle)
+        : formTitle();
 
     const path = await save({
-      defaultPath: currentFilePath!.split(".").pop()!.toLowerCase() === "json"
-        ? `${currentFilePath}`
-        : `${currentFilePath}.json`,
+      defaultPath:
+        currentFilePath!.split(".").pop()!.toLowerCase() === "json"
+          ? `${currentFilePath}`
+          : `${currentFilePath}.json`,
       filters: [
         {
           name: "JSON",
@@ -530,11 +530,13 @@ export function Logging() {
                     <Tooltip.Root>
                       <Tooltip.Trigger>
                         <IconButton
-                          disabled={portId().length === 0 ||
+                          disabled={
+                            portId().length === 0 ||
                             logGetBtnLoading() ||
                             currentLogStatus() === "Log.Status.invalid" ||
                             currentLogStatus() === "Log.Status.started" ||
-                            currentLogStatus() === "Log.Status.waiting"}
+                            currentLogStatus() === "Log.Status.waiting"
+                          }
                           onClick={async () => {
                             await startLogging();
                             const logState = await getCurrentLogStatus();
@@ -585,11 +587,13 @@ export function Logging() {
                 </Show>
 
                 <Show
-                  when={currentLogStatus() !== "Log.Status.stopped" ||
+                  when={
+                    currentLogStatus() !== "Log.Status.stopped" ||
                     portId().length === 0 ||
                     currentLogStatus() === "Log.Status.invalid" ||
                     cyclesCompleted() === 0 ||
-                    portId().length === 0}
+                    portId().length === 0
+                  }
                   fallback={
                     <Tooltip.Root>
                       <Tooltip.Trigger>
@@ -599,7 +603,7 @@ export function Logging() {
                             const path = await save({
                               defaultPath:
                                 formTitle().split(".").pop()!.toLowerCase() ===
-                                    "csv"
+                                "csv"
                                   ? `${formTitle()}`
                                   : `${formTitle()}.csv`,
                               filters: [

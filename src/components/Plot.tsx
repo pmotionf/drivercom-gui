@@ -225,9 +225,10 @@ export function Plot(props: PlotProps) {
     let i: number = 0;
     while (scale > 0.1) {
       array.push(i);
-      i += (Math.floor(scale) > 0
-        ? Math.floor(scale)
-        : parseFloat(scale.toFixed(1))) * 10;
+      i +=
+        (Math.floor(scale) > 0
+          ? Math.floor(scale)
+          : parseFloat(scale.toFixed(1))) * 10;
       if (i >= plot.data[0].length) {
         break;
       }
@@ -373,9 +374,9 @@ export function Plot(props: PlotProps) {
                       let scaleXMax = maxXBoundary;
 
                       if (xMin >= minXBoundary) {
-                        (scaleXMin = xMin), (scaleXMax = scXMax0);
+                        ((scaleXMin = xMin), (scaleXMax = scXMax0));
                       } else if (xMax <= maxXBoundary) {
-                        (scaleXMin = scXMin0), (scaleXMax = xMax);
+                        ((scaleXMin = scXMin0), (scaleXMax = xMax));
                       }
 
                       uPlot.sync(group()).plots.forEach((up) => {
@@ -475,9 +476,8 @@ export function Plot(props: PlotProps) {
     }
   `;
 
-  const [showLegendCheckBox, setShowLegendCheckBox] = createSignal<boolean>(
-    false,
-  );
+  const [showLegendCheckBox, setShowLegendCheckBox] =
+    createSignal<boolean>(false);
 
   const [isAllVisible, setIsAllVisible] = createSignal<boolean>(
     getContext().visible ? getContext().visible.every((b) => b) : true,
@@ -554,8 +554,7 @@ export function Plot(props: PlotProps) {
                 width: "100%",
                 height: "calc(100% - 0.5rem)",
               }}
-            >
-            </div>
+            ></div>
           </Splitter.Panel>
           <Stack direction="row" height="100%" gap="0">
             <IconButton
@@ -654,14 +653,18 @@ export function Plot(props: PlotProps) {
                           <ToggleGroup.Item
                             value={CursorMode[CursorMode.Pan]}
                             aria-label="Toggle Pan"
-                            color={cursorMode() === CursorMode.Pan
-                              ? "fg.default"
-                              : "fg.muted"}
-                            bgColor={cursorMode() === CursorMode.Pan
-                              ? "bg.emphasized"
-                              : lastCursorMode() === CursorMode.Pan
-                              ? "bg.subtle"
-                              : "bg.default"}
+                            color={
+                              cursorMode() === CursorMode.Pan
+                                ? "fg.default"
+                                : "fg.muted"
+                            }
+                            bgColor={
+                              cursorMode() === CursorMode.Pan
+                                ? "bg.emphasized"
+                                : lastCursorMode() === CursorMode.Pan
+                                  ? "bg.subtle"
+                                  : "bg.default"
+                            }
                           >
                             <IconArrowsMove />
                           </ToggleGroup.Item>
@@ -680,14 +683,18 @@ export function Plot(props: PlotProps) {
                           <ToggleGroup.Item
                             value={CursorMode[CursorMode.Zoom]}
                             aria-label="Toggle Selection Zoom"
-                            color={cursorMode() === CursorMode.Zoom
-                              ? "fg.default"
-                              : "fg.muted"}
-                            bgColor={cursorMode() === CursorMode.Zoom
-                              ? "bg.emphasized"
-                              : lastCursorMode() === CursorMode.Zoom
-                              ? "bg.subtle"
-                              : "bg.default"}
+                            color={
+                              cursorMode() === CursorMode.Zoom
+                                ? "fg.default"
+                                : "fg.muted"
+                            }
+                            bgColor={
+                              cursorMode() === CursorMode.Zoom
+                                ? "bg.emphasized"
+                                : lastCursorMode() === CursorMode.Zoom
+                                  ? "bg.subtle"
+                                  : "bg.default"
+                            }
                           >
                             <IconZoomInArea />
                           </ToggleGroup.Item>
@@ -706,14 +713,18 @@ export function Plot(props: PlotProps) {
                           <ToggleGroup.Item
                             value={CursorMode[CursorMode.Lock]}
                             aria-label="Toggle Cursor Lock"
-                            color={cursorMode() === CursorMode.Lock
-                              ? "fg.default"
-                              : "fg.muted"}
-                            bgColor={cursorMode() === CursorMode.Lock
-                              ? "bg.emphasized"
-                              : lastCursorMode() === CursorMode.Lock
-                              ? "bg.subtle"
-                              : "bg.default"}
+                            color={
+                              cursorMode() === CursorMode.Lock
+                                ? "fg.default"
+                                : "fg.muted"
+                            }
+                            bgColor={
+                              cursorMode() === CursorMode.Lock
+                                ? "bg.emphasized"
+                                : lastCursorMode() === CursorMode.Lock
+                                  ? "bg.subtle"
+                                  : "bg.default"
+                            }
                           >
                             <IconCrosshair />
                           </ToggleGroup.Item>
@@ -879,11 +890,11 @@ export function Plot(props: PlotProps) {
                                 stroke: getContext().color[index()],
                                 label: header,
                                 ...(getContext().style[index()] ===
-                                    LegendStroke.Dash && {
+                                  LegendStroke.Dash && {
                                   dash: [10, 5],
                                 }),
                                 ...(getContext().style[index()] ===
-                                    LegendStroke.Dot && {
+                                  LegendStroke.Dot && {
                                   dash: [0, 5],
                                   points: {
                                     show: true,

@@ -95,36 +95,39 @@ export function Panel(props: panelProps) {
       <Show when={isDragging()}>
         <Stack
           style={{
-            width: currentDraggingTabLocation() === "centerSplitter" ||
-                currentDraggingTabLocation() === "otherPanel"
-              ? `${document.getElementById(`tabs:${props.id}`)!.offsetWidth}px`
-              : `${
-                document.getElementById(`tabs:${props.id}`)!.offsetWidth / 2
-              }px`,
-            left: currentDraggingTabLocation() === "rightSplitter"
-              ? `${
-                document.getElementById(`tabs:${props.id}`)!.offsetLeft +
-                document.getElementById(`tabs:${props.id}`)!.offsetWidth / 2
-              }px`
-              : `${document.getElementById(`tabs:${props.id}`)!.offsetLeft}px`,
-            "border-radius": currentDraggingTabLocation() === "otherPanel"
-              ? "0.5rem"
-              : "0rem",
-            opacity: currentDraggingTabLocation() === "none" ||
-                currentDraggingTabLocation() === "tabList"
-              ? "0%"
-              : "10%",
+            width:
+              currentDraggingTabLocation() === "centerSplitter" ||
+              currentDraggingTabLocation() === "otherPanel"
+                ? `${document.getElementById(`tabs:${props.id}`)!.offsetWidth}px`
+                : `${
+                    document.getElementById(`tabs:${props.id}`)!.offsetWidth / 2
+                  }px`,
+            left:
+              currentDraggingTabLocation() === "rightSplitter"
+                ? `${
+                    document.getElementById(`tabs:${props.id}`)!.offsetLeft +
+                    document.getElementById(`tabs:${props.id}`)!.offsetWidth / 2
+                  }px`
+                : `${document.getElementById(`tabs:${props.id}`)!.offsetLeft}px`,
+            "border-radius":
+              currentDraggingTabLocation() === "otherPanel" ? "0.5rem" : "0rem",
+            opacity:
+              currentDraggingTabLocation() === "none" ||
+              currentDraggingTabLocation() === "tabList"
+                ? "0%"
+                : "10%",
             height: `${
               document.getElementById(`tabs:${props.id}`)!.offsetHeight
             }px`,
-            top: currentDraggingTabLocation() !== "otherPanel"
-              ? `${
-                document.getElementById(`tabs:${props.id}:list`)!
-                  .offsetHeight
-              }px`
-              : `${
-                document.getElementById(`tabs:${props.id}:list`)!.offsetTop
-              }px`,
+            top:
+              currentDraggingTabLocation() !== "otherPanel"
+                ? `${
+                    document.getElementById(`tabs:${props.id}:list`)!
+                      .offsetHeight
+                  }px`
+                : `${
+                    document.getElementById(`tabs:${props.id}:list`)!.offsetTop
+                  }px`,
             position: "absolute",
           }}
           backgroundColor="fg.default"
@@ -132,12 +135,14 @@ export function Panel(props: panelProps) {
         />
       </Show>
       <Show
-        when={currentDraggingTabLocation() === "otherPanel" &&
+        when={
+          currentDraggingTabLocation() === "otherPanel" &&
           isDragging() &&
           nextPanel() !== null &&
           document.getElementById(
             `tabs:${getPanelIds(props.key)[nextPanel()!]}`,
-          )}
+          )
+        }
       >
         <Stack
           style={{

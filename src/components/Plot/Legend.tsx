@@ -192,7 +192,8 @@ export function Legend(props: LegendProps) {
             onCheckedChange={(e) =>
               props.onSelectChange?.(
                 e.checked.toString() === "true" ? true : false,
-              )}
+              )
+            }
           />
         </Show>
         <Dialog.Root
@@ -204,9 +205,11 @@ export function Legend(props: LegendProps) {
           <IconButton
             variant="link"
             disabled={!(props.visible != null ? props.visible : visible())}
-            opacity={(props.visible != null ? props.visible : visible())
-              ? "100%"
-              : "30%"}
+            opacity={
+              (props.visible != null ? props.visible : visible())
+                ? "100%"
+                : "30%"
+            }
             onClick={() => setConfigOpen(true)}
             style={{
               width: strokeIconSize,
@@ -254,9 +257,9 @@ export function Legend(props: LegendProps) {
         <Button
           variant="link"
           style={{ "justify-content": "left" }}
-          opacity={(props.visible != null ? props.visible : visible())
-            ? "100%"
-            : "30%"}
+          opacity={
+            (props.visible != null ? props.visible : visible()) ? "100%" : "30%"
+          }
           onclick={() => {
             props.onVisibleChange?.(
               props.visible != null ? !props.visible : !visible(),
@@ -272,9 +275,9 @@ export function Legend(props: LegendProps) {
         style={{
           "white-space": "nowrap",
         }}
-        opacity={(props.visible != null ? props.visible : visible())
-          ? "100%"
-          : "30%"}
+        opacity={
+          (props.visible != null ? props.visible : visible()) ? "100%" : "30%"
+        }
       >
         {value() != null ? value() : "--"}
       </Text>

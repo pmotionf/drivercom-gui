@@ -1,5 +1,4 @@
 import { defineConfig } from "vite";
-import deno from "@deno/vite-plugin";
 import solid from "vite-plugin-solid";
 import tsconfigPaths from "vite-tsconfig-paths";
 import process from "node:process";
@@ -8,7 +7,7 @@ const host = process.env.TAURI_DEV_HOST;
 
 // https://vitejs.dev/config/
 export default defineConfig({
-  plugins: [deno(), solid(), tsconfigPaths({ root: "./" })],
+  plugins: [solid(), tsconfigPaths({ root: "./" })],
 
   // Vite options tailored for Tauri development and only applied in `tauri dev` or `tauri build`
   //

@@ -70,12 +70,10 @@ export function TabList(props: tabListProps) {
     return uuid;
   }
 
-  async function openFileDialog(): Promise<
-    {
-      id: string;
-      filePath: string;
-    } | null
-  > {
+  async function openFileDialog(): Promise<{
+    id: string;
+    filePath: string;
+  } | null> {
     const path = await open({
       multiple: false,
       filters: [{ name: "CSV", extensions: ["csv"] }],
@@ -104,11 +102,12 @@ export function TabList(props: tabListProps) {
     });
 
     const focusedTabIndex = tabIdList.indexOf(focusedTab);
-    const nextFocusedTabIndex = deleteTabIndex !== focusedTabIndex
-      ? focusedTabIndex
-      : deleteTabIndex === 0
-      ? deleteTabIndex + 1
-      : deleteTabIndex - 1;
+    const nextFocusedTabIndex =
+      deleteTabIndex !== focusedTabIndex
+        ? focusedTabIndex
+        : deleteTabIndex === 0
+          ? deleteTabIndex + 1
+          : deleteTabIndex - 1;
     return tabIdList[nextFocusedTabIndex];
   };
 
@@ -148,12 +147,12 @@ export function TabList(props: tabListProps) {
     } else {
       if (clientY > tabHeight) {
         return clientX > tabListContainerStart &&
-            clientX < tabListContainerWidthQuarter + tabListContainerStart
+          clientX < tabListContainerWidthQuarter + tabListContainerStart
           ? "leftSplitter"
           : clientX >= tabListContainerWidthQuarter + tabListContainerStart &&
               clientX <= tabListContainerEnd - tabListContainerWidthQuarter
-          ? "centerSplitter"
-          : "rightSplitter";
+            ? "centerSplitter"
+            : "rightSplitter";
       } else {
         return "tabList";
       }
@@ -260,7 +259,7 @@ export function TabList(props: tabListProps) {
             const tabList = getTabContexts().tabContext;
             const updateTabLocation =
               (tabLocation === "rightSplitter" && tabList.length <= 1) ||
-                (tabLocation === "leftSplitter" && tabList.length <= 1)
+              (tabLocation === "leftSplitter" && tabList.length <= 1)
                 ? "centerSplitter"
                 : tabLocation;
 

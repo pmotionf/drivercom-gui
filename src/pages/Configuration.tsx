@@ -142,8 +142,8 @@ function Configuration() {
     const json_str = JSON.stringify(config(), null, "  ");
     const fileNameFromPath = filePath()
       ? filePath()!
-        .match(/[^?!//]+$/)!
-        .toString()
+          .match(/[^?!//]+$/)!
+          .toString()
       : "";
     const currentFilePath = filePath()
       ? formName() === fileNameFromPath
@@ -152,9 +152,10 @@ function Configuration() {
       : formName();
 
     const path = await save({
-      defaultPath: currentFilePath!.split(".").pop()!.toLowerCase() === "json"
-        ? `${currentFilePath}`
-        : `${currentFilePath}.json`,
+      defaultPath:
+        currentFilePath!.split(".").pop()!.toLowerCase() === "json"
+          ? `${currentFilePath}`
+          : `${currentFilePath}.json`,
       filters: [
         {
           name: "JSON",
