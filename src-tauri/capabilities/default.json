@@ -18,6 +18,7 @@
     "shell:allow-open",
     "dialog:default",
     "fs:default",
-    "fs:write-all"
+    "fs:write-all",
+    "tcp:default"
   ]
 }
