@@ -7,12 +7,17 @@ import { useContext } from "solid-js";
 import { AxesInfo } from "./Axes.tsx";
 import { Stack } from "styled-system/jsx/stack";
 import { Show } from "solid-js/web";
+import { CarrierInfo } from "./Axes.tsx";
 
 export type LineProps = JSX.HTMLAttributes<HTMLDivElement> & {
   value: LineConfig;
 };
 
-export const LineContext = createContext<{ axes: AxesInfo[]; id: number }>();
+export const LineContext = createContext<{
+  axes: AxesInfo[];
+  id: number;
+  carrierInfo?: Map<number, CarrierInfo>;
+}>();
 
 export const useLineContext = () => useContext(LineContext);
 
@@ -20,6 +25,7 @@ export type LineConfig = {
   axes: number;
   name: string;
   axesInfo?: AxesInfo[];
+  carrierInfo?: Map<number, CarrierInfo>;
 };
 
 export function Line(props: LineProps) {
@@ -50,11 +56,18 @@ export function Line(props: LineProps) {
           <Show when={props.value.axesInfo}>
             <For
               each={Array.from({ length: props.value.axes / 3 }, (_, i) =>
-                props.value.axesInfo!.slice(i * 3, i * 3 + 3))}
+                props.value.axesInfo!.slice(i * 3, i * 3 + 3),
+              )}
             >
               {(axis, index) => {
                 return (
-                  <LineContext.Provider value={{ axes: axis, id: index() }}>
+                  <LineContext.Provider
+                    value={{
+                      axes: axis,
+                      id: index(),
+                      carrierInfo: props.value.carrierInfo,
+                    }}
+                  >
                     {props.children}
                   </LineContext.Provider>
                 );

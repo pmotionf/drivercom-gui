@@ -14,10 +14,17 @@ export type AxesInfo = {
   overCurrent?: boolean;
 };
 
+export type CarrierInfo = {
+  state: string;
+  location: number;
+  mainAxisId: number;
+  auxAxisId: number;
+};
+
 export function Axis() {
-  const axesContext: { axes: AxesInfo; id: string } | undefined = useContext(
-    AxesContext,
-  );
+  const axesContext:
+    | { axes: AxesInfo; id: string; carrierInfo?: CarrierInfo }
+    | undefined = useContext(AxesContext);
   if (!axesContext) return;
 
   return (
@@ -26,22 +33,26 @@ export function Axis() {
       height="9rem"
       borderRadius="0.5rem"
       borderWidth="1px"
-      borderRightWidth={axesContext.axes.hallAlarm &&
-          axesContext.axes.hallAlarm.front
-        ? "5px"
-        : "1px"}
-      borderLeftWidth={axesContext.axes.hallAlarm &&
-          axesContext.axes.hallAlarm.back
-        ? "5px"
-        : "1px"}
-      borderRightColor={axesContext.axes.hallAlarm &&
-          axesContext.axes.hallAlarm.front
-        ? "accent.customGreen"
-        : undefined}
-      borderLeftColor={axesContext.axes.hallAlarm &&
-          axesContext.axes.hallAlarm.back
-        ? "accent.customGreen"
-        : undefined}
+      borderRightWidth={
+        axesContext.axes.hallAlarm && axesContext.axes.hallAlarm.front
+          ? "5px"
+          : "1px"
+      }
+      borderLeftWidth={
+        axesContext.axes.hallAlarm && axesContext.axes.hallAlarm.back
+          ? "5px"
+          : "1px"
+      }
+      borderRightColor={
+        axesContext.axes.hallAlarm && axesContext.axes.hallAlarm.front
+          ? "accent.customGreen"
+          : undefined
+      }
+      borderLeftColor={
+        axesContext.axes.hallAlarm && axesContext.axes.hallAlarm.back
+          ? "accent.customGreen"
+          : undefined
+      }
       backgroundColor="bg.default"
       padding="0.5rem"
       gap="0"
@@ -57,11 +68,13 @@ export function Axis() {
       >
         <Badge
           width="min-content"
-          backgroundColor={axesContext.axes.overCurrent
-            ? "red"
-            : axesContext.axes.motorEnabled
-            ? "accent.customGreen"
-            : "bg.emphasized"}
+          backgroundColor={
+            axesContext.axes.overCurrent
+              ? "red"
+              : axesContext.axes.motorEnabled
+                ? "accent.customGreen"
+                : "bg.emphasized"
+          }
           paddingLeft="0.5rem"
           paddingRight="0.5rem"
           height="min-content"
@@ -86,6 +99,14 @@ export function Axis() {
         >
           Carrier {axesContext.axes.carrierId}
         </Text>
+        <Show when={axesContext.carrierInfo}>
+          <Text width="100%" size="sm">
+            {axesContext.carrierInfo!.state.replace("STATE_POS_", "")}
+          </Text>
+          <Text width="100%" size="sm">
+            {axesContext.carrierInfo!.location}
+          </Text>
+        </Show>
       </Show>
 
       <Show when={axesContext.axes.waitingPush}>

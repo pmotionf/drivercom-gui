@@ -14,20 +14,14 @@ import { Show } from "solid-js/web";
 import { createStore } from "solid-js/store";
 import { connect, disconnect, listen, send } from "@kuyoonjo/tauri-plugin-tcp";
 import { onCleanup } from "solid-js";
-
-import { load, Root, Type } from "protobufjs"; // respectively "./node_modules/protobufjs"
 import { Buffer } from "buffer";
 import { createEffect } from "solid-js";
 import { on } from "solid-js";
 import { System } from "~/components/System/System.tsx";
 import { Toast } from "~/components/ui/toast.tsx";
 import { LineConfig } from "~/components/System/Line.tsx";
-import { resolveResource, resourceDir } from "@tauri-apps/api/path";
-import { exists, BaseDirectory, readTextFile } from "@tauri-apps/plugin-fs";
-import path from "node:path";
-import protobuf from "protobufjs";
-
-import * as mmc from "~/components/proto/mmc.js";
+import { mmc } from "~/components/proto/mmc.js";
+import { CarrierInfo } from "~/components/System/Axes.tsx";
 
 export type SystemConfig = {
   lineConfig: {
@@ -63,19 +57,13 @@ function Monitoring() {
         if (systemConfig.lineConfig.lines.length === 0) {
           return;
         }
-
-        //@ts-ignore
-        load("src-tauri/resources/proto/mmc.proto", sendRequestLoop);
+        await sendRequestLoop();
       },
       { defer: true },
     ),
   );
 
-  async function sendAxisInfo(
-    lines: LineConfig[],
-    lineId: number,
-    sendMessage: Type,
-  ) {
+  async function sendAxisInfo(lines: LineConfig[], lineId: number) {
     const payload = {
       info: {
         axis: {
@@ -88,29 +76,82 @@ function Monitoring() {
       },
     };
 
-    const msg = sendMessage.create(payload);
-    const request = Array.from(sendMessage.encode(msg).finish());
+    const msg = mmc.Request.create(payload);
+    const request = Array.from(mmc.Request.encode(msg).finish());
 
     try {
       await send(clientId(), request);
     } catch {
-      await disconnect(clientId());
-      return;
+      return null;
     }
 
     if (lineId + 1 <= lines.length) {
-      await sendAxisInfo(lines, lineId + 1, sendMessage);
+      await sendAxisInfo(lines, lineId + 1);
     }
   }
 
-  async function sendRequestLoop(err: Error, root: Root) {
-    if (systemConfig.lineConfig.lines.length === 0) return;
-    if (err) throw err;
-    if (!root) return;
-    const sendMessage = root.lookupType("mmc.Request");
+  async function sendCarrierInfo(
+    lines: LineConfig[],
+    lineId: number,
+    axisId: number,
+  ) {
+    const axes = lines[lineId - 1].axes;
 
-    await sendAxisInfo(systemConfig.lineConfig.lines, 1, sendMessage);
-    setTimeout(sendRequestLoop.bind(null, err, root), 10);
+    if (
+      lines[lineId - 1].axesInfo &&
+      lines[lineId - 1].axesInfo![axisId - 1] &&
+      lines[lineId - 1].axesInfo![axisId - 1].carrierId
+    ) {
+      const payload = {
+        info: {
+          carrier: {
+            lineId: lineId,
+            axisId: axisId,
+          },
+        },
+      };
+
+      const msg = mmc.Request.create(payload);
+      const request = Array.from(mmc.Request.encode(msg).finish());
+      try {
+        await send(clientId(), request);
+      } catch {
+        return null;
+      }
+    }
+
+    if (axisId + 1 <= axes) {
+      sendCarrierInfo(lines, lineId, axisId + 1);
+    } else if (lineId + 1 <= lines.length) {
+      await sendCarrierInfo(lines, lineId + 1, 1);
+    }
+  }
+
+  async function sendRequestLoop() {
+    if (systemConfig.lineConfig.lines.length === 0) return;
+    try {
+      const sendAxis = await sendAxisInfo(systemConfig.lineConfig.lines, 1);
+      const sendCarrier = await sendCarrierInfo(
+        systemConfig.lineConfig.lines,
+        1,
+        1,
+      );
+      if (
+        sendAxis !== null &&
+        sendCarrier !== null &&
+        systemConfig.lineConfig.lines.length !== 0
+      ) {
+        setTimeout(async () => {
+          await sendRequestLoop();
+        }, 10);
+      } else {
+        setSystemConfig("lineConfig", "lines", []);
+        await disconnect(clientId());
+      }
+    } catch {
+      setSystemConfig("lineConfig", "lines", []);
+      await disconnect(clientId());
+    }
   }
 
   createEffect(async () => {
@@ -121,50 +162,80 @@ function Monitoring() {
           x.payload.event.message &&
           x.payload.event.message.data
         ) {
-          load(
-            "src-tauri/resources/proto/mmc.proto",
-            async function (err, root) {
-              if (err) throw err;
-              if (!root) return;
+          const msg = Buffer.from(x.payload.event.message!.data);
+          const decode = mmc.Response.decode(msg).toJSON();
 
-              const response = root.lookupType("mmc.Response");
-              const msg = Buffer.from(x.payload.event.message!.data);
-              const decode = response.decode(msg).toJSON();
+          if ("core" in decode && typeof decode.core === "object") {
+            if (
+              "lineConfig" in decode.core &&
+              typeof decode.core.lineConfig === "object"
+            ) {
+              setSystemConfig("lineConfig", decode.core.lineConfig);
 
-              console.log(decode);
+              console.log(JSON.stringify(systemConfig));
+            }
+          } else if ("info" in decode && typeof decode.info === "object") {
+            if (
+              "axis" in decode.info &&
+              "axes" in decode.info.axis &&
+              "lineId" in decode.info.axis
+            ) {
+              if (
+                typeof decode.info.axis.lineId === "number" &&
+                typeof decode.info.axis.axes === "object" &&
+                systemConfig.lineConfig.lines.length !== 0
+              ) {
+                setSystemConfig(
+                  "lineConfig",
+                  "lines",
+                  decode.info.axis.lineId - 1,
+                  "axesInfo",
+                  decode.info.axis.axes,
+                );
+              }
+            }
 
-              if ("core" in decode && typeof decode.core === "object") {
+            if ("carrier" in decode.info) {
+              const carrier = decode.info.carrier;
+              if (
+                "id" in carrier &&
+                "state" in carrier &&
+                "location" in carrier &&
+                "mainAxisId" in carrier &&
+                "auxAxisId" in carrier
+              ) {
                 if (
-                  "lineConfig" in decode.core &&
-                  typeof decode.core.lineConfig === "object"
-                ) {
-                  setSystemConfig("lineConfig", decode.core.lineConfig);
-                }
-              } else if ("info" in decode && typeof decode.info === "object") {
-                if (
-                  "axis" in decode.info &&
-                  "axes" in decode.info.axis &&
-                  "lineId" in decode.info.axis
+                  "lineId" in carrier &&
+                  typeof carrier.lineId == "number" &&
+                  systemConfig.lineConfig.lines.length !== 0
                 ) {
                   if (
-                    typeof decode.info.axis.lineId === "number" &&
-                    typeof decode.info.axis.axes === "object" &&
-                    systemConfig.lineConfig.lines.length !== 0
+                    !systemConfig.lineConfig.lines[carrier.lineId - 1]
+                      .carrierInfo
                   ) {
+                    const map: Map<number, CarrierInfo> = new Map();
                     setSystemConfig(
                       "lineConfig",
                       "lines",
-                      decode.info.axis.lineId - 1,
-                      "axesInfo",
-                      decode.info.axis.axes,
+                      carrier.lineId - 1,
+                      "carrierInfo",
+                      map,
                     );
                   }
+
+                  const updateInfo = {
+                    state: carrier.state as string,
+                    location: carrier.location as number,
+                    mainAxisId: carrier.mainAxisId as number,
+                    auxAxisId: carrier.auxAxisId as number,
+                  };
+                  systemConfig.lineConfig.lines[
+                    carrier.lineId - 1
+                  ].carrierInfo!.set(carrier.id, updateInfo);
                 }
-              } else {
-                await disconnect(clientId());
               }
-            },
-          );
+            }
+          }
         }
       });
     } catch {
@@ -197,17 +268,14 @@ function Monitoring() {
   return (
     <>
       <Splitter.Root
-        size={[
-          { id: `${clientId()}-panel`, size: panelSize() },
-          {
-            id: `${clientId()}-sidebar`,
-            size: 100 - panelSize(),
-          },
+        panels={[
+          { id: `${clientId()}-panel` },
+          { id: `${clientId()}-sidebar` },
         ]}
-        onSizeChange={(details) => {
-          if (typeof details.size[0].size === "number") {
-            setPanelSize(details.size[0].size);
-          }
+        size={[panelSize(), 100 - panelSize()]}
+        onResize={(details) => {
+          const size = details.size;
+          setPanelSize(size[0]);
         }}
         gap="0"
         width="100%"
@@ -352,9 +420,15 @@ function Monitoring() {
                   loading={isConnecting()}
                   onClick={async () => {
                     if (systemConfig.lineConfig.lines.length !== 0) {
+                      setSystemConfig("lineConfig", "lines", []);
                       const disconnect = await disconnectServer(clientId());
                       if (typeof disconnect === "string") {
                         setClientId(crypto.randomUUID());
+                        toaster.create({
+                          title: "Server Disconnect Error",
+                          description: disconnect,
+                          type: "success",
+                        });
                       } else {
                         toaster.create({
                           title: "Server Disconnected",
@@ -379,42 +453,33 @@ function Monitoring() {
                       try {
                         await connect(cid, address);
                       } catch (error) {
+                        if (error) {
+                          toaster.create({
+                            title: "Connection Error",
+                            description: error as string,
+                            type: "error",
+                          });
+                        }
+                      }
+
+                      const payload: object = {
+                        core: {
+                          kind: "CORE_REQUEST_KIND_LINE_CONFIG",
+                        },
+                      };
+                      const msg = mmc.Request.fromObject(payload);
+                      const request = Array.from(
+                        mmc.Request.encode(msg).finish(),
+                      );
+                      try {
+                        await send(clientId(), request);
+                      } catch (error) {
                         toaster.create({
                           title: "Connection Error",
-                          description: error.message,
+                          description: error as string,
                           type: "error",
                         });
                       }
-
-                      load(
-                        "resources/proto/mmc.proto",
-                        async function (err, root) {
-                          if (err) {
-                            //console.log(err.stack);
-                            await disconnectServer(clientId());
-                            throw err;
-                          }
-                          if (!root) {
-                            await disconnectServer(clientId());
-                            return;
-                          }
-
-                          console.log(root);
-
-                          const sendMsg = root.lookupType("mmc.Request");
-                          const payload: object = {
-                            core: {
-                              kind: "CORE_REQUEST_KIND_LINE_CONFIG",
-                            },
-                          };
-                          const msg = sendMsg.create(payload);
-                          const request = Array.from(
-                            sendMsg.encode(msg).finish(),
-                          );
-                          await send(clientId(), request);
-                        },
-                      );
-
                       setIsConnecting(false);
                     } else {
                       toaster.create({

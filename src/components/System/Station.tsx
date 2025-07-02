@@ -3,10 +3,14 @@ import { LineContext } from "./Line.tsx";
 import { Stack } from "styled-system/jsx";
 import { For } from "solid-js/web";
 import { createContext } from "solid-js";
-import { AxesInfo } from "./Axes.tsx";
+import { AxesInfo, CarrierInfo } from "./Axes.tsx";
 import { JSX } from "solid-js";
 
-export const AxesContext = createContext<{ axes: AxesInfo; id: string }>();
+export const AxesContext = createContext<{
+  axes: AxesInfo;
+  id: string;
+  carrierInfo?: CarrierInfo;
+}>();
 
 export type StationProps = JSX.HTMLAttributes<HTMLDivElement>;
 
@@ -36,6 +40,12 @@ export function Station(props: StationProps) {
               value={{
                 axes: info,
                 id: `${stationId}:${stationContext.id * 3 + axesIndex() + 1}`,
+                carrierInfo:
+                  stationContext.carrierInfo &&
+                  info.carrierId &&
+                  stationContext.carrierInfo.get(info.carrierId!)
+                    ? stationContext.carrierInfo.get(info.carrierId!)
+                    : undefined,
               }}
             >
               {props.children}
