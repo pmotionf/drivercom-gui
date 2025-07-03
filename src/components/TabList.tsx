@@ -199,7 +199,6 @@ export function TabList(props: tabListProps) {
               plotSplitIndex: [],
               plotContext: [],
               tabName: "",
-              plotZoomState: [0, 0],
             };
 
             setTabContexts([...getTabContexts().tabContext, newTab]);
