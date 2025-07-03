@@ -55,6 +55,14 @@ function Monitoring() {
       () => systemConfig.lineConfig.lines,
       async () => {
         if (systemConfig.lineConfig.lines.length === 0) {
+          const disconnect = await disconnectServer(clientId());
+          if (typeof disconnect === "string") {
+            toaster.create({
+              title: "Disconnect Error",
+              description: disconnect,
+              type: "error",
+            });
+          }
           return;
         }
         await sendRequestLoop();
@@ -128,7 +136,6 @@ function Monitoring() {
   }
 
   async function sendRequestLoop() {
-    if (systemConfig.lineConfig.lines.length === 0) return;
     try {
       const sendAxis = await sendAxisInfo(systemConfig.lineConfig.lines, 1);
       const sendCarrier = await sendCarrierInfo(
@@ -136,21 +143,19 @@ function Monitoring() {
         1,
         1,
       );
-      if (
-        sendAxis !== null &&
-        sendCarrier !== null &&
-        systemConfig.lineConfig.lines.length !== 0
-      ) {
+      if (sendAxis !== null && sendCarrier !== null) {
         setTimeout(async () => {
+          if (systemConfig.lineConfig.lines.length === 0) {
+            setSystemConfig("lineConfig", "lines", []);
+            return;
+          }
           await sendRequestLoop();
         }, 10);
       } else {
         setSystemConfig("lineConfig", "lines", []);
-        await disconnect(clientId());
       }
     } catch {
       setSystemConfig("lineConfig", "lines", []);
-      await disconnect(clientId());
     }
   }
 
@@ -421,21 +426,7 @@ function Monitoring() {
                   onClick={async () => {
                     if (systemConfig.lineConfig.lines.length !== 0) {
                       setSystemConfig("lineConfig", "lines", []);
-                      const disconnect = await disconnectServer(clientId());
-                      if (typeof disconnect === "string") {
-                        setClientId(crypto.randomUUID());
-                        toaster.create({
-                          title: "Server Disconnect Error",
-                          description: disconnect,
-                          type: "success",
-                        });
-                      } else {
-                        toaster.create({
-                          title: "Server Disconnected",
-                          description: "Server is disconnected",
-                          type: "success",
-                        });
-                      }
+
                       return;
                     }
                     const serverIp = inputValues.get("IP");
