@@ -116,7 +116,15 @@ export function Legend(props: LegendProps) {
       const enumSeriesName = enumSeries()[i][0];
       if (props.series === enumSeriesName) {
         matchedSeriesName = enumSeries()[i][1];
+        break;
+      }
 
+      const enumTypes = enumSeriesName.replaceAll("_", ".").split(".");
+      const check = enumTypes.map((enumType) => {
+        return props.series.toLowerCase().includes(enumType.toLowerCase());
+      });
+      if (!check.includes(false)) {
+        matchedSeriesName = enumSeries()[i][1];
         break;
       }
     }
