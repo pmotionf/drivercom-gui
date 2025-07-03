@@ -68,12 +68,18 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
     );
   };
 
-  const setXRange = (tabIndex: number, newXRange: [number, number]) => {
+  const setRange = (
+    tabIndex: number,
+    newRange: {
+      x?: { min: number; max: number };
+      y?: { min: number; max: number };
+    },
+  ) => {
     return tabContexts.get(props.key)?.[1](
       "tabContext",
       tabIndex,
       "plotZoomState",
-      newXRange,
+      newRange,
     );
   };
 
@@ -101,9 +107,10 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
       : [{} as PlotContext],
   );
 
-  const [plotZoomState, setPlotZoomState] = createSignal<[number, number]>([
-    0, 0,
-  ]);
+  const [plotZoomState, setPlotZoomState] = createSignal<{
+    x?: { min: number; max: number };
+    y?: { min: number; max: number };
+  }>({});
   if (getTabContext(props.tabId).tabCtx.plotZoomState) {
     setPlotZoomState(getTabContext(props.tabId).tabCtx.plotZoomState!);
   }
@@ -113,7 +120,7 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
       () => plotZoomState(),
       () => {
         setTimeout(() => {
-          setXRange(getTabContext(props.tabId).currentIndex, plotZoomState());
+          setRange(getTabContext(props.tabId).currentIndex, plotZoomState());
         }, 20);
       },
       { defer: true },
@@ -446,80 +453,88 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
             <Stack
               direction="row-reverse"
               width="100%"
+              paddingLeft="1.5rem"
               paddingRight="1.6rem"
               style={{ overflow: "hidden" }}
               height="3rem"
             >
-              <Tooltip.Root>
-                <Tooltip.Trigger>
-                  <IconButton
-                    size="sm"
-                    onClick={() => {
-                      setPrevSplitIndex(splitIndex());
-                      splitPlot(index());
-                      setMergePlotIndexes([]);
-                    }}
-                    disabled={
-                      currentHeader.length <= 1 ||
-                      !plots[index()] ||
-                      !plots[index()].selected ||
-                      allSelected(index()) ||
-                      allNotSelected(index())
-                    }
-                  >
-                    <IconSeparatorHorizontal />
-                  </IconButton>
-                </Tooltip.Trigger>
-                <Tooltip.Positioner>
-                  <Tooltip.Content backgroundColor="bg.default">
-                    <Text color="fg.default">Split</Text>
-                  </Tooltip.Content>
-                </Tooltip.Positioner>
-              </Tooltip.Root>
-
-              <Tooltip.Root>
-                <Tooltip.Trigger>
-                  <IconButton
-                    onClick={() => {
-                      setPrevSplitIndex(splitIndex());
-                      mergePlot(mergePlotIndexes());
-                      setMergePlotIndexes([]);
-                    }}
-                    disabled={
-                      mergePlotIndexes().length < 2 ||
-                      mergePlotIndexes().indexOf(index()) === -1
-                    }
-                    size="sm"
-                  >
-                    <IconFold />
-                  </IconButton>
-                </Tooltip.Trigger>
-                <Tooltip.Positioner>
-                  <Tooltip.Content backgroundColor="bg.default">
-                    <Text color="fg.default">Merge</Text>
-                  </Tooltip.Content>
-                </Tooltip.Positioner>
-              </Tooltip.Root>
-
-              <Checkbox
-                width="8rem"
-                checked={mergePlotIndexes().indexOf(index()) !== -1}
-                onCheckedChange={(checkBoxState) => {
-                  if (checkBoxState.checked === true) {
-                    setMergePlotIndexes((prev) => {
-                      return [...prev, index()];
-                    });
-                  } else {
-                    setMergePlotIndexes((prev) => {
-                      return prev.filter(
-                        (graphIndex) => graphIndex !== index(),
-                      );
-                    });
-                  }
-                }}
+              <Stack
+                direction="row-reverse"
+                width="15rem"
+                id={`plotTitle:${currentID()}`}
+                gap="0.5rem"
               >
-                <Text fontWeight="bold">Graph {index() + 1}</Text>
-              </Checkbox>
+                <Tooltip.Root>
+                  <Tooltip.Trigger>
+                    <IconButton
+                      size="sm"
+                      onClick={() => {
+                        setPrevSplitIndex(splitIndex());
+                        splitPlot(index());
+                        setMergePlotIndexes([]);
+                      }}
+                      disabled={
+                        currentHeader.length <= 1 ||
+                        !plots[index()] ||
+                        !plots[index()].selected ||
+                        allSelected(index()) ||
+                        allNotSelected(index())
+                      }
+                    >
+                      <IconSeparatorHorizontal />
+                    </IconButton>
+                  </Tooltip.Trigger>
+                  <Tooltip.Positioner>
+                    <Tooltip.Content backgroundColor="bg.default">
+                      <Text color="fg.default">Split</Text>
+                    </Tooltip.Content>
+                  </Tooltip.Positioner>
+                </Tooltip.Root>
+
+                <Tooltip.Root>
+                  <Tooltip.Trigger>
+                    <IconButton
+                      onClick={() => {
+                        setPrevSplitIndex(splitIndex());
+                        mergePlot(mergePlotIndexes());
+                        setMergePlotIndexes([]);
+                      }}
+                      disabled={
+                        mergePlotIndexes().length < 2 ||
+                        mergePlotIndexes().indexOf(index()) === -1
+                      }
+                      size="sm"
+                    >
+                      <IconFold />
+                    </IconButton>
+                  </Tooltip.Trigger>
+                  <Tooltip.Positioner>
+                    <Tooltip.Content backgroundColor="bg.default">
+                      <Text color="fg.default">Merge</Text>
+                    </Tooltip.Content>
+                  </Tooltip.Positioner>
+                </Tooltip.Root>
+
+                <Checkbox
+                  width="8.3rem"
+                  checked={mergePlotIndexes().indexOf(index()) !== -1}
+                  onCheckedChange={(checkBoxState) => {
+                    if (checkBoxState.checked === true) {
+                      setMergePlotIndexes((prev) => {
+                        return [...prev, index()];
+                      });
+                    } else {
+                      setMergePlotIndexes((prev) => {
+                        return prev.filter(
+                          (graphIndex) => graphIndex !== index(),
+                        );
+                      });
+                    }
+                  }}
+                >
+                  <Text fontWeight="bold">Graph {index() + 1}</Text>
+                </Checkbox>
+              </Stack>
               <Show when={index() === 0}>
                 <Stack direction="row" width={`calc(100% - 16rem)`}>
                   <Tooltip.Root>
@@ -562,11 +577,9 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
                   setPlots(index(), ctx);
                 }
               }}
-              xRange={plotZoomState()}
-              onXRangeChange={(xRange) => {
-                if (plotZoomState() !== xRange) {
-                  setPlotZoomState(xRange);
-                }
+              zoomState={plotZoomState()}
+              onZoomState={(zoomState) => {
+                setPlotZoomState(zoomState);
               }}
               legendShrink={isLegendShrink()}
               onLegendShrinkChange={(newState) => {
