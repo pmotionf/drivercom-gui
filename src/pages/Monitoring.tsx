@@ -20,6 +20,7 @@ import { on } from "solid-js";
 import { System } from "~/components/System/System.tsx";
 import { Toast } from "~/components/ui/toast.tsx";
 import { LineConfig } from "~/components/System/Line.tsx";
+//@ts-ignore Implicitly has an 'any' type
 import { mmc } from "~/components/proto/mmc.js";
 import { CarrierInfo } from "~/components/System/Axes.tsx";
 import { UnlistenFn } from "@tauri-apps/api/event";
@@ -41,40 +42,28 @@ function Monitoring() {
   });
   const inputValues: Map<string, string> = new Map();
 
-  const disconnectServer = async (clientId: string): Promise<string | null> => {
+  const disconnectServer = async (clientId: string) => {
     try {
       await disconnect(clientId);
+      setClientId(crypto.randomUUID());
     } catch (e) {
       if (e) {
-        return e as string;
+        toaster.create({
+          title: "Disconnect Error",
+          description: e as string,
+          type: "error",
+        });
       }
     }
-    return null;
   };
 
   createEffect(
     on(
-      () => systemConfig.lineConfig.lines,
+      () => systemConfig.lineConfig.lines.length,
       async () => {
-        if (systemConfig.lineConfig.lines.length === 0) {
-          if (unlisten !== null) {
-            unlisten();
-            unlisten = null;
-            const disconnect = await disconnectServer(clientId());
-            if (typeof disconnect === "string") {
-              toaster.create({
-                title: "Disconnect Error",
-                description: disconnect,
-                type: "error",
-              });
-            } else {
-              setClientId(crypto.randomUUID());
-            }
-          }
-          return;
+        if (systemConfig.lineConfig.lines.length !== 0) {
+          await sendRequestLoop();
         }
-
-        await sendRequestLoop();
       },
       { defer: true },
     ),
@@ -95,7 +84,7 @@ function Monitoring() {
     };
 
     const msg = mmc.Request.create(payload);
-    const request = Array.from(mmc.Request.encode(msg).finish());
+    const request: number[] = Array.from(mmc.Request.encode(msg).finish());
 
     try {
       await send(clientId(), request);
@@ -131,7 +120,7 @@ function Monitoring() {
       };
 
       const msg = mmc.Request.create(payload);
-      const request = Array.from(mmc.Request.encode(msg).finish());
+      const request: number[] = Array.from(mmc.Request.encode(msg).finish());
       try {
         await send(clientId(), request);
       } catch {
@@ -147,7 +136,7 @@ function Monitoring() {
   }
 
   async function sendRequestLoop() {
-    if (systemConfig.lineConfig.lines.length === 0) return;
+    if (unlisten === null) return;
     try {
       const sendAxis = await sendAxisInfo(systemConfig.lineConfig.lines, 1);
       const sendCarrier = await sendCarrierInfo(
@@ -158,16 +147,31 @@ function Monitoring() {
       if (sendAxis !== null && sendCarrier !== null) {
         setTimeout(async () => {
           if (systemConfig.lineConfig.lines.length === 0) {
-            setSystemConfig("lineConfig", "lines", []);
+            if (unlisten !== null) {
+              unlisten();
+              unlisten = null;
+              await disconnectServer(clientId());
+              setSystemConfig("lineConfig", "lines", []);
+            }
             return;
           }
           await sendRequestLoop();
         }, 10);
       } else {
-        setSystemConfig("lineConfig", "lines", []);
+        if (unlisten !== null) {
+          unlisten();
+          unlisten = null;
+          await disconnectServer(clientId());
+          setSystemConfig("lineConfig", "lines", []);
+        }
       }
     } catch {
-      setSystemConfig("lineConfig", "lines", []);
+      if (unlisten !== null) {
+        unlisten();
+        unlisten = null;
+        await disconnectServer(clientId());
+        setSystemConfig("lineConfig", "lines", []);
+      }
     }
   }
 
@@ -209,8 +213,6 @@ function Monitoring() {
               return;
             }
           }
-
-          console.log(decode);
 
           if ("carrier" in decode.info) {
             const carrier = decode.info.carrier;
@@ -425,8 +427,12 @@ function Monitoring() {
                   loading={isConnecting()}
                   onClick={async () => {
                     if (systemConfig.lineConfig.lines.length !== 0) {
-                      setSystemConfig("lineConfig", "lines", []);
-
+                      if (unlisten !== null) {
+                        unlisten();
+                        unlisten = null;
+                        await disconnectServer(clientId());
+                        setSystemConfig("lineConfig", "lines", []);
+                      }
                       return;
                     }
                     const serverIp = inputValues.get("IP");
@@ -460,11 +466,21 @@ function Monitoring() {
                       const request: number[] = Array.from(
                         mmc.Request.encode(msg).finish(),
                       );
-                      await send(clientId(), request);
 
                       if (unlisten === null) {
                         unlisten = await listenFromServer();
                       }
+
+                      try {
+                        await send(clientId(), request);
+                      } catch (e) {
+                        toaster.create({
+                          title: "Connection Error",
+                          description: e as string,
+                          type: "error",
+                        });
+                      }
+
                       setIsConnecting(false);
                     } else {
                       toaster.create({
