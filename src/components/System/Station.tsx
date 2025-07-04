@@ -23,14 +23,11 @@ export function Station(props: StationProps) {
   return (
     <Stack
       id={stationId}
-      width="29rem"
-      height="10rem"
       marginBottom="1rem"
       direction="row"
       gap="0.5rem"
       borderRadius="0.2rem"
       padding="0.5rem"
-      paddingBottom="1rem"
       borderWidth="1px"
     >
       <For each={stationContext.axes}>

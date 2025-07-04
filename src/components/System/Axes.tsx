@@ -29,8 +29,8 @@ export function Axis() {
 
   return (
     <Stack
-      width="9rem"
-      height="9rem"
+      width="13rem"
+      height="8rem"
       borderRadius="0.5rem"
       borderWidth="1px"
       borderRightWidth={
@@ -62,9 +62,10 @@ export function Axis() {
         width="100%"
         borderBottomWidth="0.02px"
         gap="1"
-        direction="column"
+        direction="row"
         paddingBottom="0.3rem"
         borderColor="bg.muted"
+        marginBottom="0.2rem"
       >
         <Badge
           width="min-content"
@@ -88,6 +89,28 @@ export function Axis() {
             Axis {axesContext.id.split(":")[1]}
           </Text>
         </Badge>
+
+        <Show
+          when={axesContext.axes.waitingPull || axesContext.axes.waitingPush}
+        >
+          <Badge
+            width="min-content"
+            height="min-content"
+            paddingLeft="0.5rem"
+            paddingRight="0.5rem"
+            borderWidth="0"
+          >
+            <Text width="100%" size="sm">
+              {axesContext.axes.waitingPush
+                ? axesContext.axes.waitingPull
+                  ? "Waiting pull push"
+                  : "Waiting push"
+                : axesContext.axes.waitingPull
+                  ? "Waiting pull"
+                  : ""}
+            </Text>
+          </Badge>
+        </Show>
       </Stack>
       <Show when={axesContext.axes.carrierId}>
         <Text
@@ -100,24 +123,33 @@ export function Axis() {
           Carrier {axesContext.axes.carrierId}
         </Text>
         <Show when={axesContext.carrierInfo}>
-          <Text width="100%" size="sm">
-            {axesContext.carrierInfo!.state.replace("STATE_POS_", "")}
-          </Text>
-          <Text width="100%" size="sm">
-            {axesContext.carrierInfo!.location}
-          </Text>
+          <Stack direction="row" gap="0">
+            <Text width="2.5rem" size="sm" fontWeight="bold">
+              State
+            </Text>
+            <Text width={`calc(100% - 2.5rem)`} size="sm">
+              {axesContext.carrierInfo!.state.replace("STATE_POS_", "")}
+            </Text>
+          </Stack>
+          <Stack direction="row" gap="0">
+            <Text width="2.5rem" size="sm" fontWeight="bold">
+              LOC
+            </Text>
+            <Text
+              width={`calc(100% - 2.5rem)`}
+              size="sm"
+              style={{
+                "text-overflow": "ellipsis",
+                "white-space": "nowrap",
+                display: "block",
+                overflow: "hidden",
+                "text-align": "left",
+              }}
+            >
+              {axesContext.carrierInfo!.location}
+            </Text>
+          </Stack>
         </Show>
-      </Show>
-
-      <Show when={axesContext.axes.waitingPush}>
-        <Text width="100%" size="sm">
-          Waiting push
-        </Text>
-      </Show>
-      <Show when={axesContext.axes.waitingPull}>
-        <Text width="100%" size="sm">
-          Waiting pull
-        </Text>
       </Show>
     </Stack>
   );

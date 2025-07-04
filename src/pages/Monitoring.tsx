@@ -125,7 +125,7 @@ function Monitoring() {
         info: {
           carrier: {
             lineId: lineId,
-            axisId: axisId,
+            carrierId: lines[lineId - 1].axesInfo![axisId - 1].carrierId,
           },
         },
       };
@@ -173,7 +173,6 @@ function Monitoring() {
 
   async function listenFromServer(): Promise<UnlistenFn> {
     return await listen((x) => {
-      console.log(x);
       if (
         x.payload.id === clientId() &&
         x.payload.event.message &&
@@ -207,11 +206,15 @@ function Monitoring() {
                 "axesInfo",
                 decode.info.axis.axes,
               );
+              return;
             }
           }
 
+          console.log(decode);
+
           if ("carrier" in decode.info) {
             const carrier = decode.info.carrier;
+
             if (
               "id" in carrier &&
               "state" in carrier &&
