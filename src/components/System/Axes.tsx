@@ -122,31 +122,46 @@ export function Axis() {
         >
           Carrier {axesContext.axes.carrierId}
         </Text>
+
+        <Stack direction="row" gap="0">
+          <Text width="3rem" size="sm" fontWeight="bold">
+            State
+          </Text>
+          <Text
+            width={`calc(100% - 3rem)`}
+            size="sm"
+            textAlign="right"
+            style={{
+              "white-space": "nowrap",
+              display: "block",
+              overflow: "hidden",
+              "text-overflow": `ellipsis`,
+              "user-select": "none",
+            }}
+          >
+            {axesContext.carrierInfo
+              ? axesContext.carrierInfo.state.replace("STATE_", "")
+              : ""}
+          </Text>
+        </Stack>
         <Show when={axesContext.carrierInfo}>
           <Stack direction="row" gap="0">
-            <Text width="2.5rem" size="sm" fontWeight="bold">
-              State
-            </Text>
-            <Text width={`calc(100% - 2.5rem)`} size="sm">
-              {axesContext.carrierInfo!.state.replace("STATE_POS_", "")}
-            </Text>
-          </Stack>
-          <Stack direction="row" gap="0">
-            <Text width="2.5rem" size="sm" fontWeight="bold">
-              LOC
+            <Text width="3rem" size="sm" fontWeight="bold">
+              Pos
             </Text>
             <Text
-              width={`calc(100% - 2.5rem)`}
+              width={`calc(100% - 3rem)`}
               size="sm"
               style={{
                 "text-overflow": "ellipsis",
                 "white-space": "nowrap",
                 display: "block",
                 overflow: "hidden",
-                "text-align": "left",
+                "text-align": "right",
+                "font-family": "monospace",
               }}
             >
-              {axesContext.carrierInfo!.location}
+              {axesContext.carrierInfo!.location.toFixed(6)}
             </Text>
           </Stack>
         </Show>
