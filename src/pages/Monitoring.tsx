@@ -22,6 +22,7 @@ import { Toast } from "~/components/ui/toast.tsx";
 import { LineConfig } from "~/components/System/Line.tsx";
 import { mmc } from "~/components/proto/mmc.js";
 import { CarrierInfo } from "~/components/System/Axes.tsx";
+import { UnlistenFn } from "@tauri-apps/api/event";
 
 export type SystemConfig = {
   lineConfig: {
@@ -33,6 +34,7 @@ function Monitoring() {
   const [clientId, setClientId] = createSignal<string>("clientID");
   const [showSideBar, setShowSideBar] = createSignal<boolean>(true);
   const [panelSize, setPanelSize] = createSignal<number>(100);
+  let unlisten: UnlistenFn | null = null;
 
   const [systemConfig, setSystemConfig] = createStore<SystemConfig>({
     lineConfig: { lines: [] },
@@ -55,6 +57,10 @@ function Monitoring() {
       () => systemConfig.lineConfig.lines,
       async () => {
         if (systemConfig.lineConfig.lines.length === 0) {
+          if (unlisten !== null) {
+            unlisten();
+            unlisten = null;
+          }
           const disconnect = await disconnectServer(clientId());
           if (typeof disconnect === "string") {
             toaster.create({
@@ -63,8 +69,10 @@ function Monitoring() {
               type: "error",
             });
           }
+
           return;
         }
+
         await sendRequestLoop();
       },
       { defer: true },
@@ -72,6 +80,7 @@ function Monitoring() {
   );
 
   async function sendAxisInfo(lines: LineConfig[], lineId: number) {
+    if (systemConfig.lineConfig.lines.length === 0) return null;
     const payload = {
       info: {
         axis: {
@@ -103,6 +112,7 @@ function Monitoring() {
     lineId: number,
     axisId: number,
   ) {
+    if (systemConfig.lineConfig.lines.length === 0) return null;
     const axes = lines[lineId - 1].axes;
 
     if (
@@ -136,6 +146,7 @@ function Monitoring() {
   }
 
   async function sendRequestLoop() {
+    if (systemConfig.lineConfig.lines.length === 0) return;
     try {
       const sendAxis = await sendAxisInfo(systemConfig.lineConfig.lines, 1);
       const sendCarrier = await sendCarrierInfo(
@@ -159,103 +170,88 @@ function Monitoring() {
     }
   }
 
-  createEffect(async () => {
-    try {
-      await listen((x) => {
-        if (
-          x.payload.id === clientId() &&
-          x.payload.event.message &&
-          x.payload.event.message.data
-        ) {
-          const msg = Buffer.from(x.payload.event.message!.data);
-          const decode = mmc.Response.decode(msg).toJSON();
+  async function listenFromServer(): Promise<UnlistenFn> {
+    return await listen((x) => {
+      console.log(x);
+      if (
+        x.payload.id === clientId() &&
+        x.payload.event.message &&
+        x.payload.event.message.data
+      ) {
+        const msg = Buffer.from(x.payload.event.message!.data);
+        const decode = mmc.Response.decode(msg).toJSON();
 
-          if ("core" in decode && typeof decode.core === "object") {
+        if ("core" in decode && typeof decode.core === "object") {
+          if (
+            "lineConfig" in decode.core &&
+            typeof decode.core.lineConfig === "object"
+          ) {
+            setSystemConfig("lineConfig", decode.core.lineConfig);
+          }
+        } else if ("info" in decode && typeof decode.info === "object") {
+          if (
+            "axis" in decode.info &&
+            "axes" in decode.info.axis &&
+            "lineId" in decode.info.axis
+          ) {
             if (
-              "lineConfig" in decode.core &&
-              typeof decode.core.lineConfig === "object"
+              typeof decode.info.axis.lineId === "number" &&
+              typeof decode.info.axis.axes === "object" &&
+              systemConfig.lineConfig.lines.length !== 0
             ) {
-              setSystemConfig("lineConfig", decode.core.lineConfig);
-
-              console.log(JSON.stringify(systemConfig));
+              setSystemConfig(
+                "lineConfig",
+                "lines",
+                decode.info.axis.lineId - 1,
+                "axesInfo",
+                decode.info.axis.axes,
+              );
             }
-          } else if ("info" in decode && typeof decode.info === "object") {
+          }
+
+          if ("carrier" in decode.info) {
+            const carrier = decode.info.carrier;
             if (
-              "axis" in decode.info &&
-              "axes" in decode.info.axis &&
-              "lineId" in decode.info.axis
+              "id" in carrier &&
+              "state" in carrier &&
+              "location" in carrier &&
+              "mainAxisId" in carrier &&
+              "auxAxisId" in carrier
             ) {
               if (
-                typeof decode.info.axis.lineId === "number" &&
-                typeof decode.info.axis.axes === "object" &&
+                "lineId" in carrier &&
+                typeof carrier.lineId == "number" &&
                 systemConfig.lineConfig.lines.length !== 0
               ) {
-                setSystemConfig(
-                  "lineConfig",
-                  "lines",
-                  decode.info.axis.lineId - 1,
-                  "axesInfo",
-                  decode.info.axis.axes,
-                );
-              }
-            }
-
-            if ("carrier" in decode.info) {
-              const carrier = decode.info.carrier;
-              if (
-                "id" in carrier &&
-                "state" in carrier &&
-                "location" in carrier &&
-                "mainAxisId" in carrier &&
-                "auxAxisId" in carrier
-              ) {
                 if (
-                  "lineId" in carrier &&
-                  typeof carrier.lineId == "number" &&
-                  systemConfig.lineConfig.lines.length !== 0
+                  !systemConfig.lineConfig.lines[carrier.lineId - 1].carrierInfo
                 ) {
-                  if (
-                    !systemConfig.lineConfig.lines[carrier.lineId - 1]
-                      .carrierInfo
-                  ) {
-                    const map: Map<number, CarrierInfo> = new Map();
-                    setSystemConfig(
-                      "lineConfig",
-                      "lines",
-                      carrier.lineId - 1,
-                      "carrierInfo",
-                      map,
-                    );
-                  }
-
-                  const updateInfo = {
-                    state: carrier.state as string,
-                    location: carrier.location as number,
-                    mainAxisId: carrier.mainAxisId as number,
-                    auxAxisId: carrier.auxAxisId as number,
-                  };
-                  systemConfig.lineConfig.lines[
-                    carrier.lineId - 1
-                  ].carrierInfo!.set(carrier.id, updateInfo);
+                  const map: Map<number, CarrierInfo> = new Map();
+                  setSystemConfig(
+                    "lineConfig",
+                    "lines",
+                    carrier.lineId - 1,
+                    "carrierInfo",
+                    map,
+                  );
                 }
+
+                const updateInfo = {
+                  state: carrier.state as string,
+                  location: carrier.location as number,
+                  mainAxisId: carrier.mainAxisId as number,
+                  auxAxisId: carrier.auxAxisId as number,
+                };
+                systemConfig.lineConfig.lines[
+                  carrier.lineId - 1
+                ].carrierInfo!.set(carrier.id, updateInfo);
               }
             }
           }
         }
-      });
-    } catch {
-      const disconnect = await disconnectServer(clientId());
-      if (typeof disconnect === "string") {
-        setClientId(crypto.randomUUID());
-      } else {
-        toaster.create({
-          title: "Server Disconnected",
-          description: "Server is disconnected",
-          type: "success",
-        });
       }
-    }
-  });
+    });
+  }
 
   onCleanup(() => {
     if (systemConfig.lineConfig.lines.length !== 0) {
@@ -444,13 +440,11 @@ function Monitoring() {
                       try {
                         await connect(cid, address);
                       } catch (error) {
-                        if (error) {
-                          toaster.create({
-                            title: "Connection Error",
-                            description: error as string,
-                            type: "error",
-                          });
-                        }
+                        toaster.create({
+                          title: "Connection Error",
+                          description: error as string,
+                          type: "error",
+                        });
                       }
 
                       const payload: object = {
@@ -459,17 +453,13 @@ function Monitoring() {
                         },
                       };
                       const msg = mmc.Request.fromObject(payload);
-                      const request = Array.from(
+                      const request: number[] = Array.from(
                         mmc.Request.encode(msg).finish(),
                       );
-                      try {
-                        await send(clientId(), request);
-                      } catch (error) {
-                        toaster.create({
-                          title: "Connection Error",
-                          description: error as string,
-                          type: "error",
-                        });
+                      await send(clientId(), request);
+
+                      if (unlisten === null) {
+                        unlisten = await listenFromServer();
                       }
                       setIsConnecting(false);
                     } else {
