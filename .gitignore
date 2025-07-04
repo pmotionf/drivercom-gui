@@ -6,3 +6,4 @@ styled-system-studio
 .vite
 
 src-tauri/binaries
+src/components/proto
