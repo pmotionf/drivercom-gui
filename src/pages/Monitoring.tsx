@@ -31,7 +31,7 @@ export type SystemConfig = {
 };
 
 function Monitoring() {
-  const [clientId, setClientId] = createSignal<string>("clientID");
+  const [clientId, setClientId] = createSignal<string>(crypto.randomUUID());
   const [showSideBar, setShowSideBar] = createSignal<boolean>(true);
   const [panelSize, setPanelSize] = createSignal<number>(100);
   let unlisten: UnlistenFn | null = null;
@@ -60,16 +60,17 @@ function Monitoring() {
           if (unlisten !== null) {
             unlisten();
             unlisten = null;
+            const disconnect = await disconnectServer(clientId());
+            if (typeof disconnect === "string") {
+              toaster.create({
+                title: "Disconnect Error",
+                description: disconnect,
+                type: "error",
+              });
+            } else {
+              setClientId(crypto.randomUUID());
+            }
           }
-          const disconnect = await disconnectServer(clientId());
-          if (typeof disconnect === "string") {
-            toaster.create({
-              title: "Disconnect Error",
-              description: disconnect,
-              type: "error",
-            });
-          }
-
           return;
         }
 
