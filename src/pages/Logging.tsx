@@ -7,7 +7,7 @@ import {
   setRecentLogFilePaths,
 } from "~/GlobalState.ts";
 import { Command } from "@tauri-apps/plugin-shell";
-import { createSignal, Show } from "solid-js";
+import { createSignal, onCleanup, Show } from "solid-js";
 import { LoggingForm } from "~/components/LoggingForm.tsx";
 import { Toast } from "~/components/ui/toast.tsx";
 import {
@@ -29,6 +29,7 @@ import { Spinner } from "~/components/ui/styled/spinner.tsx";
 import { FileMenu } from "~/components/FileMenu.tsx";
 import { PortMenu } from "~/components/PortMenu.tsx";
 import { ConnectButton } from "./Connect/ConnectButton.tsx";
+import { exit } from "@tauri-apps/plugin-process";
 
 export function Logging() {
   const [logConfigure, setLogConfigure] = createSignal({});
@@ -304,6 +305,10 @@ export function Logging() {
   const toaster = Toast.createToaster({
     placement: "top-end",
     gap: 24,
+  });
+
+  onCleanup(async () => {
+    await exit();
   });
 
   return (

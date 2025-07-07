@@ -22,6 +22,8 @@ import { Tooltip } from "~/components/ui/tooltip.tsx";
 import { Text } from "~/components/ui/text";
 import { IconX } from "@tabler/icons-solidjs";
 import { ConnectButton } from "./Connect/ConnectButton.tsx";
+import { exit } from "@tauri-apps/plugin-process";
+import { onCleanup } from "solid-js";
 
 function Configuration() {
   const [config, setConfig] = createSignal({});
@@ -208,6 +210,10 @@ function Configuration() {
     const output = await saveConfig.execute();
     return output.stderr;
   }
+
+  onCleanup(async () => {
+    await exit();
+  });
 
   return (
     <>
