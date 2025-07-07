@@ -23,6 +23,7 @@
   },
   "dependencies": {
     "@ark-ui/solid": "^5.1.0",
+    "@dschz/solid-uplot": "^0.2.0",
     "@kuyoonjo/tauri-plugin-tcp": "^0.1.1",
     "@leeoniya/ufuzzy": "^1.0.18",
     "@neodrag/solid": "^2.3.1",
