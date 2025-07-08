@@ -11,11 +11,10 @@ import {
 } from "solid-js";
 import { createStore, unwrap } from "solid-js/store";
 
-import uPlot, { AlignedData } from "uplot";
+import uPlot from "uplot";
 import "uplot/dist/uPlot.min.css";
 
 import { GlobalStateContext } from "~/GlobalState";
-import { Heading } from "~/components/ui/heading";
 import { ToggleGroup } from "~/components/ui/toggle-group";
 import { IconButton } from "~/components/ui/icon-button";
 import {
@@ -39,6 +38,11 @@ import { Text } from "./ui/text";
 import { Portal } from "solid-js/web";
 import uFuzzy from "@leeoniya/ufuzzy";
 import { Splitter } from "./ui/splitter";
+import type { CursorPluginMessageBus } from "@dschz/solid-uplot/plugins";
+import { SolidUplot, createPluginBus } from "@dschz/solid-uplot";
+import type { UplotPluginFactory } from "@dschz/solid-uplot";
+
+import { cursor } from "@dschz/solid-uplot/plugins";
 
 export type PlotProps = JSX.HTMLAttributes<HTMLDivElement> & {
   id: string;
@@ -54,7 +58,6 @@ export type PlotProps = JSX.HTMLAttributes<HTMLDivElement> & {
   onLegendPanelSize?: (size: number) => void;
   legendShrink?: boolean;
   onLegendShrinkChange?: (isShrink: boolean) => void;
-  cursorIdx?: number | null | undefined;
 };
 
 export type PlotContext = {
@@ -74,12 +77,11 @@ enum CursorMode {
 
 export function Plot(props: PlotProps) {
   const [, rest] = splitProps(props, ["name", "header", "series", "id"]);
-  let fg_default = getComputedCSSVariableValue("--colors-fg-default");
-  let bg_muted = getComputedCSSVariableValue("--colors-bg-muted");
   const { globalState } = useContext(GlobalStateContext)!;
   let theme = globalState.theme;
 
   const [render, setRender] = createSignal(false);
+  const [cursorIdx, setCursorIdx] = createSignal<number | null>(null);
   let plot: uPlot;
 
   const group = () => props.group ?? props.id ?? "";
@@ -216,9 +218,7 @@ export function Plot(props: PlotProps) {
   const [xRange, setXRange] = createSignal<number>(0);
 
   createEffect(() => {
-    const domainWidth: number = document.getElementById(
-      props.id + "-wrapper",
-    )!.offsetWidth;
+    const domainWidth: number = document.getElementById(props.id)!.offsetWidth;
     const scale: number = xRange() / domainWidth;
     const array: number[] = [];
 
@@ -252,192 +252,6 @@ export function Plot(props: PlotProps) {
     document.removeEventListener("wheel", checkZoomLevel);
   });
 
-  function createPlot() {
-    const plot_element = document.getElementById(props.id)!;
-    plot_element.replaceChildren();
-    const oldContext: PlotContext = unwrap(getContext());
-
-    let series: uPlot.Series[] = [
-      {
-        label: "Cycle",
-      },
-      ...props.header.map((_, index) => ({
-        label: props.header[index],
-        stroke: () => oldContext.color[index],
-        show: oldContext.visible[index],
-        ...{
-          ...(oldContext.style[index] === LegendStroke.Dash && {
-            dash: [10, 5],
-          }),
-          ...(oldContext.style[index] === LegendStroke.Dot && {
-            dash: [0, 5],
-            points: {
-              show: true,
-              ...(dotFilter().length !== 0 && { filter: checkDotFilter() }),
-            },
-          }),
-        },
-      })),
-    ];
-    let scales: uPlot.Scales = {
-      x: {
-        time: false,
-      },
-    };
-
-    // Save and restore existing plot state.
-    if (plot) {
-      series = plot.series;
-      scales = plot.scales;
-    }
-
-    plot = new uPlot(
-      {
-        scales: scales,
-        axes: [
-          {
-            stroke: fg_default,
-            grid: {
-              stroke: bg_muted,
-            },
-            ticks: {
-              stroke: bg_muted,
-            },
-          },
-          {
-            stroke: fg_default,
-            grid: {
-              stroke: bg_muted,
-            },
-            ticks: {
-              stroke: bg_muted,
-            },
-          },
-        ],
-        legend: {
-          show: false,
-        },
-        width: plot_element.clientWidth,
-        height: plot_element.clientHeight,
-        series: series,
-        cursor: {
-          sync: {
-            key: group(),
-          },
-          bind: {
-            mousedown: (u, _targ, handler) => {
-              return (e) => {
-                if (e.button == 0) {
-                  // Always release cursor lock if not control-clicking.
-                  if (cursorMode() !== CursorMode.Lock) {
-                    // @ts-ignore: TSC unable to detect `_lock` field
-                    if (u.cursor._lock) {
-                      uPlot.sync(group()).plots.forEach((up) => {
-                        // @ts-ignore: TSC unable to detect `_lock` field
-                        up.cursor._lock = false;
-                      });
-                    }
-                  } else {
-                    // @ts-ignore: TSC unable to detect `_lock` field
-                    const new_lock = !u.cursor._lock;
-                    // Lock cursor in plot only when control-clicking.
-                    uPlot.sync(group()).plots.forEach((up) => {
-                      // @ts-ignore: TSC unable to detect `_lock` field
-                      up.cursor._lock = new_lock;
-                    });
-                    return null;
-                  }
-
-                  if (cursorMode() === CursorMode.Zoom) {
-                    handler(e);
-                  } else if (cursorMode() === CursorMode.Pan) {
-                    const xMin = 0;
-                    const xMax = u.data[0].length;
-
-                    const left0 = e.clientX;
-
-                    const scXMin0 = u.scales.x.min!;
-                    const scXMax0 = u.scales.x.max!;
-
-                    const xUnitsPerPx = u.posToVal(1, "x") - u.posToVal(0, "x");
-
-                    const onmove = (e: MouseEvent) => {
-                      e.preventDefault();
-
-                      const left1 = e.clientX;
-                      const dx = xUnitsPerPx * (left1 - left0);
-
-                      const minXBoundary = scXMin0 - dx;
-                      const maxXBoundary = scXMax0 - dx;
-
-                      let scaleXMin = minXBoundary;
-                      let scaleXMax = maxXBoundary;
-
-                      if (xMin >= minXBoundary) {
-                        scaleXMin = xMin;
-                        scaleXMax = scXMax0;
-                      } else if (xMax <= maxXBoundary) {
-                        scaleXMin = scXMin0;
-                        scaleXMax = xMax;
-                      }
-
-                      uPlot.sync(group()).plots.forEach((up) => {
-                        up.setScale("x", {
-                          min: scaleXMin,
-                          max: scaleXMax,
-                        });
-                      });
-                    };
-
-                    const onup = () => {
-                      document.removeEventListener("mousemove", onmove);
-                      document.removeEventListener("mouseup", onup);
-                    };
-
-                    document.addEventListener("mousemove", onmove);
-                    document.addEventListener("mouseup", onup);
-                  }
-                }
-
-                return null;
-              };
-            },
-            mouseup: (u, _targ, handler) => {
-              return (e) => {
-                if (e.button == 0) {
-                  // Prevent accidental micro-drags.
-                  if (u.select.width < 10) {
-                    u.select.width = 0;
-                  }
-                  handler(e);
-                }
-                return null;
-              };
-            },
-          },
-        },
-        plugins: [wheelZoomPlugin({ factor: 0.75, group: group() })],
-      },
-      [
-        [...Array(props.series[0].length).keys()],
-        ...props.series,
-      ] as AlignedData,
-      plot_element,
-    );
-    setRender(true);
-
-    if (props.xRange) {
-      const xMin = props.xRange[0];
-      const xMax = props.xRange[1];
-
-      if (xMin >= xMax) return;
-      uPlot.sync(group()).plots.forEach((up: uPlot) => {
-        up.setScale("x", { min: xMin, max: xMax });
-        setXRange(xMax - xMin);
-      });
-    }
-  }
-
   onMount(() => {
     // Wrap in create effect to handle ID changing.
     createEffect(() => {
@@ -453,22 +267,23 @@ export function Plot(props: PlotProps) {
           }
         }, 200);
       });
-      resize.observe(document.getElementById(props.id)!);
+      resize.observe(document.getElementById(`${props.id}`)!);
     });
   });
+
+  const [fgDefault, setFgDefault] = createSignal<string>(
+    getComputedCSSVariableValue("--colors-fg-default"),
+  );
+  const [bgMuted, setBgMuted] = createSignal<string>(
+    getComputedCSSVariableValue("--colors-bg-muted"),
+  );
+
   createEffect(() => {
     if (globalState.theme !== theme) {
       theme = globalState.theme;
-      fg_default = getComputedCSSVariableValue("--colors-fg-default");
-      bg_muted = getComputedCSSVariableValue("--colors-bg-muted");
-      createPlot();
+      setFgDefault(getComputedCSSVariableValue("--colors-fg-default"));
+      setBgMuted(getComputedCSSVariableValue("--colors-bg-muted"));
     }
-  });
-
-  createEffect(() => {
-    setTimeout(() => {
-      createPlot();
-    }, 200);
   });
 
   const selection_css = `
@@ -514,11 +329,14 @@ export function Plot(props: PlotProps) {
     }
   });
 
+  const bus = createPluginBus<CursorPluginMessageBus>();
+
   return (
     <>
-      <div {...rest} id={props.id + "-wrapper"}>
+      <div {...rest} id={props.id}>
         <Splitter.Root
-          style={{ width: "100%", height: "100%" }}
+          id={props.id}
+          style={{ width: "100%", height: "100%", padding: "0" }}
           panels={[{ id: `plot-${props.id}` }, { id: `legend-${props.id}` }]}
           size={
             props.legendPanelSize
@@ -531,25 +349,197 @@ export function Plot(props: PlotProps) {
             props.onLegendPanelSize?.(updatedSize);
           }}
         >
-          <Splitter.Panel id={`plot-${props.id}`} borderWidth="0">
-            <Heading
-              size="lg"
-              style={{
-                "padding-top": "0.25rem",
-                "padding-left": "1rem",
+          <Splitter.Panel
+            id={`plot-${props.id}`}
+            borderWidth="0"
+            width="100%"
+            height="100%"
+          >
+            <SolidUplot
+              onCreate={(e) => {
+                plot = e as uPlot;
+                setRender(true);
+                onMount(() => {
+                  if (props.xRange) {
+                    setTimeout(() => {
+                      plot.setScale("x", {
+                        min: props.xRange![0],
+                        max: props.xRange![1],
+                      });
+                    }, 100);
+                  }
+                });
               }}
-            >
-              {props.name}
-            </Heading>
+              onCursorMove={(e) => {
+                setCursorIdx(e.cursor.xValue);
+              }}
+              cursor={{
+                sync: {
+                  key: group(),
+                },
+                bind: {
+                  mousedown: (u, _targ, handler) => {
+                    return (e) => {
+                      if (e.button == 0) {
+                        // Always release cursor lock if not control-clicking.
+                        if (cursorMode() !== CursorMode.Lock) {
+                          // @ts-ignore: TSC unable to detect `_lock` field
+                          if (u.cursor._lock) {
+                            uPlot.sync(group()).plots.forEach((up) => {
+                              // @ts-ignore: TSC unable to detect `_lock` field
+                              up.cursor._lock = false;
+                            });
+                          }
+                        } else {
+                          // @ts-ignore: TSC unable to detect `_lock` field
+                          const new_lock = !u.cursor._lock;
+                          // Lock cursor in plot only when control-clicking.
+                          uPlot.sync(group()).plots.forEach((up) => {
+                            // @ts-ignore: TSC unable to detect `_lock` field
+                            up.cursor._lock = new_lock;
+                          });
+                          return null;
+                        }
+
+                        if (cursorMode() === CursorMode.Zoom) {
+                          handler(e);
+                        } else if (cursorMode() === CursorMode.Pan) {
+                          const xMin = 0;
+                          const xMax = u.data[0].length;
+
+                          const left0 = e.clientX;
+
+                          const scXMin0 = u.scales.x.min!;
+                          const scXMax0 = u.scales.x.max!;
+
+                          const xUnitsPerPx =
+                            u.posToVal(1, "x") - u.posToVal(0, "x");
+
+                          const onmove = (e: MouseEvent) => {
+                            e.preventDefault();
+
+                            const left1 = e.clientX;
+                            const dx = xUnitsPerPx * (left1 - left0);
+
+                            const minXBoundary = scXMin0 - dx;
+                            const maxXBoundary = scXMax0 - dx;
+
+                            let scaleXMin = minXBoundary;
+                            let scaleXMax = maxXBoundary;
+
+                            if (xMin >= minXBoundary) {
+                              scaleXMin = xMin;
+                              scaleXMax = scXMax0;
+                            } else if (xMax <= maxXBoundary) {
+                              scaleXMin = scXMin0;
+                              scaleXMax = xMax;
+                            }
+
+                            uPlot.sync(group()).plots.forEach((up) => {
+                              up.setScale("x", {
+                                min: scaleXMin,
+                                max: scaleXMax,
+                              });
+                            });
+                          };
+
+                          const onup = () => {
+                            document.removeEventListener("mousemove", onmove);
+                            document.removeEventListener("mouseup", onup);
+                          };
+
+                          document.addEventListener("mousemove", onmove);
+                          document.addEventListener("mouseup", onup);
+                        }
+                      }
+
+                      return null;
+                    };
+                  },
+                  mouseup: (u, _targ, handler) => {
+                    return (e) => {
+                      if (e.button == 0) {
+                        // Prevent accidental micro-drags.
+                        if (u.select.width < 10) {
+                          u.select.width = 0;
+                        }
+                        handler(e);
+                      }
+                      return null;
+                    };
+                  },
+                },
+              }}
+              autoResize={true}
+              axes={[
+                {
+                  stroke: fgDefault(),
+                  grid: {
+                    stroke: bgMuted(),
+                  },
+                  ticks: {
+                    stroke: bgMuted(),
+                  },
+                },
+                {
+                  stroke: fgDefault(),
+                  grid: {
+                    stroke: bgMuted(),
+                  },
+                  ticks: {
+                    stroke: bgMuted(),
+                  },
+                },
+              ]}
+              data={[
+                Array.from({ length: props.series[0].length }, (_, i) => i), // x values
+                ...props.series,
+              ]}
+              scales={{
+                x: {
+                  time: false,
+                },
+              }}
+              series={
+                plot! && plot.series
+                  ? plot.series
+                  : [
+                      {
+                        label: "Cycle",
+                      },
+                      ...props.header.map((_, index) => ({
+                        label: props.header[index],
+                        stroke: () => unwrap(getContext()).color[index],
+                        show: unwrap(getContext()).visible[index],
+                        ...{
+                          ...(unwrap(getContext()).style[index] ===
+                            LegendStroke.Dash && {
+                            dash: [10, 5],
+                          }),
+                          ...(unwrap(getContext()).style[index] ===
+                            LegendStroke.Dot && {
+                            dash: [0, 5],
+                            points: {
+                              show: true,
+                              ...(dotFilter().length !== 0 && {
+                                filter: checkDotFilter(),
+                              }),
+                            },
+                          }),
+                        },
+                      })),
+                    ]
+              }
+              plugins={[
+                cursor(),
+                wheelZoomPlugin({ factor: 0.75, group: group() }),
+              ]}
+              pluginBus={bus}
+            />
+
             <style>{selection_css}</style>
-            <div
-              id={props.id}
-              style={{
-                width: "100%",
-                height: "calc(100% - 0.5rem)",
-              }}
-            ></div>
           </Splitter.Panel>
+
           <Stack direction="row" height="100%" gap="0">
             <IconButton
               size="sm"
@@ -804,12 +794,11 @@ export function Plot(props: PlotProps) {
                 </Stack>
                 <Show when={render()}>
                   <Stack
-                    id="legend_container"
                     style={{
                       "padding-bottom": "0.5rem",
                       float: "left",
                       width: "100%",
-                      "max-height": "calc(100% - 1.5rem - 8rem)",
+                      "max-height": "calc(100% - 1.5rem - 6rem)",
                       "overflow-x": "auto",
                       "overflow-y": "auto",
                     }}
@@ -841,7 +830,7 @@ export function Plot(props: PlotProps) {
                         series="Cycle"
                         group={group()}
                         width="min-content"
-                        cursorIdx={props.cursorIdx}
+                        cursorIdx={cursorIdx()}
                         readonly
                       />
                     </Stack>
@@ -849,10 +838,10 @@ export function Plot(props: PlotProps) {
                       {(header, index) => (
                         <Show when={searchResults().includes(header)}>
                           <Legend
-                            plot={plot!}
+                            plot={plot}
                             group={group()}
                             series={header}
-                            cursorIdx={props.cursorIdx}
+                            cursorIdx={cursorIdx()}
                             showSelectCheckBox={showLegendCheckBox()}
                             selected={getContext().selected[index()]}
                             onSelectChange={(isChecked) => {
@@ -939,68 +928,71 @@ type WheelZoomPluginOpts = {
   group: string;
 };
 
-function wheelZoomPlugin(opts: WheelZoomPluginOpts) {
-  const factor = opts.factor || 0.75;
+export const wheelZoomPlugin = (
+  opts: WheelZoomPluginOpts,
+): UplotPluginFactory<CursorPluginMessageBus> => {
+  return () => {
+    const factor = opts.factor || 0.75;
 
-  let xMin: number, xMax: number, xRange: number;
+    let xMin: number, xMax: number, xRange: number;
 
-  function clamp(
-    nRange: number,
-    nMin: number,
-    nMax: number,
-    fRange: number,
-    fMin: number,
-    fMax: number,
-  ) {
-    if (nRange > fRange) {
-      nMin = fMin;
-      nMax = fMax;
-    } else if (nMin < fMin) {
-      nMin = fMin;
-      nMax = fMin + nRange;
-    } else if (nMax > fMax) {
-      nMax = fMax;
-      nMin = fMax - nRange;
-    }
+    return {
+      hooks: {
+        ready: (u) => {
+          xMin = 0;
+          xMax = u.data[0].length - 1!;
 
-    return [nMin, nMax];
+          xRange = xMax - xMin;
+
+          const over = u.over;
+          const rect = over.getBoundingClientRect();
+
+          // wheel scroll zoom
+          over.addEventListener("wheel", (e) => {
+            e.preventDefault();
+
+            const { left } = u.cursor;
+
+            const leftPct = left! / rect.width;
+            const xVal = u.posToVal(left!, "x");
+            const oxRange = u.scales.x.max! - u.scales.x.min!;
+
+            const nxRange = e.deltaY < 0 ? oxRange * factor : oxRange / factor;
+            let nxMin = xVal - leftPct * nxRange;
+            let nxMax = nxMin + nxRange;
+            [nxMin, nxMax] = clamp(nxRange, nxMin, nxMax, xRange, xMin, xMax);
+
+            uPlot.sync(opts.group).plots.forEach((up: uPlot) => {
+              up.setScale("x", { min: nxMin, max: nxMax });
+            });
+          });
+        },
+      },
+    };
+  };
+};
+
+function clamp(
+  nRange: number,
+  nMin: number,
+  nMax: number,
+  fRange: number,
+  fMin: number,
+  fMax: number,
+) {
+  if (nRange > fRange) {
+    nMin = fMin;
+    nMax = fMax;
+  } else if (nMin < fMin) {
+    nMin = fMin;
+    nMax = fMin + nRange;
+  } else if (nMax > fMax) {
+    nMax = fMax;
+    nMin = fMax - nRange;
   }
 
-  return {
-    hooks: {
-      ready: (u: uPlot) => {
-        xMin = 0;
-        xMax = u.data[0].length - 1!;
-
-        xRange = xMax - xMin;
-
-        const over = u.over;
-        const rect = over.getBoundingClientRect();
-
-        // wheel scroll zoom
-        over.addEventListener("wheel", (e) => {
-          e.preventDefault();
-
-          const { left } = u.cursor;
-
-          const leftPct = left! / rect.width;
-          const xVal = u.posToVal(left!, "x");
-          const oxRange = u.scales.x.max! - u.scales.x.min!;
-
-          const nxRange = e.deltaY < 0 ? oxRange * factor : oxRange / factor;
-          let nxMin = xVal - leftPct * nxRange;
-          let nxMax = nxMin + nxRange;
-          [nxMin, nxMax] = clamp(nxRange, nxMin, nxMax, xRange, xMin, xMax);
-
-          uPlot.sync(opts.group).plots.forEach((up: uPlot) => {
-            up.setScale("x", { min: nxMin, max: nxMax });
-          });
-        });
-      },
-    },
-  };
+  return [nMin, nMax];
 }
-
 const kelly_colors_hex = [
   "#FFB300", // Vivid Yellow
   "#803E75", // Strong Purple
