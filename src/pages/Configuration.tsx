@@ -211,10 +211,6 @@ function Configuration() {
     return output.stderr;
   }
 
-  onCleanup(async () => {
-    await exit();
-  });
-
   return (
     <>
       <div

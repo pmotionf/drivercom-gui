@@ -1,6 +1,7 @@
 import { Stack } from "styled-system/jsx";
 import { Text } from "~/components/ui/text.tsx";
 import {
+  logDownloads,
   logFormFileFormat,
   portId,
   recentLogFilePaths,
@@ -181,43 +182,40 @@ export function Logging() {
   const [logGetBtnLoading, setLogGetBtnLoading] = createSignal(false);
 
   // Save log.csv file && Display `Log Get` button loading while saving log.csv file
-  async function saveLogCsvFile(): Promise<
-    string | { title: string; description: string; type: string } | null
-  > {
+  async function saveLogCsvFile(filePath: string) {
     const logGet = Command.sidecar("binaries/drivercom", [
       `--port`,
       portId(),
       `--timeout`,
       `10000`,
       `log.get`,
+      `-f`,
+      filePath,
     ]);
-    const output = await logGet.execute();
 
-    if (output) {
-      const notEmptyLines = output.stdout
-        .split("\n")
-        .filter((line) => line.length > 0);
+    let pid: number | null = null;
 
-      if (output.stderr.length > 0) {
-        return {
-          title: "Communication Failure",
-          description: output.stderr,
-          type: "error",
-        };
+    logGet.on("close", (data) => {
+      if (data.code === null) {
+        console.log("failure");
+      } else {
+        if (data.code == 0) {
+          console.log("success");
+        } else {
+          console.log("failure");
+        }
       }
 
-      if (notEmptyLines.length <= 1) {
-        return {
-          title: "Invalid Log",
-          description: "No log data found.",
-          type: "error",
-        };
+      logGet.removeAllListeners();
+      if (pid) {
+        logDownloads.delete(pid);
       }
+      setLogGetBtnLoading(false);
+    });
 
-      const csvFile = output.stdout;
-      return csvFile;
-    }
-    return null;
+    const child = await logGet.spawn();
+    pid = child.pid;
+    logDownloads.set(pid, child);
   }
 
   async function startLogging() {
@@ -305,10 +303,6 @@ export function Logging() {
   const toaster = Toast.createToaster({
     placement: "top-end",
     gap: 24,
-  });
-
-  onCleanup(async () => {
-    await exit();
   });
 
   return (
@@ -639,15 +633,7 @@ export function Logging() {
                               return;
                             }
                             setLogGetBtnLoading(true);
-                            const csvFile = await saveLogCsvFile();
-                            setLogGetBtnLoading(false);
-                            if (csvFile) {
-                              if (typeof csvFile === "string") {
-                                await writeTextFile(path, csvFile);
-                              } else {
-                                toaster.create(csvFile);
-                              }
-                            }
+                            await saveLogCsvFile(path);
                           }}
                           variant="ghost"
                           userSelect="none"
