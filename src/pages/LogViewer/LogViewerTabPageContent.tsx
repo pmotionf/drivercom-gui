@@ -1,18 +1,9 @@
 import { trackStore } from "@solid-primitives/deep";
-import {
-  createEffect,
-  createSignal,
-  For,
-  JSX,
-  onCleanup,
-  onMount,
-  Show,
-} from "solid-js";
+import { createEffect, createSignal, For, JSX, onMount, Show } from "solid-js";
 import { createStore } from "solid-js/store";
 import { Plot, PlotContext } from "~/components/Plot";
 import { inferSchema, initParser } from "udsv";
 import { readTextFile } from "@tauri-apps/plugin-fs";
-import uPlot from "uplot";
 import { IconButton } from "~/components/ui/icon-button";
 import {
   IconFold,
@@ -304,47 +295,6 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
     return plots[index].selected.every((b) => !b);
   };
 
-  const [cursorIdx, setCursorIdx] = createSignal<number | null | undefined>(0);
-
-  createEffect(() => {
-    const splitIndexLength = splitIndex().length;
-    if (splitIndexLength === 0) return;
-
-    setTimeout(() => {
-      const plotGroup: uPlot[] = uPlot.sync(props.tabId).plots;
-
-      plotGroup.forEach((plot) => {
-        plot.over.removeEventListener("mousemove", () =>
-          setCursorIdx(plot.cursor.idx),
-        );
-        plot.over.removeEventListener("mouseleave", () =>
-          setCursorIdx(plot.cursor.idx),
-        );
-      });
-
-      plotGroup.forEach((plot) => {
-        plot.over.addEventListener("mousemove", () =>
-          setCursorIdx(plot.cursor.idx),
-        );
-        plot.over.addEventListener("mouseleave", () =>
-          setCursorIdx(plot.cursor.idx),
-        );
-      });
-    }, 300);
-  });
-
-  onCleanup(() => {
-    const plotGroup: uPlot[] = uPlot.sync(props.tabId).plots;
-    plotGroup.forEach((plot) => {
-      plot.over.removeEventListener("mousemove", () =>
-        setCursorIdx(plot.cursor.idx),
-      );
-      plot.over.removeEventListener("mouseleave", () =>
-        setCursorIdx(plot.cursor.idx),
-      );
-    });
-  });
-
   const [legendSplitterSize, setLegendSplitterSize] = createSignal<number>(
     getTabContext(props.tabId).tabCtx.legendPanelSize
       ? getTabContext(props.tabId).tabCtx.legendPanelSize!
@@ -386,6 +336,7 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
   const [prevSplitIndex, setPrevSplitIndex] = createSignal<number[][]>(
     [] as number[][],
   );
+
   createEffect(
     on(
       () => splitIndex(),
@@ -425,7 +376,7 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
   );
 
   return (
-    <For each={plots && splitIndex()}>
+    <For each={splitIndex()}>
       {(item, index) => {
         // Header and items need not be derived state, as they will not
         // change within a plot.
@@ -441,6 +392,7 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
             style={{
               height: `calc(100% / ${splitIndex().length})`,
               width: "100%",
+              "min-height": "20rem",
             }}
           >
             <Stack
@@ -576,10 +528,7 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
                 width: "100%",
                 height: `calc(100% - 3rem)`,
                 "min-height": "17rem",
-                "padding-right": "0.5rem",
-                "padding-left": "0.5rem",
               }}
-              cursorIdx={cursorIdx()}
             />
           </div>
         );
