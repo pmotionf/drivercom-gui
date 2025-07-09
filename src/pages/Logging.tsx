@@ -1,13 +1,14 @@
 import { Stack } from "styled-system/jsx";
 import { Text } from "~/components/ui/text.tsx";
 import {
+  logDownloads,
   logFormFileFormat,
   portId,
   recentLogFilePaths,
   setRecentLogFilePaths,
 } from "~/GlobalState.ts";
 import { Command } from "@tauri-apps/plugin-shell";
-import { createSignal, Show } from "solid-js";
+import { createSignal, onCleanup, Show } from "solid-js";
 import { LoggingForm } from "~/components/LoggingForm.tsx";
 import { Toast } from "~/components/ui/toast.tsx";
 import {
@@ -180,43 +181,65 @@ export function Logging() {
   const [logGetBtnLoading, setLogGetBtnLoading] = createSignal(false);
 
   // Save log.csv file && Display `Log Get` button loading while saving log.csv file
-  async function saveLogCsvFile(): Promise<
-    string | { title: string; description: string; type: string } | null
-  > {
+  async function saveLogCsvFile(filePath: string) {
     const logGet = Command.sidecar("binaries/drivercom", [
       `--port`,
       portId(),
       `--timeout`,
       `10000`,
       `log.get`,
+      `-f`,
+      filePath,
     ]);
-    const output = await logGet.execute();
 
-    if (output) {
-      const notEmptyLines = output.stdout
-        .split("\n")
-        .filter((line) => line.length > 0);
+    let pid: number | null = null;
 
-      if (output.stderr.length > 0) {
-        return {
-          title: "Communication Failure",
-          description: output.stderr,
-          type: "error",
-        };
+    /*logGet.once("close", (data) => {
+      if (data.code === null) {
+        //console.log("failure");
+      } else {
+        if (data.code == 0) {
+          //console.log("success");
+        } else {
+          //console.log("failure");
+        }
       }
-
-      if (notEmptyLines.length <= 1) {
-        return {
-          title: "Invalid Log",
-          description: "No log data found.",
-          type: "error",
-        };
+      console.log(data);
+      //logGet.removeAllListeners("close");
+      if (pid) {
+        logDownloads.delete(pid);
       }
+      //setLogGetBtnLoading(false);
+    });*/
 
-      const csvFile = output.stdout;
-      return csvFile;
+    logGet.addListener("close", (data) => {
+      if (data.code === null) {
+        //console.log("failure");
+      } else {
+        if (data.code == 0) {
+          //console.log("success");
+        } else {
+          //console.log("failure");
+        }
+      }
+      console.log(data);
+      logGet.removeAllListeners("close");
+      if (pid) {
+        logDownloads.delete(pid);
+      }
+      return null;
+      //setLogGetBtnLoading(false);
+    });
+    logGet.stderr.on("data", (line) =>
+      console.log(`command stderr: "${line}"`),
+    );
+
+    /*const child =*/ await logGet.spawn();
+    //pid = child.pid;
+    if (pid) {
+      //console.log(child.pid);
+      //logDownloads.set(pid, child);
     }
-    return null;
   }
 
   async function startLogging() {
@@ -634,15 +657,7 @@ export function Logging() {
                               return;
                             }
                             setLogGetBtnLoading(true);
-                            const csvFile = await saveLogCsvFile();
-                            setLogGetBtnLoading(false);
-                            if (csvFile) {
-                              if (typeof csvFile === "string") {
-                                await writeTextFile(path, csvFile);
-                              } else {
-                                toaster.create(csvFile);
-                              }
-                            }
+                            await saveLogCsvFile(path);
                           }}
                           variant="ghost"
                           userSelect="none"

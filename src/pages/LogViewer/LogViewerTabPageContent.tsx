@@ -155,6 +155,7 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
     splitIndex: number[][];
   } | null {
     const rows = csv_str.split("\n");
+    console.log(rows);
     if (rows.length < 2) {
       const errorMessage: ErrorMessage = {
         title: "Invalid Log File",
@@ -166,7 +167,14 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
     }
 
     const schema = inferSchema(csv_str);
+    if (!schema) {
+      console.log("error");
+      return null;
+    }
     const parser = initParser(schema);
+    if (!parser) {
+      return null;
+    }
     const local_header: string[] = rows[0].replace(/,\s*$/, "").split(",");
     const data: number[][] = parser.typedCols(csv_str).map((row) =>
       row.map((val) => {
