@@ -30,7 +30,6 @@ import { Spinner } from "~/components/ui/styled/spinner.tsx";
 import { FileMenu } from "~/components/FileMenu.tsx";
 import { PortMenu } from "~/components/PortMenu.tsx";
 import { ConnectButton } from "./Connect/ConnectButton.tsx";
-import { exit } from "@tauri-apps/plugin-process";
 
 export function Logging() {
   const [logConfigure, setLogConfigure] = createSignal({});
@@ -195,27 +194,52 @@ export function Logging() {
 
     let pid: number | null = null;
 
-    logGet.on("close", (data) => {
+    /*logGet.once("close", (data) => {
       if (data.code === null) {
-        console.log("failure");
+        //console.log("failure");
       } else {
         if (data.code == 0) {
-          console.log("success");
+          //console.log("success");
         } else {
-          console.log("failure");
+          //console.log("failure");
         }
       }
-
-      logGet.removeAllListeners();
+      console.log(data);
+      //logGet.removeAllListeners("close");
       if (pid) {
         logDownloads.delete(pid);
       }
-      setLogGetBtnLoading(false);
-    });
+      //setLogGetBtnLoading(false);
+    });*/
 
-    const child = await logGet.spawn();
-    pid = child.pid;
-    logDownloads.set(pid, child);
+    logGet.addListener("close", (data) => {
+      if (data.code === null) {
+        //console.log("failure");
+      } else {
+        if (data.code == 0) {
+          //console.log("success");
+        } else {
+          //console.log("failure");
+        }
+      }
+      console.log(data);
+      logGet.removeAllListeners("close");
+      if (pid) {
+        logDownloads.delete(pid);
+      }
+      return null;
+      //setLogGetBtnLoading(false);
+    });
+    logGet.stderr.on("data", (line) =>
+      console.log(`command stderr: "${line}"`),
+    );
+
+    /*const child =*/ await logGet.spawn();
+    //pid = child.pid;
+    if (pid) {
+      //console.log(child.pid);
+      //logDownloads.set(pid, child);
+    }
   }
 
   async function startLogging() {
