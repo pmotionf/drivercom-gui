@@ -331,12 +331,18 @@ export function Plot(props: PlotProps) {
 
   const bus = createPluginBus<CursorPluginMessageBus>();
 
+  onCleanup(() => {
+    if (plot) {
+      uPlot.sync(group()).unsub(plot);
+    }
+  });
+
   return (
     <>
-      <div {...rest} id={props.id}>
+      <div {...rest}>
         <Splitter.Root
           id={props.id}
-          style={{ width: "100%", height: "100%", padding: "0" }}
+          style={{ width: "100%", height: "100%", "padding-right": "0.5rem" }}
           panels={[{ id: `plot-${props.id}` }, { id: `legend-${props.id}` }]}
           size={
             props.legendPanelSize
@@ -355,188 +361,189 @@ export function Plot(props: PlotProps) {
             width="100%"
             height="100%"
           >
-            <SolidUplot
-              onCreate={(e) => {
-                plot = e as uPlot;
-                setRender(true);
-                onMount(() => {
-                  if (props.xRange) {
-                    setTimeout(() => {
-                      plot.setScale("x", {
-                        min: props.xRange![0],
-                        max: props.xRange![1],
+            <div id={props.id} style={{ width: "100%", height: "100%" }}>
+              <SolidUplot
+                onCreate={(e) => {
+                  plot = e as uPlot;
+                  setRender(true);
+                  uPlot.sync(group()).sub(plot);
+                  onMount(() => {
+                    if (unwrap(props.xRange)) {
+                      uPlot.sync(group()).plots.forEach((up) => {
+                        setTimeout(() => {
+                          up.setScale("x", {
+                            min: unwrap(props.xRange)![0],
+                            max: unwrap(props.xRange)![1],
+                          });
+                        }, 10);
                       });
-                    }, 100);
-                  }
-                });
-              }}
-              onCursorMove={(e) => {
-                setCursorIdx(e.cursor.xValue);
-              }}
-              cursor={{
-                sync: {
-                  key: group(),
-                },
-                bind: {
-                  mousedown: (u, _targ, handler) => {
-                    return (e) => {
-                      if (e.button == 0) {
-                        // Always release cursor lock if not control-clicking.
-                        if (cursorMode() !== CursorMode.Lock) {
-                          // @ts-ignore: TSC unable to detect `_lock` field
-                          if (u.cursor._lock) {
+                    }
+                  });
+                }}
+                onCursorMove={(e) => {
+                  setCursorIdx(e.cursor.xValue);
+                }}
+                cursor={{
+                  bind: {
+                    mousedown: (u, _targ, handler) => {
+                      return (e) => {
+                        if (e.button == 0) {
+                          // Always release cursor lock if not control-clicking.
+                          if (cursorMode() !== CursorMode.Lock) {
+                            // @ts-ignore: TSC unable to detect `_lock` field
+                            if (u.cursor._lock) {
+                              uPlot.sync(group()).plots.forEach((up) => {
+                                // @ts-ignore: TSC unable to detect `_lock` field
+                                up.cursor._lock = false;
+                              });
+                            }
+                          } else {
+                            // @ts-ignore: TSC unable to detect `_lock` field
+                            const new_lock = !u.cursor._lock;
+                            // Lock cursor in plot only when control-clicking.
                             uPlot.sync(group()).plots.forEach((up) => {
                               // @ts-ignore: TSC unable to detect `_lock` field
-                              up.cursor._lock = false;
+                              up.cursor._lock = new_lock;
                             });
+                            return null;
                           }
-                        } else {
-                          // @ts-ignore: TSC unable to detect `_lock` field
-                          const new_lock = !u.cursor._lock;
-                          // Lock cursor in plot only when control-clicking.
-                          uPlot.sync(group()).plots.forEach((up) => {
-                            // @ts-ignore: TSC unable to detect `_lock` field
-                            up.cursor._lock = new_lock;
-                          });
-                          return null;
-                        }
 
-                        if (cursorMode() === CursorMode.Zoom) {
-                          handler(e);
-                        } else if (cursorMode() === CursorMode.Pan) {
-                          const xMin = 0;
-                          const xMax = u.data[0].length;
+                          if (cursorMode() === CursorMode.Zoom) {
+                            handler(e);
+                          } else if (cursorMode() === CursorMode.Pan) {
+                            const xMin = 0;
+                            const xMax = u.data[0].length;
 
-                          const left0 = e.clientX;
+                            const left0 = e.clientX;
 
-                          const scXMin0 = u.scales.x.min!;
-                          const scXMax0 = u.scales.x.max!;
+                            const scXMin0 = u.scales.x.min!;
+                            const scXMax0 = u.scales.x.max!;
 
-                          const xUnitsPerPx =
-                            u.posToVal(1, "x") - u.posToVal(0, "x");
+                            const xUnitsPerPx =
+                              u.posToVal(1, "x") - u.posToVal(0, "x");
 
-                          const onmove = (e: MouseEvent) => {
-                            e.preventDefault();
+                            const onmove = (e: MouseEvent) => {
+                              e.preventDefault();
 
-                            const left1 = e.clientX;
-                            const dx = xUnitsPerPx * (left1 - left0);
+                              const left1 = e.clientX;
+                              const dx = xUnitsPerPx * (left1 - left0);
 
-                            const minXBoundary = scXMin0 - dx;
-                            const maxXBoundary = scXMax0 - dx;
+                              const minXBoundary = scXMin0 - dx;
+                              const maxXBoundary = scXMax0 - dx;
 
-                            let scaleXMin = minXBoundary;
-                            let scaleXMax = maxXBoundary;
+                              let scaleXMin = minXBoundary;
+                              let scaleXMax = maxXBoundary;
 
-                            if (xMin >= minXBoundary) {
-                              scaleXMin = xMin;
-                              scaleXMax = scXMax0;
-                            } else if (xMax <= maxXBoundary) {
-                              scaleXMin = scXMin0;
-                              scaleXMax = xMax;
-                            }
+                              if (xMin >= minXBoundary) {
+                                scaleXMin = xMin;
+                                scaleXMax = scXMax0;
+                              } else if (xMax <= maxXBoundary) {
+                                scaleXMin = scXMin0;
+                                scaleXMax = xMax;
+                              }
 
-                            uPlot.sync(group()).plots.forEach((up) => {
-                              up.setScale("x", {
-                                min: scaleXMin,
-                                max: scaleXMax,
+                              uPlot.sync(group()).plots.forEach((up) => {
+                                up.setScale("x", {
+                                  min: scaleXMin,
+                                  max: scaleXMax,
+                                });
                               });
-                            });
-                          };
+                            };
 
-                          const onup = () => {
-                            document.removeEventListener("mousemove", onmove);
-                            document.removeEventListener("mouseup", onup);
-                          };
+                            const onup = () => {
+                              document.removeEventListener("mousemove", onmove);
+                              document.removeEventListener("mouseup", onup);
+                            };
 
-                          document.addEventListener("mousemove", onmove);
-                          document.addEventListener("mouseup", onup);
+                            document.addEventListener("mousemove", onmove);
+                            document.addEventListener("mouseup", onup);
+                          }
                         }
-                      }
 
-                      return null;
-                    };
-                  },
-                  mouseup: (u, _targ, handler) => {
-                    return (e) => {
-                      if (e.button == 0) {
-                        // Prevent accidental micro-drags.
-                        if (u.select.width < 10) {
-                          u.select.width = 0;
+                        return null;
+                      };
+                    },
+                    mouseup: (u, _targ, handler) => {
+                      return (e) => {
+                        if (e.button == 0) {
+                          // Prevent accidental micro-drags.
+                          if (u.select.width < 10) {
+                            u.select.width = 0;
+                          }
+                          handler(e);
                         }
-                        handler(e);
-                      }
-                      return null;
-                    };
+                        return null;
+                      };
+                    },
                   },
-                },
-              }}
-              autoResize={true}
-              axes={[
-                {
-                  stroke: fgDefault(),
-                  grid: {
-                    stroke: bgMuted(),
+                }}
+                autoResize={true}
+                axes={[
+                  {
+                    stroke: fgDefault(),
+                    grid: {
+                      stroke: bgMuted(),
+                    },
+                    ticks: {
+                      stroke: bgMuted(),
+                    },
                   },
-                  ticks: {
-                    stroke: bgMuted(),
+                  {
+                    stroke: fgDefault(),
+                    grid: {
+                      stroke: bgMuted(),
+                    },
+                    ticks: {
+                      stroke: bgMuted(),
+                    },
                   },
-                },
-                {
-                  stroke: fgDefault(),
-                  grid: {
-                    stroke: bgMuted(),
+                ]}
+                data={[
+                  Array.from({ length: props.series[0].length }, (_, i) => i), // x values
+                  ...props.series,
+                ]}
+                scales={{
+                  x: {
+                    time: false,
                   },
-                  ticks: {
-                    stroke: bgMuted(),
-                  },
-                },
-              ]}
-              data={[
-                Array.from({ length: props.series[0].length }, (_, i) => i), // x values
-                ...props.series,
-              ]}
-              scales={{
-                x: {
-                  time: false,
-                },
-              }}
-              series={
-                plot! && plot.series
-                  ? plot.series
-                  : [
-                      {
-                        label: "Cycle",
-                      },
-                      ...props.header.map((_, index) => ({
-                        label: props.header[index],
-                        stroke: () => unwrap(getContext()).color[index],
-                        show: unwrap(getContext()).visible[index],
-                        ...{
-                          ...(unwrap(getContext()).style[index] ===
-                            LegendStroke.Dash && {
-                            dash: [10, 5],
-                          }),
-                          ...(unwrap(getContext()).style[index] ===
-                            LegendStroke.Dot && {
-                            dash: [0, 5],
-                            points: {
-                              show: true,
-                              ...(dotFilter().length !== 0 && {
-                                filter: checkDotFilter(),
-                              }),
-                            },
-                          }),
+                }}
+                series={
+                  plot! && plot.series
+                    ? plot.series
+                    : [
+                        {
+                          label: "Cycle",
                         },
-                      })),
-                    ]
-              }
-              plugins={[
-                cursor(),
-                wheelZoomPlugin({ factor: 0.75, group: group() }),
-              ]}
-              pluginBus={bus}
-            />
-
+                        ...props.header.map((_, index) => ({
+                          label: props.header[index],
+                          stroke: () => unwrap(getContext()).color[index],
+                          show: unwrap(getContext()).visible[index],
+                          ...{
+                            ...(unwrap(getContext()).style[index] ===
+                              LegendStroke.Dash && {
+                              dash: [10, 5],
+                            }),
+                            ...(unwrap(getContext()).style[index] ===
+                              LegendStroke.Dot && {
+                              dash: [0, 5],
+                              points: {
+                                show: true,
+                                ...(dotFilter().length !== 0 && {
+                                  filter: checkDotFilter(),
+                                }),
+                              },
+                            }),
+                          },
+                        })),
+                      ]
+                }
+                plugins={[
+                  cursor(),
+                  wheelZoomPlugin({ factor: 0.75, group: group() }),
+                ]}
+                pluginBus={bus}
+              />
+            </div>
             <style>{selection_css}</style>
           </Splitter.Panel>
 
@@ -754,7 +761,7 @@ export function Plot(props: PlotProps) {
                   </Stack>
                 </Stack>
                 <Stack
-                  width="100%"
+                  width={`calc(100% - 1rem)`}
                   direction="row"
                   borderWidth="1px"
                   borderRadius="1rem"
