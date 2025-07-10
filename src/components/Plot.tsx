@@ -182,6 +182,9 @@ export function Plot(props: PlotProps) {
     if (event.key === "Control") {
       setCursorMode(CursorMode.Lock);
     } else if (event.key === "Shift") {
+      if (enterSplitter()) {
+        return;
+      }
       setCursorMode(CursorMode.Zoom);
     } else if (event.key === "Alt") {
       // TODO: Handle alt click
@@ -337,6 +340,30 @@ export function Plot(props: PlotProps) {
     }
   });
 
+  const [prevCheck, setPrevCheck] = createSignal<number | null>(null);
+  const [enterSplitter, setEnterSplitter] = createSignal<boolean>(false);
+  const multiSelect = (index: number, prevIndex: number) => {
+    const select = getContext().selected;
+    const min = Math.min(index, prevIndex + 1);
+    const max = Math.max(index, prevIndex);
+
+    const shiftSelect = select.slice(min, max);
+    const shiftSelectState = [...new Set(shiftSelect)];
+    const isAllSame = shiftSelectState.length !== 2;
+
+    if (isAllSame) {
+      const updateSelected = select.map((selected, i) => {
+        if (i >= min && i <= max) {
+          return !shiftSelectState[0];
+        } else {
+          return selected;
+        }
+      });
+      setContext()("selected", updateSelected);
+      return;
+    }
+  };
+
   return (
     <>
       <div {...rest}>
@@ -384,6 +411,9 @@ export function Plot(props: PlotProps) {
                   setCursorIdx(e.cursor.xValue);
                 }}
                 cursor={{
+                  sync: {
+                    key: group(),
+                  },
                   bind: {
                     mousedown: (u, _targ, handler) => {
                       return (e) => {
@@ -584,8 +614,18 @@ export function Plot(props: PlotProps) {
               style={{
                 "min-width": props.legendShrink ? "0rem" : panelMinWidth(),
               }}
+              onMouseEnter={() => {
+                setEnterSplitter(true);
+                setCursorMode(lastCursorMode());
+              }}
+              onMouseLeave={(e) => {
+                if (e.shiftKey) {
+                  setCursorMode(CursorMode["Zoom"]);
+                }
+                setEnterSplitter(false);
+              }}
             >
-              <Stack width="100%" height="100%">
+              <Stack width="100%" height="100%" id={`legend-${props.id}`}>
                 <Stack
                   direction="row-reverse"
                   style={{
@@ -851,9 +891,19 @@ export function Plot(props: PlotProps) {
                             cursorIdx={cursorIdx()}
                             showSelectCheckBox={showLegendCheckBox()}
                             selected={getContext().selected[index()]}
-                            onSelectChange={(isChecked) => {
-                              setContext()("selected", index(), isChecked);
-                              props.onContextChange?.(getContext());
+                            onSelectChange={(isChecked, shiftKey) => {
+                              if (
+                                shiftKey === true &&
+                                typeof prevCheck() === "number"
+                              ) {
+                                multiSelect(index(), prevCheck()!);
+                                setPrevCheck(null);
+                                return;
+                              } else {
+                                setContext()("selected", index(), isChecked);
+                                setPrevCheck(index());
+                                props.onContextChange?.(getContext());
+                              }
                             }}
                             visible={getContext().visible[index()]}
                             onVisibleChange={(new_visible) => {

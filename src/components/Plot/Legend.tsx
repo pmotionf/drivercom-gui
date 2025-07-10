@@ -44,7 +44,7 @@ export type LegendProps = Omit<StackProps, "stroke"> & {
   cursorIdx?: number | null | undefined;
   showSelectCheckBox?: boolean;
   selected?: boolean;
-  onSelectChange?: (checkBoxValue: boolean) => void;
+  onSelectChange?: (checkBoxValue: boolean, isShiftClick?: boolean) => void;
 };
 
 export enum LegendStroke {
@@ -183,18 +183,18 @@ export function Legend(props: LegendProps) {
   );
 
   const strokeIconSize: string = "1.2rem";
+
   return (
     <Stack direction="row" gap="1" {...rest}>
       <Show when={!props.readonly}>
         <Show when={props.showSelectCheckBox}>
-          <Checkbox
-            value={props.selected ? props.selected.toString() : "false"}
-            onCheckedChange={(e) =>
-              props.onSelectChange?.(
-                e.checked.toString() === "true" ? true : false,
-              )
-            }
-          />
+          <div
+            onClick={(e) => {
+              props.onSelectChange?.(!props.selected, e.shiftKey);
+            }}
+          >
+            <Checkbox checked={props.selected === true} />
+          </div>
         </Show>
         <Dialog.Root
           open={configOpen()}
