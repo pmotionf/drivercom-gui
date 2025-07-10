@@ -42,7 +42,8 @@ import type { CursorPluginMessageBus } from "@dschz/solid-uplot/plugins";
 import { SolidUplot, createPluginBus } from "@dschz/solid-uplot";
 import type { UplotPluginFactory } from "@dschz/solid-uplot";
 
-import { cursor } from "@dschz/solid-uplot/plugins";
+import { cursor, tooltip } from "@dschz/solid-uplot/plugins";
+import { PlotToolTip } from "./Plot/PlotTooltip";
 
 export type PlotProps = JSX.HTMLAttributes<HTMLDivElement> & {
   id: string;
@@ -395,14 +396,14 @@ export function Plot(props: PlotProps) {
                   setRender(true);
                   uPlot.sync(group()).sub(plot);
                   onMount(() => {
-                    if (unwrap(props.xRange)) {
+                    if (props.xRange) {
                       uPlot.sync(group()).plots.forEach((up) => {
                         setTimeout(() => {
                           up.setScale("x", {
                             min: unwrap(props.xRange)![0],
                             max: unwrap(props.xRange)![1],
                           });
-                        }, 10);
+                        }, 0);
                       });
                     }
                   });
@@ -570,6 +571,9 @@ export function Plot(props: PlotProps) {
                 plugins={[
                   cursor(),
                   wheelZoomPlugin({ factor: 0.75, group: group() }),
+                  tooltip(PlotToolTip, {
+                    placement: "top-right",
+                  }),
                 ]}
                 pluginBus={bus}
               />
