@@ -74,6 +74,7 @@ enum CursorMode {
   Pan,
   Zoom,
   Lock,
+  Vertical,
 }
 
 export function Plot(props: PlotProps) {
@@ -189,6 +190,7 @@ export function Plot(props: PlotProps) {
       setCursorMode(CursorMode.Zoom);
     } else if (event.key === "Alt") {
       // TODO: Handle alt click
+      setCursorMode(CursorMode.Vertical);
     }
   };
   const cursorModeRelease = (event: KeyboardEvent) => {
@@ -196,8 +198,9 @@ export function Plot(props: PlotProps) {
       setCursorMode(lastCursorMode());
     } else if (event.key === "Shift" && cursorMode() === CursorMode.Zoom) {
       setCursorMode(lastCursorMode());
-    } else if (event.key === "Alt" && cursorMode() === CursorMode.None) {
+    } else if (event.key === "Alt" && cursorMode() === CursorMode.Vertical) {
       // TODO: Handle alt click
+      setCursorMode(lastCursorMode());
     }
   };
 
@@ -365,6 +368,107 @@ export function Plot(props: PlotProps) {
     }
   };
 
+  const getPlotYMax = (u: uPlot): number => {
+    const plotYMax: number = props.series
+      .map((series) => [...new Set(series)].sort((a, b) => b - a)[0])
+      .sort((a, b) => b - a)[0];
+
+    const yMin = u.scales.y.min!;
+    const yMax = u.scales.y.max!;
+    const yRange = yMax - yMin;
+
+    const plotHeight = u.over.offsetHeight;
+    const six_rem =
+      parseFloat(getComputedStyle(document.documentElement).fontSize) * 6;
+
+    const percent = six_rem / plotHeight;
+    const yMaxPadding = yRange * percent;
+    return plotYMax + yMaxPadding;
+  };
+
+  const wheelZoomPlugin = (opts: {
+    factor: number;
+    group: string;
+  }): UplotPluginFactory<CursorPluginMessageBus> => {
+    return () => {
+      const factor = opts.factor || 0.75;
+
+      let xMin: number,
+        xMax: number,
+        xRange: number,
+        yMin: number,
+        yMax: number,
+        yRange: number;
+
+      return {
+        hooks: {
+          ready: (u) => {
+            xMin = 0;
+            xMax = u.data[0].length - 1!;
+
+            xRange = xMax - xMin;
+
+            yMin = 0;
+            yMax = u.scales.y.max!;
+
+            if (u.axes[1]) {
+              const axes = JSON.parse(JSON.stringify(u.axes[1]));
+              const splits: number[] = axes["_splits" as keyof typeof axes];
+              if (splits) {
+                yMax = splits.sort((a, b) => b - a)[0];
+              }
+            }
+
+            yRange = yMax - yMin;
+
+            const over = u.over;
+            const rect = over.getBoundingClientRect();
+
+            // wheel scroll zoom
+            over.addEventListener("wheel", (e) => {
+              e.preventDefault();
+
+              const { left, top } = u.cursor;
+
+              const leftPct = left! / rect.width;
+              const xVal = u.posToVal(left!, "x");
+              const oxRange = u.scales.x.max! - u.scales.x.min!;
+
+              const nxRange =
+                e.deltaY < 0 ? oxRange * factor : oxRange / factor;
+              let nxMin = xVal - leftPct * nxRange;
+              let nxMax = nxMin + nxRange;
+              [nxMin, nxMax] = clamp(nxRange, nxMin, nxMax, xRange, xMin, xMax);
+
+              // y Zoom
+              const btmPct = 1 - top! / rect.height;
+              const yVal = u.posToVal(top!, "y");
+              const oyRange = u.scales.y.max! - u.scales.y.min!;
+
+              const nyRange =
+                e.deltaY < 0 ? oyRange * factor : oyRange / factor;
+              let nyMin = yVal - btmPct * nyRange;
+              let nyMax = nyMin + nyRange;
+              [nyMin, nyMax] = clamp(nyRange, nyMin, nyMax, yRange, yMin, yMax);
+
+              if (cursorMode() === CursorMode.Vertical) {
+                u.setScale("y", { min: nyMin, max: nyMax });
+              } else {
+                uPlot.sync(opts.group).plots.forEach((up: uPlot) => {
+                  up.setScale("x", { min: nxMin, max: nxMax });
+                  up.setScale("y", {
+                    min: up.scales.y.min!,
+                    max: up.scales.y.max!,
+                  });
+                });
+              }
+            });
+          },
+        },
+      };
+    };
+  };
+
   return (
     <>
       <div {...rest}>
@@ -453,6 +557,17 @@ export function Plot(props: PlotProps) {
                             const xUnitsPerPx =
                               u.posToVal(1, "x") - u.posToVal(0, "x");
 
+                            const yMin = 0;
+                            const yMax = getPlotYMax(u);
+
+                            const top0 = e.clientY;
+
+                            const scYMin0 = u.scales.y.min!;
+                            const scYMax0 = u.scales.y.max!;
+
+                            const yUnitsPerPx =
+                              u.posToVal(1, "y") - u.posToVal(0, "y");
+
                             const onmove = (e: MouseEvent) => {
                               e.preventDefault();
 
@@ -473,10 +588,32 @@ export function Plot(props: PlotProps) {
                                 scaleXMax = xMax;
                               }
 
+                              // Tilting (Vertical panning)
+                              const top1 = e.clientY;
+                              const topDx = yUnitsPerPx * (top1 - top0);
+
+                              const minYBoundary = scYMin0 - topDx;
+                              const maxYBoundary = scYMax0 - topDx;
+
+                              let scaleYMin = minYBoundary;
+                              let scaleYMax = maxYBoundary;
+
+                              if (yMin >= minYBoundary) {
+                                scaleYMin = yMin;
+                                scaleYMax = scYMax0;
+                              } else if (yMax <= maxYBoundary) {
+                                scaleYMin = scYMin0;
+                                scaleYMax = yMax;
+                              }
+
                               uPlot.sync(group()).plots.forEach((up) => {
                                 up.setScale("x", {
                                   min: scaleXMin,
                                   max: scaleXMax,
+                                });
+                                u.setScale("y", {
+                                  min: scaleYMin,
+                                  max: scaleYMax,
                                 });
                               });
                             };
@@ -576,6 +713,45 @@ export function Plot(props: PlotProps) {
                   }),
                 ]}
                 pluginBus={bus}
+                hooks={{
+                  init: [
+                    (u) => {
+                      const axisEls = u.root.querySelectorAll(".u-axis");
+
+                      axisEls.forEach((el) => {
+                        el.addEventListener("mousedown", (e) => {
+                          const y0 = e.clientY;
+                          let scaleKey = u.axes[i].scale;
+                          let scale = u.scales[scaleKey];
+                          let { min, max } = scale;
+                          let unitsPerPx =
+                            (max - min) / (u.bbox.height / uPlot.pxRatio);
+
+                          let mousemove = (e) => {
+                            let dy = e.clientY - y0;
+                            let shiftyBy = dy * unitsPerPx;
+
+                            u.setScale(scaleKey, {
+                              min: e.shiftKey ? min - shiftyBy : min + shiftyBy,
+                              max: max + shiftyBy,
+                            });
+                          };
+
+                          let mouseup = (e) => {
+                            document.removeEventListener(
+                              "mousemove",
+                              mousemove,
+                            );
+                            document.removeEventListener("mousemove", mouseup);
+                          };
+
+                          document.addEventListener("mousemove", mousemove);
+                          document.addEventListener("mouseup", mouseup);
+                        });
+                      });
+                    },
+                  ],
+                }}
               />
             </div>
             <style>{selection_css}</style>
@@ -772,76 +948,108 @@ export function Plot(props: PlotProps) {
                           </Tooltip.Positioner>
                         </Portal>
                       </Tooltip.Root>
-                    </ToggleGroup.Root>
 
-                    <Tooltip.Root>
-                      <Tooltip.Trigger>
-                        <IconButton
-                          variant="outline"
-                          onClick={() => {
-                            if (showLegendCheckBox()) {
-                              setContext()(
-                                "selected",
-                                props.header.map(() => false),
-                              );
+                      <Tooltip.Root>
+                        <Tooltip.Trigger>
+                          <ToggleGroup.Item
+                            value={CursorMode[CursorMode.Vertical]}
+                            aria-label="Toggle Cursor Lock"
+                            color={
+                              cursorMode() === CursorMode.Vertical
+                                ? "fg.default"
+                                : "fg.muted"
                             }
-                            setShowLegendCheckBox(!showLegendCheckBox());
-                          }}
-                        >
-                          <Show
-                            when={showLegendCheckBox()}
-                            fallback={<IconLocationOff />}
+                            bgColor={
+                              cursorMode() === CursorMode.Vertical
+                                ? "bg.emphasized"
+                                : lastCursorMode() === CursorMode.Vertical
+                                  ? "bg.subtle"
+                                  : "bg.default"
+                            }
                           >
-                            <IconLocation />
-                          </Show>
-                        </IconButton>
-                      </Tooltip.Trigger>
-                      <Tooltip.Positioner>
-                        <Tooltip.Content backgroundColor="bg.default">
-                          <Text color="fg.default">Select</Text>
-                        </Tooltip.Content>
-                      </Tooltip.Positioner>
-                    </Tooltip.Root>
+                            <IconCrosshair />
+                          </ToggleGroup.Item>
+                        </Tooltip.Trigger>
+                        <Portal>
+                          <Tooltip.Positioner>
+                            <Tooltip.Content backgroundColor="bg.default">
+                              <Text color="fg.default">Vertical Zoom</Text>
+                            </Tooltip.Content>
+                          </Tooltip.Positioner>
+                        </Portal>
+                      </Tooltip.Root>
+                    </ToggleGroup.Root>
                   </Stack>
                 </Stack>
-                <Stack
-                  width={`calc(100% - 1rem)`}
-                  direction="row"
-                  borderWidth="1px"
-                  borderRadius="1rem"
-                  paddingLeft="0.5rem"
-                  padding="0.3rem"
-                  gap="2"
-                >
-                  <IconSearch />
-                  <input
-                    value={searchInput()}
-                    onInput={(e) => {
-                      setSearchInput(e.target.value);
-                    }}
-                    placeholder="Search series"
-                    style={{
-                      border: "none",
-                      outline: "none",
-                      "white-space": "nowrap",
-                      overflow: "hidden",
-                      display: "block",
-                      "text-overflow": "ellipsis",
-                      width: `calc(100% - 3rem)`,
-                    }}
-                    height="2.5rem"
-                  />
-                  <IconButton
-                    variant="ghost"
-                    onClick={() => setSearchInput("")}
-                    padding="0"
-                    size="sm"
-                    width="3rem"
-                    height="1.5rem"
-                    borderRadius="3rem"
+
+                <Stack width={`calc(100% - 1rem)`} direction="row">
+                  <Stack
+                    width={`calc(100% - 3rem)`}
+                    direction="row"
+                    borderWidth="1px"
+                    borderRadius="1rem"
+                    paddingLeft="0.5rem"
+                    padding="0.3rem"
+                    gap="2"
                   >
-                    <IconX />
-                  </IconButton>
+                    <IconSearch />
+                    <input
+                      value={searchInput()}
+                      onInput={(e) => {
+                        setSearchInput(e.target.value);
+                      }}
+                      placeholder="Search series"
+                      style={{
+                        border: "none",
+                        outline: "none",
+                        "white-space": "nowrap",
+                        overflow: "hidden",
+                        display: "block",
+                        "text-overflow": "ellipsis",
+                        width: `calc(100% - 3rem)`,
+                      }}
+                      height="2.5rem"
+                    />
+                    <IconButton
+                      variant="ghost"
+                      onClick={() => setSearchInput("")}
+                      padding="0"
+                      size="sm"
+                      width="3rem"
+                      height="1.5rem"
+                      borderRadius="3rem"
+                    >
+                      <IconX />
+                    </IconButton>
+                  </Stack>
+                  <Tooltip.Root>
+                    <Tooltip.Trigger>
+                      <IconButton
+                        variant="outline"
+                        onClick={() => {
+                          if (showLegendCheckBox()) {
+                            setContext()(
+                              "selected",
+                              props.header.map(() => false),
+                            );
+                          }
+                          setShowLegendCheckBox(!showLegendCheckBox());
+                        }}
+                      >
+                        <Show
+                          when={showLegendCheckBox()}
+                          fallback={<IconLocationOff />}
+                        >
+                          <IconLocation />
+                        </Show>
+                      </IconButton>
+                    </Tooltip.Trigger>
+                    <Tooltip.Positioner>
+                      <Tooltip.Content backgroundColor="bg.default">
+                        <Text color="fg.default">Select</Text>
+                      </Tooltip.Content>
+                    </Tooltip.Positioner>
+                  </Tooltip.Root>
                 </Stack>
                 <Show when={render()}>
                   <Stack
@@ -983,55 +1191,6 @@ function getComputedCSSVariableValue(variable: string) {
 
   return value.trim();
 }
-
-type WheelZoomPluginOpts = {
-  factor: number;
-  group: string;
-};
-
-export const wheelZoomPlugin = (
-  opts: WheelZoomPluginOpts,
-): UplotPluginFactory<CursorPluginMessageBus> => {
-  return () => {
-    const factor = opts.factor || 0.75;
-
-    let xMin: number, xMax: number, xRange: number;
-
-    return {
-      hooks: {
-        ready: (u) => {
-          xMin = 0;
-          xMax = u.data[0].length - 1!;
-
-          xRange = xMax - xMin;
-
-          const over = u.over;
-          const rect = over.getBoundingClientRect();
-
-          // wheel scroll zoom
-          over.addEventListener("wheel", (e) => {
-            e.preventDefault();
-
-            const { left } = u.cursor;
-
-            const leftPct = left! / rect.width;
-            const xVal = u.posToVal(left!, "x");
-            const oxRange = u.scales.x.max! - u.scales.x.min!;
-
-            const nxRange = e.deltaY < 0 ? oxRange * factor : oxRange / factor;
-            let nxMin = xVal - leftPct * nxRange;
-            let nxMax = nxMin + nxRange;
-            [nxMin, nxMax] = clamp(nxRange, nxMin, nxMax, xRange, xMin, xMax);
-
-            uPlot.sync(opts.group).plots.forEach((up: uPlot) => {
-              up.setScale("x", { min: nxMin, max: nxMax });
-            });
-          });
-        },
-      },
-    };
-  };
-};
 
 function clamp(
   nRange: number,
