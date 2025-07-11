@@ -30,7 +30,7 @@ export const PlotToolTip = (props: TooltipProps) => {
       style={{
         "border-radius": "0.5rem",
         "border-width": "1px",
-        "max-height": "20rem",
+        "max-height": "20em",
         "overflow-y": "auto",
         "pointer-events": "auto",
         opacity: "100%",
@@ -61,16 +61,22 @@ export const PlotToolTip = (props: TooltipProps) => {
             const yRange = yMax - yMin;
 
             const cursorY = props.cursor.position.top;
-            const overOffsetHeight = props.u.over.offsetHeight;
-            const currentLocation = cursorY / overOffsetHeight;
+            const plotHeight = props.u.over.offsetHeight;
+            const currentLocation = cursorY / plotHeight;
             const currentY: number = Number(
               (yMax - yRange * currentLocation).toFixed(2),
             );
 
-            if (
-              val < currentY - yRange * 0.025 ||
-              val > currentY + yRange * 0.025
-            ) {
+            const one_rem = parseFloat(
+              getComputedStyle(document.documentElement).fontSize,
+            );
+
+            const cursorRange = (0.6 * one_rem) / plotHeight;
+            console.log(cursorRange, "cursor");
+            const plotRange = yRange * cursorRange;
+            console.log(plotRange, "plot");
+
+            if (val < currentY - plotRange || val > currentY + plotRange) {
               seriesValues.get(i())![1]("");
               return;
             }
@@ -97,8 +103,8 @@ export const PlotToolTip = (props: TooltipProps) => {
                 seriesValues.get(i())![0]().toString().length > 0
               }
             >
-              <Stack direction={"row"} gap="0.5rem" padding="0.2rem">
-                <Stack width="1rem" height="1rem" gap="0" marginTop="0.2rem">
+              <Stack direction="row" gap="0.5em" padding="0.2em">
+                <Stack width="1em" height="1em" gap="0" marginTop="0.2em">
                   <Dynamic
                     size="20px"
                     color={series.stroke as string}
