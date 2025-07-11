@@ -20,7 +20,8 @@ export type TabContext = {
   filePath?: string;
   plotSplitIndex?: number[][];
   plotContext?: PlotContext[];
-  plotZoomState?: [number, number];
+  plotXScales?: [number, number];
+  plotYScales?: Map<number, { min: number; max: number }>;
   legendPanelSize?: number;
   legendShrink?: boolean;
 };
