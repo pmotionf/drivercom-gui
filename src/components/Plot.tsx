@@ -19,6 +19,7 @@ import { ToggleGroup } from "~/components/ui/toggle-group";
 import { IconButton } from "~/components/ui/icon-button";
 import {
   IconArrowsMove,
+  IconArrowsMoveVertical,
   IconChevronLeftPipe,
   IconChevronRightPipe,
   IconCrosshair,
@@ -378,10 +379,10 @@ export function Plot(props: PlotProps) {
     const yRange = yMax - yMin;
 
     const plotHeight = u.over.offsetHeight;
-    const six_rem =
+    const three_rem =
       parseFloat(getComputedStyle(document.documentElement).fontSize) * 6;
 
-    const percent = six_rem / plotHeight;
+    const percent = three_rem / plotHeight;
     const yMaxPadding = yRange * percent;
     return plotYMax + yMaxPadding;
   };
@@ -409,15 +410,7 @@ export function Plot(props: PlotProps) {
             xRange = xMax - xMin;
 
             yMin = 0;
-            yMax = u.scales.y.max!;
-
-            if (u.axes[1]) {
-              const axes = JSON.parse(JSON.stringify(u.axes[1]));
-              const splits: number[] = axes["_splits" as keyof typeof axes];
-              if (splits) {
-                yMax = splits.sort((a, b) => b - a)[0];
-              }
-            }
+            yMax = getPlotYMax(u);
 
             yRange = yMax - yMin;
 
@@ -468,6 +461,11 @@ export function Plot(props: PlotProps) {
       };
     };
   };
+
+  const [yMin, setYMin] = createSignal<number | null>(null);
+  const [yMax, setYMax] = createSignal<number | null>(null);
+  const [selectionLeft, setSelectionLeft] = createSignal<number | null>(null);
+  const [selectionWidth, setSelectionWidth] = createSignal<number | null>(null);
 
   return (
     <>
@@ -625,6 +623,79 @@ export function Plot(props: PlotProps) {
 
                             document.addEventListener("mousemove", onmove);
                             document.addEventListener("mouseup", onup);
+                          } else if (cursorMode() === CursorMode.Vertical) {
+                            const y0 = e.clientY;
+
+                            setYMin(e.clientY);
+                            setSelectionLeft(
+                              document.getElementById(props.id)!.offsetLeft +
+                                u.over.offsetLeft,
+                            );
+                            setSelectionWidth(u.over.offsetWidth);
+
+                            let y1: number | null = null;
+                            const uOverTop = u.over.offsetTop;
+                            const uOverHeight = u.over.offsetHeight;
+                            const uPlotDivTop = document.getElementById(
+                              props.id,
+                            )!.offsetTop;
+
+                            const onmove = (e: MouseEvent) => {
+                              y1 = e.clientY;
+                              const uPlotTop = uPlotDivTop + uOverTop;
+                              const uPlotBottom = uPlotTop + uOverHeight;
+                              if (y1 <= uPlotTop) {
+                                setYMax(uPlotTop);
+                              } else if (y1 >= uPlotBottom) {
+                                setYMax(uPlotBottom);
+                              } else {
+                                setYMax(y1);
+                              }
+                            };
+
+                            const onup = () => {
+                              if (y1) {
+                                const startNumber = Math.min(y0, y1);
+                                let endNumber = Math.max(y0, y1);
+                                if (
+                                  endNumber - uPlotDivTop - uOverTop >=
+                                  uOverHeight
+                                ) {
+                                  endNumber = uOverHeight;
+                                }
+
+                                const cursorMin =
+                                  startNumber - uPlotDivTop - uOverTop;
+                                const cursorMax =
+                                  endNumber - uPlotDivTop - uOverTop;
+
+                                const yMin = u.scales.y.min!;
+                                const yMax = u.scales.y.max!;
+                                const yRange = yMax - yMin;
+
+                                const minPercent = cursorMin / uOverHeight;
+                                const scaleYMin = yMax - yRange * minPercent;
+
+                                const maxPercent = cursorMax / uOverHeight;
+                                const scaleYMax = yMax - yRange * maxPercent;
+
+                                u.setScale("y", {
+                                  min: scaleYMin,
+                                  max: scaleYMax,
+                                });
+
+                                setYMin(null);
+                                setYMax(null);
+                                setSelectionLeft(null);
+                                setSelectionWidth(null);
+                              }
+
+                              document.removeEventListener("mousemove", onmove);
+                              document.removeEventListener("mouseup", onup);
+                            };
+
+                            document.addEventListener("mousemove", onmove);
+                            document.addEventListener("mouseup", onup);
                           }
                         }
 
@@ -713,47 +784,9 @@ export function Plot(props: PlotProps) {
                   }),
                 ]}
                 pluginBus={bus}
-                hooks={{
-                  init: [
-                    (u) => {
-                      const axisEls = u.root.querySelectorAll(".u-axis");
-
-                      axisEls.forEach((el) => {
-                        el.addEventListener("mousedown", (e) => {
-                          const y0 = e.clientY;
-                          let scaleKey = u.axes[i].scale;
-                          let scale = u.scales[scaleKey];
-                          let { min, max } = scale;
-                          let unitsPerPx =
-                            (max - min) / (u.bbox.height / uPlot.pxRatio);
-
-                          let mousemove = (e) => {
-                            let dy = e.clientY - y0;
-                            let shiftyBy = dy * unitsPerPx;
-
-                            u.setScale(scaleKey, {
-                              min: e.shiftKey ? min - shiftyBy : min + shiftyBy,
-                              max: max + shiftyBy,
-                            });
-                          };
-
-                          let mouseup = (e) => {
-                            document.removeEventListener(
-                              "mousemove",
-                              mousemove,
-                            );
-                            document.removeEventListener("mousemove", mouseup);
-                          };
-
-                          document.addEventListener("mousemove", mousemove);
-                          document.addEventListener("mouseup", mouseup);
-                        });
-                      });
-                    },
-                  ],
-                }}
               />
             </div>
+
             <style>{selection_css}</style>
           </Splitter.Panel>
 
@@ -967,7 +1000,7 @@ export function Plot(props: PlotProps) {
                                   : "bg.default"
                             }
                           >
-                            <IconCrosshair />
+                            <IconArrowsMoveVertical />
                           </ToggleGroup.Item>
                         </Tooltip.Trigger>
                         <Portal>
@@ -1173,6 +1206,20 @@ export function Plot(props: PlotProps) {
           </Show>
         </Splitter.Root>
       </div>
+      <Show when={yMin() && yMax()}>
+        <Stack
+          position="absolute"
+          pointerEvents="none"
+          backgroundColor="fg.subtle"
+          style={{
+            top: `${Math.min(yMax()!, yMin()!)}px`,
+            left: `${selectionLeft()}px`,
+            width: `${selectionWidth()}px`,
+            height: `${Math.max(yMax()!, yMin()!) - Math.min(yMax()!, yMin()!)}px`,
+            opacity: "0.1",
+          }}
+        />
+      </Show>
     </>
   );
 }
