@@ -63,10 +63,21 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
     return tabContexts.get(props.key)?.[1](
       "tabContext",
       tabIndex,
-      "plotZoomState",
+      "plotXScales",
       newXRange,
     );
   };
+
+  /*const setYRange = (
+    plotIndex: number,
+    newYRange: { min: number; max: number },
+  ) => {
+    setTimeout(() => {
+      if (getTabContext(props.key).tabCtx.plotYScales) {
+        getTabContext(props.key).tabCtx.plotYScales?.set(plotIndex, newYRange);
+      }
+    }, 10);
+  };*/
 
   const setLegendSplitter = (tabIndex: number, newSize: number) => {
     return tabContexts.get(props.key)?.[1](
@@ -95,8 +106,8 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
   const [plotZoomState, setPlotZoomState] = createSignal<[number, number]>([
     0, 0,
   ]);
-  if (getTabContext(props.tabId).tabCtx.plotZoomState) {
-    setPlotZoomState(getTabContext(props.tabId).tabCtx.plotZoomState!);
+  if (getTabContext(props.tabId).tabCtx.plotXScales) {
+    setPlotZoomState(getTabContext(props.tabId).tabCtx.plotXScales!);
   }
 
   createEffect(
@@ -227,6 +238,21 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
 
     if (splitIndex().length === 0) {
       setSplitIndex(dataForPlot.splitIndex);
+    }
+
+    if (!getTabContext(props.tabId).tabCtx.plotYScales) {
+      const newYScales: { min?: number; max?: number }[] = Array.from(
+        { length: splitIndex.length },
+        () => {
+          return {};
+        },
+      );
+      tabContexts.get(props.key)?.[1](
+        "tabContext",
+        getTabContext(props.tabId).currentIndex,
+        "plotYScales",
+        newYScales,
+      );
     }
   });
 
@@ -375,6 +401,23 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
     ),
   );
 
+  const [plotYScales, setPlotYScales] = createSignal<
+    { min: number; max: number }[]
+  >([]);
+
+  createEffect(
+    on(
+      () => getTabContext(props.tabId).tabCtx.plotYScales,
+      () => {
+        const tabPlotYScales = getTabContext(props.tabId).tabCtx.plotYScales;
+        if (tabPlotYScales) {
+          setPlotYScales(tabPlotYScales);
+        }
+      },
+      { defer: true },
+    ),
+  );
+
   return (
     <For each={splitIndex()}>
       {(item, index) => {
@@ -518,6 +561,24 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
               onXRangeChange={(xRange) => {
                 if (plotZoomState() !== xRange) {
                   setPlotZoomState(xRange);
+                }
+              }}
+              yRange={plotYScales()[index()]}
+              onYRangeChange={(yRange) => {
+                const yScales = getTabContext(props.tabId).tabCtx.plotYScales;
+                if (
+                  yScales &&
+                  JSON.stringify(yScales) !== JSON.stringify(yRange)
+                ) {
+                  tabContexts.get(props.key)?.[1](
+                    "tabContext",
+                    getTabContext(props.tabId).currentIndex,
+                    "plotYScales",
+                    index(),
+                    yRange,
+                  );
+
+                  console.log("Test");
                 }
               }}
               legendShrink={isLegendShrink()}

@@ -21,7 +21,7 @@ export type TabContext = {
   plotSplitIndex?: number[][];
   plotContext?: PlotContext[];
   plotXScales?: [number, number];
-  plotYScales?: Map<number, { min: number; max: number }>;
+  plotYScales?: { min: number; max: number }[];
   legendPanelSize?: number;
   legendShrink?: boolean;
 };
