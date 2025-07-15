@@ -45,6 +45,7 @@ import type { UplotPluginFactory } from "@dschz/solid-uplot";
 
 import { cursor, tooltip } from "@dschz/solid-uplot/plugins";
 import { PlotToolTip } from "./Plot/PlotTooltip";
+import { on } from "solid-js";
 
 export type PlotProps = JSX.HTMLAttributes<HTMLDivElement> & {
   id: string;
@@ -473,6 +474,34 @@ export function Plot(props: PlotProps) {
   const [selectionLeft, setSelectionLeft] = createSignal<number | null>(null);
   const [selectionWidth, setSelectionWidth] = createSignal<number | null>(null);
 
+  createEffect(
+    on(
+      () => plot,
+      () => {
+        if (plot) {
+          console.log(plot);
+          /*uPlot.sync(group()).plots.forEach((up) => {
+            if (props.xRange) {
+              setTimeout(() => {
+                up.setScale("x", {
+                  min: unwrap(props.xRange)![0],
+                  max: unwrap(props.xRange)![1],
+                });
+              }, 0);
+            }
+          });*/
+          /*if (props.yRange) {
+            plot.setScale("y", {
+              min: unwrap(props.yRange).min,
+              max: unwrap(props.yRange).max,
+            });
+          }*/
+        }
+      },
+      { defer: true },
+    ),
+  );
+
   return (
     <>
       <div {...rest}>
@@ -502,19 +531,6 @@ export function Plot(props: PlotProps) {
                 onCreate={(e) => {
                   plot = e as uPlot;
                   setRender(true);
-                  uPlot.sync(group()).sub(plot);
-                  onMount(() => {
-                    if (props.xRange) {
-                      uPlot.sync(group()).plots.forEach((up) => {
-                        setTimeout(() => {
-                          up.setScale("x", {
-                            min: unwrap(props.xRange)![0],
-                            max: unwrap(props.xRange)![1],
-                          });
-                        }, 0);
-                      });
-                    }
-                  });
                 }}
                 onCursorMove={(e) => {
                   setCursorIdx(e.cursor.xValue);
