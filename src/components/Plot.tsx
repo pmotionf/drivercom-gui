@@ -56,6 +56,8 @@ export type PlotProps = JSX.HTMLAttributes<HTMLDivElement> & {
   onContextChange?: (context: PlotContext) => void;
   xRange?: [number, number];
   onXRangeChange?: (xRange: [number, number]) => void;
+  yRange?: { min: number; max: number };
+  onYRangeChange?: (yRange: { min: number; max: number }) => void;
   legendPanelSize?: number;
   onLegendPanelSize?: (size: number) => void;
   legendShrink?: boolean;
@@ -218,6 +220,10 @@ export function Plot(props: PlotProps) {
 
       setXRange(plot.scales.x.max! - plot.scales.x.min!);
       props.onXRangeChange?.([plot.scales.x.min!, plot.scales.x.max!]);
+      props.onYRangeChange?.({
+        min: plot.scales.y.min!,
+        max: plot.scales.y.max!,
+      });
     }, 10);
   };
 
@@ -609,10 +615,14 @@ export function Plot(props: PlotProps) {
                                   min: scaleXMin,
                                   max: scaleXMax,
                                 });
-                                u.setScale("y", {
-                                  min: scaleYMin,
-                                  max: scaleYMax,
-                                });
+                              });
+                              u.setScale("y", {
+                                min: scaleYMin,
+                                max: scaleYMax,
+                              });
+                              props.onYRangeChange?.({
+                                min: scaleYMin,
+                                max: scaleYMax,
                               });
                             };
 
@@ -655,13 +665,17 @@ export function Plot(props: PlotProps) {
 
                             const onup = () => {
                               if (y1) {
-                                const startNumber = Math.min(y0, y1);
+                                let startNumber = Math.min(y0, y1);
                                 let endNumber = Math.max(y0, y1);
                                 if (
                                   endNumber - uPlotDivTop - uOverTop >=
                                   uOverHeight
                                 ) {
                                   endNumber = uOverHeight;
+                                }
+
+                                if (startNumber - uPlotDivTop - uOverTop <= 0) {
+                                  startNumber = 0;
                                 }
 
                                 const cursorMin =
@@ -683,6 +697,11 @@ export function Plot(props: PlotProps) {
                                   min: scaleYMin,
                                   max: scaleYMax,
                                 });
+
+                                /*props.onYRangeChange?.({
+                                  min: scaleYMin,
+                                  max: scaleYMax,
+                                });*/
 
                                 setYMin(null);
                                 setYMax(null);

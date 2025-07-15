@@ -63,18 +63,14 @@ export const PlotToolTip = (props: TooltipProps) => {
             const cursorY = props.cursor.position.top;
             const plotHeight = props.u.over.offsetHeight;
             const currentLocation = cursorY / plotHeight;
-            const currentY: number = Number(
-              (yMax - yRange * currentLocation).toFixed(2),
-            );
+            const currentY: number = Number(yMax - yRange * currentLocation);
 
             const one_rem = parseFloat(
               getComputedStyle(document.documentElement).fontSize,
             );
 
             const cursorRange = (0.6 * one_rem) / plotHeight;
-            console.log(cursorRange, "cursor");
             const plotRange = yRange * cursorRange;
-            console.log(plotRange, "plot");
 
             if (val < currentY - plotRange || val > currentY + plotRange) {
               seriesValues.get(i())![1]("");
