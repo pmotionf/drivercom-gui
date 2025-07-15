@@ -193,13 +193,14 @@ export function TabList(props: tabListProps) {
               });
               return;
             }
+
             const newTab: TabContext = {
               id: newTabInfo.id,
               filePath: newTabInfo.filePath,
               plotSplitIndex: [],
               plotContext: [],
               tabName: "",
-              plotZoomState: [0, 0],
+              plotXScales: [0, 0],
             };
 
             setTabContexts([...getTabContexts().tabContext, newTab]);
