@@ -220,9 +220,8 @@ function Monitoring() {
             if (
               "id" in carrier &&
               "state" in carrier &&
-              "location" in carrier &&
-              "mainAxisId" in carrier &&
-              "auxAxisId" in carrier
+              "position" in carrier &&
+              "cas" in carrier
             ) {
               if (
                 "lineId" in carrier &&
@@ -244,10 +243,10 @@ function Monitoring() {
 
                 const updateInfo = {
                   state: carrier.state as string,
-                  location: carrier.location as number,
-                  mainAxisId: carrier.mainAxisId as number,
-                  auxAxisId: carrier.auxAxisId as number,
-                };
+                  position: carrier.position as number,
+                  cas: carrier.cas,
+                } as CarrierInfo;
+
                 systemConfig.lineConfig.lines[
                   carrier.lineId - 1
                 ].carrierInfo!.set(carrier.id, updateInfo);

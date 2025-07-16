@@ -16,9 +16,11 @@ export type AxesInfo = {
 
 export type CarrierInfo = {
   state: string;
-  location: number;
-  mainAxisId: number;
-  auxAxisId: number;
+  position: number;
+  cas: {
+    enabled: boolean;
+    triggered?: boolean;
+  };
 };
 
 export function Axis() {
@@ -140,11 +142,24 @@ export function Axis() {
             }}
           >
             {axesContext.carrierInfo
-              ? axesContext.carrierInfo.state.replace("STATE_", "")
+              ? axesContext.carrierInfo.state.replace("CARRIER_STATE_", "")
               : ""}
           </Text>
         </Stack>
         <Show when={axesContext.carrierInfo}>
+          <Stack direction="row" gap="0">
+            <Text width="3rem" size="sm" fontWeight="bold">
+              CAS
+            </Text>
+            <Stack width={`calc(100% - 3rem)`}>
+              <Show when={axesContext.carrierInfo!.cas.triggered}>
+                <Text size="sm">Triggered</Text>
+              </Show>
+              <Show when={axesContext.carrierInfo!.cas.enabled}>
+                <Text size="sm">Enabled</Text>
+              </Show>
+            </Stack>
+          </Stack>
           <Stack direction="row" gap="0">
             <Text width="3rem" size="sm" fontWeight="bold">
               Pos
@@ -161,7 +176,7 @@ export function Axis() {
                 "font-family": "monospace",
               }}
             >
-              {axesContext.carrierInfo!.location.toFixed(6)}
+              {axesContext.carrierInfo!.position.toFixed(6)}
             </Text>
           </Stack>
         </Show>
