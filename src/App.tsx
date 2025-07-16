@@ -1,7 +1,15 @@
 import "./App.css";
 
 import { invoke } from "@tauri-apps/api/core";
-import { createSignal, Index, onMount, Show, ValidComponent } from "solid-js";
+import {
+  createEffect,
+  createSignal,
+  Index,
+  on,
+  onMount,
+  Show,
+  ValidComponent,
+} from "solid-js";
 import { Dynamic, Portal } from "solid-js/web";
 import type { RouteSectionProps } from "@solidjs/router";
 import { useNavigate } from "@solidjs/router";
@@ -22,6 +30,8 @@ import {
   driverComVersion,
   globalState,
   GlobalStateContext,
+  page,
+  Pages,
   setCliVersion,
   setConfigFormFileFormat,
   setDriverComVersion,
@@ -29,8 +39,9 @@ import {
   setEnumSeries,
   setGlobalState,
   setLogFormFileFormat,
-  setLogStartCoditionList,
+  setLogStartConditionList,
   setLogStartCombinatorList,
+  setPage,
   Theme,
 } from "./GlobalState.ts";
 
@@ -181,7 +192,7 @@ function App(props: RouteSectionProps) {
     const startConditionList = parseOutput[1]
       .split(",")
       .filter((value) => value !== "\n");
-    setLogStartCoditionList(startConditionList);
+    setLogStartConditionList(startConditionList);
   }
 
   async function getLogStartCombinator() {
@@ -226,7 +237,6 @@ function App(props: RouteSectionProps) {
       disabled: false,
     },
   };
-  const [page, setPage] = createSignal("");
 
   const sidebar_collapsed_width = "3rem";
   const sidebar_expanded_width = "18rem";
@@ -240,6 +250,20 @@ function App(props: RouteSectionProps) {
   const toggleTheme = () => {
     applyTheme(globalState.theme === "light" ? "dark" : "light");
   };
+
+  createEffect(
+    on(
+      () => page(),
+      () => {
+        if (page() !== Pages.None) {
+          navigate("/" + page().toLowerCase(), {
+            replace: true,
+          });
+        }
+      },
+      { defer: true },
+    ),
+  );
 
   return (
     <GlobalStateContext.Provider value={{ globalState, setGlobalState }}>
@@ -336,10 +360,7 @@ function App(props: RouteSectionProps) {
                     value={page()}
                     onValueChange={(e) => {
                       if (e != null) {
-                        setPage(e.value!);
-                        navigate("/" + e.value!.toLowerCase(), {
-                          replace: true,
-                        });
+                        setPage(e.value! as Pages);
                       }
                     }}
                     style={{ width: "98%" }}
@@ -470,8 +491,7 @@ function App(props: RouteSectionProps) {
           value={page()}
           onValueChange={(e) => {
             if (e != null) {
-              setPage(e.value!);
-              navigate("/" + e.value!.toLowerCase(), { replace: true });
+              setPage(e.value! as Pages);
             }
           }}
           style={{

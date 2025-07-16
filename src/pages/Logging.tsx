@@ -2,9 +2,14 @@ import { Stack } from "styled-system/jsx";
 import { Text } from "~/components/ui/text.tsx";
 import {
   logFormFileFormat,
+  Pages,
+  panelContexts,
+  panelKeys,
   portId,
   recentLogFilePaths,
+  setPage,
   setRecentLogFilePaths,
+  tabContexts,
 } from "~/GlobalState.ts";
 import { Command } from "@tauri-apps/plugin-shell";
 import { createSignal, Show } from "solid-js";
@@ -25,10 +30,13 @@ import { Editable } from "~/components/ui/editable.tsx";
 import { Tooltip } from "~/components/ui/tooltip.tsx";
 import { createEffect } from "solid-js";
 import { on } from "solid-js";
-import { Spinner } from "~/components/ui/styled/spinner.tsx";
+import { PanelSizeContext } from "~/components/PanelLayout.tsx";
 import { FileMenu } from "~/components/FileMenu.tsx";
 import { PortMenu } from "~/components/PortMenu.tsx";
 import { ConnectButton } from "./Connect/ConnectButton.tsx";
+import { TabContext } from "~/components/Tab.tsx";
+import { createStore } from "solid-js/store";
+import { TabListContext } from "~/components/TabList.tsx";
 
 export function Logging() {
   const [logConfigure, setLogConfigure] = createSignal({});
@@ -306,6 +314,47 @@ export function Logging() {
     gap: 24,
   });
 
+  const openNewTab = (newFilePath: string) => {
+    if (!panelKeys.has(Pages.LogViewer)) {
+      const uuid = crypto.randomUUID();
+      panelKeys.set(Pages.LogViewer, uuid);
+      panelContexts.set(uuid, createSignal<PanelSizeContext[]>([]));
+    }
+    const panelKey = panelKeys.get(Pages.LogViewer);
+    if (panelKey && panelContexts.get(panelKey)) {
+      const panelContext = panelContexts.get(panelKey)!;
+      if (panelContext[0]().length === 0) {
+        panelContext[1]([{ id: crypto.randomUUID(), size: 100 }]);
+      }
+      const ctx = panelContext[0]();
+      const tabListId = ctx[0].id;
+      if (!tabContexts.has(tabListId)) {
+        tabContexts.set(
+          tabListId,
+          createStore<TabListContext>({ tabContext: [], focusedTab: "" }),
+        );
+      }
+      const tabCtx = tabContexts.get(tabListId);
+      const newTabID = crypto.randomUUID();
+      const newTab: TabContext = {
+        id: newTabID,
+        filePath: newFilePath,
+      };
+      setTimeout(() => {
+        tabCtx![1]({
+          tabContext: [
+            ...(tabCtx![0].tabContext.length !== 0
+              ? tabCtx![0].tabContext
+              : []),
+            newTab,
+          ],
+          focusedTab: newTabID,
+        });
+        setPage(Pages.LogViewer);
+      }, 200);
+    }
+  };
+
   return (
     <>
       <div
@@ -539,13 +588,15 @@ export function Logging() {
                           }
                           onClick={async () => {
                             await startLogging();
-                            const logState = await getCurrentLogStatus();
-                            setCurrentLogStatus(
-                              logState ? logState.logStatus : null,
-                            );
-                            setCyclesCompleted(
-                              logState ? logState.cycle : null,
-                            );
+                            setTimeout(async () => {
+                              const logState = await getCurrentLogStatus();
+                              setCurrentLogStatus(
+                                logState ? logState.logStatus : null,
+                              );
+                              setCyclesCompleted(
+                                logState ? logState.cycle : null,
+                              );
+                            }, 100);
                           }}
                           size="sm"
                           variant="ghost"
@@ -598,6 +649,7 @@ export function Logging() {
                     <Tooltip.Root>
                       <Tooltip.Trigger>
                         <IconButton
+                          disabled={logGetBtnLoading()}
                           onClick={async () => {
                             if (portId().length === 0) return;
                             const path = await save({
@@ -639,6 +691,17 @@ export function Logging() {
                             if (csvFile) {
                               if (typeof csvFile === "string") {
                                 await writeTextFile(path, csvFile);
+                                toaster.create({
+                                  title: "Download Success",
+                                  description: `The file is Downloaded at`,
+                                  type: "success",
+                                  action: {
+                                    label: `${path}`,
+                                    onClick: () => {
+                                      openNewTab(path);
+                                    },
+                                  },
+                                });
                               } else {
                                 toaster.create(csvFile);
                               }
@@ -648,12 +711,7 @@ export function Logging() {
                           userSelect="none"
                           size="sm"
                         >
-                          <Show
-                            when={logGetBtnLoading()}
-                            fallback={<IconFileDownload />}
-                          >
-                            <Spinner size="sm" />
-                          </Show>
+                          <IconFileDownload />
                         </IconButton>
                       </Tooltip.Trigger>
                       <Tooltip.Positioner>
@@ -697,14 +755,35 @@ export function Logging() {
           </Show>
         </Stack>
       </div>
+
       <ConnectButton
         style={{ position: "absolute", right: "0.5rem", top: "1rem" }}
       />
+
       <Toast.Toaster toaster={toaster}>
         {(toast) => (
           <Toast.Root>
             <Toast.Title>{toast().title}</Toast.Title>
             <Toast.Description>{toast().description}</Toast.Description>
+            {toast().action && (
+              <Toast.ActionTrigger>
+                <Text
+                  size="sm"
+                  style={{
+                    width: "100%",
+                    height: "1rem",
+                    display: "block",
+                    "white-space": "none",
+                    overflow: "hidden",
+                    "text-overflow": "ellipsis",
+                    "text-decoration": "underline",
+                  }}
+                  fontWeight="bold"
+                >
+                  {toast().action?.label}
+                </Text>
+              </Toast.ActionTrigger>
+            )}
             <Toast.CloseTrigger>
               <IconX />
             </Toast.CloseTrigger>

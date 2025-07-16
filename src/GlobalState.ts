@@ -45,7 +45,7 @@ export const [recentConfigFilePaths, setRecentConfigFilePaths] = createSignal<
   string[]
 >([]);
 
-export const [logStartConditionList, setLogStartCoditionList] = createSignal<
+export const [logStartConditionList, setLogStartConditionList] = createSignal<
   string[]
 >([]);
 export const [logStartCombinatorList, setLogStartCombinatorList] = createSignal<
@@ -66,3 +66,13 @@ type TabContexts = Map<
   [Store<TabListContext>, SetStoreFunction<TabListContext>]
 >;
 export const tabContexts: TabContexts = new Map();
+
+export enum Pages {
+  Configuration = "configuration",
+  Logging = "logging",
+  LogViewer = "logViewer",
+  Monitoring = "monitoring",
+  None = "none",
+}
+
+export const [page, setPage] = createSignal<Pages>(Pages.None);
