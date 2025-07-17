@@ -20,9 +20,8 @@ import { on } from "solid-js";
 import { System } from "~/components/System/System.tsx";
 import { Toast } from "~/components/ui/toast.tsx";
 import { LineConfig } from "~/components/System/Line.tsx";
-//@ts-ignore Implicitly has an 'any' type
+//@ts-ignore Ignore test in git action
 import { mmc } from "~/components/proto/mmc.js";
-import { CarrierInfo } from "~/components/System/Axes.tsx";
 import { UnlistenFn } from "@tauri-apps/api/event";
 
 export type SystemConfig = {
@@ -59,9 +58,12 @@ function Monitoring() {
 
   createEffect(
     on(
-      () => systemConfig.lineConfig.lines.length,
+      () => systemConfig.lineConfig.lines,
       async () => {
-        if (systemConfig.lineConfig.lines.length !== 0) {
+        if (
+          systemConfig.lineConfig.lines &&
+          systemConfig.lineConfig.lines.length !== 0
+        ) {
           await sendRequestLoop();
         }
       },
@@ -70,14 +72,14 @@ function Monitoring() {
   );
 
   async function sendAxisInfo(lines: LineConfig[], lineId: number) {
-    if (systemConfig.lineConfig.lines.length === 0) return null;
+    if (systemConfig.lineConfig.lines!.length === 0) return null;
     const payload = {
       info: {
         axis: {
           lineId: lineId,
           range: {
             startId: 1,
-            endId: lines[lineId - 1].axes,
+            endId: lines[lineId - 1].line.axes!,
           },
         },
       },
@@ -102,19 +104,19 @@ function Monitoring() {
     lineId: number,
     axisId: number,
   ) {
-    if (systemConfig.lineConfig.lines.length === 0) return null;
-    const axes = lines[lineId - 1].axes;
+    if (systemConfig.lineConfig.lines!.length === 0) return null;
+    const axes = lines[lineId - 1].line.axes!;
 
     if (
-      lines[lineId - 1].axesInfo &&
-      lines[lineId - 1].axesInfo![axisId - 1] &&
-      lines[lineId - 1].axesInfo![axisId - 1].carrierId
+      lines[lineId - 1].axisInfo &&
+      lines[lineId - 1].axisInfo![axisId - 1] &&
+      lines[lineId - 1].axisInfo![axisId - 1].carrierId
     ) {
       const payload = {
         info: {
           carrier: {
             lineId: lineId,
-            carrierId: lines[lineId - 1].axesInfo![axisId - 1].carrierId,
+            carrierId: lines[lineId - 1].axisInfo![axisId - 1].carrierId,
           },
         },
       };
@@ -138,15 +140,15 @@ function Monitoring() {
   async function sendRequestLoop() {
     if (unlisten === null) return;
     try {
-      const sendAxis = await sendAxisInfo(systemConfig.lineConfig.lines, 1);
+      const sendAxis = await sendAxisInfo(systemConfig.lineConfig.lines!, 1);
       const sendCarrier = await sendCarrierInfo(
-        systemConfig.lineConfig.lines,
+        systemConfig.lineConfig.lines!,
         1,
         1,
       );
       if (sendAxis !== null && sendCarrier !== null) {
         setTimeout(async () => {
-          if (systemConfig.lineConfig.lines.length === 0) {
+          if (systemConfig.lineConfig.lines!.length === 0) {
             if (unlisten !== null) {
               unlisten();
               unlisten = null;
@@ -183,75 +185,44 @@ function Monitoring() {
         x.payload.event.message.data
       ) {
         const msg = Buffer.from(x.payload.event.message!.data);
-        const decode = mmc.Response.decode(msg).toJSON();
+        const decode = mmc.Response.decode(msg);
 
-        if ("core" in decode && typeof decode.core === "object") {
-          if (
-            "lineConfig" in decode.core &&
-            typeof decode.core.lineConfig === "object"
-          ) {
-            setSystemConfig("lineConfig", decode.core.lineConfig);
-          }
-        } else if ("info" in decode && typeof decode.info === "object") {
-          if (
-            "axis" in decode.info &&
-            "axes" in decode.info.axis &&
-            "lineId" in decode.info.axis
-          ) {
-            if (
-              typeof decode.info.axis.lineId === "number" &&
-              typeof decode.info.axis.axes === "object" &&
-              systemConfig.lineConfig.lines.length !== 0
-            ) {
-              setSystemConfig(
-                "lineConfig",
-                "lines",
-                decode.info.axis.lineId - 1,
-                "axesInfo",
-                decode.info.axis.axes,
-              );
-              return;
-            }
+        if (
+          decode.core &&
+          decode.core.lineConfig &&
+          typeof decode.core.lineConfig === "object"
+        ) {
+          //@ts-ignore Ignore test in git action
+          const update = decode.core.lineConfig.lines!.map((lineData) => {
+            return { line: lineData, carrierInfo: new Map() } as LineConfig;
+          });
+          setSystemConfig("lineConfig", "lines", update);
+        }
+
+        if (decode.info) {
+          if (decode.info.axis) {
+            setSystemConfig(
+              "lineConfig",
+              "lines",
+              decode.info.axis.lineId! - 1,
+              "axisInfo",
+              decode.info.axis.axes!,
+            );
           }
 
-          if ("carrier" in decode.info) {
-            const carrier = decode.info.carrier;
+          if (decode.info.carrier) {
+            const lineId = decode.info.carrier.lineId!;
 
-            if (
-              "id" in carrier &&
-              "state" in carrier &&
-              "position" in carrier &&
-              "cas" in carrier
-            ) {
-              if (
-                "lineId" in carrier &&
-                typeof carrier.lineId == "number" &&
-                systemConfig.lineConfig.lines.length !== 0
-              ) {
-                if (
-                  !systemConfig.lineConfig.lines[carrier.lineId - 1].carrierInfo
-                ) {
-                  const map: Map<number, CarrierInfo> = new Map();
-                  setSystemConfig(
-                    "lineConfig",
-                    "lines",
-                    carrier.lineId - 1,
-                    "carrierInfo",
-                    map,
-                  );
-                }
+            const carrier: mmc.info.Response.ICarrier = {
+              cas: decode.info.carrier.cas,
+              position: decode.info.carrier.position,
+              state: decode.info.carrier.state,
+            };
 
-                const updateInfo = {
-                  state: carrier.state as string,
-                  position: carrier.position as number,
-                  cas: carrier.cas,
-                } as CarrierInfo;
-
-                systemConfig.lineConfig.lines[
-                  carrier.lineId - 1
-                ].carrierInfo!.set(carrier.id, updateInfo);
-              }
-            }
+            systemConfig.lineConfig.lines[lineId - 1].carrierInfo!.set(
+              decode.info.carrier.id!,
+              carrier,
+            );
           }
         }
       }

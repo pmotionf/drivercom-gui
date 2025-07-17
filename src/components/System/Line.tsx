@@ -4,39 +4,38 @@ import { Accordion } from "../ui/accordion.tsx";
 import { ChevronDownIcon } from "lucide-solid";
 import { createContext } from "solid-js";
 import { useContext } from "solid-js";
-import { AxesInfo } from "./Axes.tsx";
 import { Stack } from "styled-system/jsx/stack";
 import { Show } from "solid-js/web";
-import { CarrierInfo } from "./Axes.tsx";
+//@ts-ignore Ignore test in git action
+import { mmc } from "../proto/mmc";
 
 export type LineProps = JSX.HTMLAttributes<HTMLDivElement> & {
   value: LineConfig;
 };
 
 export const LineContext = createContext<{
-  axes: AxesInfo[];
+  axes: mmc.info.Response.Axes.IAxis[];
   id: number;
-  carrierInfo?: Map<number, CarrierInfo>;
+  carrierInfo?: Map<number, mmc.info.Response.ICarrier>;
 }>();
 
 export const useLineContext = () => useContext(LineContext);
 
 export type LineConfig = {
-  axes: number;
-  name: string;
-  axesInfo?: AxesInfo[];
-  carrierInfo?: Map<number, CarrierInfo>;
+  line: mmc.core.Response.LineConfig.ILine;
+  axisInfo?: mmc.info.Response.Axes.IAxis[];
+  carrierInfo?: Map<number, mmc.info.Response.ICarrier>;
 };
 
 export function Line(props: LineProps) {
   return (
-    <Accordion.Item value={props.value.name}>
+    <Accordion.Item value={props.value.line.name!}>
       <Accordion.ItemTrigger
         padding="0.6rem"
         paddingLeft="1rem"
         paddingRight="1rem"
       >
-        {props.value.name}
+        {props.value.line.name}
         <Accordion.ItemIndicator>
           <ChevronDownIcon />
         </Accordion.ItemIndicator>
@@ -53,10 +52,10 @@ export function Line(props: LineProps) {
           overflowX="auto"
           gap="1rem"
         >
-          <Show when={props.value.axesInfo}>
+          <Show when={props.value.axisInfo!}>
             <For
-              each={Array.from({ length: props.value.axes / 3 }, (_, i) =>
-                props.value.axesInfo!.slice(i * 3, i * 3 + 3),
+              each={Array.from({ length: props.value.line.axes! / 3 }, (_, i) =>
+                props.value.axisInfo!.slice(i * 3, i * 3 + 3),
               )}
             >
               {(axis, index) => {
