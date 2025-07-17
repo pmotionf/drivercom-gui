@@ -72,9 +72,7 @@ export const PlotToolTip = (props: TooltipProps) => {
             );
 
             const cursorRange = (0.6 * one_rem) / plotHeight;
-            console.log(cursorRange, "cursor");
             const plotRange = yRange * cursorRange;
-            console.log(plotRange, "plot");
 
             if (val < currentY - plotRange || val > currentY + plotRange) {
               seriesValues.get(i())![1]("");
@@ -84,10 +82,15 @@ export const PlotToolTip = (props: TooltipProps) => {
             if (enumMappingIndex !== null) {
               const array: [number, string][] =
                 enumMappings()[enumMappingIndex][1];
+              const index = array
+                .map((arr) => {
+                  return arr[0];
+                })
+                .indexOf(val);
 
               if (array[val]) {
-                const enumValue = array[val][0];
-                const enumKind = array[val][1];
+                const enumValue = array[index][0];
+                const enumKind = array[index][1];
                 const seriesValue = `${enumKind} (${enumValue})`;
                 seriesValues.get(i())![1](seriesValue);
               }
