@@ -8,6 +8,7 @@ import { AxesInfo } from "./Axes.tsx";
 import { Stack } from "styled-system/jsx/stack";
 import { Show } from "solid-js/web";
 import { CarrierInfo } from "./Axes.tsx";
+import { Text } from "../ui/text.tsx";
 
 export type LineProps = JSX.HTMLAttributes<HTMLDivElement> & {
   value: LineConfig;
@@ -35,11 +36,14 @@ export function Line(props: LineProps) {
         padding="0.6rem"
         paddingLeft="1rem"
         paddingRight="1rem"
+        gap="0"
       >
-        {props.value.name}
         <Accordion.ItemIndicator>
           <ChevronDownIcon />
         </Accordion.ItemIndicator>
+        <Text marginLeft="1rem" width="100%">
+          {props.value.name}
+        </Text>
       </Accordion.ItemTrigger>
       <Accordion.ItemContent
         padding="0.5rem"

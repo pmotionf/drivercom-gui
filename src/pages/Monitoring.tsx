@@ -271,6 +271,21 @@ function Monitoring() {
 
   const [isConnecting, setIsConnecting] = createSignal<boolean>(false);
 
+  const [floatBtnRight, setFloatBtnRight] = createSignal<number | null>(null);
+  createEffect(
+    on(
+      () => panelSize(),
+      () => {
+        const width = document.getElementById(
+          `${clientId()}-sidebar`,
+        )?.offsetWidth;
+        if (width) {
+          setFloatBtnRight(width);
+        }
+      },
+    ),
+  );
+
   return (
     <>
       <Splitter.Root
@@ -293,22 +308,13 @@ function Monitoring() {
           backgroundColor="transparent"
         >
           <Show when={systemConfig.lineConfig.lines.length > 0}>
-            <div style={{ width: "100%", height: "100%" }}>
+            <div
+              style={{ width: "100%", height: "100%", "overflow-y": "auto" }}
+            >
               <System lineConfig={systemConfig.lineConfig.lines} />
             </div>
           </Show>
         </Splitter.Panel>
-
-        {/* Resize trigger */}
-        <IconButton
-          size="sm"
-          variant="ghost"
-          onClick={() => setShowSideBar(!showSideBar())}
-        >
-          <Show when={!showSideBar()} fallback={<IconChevronRightPipe />}>
-            <IconChevronLeftPipe />
-          </Show>
-        </IconButton>
 
         {/* Side bar */}
         <Show when={showSideBar()}>
@@ -332,7 +338,12 @@ function Monitoring() {
             borderWidth="0"
             backgroundColor="transparent"
           >
-            <Stack direction="column" width="100%" height="100%">
+            <Stack
+              direction="column"
+              width="100%"
+              height="100%"
+              id={`${clientId()}-sidebar`}
+            >
               {/* Connect Area */}
               <Stack padding="1rem" width="100%" borderBottomWidth="2px">
                 <Text size="lg" fontWeight="bold">
@@ -511,6 +522,25 @@ function Monitoring() {
           </Toast.Root>
         )}
       </Toast.Toaster>
+
+      {/* Resize trigger */}
+      <Show when={floatBtnRight()}>
+        <IconButton
+          size="sm"
+          width="0.5rem"
+          variant="ghost"
+          onClick={() => setShowSideBar(!showSideBar())}
+          style={{
+            position: "absolute",
+            top: "0",
+            right: showSideBar() ? `calc(${floatBtnRight()}px + 0.5rem)` : 0,
+          }}
+        >
+          <Show when={!showSideBar()} fallback={<IconChevronRightPipe />}>
+            <IconChevronLeftPipe />
+          </Show>
+        </IconButton>
+      </Show>
     </>
   );
 }
