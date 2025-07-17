@@ -4,29 +4,11 @@ import { Show } from "solid-js/web";
 import { AxesContext } from "./Station.tsx";
 import { useContext } from "solid-js";
 import { Badge } from "../ui/badge.tsx";
-
-export type AxesInfo = {
-  hallAlarm?: { front?: boolean; back?: boolean };
-  motorEnabled?: boolean;
-  carrierId?: number;
-  waitingPull?: boolean;
-  waitingPush?: boolean;
-  overCurrent?: boolean;
-};
-
-export type CarrierInfo = {
-  state: string;
-  position: number;
-  cas: {
-    enabled: boolean;
-    triggered?: boolean;
-  };
-};
+//@ts-ignore Ignore test in git action
+import { mmc } from "../proto/mmc";
 
 export function Axis() {
-  const axesContext:
-    | { axes: AxesInfo; id: string; carrierInfo?: CarrierInfo }
-    | undefined = useContext(AxesContext);
+  const axesContext = useContext(AxesContext);
   if (!axesContext) return;
 
   return (
@@ -72,7 +54,7 @@ export function Axis() {
         <Badge
           width="min-content"
           backgroundColor={
-            axesContext.axes.overCurrent
+            axesContext.axes.errors?.overcurrent
               ? "red"
               : axesContext.axes.motorEnabled
                 ? "accent.customGreen"
@@ -84,7 +66,9 @@ export function Axis() {
           borderWidth="0"
         >
           <Text
-            color={axesContext.axes.overCurrent ? "#ffffff" : "fg.default"}
+            color={
+              axesContext.axes.errors?.overcurrent ? "#ffffff" : "fg.default"
+            }
             size="sm"
             fontWeight="medium"
           >
@@ -114,6 +98,7 @@ export function Axis() {
           </Badge>
         </Show>
       </Stack>
+
       <Show when={axesContext.axes.carrierId}>
         <Text
           fontWeight="bold"
@@ -141,8 +126,12 @@ export function Axis() {
               "user-select": "none",
             }}
           >
-            {axesContext.carrierInfo
-              ? axesContext.carrierInfo.state.replace("CARRIER_STATE_", "")
+            {axesContext.carrierInfo && axesContext.carrierInfo.state
+              ? mmc.info.Response.Carrier.State[
+                  `${axesContext.carrierInfo!.state}` as keyof typeof mmc.info.Response.Carrier.State
+                ]
+                  .toString()
+                  .replace("CARRIER_STATE_", "")
               : ""}
           </Text>
         </Stack>
@@ -152,10 +141,22 @@ export function Axis() {
               CAS
             </Text>
             <Stack width={`calc(100% - 3rem)`}>
-              <Show when={axesContext.carrierInfo!.cas.triggered}>
+              <Show
+                when={
+                  axesContext.carrierInfo &&
+                  axesContext.carrierInfo.cas &&
+                  axesContext.carrierInfo.cas.triggered
+                }
+              >
                 <Text size="sm">Triggered</Text>
               </Show>
-              <Show when={axesContext.carrierInfo!.cas.enabled}>
+              <Show
+                when={
+                  axesContext.carrierInfo &&
+                  axesContext.carrierInfo.cas &&
+                  axesContext.carrierInfo.cas.enabled
+                }
+              >
                 <Text size="sm">Enabled</Text>
               </Show>
             </Stack>
@@ -176,7 +177,7 @@ export function Axis() {
                 "font-family": "monospace",
               }}
             >
-              {axesContext.carrierInfo!.position.toFixed(6)}
+              {axesContext.carrierInfo!.position!.toFixed(6)}
             </Text>
           </Stack>
         </Show>
