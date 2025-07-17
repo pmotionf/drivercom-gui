@@ -23,6 +23,7 @@ import { LineConfig } from "~/components/System/Line.tsx";
 //@ts-ignore Ignore test in git action
 import { mmc } from "~/components/proto/mmc.js";
 import { UnlistenFn } from "@tauri-apps/api/event";
+import { monitoringInputs } from "~/GlobalState.ts";
 
 export type SystemConfig = {
   lineConfig: {
@@ -39,7 +40,6 @@ function Monitoring() {
   const [systemConfig, setSystemConfig] = createStore<SystemConfig>({
     lineConfig: { lines: [] },
   });
-  const inputValues: Map<string, string> = new Map();
 
   const disconnectServer = async (clientId: string) => {
     try {
@@ -325,11 +325,13 @@ function Monitoring() {
                     >
                       <input
                         value={
-                          inputValues.get("IP") ? inputValues.get("IP") : ""
+                          monitoringInputs.get("IP")
+                            ? monitoringInputs.get("IP")
+                            : ""
                         }
                         onInput={(e) => {
                           if (typeof e.target.value === "string") {
-                            inputValues.set("IP", e.target.value);
+                            monitoringInputs.set("IP", e.target.value);
                           }
                         }}
                         style={{
@@ -364,11 +366,13 @@ function Monitoring() {
                     >
                       <input
                         value={
-                          inputValues.get("port") ? inputValues.get("port") : ""
+                          monitoringInputs.get("port")
+                            ? monitoringInputs.get("port")
+                            : ""
                         }
                         onInput={(e) => {
                           if (typeof e.target.value === "string") {
-                            inputValues.set("port", e.target.value);
+                            monitoringInputs.set("port", e.target.value);
                           }
                         }}
                         style={{
@@ -403,8 +407,8 @@ function Monitoring() {
                       }
                       return;
                     }
-                    const serverIp = inputValues.get("IP");
-                    const port = inputValues.get("port");
+                    const serverIp = monitoringInputs.get("IP");
+                    const port = monitoringInputs.get("port");
 
                     if (
                       typeof serverIp == "string" &&

@@ -76,3 +76,5 @@ export enum Pages {
 }
 
 export const [page, setPage] = createSignal<Pages>(Pages.None);
+
+export const monitoringInputs: Map<string, string> = new Map();
