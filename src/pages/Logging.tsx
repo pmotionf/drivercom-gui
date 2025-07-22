@@ -37,6 +37,7 @@ import { ConnectButton } from "./Connect/ConnectButton.tsx";
 import { TabContext } from "~/components/Tab.tsx";
 import { createStore } from "solid-js/store";
 import { TabListContext } from "~/components/TabList.tsx";
+import { Button } from "~/components/ui/button.tsx";
 
 export function Logging() {
   const [logConfigure, setLogConfigure] = createSignal({});
@@ -648,8 +649,8 @@ export function Logging() {
                   fallback={
                     <Tooltip.Root>
                       <Tooltip.Trigger>
-                        <IconButton
-                          disabled={logGetBtnLoading()}
+                        <Button
+                          loading={logGetBtnLoading()}
                           onClick={async () => {
                             if (portId().length === 0) return;
                             const path = await save({
@@ -712,7 +713,7 @@ export function Logging() {
                           size="sm"
                         >
                           <IconFileDownload />
-                        </IconButton>
+                        </Button>
                       </Tooltip.Trigger>
                       <Tooltip.Positioner>
                         <Tooltip.Content backgroundColor="bg.default">
