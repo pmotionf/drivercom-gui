@@ -38,6 +38,7 @@ import { TabContext } from "~/components/Tab.tsx";
 import { createStore } from "solid-js/store";
 import { TabListContext } from "~/components/TabList.tsx";
 import { Button } from "~/components/ui/button.tsx";
+import { PlotContext } from "~/components/Plot.tsx";
 
 export function Logging() {
   const [logConfigure, setLogConfigure] = createSignal({});
@@ -339,8 +340,11 @@ export function Logging() {
       const newTabID = crypto.randomUUID();
       const newTab: TabContext = {
         id: newTabID,
-        filePath: newFilePath,
+        filePath: newFilePath.replaceAll("\\", "/"),
+        tabName: "",
+        plotContext: [{} as PlotContext],
       };
+
       setTimeout(() => {
         tabCtx![1]({
           tabContext: [
