@@ -339,6 +339,7 @@ export function Logging() {
       const newTab: TabContext = {
         id: newTabID,
         filePath: newFilePath,
+        tabName: "",
       };
       setTimeout(() => {
         tabCtx![1]({
