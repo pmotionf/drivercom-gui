@@ -29,14 +29,18 @@ export type LineConfig = {
 
 export function Line(props: LineProps) {
   return (
-    <Accordion.Item value={props.value.line.name!}>
+    <Accordion.Item
+      value={props.value.line.name!}
+      backgroundColor="bg.canvas"
+      borderBottomWidth="1px"
+    >
       <Accordion.ItemTrigger
         padding="0.6rem"
         paddingLeft="1rem"
         paddingRight="1rem"
       >
         {props.value.line.name}
-        <Accordion.ItemIndicator>
+        <Accordion.ItemIndicator class="cancel">
           <ChevronDownIcon />
         </Accordion.ItemIndicator>
       </Accordion.ItemTrigger>
