@@ -4,32 +4,101 @@ import { Accordion } from "../ui/accordion.tsx";
 import { For } from "solid-js/web";
 import { Station } from "./Station.tsx";
 import { Axis } from "./Axes.tsx";
+import { createSignal } from "solid-js";
+
+import { useDragDropContext } from "@thisbeyond/solid-dnd";
+import {
+  DragDropProvider,
+  DragDropSensors,
+  SortableProvider,
+  createSortable,
+  closestCenter,
+} from "@thisbeyond/solid-dnd";
 
 export type SystemProps = JSX.HTMLAttributes<HTMLDivElement> & {
   lineConfig: LineConfig[];
 };
 
 export function System(props: SystemProps) {
+  const [accordionStates, setAccordionStates] = createSignal<string[]>(
+    props.lineConfig.map((config) => config.line.name!),
+  );
+  const [dragging, setDragging] = createSignal<boolean>(false);
+
+  const [items, setItems] = createSignal(
+    Array.from({ length: props.lineConfig.length }, (_, i) => i),
+  );
+  const ids = () => items();
+
+  //@ts-ignore Using Library
+  const onDragEnd = ({ draggable, droppable }) => {
+    if (draggable && droppable) {
+      const currentItems = ids();
+      const fromIndex = currentItems.indexOf(draggable.id);
+      const toIndex = currentItems.indexOf(droppable.id);
+      if (fromIndex !== toIndex) {
+        const updatedItems = currentItems.slice();
+        updatedItems.splice(toIndex, 0, ...updatedItems.splice(fromIndex, 1));
+        setItems(updatedItems);
+      }
+    }
+  };
+
   return (
-    <Accordion.Root
-      multiple
-      defaultValue={props.lineConfig.map((line) => line.line.name!)}
+    <div
       style={{
         width: "100%",
         height: "100%",
+        "overflow-y": "auto",
       }}
     >
-      <For each={props.lineConfig}>
-        {(config) => {
-          return (
-            <Line value={config}>
-              <Station>
-                <Axis />
-              </Station>
-            </Line>
-          );
+      <Accordion.Root
+        multiple
+        value={accordionStates()}
+        onValueChange={(e) => {
+          if (dragging()) {
+            setDragging(false);
+          } else {
+            setAccordionStates(e.value);
+          }
         }}
-      </For>
-    </Accordion.Root>
+      >
+        <DragDropProvider
+          onDragStart={() => setDragging(true)}
+          //@ts-ignore Using Library
+          onDragEnd={onDragEnd}
+          collisionDetector={closestCenter}
+        >
+          <DragDropSensors />
+          <SortableProvider ids={ids()}>
+            <For each={items()}>
+              {(item) => {
+                const sortable = createSortable(item);
+                //@ts-ignore Using Library
+                const [state] = useDragDropContext();
+
+                return (
+                  <div
+                    //@ts-ignore Using Library
+                    use:sortable
+                    class="sortable"
+                    classList={{
+                      "opacity-25": sortable.isActiveDraggable,
+                      "transition-transform": !!state.active.draggable,
+                    }}
+                  >
+                    <Line value={props.lineConfig[item]}>
+                      <Station>
+                        <Axis />
+                      </Station>
+                    </Line>
+                  </div>
+                );
+              }}
+            </For>
+          </SortableProvider>
+        </DragDropProvider>
+      </Accordion.Root>
+    </div>
   );
 }
