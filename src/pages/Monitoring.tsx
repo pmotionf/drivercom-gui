@@ -264,11 +264,7 @@ function Monitoring() {
           backgroundColor="transparent"
         >
           <Show when={systemConfig.lineConfig.lines.length > 0}>
-            <div
-              style={{ width: "100%", height: "100%", "overflow-y": "auto" }}
-            >
-              <System lineConfig={systemConfig.lineConfig.lines} />
-            </div>
+            <System lineConfig={systemConfig.lineConfig.lines} />
           </Show>
         </Splitter.Panel>
 
