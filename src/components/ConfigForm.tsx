@@ -13,12 +13,17 @@ import { createStore } from "solid-js/store";
 
 import { Accordion } from "~/components/ui/accordion.tsx";
 import { Checkbox } from "~/components/ui/checkbox.tsx";
-import { Input } from "~/components/ui/input.tsx";
 
 import { Stack } from "styled-system/jsx";
 import { Text } from "./ui/text.tsx";
 import { IconButton } from "./ui/icon-button.tsx";
-import { IconChevronDown, IconLink, IconLinkOff } from "@tabler/icons-solidjs";
+import {
+  IconChevronDown,
+  IconLink,
+  IconLinkOff,
+  IconLock,
+  IconLockOff,
+} from "@tabler/icons-solidjs";
 import { Tooltip } from "./ui/tooltip.tsx";
 
 export type ConfigFormProps = JSX.HTMLAttributes<HTMLFormElement> & {
@@ -33,10 +38,13 @@ type LinkedStatuses = Map<
   [Accessor<[boolean, number]>, Setter<[boolean, number]>]
 >;
 
+type GainLockStatuses = Map<string, [Accessor<boolean>, Setter<boolean>]>;
+
 export function ConfigForm(props: ConfigFormProps) {
   const [config, setConfig] = createStore(props.config);
   const accordionStatuses: AccordionStatuses = new Map();
   const linkedStatuses: LinkedStatuses = new Map();
+  const gainLockStatuses: GainLockStatuses = new Map();
 
   const dynamic = ["center", "between"];
 
@@ -95,6 +103,7 @@ export function ConfigForm(props: ConfigFormProps) {
           () => config.coil.ls,
         ],
         () => {
+          if (gainLockStatuses.get(`${dynPos}.gain.current.p`)![0]()) return;
           const p = calcCurrentP(
             //@ts-ignore Guaranteed to exist from above check
             config.axis[dynPos].gain.current.denominator,
@@ -118,6 +127,8 @@ export function ConfigForm(props: ConfigFormProps) {
           () => config.coil.rs,
         ],
         () => {
+          if (gainLockStatuses.get(`${dynPos}.gain.current.i`)![0]()) return;
+
           const i = calcCurrentI(
             //@ts-ignore Guaranteed to exist from above check
             config.axis[dynPos].gain.current.denominator,
@@ -147,6 +158,8 @@ export function ConfigForm(props: ConfigFormProps) {
           () => config.magnet.pitch,
         ],
         () => {
+          if (gainLockStatuses.get(`${dynPos}.gain.velocity.p`)![0]()) return;
+
           const wcc = calcWcc(
             //@ts-ignore Guaranteed to exist from above check
             config.axis[dynPos].gain.current.p,
@@ -185,6 +198,7 @@ export function ConfigForm(props: ConfigFormProps) {
           () => config.axis[dynPos].gain.velocity.p,
         ],
         () => {
+          if (gainLockStatuses.get(`${dynPos}.gain.velocity.i`)![0]()) return;
           const i = calcVelocityI(
             //@ts-ignore Guaranteed to exist from above check
             config.axis[dynPos].gain.velocity.denominator,
@@ -212,6 +226,7 @@ export function ConfigForm(props: ConfigFormProps) {
           () => config.axis[dynPos].gain.velocity.p,
         ],
         () => {
+          if (gainLockStatuses.get(`${dynPos}.gain.position.p`)![0]()) return;
           const wsc = calcWsc(
             //@ts-ignore Guaranteed to exist from above check
             config.axis[dynPos].gain.velocity.p,
@@ -315,6 +330,8 @@ export function ConfigForm(props: ConfigFormProps) {
         id_prefix={props.label}
         accordionStatuses={accordionStatuses}
         linkedStatuses={linkedStatuses}
+        gainLockStatuses={gainLockStatuses}
+        gainKinds={dynamic}
       />
     </div>
   );
@@ -326,10 +343,29 @@ type ConfigObjectProps = JSX.HTMLAttributes<HTMLDivElement> & {
   onItemChange?: () => void;
   accordionStatuses: AccordionStatuses;
   linkedStatuses: LinkedStatuses;
+  gainLockStatuses: GainLockStatuses;
+  gainKinds: string[];
+  gainKey?: string;
 };
 
 function ConfigObject(props: ConfigObjectProps) {
   const [object, setObject] = createStore(props.object);
+
+  function getComputedCSSVariableValue(variable: string) {
+    let value = getComputedStyle(document.documentElement).getPropertyValue(
+      variable,
+    );
+
+    while (value.startsWith("var(")) {
+      // Extract the name of the referenced variable
+      const referencedVarName = value.slice(4, value.length - 1);
+      value = getComputedStyle(document.documentElement).getPropertyValue(
+        referencedVarName,
+      );
+    }
+
+    return value.trim();
+  }
 
   return (
     <div>
@@ -367,12 +403,23 @@ function ConfigObject(props: ConfigObjectProps) {
                     id_prefix={props.id_prefix}
                     accordionStatuses={props.accordionStatuses}
                     linkedStatuses={props.linkedStatuses}
+                    gainLockStatuses={props.gainLockStatuses}
+                    gainKinds={props.gainKinds}
                   />
                 </Stack>
               </>
             );
           }
           if (typeof value === "object") {
+            let gainkey = props.gainKey ? props.gainKey : "";
+            if (gainkey.length !== 0) {
+              gainkey = `${props.gainKey}.${key}`;
+            }
+
+            const index = props.gainKinds.indexOf(key.toLowerCase());
+            if (index !== -1) {
+              gainkey = `${props.gainKinds[index]}`;
+            }
             return (
               <fieldset
                 style={{
@@ -408,6 +455,9 @@ function ConfigObject(props: ConfigObjectProps) {
                   }}
                   accordionStatuses={props.accordionStatuses}
                   linkedStatuses={props.linkedStatuses}
+                  gainLockStatuses={props.gainLockStatuses}
+                  gainKinds={props.gainKinds}
+                  gainKey={gainkey}
                 />
               </fieldset>
             );
@@ -434,6 +484,23 @@ function ConfigObject(props: ConfigObjectProps) {
             );
           }
           if (typeof value === "number" || value === "NaN") {
+            let lockStatusKey = "";
+            const lockStatus = props.gainLockStatuses;
+            if (
+              props.gainKey &&
+              props.gainKey.length !== 0 &&
+              !props.gainKinds.includes(props.gainKey)
+            ) {
+              if (key.toLowerCase() === "p" || key.toLowerCase() === "i") {
+                lockStatusKey = `${props.gainKey}.${key}`;
+                if (!lockStatus.has(lockStatusKey)) {
+                  lockStatus.set(lockStatusKey, createSignal<boolean>(false));
+                }
+              }
+            }
+
+            let formRef: HTMLFormElement | undefined;
+
             return (
               <Stack
                 direction="row"
@@ -444,28 +511,90 @@ function ConfigObject(props: ConfigObjectProps) {
                 <Text width="50%" marginTop="0.4rem" fontWeight="light">
                   {key}
                 </Text>
-                <Input
-                  width="50%"
-                  placeholder={key}
-                  value={object[key as keyof typeof object]}
-                  onChange={(e) => {
-                    if (isNaN(Number(e.target.value))) {
-                      if (e.target.value.toLowerCase() !== "nan") {
-                        e.target.value = String(
-                          object[key as keyof typeof object],
-                        );
-                        return;
-                      }
-                    }
-                    setObject(
-                      key as keyof typeof object,
-                      // @ts-ignore: TSC unable to handle generic object type
-                      // in store
-                      Number(e.target.value),
-                    );
-                    props.onItemChange?.();
+                <form
+                  ref={formRef}
+                  style={{
+                    width: "50%",
+                    display: "flex",
+                    padding: "0.4rem",
+                    "padding-right": "0.2rem",
+                    "border-radius": "0.5rem",
+                    "border-width": "1px",
+                    "border-color":
+                      getComputedCSSVariableValue("--colors-bg-muted"),
                   }}
-                />
+                  class="{formFocus: formFocusOn}"
+                >
+                  <input
+                    style={{
+                      width: lockStatus.has(lockStatusKey)
+                        ? `calc(100% - 1rem)`
+                        : "100%",
+                      outline: "none",
+                    }}
+                    disabled={
+                      lockStatus.has(lockStatusKey)
+                        ? lockStatus.get(lockStatusKey)![0]()
+                        : false
+                    }
+                    onFocusIn={() => {
+                      formRef!.style.borderWidth = "2px";
+                      formRef!.style.borderColor = getComputedCSSVariableValue(
+                        "--colors-accent-default",
+                      );
+                    }}
+                    onFocusOut={() => {
+                      formRef!.style.borderWidth = "1px";
+                      formRef!.style.borderColor =
+                        getComputedCSSVariableValue("--colors-bg-muted");
+                    }}
+                    placeholder={key}
+                    value={object[key as keyof typeof object]}
+                    onChange={(e) => {
+                      if (isNaN(Number(e.target.value))) {
+                        if (e.target.value.toLowerCase() !== "nan") {
+                          e.target.value = String(
+                            object[key as keyof typeof object],
+                          );
+                          return;
+                        }
+                      }
+                      setObject(
+                        key as keyof typeof object,
+                        // @ts-ignore: TSC unable to handle generic object type
+                        // in store
+                        Number(e.target.value),
+                      );
+                      props.onItemChange?.();
+                    }}
+                  />
+                  <Show when={lockStatus.has(lockStatusKey)}>
+                    <IconButton
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      borderRadius="3rem"
+                      height="min-content"
+                      paddingTop="0.2rem"
+                      paddingBottom="0.2rem"
+                      opacity={
+                        lockStatus.get(lockStatusKey)![0]() ? "1" : "0.5"
+                      }
+                      onClick={() =>
+                        lockStatus.get(lockStatusKey)![1](
+                          !lockStatus.get(lockStatusKey)![0](),
+                        )
+                      }
+                    >
+                      <Show
+                        when={lockStatus.get(lockStatusKey)![0]()}
+                        fallback={<IconLockOff />}
+                      >
+                        <IconLock />
+                      </Show>
+                    </IconButton>
+                  </Show>
+                </form>
               </Stack>
             );
           }
@@ -482,6 +611,8 @@ type ConfigListProps = Accordion.RootProps & {
   onItemChange?: () => void;
   accordionStatuses: AccordionStatuses;
   linkedStatuses: LinkedStatuses;
+  gainLockStatuses: GainLockStatuses;
+  gainKinds: string[];
 };
 
 function ConfigList(props: ConfigListProps) {
@@ -635,6 +766,8 @@ function ConfigList(props: ConfigListProps) {
                   }}
                   accordionStatuses={props.accordionStatuses}
                   linkedStatuses={props.linkedStatuses}
+                  gainLockStatuses={props.gainLockStatuses}
+                  gainKinds={props.gainKinds}
                 />
               </Accordion.ItemContent>
             </Accordion.Item>
