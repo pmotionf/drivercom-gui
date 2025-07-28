@@ -417,8 +417,18 @@ function ConfigObject(props: ConfigObjectProps) {
             }
 
             const index = props.gainKinds.indexOf(key.toLowerCase());
+
             if (index !== -1) {
               gainkey = `${props.gainKinds[index]}`;
+              if (
+                !props.gainLockStatuses.has(gainkey) &&
+                Object.keys(value).includes("gain")
+              ) {
+                props.gainLockStatuses.set(
+                  `${gainkey}.gain`,
+                  createSignal<boolean>(false),
+                );
+              }
             }
             return (
               <fieldset
@@ -431,7 +441,7 @@ function ConfigObject(props: ConfigObjectProps) {
                   "margin-top": "1rem",
                 }}
               >
-                <legend>
+                <legend style={{ display: "flex" }}>
                   <Text fontWeight="bold" opacity="70%">
                     {`${key[0].toUpperCase()}${Array.from(
                       key.slice(1, key.length),
@@ -445,6 +455,44 @@ function ConfigObject(props: ConfigObjectProps) {
                       .toString()
                       .replaceAll(",", "")}`}
                   </Text>
+                  <Show
+                    when={
+                      props.gainLockStatuses.has(`${key}.gain`) &&
+                      Object.keys(value).includes("gain")
+                    }
+                  >
+                    <IconButton
+                      size="sm"
+                      width="1rem"
+                      height="min-content"
+                      paddingTop="0.2rem"
+                      paddingBottom="0.2rem"
+                      variant="ghost"
+                      opacity={
+                        props.gainLockStatuses.get(`${key}.gain`)![0]()
+                          ? "1"
+                          : "0.5"
+                      }
+                      onClick={() => {
+                        const lockStatus = props.gainLockStatuses.get(
+                          `${key}.gain`,
+                        )![0]();
+                        const mapKeys = Array.from(
+                          props.gainLockStatuses.keys(),
+                        ).filter((mapKey) => mapKey.includes(`${key}.gain`));
+                        mapKeys.forEach((mapKey) => {
+                          props.gainLockStatuses.get(mapKey)![1](!lockStatus);
+                        });
+                      }}
+                    >
+                      <Show
+                        when={props.gainLockStatuses.get(`${key}.gain`)![0]()}
+                        fallback={<IconLockOff />}
+                      >
+                        <IconLock />
+                      </Show>
+                    </IconButton>
+                  </Show>
                 </legend>
                 <ConfigObject
                   object={value}
@@ -499,7 +547,7 @@ function ConfigObject(props: ConfigObjectProps) {
               }
             }
 
-            let formRef: HTMLFormElement | undefined;
+            let divRef: HTMLDivElement | undefined;
 
             return (
               <Stack
@@ -511,19 +559,17 @@ function ConfigObject(props: ConfigObjectProps) {
                 <Text width="50%" marginTop="0.4rem" fontWeight="light">
                   {key}
                 </Text>
-                <form
-                  ref={formRef}
+                <Stack
+                  ref={divRef}
                   style={{
                     width: "50%",
-                    display: "flex",
                     padding: "0.4rem",
                     "padding-right": "0.2rem",
                     "border-radius": "0.5rem",
                     "border-width": "1px",
-                    "border-color":
-                      getComputedCSSVariableValue("--colors-bg-muted"),
                   }}
-                  class="{formFocus: formFocusOn}"
+                  borderColor="bg.disabled"
+                  direction="row"
                 >
                   <input
                     style={{
@@ -531,6 +577,11 @@ function ConfigObject(props: ConfigObjectProps) {
                         ? `calc(100% - 1rem)`
                         : "100%",
                       outline: "none",
+                      opacity: lockStatus.has(lockStatusKey)
+                        ? lockStatus.get(lockStatusKey)![0]()
+                          ? "0.4"
+                          : "1"
+                        : "1",
                     }}
                     disabled={
                       lockStatus.has(lockStatusKey)
@@ -538,15 +589,16 @@ function ConfigObject(props: ConfigObjectProps) {
                         : false
                     }
                     onFocusIn={() => {
-                      formRef!.style.borderWidth = "2px";
-                      formRef!.style.borderColor = getComputedCSSVariableValue(
+                      divRef!.style.borderWidth = "2px";
+                      divRef!.style.borderColor = getComputedCSSVariableValue(
                         "--colors-accent-default",
                       );
                     }}
                     onFocusOut={() => {
-                      formRef!.style.borderWidth = "1px";
-                      formRef!.style.borderColor =
-                        getComputedCSSVariableValue("--colors-bg-muted");
+                      divRef!.style.borderWidth = "1px";
+                      divRef!.style.borderColor = getComputedCSSVariableValue(
+                        "--colors-bg-disabled",
+                      );
                     }}
                     placeholder={key}
                     value={object[key as keyof typeof object]}
@@ -580,11 +632,29 @@ function ConfigObject(props: ConfigObjectProps) {
                       opacity={
                         lockStatus.get(lockStatusKey)![0]() ? "1" : "0.5"
                       }
-                      onClick={() =>
+                      onClick={() => {
                         lockStatus.get(lockStatusKey)![1](
                           !lockStatus.get(lockStatusKey)![0](),
+                        );
+
+                        const split = lockStatusKey.split(".");
+                        const includingKeys = `${split[0]}.${split[1]}.`;
+                        const mapValues = Array.from(
+                          props.gainLockStatuses.entries(),
                         )
-                      }
+                          .filter((entries) =>
+                            entries[0].includes(includingKeys),
+                          )
+                          .map((entries) => entries[1][0]());
+                        const parseValues = [...new Set(mapValues)];
+                        if (parseValues.length !== 1) {
+                          lockStatus.get(includingKeys.slice(0, -1))![1](true);
+                        } else {
+                          lockStatus.get(includingKeys.slice(0, -1))![1](
+                            parseValues[0],
+                          );
+                        }
+                      }}
                     >
                       <Show
                         when={lockStatus.get(lockStatusKey)![0]()}
@@ -594,7 +664,7 @@ function ConfigObject(props: ConfigObjectProps) {
                       </Show>
                     </IconButton>
                   </Show>
-                </form>
+                </Stack>
               </Stack>
             );
           }
