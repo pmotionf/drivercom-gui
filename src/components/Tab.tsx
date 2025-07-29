@@ -1,4 +1,4 @@
-import { JSX } from "solid-js";
+import { JSX, onCleanup, onMount } from "solid-js";
 import { For, Portal } from "solid-js/web";
 import { Tabs } from "~/components/ui/tabs.tsx";
 import { IconButton } from "~/components/ui/icon-button.tsx";
@@ -142,6 +142,21 @@ export function Tab(props: tabProps) {
     setRender(false);
     setRender(true);
   };
+
+  const cancelReorder = (e: KeyboardEvent) => {
+    if(e.key === 'Escape'){
+        //props.onTabDragging?.(-1, -1, "")
+        setFocusId(currentDraggingTabId()!);
+        setReorderTabIndex(null);
+        setCurrentDraggingTabId("");
+        props.onTabDragEnd?.(-100, -100, "")
+        refreshUI()
+      }
+  }
+   
+  onMount(() => document.addEventListener('keydown', cancelReorder))
+
+  onCleanup(() => document.removeEventListener('keydown', cancelReorder))
 
   return (
     <Tabs.List

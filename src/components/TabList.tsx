@@ -131,6 +131,7 @@ export function TabList(props: tabListProps) {
     tabId: string,
     tabListId: string,
   ): TabLocation => {
+    if(tabId.length === 0) return "none"
     const tabListContainerStart =
       document.getElementById(tabListId)!.offsetLeft;
     const tabListContainerWidth =
@@ -222,6 +223,8 @@ export function TabList(props: tabListProps) {
               tabListId,
             );
 
+            console.log(tabLocation)
+
             if (
               tabLocation === "rightSplitter" ||
               tabLocation === "leftSplitter" ||
@@ -245,6 +248,7 @@ export function TabList(props: tabListProps) {
             }
 
             props.onTabDragEnd?.(mouseX);
+
             setTabContextRender(false);
             setTabContextRender(true);
           }}
