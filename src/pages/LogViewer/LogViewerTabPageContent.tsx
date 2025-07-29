@@ -68,17 +68,6 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
     );
   };
 
-  /*const setYRange = (
-    plotIndex: number,
-    newYRange: { min: number; max: number },
-  ) => {
-    setTimeout(() => {
-      if (getTabContext(props.key).tabCtx.plotYScales) {
-        getTabContext(props.key).tabCtx.plotYScales?.set(plotIndex, newYRange);
-      }
-    }, 10);
-  };*/
-
   const setLegendSplitter = (tabIndex: number, newSize: number) => {
     return tabContexts.get(props.key)?.[1](
       "tabContext",
@@ -143,6 +132,30 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
       () => splitIndex(),
       () => {
         setSplitPlot(getTabContext(props.tabId).currentIndex, splitIndex());
+      },
+      { defer: true },
+    ),
+  );
+
+  const [plotYScales, setPlotYScales] = createSignal<
+    { min: number; max: number }[]
+  >(
+    getTabContext(props.tabId).tabCtx.plotYScales
+      ? getTabContext(props.tabId).tabCtx.plotYScales!
+      : [],
+  );
+
+  createEffect(
+    on(
+      () => plotYScales(),
+      () => {
+        const yScales = plotYScales();
+        tabContexts.get(props.key)?.[1](
+          "tabContext",
+          getTabContext(props.tabId).currentIndex,
+          "plotYScales",
+          yScales,
+        );
       },
       { defer: true },
     ),
@@ -242,7 +255,7 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
 
     if (!getTabContext(props.tabId).tabCtx.plotYScales) {
       const newYScales: { min: number; max: number }[] = Array.from(
-        { length: splitIndex.length },
+        { length: splitIndex().length },
         () => {
           return { min: 0, max: 0 };
         },
@@ -253,6 +266,7 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
         "plotYScales",
         newYScales,
       );
+      setPlotYScales(newYScales);
     }
   });
 
@@ -289,14 +303,31 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
       updated.splice(plot_index, 1, nonSelectSeries, selectSeries);
       return updated;
     });
+
+    setPlotYScales((prev) => {
+      const newUpdate = [
+        ...prev.slice(0, plot_index + 1),
+        { min: 0, max: 0 },
+        ...prev.slice(plot_index + 1, prev.length),
+      ];
+      return newUpdate;
+    });
   }
 
   function mergePlot(plot_indexes: number[]) {
     const prevPlot = [...splitIndex()];
     let mergePlot: number[] = [];
+
+    const prevYRange = [...plotYScales()];
+    let mergeYRange: { min: number; max: number } = prevYRange[plot_indexes[0]];
+
     let smallestIndex = plot_indexes[0];
     plot_indexes.forEach((plot_index) => {
       mergePlot = [...mergePlot, ...prevPlot[plot_index]];
+      mergeYRange = {
+        min: Math.max(mergeYRange.min, prevYRange[plot_index].min),
+        max: Math.min(mergeYRange.max, prevYRange[plot_index].max),
+      };
       smallestIndex = Math.min(smallestIndex, plot_index);
     });
 
@@ -310,6 +341,16 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
       ...newSplitIndex.slice(smallestIndex, newSplitIndex.length),
     ];
     setSplitIndex(updatePlot);
+
+    const newYRange = prevYRange.filter(
+      (_, index) => !plot_indexes.includes(index),
+    );
+    const updateYRange = [
+      ...newYRange.slice(0, smallestIndex),
+      mergeYRange,
+      ...newYRange.slice(smallestIndex, newYRange.length),
+    ];
+    setPlotYScales(updateYRange);
   }
 
   const allSelected = (index: number) => {
@@ -396,23 +437,6 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
         });
 
         setPlots(updatePlot);
-      },
-      { defer: true },
-    ),
-  );
-
-  const [plotYScales, setPlotYScales] = createSignal<
-    { min: number; max: number }[]
-  >([]);
-
-  createEffect(
-    on(
-      () => getTabContext(props.tabId).tabCtx.plotYScales,
-      () => {
-        const tabPlotYScales = getTabContext(props.tabId).tabCtx.plotYScales;
-        if (tabPlotYScales) {
-          setPlotYScales(tabPlotYScales);
-        }
       },
       { defer: true },
     ),
@@ -565,7 +589,7 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
               }}
               yRange={
                 getTabContext(props.tabId).tabCtx.plotYScales
-                  ? getTabContext(props.tabId).tabCtx.plotYScales![index()]
+                  ? plotYScales()[index()]
                   : undefined
               }
               onYRangeChange={(yRange) => {
@@ -574,13 +598,16 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
                   yScales &&
                   JSON.stringify(yScales) !== JSON.stringify(yRange)
                 ) {
-                  tabContexts.get(props.key)?.[1](
-                    "tabContext",
-                    getTabContext(props.tabId).currentIndex,
-                    "plotYScales",
-                    index(),
-                    yRange,
-                  );
+                  setPlotYScales((prev) => {
+                    const update = prev.map((prevRange, i) => {
+                      if (i === index()) {
+                        return yRange;
+                      } else {
+                        return prevRange;
+                      }
+                    });
+                    return update;
+                  });
                 }
               }}
               legendShrink={isLegendShrink()}

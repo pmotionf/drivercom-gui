@@ -502,24 +502,27 @@ export function Plot(props: PlotProps) {
                 onCreate={(e) => {
                   plot = e as uPlot;
                   setRender(true);
+                  onMount(() => {
+                      if (
+                        props.yRange &&
+                        props.yRange.max - props.yRange.min > 0
+                      ) {
+                        setTimeout(() => {
+                          plot.setScale("y", props.yRange!);
+                        },10) 
+                      }
 
-                  setTimeout(() => {
-                    if (
-                      props.yRange &&
-                      props.yRange.max - props.yRange.min > 0
-                    ) {
-                      plot.setScale("y", props.yRange!);
-                    }
-
-                    if (props.xRange) {
-                      uPlot.sync(group()).plots.forEach((up) => {
-                        up.setScale("x", {
-                          min: props.xRange![0],
-                          max: props.xRange![1],
-                        });
-                      });
-                    }
-                  }, 0);
+                      if (props.xRange) {
+                        setTimeout(() => {
+                          uPlot.sync(group()).plots.forEach((up) => {
+                            up.setScale("x", {
+                              min: props.xRange![0],
+                              max: props.xRange![1],
+                            });
+                          });
+                        },0) 
+                      }
+                  });
                 }}
                 onCursorMove={(e) => {
                   setCursorIdx(e.cursor.xValue);
