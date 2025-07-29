@@ -1,5 +1,12 @@
 import { trackStore } from "@solid-primitives/deep";
-import { createEffect, createSignal, For, JSX, onMount, Show } from "solid-js";
+import {
+  createEffect,
+  createSignal,
+  For,
+  onMount,
+  Show,
+  useContext,
+} from "solid-js";
 import { createStore } from "solid-js/store";
 import { Plot, PlotContext } from "~/components/Plot";
 import { inferSchema, initParser } from "udsv";
@@ -18,6 +25,7 @@ import { tabContexts } from "~/GlobalState.ts";
 import { TabContext } from "~/components/Tab";
 import { on } from "solid-js";
 import { LegendStroke } from "~/components/Plot/Legend";
+import { tabPageContext } from "~/components/TabList";
 
 export type ErrorMessage = {
   title: string;
@@ -25,34 +33,36 @@ export type ErrorMessage = {
   type: string;
 };
 
-export type LogViewerTabPageContentProps =
-  JSX.HTMLAttributes<HTMLDivElement> & {
-    key: string;
-    tabId: string;
-    onErrorMessage?: (message: ErrorMessage) => void;
-  };
+export type LogViewerTabPageContentProps = {
+  key: string;
+  tabId: string;
+  onErrorMessage?: (message: ErrorMessage) => void;
+};
 
-export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
-  if (!tabContexts.get(props.key)) return;
+export function LogViewerTabPageContent() {
+  const tabPageProps = useContext(tabPageContext);
+  if (!tabPageProps) return;
+  if (!tabContexts.get(tabPageProps.key)) return;
+
   const [render, setRender] = createSignal<boolean>(false);
 
   const getTabContext = (
     tabId: string,
   ): { tabCtx: TabContext; currentIndex: number } => {
-    const tabs = tabContexts.get(props.key)![0]!;
+    const tabs = tabContexts.get(tabPageProps.key)![0]!;
     const index = tabs.tabContext
       .map((tab) => {
         return tab.id;
       })
       .indexOf(tabId);
     return {
-      tabCtx: tabContexts.get(props.key)![0].tabContext[index],
+      tabCtx: tabContexts.get(tabPageProps.key)![0].tabContext[index],
       currentIndex: index,
     };
   };
 
   const setSplitPlot = (tabIndex: number, newSplit: number[][]) => {
-    return tabContexts.get(props.key)?.[1](
+    return tabContexts.get(tabPageProps.key)?.[1](
       "tabContext",
       tabIndex,
       "plotSplitIndex",
@@ -61,7 +71,7 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
   };
 
   const setXRange = (tabIndex: number, newXRange: [number, number]) => {
-    return tabContexts.get(props.key)?.[1](
+    return tabContexts.get(tabPageProps.key)?.[1](
       "tabContext",
       tabIndex,
       "plotXScale",
@@ -70,7 +80,7 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
   };
 
   const setLegendSplitter = (tabIndex: number, newSize: number) => {
-    return tabContexts.get(props.key)?.[1](
+    return tabContexts.get(tabPageProps.key)?.[1](
       "tabContext",
       tabIndex,
       "legendPanelSize",
@@ -79,7 +89,7 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
   };
 
   const setLegendShrink = (tabIndex: number, newStatus: boolean) => {
-    return tabContexts.get(props.key)?.[1](
+    return tabContexts.get(tabPageProps.key)?.[1](
       "tabContext",
       tabIndex,
       "legendShrink",
@@ -88,16 +98,16 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
   };
 
   const [plots, setPlots] = createStore<PlotContext[]>(
-    getTabContext(props.tabId).tabCtx.plotContext
-      ? getTabContext(props.tabId).tabCtx.plotContext!
+    getTabContext(tabPageProps.tabId).tabCtx.plotContext
+      ? getTabContext(tabPageProps.tabId).tabCtx.plotContext!
       : [{} as PlotContext],
   );
 
   const [plotZoomState, setPlotZoomState] = createSignal<[number, number]>([
     0, 0,
   ]);
-  if (getTabContext(props.tabId).tabCtx.plotXScale) {
-    setPlotZoomState(getTabContext(props.tabId).tabCtx.plotXScale!);
+  if (getTabContext(tabPageProps.tabId).tabCtx.plotXScale) {
+    setPlotZoomState(getTabContext(tabPageProps.tabId).tabCtx.plotXScale!);
   }
 
   createEffect(
@@ -105,7 +115,10 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
       () => plotZoomState(),
       () => {
         setTimeout(() => {
-          setXRange(getTabContext(props.tabId).currentIndex, plotZoomState());
+          setXRange(
+            getTabContext(tabPageProps.tabId).currentIndex,
+            plotZoomState(),
+          );
         }, 20);
       },
       { defer: true },
@@ -119,7 +132,10 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
       () => splitIndex(),
       () => {
         setTimeout(() => {
-          setSplitPlot(getTabContext(props.tabId).currentIndex, splitIndex());
+          setSplitPlot(
+            getTabContext(tabPageProps.tabId).currentIndex,
+            splitIndex(),
+          );
         }, 200);
       },
       { defer: true },
@@ -132,7 +148,10 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
     on(
       () => splitIndex(),
       () => {
-        setSplitPlot(getTabContext(props.tabId).currentIndex, splitIndex());
+        setSplitPlot(
+          getTabContext(tabPageProps.tabId).currentIndex,
+          splitIndex(),
+        );
       },
       { defer: true },
     ),
@@ -147,9 +166,9 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
       () => plotYScales(),
       () => {
         const yScales = plotYScales();
-        tabContexts.get(props.key)?.[1](
+        tabContexts.get(tabPageProps.key)?.[1](
           "tabContext",
-          getTabContext(props.tabId).currentIndex,
+          getTabContext(tabPageProps.tabId).currentIndex,
           "plotYScales",
           yScales,
         );
@@ -173,7 +192,7 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
         description: "Not enough rows.",
         type: "error",
       };
-      props.onErrorMessage?.(errorMessage);
+      tabPageProps!.onErrorMessage?.(errorMessage);
       return null;
     }
 
@@ -192,7 +211,7 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
         description: `Data has ${data.length} columns, while header has ${local_header.length} labels.`,
         type: "error",
       };
-      props.onErrorMessage?.(errorMessage);
+      tabPageProps!.onErrorMessage?.(errorMessage);
       return null;
     }
 
@@ -228,26 +247,29 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
 
   onMount(async () => {
     const csv_str = await readTextFile(
-      getTabContext(props.tabId).tabCtx.filePath!,
+      getTabContext(tabPageProps.tabId).tabCtx.filePath!,
     );
     const dataForPlot = parseCsvForPlot(csv_str);
     if (!dataForPlot) return;
     setSeries(dataForPlot.series);
     setHeader(dataForPlot.header);
 
-    if (getTabContext(props.tabId)) {
-      if (getTabContext(props.tabId).tabCtx) {
+    if (getTabContext(tabPageProps.tabId)) {
+      if (getTabContext(tabPageProps.tabId).tabCtx) {
         if (
-          typeof getTabContext(props.tabId).tabCtx.plotSplitIndex! !==
+          typeof getTabContext(tabPageProps.tabId).tabCtx.plotSplitIndex! !==
           "undefined"
         ) {
-          setSplitIndex([...getTabContext(props.tabId).tabCtx.plotSplitIndex!]);
+          setSplitIndex([
+            ...getTabContext(tabPageProps.tabId).tabCtx.plotSplitIndex!,
+          ]);
         }
 
         if (
-          typeof getTabContext(props.tabId).tabCtx.plotYScales! !== "undefined"
+          typeof getTabContext(tabPageProps.tabId).tabCtx.plotYScales! !==
+          "undefined"
         ) {
-          setPlotYScales(getTabContext(props.tabId).tabCtx.plotYScales!);
+          setPlotYScales(getTabContext(tabPageProps.tabId).tabCtx.plotYScales!);
         }
       }
     }
@@ -362,8 +384,8 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
   };
 
   const [legendSplitterSize, setLegendSplitterSize] = createSignal<number>(
-    getTabContext(props.tabId).tabCtx.legendPanelSize
-      ? getTabContext(props.tabId).tabCtx.legendPanelSize!
+    getTabContext(tabPageProps.tabId).tabCtx.legendPanelSize
+      ? getTabContext(tabPageProps.tabId).tabCtx.legendPanelSize!
       : 0,
   );
 
@@ -372,7 +394,7 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
       () => legendSplitterSize(),
       () => {
         setLegendSplitter(
-          getTabContext(props.tabId).currentIndex,
+          getTabContext(tabPageProps.tabId).currentIndex,
           legendSplitterSize(),
         );
       },
@@ -381,8 +403,8 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
   );
 
   const [isLegendShrink, setIsLegendShrink] = createSignal<boolean>(
-    getTabContext(props.tabId).tabCtx.legendShrink
-      ? getTabContext(props.tabId).tabCtx.legendShrink!
+    getTabContext(tabPageProps.tabId).tabCtx.legendShrink
+      ? getTabContext(tabPageProps.tabId).tabCtx.legendShrink!
       : false,
   );
 
@@ -391,7 +413,7 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
       () => isLegendShrink(),
       () => {
         setLegendShrink(
-          getTabContext(props.tabId).currentIndex,
+          getTabContext(tabPageProps.tabId).currentIndex,
           isLegendShrink(),
         );
       },
@@ -452,7 +474,7 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
 
           // Current ID must be derived state as index can change based on
           // added/merged plots.
-          const currentID = () => props.tabId + index();
+          const currentID = () => tabPageProps.tabId + index();
 
           return (
             <div
@@ -567,7 +589,7 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
               </Stack>
               <Plot
                 id={currentID()}
-                group={props.tabId}
+                group={tabPageProps.tabId}
                 name=""
                 header={currentHeader}
                 series={currentItems}

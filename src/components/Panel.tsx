@@ -1,5 +1,5 @@
-import { JSX } from "solid-js";
-import { TabList, TabListContext, TabLocation } from "./TabList.tsx";
+import { createContext, JSX, useContext } from "solid-js";
+import { TabListContext, TabListProps, TabLocation } from "./TabList.tsx";
 import { createSignal } from "solid-js";
 import { Show } from "solid-js";
 //@ts-ignore Has an Any type error
@@ -7,6 +7,7 @@ import { Stack } from "styled-system/jsx/stack.mjs";
 import { TabContext } from "./Tab.tsx";
 import { panelContexts } from "~/GlobalState.ts";
 import { Splitter } from "./ui/splitter.tsx";
+import { panelLayoutContext } from "./PanelLayout.tsx";
 
 export type PanelContext = {
   id: string;
@@ -14,19 +15,24 @@ export type PanelContext = {
   focusedTab?: string;
 };
 
-export type panelProps = JSX.HTMLAttributes<HTMLDivElement> & {
+export type panelProps = {
   id: string;
   key: string;
+  onDeletePanel?: () => void;
   onSplitTab?: (
     location: TabLocation,
     draggedTab: TabContext,
     mouseX: number,
   ) => void;
-  onDeletePanel?: () => void;
 };
 
-export function Panel(props: panelProps) {
-  if (!panelContexts.get(props.key)) return;
+export const panelContext = createContext<TabListProps>();
+
+export function Panel(props: JSX.HTMLAttributes<HTMLDivElement>) {
+  const panelLayoutCtx = useContext(panelLayoutContext);
+  if (!panelLayoutCtx) return;
+  if (!panelContexts.get(panelLayoutCtx.key)) return;
+
   const [currentDraggingTabLocation, setCurrentDraggingTabLocation] =
     createSignal<TabLocation>("none");
   const [draggedTab, setDraggedTab] = createSignal<TabContext | null>(null);
@@ -35,7 +41,7 @@ export function Panel(props: panelProps) {
 
   const getPanelIds = (): string[] => {
     const panelIds: string[] = panelContexts
-      .get(props.key)![0]()
+      .get(panelLayoutCtx.key)![0]()
       .map((panel) => {
         return panel.id;
       })!;
@@ -59,39 +65,42 @@ export function Panel(props: panelProps) {
   return (
     <>
       <Splitter.Panel
-        id={props.id}
+        id={panelLayoutCtx.id}
         style={{
           width: "100%",
           height: "100%",
         }}
       >
-        <TabList
-          id={props.id}
-          style={{ width: "100%", height: "100%" }}
-          onDraggingTab={(tabLocation, draggedTab, mouseX) => {
-            if (tabLocation !== currentDraggingTabLocation()) {
-              setCurrentDraggingTabLocation(tabLocation);
-              setDraggedTab(draggedTab);
-              setIsDragging(true);
-            }
+        <panelContext.Provider
+          value={{
+            id: panelLayoutCtx.id,
+            onDraggingTab: (tabLocation, draggedTab, mouseX) => {
+              if (tabLocation !== currentDraggingTabLocation()) {
+                setCurrentDraggingTabLocation(tabLocation);
+                setDraggedTab(draggedTab);
+                setIsDragging(true);
+              }
 
-            if (nextPanel() !== getNextPanel(getPanelIds(), mouseX)) {
-              setNextPanel(getNextPanel(getPanelIds(), mouseX));
-            }
+              if (nextPanel() !== getNextPanel(getPanelIds(), mouseX)) {
+                setNextPanel(getNextPanel(getPanelIds(), mouseX));
+              }
+            },
+            onTabDragEnd: (clientX) => {
+              panelLayoutCtx.onSplitTab?.(
+                currentDraggingTabLocation(),
+                draggedTab()!,
+                clientX,
+              );
+              setIsDragging(false);
+              setCurrentDraggingTabLocation("none");
+            },
+            onDeleteTabList: () => {
+              panelLayoutCtx.onDeletePanel?.();
+            },
           }}
-          onTabDragEnd={(clientX) => {
-            props.onSplitTab?.(
-              currentDraggingTabLocation(),
-              draggedTab()!,
-              clientX,
-            );
-            setIsDragging(false);
-            setCurrentDraggingTabLocation("none");
-          }}
-          onDeleteTabList={() => {
-            props.onDeletePanel?.();
-          }}
-        />
+        >
+          {props.children}
+        </panelContext.Provider>
       </Splitter.Panel>
       <Show when={isDragging()}>
         <Stack
@@ -99,17 +108,21 @@ export function Panel(props: panelProps) {
             width:
               currentDraggingTabLocation() === "centerSplitter" ||
               currentDraggingTabLocation() === "otherPanel"
-                ? `${document.getElementById(`tabs:${props.id}`)!.offsetWidth}px`
+                ? `${document.getElementById(`tabs:${panelLayoutCtx.id}`)!.offsetWidth}px`
                 : `${
-                    document.getElementById(`tabs:${props.id}`)!.offsetWidth / 2
+                    document.getElementById(`tabs:${panelLayoutCtx.id}`)!
+                      .offsetWidth / 2
                   }px`,
             left:
               currentDraggingTabLocation() === "rightSplitter"
                 ? `${
-                    document.getElementById(`tabs:${props.id}`)!.offsetLeft +
-                    document.getElementById(`tabs:${props.id}`)!.offsetWidth / 2
+                    document.getElementById(`tabs:${panelLayoutCtx.id}`)!
+                      .offsetLeft +
+                    document.getElementById(`tabs:${panelLayoutCtx.id}`)!
+                      .offsetWidth /
+                      2
                   }px`
-                : `${document.getElementById(`tabs:${props.id}`)!.offsetLeft}px`,
+                : `${document.getElementById(`tabs:${panelLayoutCtx.id}`)!.offsetLeft}px`,
             "border-radius":
               currentDraggingTabLocation() === "otherPanel" ? "0.5rem" : "0rem",
             opacity:
@@ -118,16 +131,17 @@ export function Panel(props: panelProps) {
                 ? "0%"
                 : "10%",
             height: `${
-              document.getElementById(`tabs:${props.id}`)!.offsetHeight
+              document.getElementById(`tabs:${panelLayoutCtx.id}`)!.offsetHeight
             }px`,
             top:
               currentDraggingTabLocation() !== "otherPanel"
                 ? `${
-                    document.getElementById(`tabs:${props.id}:list`)!
+                    document.getElementById(`tabs:${panelLayoutCtx.id}:list`)!
                       .offsetHeight
                   }px`
                 : `${
-                    document.getElementById(`tabs:${props.id}:list`)!.offsetTop
+                    document.getElementById(`tabs:${panelLayoutCtx.id}:list`)!
+                      .offsetTop
                   }px`,
             position: "absolute",
           }}
