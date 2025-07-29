@@ -45,7 +45,6 @@ import type { UplotPluginFactory } from "@dschz/solid-uplot";
 
 import { cursor, tooltip } from "@dschz/solid-uplot/plugins";
 import { PlotToolTip } from "./Plot/PlotTooltip";
-import { on } from "solid-js";
 
 export type PlotProps = JSX.HTMLAttributes<HTMLDivElement> & {
   id: string;
@@ -474,34 +473,6 @@ export function Plot(props: PlotProps) {
   const [selectionLeft, setSelectionLeft] = createSignal<number | null>(null);
   const [selectionWidth, setSelectionWidth] = createSignal<number | null>(null);
 
-  createEffect(
-    on(
-      () => plot,
-      () => {
-        if (plot) {
-          console.log(plot);
-          /*uPlot.sync(group()).plots.forEach((up) => {
-            if (props.xRange) {
-              setTimeout(() => {
-                up.setScale("x", {
-                  min: unwrap(props.xRange)![0],
-                  max: unwrap(props.xRange)![1],
-                });
-              }, 0);
-            }
-          });*/
-          /*if (props.yRange) {
-            plot.setScale("y", {
-              min: unwrap(props.yRange).min,
-              max: unwrap(props.yRange).max,
-            });
-          }*/
-        }
-      },
-      { defer: true },
-    ),
-  );
-
   return (
     <>
       <div {...rest}>
@@ -531,6 +502,24 @@ export function Plot(props: PlotProps) {
                 onCreate={(e) => {
                   plot = e as uPlot;
                   setRender(true);
+
+                  setTimeout(() => {
+                    if (
+                      props.yRange &&
+                      props.yRange.max - props.yRange.min > 0
+                    ) {
+                      plot.setScale("y", props.yRange!);
+                    }
+
+                    if (props.xRange) {
+                      uPlot.sync(group()).plots.forEach((up) => {
+                        up.setScale("x", {
+                          min: props.xRange![0],
+                          max: props.xRange![1],
+                        });
+                      });
+                    }
+                  }, 0);
                 }}
                 onCursorMove={(e) => {
                   setCursorIdx(e.cursor.xValue);
@@ -540,7 +529,7 @@ export function Plot(props: PlotProps) {
                     key: group(),
                   },
                   bind: {
-                    mousedown: (u, _targ, handler) => {
+                    mousedown: (u) => {
                       return (e) => {
                         if (e.button == 0) {
                           // Always release cursor lock if not control-clicking.
@@ -564,7 +553,78 @@ export function Plot(props: PlotProps) {
                           }
 
                           if (cursorMode() === CursorMode.Zoom) {
-                            handler(e);
+                            const uOverLeft = u.over.offsetLeft;
+                            const uPlotDivLeft = document.getElementById(
+                              props.id,
+                            )!.offsetLeft;
+                            const uPlotDivTop = document.getElementById(
+                              props.id,
+                            )!.offsetTop;
+                            const sideBar = document.getElementById(
+                              "radio-group:collapsed_side_bar",
+                            )!.offsetWidth;
+
+                            const clientX0 = e.clientX - sideBar;
+                            const left0 = u.posToVal(
+                              clientX0 - uPlotDivLeft - uOverLeft,
+                              "x",
+                            );
+                            setYMin(uPlotDivTop + u.over.offsetTop);
+                            setYMax(
+                              uPlotDivTop +
+                                u.over.offsetTop +
+                                u.over.offsetHeight,
+                            );
+
+                            let clientX1 = 0;
+
+                            const onmove = (e: MouseEvent) => {
+                              if (e.clientX - sideBar <= u.over.offsetLeft) {
+                                clientX1 = u.over.offsetLeft;
+                              } else if (
+                                e.clientX - sideBar >=
+                                u.over.offsetLeft + u.over.offsetWidth
+                              ) {
+                                clientX1 =
+                                  u.over.offsetLeft + u.over.offsetWidth;
+                              } else {
+                                clientX1 = e.clientX - sideBar;
+                              }
+
+                              setSelectionLeft(Math.min(clientX0, clientX1));
+                              setSelectionWidth(
+                                Math.max(clientX0, clientX1) -
+                                  Math.min(clientX0, clientX1),
+                              );
+                            };
+
+                            const onup = () => {
+                              const left1 = u.posToVal(
+                                clientX1 - uPlotDivLeft - uOverLeft,
+                                "x",
+                              );
+                              uPlot.sync(group()).plots.forEach((up) => {
+                                up.setScale("y", {
+                                  min: up.scales.y.min!,
+                                  max: up.scales.y.max!,
+                                });
+                                up.setScale("x", {
+                                  min: Math.min(left0, left1),
+                                  max: Math.max(left0, left1),
+                                });
+                              });
+
+                              setYMax(null);
+                              setYMin(null);
+                              setSelectionWidth(null);
+                              setSelectionLeft(null);
+
+                              document.removeEventListener("mousemove", onmove);
+                              document.removeEventListener("mouseup", onup);
+                            };
+
+                            document.addEventListener("mousemove", onmove);
+                            document.addEventListener("mouseup", onup);
                           } else if (cursorMode() === CursorMode.Pan) {
                             const xMin = 0;
                             const xMax = u.data[0].length;
@@ -633,10 +693,6 @@ export function Plot(props: PlotProps) {
                                 });
                               });
                               u.setScale("y", {
-                                min: scaleYMin,
-                                max: scaleYMax,
-                              });
-                              props.onYRangeChange?.({
                                 min: scaleYMin,
                                 max: scaleYMax,
                               });
@@ -713,11 +769,6 @@ export function Plot(props: PlotProps) {
                                   min: scaleYMin,
                                   max: scaleYMax,
                                 });
-
-                                /*props.onYRangeChange?.({
-                                  min: scaleYMin,
-                                  max: scaleYMax,
-                                });*/
 
                                 setYMin(null);
                                 setYMax(null);

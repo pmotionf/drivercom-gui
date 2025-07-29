@@ -241,10 +241,10 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
     }
 
     if (!getTabContext(props.tabId).tabCtx.plotYScales) {
-      const newYScales: { min?: number; max?: number }[] = Array.from(
+      const newYScales: { min: number; max: number }[] = Array.from(
         { length: splitIndex.length },
         () => {
-          return {};
+          return { min: 0, max: 0 };
         },
       );
       tabContexts.get(props.key)?.[1](
@@ -563,7 +563,11 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
                   setPlotZoomState(xRange);
                 }
               }}
-              yRange={plotYScales()[index()]}
+              yRange={
+                getTabContext(props.tabId).tabCtx.plotYScales
+                  ? getTabContext(props.tabId).tabCtx.plotYScales![index()]
+                  : undefined
+              }
               onYRangeChange={(yRange) => {
                 const yScales = getTabContext(props.tabId).tabCtx.plotYScales;
                 if (
@@ -577,8 +581,6 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
                     index(),
                     yRange,
                   );
-
-                  console.log("Test");
                 }
               }}
               legendShrink={isLegendShrink()}
