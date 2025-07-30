@@ -219,10 +219,11 @@ export function Plot(props: PlotProps) {
       );
 
       if (zoomReset() && plot.scales.y.min && plot.scales.y.max) {
+        const yScales = getPlotYScales(plot);
         setZoomReset(
           !(
-            plot.scales.y.min! > getPlotYMin(plot) ||
-            plot.scales.y.max! < getPlotYMax(plot)
+            plot.scales.y.min! > yScales.yMin ||
+            plot.scales.y.max! < yScales.yMax
           ),
         );
       }
@@ -373,40 +374,7 @@ export function Plot(props: PlotProps) {
     }
   };
 
-  const getPlotYMax = (u: uPlot): number => {
-    const parseData = u.data.filter(
-      (_, i) => u.series[i].show === true && u.series[i].scale === "y",
-    );
-    const plotYMax = parseData
-      .map(
-        (series) =>
-          [...new Set(series.map((i) => Number(i)))].sort((a, b) => b - a)[0],
-      )
-      .sort((a, b) => b - a)[0];
-
-    const yMin = parseData
-      .map(
-        (series) =>
-          [...new Set(series.map((i) => Number(i)))].sort((a, b) => a - b)[0],
-      )
-      .sort((a, b) => a - b)[0];
-
-    const yMax = parseData
-      .map(
-        (series) =>
-          [...new Set(series.map((i) => Number(i)))].sort((a, b) => b - a)[0],
-      )
-      .sort((a, b) => b - a)[0];
-
-    const yRange = yMax - yMin;
-
-    const plotHeight = u.over.offsetHeight;
-    const percent = (plotHeight * 0.05) / plotHeight;
-    const yMaxPadding = yRange * percent;
-    return plotYMax + yMaxPadding;
-  };
-
-  const getPlotYMin = (u: uPlot): number => {
+  const getPlotYScales = (u: uPlot): { yMin: number; yMax: number } => {
     const parseData = u.data.filter(
       (_, i) => u.series[i].show === true && u.series[i].scale === "y",
     );
@@ -432,8 +400,12 @@ export function Plot(props: PlotProps) {
 
     const plotHeight = u.over.offsetHeight;
     const percent = one_rem / plotHeight;
-    const yMaxPadding = yRange * percent;
-    return yMin - yMaxPadding;
+    const paddingToYVal = yRange * percent;
+
+    return {
+      yMin: yMin > 0 ? yMin : yMin - paddingToYVal,
+      yMax: yMax + paddingToYVal,
+    };
   };
 
   const wheelZoomPlugin = (opts: {
@@ -458,8 +430,9 @@ export function Plot(props: PlotProps) {
 
             xRange = xMax - xMin;
 
-            yMin = getPlotYMin(u);
-            yMax = getPlotYMax(u);
+            const yScales = getPlotYScales(u);
+            yMin = yScales.yMin;
+            yMax = yScales.yMax;
 
             yRange = yMax - yMin;
 
@@ -555,9 +528,10 @@ export function Plot(props: PlotProps) {
                       }, 10);
                     } else {
                       setTimeout(() => {
+                        const yScales = getPlotYScales(plot);
                         plot.setScale("y", {
-                          min: getPlotYMin(plot),
-                          max: getPlotYMax(plot),
+                          min: yScales.yMin,
+                          max: yScales.yMax,
                         });
                       }, 10);
                     }
@@ -613,6 +587,9 @@ export function Plot(props: PlotProps) {
                             const uPlotDivTop = document.getElementById(
                               props.id,
                             )!.offsetTop;
+                            const uPlotDivWidth = document.getElementById(
+                              props.id,
+                            )!.offsetWidth;
                             const sideBar = document.getElementById(
                               "radio-group:collapsed_side_bar",
                             )!.offsetWidth;
@@ -629,17 +606,15 @@ export function Plot(props: PlotProps) {
                                 u.over.offsetHeight,
                             );
 
-                            let clientX1 = 0;
-
+                            let clientX1 = e.clientX - sideBar;
                             const onmove = (e: MouseEvent) => {
-                              if (e.clientX - sideBar <= u.over.offsetLeft) {
-                                clientX1 = u.over.offsetLeft;
+                              if (e.clientX - sideBar <= uPlotDivLeft) {
+                                clientX1 = uPlotDivLeft;
                               } else if (
                                 e.clientX - sideBar >=
-                                u.over.offsetLeft + u.over.offsetWidth
+                                uPlotDivLeft + uPlotDivWidth
                               ) {
-                                clientX1 =
-                                  u.over.offsetLeft + u.over.offsetWidth;
+                                clientX1 = uPlotDivLeft + uPlotDivWidth;
                               } else {
                                 clientX1 = e.clientX - sideBar;
                               }
@@ -690,8 +665,9 @@ export function Plot(props: PlotProps) {
                             const xUnitsPerPx =
                               u.posToVal(1, "x") - u.posToVal(0, "x");
 
-                            const yMin = getPlotYMin(u);
-                            const yMax = getPlotYMax(u);
+                            const yScales = getPlotYScales(u);
+                            const yMin = yScales.yMin;
+                            const yMax = yScales.yMax;
 
                             const top0 = e.clientY;
 
@@ -876,9 +852,10 @@ export function Plot(props: PlotProps) {
                           });
                         } else {
                           uPlot.sync(group()).plots.forEach((up) => {
+                            const yScales = getPlotYScales(up);
                             up.setScale("y", {
-                              min: getPlotYMin(u),
-                              max: getPlotYMax(u),
+                              min: yScales.yMin,
+                              max: yScales.yMax,
                             });
                             up.setScale("x", {
                               min: up.scales.x.min!,
@@ -1040,9 +1017,11 @@ export function Plot(props: PlotProps) {
                             uPlot.sync(group()).plots.forEach((up: uPlot) => {
                               const xMax = Number(up.data[0].length - 1);
                               up.setScale("x", { min: 0, max: xMax });
+
+                              const yScales = getPlotYScales(up);
                               up.setScale("y", {
-                                min: getPlotYMin(up),
-                                max: getPlotYMax(up),
+                                min: yScales.yMin,
+                                max: yScales.yMax,
                               });
                               setXRange(xMax);
                               props.onXRangeChange?.([0, xMax]);
