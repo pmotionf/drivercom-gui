@@ -10,7 +10,6 @@ import {
 import { Tabs } from "~/components/ui/tabs.tsx";
 import { Tab, TabContext } from "~/components/Tab.tsx";
 import { For } from "solid-js/web";
-import { open } from "@tauri-apps/plugin-dialog";
 import { LogViewerTabPageContentProps } from "~/pages/LogViewer/LogViewerTabPageContent.tsx";
 import { tabContexts } from "~/GlobalState.ts";
 import { createStore } from "solid-js/store";
@@ -44,7 +43,11 @@ export type TabListProps = {
 
 export const tabPageContext = createContext<LogViewerTabPageContentProps>();
 
-export function TabList(props: JSX.HTMLAttributes<HTMLDivElement>) {
+export function TabList(
+  props: JSX.HTMLAttributes<HTMLDivElement> & {
+    onCreateTab?: (key: string) => void;
+  },
+) {
   const tabListProps = useContext(panelContext);
   if (!tabListProps) return;
   if (!tabContexts.has(tabListProps.id)) {
@@ -78,33 +81,6 @@ export function TabList(props: JSX.HTMLAttributes<HTMLDivElement>) {
   const setFocusTab = (focusTab: string) => {
     return tabContexts.get(tabListProps.id)?.[1]("focusedTab", focusTab);
   };
-
-  function getCryptoUUID(): string {
-    const uuid: string = crypto.randomUUID();
-    return uuid;
-  }
-
-  async function openFileDialog(): Promise<{
-    id: string;
-    filePath: string;
-  } | null> {
-    const path = await open({
-      multiple: false,
-      filters: [{ name: "CSV", extensions: ["csv"] }],
-    });
-
-    if (!path) {
-      return null;
-    }
-
-    const extensions = path.slice(path.length - 4, path.length);
-    if (extensions !== ".csv") {
-      return null;
-    }
-
-    const tabId = getCryptoUUID();
-    return { id: tabId, filePath: path.replaceAll("\\", "/") };
-  }
 
   const getNextFocusTabId = (
     deleteTabIndex: number,
@@ -197,27 +173,14 @@ export function TabList(props: JSX.HTMLAttributes<HTMLDivElement>) {
             height: "3rem",
           }}
           onCreateTab={async () => {
-            const newTabInfo = await openFileDialog();
-            if (!newTabInfo) {
-              toaster.create({
-                title: "Invalid File",
-                description: "The file is invalid.",
-                type: "error",
-              });
-              return;
+            if (props.onCreateTab) {
+              props.onCreateTab?.(tabListProps.id);
+            } else {
+              setTabContexts([
+                ...getTabContexts().tabContext,
+                { id: crypto.randomUUID() },
+              ]);
             }
-
-            const newTab: TabContext = {
-              id: newTabInfo.id,
-              filePath: newTabInfo.filePath,
-              plotSplitIndex: [],
-              plotContext: [],
-              tabName: "",
-              plotXScale: [0, 0],
-            };
-
-            setTabContexts([...getTabContexts().tabContext, newTab]);
-            setFocusTab(newTab.id);
           }}
           onDeleteTab={(tabIndex) => {
             const nextFocusTabId = getNextFocusTabId(
