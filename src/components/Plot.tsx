@@ -376,8 +376,14 @@ export function Plot(props: PlotProps) {
   };
 
   const getPlotYMax = (u: uPlot): number => {
-    const plotYMax: number = props.series
-      .map((series) => [...new Set(series)].sort((a, b) => b - a)[0])
+    const parseData = u.data.filter(
+      (_, i) => u.series[i].show === true && u.series[i].scale === "y",
+    );
+    const plotYMax = parseData
+      .map(
+        (series) =>
+          [...new Set(series.map((i) => Number(i)))].sort((a, b) => b - a)[0],
+      )
       .sort((a, b) => b - a)[0];
 
     const yMin = u.scales.y.min!;
@@ -385,12 +391,30 @@ export function Plot(props: PlotProps) {
     const yRange = yMax - yMin;
 
     const plotHeight = u.over.offsetHeight;
-    const three_rem =
-      parseFloat(getComputedStyle(document.documentElement).fontSize) * 6;
-
-    const percent = three_rem / plotHeight;
+    const percent = (plotHeight * 0.05) / plotHeight;
     const yMaxPadding = yRange * percent;
     return plotYMax + yMaxPadding;
+  };
+
+  const getPlotYMin = (u: uPlot): number => {
+    const parseData = u.data.filter(
+      (_, i) => u.series[i].show === true && u.series[i].scale === "y",
+    );
+    const plotYMin = parseData
+      .map(
+        (series) =>
+          [...new Set(series.map((i) => Number(i)))].sort((a, b) => a - b)[0],
+      )
+      .sort((a, b) => a - b)[0];
+
+    const yMin = u.scales.y.min!;
+    const yMax = u.scales.y.max!;
+    const yRange = yMax - yMin;
+
+    const plotHeight = u.over.offsetHeight;
+    const percent = (plotHeight * 0.05) / plotHeight;
+    const yMaxPadding = yRange * percent;
+    return plotYMin - yMaxPadding;
   };
 
   const wheelZoomPlugin = (opts: {
@@ -415,7 +439,7 @@ export function Plot(props: PlotProps) {
 
             xRange = xMax - xMin;
 
-            yMin = 0;
+            yMin = getPlotYMin(u);
             yMax = getPlotYMax(u);
 
             yRange = yMax - yMin;
@@ -503,25 +527,25 @@ export function Plot(props: PlotProps) {
                   plot = e as uPlot;
                   setRender(true);
                   onMount(() => {
-                      if (
-                        props.yRange &&
-                        props.yRange.max - props.yRange.min > 0
-                      ) {
-                        setTimeout(() => {
-                          plot.setScale("y", props.yRange!);
-                        },10) 
-                      }
+                    if (
+                      props.yRange &&
+                      props.yRange.max - props.yRange.min > 0
+                    ) {
+                      setTimeout(() => {
+                        plot.setScale("y", props.yRange!);
+                      }, 10);
+                    }
 
-                      if (props.xRange) {
-                        setTimeout(() => {
-                          uPlot.sync(group()).plots.forEach((up) => {
-                            up.setScale("x", {
-                              min: props.xRange![0],
-                              max: props.xRange![1],
-                            });
+                    if (props.xRange) {
+                      setTimeout(() => {
+                        uPlot.sync(group()).plots.forEach((up) => {
+                          up.setScale("x", {
+                            min: props.xRange![0],
+                            max: props.xRange![1],
                           });
-                        },0) 
-                      }
+                        });
+                      }, 0);
+                    }
                   });
                 }}
                 onCursorMove={(e) => {
@@ -630,7 +654,7 @@ export function Plot(props: PlotProps) {
                             document.addEventListener("mouseup", onup);
                           } else if (cursorMode() === CursorMode.Pan) {
                             const xMin = 0;
-                            const xMax = u.data[0].length;
+                            const xMax = u.data[0].length - 1;
 
                             const left0 = e.clientX;
 
@@ -640,7 +664,7 @@ export function Plot(props: PlotProps) {
                             const xUnitsPerPx =
                               u.posToVal(1, "x") - u.posToVal(0, "x");
 
-                            const yMin = 0;
+                            const yMin = getPlotYMin(u);
                             const yMax = getPlotYMax(u);
 
                             const top0 = e.clientY;
@@ -694,6 +718,12 @@ export function Plot(props: PlotProps) {
                                   min: scaleXMin,
                                   max: scaleXMax,
                                 });
+                                if (!up.cursor.event) {
+                                  up.setScale("y", {
+                                    min: up.scales.y.min!,
+                                    max: up.scales.y.max!,
+                                  });
+                                }
                               });
                               u.setScale("y", {
                                 min: scaleYMin,
@@ -799,6 +829,36 @@ export function Plot(props: PlotProps) {
                             u.select.width = 0;
                           }
                           handler(e);
+                        }
+                        return null;
+                      };
+                    },
+                    dblclick: (u) => {
+                      return (e) => {
+                        e.stopPropagation();
+
+                        if (cursorMode() !== CursorMode.Vertical) {
+                          uPlot.sync(group()).plots.forEach((up) => {
+                            up.setScale("y", {
+                              min: up.scales.y.min!,
+                              max: up.scales.y.max!,
+                            });
+                            up.setScale("x", {
+                              min: 0,
+                              max: u.data[0].length - 1,
+                            });
+                          });
+                        } else {
+                          uPlot.sync(group()).plots.forEach((up) => {
+                            up.setScale("y", {
+                              min: getPlotYMin(u),
+                              max: getPlotYMax(u),
+                            });
+                            up.setScale("x", {
+                              min: up.scales.x.min!,
+                              max: up.scales.x.max!,
+                            });
+                          });
                         }
                         return null;
                       };
@@ -950,6 +1010,10 @@ export function Plot(props: PlotProps) {
                             uPlot.sync(group()).plots.forEach((up: uPlot) => {
                               const xMax = Number(up.data[0].length - 1);
                               up.setScale("x", { min: 0, max: xMax });
+                              up.setScale("y", {
+                                min: getPlotYMin(up),
+                                max: getPlotYMax(up),
+                              });
                               setXRange(xMax);
                               props.onXRangeChange?.([0, xMax]);
                             });
