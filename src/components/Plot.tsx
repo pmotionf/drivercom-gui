@@ -218,6 +218,15 @@ export function Plot(props: PlotProps) {
           ),
       );
 
+      if (zoomReset() && plot.scales.y.min && plot.scales.y.max) {
+        setZoomReset(
+          !(
+            plot.scales.y.min! > getPlotYMin(plot) ||
+            plot.scales.y.max! < getPlotYMax(plot)
+          ),
+        );
+      }
+
       setXRange(plot.scales.x.max! - plot.scales.x.min!);
       props.onXRangeChange?.([plot.scales.x.min!, plot.scales.x.max!]);
       props.onYRangeChange?.({
@@ -332,17 +341,6 @@ export function Plot(props: PlotProps) {
     }
   });
 
-  const [panelMinWidth, setPanelMinWidth] = createSignal<string>("");
-  // Needed for legend panel min-width.
-  createEffect(() => {
-    if (!render()) return;
-    if (document.getElementById(`toolBox:${props.id}`)) {
-      setPanelMinWidth(
-        `${document.getElementById(`toolBox:${props.id}`)!.offsetWidth}px`,
-      );
-    }
-  });
-
   const bus = createPluginBus<CursorPluginMessageBus>();
 
   onCleanup(() => {
@@ -386,8 +384,20 @@ export function Plot(props: PlotProps) {
       )
       .sort((a, b) => b - a)[0];
 
-    const yMin = u.scales.y.min!;
-    const yMax = u.scales.y.max!;
+    const yMin = parseData
+      .map(
+        (series) =>
+          [...new Set(series.map((i) => Number(i)))].sort((a, b) => a - b)[0],
+      )
+      .sort((a, b) => a - b)[0];
+
+    const yMax = parseData
+      .map(
+        (series) =>
+          [...new Set(series.map((i) => Number(i)))].sort((a, b) => b - a)[0],
+      )
+      .sort((a, b) => b - a)[0];
+
     const yRange = yMax - yMin;
 
     const plotHeight = u.over.offsetHeight;
@@ -400,21 +410,30 @@ export function Plot(props: PlotProps) {
     const parseData = u.data.filter(
       (_, i) => u.series[i].show === true && u.series[i].scale === "y",
     );
-    const plotYMin = parseData
+    const yMin = parseData
       .map(
         (series) =>
           [...new Set(series.map((i) => Number(i)))].sort((a, b) => a - b)[0],
       )
       .sort((a, b) => a - b)[0];
 
-    const yMin = u.scales.y.min!;
-    const yMax = u.scales.y.max!;
+    const yMax = parseData
+      .map(
+        (series) =>
+          [...new Set(series.map((i) => Number(i)))].sort((a, b) => b - a)[0],
+      )
+      .sort((a, b) => b - a)[0];
+
     const yRange = yMax - yMin;
 
+    const one_rem = parseFloat(
+      getComputedStyle(document.documentElement).fontSize,
+    );
+
     const plotHeight = u.over.offsetHeight;
-    const percent = (plotHeight * 0.05) / plotHeight;
+    const percent = one_rem / plotHeight;
     const yMaxPadding = yRange * percent;
-    return plotYMin - yMaxPadding;
+    return yMin - yMaxPadding;
   };
 
   const wheelZoomPlugin = (opts: {
@@ -533,6 +552,13 @@ export function Plot(props: PlotProps) {
                     ) {
                       setTimeout(() => {
                         plot.setScale("y", props.yRange!);
+                      }, 10);
+                    } else {
+                      setTimeout(() => {
+                        plot.setScale("y", {
+                          min: getPlotYMin(plot),
+                          max: getPlotYMax(plot),
+                        });
                       }, 10);
                     }
 
@@ -974,7 +1000,11 @@ export function Plot(props: PlotProps) {
               id={`legend-${props.id}`}
               borderWidth="0"
               style={{
-                "min-width": props.legendShrink ? "0rem" : panelMinWidth(),
+                "min-width": props.legendShrink
+                  ? "0"
+                  : document.getElementById(`toolBox:${props.id}`)
+                    ? `${document.getElementById(`toolBox:${props.id}`)!.offsetWidth}px`
+                    : "15rem",
               }}
               onMouseEnter={() => {
                 setEnterSplitter(true);
