@@ -24,6 +24,7 @@ export type TabContext = {
   plotYScales?: { min: number; max: number }[];
   legendPanelSize?: number;
   legendShrink?: boolean;
+  configFile?: object;
 };
 
 export type tabProps = JSX.HTMLAttributes<HTMLDivElement> & {

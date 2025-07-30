@@ -7,9 +7,11 @@ import { readTextFile, writeTextFile } from "@tauri-apps/plugin-fs";
 
 import {
   configFormFileFormat,
+  Pages,
   portId,
   recentConfigFilePaths,
   setRecentConfigFilePaths,
+  tabContexts,
 } from "~/GlobalState.ts";
 import { Command } from "@tauri-apps/plugin-shell";
 import { onMount } from "solid-js";
@@ -22,6 +24,11 @@ import { Tooltip } from "~/components/ui/tooltip.tsx";
 import { Text } from "~/components/ui/text";
 import { IconX } from "@tabler/icons-solidjs";
 import { ConnectButton } from "./Connect/ConnectButton.tsx";
+import { Panel } from "~/components/Panel.tsx";
+import { PanelLayout } from "~/components/PanelLayout.tsx";
+import { TabList } from "~/components/TabList.tsx";
+import { TabContext } from "~/components/Tab.tsx";
+import { ConfigTabContent } from "./Configuration/ConfigTabContent.tsx";
 
 function Configuration() {
   const [config, setConfig] = createSignal({});
@@ -209,197 +216,235 @@ function Configuration() {
     return output.stderr;
   }
 
+  const setTab = (key: string, tabIndex: number, tabCtx: TabContext) => {
+    tabContexts.get(key)![1]("tabContext", tabIndex, tabCtx)
+  }
+
+  const getTab = (key: string, tabIndex: number) : TabContext => {
+    return tabContexts.get(key)![0].tabContext[tabIndex]!
+  }
+
   return (
     <>
-      <div
-        style={{
-          "padding-top": "0.5rem",
-          "padding-bottom": "0.5rem",
-          height: "100%",
-          width: `100% `,
-          "justify-content": "center",
-          display: "flex",
-        }}
-      >
-        <Stack
-          style={{
-            width: "40%",
-            height: `calc(100% - 1rem)`,
-            "margin-top": "0.5rem",
-            "padding-top": "1rem",
-            "padding-bottom": "1rem",
-            "padding-left": "1rem",
-            "padding-right": "1rem",
-            "min-width": "30rem",
-            "border-radius": "0.5rem",
-            "box-shadow": "0px 0px 15px 1px rgb(0,0,0,0.05)",
-            "border-width": "1px",
-          }}
-          borderColor="bg.muted"
-          backgroundColor="bg.default"
-        >
-          <Show when={render()}>
-            <Stack direction="row" width="100%">
-              <Tooltip.Root positioning={{ placement: "bottom-start" }}>
-                <Tooltip.Trigger width={`calc(100% - 9rem)`}>
-                  <Editable.Root
-                    placeholder="File name"
-                    defaultValue={formName() ? formName() : "New File"}
-                    activationMode="dblclick"
-                    onValueCommit={(e) => {
-                      setFormName(e.value);
-                    }}
-                    fontWeight="bold"
-                    fontSize="2xl"
-                  >
-                    <Editable.Area>
-                      <Editable.Input width="100%" />
-                      <Editable.Preview
-                        width="100%"
-                        style={{
-                          "white-space": "nowrap",
-                          "text-overflow": "ellipsis",
-                          display: "block",
-                          overflow: "hidden",
-                          "text-align": "left",
-                        }}
-                      />
-                    </Editable.Area>
-                  </Editable.Root>
-                </Tooltip.Trigger>
-                <Show when={filePath()}>
-                  <Tooltip.Positioner>
-                    <Tooltip.Content backgroundColor="bg.default">
-                      <Text color="fg.default">{filePath()!}</Text>
-                    </Tooltip.Content>
-                  </Tooltip.Positioner>
-                </Show>
-              </Tooltip.Root>
+      <PanelLayout id={Pages.Configuration}>
+        <Panel>
+          <TabList
+            onCreateTab={(key) => {
+              const id = crypto.randomUUID();
+              const newTab = {
+                id: id,
+                tabName: "New File",
+                configFile: JSON.parse(JSON.stringify(configFormFileFormat()))
+              } as TabContext;
 
-              <FileMenu
-                filePath={filePath() ? filePath()! : ""}
-                recentFiles={recentConfigFilePaths()}
-                onNewFile={() => {
-                  const newEmptyFile = JSON.parse(
-                    JSON.stringify(configFormFileFormat()),
-                  );
-                  setFormName("New File");
-                  setConfig(newEmptyFile);
-                  setFilePath(null);
-                  refresh();
+              if (tabContexts.has(key)) {
+                const tabCtx = tabContexts.get(key)!;
+                tabCtx[1]({
+                  tabContext: [...tabCtx[0].tabContext, newTab],
+                  focusedTab: newTab.id,
+                });
+              }
+            }}
+          >
+            <ConfigTabContent
+              onNewFile= {() => {
+                const newEmptyFile = JSON.parse(JSON.stringify(configFormFileFormat()))
+              }}
+            />
+            {/* 
+            <div
+              style={{
+                "padding-bottom": "0.5rem",
+                height: "100%",
+                width: `100% `,
+                "justify-content": "center",
+                display: "flex",
+              }}
+            >
+              <Stack
+                style={{
+                  width: "40%",
+                  height: `calc(100% - 1rem)`,
+                  "margin-top": "0.5rem",
+                  "padding-top": "1rem",
+                  "padding-bottom": "1rem",
+                  "padding-left": "1rem",
+                  "padding-right": "1rem",
+                  "min-width": "30rem",
+                  "border-radius": "0.5rem",
+                  "box-shadow": "0px 0px 15px 1px rgb(0,0,0,0.05)",
+                  "border-width": "1px",
                 }}
-                onOpenFile={async () => {
-                  const path = await openFileDialog();
-                  if (!path) return;
-                  const object = await readJsonFile(path);
-                  const checkObject = compareFileFormat(
-                    object!,
-                    configFormFileFormat(),
-                  );
-                  if (!checkObject) {
-                    toaster.create({
-                      title: "Invalid File",
-                      description: "The file is invalid.",
-                      type: "error",
-                    });
-                    return;
-                  }
-                  setFormData(object!, path);
-                  refresh();
-                }}
-                onOpenRecentFile={async (filePath: string) => {
-                  const object = await readJsonFile(filePath);
-                  const checkObject = compareFileFormat(
-                    object!,
-                    configFormFileFormat(),
-                  );
-                  if (!checkObject) {
-                    toaster.create({
-                      title: "Invalid File",
-                      description: "The file is invalid.",
-                      type: "error",
-                    });
-                    return;
-                  }
-                  setFormData(object!, filePath);
-                  refresh();
-                }}
-                onDeleteRecentPath={(index: number) => {
-                  setRecentConfigFilePaths((prev) => {
-                    return prev.filter((_, i) => i !== index);
-                  });
-                }}
-                onReloadFile={async () => {
-                  const object = await readJsonFile(filePath()!);
-                  const checkObject = compareFileFormat(
-                    object!,
-                    configFormFileFormat(),
-                  );
-                  if (!checkObject) {
-                    toaster.create({
-                      title: "Invalid File",
-                      description: "The file is invalid.",
-                      type: "error",
-                    });
-                    return;
-                  }
-                  setFormData(object!, filePath()!);
-                  refresh();
-                }}
-                onSaveFile={() => saveConfigAsFile()}
-              />
-              <PortMenu
-                disabled={portId().length === 0}
-                onGetFromPort={async () => {
-                  if (portId().length === 0) return;
-                  setFilePath(null);
-                  const output = await getConfigFromPort();
-                  if (output.stderr.length !== 0) {
-                    toaster.create({
-                      title: "Communication Error",
-                      description: output.stderr,
-                      type: "error",
-                    });
-                  } else {
-                    const parseConfigToObject = JSON.parse(output.stdout);
-                    setFormName(portId());
-                    setConfig(parseConfigToObject);
-                    refresh();
-                  }
-                }}
-                onSaveToPort={async () => {
-                  if (portId().length === 0) return;
-                  const outputError = await saveConfigToPort();
-                  if (outputError.length !== 0) {
-                    toaster.create({
-                      title: "Communication Error",
-                      description: outputError,
-                      type: "error",
-                    });
-                    return;
-                  }
-                  toaster.create({
-                    title: "Communication Success",
-                    description: "Configuration saved to port successfully.",
-                    type: "error",
-                  });
-                }}
+                borderColor="bg.muted"
+                backgroundColor="bg.default"
               >
-                <Button
-                  disabled={portId().length === 0}
-                  variant="outline"
-                  borderColor="bg.disabled"
-                  borderRadius="0.4rem"
-                >
-                  Port
-                </Button>
-              </PortMenu>
-            </Stack>
+                <Show when={render()}>
+                  <Stack direction="row" width="100%">
+                    <Tooltip.Root positioning={{ placement: "bottom-start" }}>
+                      <Tooltip.Trigger width={`calc(100% - 9rem)`}>
+                        <Editable.Root
+                          placeholder="File name"
+                          defaultValue={formName() ? formName() : "New File"}
+                          activationMode="dblclick"
+                          onValueCommit={(e) => {
+                            setFormName(e.value);
+                          }}
+                          fontWeight="bold"
+                          fontSize="2xl"
+                        >
+                          <Editable.Area>
+                            <Editable.Input width="100%" />
+                            <Editable.Preview
+                              width="100%"
+                              style={{
+                                "white-space": "nowrap",
+                                "text-overflow": "ellipsis",
+                                display: "block",
+                                overflow: "hidden",
+                                "text-align": "left",
+                              }}
+                            />
+                          </Editable.Area>
+                        </Editable.Root>
+                      </Tooltip.Trigger>
+                      <Show when={filePath()}>
+                        <Tooltip.Positioner>
+                          <Tooltip.Content backgroundColor="bg.default">
+                            <Text color="fg.default">{filePath()!}</Text>
+                          </Tooltip.Content>
+                        </Tooltip.Positioner>
+                      </Show>
+                    </Tooltip.Root>
 
-            <ConfigForm config={config()} label={formName()} />
-          </Show>
-        </Stack>
-      </div>
+                    <FileMenu
+                      filePath={filePath() ? filePath()! : ""}
+                      recentFiles={recentConfigFilePaths()}
+                      onNewFile={() => {
+                        const newEmptyFile = JSON.parse(
+                          JSON.stringify(configFormFileFormat()),
+                        );
+                        setFormName("New File");
+                        setConfig(newEmptyFile);
+                        setFilePath(null);
+                        refresh();
+                      }}
+                      onOpenFile={async () => {
+                        const path = await openFileDialog();
+                        if (!path) return;
+                        const object = await readJsonFile(path);
+                        const checkObject = compareFileFormat(
+                          object!,
+                          configFormFileFormat(),
+                        );
+                        if (!checkObject) {
+                          toaster.create({
+                            title: "Invalid File",
+                            description: "The file is invalid.",
+                            type: "error",
+                          });
+                          return;
+                        }
+                        setFormData(object!, path);
+                        refresh();
+                      }}
+                      onOpenRecentFile={async (filePath: string) => {
+                        const object = await readJsonFile(filePath);
+                        const checkObject = compareFileFormat(
+                          object!,
+                          configFormFileFormat(),
+                        );
+                        if (!checkObject) {
+                          toaster.create({
+                            title: "Invalid File",
+                            description: "The file is invalid.",
+                            type: "error",
+                          });
+                          return;
+                        }
+                        setFormData(object!, filePath);
+                        refresh();
+                      }}
+                      onDeleteRecentPath={(index: number) => {
+                        setRecentConfigFilePaths((prev) => {
+                          return prev.filter((_, i) => i !== index);
+                        });
+                      }}
+                      onReloadFile={async () => {
+                        const object = await readJsonFile(filePath()!);
+                        const checkObject = compareFileFormat(
+                          object!,
+                          configFormFileFormat(),
+                        );
+                        if (!checkObject) {
+                          toaster.create({
+                            title: "Invalid File",
+                            description: "The file is invalid.",
+                            type: "error",
+                          });
+                          return;
+                        }
+                        setFormData(object!, filePath()!);
+                        refresh();
+                      }}
+                      onSaveFile={() => saveConfigAsFile()}
+                    />
+                    <PortMenu
+                      disabled={portId().length === 0}
+                      onGetFromPort={async () => {
+                        if (portId().length === 0) return;
+                        setFilePath(null);
+                        const output = await getConfigFromPort();
+                        if (output.stderr.length !== 0) {
+                          toaster.create({
+                            title: "Communication Error",
+                            description: output.stderr,
+                            type: "error",
+                          });
+                        } else {
+                          const parseConfigToObject = JSON.parse(output.stdout);
+                          setFormName(portId());
+                          setConfig(parseConfigToObject);
+                          refresh();
+                        }
+                      }}
+                      onSaveToPort={async () => {
+                        if (portId().length === 0) return;
+                        const outputError = await saveConfigToPort();
+                        if (outputError.length !== 0) {
+                          toaster.create({
+                            title: "Communication Error",
+                            description: outputError,
+                            type: "error",
+                          });
+                          return;
+                        }
+                        toaster.create({
+                          title: "Communication Success",
+                          description:
+                            "Configuration saved to port successfully.",
+                          type: "error",
+                        });
+                      }}
+                    >
+                      <Button
+                        disabled={portId().length === 0}
+                        variant="outline"
+                        borderColor="bg.disabled"
+                        borderRadius="0.4rem"
+                      >
+                        Port
+                      </Button>
+                    </PortMenu>
+                  </Stack>
+
+                  <ConfigForm config={config()} label={formName()} />
+                </Show>
+              </Stack>
+            </div>
+            */}
+          </TabList>
+        </Panel>
+      </PanelLayout>
       <ConnectButton
         style={{ position: "absolute", right: "0.5rem", top: "1rem" }}
       />
