@@ -64,7 +64,7 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
     return tabContexts.get(props.key)?.[1](
       "tabContext",
       tabIndex,
-      "plotXScales",
+      "plotXScale",
       newXRange,
     );
   };
@@ -96,8 +96,8 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
   const [plotZoomState, setPlotZoomState] = createSignal<[number, number]>([
     0, 0,
   ]);
-  if (getTabContext(props.tabId).tabCtx.plotXScales) {
-    setPlotZoomState(getTabContext(props.tabId).tabCtx.plotXScales!);
+  if (getTabContext(props.tabId).tabCtx.plotXScale) {
+    setPlotZoomState(getTabContext(props.tabId).tabCtx.plotXScale!);
   }
 
   createEffect(
@@ -140,11 +140,7 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
 
   const [plotYScales, setPlotYScales] = createSignal<
     { min: number; max: number }[]
-  >(
-    getTabContext(props.tabId).tabCtx.plotYScales
-      ? getTabContext(props.tabId).tabCtx.plotYScales!
-      : [],
-  );
+  >([]);
 
   createEffect(
     on(
@@ -585,16 +581,16 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
                     setPlots(index(), ctx);
                   }
                 }}
-                xRange={plotZoomState()}
-                onXRangeChange={(xRange) => {
+                xScale={plotZoomState()}
+                onXScaleChange={(xRange) => {
                   if (plotZoomState() !== xRange) {
                     setPlotZoomState(xRange);
                   }
                 }}
-                yRange={
+                yScale={
                   plotYScales()[index()] ? plotYScales()[index()] : undefined
                 }
-                onYRangeChange={(yRange) => {
+                onYScaleChange={(yRange) => {
                   const yScales = plotYScales();
                   if (
                     JSON.stringify(yScales[index()]) !==

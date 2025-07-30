@@ -200,7 +200,7 @@ export function TabList(props: tabListProps) {
               plotSplitIndex: [],
               plotContext: [],
               tabName: "",
-              plotXScales: [0, 0],
+              plotXScale: [0, 0],
             };
 
             setTabContexts([...getTabContexts().tabContext, newTab]);

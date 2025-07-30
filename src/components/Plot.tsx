@@ -54,10 +54,10 @@ export type PlotProps = JSX.HTMLAttributes<HTMLDivElement> & {
   series: number[][];
   context?: PlotContext;
   onContextChange?: (context: PlotContext) => void;
-  xRange?: [number, number];
-  onXRangeChange?: (xRange: [number, number]) => void;
-  yRange?: { min: number; max: number };
-  onYRangeChange?: (yRange: { min: number; max: number }) => void;
+  xScale?: [number, number];
+  onXScaleChange?: (xRange: [number, number]) => void;
+  yScale?: { min: number; max: number };
+  onYScaleChange?: (yScale: { min: number; max: number }) => void;
   legendPanelSize?: number;
   onLegendPanelSize?: (size: number) => void;
   legendShrink?: boolean;
@@ -229,8 +229,8 @@ export function Plot(props: PlotProps) {
       }
 
       setXRange(plot.scales.x.max! - plot.scales.x.min!);
-      props.onXRangeChange?.([plot.scales.x.min!, plot.scales.x.max!]);
-      props.onYRangeChange?.({
+      props.onXScaleChange?.([plot.scales.x.min!, plot.scales.x.max!]);
+      props.onYScaleChange?.({
         min: plot.scales.y.min!,
         max: plot.scales.y.max!,
       });
@@ -520,11 +520,11 @@ export function Plot(props: PlotProps) {
                   setRender(true);
                   onMount(() => {
                     if (
-                      props.yRange &&
-                      props.yRange.max - props.yRange.min > 0
+                      props.yScale &&
+                      props.yScale.max - props.yScale.min > 0
                     ) {
                       setTimeout(() => {
-                        plot.setScale("y", props.yRange!);
+                        plot.setScale("y", props.yScale!);
                       }, 10);
                     } else {
                       setTimeout(() => {
@@ -536,12 +536,12 @@ export function Plot(props: PlotProps) {
                       }, 10);
                     }
 
-                    if (props.xRange) {
+                    if (props.xScale) {
                       setTimeout(() => {
                         uPlot.sync(group()).plots.forEach((up) => {
                           up.setScale("x", {
-                            min: props.xRange![0],
-                            max: props.xRange![1],
+                            min: props.xScale![0],
+                            max: props.xScale![1],
                           });
                         });
                       }, 0);
@@ -1006,7 +1006,7 @@ export function Plot(props: PlotProps) {
                     direction="row"
                     id={`toolBox:${props.id}`}
                     width="15rem"
-                    paddingRight="1rem"
+                    gap="1rem"
                   >
                     <Tooltip.Root>
                       <Tooltip.Trigger>
@@ -1024,7 +1024,7 @@ export function Plot(props: PlotProps) {
                                 max: yScales.yMax,
                               });
                               setXRange(xMax);
-                              props.onXRangeChange?.([0, xMax]);
+                              props.onXScaleChange?.([0, xMax]);
                             });
                           }}
                         >
