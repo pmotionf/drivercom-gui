@@ -19,6 +19,7 @@ import { ToggleGroup } from "~/components/ui/toggle-group";
 import { IconButton } from "~/components/ui/icon-button";
 import {
   IconArrowsMove,
+  IconArrowsMoveHorizontal,
   IconArrowsMoveVertical,
   IconChevronLeftPipe,
   IconChevronRightPipe,
@@ -29,7 +30,6 @@ import {
   IconLocationOff,
   IconSearch,
   IconX,
-  IconZoomInArea,
   IconZoomReset,
 } from "@tabler/icons-solidjs";
 import { Stack } from "styled-system/jsx";
@@ -75,7 +75,7 @@ export type PlotContext = {
 enum CursorMode {
   None,
   Pan,
-  Zoom,
+  Horizontal,
   Lock,
   Vertical,
 }
@@ -190,7 +190,7 @@ export function Plot(props: PlotProps) {
       if (enterSplitter()) {
         return;
       }
-      setCursorMode(CursorMode.Zoom);
+      setCursorMode(CursorMode.Horizontal);
     } else if (event.key === "Alt") {
       // TODO: Handle alt click
       setCursorMode(CursorMode.Vertical);
@@ -199,7 +199,10 @@ export function Plot(props: PlotProps) {
   const cursorModeRelease = (event: KeyboardEvent) => {
     if (event.key === "Control" && cursorMode() === CursorMode.Lock) {
       setCursorMode(lastCursorMode());
-    } else if (event.key === "Shift" && cursorMode() === CursorMode.Zoom) {
+    } else if (
+      event.key === "Shift" &&
+      cursorMode() === CursorMode.Horizontal
+    ) {
       setCursorMode(lastCursorMode());
     } else if (event.key === "Alt" && cursorMode() === CursorMode.Vertical) {
       // TODO: Handle alt click
@@ -579,7 +582,7 @@ export function Plot(props: PlotProps) {
                             return null;
                           }
 
-                          if (cursorMode() === CursorMode.Zoom) {
+                          if (cursorMode() === CursorMode.Horizontal) {
                             const uOverLeft = u.over.offsetLeft;
                             const uPlotDivLeft = document.getElementById(
                               props.id,
@@ -839,7 +842,7 @@ export function Plot(props: PlotProps) {
                       return (e) => {
                         e.stopPropagation();
 
-                        if (cursorMode() !== CursorMode.Vertical) {
+                        if (cursorMode() === CursorMode.Horizontal) {
                           uPlot.sync(group()).plots.forEach((up) => {
                             up.setScale("y", {
                               min: up.scales.y.min!,
@@ -850,7 +853,7 @@ export function Plot(props: PlotProps) {
                               max: u.data[0].length - 1,
                             });
                           });
-                        } else {
+                        } else if (cursorMode() === CursorMode.Vertical) {
                           uPlot.sync(group()).plots.forEach((up) => {
                             const yScales = getPlotYScales(up);
                             up.setScale("y", {
@@ -989,7 +992,7 @@ export function Plot(props: PlotProps) {
               }}
               onMouseLeave={(e) => {
                 if (e.shiftKey) {
-                  setCursorMode(CursorMode["Zoom"]);
+                  setCursorMode(CursorMode["Horizontal"]);
                 }
                 setEnterSplitter(false);
               }}
@@ -1087,58 +1090,30 @@ export function Plot(props: PlotProps) {
                       <Tooltip.Root>
                         <Tooltip.Trigger>
                           <ToggleGroup.Item
-                            value={CursorMode[CursorMode.Zoom]}
+                            value={CursorMode[CursorMode.Horizontal]}
                             aria-label="Toggle Selection Zoom"
                             color={
-                              cursorMode() === CursorMode.Zoom
+                              cursorMode() === CursorMode.Horizontal
                                 ? "fg.default"
                                 : "fg.muted"
                             }
                             bgColor={
-                              cursorMode() === CursorMode.Zoom
+                              cursorMode() === CursorMode.Horizontal
                                 ? "bg.emphasized"
-                                : lastCursorMode() === CursorMode.Zoom
+                                : lastCursorMode() === CursorMode.Horizontal
                                   ? "bg.subtle"
                                   : "bg.default"
                             }
                           >
-                            <IconZoomInArea />
+                            <IconArrowsMoveHorizontal />
                           </ToggleGroup.Item>
                         </Tooltip.Trigger>
                         <Portal>
                           <Tooltip.Positioner>
                             <Tooltip.Content backgroundColor="bg.default">
-                              <Text color="fg.default">Selection Zoom</Text>
-                            </Tooltip.Content>
-                          </Tooltip.Positioner>
-                        </Portal>
-                      </Tooltip.Root>
-
-                      <Tooltip.Root>
-                        <Tooltip.Trigger>
-                          <ToggleGroup.Item
-                            value={CursorMode[CursorMode.Lock]}
-                            aria-label="Toggle Cursor Lock"
-                            color={
-                              cursorMode() === CursorMode.Lock
-                                ? "fg.default"
-                                : "fg.muted"
-                            }
-                            bgColor={
-                              cursorMode() === CursorMode.Lock
-                                ? "bg.emphasized"
-                                : lastCursorMode() === CursorMode.Lock
-                                  ? "bg.subtle"
-                                  : "bg.default"
-                            }
-                          >
-                            <IconCrosshair />
-                          </ToggleGroup.Item>
-                        </Tooltip.Trigger>
-                        <Portal>
-                          <Tooltip.Positioner>
-                            <Tooltip.Content backgroundColor="bg.default">
-                              <Text color="fg.default">Cursor Lock</Text>
+                              <Text color="fg.default">
+                                Horizontal Zoom (Shift)
+                              </Text>
                             </Tooltip.Content>
                           </Tooltip.Positioner>
                         </Portal>
@@ -1168,7 +1143,39 @@ export function Plot(props: PlotProps) {
                         <Portal>
                           <Tooltip.Positioner>
                             <Tooltip.Content backgroundColor="bg.default">
-                              <Text color="fg.default">Vertical Zoom</Text>
+                              <Text color="fg.default">
+                                Vertical Zoom (Alt)
+                              </Text>
+                            </Tooltip.Content>
+                          </Tooltip.Positioner>
+                        </Portal>
+                      </Tooltip.Root>
+
+                      <Tooltip.Root>
+                        <Tooltip.Trigger>
+                          <ToggleGroup.Item
+                            value={CursorMode[CursorMode.Lock]}
+                            aria-label="Toggle Cursor Lock"
+                            color={
+                              cursorMode() === CursorMode.Lock
+                                ? "fg.default"
+                                : "fg.muted"
+                            }
+                            bgColor={
+                              cursorMode() === CursorMode.Lock
+                                ? "bg.emphasized"
+                                : lastCursorMode() === CursorMode.Lock
+                                  ? "bg.subtle"
+                                  : "bg.default"
+                            }
+                          >
+                            <IconCrosshair />
+                          </ToggleGroup.Item>
+                        </Tooltip.Trigger>
+                        <Portal>
+                          <Tooltip.Positioner>
+                            <Tooltip.Content backgroundColor="bg.default">
+                              <Text color="fg.default">Cursor Lock (Ctrl)</Text>
                             </Tooltip.Content>
                           </Tooltip.Positioner>
                         </Portal>
