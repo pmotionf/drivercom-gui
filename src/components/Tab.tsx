@@ -13,6 +13,12 @@ import { createEffect } from "solid-js";
 import { Text } from "./ui/text.tsx";
 import { PlotContext } from "./Plot.tsx";
 import { tabContexts } from "~/GlobalState.ts";
+import { on } from "solid-js";
+import {
+  AccordionStatuses,
+  GainLockStatuses,
+  LinkedStatuses,
+} from "./ConfigForm.tsx";
 
 export type TabContext = {
   id: string;
@@ -24,6 +30,10 @@ export type TabContext = {
   plotYScales?: { min: number; max: number }[];
   legendPanelSize?: number;
   legendShrink?: boolean;
+  configForm?: object;
+  configAccordionStatuses?: AccordionStatuses;
+  configLinkedStatuses?: LinkedStatuses;
+  configGainLockStatuses?: GainLockStatuses;
 };
 
 export type tabProps = JSX.HTMLAttributes<HTMLDivElement> & {
@@ -40,6 +50,18 @@ export function Tab(props: tabProps) {
   const getTabContexts = (): TabContext[] => {
     return tabContexts.get(props.key)![0].tabContext!;
   };
+
+  createEffect(
+    on(
+      () => getTabContexts().map((tab) => tab.tabName),
+      () => {
+        setTimeout(() => {
+          refreshUI();
+        }, 0);
+      },
+      { defer: true },
+    ),
+  );
 
   const getFocusId = (): string => {
     return tabContexts.get(props.key)![0].focusedTab!;
