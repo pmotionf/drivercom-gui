@@ -29,22 +29,28 @@ import { Tooltip } from "./ui/tooltip.tsx";
 export type ConfigFormProps = JSX.HTMLAttributes<HTMLFormElement> & {
   config: object;
   label: string;
+  accordionStatuses: AccordionStatuses;
+  linkedStatuses: LinkedStatuses;
+  gainLockStatuses: GainLockStatuses;
 };
 
-type AccordionStatuses = Map<string, [Accessor<string[]>, Setter<string[]>]>;
+export type AccordionStatuses = Map<
+  string,
+  [Accessor<string[]>, Setter<string[]>]
+>;
 
-type LinkedStatuses = Map<
+export type LinkedStatuses = Map<
   string,
   [Accessor<[boolean, number]>, Setter<[boolean, number]>]
 >;
 
-type GainLockStatuses = Map<string, [Accessor<boolean>, Setter<boolean>]>;
+export type GainLockStatuses = Map<
+  string,
+  [Accessor<boolean>, Setter<boolean>]
+>;
 
 export function ConfigForm(props: ConfigFormProps) {
   const [config, setConfig] = createStore(props.config);
-  const accordionStatuses: AccordionStatuses = new Map();
-  const linkedStatuses: LinkedStatuses = new Map();
-  const gainLockStatuses: GainLockStatuses = new Map();
 
   const dynamic = ["center", "between"];
 
@@ -103,7 +109,8 @@ export function ConfigForm(props: ConfigFormProps) {
           () => config.coil.ls,
         ],
         () => {
-          if (gainLockStatuses.get(`${dynPos}.gain.current.p`)![0]()) return;
+          if (props.gainLockStatuses.get(`${dynPos}.gain.current.p`)![0]())
+            return;
           const p = calcCurrentP(
             //@ts-ignore Guaranteed to exist from above check
             config.axis[dynPos].gain.current.denominator,
@@ -127,7 +134,8 @@ export function ConfigForm(props: ConfigFormProps) {
           () => config.coil.rs,
         ],
         () => {
-          if (gainLockStatuses.get(`${dynPos}.gain.current.i`)![0]()) return;
+          if (props.gainLockStatuses.get(`${dynPos}.gain.current.i`)![0]())
+            return;
 
           const i = calcCurrentI(
             //@ts-ignore Guaranteed to exist from above check
@@ -158,7 +166,8 @@ export function ConfigForm(props: ConfigFormProps) {
           () => config.magnet.pitch,
         ],
         () => {
-          if (gainLockStatuses.get(`${dynPos}.gain.velocity.p`)![0]()) return;
+          if (props.gainLockStatuses.get(`${dynPos}.gain.velocity.p`)![0]())
+            return;
 
           const wcc = calcWcc(
             //@ts-ignore Guaranteed to exist from above check
@@ -198,7 +207,8 @@ export function ConfigForm(props: ConfigFormProps) {
           () => config.axis[dynPos].gain.velocity.p,
         ],
         () => {
-          if (gainLockStatuses.get(`${dynPos}.gain.velocity.i`)![0]()) return;
+          if (props.gainLockStatuses.get(`${dynPos}.gain.velocity.i`)![0]())
+            return;
           const i = calcVelocityI(
             //@ts-ignore Guaranteed to exist from above check
             config.axis[dynPos].gain.velocity.denominator,
@@ -226,7 +236,8 @@ export function ConfigForm(props: ConfigFormProps) {
           () => config.axis[dynPos].gain.velocity.p,
         ],
         () => {
-          if (gainLockStatuses.get(`${dynPos}.gain.position.p`)![0]()) return;
+          if (props.gainLockStatuses.get(`${dynPos}.gain.position.p`)![0]())
+            return;
           const wsc = calcWsc(
             //@ts-ignore Guaranteed to exist from above check
             config.axis[dynPos].gain.velocity.p,
@@ -328,9 +339,9 @@ export function ConfigForm(props: ConfigFormProps) {
       <ConfigObject
         object={config}
         id_prefix={props.label}
-        accordionStatuses={accordionStatuses}
-        linkedStatuses={linkedStatuses}
-        gainLockStatuses={gainLockStatuses}
+        accordionStatuses={props.accordionStatuses}
+        linkedStatuses={props.linkedStatuses}
+        gainLockStatuses={props.gainLockStatuses}
         gainKinds={dynamic}
       />
     </div>

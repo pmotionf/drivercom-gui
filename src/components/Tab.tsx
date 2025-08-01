@@ -14,6 +14,11 @@ import { Text } from "./ui/text.tsx";
 import { PlotContext } from "./Plot.tsx";
 import { tabContexts } from "~/GlobalState.ts";
 import { on } from "solid-js";
+import {
+  AccordionStatuses,
+  GainLockStatuses,
+  LinkedStatuses,
+} from "./ConfigForm.tsx";
 
 export type TabContext = {
   id: string;
@@ -25,7 +30,10 @@ export type TabContext = {
   plotYScales?: { min: number; max: number }[];
   legendPanelSize?: number;
   legendShrink?: boolean;
-  configFile?: object;
+  configForm?: object;
+  configAccordionStatuses?: AccordionStatuses;
+  configLinkedStatuses?: LinkedStatuses;
+  configGainLockStatuses?: GainLockStatuses;
 };
 
 export type tabProps = JSX.HTMLAttributes<HTMLDivElement> & {

@@ -41,14 +41,14 @@ export function ConfigTabContent() {
 
   const getConfigForm = () => {
     return tabContexts.get(configTabProps.key)![0].tabContext[getTabIndex()]
-      .configFile;
+      .configForm;
   };
 
   const setConfigForm = (config: object) => {
     return tabContexts.get(configTabProps.key)![1](
       "tabContext",
       getTabIndex(),
-      "configFile",
+      "configForm",
       config,
     );
   };
@@ -79,6 +79,21 @@ export function ConfigTabContent() {
       "filePath",
       filePath ? filePath : undefined,
     );
+  };
+
+  const getAccordionStatuses = () => {
+    return tabContexts.get(configTabProps.key)![0].tabContext[getTabIndex()]
+      .configAccordionStatuses;
+  };
+
+  const getLinkedStatuses = () => {
+    return tabContexts.get(configTabProps.key)![0].tabContext[getTabIndex()]
+      .configLinkedStatuses;
+  };
+
+  const getGainLockStatuses = () => {
+    return tabContexts.get(configTabProps.key)![0].tabContext[getTabIndex()]
+      .configGainLockStatuses;
   };
 
   const [render, setRender] = createSignal<boolean>(true);
@@ -260,7 +275,6 @@ export function ConfigTabContent() {
     on(
       () => getTabName(),
       () => {
-        console.log(getTabName());
         setFormName(getTabName() ? getTabName()! : "New File");
       },
       { defer: true },
@@ -268,210 +282,213 @@ export function ConfigTabContent() {
   );
 
   return (
-    <Show when={render()}>
-      <div
+    <div
+      id={configTabProps.key}
+      style={{
+        "padding-bottom": "0.5rem",
+        height: "100%",
+        width: `100% `,
+        "justify-content": "center",
+        display: "flex",
+      }}
+    >
+      <Stack
         style={{
-          "padding-bottom": "0.5rem",
-          height: "100%",
-          width: `100% `,
-          "justify-content": "center",
-          display: "flex",
+          width: "40%",
+          height: `calc(100% - 1rem)`,
+          "margin-top": "0.5rem",
+          "padding-top": "1rem",
+          "padding-bottom": "1rem",
+          "padding-left": "1rem",
+          "padding-right": "1rem",
+          "min-width": "30rem",
+          "border-radius": "0.5rem",
+          "box-shadow": "0px 0px 15px 1px rgb(0,0,0,0.05)",
+          "border-width": "1px",
         }}
+        borderColor="bg.muted"
+        backgroundColor="bg.default"
       >
-        <Stack
-          style={{
-            width: "40%",
-            height: `calc(100% - 1rem)`,
-            "margin-top": "0.5rem",
-            "padding-top": "1rem",
-            "padding-bottom": "1rem",
-            "padding-left": "1rem",
-            "padding-right": "1rem",
-            "min-width": "30rem",
-            "border-radius": "0.5rem",
-            "box-shadow": "0px 0px 15px 1px rgb(0,0,0,0.05)",
-            "border-width": "1px",
-          }}
-          borderColor="bg.muted"
-          backgroundColor="bg.default"
-        >
-          <Stack direction="row" width="100%">
-            <Tooltip.Root positioning={{ placement: "bottom-start" }}>
-              <Tooltip.Trigger width={`calc(100% - 9rem)`}>
-                <Editable.Root
-                  placeholder="File name"
-                  value={formName()}
-                  onValueChange={(e) => {
-                    setFormName(e.value);
-                  }}
-                  activationMode="dblclick"
-                  onValueCommit={(e) => {
-                    setTabName(e.value);
-                  }}
-                  fontWeight="bold"
-                  fontSize="2xl"
-                >
-                  <Editable.Area>
-                    <Editable.Input width="100%" />
-                    <Editable.Preview
-                      width="100%"
-                      style={{
-                        "white-space": "nowrap",
-                        "text-overflow": "ellipsis",
-                        display: "block",
-                        overflow: "hidden",
-                        "text-align": "left",
-                      }}
-                    />
-                  </Editable.Area>
-                </Editable.Root>
-              </Tooltip.Trigger>
-              <Show when={getFilePath()}>
-                <Tooltip.Positioner>
-                  <Tooltip.Content backgroundColor="bg.default">
-                    <Text color="fg.default">{getFilePath()!}</Text>
-                  </Tooltip.Content>
-                </Tooltip.Positioner>
-              </Show>
-            </Tooltip.Root>
-            <FileMenu
-              filePath={getFilePath() ? getFilePath()! : ""}
-              recentFiles={recentConfigFilePaths()}
-              onNewFile={() => {
-                const newEmptyFile = JSON.parse(
-                  JSON.stringify(configFormFileFormat()),
-                );
-                setTabName("New File");
-                setConfigForm(newEmptyFile);
-                setFilePath(null);
-                refresh();
-              }}
-              onOpenFile={async () => {
-                const path = await openFileDialog();
-                if (!path) return;
-                const object = await readJsonFile(path);
-                const checkObject = compareFileFormat(
-                  object!,
-                  configFormFileFormat(),
-                );
-                if (!checkObject) {
-                  toaster.create({
-                    title: "Invalid File",
-                    description: "The file is invalid.",
-                    type: "error",
-                  });
-                  return;
-                }
-                setFormData(object!, path);
-                refresh();
-              }}
-              onOpenRecentFile={async (filePath: string) => {
-                const object = await readJsonFile(filePath);
-                const checkObject = compareFileFormat(
-                  object!,
-                  configFormFileFormat(),
-                );
-                if (!checkObject) {
-                  toaster.create({
-                    title: "Invalid File",
-                    description: "The file is invalid.",
-                    type: "error",
-                  });
-                  return;
-                }
-                setFormData(object!, filePath);
-                refresh();
-              }}
-              onDeleteRecentPath={(index: number) => {
-                setRecentConfigFilePaths((prev) => {
-                  return prev.filter((_, i) => i !== index);
-                });
-              }}
-              onReloadFile={async () => {
-                if (!getFilePath()) return;
-                const object = await readJsonFile(getFilePath()!);
-                const checkObject = compareFileFormat(
-                  object!,
-                  configFormFileFormat(),
-                );
-                if (!checkObject) {
-                  toaster.create({
-                    title: "Invalid File",
-                    description: "The file is invalid.",
-                    type: "error",
-                  });
-                  return;
-                }
-                setFormData(object!, getFilePath()!);
-                refresh();
-              }}
-              onSaveFile={() => saveConfigAsFile()}
-            />
-            <PortMenu
-              disabled={portId().length === 0}
-              onGetFromPort={async () => {
-                if (portId().length === 0) return;
-                setFilePath(null);
-                const output = await getConfigFromPort();
-                if (output.stderr.length !== 0) {
-                  toaster.create({
-                    title: "Communication Error",
-                    description: output.stderr,
-                    type: "error",
-                  });
-                } else {
-                  const parseConfigToObject = JSON.parse(output.stdout);
-                  setTabName(portId());
-                  setConfigForm(parseConfigToObject);
-                  refresh();
-                }
-              }}
-              onSaveToPort={async () => {
-                if (portId().length === 0) return;
-                const outputError = await saveConfigToPort();
-                if (outputError.length !== 0) {
-                  toaster.create({
-                    title: "Communication Error",
-                    description: outputError,
-                    type: "error",
-                  });
-                  return;
-                }
+        <Stack direction="row" width="100%">
+          <Tooltip.Root positioning={{ placement: "bottom-start" }}>
+            <Tooltip.Trigger width={`calc(100% - 9rem)`}>
+              <Editable.Root
+                placeholder="File name"
+                value={formName()}
+                onValueChange={(e) => {
+                  setFormName(e.value);
+                }}
+                activationMode="dblclick"
+                onValueCommit={(e) => {
+                  setTabName(e.value);
+                }}
+                fontWeight="bold"
+                fontSize="2xl"
+              >
+                <Editable.Area>
+                  <Editable.Input width="100%" />
+                  <Editable.Preview
+                    width="100%"
+                    style={{
+                      "white-space": "nowrap",
+                      "text-overflow": "ellipsis",
+                      display: "block",
+                      overflow: "hidden",
+                      "text-align": "left",
+                    }}
+                  />
+                </Editable.Area>
+              </Editable.Root>
+            </Tooltip.Trigger>
+            <Show when={getFilePath()}>
+              <Tooltip.Positioner>
+                <Tooltip.Content backgroundColor="bg.default">
+                  <Text color="fg.default">{getFilePath()!}</Text>
+                </Tooltip.Content>
+              </Tooltip.Positioner>
+            </Show>
+          </Tooltip.Root>
+          <FileMenu
+            filePath={getFilePath() ? getFilePath()! : ""}
+            recentFiles={recentConfigFilePaths()}
+            onNewFile={() => {
+              const newEmptyFile = JSON.parse(
+                JSON.stringify(configFormFileFormat()),
+              );
+              setTabName("New File");
+              setConfigForm(newEmptyFile);
+              setFilePath(null);
+              refresh();
+            }}
+            onOpenFile={async () => {
+              const path = await openFileDialog();
+              if (!path) return;
+              const object = await readJsonFile(path);
+              const checkObject = compareFileFormat(
+                object!,
+                configFormFileFormat(),
+              );
+              if (!checkObject) {
                 toaster.create({
-                  title: "Communication Success",
-                  description: "Configuration saved to port successfully.",
+                  title: "Invalid File",
+                  description: "The file is invalid.",
                   type: "error",
                 });
-              }}
+                return;
+              }
+              setFormData(object!, path);
+              refresh();
+            }}
+            onOpenRecentFile={async (filePath: string) => {
+              const object = await readJsonFile(filePath);
+              const checkObject = compareFileFormat(
+                object!,
+                configFormFileFormat(),
+              );
+              if (!checkObject) {
+                toaster.create({
+                  title: "Invalid File",
+                  description: "The file is invalid.",
+                  type: "error",
+                });
+                return;
+              }
+              setFormData(object!, filePath);
+              refresh();
+            }}
+            onDeleteRecentPath={(index: number) => {
+              setRecentConfigFilePaths((prev) => {
+                return prev.filter((_, i) => i !== index);
+              });
+            }}
+            onReloadFile={async () => {
+              if (!getFilePath()) return;
+              const object = await readJsonFile(getFilePath()!);
+              const checkObject = compareFileFormat(
+                object!,
+                configFormFileFormat(),
+              );
+              if (!checkObject) {
+                toaster.create({
+                  title: "Invalid File",
+                  description: "The file is invalid.",
+                  type: "error",
+                });
+                return;
+              }
+              setFormData(object!, getFilePath()!);
+              refresh();
+            }}
+            onSaveFile={() => saveConfigAsFile()}
+          />
+          <PortMenu
+            disabled={portId().length === 0}
+            onGetFromPort={async () => {
+              if (portId().length === 0) return;
+              setFilePath(null);
+              const output = await getConfigFromPort();
+              if (output.stderr.length !== 0) {
+                toaster.create({
+                  title: "Communication Error",
+                  description: output.stderr,
+                  type: "error",
+                });
+              } else {
+                const parseConfigToObject = JSON.parse(output.stdout);
+                setTabName(portId());
+                setConfigForm(parseConfigToObject);
+                refresh();
+              }
+            }}
+            onSaveToPort={async () => {
+              if (portId().length === 0) return;
+              const outputError = await saveConfigToPort();
+              if (outputError.length !== 0) {
+                toaster.create({
+                  title: "Communication Error",
+                  description: outputError,
+                  type: "error",
+                });
+                return;
+              }
+              toaster.create({
+                title: "Communication Success",
+                description: "Configuration saved to port successfully.",
+                type: "error",
+              });
+            }}
+          >
+            <Button
+              disabled={portId().length === 0}
+              variant="outline"
+              borderColor="bg.disabled"
+              borderRadius="0.4rem"
             >
-              <Button
-                disabled={portId().length === 0}
-                variant="outline"
-                borderColor="bg.disabled"
-                borderRadius="0.4rem"
-              >
-                Port
-              </Button>
-            </PortMenu>
-          </Stack>
-
+              Port
+            </Button>
+          </PortMenu>
+        </Stack>
+        <Show when={render()}>
           <ConfigForm
             config={getConfigForm()!}
             label={getTabName() ? getTabName()! : "New File"}
+            linkedStatuses={getLinkedStatuses()!}
+            accordionStatuses={getAccordionStatuses()!}
+            gainLockStatuses={getGainLockStatuses()!}
           />
-          <Toast.Toaster toaster={toaster}>
-            {(toast) => (
-              <Toast.Root>
-                <Toast.Title>{toast().title}</Toast.Title>
-                <Toast.Description>{toast().description}</Toast.Description>
-                <Toast.CloseTrigger>
-                  <IconX />
-                </Toast.CloseTrigger>
-              </Toast.Root>
-            )}
-          </Toast.Toaster>
-        </Stack>
-      </div>
-    </Show>
+        </Show>
+        <Toast.Toaster toaster={toaster}>
+          {(toast) => (
+            <Toast.Root>
+              <Toast.Title>{toast().title}</Toast.Title>
+              <Toast.Description>{toast().description}</Toast.Description>
+              <Toast.CloseTrigger>
+                <IconX />
+              </Toast.CloseTrigger>
+            </Toast.Root>
+          )}
+        </Toast.Toaster>
+      </Stack>
+    </div>
   );
 }

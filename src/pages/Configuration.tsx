@@ -1,18 +1,29 @@
 import { configFormFileFormat, Pages, tabContexts } from "~/GlobalState.ts";
-import { ConnectButton } from "./Connect/ConnectButton.tsx";
 import { Panel } from "~/components/Panel.tsx";
 import { PanelLayout } from "~/components/PanelLayout.tsx";
 import { TabList } from "~/components/TabList.tsx";
 import { TabContext } from "~/components/Tab.tsx";
 import { ConfigTabContent } from "./Configuration/ConfigTabContent.tsx";
+import {
+  AccordionStatuses,
+  GainLockStatuses,
+  LinkedStatuses,
+} from "~/components/ConfigForm.tsx";
+import { ConnectButton } from "./Connect/ConnectButton.tsx";
 
 function Configuration() {
   const createTab = (key: string) => {
     const id = crypto.randomUUID();
+    const accordionStatuses: AccordionStatuses = new Map();
+    const linkedStatuses: LinkedStatuses = new Map();
+    const gainLockStatuses: GainLockStatuses = new Map();
     const newTab = {
       id: id,
       tabName: "New File",
-      configFile: JSON.parse(JSON.stringify(configFormFileFormat())),
+      configForm: JSON.parse(JSON.stringify(configFormFileFormat())),
+      configAccordionStatuses: accordionStatuses,
+      configLinkedStatuses: linkedStatuses,
+      configGainLockStatuses: gainLockStatuses,
     } as TabContext;
 
     if (tabContexts.has(key)) {
@@ -34,7 +45,7 @@ function Configuration() {
         </Panel>
       </PanelLayout>
       <ConnectButton
-        style={{ position: "absolute", right: "0.5rem", top: "1rem" }}
+        style={{ position: "absolute", top: "4rem", right: "1rem" }}
       />
     </>
   );
