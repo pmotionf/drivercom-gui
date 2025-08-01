@@ -592,11 +592,11 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
                 }
                 onYScaleChange={(yRange) => {
                   const yScales = plotYScales();
+                  const currentYScale = yScales[index()];
+                  if (isNaN(yRange.min) || isNaN(yRange.max)) return;
                   if (
-                    JSON.stringify(yScales[index()]) !==
-                      JSON.stringify(yRange) &&
-                    !isNaN(yRange.min) &&
-                    !isNaN(yRange.max)
+                    currentYScale.max !== yRange.max ||
+                    currentYScale.min !== yRange.min
                   ) {
                     setPlotYScales((prev) => {
                       const update = prev.map((prevRange, i) => {
