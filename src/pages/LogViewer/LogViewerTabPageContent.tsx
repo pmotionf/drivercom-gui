@@ -34,6 +34,7 @@ export type LogViewerTabPageContentProps =
 
 export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
   if (!tabContexts.get(props.key)) return;
+  const [render, setRender] = createSignal<boolean>(false);
 
   const getTabContext = (
     tabId: string,
@@ -63,7 +64,7 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
     return tabContexts.get(props.key)?.[1](
       "tabContext",
       tabIndex,
-      "plotZoomState",
+      "plotXScale",
       newXRange,
     );
   };
@@ -95,8 +96,8 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
   const [plotZoomState, setPlotZoomState] = createSignal<[number, number]>([
     0, 0,
   ]);
-  if (getTabContext(props.tabId).tabCtx.plotZoomState) {
-    setPlotZoomState(getTabContext(props.tabId).tabCtx.plotZoomState!);
+  if (getTabContext(props.tabId).tabCtx.plotXScale) {
+    setPlotZoomState(getTabContext(props.tabId).tabCtx.plotXScale!);
   }
 
   createEffect(
@@ -132,6 +133,26 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
       () => splitIndex(),
       () => {
         setSplitPlot(getTabContext(props.tabId).currentIndex, splitIndex());
+      },
+      { defer: true },
+    ),
+  );
+
+  const [plotYScales, setPlotYScales] = createSignal<
+    { min: number; max: number }[]
+  >([]);
+
+  createEffect(
+    on(
+      () => plotYScales(),
+      () => {
+        const yScales = plotYScales();
+        tabContexts.get(props.key)?.[1](
+          "tabContext",
+          getTabContext(props.tabId).currentIndex,
+          "plotYScales",
+          yScales,
+        );
       },
       { defer: true },
     ),
@@ -222,12 +243,30 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
         ) {
           setSplitIndex([...getTabContext(props.tabId).tabCtx.plotSplitIndex!]);
         }
+
+        if (
+          typeof getTabContext(props.tabId).tabCtx.plotYScales! !== "undefined"
+        ) {
+          setPlotYScales(getTabContext(props.tabId).tabCtx.plotYScales!);
+        }
       }
     }
 
     if (splitIndex().length === 0) {
       setSplitIndex(dataForPlot.splitIndex);
     }
+
+    if (plotYScales().length === 0) {
+      const newYScales: { min: number; max: number }[] = Array.from(
+        { length: splitIndex().length },
+        () => {
+          return { min: 0, max: 0 };
+        },
+      );
+      setPlotYScales(newYScales);
+    }
+
+    setRender(true);
   });
 
   function resetChart() {
@@ -263,14 +302,31 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
       updated.splice(plot_index, 1, nonSelectSeries, selectSeries);
       return updated;
     });
+
+    setPlotYScales((prev) => {
+      const newUpdate = [
+        ...prev.slice(0, plot_index + 1),
+        { min: 0, max: 0 },
+        ...prev.slice(plot_index + 1, prev.length),
+      ];
+      return newUpdate;
+    });
   }
 
   function mergePlot(plot_indexes: number[]) {
     const prevPlot = [...splitIndex()];
     let mergePlot: number[] = [];
+
+    const prevYRange = [...plotYScales()];
+    let mergeYRange: { min: number; max: number } = prevYRange[plot_indexes[0]];
+
     let smallestIndex = plot_indexes[0];
     plot_indexes.forEach((plot_index) => {
       mergePlot = [...mergePlot, ...prevPlot[plot_index]];
+      mergeYRange = {
+        min: Math.max(mergeYRange.min, prevYRange[plot_index].min),
+        max: Math.min(mergeYRange.max, prevYRange[plot_index].max),
+      };
       smallestIndex = Math.min(smallestIndex, plot_index);
     });
 
@@ -284,6 +340,16 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
       ...newSplitIndex.slice(smallestIndex, newSplitIndex.length),
     ];
     setSplitIndex(updatePlot);
+
+    const newYRange = prevYRange.filter(
+      (_, index) => !plot_indexes.includes(index),
+    );
+    const updateYRange = [
+      ...newYRange.slice(0, smallestIndex),
+      mergeYRange,
+      ...newYRange.slice(smallestIndex, newYRange.length),
+    ];
+    setPlotYScales(updateYRange);
   }
 
   const allSelected = (index: number) => {
@@ -376,163 +442,188 @@ export function LogViewerTabPageContent(props: LogViewerTabPageContentProps) {
   );
 
   return (
-    <For each={splitIndex()}>
-      {(item, index) => {
-        // Header and items need not be derived state, as they will not
-        // change within a plot.
-        const currentHeader = item.map((i) => header()[i]);
-        const currentItems = item.map((i) => series()[i]);
+    <Show when={render()}>
+      <For each={splitIndex()}>
+        {(item, index) => {
+          // Header and items need not be derived state, as they will not
+          // change within a plot.
+          const currentHeader = item.map((i) => header()[i]);
+          const currentItems = item.map((i) => series()[i]);
 
-        // Current ID must be derived state as index can change based on
-        // added/merged plots.
-        const currentID = () => props.tabId + index();
+          // Current ID must be derived state as index can change based on
+          // added/merged plots.
+          const currentID = () => props.tabId + index();
 
-        return (
-          <div
-            style={{
-              height: `calc(100% / ${splitIndex().length})`,
-              width: "100%",
-              "min-height": "20rem",
-            }}
-          >
-            <Stack
-              direction="row-reverse"
-              width="100%"
-              paddingRight="1.6rem"
-              style={{ overflow: "hidden" }}
-              height="3rem"
+          return (
+            <div
+              style={{
+                height: `calc(100% / ${splitIndex().length})`,
+                width: "100%",
+                "min-height": "20rem",
+              }}
             >
-              <Tooltip.Root>
-                <Tooltip.Trigger>
-                  <IconButton
-                    size="sm"
-                    onClick={() => {
-                      setPrevSplitIndex(splitIndex());
-                      splitPlot(index());
-                      setMergePlotIndexes([]);
-                    }}
-                    disabled={
-                      currentHeader.length <= 1 ||
-                      !plots[index()] ||
-                      !plots[index()].selected ||
-                      allSelected(index()) ||
-                      allNotSelected(index())
-                    }
-                  >
-                    <IconSeparatorHorizontal />
-                  </IconButton>
-                </Tooltip.Trigger>
-                <Tooltip.Positioner>
-                  <Tooltip.Content backgroundColor="bg.default">
-                    <Text color="fg.default">Split</Text>
-                  </Tooltip.Content>
-                </Tooltip.Positioner>
-              </Tooltip.Root>
+              <Stack
+                direction="row-reverse"
+                width="100%"
+                paddingRight="1.6rem"
+                style={{ overflow: "hidden" }}
+                height="3rem"
+              >
+                <Tooltip.Root>
+                  <Tooltip.Trigger>
+                    <IconButton
+                      size="sm"
+                      onClick={() => {
+                        setPrevSplitIndex(splitIndex());
+                        splitPlot(index());
+                        setMergePlotIndexes([]);
+                      }}
+                      disabled={
+                        currentHeader.length <= 1 ||
+                        !plots[index()] ||
+                        !plots[index()].selected ||
+                        allSelected(index()) ||
+                        allNotSelected(index())
+                      }
+                    >
+                      <IconSeparatorHorizontal />
+                    </IconButton>
+                  </Tooltip.Trigger>
+                  <Tooltip.Positioner>
+                    <Tooltip.Content backgroundColor="bg.default">
+                      <Text color="fg.default">Split</Text>
+                    </Tooltip.Content>
+                  </Tooltip.Positioner>
+                </Tooltip.Root>
 
-              <Tooltip.Root>
-                <Tooltip.Trigger>
-                  <IconButton
-                    onClick={() => {
-                      setPrevSplitIndex(splitIndex());
-                      mergePlot(mergePlotIndexes());
-                      setMergePlotIndexes([]);
-                    }}
-                    disabled={
-                      mergePlotIndexes().length < 2 ||
-                      mergePlotIndexes().indexOf(index()) === -1
-                    }
-                    size="sm"
-                  >
-                    <IconFold />
-                  </IconButton>
-                </Tooltip.Trigger>
-                <Tooltip.Positioner>
-                  <Tooltip.Content backgroundColor="bg.default">
-                    <Text color="fg.default">Merge</Text>
-                  </Tooltip.Content>
-                </Tooltip.Positioner>
-              </Tooltip.Root>
+                <Tooltip.Root>
+                  <Tooltip.Trigger>
+                    <IconButton
+                      onClick={() => {
+                        setPrevSplitIndex(splitIndex());
+                        mergePlot(mergePlotIndexes());
+                        setMergePlotIndexes([]);
+                      }}
+                      disabled={
+                        mergePlotIndexes().length < 2 ||
+                        mergePlotIndexes().indexOf(index()) === -1
+                      }
+                      size="sm"
+                    >
+                      <IconFold />
+                    </IconButton>
+                  </Tooltip.Trigger>
+                  <Tooltip.Positioner>
+                    <Tooltip.Content backgroundColor="bg.default">
+                      <Text color="fg.default">Merge</Text>
+                    </Tooltip.Content>
+                  </Tooltip.Positioner>
+                </Tooltip.Root>
 
-              <Checkbox
-                width="8rem"
-                checked={mergePlotIndexes().indexOf(index()) !== -1}
-                onCheckedChange={(checkBoxState) => {
-                  if (checkBoxState.checked === true) {
-                    setMergePlotIndexes((prev) => {
-                      return [...prev, index()];
-                    });
-                  } else {
-                    setMergePlotIndexes((prev) => {
-                      return prev.filter(
-                        (graphIndex) => graphIndex !== index(),
-                      );
+                <Checkbox
+                  width="8rem"
+                  checked={mergePlotIndexes().indexOf(index()) !== -1}
+                  onCheckedChange={(checkBoxState) => {
+                    if (checkBoxState.checked === true) {
+                      setMergePlotIndexes((prev) => {
+                        return [...prev, index()];
+                      });
+                    } else {
+                      setMergePlotIndexes((prev) => {
+                        return prev.filter(
+                          (graphIndex) => graphIndex !== index(),
+                        );
+                      });
+                    }
+                  }}
+                >
+                  <Text fontWeight="bold">Graph {index() + 1}</Text>
+                </Checkbox>
+                <Show when={index() === 0}>
+                  <Stack direction="row" width={`calc(100% - 16rem)`}>
+                    <Tooltip.Root>
+                      <Tooltip.Trigger>
+                        <IconButton
+                          variant="outline"
+                          disabled={splitIndex().length <= 1}
+                          onclick={() => {
+                            setPrevSplitIndex(splitIndex());
+                            resetChart();
+                            setMergePlotIndexes([]);
+                          }}
+                          size="sm"
+                        >
+                          <IconRestore />
+                        </IconButton>
+                      </Tooltip.Trigger>
+                      <Tooltip.Positioner>
+                        <Tooltip.Content backgroundColor="bg.default">
+                          <Text color="fg.default">Reset</Text>
+                        </Tooltip.Content>
+                      </Tooltip.Positioner>
+                    </Tooltip.Root>
+                  </Stack>
+                </Show>
+              </Stack>
+              <Plot
+                id={currentID()}
+                group={props.tabId}
+                name=""
+                header={currentHeader}
+                series={currentItems}
+                context={plots[index()]}
+                legendPanelSize={legendSplitterSize()}
+                onLegendPanelSize={(size) => {
+                  setLegendSplitterSize(size);
+                }}
+                onContextChange={(ctx) => {
+                  if (JSON.stringify(ctx) !== JSON.stringify(plots[index()])) {
+                    setPlots(index(), ctx);
+                  }
+                }}
+                xScale={plotZoomState()}
+                onXScaleChange={(xRange) => {
+                  if (plotZoomState() !== xRange) {
+                    setPlotZoomState(xRange);
+                  }
+                }}
+                yScale={
+                  plotYScales()[index()] ? plotYScales()[index()] : undefined
+                }
+                onYScaleChange={(yRange) => {
+                  const yScales = plotYScales();
+                  const currentYScale = yScales[index()];
+                  if (isNaN(yRange.min) || isNaN(yRange.max)) return;
+                  if (
+                    currentYScale.max !== yRange.max ||
+                    currentYScale.min !== yRange.min
+                  ) {
+                    setPlotYScales((prev) => {
+                      const update = prev.map((prevRange, i) => {
+                        if (i === index()) {
+                          return yRange;
+                        } else {
+                          return prevRange;
+                        }
+                      });
+                      return update;
                     });
                   }
                 }}
-              >
-                <Text fontWeight="bold">Graph {index() + 1}</Text>
-              </Checkbox>
-              <Show when={index() === 0}>
-                <Stack direction="row" width={`calc(100% - 16rem)`}>
-                  <Tooltip.Root>
-                    <Tooltip.Trigger>
-                      <IconButton
-                        variant="outline"
-                        disabled={splitIndex().length <= 1}
-                        onclick={() => {
-                          setPrevSplitIndex(splitIndex());
-                          resetChart();
-                          setMergePlotIndexes([]);
-                        }}
-                        size="sm"
-                      >
-                        <IconRestore />
-                      </IconButton>
-                    </Tooltip.Trigger>
-                    <Tooltip.Positioner>
-                      <Tooltip.Content backgroundColor="bg.default">
-                        <Text color="fg.default">Reset</Text>
-                      </Tooltip.Content>
-                    </Tooltip.Positioner>
-                  </Tooltip.Root>
-                </Stack>
-              </Show>
-            </Stack>
-            <Plot
-              id={currentID()}
-              group={props.tabId}
-              name=""
-              header={currentHeader}
-              series={currentItems}
-              context={plots[index()]}
-              legendPanelSize={legendSplitterSize()}
-              onLegendPanelSize={(size) => {
-                setLegendSplitterSize(size);
-              }}
-              onContextChange={(ctx) => {
-                if (JSON.stringify(ctx) !== JSON.stringify(plots[index()])) {
-                  setPlots(index(), ctx);
-                }
-              }}
-              xRange={plotZoomState()}
-              onXRangeChange={(xRange) => {
-                if (plotZoomState() !== xRange) {
-                  setPlotZoomState(xRange);
-                }
-              }}
-              legendShrink={isLegendShrink()}
-              onLegendShrinkChange={(newState) => {
-                setIsLegendShrink(newState);
-              }}
-              style={{
-                width: "100%",
-                height: `calc(100% - 3rem)`,
-                "min-height": "17rem",
-              }}
-            />
-          </div>
-        );
-      }}
-    </For>
+                legendShrink={isLegendShrink()}
+                onLegendShrinkChange={(newState) => {
+                  setIsLegendShrink(newState);
+                }}
+                style={{
+                  width: "100%",
+                  height: `calc(100% - 3rem)`,
+                  "min-height": "17rem",
+                }}
+              />
+            </div>
+          );
+        }}
+      </For>
+    </Show>
   );
 }

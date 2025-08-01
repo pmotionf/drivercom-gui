@@ -63,9 +63,7 @@ export const PlotToolTip = (props: TooltipProps) => {
             const cursorY = props.cursor.position.top;
             const plotHeight = props.u.over.offsetHeight;
             const currentLocation = cursorY / plotHeight;
-            const currentY: number = Number(
-              (yMax - yRange * currentLocation).toFixed(2),
-            );
+            const currentY: number = Number(yMax - yRange * currentLocation);
 
             const one_rem = parseFloat(
               getComputedStyle(document.documentElement).fontSize,
