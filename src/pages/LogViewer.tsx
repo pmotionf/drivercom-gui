@@ -58,7 +58,7 @@ function LogViewer() {
                 plotSplitIndex: [],
                 plotContext: [],
                 tabName: "",
-                plotZoomState: [0, 0],
+                plotXScale: [0, 0],
               };
 
               if (tabContexts.has(key)) {
