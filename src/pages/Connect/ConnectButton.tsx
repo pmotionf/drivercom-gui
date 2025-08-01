@@ -9,7 +9,7 @@ import {
 import { Popover } from "~/components/ui/popover.tsx";
 import { createSignal, JSX, Show } from "solid-js";
 import { portId, portList, setPortId, setPortList } from "../../GlobalState.ts";
-//@ts-ignore Implicitily has an 'any' type
+//@ts-ignore Implicitly has an 'any' type.
 import { Stack } from "styled-system/jsx/stack.mjs";
 import { Text } from "../../components/ui/text.tsx";
 import { Command } from "@tauri-apps/plugin-shell";
@@ -93,6 +93,7 @@ export function ConnectButton(props: ConnectButtonProps) {
         <Button
           variant="outline"
           borderColor="bg.disabled"
+          backgroundColor="bg.default"
           style={{
             "padding-right": "0.5rem",
             "padding-left": "0rem",
