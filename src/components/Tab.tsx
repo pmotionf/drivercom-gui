@@ -13,6 +13,7 @@ import { createEffect } from "solid-js";
 import { Text } from "./ui/text.tsx";
 import { PlotContext } from "./Plot.tsx";
 import { tabContexts } from "~/GlobalState.ts";
+import { on } from "solid-js";
 
 export type TabContext = {
   id: string;
@@ -41,6 +42,18 @@ export function Tab(props: tabProps) {
   const getTabContexts = (): TabContext[] => {
     return tabContexts.get(props.key)![0].tabContext!;
   };
+
+  createEffect(
+    on(
+      () => getTabContexts().map((tab) => tab.tabName),
+      () => {
+        setTimeout(() => {
+          refreshUI();
+        }, 0);
+      },
+      { defer: true },
+    ),
+  );
 
   const getFocusId = (): string => {
     return tabContexts.get(props.key)![0].focusedTab!;

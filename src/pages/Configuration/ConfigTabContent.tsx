@@ -2,7 +2,7 @@ import { IconX } from "@tabler/icons-solidjs";
 import { open, save } from "@tauri-apps/plugin-dialog";
 import { readTextFile, writeTextFile } from "@tauri-apps/plugin-fs";
 import { Command } from "@tauri-apps/plugin-shell";
-import { createSignal, Show, useContext } from "solid-js";
+import { createEffect, createSignal, on, Show, useContext } from "solid-js";
 import { Stack } from "styled-system/jsx";
 import { ConfigForm } from "~/components/ConfigForm";
 import { FileMenu } from "~/components/FileMenu";
@@ -253,6 +253,20 @@ export function ConfigTabContent() {
     return output.stderr;
   }
 
+  const [formName, setFormName] = createSignal<string>(
+    getTabName() ? getTabName()! : "New File",
+  );
+  createEffect(
+    on(
+      () => getTabName(),
+      () => {
+        console.log(getTabName());
+        setFormName(getTabName() ? getTabName()! : "New File");
+      },
+      { defer: true },
+    ),
+  );
+
   return (
     <Show when={render()}>
       <div
@@ -286,7 +300,10 @@ export function ConfigTabContent() {
               <Tooltip.Trigger width={`calc(100% - 9rem)`}>
                 <Editable.Root
                   placeholder="File name"
-                  defaultValue={getTabName() ? getTabName() : "New File"}
+                  value={formName()}
+                  onValueChange={(e) => {
+                    setFormName(e.value);
+                  }}
                   activationMode="dblclick"
                   onValueCommit={(e) => {
                     setTabName(e.value);
