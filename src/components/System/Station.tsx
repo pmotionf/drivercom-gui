@@ -8,9 +8,10 @@ import { JSX } from "solid-js";
 import { mmc } from "../proto/mmc.js";
 
 export const AxesContext = createContext<{
-  axes: mmc.info.Response.Axes.IAxis;
   id: string;
-  carrierInfo?: mmc.info.Response.ICarrier;
+  axes: mmc.info.Response.System.Axis.IInfo;
+  axesErrors: mmc.info.Response.System.Axis.IError;
+  carrierInfo?: mmc.info.Response.System.Carrier.IInfo;
 }>();
 
 export type StationProps = JSX.HTMLAttributes<HTMLDivElement>;
@@ -33,19 +34,19 @@ export function Station(props: StationProps) {
     >
       <For each={stationContext.axes}>
         {(info, axesIndex) => {
-          let carrier: mmc.info.Response.ICarrier | undefined = undefined;
-          if (info.carrierId) {
-            const carrierCtx = stationContext.carrierInfo!.get(info.carrierId);
-            if (carrierCtx) {
-              carrier = carrierCtx;
-            }
-          }
           return (
             <AxesContext.Provider
               value={{
                 axes: info,
                 id: `${stationId}:${stationContext.id * 3 + axesIndex() + 1}`,
-                carrierInfo: carrier,
+                carrierInfo: stationContext.carrierInfo
+                  ? stationContext.carrierInfo.filter(
+                      (carrier) =>
+                        carrier.axis ===
+                        stationContext.id * 3 + axesIndex() + 1,
+                    )[0]
+                  : {},
+                axesErrors: stationContext.axesErrors[axesIndex()],
               }}
             >
               {props.children}
