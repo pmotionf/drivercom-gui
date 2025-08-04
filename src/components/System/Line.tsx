@@ -3,34 +3,29 @@ import { For } from "solid-js/web";
 import { Accordion } from "../ui/accordion.tsx";
 import { ChevronDownIcon } from "lucide-solid";
 import { createContext } from "solid-js";
-import { useContext } from "solid-js";
 import { Stack } from "styled-system/jsx/stack";
 import { Show } from "solid-js/web";
 //@ts-ignore Ignore test in git action
 import { mmc } from "../proto/mmc";
 
 export type LineProps = JSX.HTMLAttributes<HTMLDivElement> & {
-  value: LineConfig;
+  value: mmc.core.Response.LineConfig.ILine;
+  system?: mmc.info.Response.ISystem;
 };
 
 export const LineContext = createContext<{
-  axes: mmc.info.Response.Axes.IAxis[];
   id: number;
-  carrierInfo?: Map<number, mmc.info.Response.ICarrier>;
+  axes: mmc.info.Response.System.Axis.IInfo[];
+  axesErrors: mmc.info.Response.System.Axis.IError[];
+  carrierInfo?: mmc.info.Response.System.Carrier.IInfo[];
+  driver?: mmc.info.Response.System.Driver.IInfo;
+  driverError?: mmc.info.Response.System.Driver.IError;
 }>();
-
-export const useLineContext = () => useContext(LineContext);
-
-export type LineConfig = {
-  line: mmc.core.Response.LineConfig.ILine;
-  axisInfo?: mmc.info.Response.Axes.IAxis[];
-  carrierInfo?: Map<number, mmc.info.Response.ICarrier>;
-};
 
 export function Line(props: LineProps) {
   return (
     <Accordion.Item
-      value={props.value.line.name!}
+      value={props.value.name!}
       backgroundColor="bg.canvas"
       borderBottomWidth="1px"
     >
@@ -39,7 +34,7 @@ export function Line(props: LineProps) {
         paddingLeft="1rem"
         paddingRight="1rem"
       >
-        {props.value.line.name}
+        {props.value.name}
         <Accordion.ItemIndicator class="cancel">
           <ChevronDownIcon />
         </Accordion.ItemIndicator>
@@ -56,19 +51,26 @@ export function Line(props: LineProps) {
           overflowX="auto"
           gap="1rem"
         >
-          <Show when={props.value.axisInfo!}>
+          <Show when={props.system && props.system.axisInfos}>
             <For
-              each={Array.from({ length: props.value.line.axes! / 3 }, (_, i) =>
-                props.value.axisInfo!.slice(i * 3, i * 3 + 3),
+              each={Array.from({ length: props.value.axes! / 3 }, (_, i) =>
+                props.system!.axisInfos!.slice(i * 3, i * 3 + 3),
               )}
             >
               {(axis, index) => {
+                const axisError = props.system!.axisErrors!.slice(
+                  index() * 3,
+                  index() * 3 + 3,
+                );
                 return (
                   <LineContext.Provider
                     value={{
-                      axes: axis,
                       id: index(),
-                      carrierInfo: props.value.carrierInfo,
+                      axes: axis,
+                      axesErrors: axisError,
+                      carrierInfo: props.system!.carrierInfos!,
+                      driver: props.system!.driverInfos![index()],
+                      driverError: props.system!.driverErrors![index()],
                     }}
                   >
                     {props.children}

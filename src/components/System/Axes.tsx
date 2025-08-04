@@ -54,7 +54,7 @@ export function Axis() {
         <Badge
           width="min-content"
           backgroundColor={
-            axesContext.axes.errors?.overcurrent
+            axesContext.axesErrors.overcurrent
               ? "red"
               : axesContext.axes.motorEnabled
                 ? "accent.customGreen"
@@ -67,7 +67,7 @@ export function Axis() {
         >
           <Text
             color={
-              axesContext.axes.errors?.overcurrent ? "#ffffff" : "fg.default"
+              axesContext.axesErrors.overcurrent ? "#ffffff" : "fg.default"
             }
             size="sm"
             fontWeight="medium"
@@ -127,8 +127,8 @@ export function Axis() {
             }}
           >
             {axesContext.carrierInfo && axesContext.carrierInfo.state
-              ? mmc.info.Response.Carrier.State[
-                  `${axesContext.carrierInfo!.state}` as keyof typeof mmc.info.Response.Carrier.State
+              ? mmc.info.Response.System.Carrier.Info.State[
+                  `${axesContext.carrierInfo.state}` as keyof typeof mmc.info.Response.System.Carrier.Info.State
                 ]
                   .toString()
                   .replace("CARRIER_STATE_", "")

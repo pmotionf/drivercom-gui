@@ -11,7 +11,6 @@ import {
 } from "@tabler/icons-solidjs";
 import { css } from "styled-system/css/css";
 import { Show } from "solid-js/web";
-import { createStore } from "solid-js/store";
 import { connect, disconnect, listen, send } from "@kuyoonjo/tauri-plugin-tcp";
 import { onCleanup } from "solid-js";
 import { Buffer } from "buffer";
@@ -19,16 +18,17 @@ import { createEffect } from "solid-js";
 import { on } from "solid-js";
 import { System } from "~/components/System/System.tsx";
 import { Toast } from "~/components/ui/toast.tsx";
-import { LineConfig } from "~/components/System/Line.tsx";
 //@ts-ignore Ignore test in git action
 import { mmc } from "~/components/proto/mmc.js";
 import { UnlistenFn } from "@tauri-apps/api/event";
 import { monitoringInputs } from "~/GlobalState.ts";
+import { createStore } from "solid-js/store";
 
 export type SystemConfig = {
-  lineConfig: {
-    lines: LineConfig[];
-  };
+  lines: {
+    line: mmc.core.Response.LineConfig.ILine;
+    system?: mmc.info.Response.ISystem;
+  }[];
 };
 
 function Monitoring() {
@@ -38,7 +38,7 @@ function Monitoring() {
   let unlisten: UnlistenFn | null = null;
 
   const [systemConfig, setSystemConfig] = createStore<SystemConfig>({
-    lineConfig: { lines: [] },
+    lines: [],
   });
 
   const disconnectServer = async (clientId: string) => {
@@ -58,12 +58,9 @@ function Monitoring() {
 
   createEffect(
     on(
-      () => systemConfig.lineConfig.lines,
+      () => systemConfig.lines,
       async () => {
-        if (
-          systemConfig.lineConfig.lines &&
-          systemConfig.lineConfig.lines.length !== 0
-        ) {
+        if (systemConfig.lines.length > 0) {
           await sendRequestLoop();
         }
       },
@@ -71,89 +68,48 @@ function Monitoring() {
     ),
   );
 
-  async function sendAxisInfo(lines: LineConfig[], lineId: number) {
-    if (systemConfig.lineConfig.lines!.length === 0) return null;
+  async function requestSystemInfo(
+    lineId: number,
+    lines: mmc.core.Response.LineConfig.ILine[],
+  ) {
     const payload = {
       info: {
-        axis: {
+        system: {
           lineId: lineId,
-          range: {
-            startId: 1,
-            endId: lines[lineId - 1].line.axes!,
-          },
+          driver: true,
+          axis: true,
+          carrier: true,
         },
       },
     };
-
-    const msg = mmc.Request.create(payload);
+    const msg = mmc.Request.fromObject(payload);
     const request: number[] = Array.from(mmc.Request.encode(msg).finish());
-
     try {
       await send(clientId(), request);
+      if (lineId + 1 <= lines.length) {
+        requestSystemInfo(lineId + 1, lines);
+      }
     } catch {
       return null;
-    }
-
-    if (lineId + 1 <= lines.length) {
-      await sendAxisInfo(lines, lineId + 1);
-    }
-  }
-
-  async function sendCarrierInfo(
-    lines: LineConfig[],
-    lineId: number,
-    axisId: number,
-  ) {
-    if (systemConfig.lineConfig.lines!.length === 0) return null;
-    const axes = lines[lineId - 1].line.axes!;
-
-    if (
-      lines[lineId - 1].axisInfo &&
-      lines[lineId - 1].axisInfo![axisId - 1] &&
-      lines[lineId - 1].axisInfo![axisId - 1].carrierId
-    ) {
-      const payload = {
-        info: {
-          carrier: {
-            lineId: lineId,
-            carrierId: lines[lineId - 1].axisInfo![axisId - 1].carrierId,
-          },
-        },
-      };
-
-      const msg = mmc.Request.create(payload);
-      const request: number[] = Array.from(mmc.Request.encode(msg).finish());
-      try {
-        await send(clientId(), request);
-      } catch {
-        return null;
-      }
-    }
-
-    if (axisId + 1 <= axes) {
-      sendCarrierInfo(lines, lineId, axisId + 1);
-    } else if (lineId + 1 <= lines.length) {
-      await sendCarrierInfo(lines, lineId + 1, 1);
     }
   }
 
   async function sendRequestLoop() {
-    if (unlisten === null) return;
+    if (unlisten === null && systemConfig.lines.length < 0) return;
     try {
-      const sendAxis = await sendAxisInfo(systemConfig.lineConfig.lines!, 1);
-      const sendCarrier = await sendCarrierInfo(
-        systemConfig.lineConfig.lines!,
+      const sendSystemInfo = await requestSystemInfo(
         1,
-        1,
+        systemConfig.lines.map((line) => line.line),
       );
-      if (sendAxis !== null && sendCarrier !== null) {
+
+      if (sendSystemInfo !== null) {
         setTimeout(async () => {
-          if (systemConfig.lineConfig.lines!.length === 0) {
+          if (systemConfig.lines.length === 0) {
             if (unlisten !== null) {
               unlisten();
               unlisten = null;
               await disconnectServer(clientId());
-              setSystemConfig("lineConfig", "lines", []);
+              setSystemConfig({ lines: [] });
             }
             return;
           }
@@ -164,7 +120,7 @@ function Monitoring() {
           unlisten();
           unlisten = null;
           await disconnectServer(clientId());
-          setSystemConfig("lineConfig", "lines", []);
+          setSystemConfig({ lines: [] });
         }
       }
     } catch {
@@ -172,7 +128,7 @@ function Monitoring() {
         unlisten();
         unlisten = null;
         await disconnectServer(clientId());
-        setSystemConfig("lineConfig", "lines", []);
+        setSystemConfig({ lines: [] });
       }
     }
   }
@@ -187,51 +143,25 @@ function Monitoring() {
         const msg = Buffer.from(x.payload.event.message!.data);
         const decode = mmc.Response.decode(msg);
 
-        if (
-          decode.core &&
-          decode.core.lineConfig &&
-          typeof decode.core.lineConfig === "object"
-        ) {
+        if (decode.core && decode.core.lineConfig) {
           //@ts-ignore Ignore test in git action
-          const update = decode.core.lineConfig.lines!.map((lineData) => {
-            return { line: lineData, carrierInfo: new Map() } as LineConfig;
+          const update = decode.core.lineConfig.lines!.map((line) => {
+            return { line: line };
           });
-          setSystemConfig("lineConfig", "lines", update);
+          setSystemConfig({ lines: update });
         }
 
-        if (decode.info) {
-          if (decode.info.axis) {
-            setSystemConfig(
-              "lineConfig",
-              "lines",
-              decode.info.axis.lineId! - 1,
-              "axisInfo",
-              decode.info.axis.axes!,
-            );
-          }
-
-          if (decode.info.carrier) {
-            const lineId = decode.info.carrier.lineId!;
-
-            const carrier: mmc.info.Response.ICarrier = {
-              cas: decode.info.carrier.cas,
-              position: decode.info.carrier.position,
-              state: decode.info.carrier.state,
-            };
-
-            systemConfig.lineConfig.lines[lineId - 1].carrierInfo!.set(
-              decode.info.carrier.id!,
-              carrier,
-            );
-          }
+        if (decode.info && decode.info.system) {
+          const index = decode.info!.system!.lineId! - 1;
+          setSystemConfig("lines", index, "system", decode.info!.system);
         }
       }
     });
   }
 
-  onCleanup(() => {
-    if (systemConfig.lineConfig.lines.length !== 0) {
-      disconnect(clientId());
+  onCleanup(async () => {
+    if (systemConfig.lines.length > 0) {
+      await disconnectServer(clientId());
     }
   });
 
@@ -263,8 +193,8 @@ function Monitoring() {
           borderWidth="0"
           backgroundColor="transparent"
         >
-          <Show when={systemConfig.lineConfig.lines.length > 0}>
-            <System lineConfig={systemConfig.lineConfig.lines} />
+          <Show when={systemConfig.lines.length > 0}>
+            <System value={systemConfig} />
           </Show>
         </Splitter.Panel>
 
@@ -392,35 +322,38 @@ function Monitoring() {
                 </Stack>
                 <Button
                   variant={
-                    systemConfig.lineConfig.lines.length !== 0
-                      ? "outline"
-                      : "solid"
+                    systemConfig.lines.length === 0 ? "solid" : "outline"
                   }
                   loading={isConnecting()}
                   onClick={async () => {
-                    if (systemConfig.lineConfig.lines.length !== 0) {
+                    if (systemConfig.lines.length > 0) {
                       if (unlisten !== null) {
                         unlisten();
                         unlisten = null;
                         await disconnectServer(clientId());
-                        setSystemConfig("lineConfig", "lines", []);
                       }
-                      return;
-                    }
-                    const serverIp = monitoringInputs.get("IP");
-                    const port = monitoringInputs.get("port");
-
-                    if (
-                      typeof serverIp == "string" &&
-                      typeof port == "string"
-                    ) {
+                      setSystemConfig({ lines: [] });
+                    } else {
                       setIsConnecting(true);
-
-                      const address = `${serverIp}:${port}`;
+                      const address = `${monitoringInputs.get("IP")}:${monitoringInputs.get("port")}`;
                       const cid = clientId();
 
                       try {
                         await connect(cid, address);
+                        const payload: object = {
+                          core: {
+                            kind: "CORE_REQUEST_KIND_LINE_CONFIG",
+                          },
+                        };
+                        const msg = mmc.Request.fromObject(payload);
+                        const request: number[] = Array.from(
+                          mmc.Request.encode(msg).finish(),
+                        );
+
+                        if (unlisten === null) {
+                          unlisten = await listenFromServer();
+                        }
+                        await send(clientId(), request);
                       } catch (error) {
                         toaster.create({
                           title: "Connection Error",
@@ -428,45 +361,11 @@ function Monitoring() {
                           type: "error",
                         });
                       }
-
-                      const payload: object = {
-                        core: {
-                          kind: "CORE_REQUEST_KIND_LINE_CONFIG",
-                        },
-                      };
-                      const msg = mmc.Request.fromObject(payload);
-                      const request: number[] = Array.from(
-                        mmc.Request.encode(msg).finish(),
-                      );
-
-                      if (unlisten === null) {
-                        unlisten = await listenFromServer();
-                      }
-
-                      try {
-                        await send(clientId(), request);
-                      } catch (e) {
-                        toaster.create({
-                          title: "Connection Error",
-                          description: e as string,
-                          type: "error",
-                        });
-                      }
-
                       setIsConnecting(false);
-                    } else {
-                      toaster.create({
-                        title: "Missing Input",
-                        description:
-                          "IP address and port number must be provided.",
-                        type: "error",
-                      });
                     }
                   }}
                 >
-                  {systemConfig.lineConfig.lines.length !== 0
-                    ? "Cancel"
-                    : "Connect"}
+                  {systemConfig.lines.length === 0 ? "Connect" : "Cancel"}
                 </Button>
               </Stack>
             </Stack>
