@@ -34,18 +34,28 @@ export function Station(props: StationProps) {
     >
       <For each={stationContext.axes}>
         {(info, axesIndex) => {
+          const axisId = stationContext.id * 3 + axesIndex() + 1;
+          let currentCarrier:
+            | mmc.info.Response.System.Carrier.IInfo
+            | undefined = undefined;
+
+          if (
+            stationContext.carrierInfo &&
+            stationContext.carrierInfo.length > 0
+          ) {
+            const findCarrier = stationContext.carrierInfo.filter(
+              (carrier) => carrier.axis!.main === axisId,
+            );
+            if (findCarrier.length === 1) {
+              currentCarrier = findCarrier[0];
+            }
+          }
           return (
             <AxesContext.Provider
               value={{
                 axes: info,
-                id: `${stationId}:${stationContext.id * 3 + axesIndex() + 1}`,
-                carrierInfo: stationContext.carrierInfo
-                  ? stationContext.carrierInfo.filter(
-                      (carrier) =>
-                        carrier.axis ===
-                        stationContext.id * 3 + axesIndex() + 1,
-                    )[0]
-                  : {},
+                id: `${stationId}:${axisId}`,
+                carrierInfo: currentCarrier,
                 axesErrors: stationContext.axesErrors[axesIndex()],
               }}
             >

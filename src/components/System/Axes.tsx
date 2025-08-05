@@ -117,13 +117,13 @@ export function Axis() {
           <Text
             width={`calc(100% - 3rem)`}
             size="sm"
-            textAlign="right"
             style={{
               "white-space": "nowrap",
               display: "block",
               overflow: "hidden",
               "text-overflow": `ellipsis`,
               "user-select": "none",
+              "text-align": "left",
             }}
           >
             {axesContext.carrierInfo && axesContext.carrierInfo.state
@@ -140,26 +140,24 @@ export function Axis() {
             <Text width="3rem" size="sm" fontWeight="bold">
               CAS
             </Text>
-            <Stack width={`calc(100% - 3rem)`}>
-              <Show
-                when={
-                  axesContext.carrierInfo &&
-                  axesContext.carrierInfo.cas &&
-                  axesContext.carrierInfo.cas.triggered
-                }
-              >
-                <Text size="sm">Triggered</Text>
-              </Show>
-              <Show
-                when={
-                  axesContext.carrierInfo &&
-                  axesContext.carrierInfo.cas &&
-                  axesContext.carrierInfo.cas.enabled
-                }
-              >
-                <Text size="sm">Enabled</Text>
-              </Show>
-            </Stack>
+            <Show
+              when={
+                axesContext.carrierInfo &&
+                axesContext.carrierInfo.cas &&
+                axesContext.carrierInfo.cas.triggered
+              }
+            >
+              <Text size="sm">Triggered</Text>
+            </Show>
+            <Show
+              when={
+                axesContext.carrierInfo &&
+                axesContext.carrierInfo.cas &&
+                axesContext.carrierInfo.cas.enabled
+              }
+            >
+              <Text size="sm">Enabled</Text>
+            </Show>
           </Stack>
           <Stack direction="row" gap="0">
             <Text width="3rem" size="sm" fontWeight="bold">
