@@ -241,7 +241,7 @@ export function Tab(props: tabProps) {
                   borderBottomColor="accent.emphasized"
                 >
                   <Editable.Root
-                    defaultValue={tabCtx.tab.tabName}
+                    value={tabCtx.tab.tabName}
                     activationMode="dblclick"
                     onValueCommit={(editableDetails: { value: string }) => {
                       setTabName(tabIndex(), editableDetails.value);
