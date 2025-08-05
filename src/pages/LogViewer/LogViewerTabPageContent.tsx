@@ -22,7 +22,6 @@ import { Text } from "~/components/ui/text";
 import { Checkbox } from "~/components/ui/checkbox";
 import { Tooltip } from "~/components/ui/tooltip";
 import { tabContexts } from "~/GlobalState.ts";
-import { TabContext } from "~/components/Tab";
 import { on } from "solid-js";
 import { LegendStroke } from "~/components/Plot/Legend";
 import { tabPageContext } from "~/components/TabList";
@@ -39,6 +38,16 @@ export type LogViewerTabPageContentProps = {
   onErrorMessage?: (message: ErrorMessage) => void;
 };
 
+export type LogViewerTabPage = {
+  filePath?: string;
+  plotSplitIndex?: number[][];
+  plotContext?: PlotContext[];
+  plotXScale?: [number, number];
+  plotYScales?: { min: number; max: number }[];
+  legendPanelSize?: number;
+  legendShrink?: boolean;
+};
+
 export function LogViewerTabPageContent() {
   const tabPageProps = useContext(tabPageContext);
   if (!tabPageProps) return;
@@ -48,15 +57,16 @@ export function LogViewerTabPageContent() {
 
   const getTabContext = (
     tabId: string,
-  ): { tabCtx: TabContext; currentIndex: number } => {
+  ): { tabCtx: LogViewerTabPage; currentIndex: number } => {
     const tabs = tabContexts.get(tabPageProps.key)![0]!;
     const index = tabs.tabContext
-      .map((tab) => {
-        return tab.id;
+      .map((tabCtx) => {
+        return tabCtx.tab.id;
       })
       .indexOf(tabId);
     return {
-      tabCtx: tabContexts.get(tabPageProps.key)![0].tabContext[index],
+      tabCtx: tabContexts.get(tabPageProps.key)![0].tabContext[index].tabPage!
+        .logViewerTabPage!,
       currentIndex: index,
     };
   };
@@ -65,6 +75,8 @@ export function LogViewerTabPageContent() {
     return tabContexts.get(tabPageProps.key)?.[1](
       "tabContext",
       tabIndex,
+      "tabPage",
+      "logViewerTabPage",
       "plotSplitIndex",
       newSplit,
     );
@@ -74,6 +86,8 @@ export function LogViewerTabPageContent() {
     return tabContexts.get(tabPageProps.key)?.[1](
       "tabContext",
       tabIndex,
+      "tabPage",
+      "logViewerTabPage",
       "plotXScale",
       newXRange,
     );
@@ -83,6 +97,8 @@ export function LogViewerTabPageContent() {
     return tabContexts.get(tabPageProps.key)?.[1](
       "tabContext",
       tabIndex,
+      "tabPage",
+      "logViewerTabPage",
       "legendPanelSize",
       newSize,
     );
@@ -92,6 +108,8 @@ export function LogViewerTabPageContent() {
     return tabContexts.get(tabPageProps.key)?.[1](
       "tabContext",
       tabIndex,
+      "tabPage",
+      "logViewerTabPage",
       "legendShrink",
       newStatus,
     );
@@ -169,6 +187,8 @@ export function LogViewerTabPageContent() {
         tabContexts.get(tabPageProps.key)?.[1](
           "tabContext",
           getTabContext(tabPageProps.tabId).currentIndex,
+          "tabPage",
+          "logViewerTabPage",
           "plotYScales",
           yScales,
         );

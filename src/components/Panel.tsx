@@ -1,10 +1,14 @@
 import { createContext, JSX, useContext } from "solid-js";
-import { TabListContext, TabListProps, TabLocation } from "./TabList.tsx";
+import {
+  TabContext,
+  TabListContext,
+  TabListProps,
+  TabLocation,
+} from "./TabList.tsx";
 import { createSignal } from "solid-js";
 import { Show } from "solid-js";
 //@ts-ignore Has an Any type error
 import { Stack } from "styled-system/jsx/stack.mjs";
-import { TabContext } from "./Tab.tsx";
 import { panelContexts } from "~/GlobalState.ts";
 import { Splitter } from "./ui/splitter.tsx";
 import { panelLayoutContext } from "./PanelLayout.tsx";
@@ -12,7 +16,6 @@ import { panelLayoutContext } from "./PanelLayout.tsx";
 export type PanelContext = {
   id: string;
   tabContext: TabListContext[];
-  focusedTab?: string;
 };
 
 export type panelProps = {

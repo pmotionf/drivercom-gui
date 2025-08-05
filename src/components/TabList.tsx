@@ -8,18 +8,37 @@ import {
   useContext,
 } from "solid-js";
 import { Tabs } from "~/components/ui/tabs.tsx";
-import { Tab, TabContext } from "~/components/Tab.tsx";
+import { Tab, TabType } from "~/components/Tab.tsx";
 import { For } from "solid-js/web";
-import { LogViewerTabPageContentProps } from "~/pages/LogViewer/LogViewerTabPageContent.tsx";
+import {
+  LogViewerTabPage,
+  LogViewerTabPageContentProps,
+} from "~/pages/LogViewer/LogViewerTabPageContent.tsx";
 import { tabContexts } from "~/GlobalState.ts";
 import { createStore } from "solid-js/store";
 import { Toast } from "./ui/toast.tsx";
 import { IconX } from "@tabler/icons-solidjs";
 import { panelContext } from "./Panel.tsx";
+import { ConfigTabPage } from "~/pages/Configuration/ConfigTabContent.tsx";
+
+type ValueOf<Obj> = Obj[keyof Obj];
+type OneOnly<Obj, Key extends keyof Obj> = {
+  [key in Exclude<keyof Obj, Key>]: null;
+} & Pick<Obj, Key>;
+type OneOfByKey<Obj> = { [key in keyof Obj]: OneOnly<Obj, key> };
+export type OneOfType<Obj> = ValueOf<OneOfByKey<Obj>>;
 
 export type TabListContext = {
   focusedTab: string;
   tabContext: TabContext[];
+};
+
+export type TabContext = {
+  tab: TabType;
+  tabPage?: OneOfType<{
+    logViewerTabPage: LogViewerTabPage;
+    configTabPage: ConfigTabPage;
+  }>;
 };
 
 export type TabLocation =
@@ -88,7 +107,7 @@ export function TabList(
     tabCtx: TabContext[],
   ): string => {
     const tabIdList: string[] = tabCtx.map((tabCtx) => {
-      return tabCtx.id ? tabCtx.id : "";
+      return tabCtx.tab.id ? tabCtx.tab.id : "";
     });
 
     const focusedTabIndex = tabIdList.indexOf(focusedTab);
@@ -178,7 +197,7 @@ export function TabList(
             } else {
               setTabContexts([
                 ...getTabContexts().tabContext,
-                { id: crypto.randomUUID() },
+                { tab: { id: crypto.randomUUID(), tabName: "new Tab" } },
               ]);
             }
           }}
@@ -205,8 +224,8 @@ export function TabList(
               tabLocation === "otherPanel"
             ) {
               const deleteTabIndex = getTabContexts()
-                .tabContext.map((tab) => {
-                  return tab.id;
+                .tabContext.map((tabCtx) => {
+                  return tabCtx.tab.id;
                 })
                 .indexOf(tabId);
               const nextFocusTabId = getNextFocusTabId(
@@ -241,16 +260,18 @@ export function TabList(
                 ? "centerSplitter"
                 : tabLocation;
 
-            const draggedTab = tabList.filter((tab) => tab.id === tabId)[0];
+            const draggedTab = tabList.filter(
+              (tabCtx) => tabCtx.tab.id === tabId,
+            )[0];
             tabListProps.onDraggingTab?.(updateTabLocation, draggedTab, mouseX);
           }}
         />
         <Show when={tabContextRender()}>
           <For each={getTabContexts().tabContext}>
-            {(tab) => {
+            {(tabCtx) => {
               return (
                 <Tabs.Content
-                  value={tab.id}
+                  value={tabCtx.tab.id}
                   width="100%"
                   height={`calc(100% - 3rem)`}
                   overflowY="auto"
@@ -258,7 +279,7 @@ export function TabList(
                   <tabPageContext.Provider
                     value={{
                       key: tabListProps.id,
-                      tabId: tab.id,
+                      tabId: tabCtx.tab.id,
                       onErrorMessage: (error) => {
                         toaster.create(error);
                       },

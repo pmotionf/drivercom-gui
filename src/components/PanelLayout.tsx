@@ -2,12 +2,11 @@ import { JSX } from "solid-js/jsx-runtime";
 import { Show } from "solid-js/web";
 import { For } from "solid-js/web";
 import { Splitter } from "~/components/ui/splitter.tsx";
-import { TabLocation } from "./TabList.tsx";
+import { TabContext, TabLocation } from "./TabList.tsx";
 import { createContext, createSignal, onMount } from "solid-js";
 import { panelContexts, panelKeys, tabContexts } from "~/GlobalState.ts";
 import { createStore } from "solid-js/store";
 import { TabListContext } from "./TabList.tsx";
-import { TabContext } from "./Tab.tsx";
 import { panelProps } from "./Panel.tsx";
 
 export type PanelSizeContext = {
@@ -156,7 +155,7 @@ export function PanelLayout(props: PanelLayoutProps) {
                           newSplit.nextTabListId,
                           createStore<TabListContext>({
                             tabContext: [draggedTab] as TabContext[],
-                            focusedTab: draggedTab.id,
+                            focusedTab: draggedTab.tab.id,
                           }),
                         );
                         setPanelContext(getPanelKey(), newSplit.panelContext);
@@ -189,7 +188,7 @@ export function PanelLayout(props: PanelLayoutProps) {
                         ]);
                         tabContexts.get(nextPanelId)?.[1](
                           "focusedTab",
-                          draggedTab.id,
+                          draggedTab.tab.id,
                         );
                       }
                     },

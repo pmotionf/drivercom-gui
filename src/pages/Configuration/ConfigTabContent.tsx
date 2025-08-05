@@ -21,6 +21,20 @@ import {
   tabContexts,
 } from "~/GlobalState";
 
+import {
+  AccordionStatuses,
+  LinkedStatuses,
+  GainLockStatuses,
+} from "~/components/ConfigForm";
+
+export type ConfigTabPage = {
+  filePath?: string;
+  configForm?: object;
+  configAccordionStatuses?: AccordionStatuses;
+  configLinkedStatuses?: LinkedStatuses;
+  configGainLockStatuses?: GainLockStatuses;
+};
+
 export function ConfigTabContent() {
   const configTabProps = useContext(tabPageContext);
   if (!configTabProps) return;
@@ -34,20 +48,22 @@ export function ConfigTabContent() {
   const getTabIndex = () => {
     const index = tabContexts
       .get(configTabProps.key)![0]
-      .tabContext.map((ctx) => ctx.id)
+      .tabContext.map((ctx) => ctx.tab.id)
       .indexOf(configTabProps.tabId);
     return index;
   };
 
   const getConfigForm = () => {
     return tabContexts.get(configTabProps.key)![0].tabContext[getTabIndex()]
-      .configForm;
+      .tabPage!.configTabPage!.configForm!;
   };
 
   const setConfigForm = (config: object) => {
     return tabContexts.get(configTabProps.key)![1](
       "tabContext",
       getTabIndex(),
+      "tabPage",
+      "configTabPage",
       "configForm",
       config,
     );
@@ -55,13 +71,14 @@ export function ConfigTabContent() {
 
   const getTabName = () => {
     return tabContexts.get(configTabProps.key)![0].tabContext[getTabIndex()]
-      .tabName;
+      .tab!.tabName;
   };
 
   const setTabName = (tabName: string) => {
     return tabContexts.get(configTabProps.key)![1](
       "tabContext",
       getTabIndex(),
+      "tab",
       "tabName",
       tabName,
     );
@@ -69,13 +86,15 @@ export function ConfigTabContent() {
 
   const getFilePath = () => {
     return tabContexts.get(configTabProps.key)![0].tabContext[getTabIndex()]
-      .filePath;
+      .tabPage!.configTabPage!.filePath;
   };
 
   const setFilePath = (filePath: string | null) => {
     return tabContexts.get(configTabProps.key)![1](
       "tabContext",
       getTabIndex(),
+      "tabPage",
+      "configTabPage",
       "filePath",
       filePath ? filePath : undefined,
     );
@@ -83,17 +102,17 @@ export function ConfigTabContent() {
 
   const getAccordionStatuses = () => {
     return tabContexts.get(configTabProps.key)![0].tabContext[getTabIndex()]
-      .configAccordionStatuses;
+      .tabPage!.configTabPage!.configAccordionStatuses;
   };
 
   const getLinkedStatuses = () => {
     return tabContexts.get(configTabProps.key)![0].tabContext[getTabIndex()]
-      .configLinkedStatuses;
+      .tabPage!.configTabPage!.configLinkedStatuses;
   };
 
   const getGainLockStatuses = () => {
     return tabContexts.get(configTabProps.key)![0].tabContext[getTabIndex()]
-      .configGainLockStatuses;
+      .tabPage!.configTabPage!.configGainLockStatuses;
   };
 
   const [render, setRender] = createSignal<boolean>(true);
@@ -268,14 +287,12 @@ export function ConfigTabContent() {
     return output.stderr;
   }
 
-  const [formName, setFormName] = createSignal<string>(
-    getTabName() ? getTabName()! : "New File",
-  );
+  const [formName, setFormName] = createSignal<string>(getTabName());
   createEffect(
     on(
       () => getTabName(),
       () => {
-        setFormName(getTabName() ? getTabName()! : "New File");
+        setFormName(getTabName());
       },
       { defer: true },
     ),
@@ -471,7 +488,7 @@ export function ConfigTabContent() {
         <Show when={render()}>
           <ConfigForm
             config={getConfigForm()!}
-            label={getTabName() ? getTabName()! : "New File"}
+            label={getTabName()}
             linkedStatuses={getLinkedStatuses()!}
             accordionStatuses={getAccordionStatuses()!}
             gainLockStatuses={getGainLockStatuses()!}

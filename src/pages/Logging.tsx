@@ -34,9 +34,8 @@ import { PanelSizeContext } from "~/components/PanelLayout.tsx";
 import { FileMenu } from "~/components/FileMenu.tsx";
 import { PortMenu } from "~/components/PortMenu.tsx";
 import { ConnectButton } from "./Connect/ConnectButton.tsx";
-import { TabContext } from "~/components/Tab.tsx";
 import { createStore } from "solid-js/store";
-import { TabListContext } from "~/components/TabList.tsx";
+import { TabContext, TabListContext } from "~/components/TabList.tsx";
 import { Button } from "~/components/ui/button.tsx";
 
 export function Logging() {
@@ -338,8 +337,20 @@ export function Logging() {
       const tabCtx = tabContexts.get(tabListId);
       const newTabID = crypto.randomUUID();
       const newTab: TabContext = {
-        id: newTabID,
-        filePath: newFilePath,
+        tab: {
+          id: newTabID,
+          tabName: newFilePath
+            .replaceAll("\\", "/")
+            .match(/[^?!//]+$/!)!
+            .toString()
+            .slice(0, -4) as string,
+        },
+        tabPage: {
+          logViewerTabPage: {
+            filePath: newFilePath,
+          },
+          configTabPage: null,
+        },
       };
       setTimeout(() => {
         tabCtx![1]({

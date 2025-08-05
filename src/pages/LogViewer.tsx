@@ -1,11 +1,10 @@
 import { Panel } from "~/components/Panel";
 import { PanelLayout } from "~/components/PanelLayout.tsx";
-import { TabList } from "~/components/TabList";
+import { TabContext, TabList } from "~/components/TabList";
 import { Pages, tabContexts } from "~/GlobalState";
 import { LogViewerTabPageContent } from "./LogViewer/LogViewerTabPageContent";
 import { open } from "@tauri-apps/plugin-dialog";
 import { Toast } from "~/components/ui/toast";
-import { TabContext } from "~/components/Tab";
 import { IconX } from "@tabler/icons-solidjs";
 
 function LogViewer() {
@@ -53,19 +52,30 @@ function LogViewer() {
               }
 
               const newTab: TabContext = {
-                id: newTabInfo.id,
-                filePath: newTabInfo.filePath,
-                plotSplitIndex: [],
-                plotContext: [],
-                tabName: "",
-                plotXScale: [0, 0],
+                tab: {
+                  id: newTabInfo.id,
+                  tabName: newTabInfo.filePath
+                    .replaceAll("\\", "/")
+                    .match(/[^?!//]+$/!)!
+                    .toString()
+                    .slice(0, -4) as string,
+                },
+                tabPage: {
+                  logViewerTabPage: {
+                    filePath: newTabInfo.filePath.replaceAll("\\", "/"),
+                    plotSplitIndex: [],
+                    plotContext: [],
+                    plotXScale: [0, 0],
+                  },
+                  configTabPage: null,
+                },
               };
 
               if (tabContexts.has(key)) {
                 const tabCtx = tabContexts.get(key)!;
                 tabCtx[1]({
                   tabContext: [...tabCtx[0].tabContext, newTab],
-                  focusedTab: newTab.id,
+                  focusedTab: newTab.tab.id,
                 });
               }
             }}

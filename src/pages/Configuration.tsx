@@ -1,8 +1,7 @@
 import { configFormFileFormat, Pages, tabContexts } from "~/GlobalState.ts";
 import { Panel } from "~/components/Panel.tsx";
 import { PanelLayout } from "~/components/PanelLayout.tsx";
-import { TabList } from "~/components/TabList.tsx";
-import { TabContext } from "~/components/Tab.tsx";
+import { TabContext, TabList } from "~/components/TabList.tsx";
 import { ConfigTabContent } from "./Configuration/ConfigTabContent.tsx";
 import {
   AccordionStatuses,
@@ -18,19 +17,26 @@ function Configuration() {
     const linkedStatuses: LinkedStatuses = new Map();
     const gainLockStatuses: GainLockStatuses = new Map();
     const newTab = {
-      id: id,
-      tabName: "New File",
-      configForm: JSON.parse(JSON.stringify(configFormFileFormat())),
-      configAccordionStatuses: accordionStatuses,
-      configLinkedStatuses: linkedStatuses,
-      configGainLockStatuses: gainLockStatuses,
+      tab: {
+        id: id,
+        tabName: "New File",
+      },
+      tabPage: {
+        configTabPage: {
+          filePath: "",
+          configForm: JSON.parse(JSON.stringify(configFormFileFormat())),
+          configAccordionStatuses: accordionStatuses,
+          configLinkedStatuses: linkedStatuses,
+          configGainLockStatuses: gainLockStatuses,
+        },
+      },
     } as TabContext;
 
     if (tabContexts.has(key)) {
       const tabCtx = tabContexts.get(key)!;
       tabCtx[1]({
         tabContext: [...tabCtx[0].tabContext, newTab],
-        focusedTab: newTab.id,
+        focusedTab: newTab.tab.id,
       });
     }
   };

@@ -11,29 +11,12 @@ import { createDraggable } from "@neodrag/solid";
 import { Stack } from "styled-system/jsx/stack.mjs";
 import { createEffect } from "solid-js";
 import { Text } from "./ui/text.tsx";
-import { PlotContext } from "./Plot.tsx";
 import { tabContexts } from "~/GlobalState.ts";
-import { on } from "solid-js";
-import {
-  AccordionStatuses,
-  GainLockStatuses,
-  LinkedStatuses,
-} from "./ConfigForm.tsx";
+import { TabContext } from "./TabList.tsx";
 
-export type TabContext = {
+export type TabType = {
   id: string;
-  tabName?: string;
-  filePath?: string;
-  plotSplitIndex?: number[][];
-  plotContext?: PlotContext[];
-  plotXScale?: [number, number];
-  plotYScales?: { min: number; max: number }[];
-  legendPanelSize?: number;
-  legendShrink?: boolean;
-  configForm?: object;
-  configAccordionStatuses?: AccordionStatuses;
-  configLinkedStatuses?: LinkedStatuses;
-  configGainLockStatuses?: GainLockStatuses;
+  tabName: string;
 };
 
 export type tabProps = JSX.HTMLAttributes<HTMLDivElement> & {
@@ -51,18 +34,6 @@ export function Tab(props: tabProps) {
     return tabContexts.get(props.key)![0].tabContext!;
   };
 
-  createEffect(
-    on(
-      () => getTabContexts().map((tab) => tab.tabName),
-      () => {
-        setTimeout(() => {
-          refreshUI();
-        }, 0);
-      },
-      { defer: true },
-    ),
-  );
-
   const getFocusId = (): string => {
     return tabContexts.get(props.key)![0].focusedTab!;
   };
@@ -75,6 +46,7 @@ export function Tab(props: tabProps) {
     return tabContexts.get(props.key)?.[1](
       "tabContext",
       tabIndex,
+      "tab",
       "tabName",
       newName,
     );
@@ -154,12 +126,6 @@ export function Tab(props: tabProps) {
       y: number;
     }>({ x: 0, y: 0 });
 
-  const parseTabName = (tabName: string, filePath: string): string => {
-    if (tabName.length === 0) {
-      return JSON.stringify(filePath.match(/[^?!//]+$/!)).slice(2, -2);
-    } else return tabName;
-  };
-
   const [render, setRender] = createSignal<boolean>(true);
   const refreshUI = () => {
     setRender(false);
@@ -176,14 +142,16 @@ export function Tab(props: tabProps) {
     >
       <Show when={render()}>
         <For each={getTabContexts()}>
-          {(tab, tabIndex) => {
+          {(tabCtx, tabIndex) => {
             return (
               <div
-                id={`${tab.id}`}
+                id={`${tabCtx.tab.id}`}
                 style={{
-                  opacity: currentDraggingTabId() === tab.id ? "0%" : "100%",
+                  opacity:
+                    currentDraggingTabId() === tabCtx.tab.id ? "0%" : "100%",
                   position: "relative",
-                  "z-index": tab.id === currentDraggingTabId() ? "0" : "10",
+                  "z-index":
+                    tabCtx.tab.id === currentDraggingTabId() ? "0" : "10",
                 }}
                 onWheel={(e) => mouseWheelHandler(e, scrollContainer)}
                 onMouseEnter={() => {
@@ -196,7 +164,7 @@ export function Tab(props: tabProps) {
                   cancel: ".cancel",
                   bounds: "parent",
                   onDragStart: (data) => {
-                    setCurrentDraggingTabId(tab.id);
+                    setCurrentDraggingTabId(tabCtx.tab.id);
                     setMousePositionInsideComponent({
                       x: data.event.offsetX,
                       y: data.event.offsetY,
@@ -223,7 +191,7 @@ export function Tab(props: tabProps) {
                     props.onTabDragging?.(
                       data.event.clientX,
                       data.event.clientY,
-                      tab.id,
+                      tabCtx.tab.id,
                     );
                   },
                   onDragEnd: (data) => {
@@ -239,7 +207,7 @@ export function Tab(props: tabProps) {
                     props.onTabDragEnd?.(
                       data.event.clientX,
                       data.event.clientY,
-                      tab.id,
+                      tabCtx.tab.id,
                     );
                     setFocusId(currentDraggingTabId()!);
                     setReorderTabIndex(null);
@@ -249,34 +217,31 @@ export function Tab(props: tabProps) {
                 }}
               >
                 <Tabs.Trigger
-                  value={tab.id}
+                  value={tabCtx.tab.id}
                   paddingRight="0rem"
                   paddingLeft="0.5rem"
                   borderBottomWidth={
                     currentDraggingTabId().length > 0
-                      ? currentDraggingTabId() === tab.id
+                      ? currentDraggingTabId() === tabCtx.tab.id
                         ? "3px"
                         : "0px"
-                      : getFocusId() === tab.id
+                      : getFocusId() === tabCtx.tab.id
                         ? "3px"
                         : "0px"
                   }
                   marginTop={
                     currentDraggingTabId().length > 0
-                      ? currentDraggingTabId() === tab.id
+                      ? currentDraggingTabId() === tabCtx.tab.id
                         ? `calc(0.5rem + 1px)`
                         : "0.5rem"
-                      : getFocusId() === tab.id
+                      : getFocusId() === tabCtx.tab.id
                         ? `calc(0.5rem + 1px)`
                         : `0.5rem`
                   }
                   borderBottomColor="accent.emphasized"
                 >
                   <Editable.Root
-                    defaultValue={parseTabName(
-                      tab.tabName ? tab.tabName : "",
-                      tab.filePath ? tab.filePath : "",
-                    )}
+                    defaultValue={tabCtx.tab.tabName}
                     activationMode="dblclick"
                     onValueCommit={(editableDetails: { value: string }) => {
                       setTabName(tabIndex(), editableDetails.value);
@@ -316,7 +281,7 @@ export function Tab(props: tabProps) {
                   />
                 </Show>
                 <Portal>
-                  {currentDraggingTabId() === tab.id && (
+                  {currentDraggingTabId() === tabCtx.tab.id && (
                     <Stack
                       direction="row"
                       borderBottomColor="accent.emphasized"
@@ -338,10 +303,7 @@ export function Tab(props: tabProps) {
                         paddingTop="0.5rem"
                         whiteSpace="nowrap"
                       >
-                        {parseTabName(
-                          tab.tabName ? tab.tabName : "",
-                          tab.filePath ? tab.filePath : "",
-                        )}
+                        {tabCtx.tab.tabName}
                       </Text>
                       <IconButton variant="ghost" size="sm" borderRadius="3rem">
                         <IconX />
