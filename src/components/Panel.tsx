@@ -101,6 +101,7 @@ export function Panel(props: JSX.HTMLAttributes<HTMLDivElement>) {
       <Show when={isDragging()}>
         <Stack
           style={{
+            "z-index": "1",
             width:
               currentDraggingTabLocation() === "centerSplitter" ||
               currentDraggingTabLocation() === "otherPanel"
