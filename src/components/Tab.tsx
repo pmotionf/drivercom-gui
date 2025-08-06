@@ -21,7 +21,6 @@ export type TabType = {
 
 export type tabProps = JSX.HTMLAttributes<HTMLDivElement> & {
   key: string;
-  focusId: string;
   onTabDragging?: (clientX: number, clientY: number, tabId: string) => void;
   onTabDragEnd?: (
     clientX: number,
@@ -38,6 +37,10 @@ export function Tab(props: tabProps) {
 
   const getTabContexts = (): TabContext[] => {
     return tabContexts.get(props.key)![0].tabContext!;
+  };
+
+  const getFocusTabId = () => {
+    return tabContexts.get(props.key)![0].focusedTab;
   };
 
   const setTabName = (tabIndex: number, newName: string) => {
@@ -103,7 +106,7 @@ export function Tab(props: tabProps) {
 
   // This is a create effect for scrolling the tab list automatically.
   createEffect(() => {
-    const focusedTab = props.focusId;
+    const focusedTab = getFocusTabId();
     if (!focusedTab) return;
     const currentTabTrigger = document.getElementById(focusedTab);
     if (scrollContainer && currentTabTrigger) {
@@ -223,7 +226,7 @@ export function Tab(props: tabProps) {
                       ? currentDraggingTabId() === tabCtx.tab.id
                         ? "3px"
                         : "0px"
-                      : props.focusId === tabCtx.tab.id
+                      : getFocusTabId() === tabCtx.tab.id
                         ? "3px"
                         : "0px"
                   }
@@ -232,7 +235,7 @@ export function Tab(props: tabProps) {
                       ? currentDraggingTabId() === tabCtx.tab.id
                         ? `calc(0.5rem + 1px)`
                         : "0.5rem"
-                      : props.focusId === tabCtx.tab.id
+                      : getFocusTabId() === tabCtx.tab.id
                         ? `calc(0.5rem + 1px)`
                         : `0.5rem`
                   }

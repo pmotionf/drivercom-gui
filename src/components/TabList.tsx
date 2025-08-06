@@ -1,7 +1,6 @@
 import {
   createContext,
   createEffect,
-  createSignal,
   JSX,
   on,
   Show,
@@ -200,19 +199,13 @@ export function TabList(
     gap: 24,
   });
 
-  const [currentFocusTab, setCurrentFocusTab] = createSignal<string>("");
-
-  createEffect(() => {
-    setCurrentFocusTab(getTabContexts().focusedTab);
-  });
-
   return (
     <>
       <Tabs.Root
         id={tabListProps.id}
         width="100%"
         height="100%"
-        value={currentFocusTab()}
+        value={getTabContexts().focusedTab}
         onValueChange={(tabDetails: { value: string }) => {
           if (getTabContexts().focusedTab !== tabDetails.value) {
             setFocusTab(tabDetails.value);
@@ -221,7 +214,6 @@ export function TabList(
       >
         <Tab
           key={tabListProps.id}
-          focusId={currentFocusTab()}
           style={{
             height: "3rem",
           }}
@@ -307,7 +299,7 @@ export function TabList(
         <For each={getTabContexts().tabContext}>
           {(tabCtx) => {
             return (
-              <Show when={currentFocusTab() === tabCtx.tab.id}>
+              <Show when={getTabContexts().focusedTab === tabCtx.tab.id}>
                 <div style={{ width: "100%", height: `calc(100% - 3rem)` }}>
                   <tabPageContext.Provider
                     value={{
