@@ -1,10 +1,5 @@
 import { createContext, JSX, useContext } from "solid-js";
-import {
-  TabContext,
-  TabListContext,
-  TabListProps,
-  TabLocation,
-} from "./TabList.tsx";
+import { TabListContext, TabListProps, TabLocation } from "./TabList.tsx";
 import { createSignal } from "solid-js";
 import { Show } from "solid-js";
 //@ts-ignore Has an Any type error
@@ -22,11 +17,7 @@ export type panelProps = {
   id: string;
   key: string;
   onDeletePanel?: () => void;
-  onSplitTab?: (
-    location: TabLocation,
-    draggedTab: TabContext,
-    mouseX: number,
-  ) => void;
+  onCreatePanel?: (tabLocation: TabLocation, newPanelKey: string) => void;
 };
 
 export const panelContext = createContext<TabListProps>();
@@ -38,7 +29,6 @@ export function Panel(props: JSX.HTMLAttributes<HTMLDivElement>) {
 
   const [currentDraggingTabLocation, setCurrentDraggingTabLocation] =
     createSignal<TabLocation>("none");
-  const [draggedTab, setDraggedTab] = createSignal<TabContext | null>(null);
   const [isDragging, setIsDragging] = createSignal<boolean>(false);
   const [nextPanel, setNextPanel] = createSignal<number | null>(null);
 
@@ -77,10 +67,9 @@ export function Panel(props: JSX.HTMLAttributes<HTMLDivElement>) {
         <panelContext.Provider
           value={{
             id: panelLayoutCtx.id,
-            onDraggingTab: (tabLocation, draggedTab, mouseX) => {
+            onDraggingTab: (tabLocation, mouseX) => {
               if (tabLocation !== currentDraggingTabLocation()) {
                 setCurrentDraggingTabLocation(tabLocation);
-                setDraggedTab(draggedTab);
                 setIsDragging(true);
               }
 
@@ -88,12 +77,16 @@ export function Panel(props: JSX.HTMLAttributes<HTMLDivElement>) {
                 setNextPanel(getNextPanel(getPanelIds(), mouseX));
               }
             },
-            onTabDragEnd: (clientX) => {
-              panelLayoutCtx.onSplitTab?.(
-                currentDraggingTabLocation(),
-                draggedTab()!,
-                clientX,
-              );
+            onTabDragEnd: (newPanelKey) => {
+              if (
+                currentDraggingTabLocation() === "leftSplitter" ||
+                currentDraggingTabLocation() === "rightSplitter"
+              ) {
+                panelLayoutCtx.onCreatePanel?.(
+                  currentDraggingTabLocation(),
+                  newPanelKey!,
+                );
+              }
               setIsDragging(false);
               setCurrentDraggingTabLocation("none");
             },
