@@ -1,11 +1,4 @@
-import {
-  createContext,
-  createEffect,
-  JSX,
-  on,
-  Show,
-  useContext,
-} from "solid-js";
+import { createContext, createEffect, JSX, on, useContext } from "solid-js";
 import { Tabs } from "~/components/ui/tabs.tsx";
 import { Tab, TabType } from "~/components/Tab.tsx";
 import { For } from "solid-js/web";
@@ -19,6 +12,7 @@ import { Toast } from "./ui/toast.tsx";
 import { IconX } from "@tabler/icons-solidjs";
 import { panelContext } from "./Panel.tsx";
 import { ConfigTabPage } from "~/pages/Configuration/ConfigTabContent.tsx";
+import { createSignal } from "solid-js";
 
 type ValueOf<Obj> = Obj[keyof Obj];
 type OneOnly<Obj, Key extends keyof Obj> = {
@@ -121,10 +115,8 @@ export function TabList(
     nextFocusId: string,
   ) => {
     const updateTab = [...tabListCtx.filter((_, index) => index !== tabIndex)];
-    return tabContexts.get(tabListProps.id)![1]({
-      tabContext: updateTab,
-      focusedTab: nextFocusId,
-    });
+    setTabContexts(updateTab);
+    setFocusTab(nextFocusId);
   };
 
   const parseTabLocation = (
@@ -199,6 +191,8 @@ export function TabList(
     gap: 24,
   });
 
+  const [isTabClicked, setIsTabClicked] = createSignal<boolean>(true);
+
   return (
     <>
       <Tabs.Root
@@ -206,8 +200,15 @@ export function TabList(
         width="100%"
         height="100%"
         value={getTabContexts().focusedTab}
-        onValueChange={(tabDetails: { value: string }) => {
-          if (getTabContexts().focusedTab !== tabDetails.value) {
+        onValueChange={(tabDetails) => {
+          if (!isTabClicked()) {
+            setIsTabClicked(true);
+            return;
+          }
+          if (
+            getTabContexts().focusedTab !== tabDetails.value &&
+            tabDetails.value
+          ) {
             setFocusTab(tabDetails.value);
           }
         }}
@@ -233,9 +234,8 @@ export function TabList(
               getTabContexts().focusedTab,
               getTabContexts().tabContext,
             );
-            setTimeout(() => {
-              deleteTab(tabIndex, getTabContexts().tabContext, nextFocusTabId);
-            }, 200);
+            deleteTab(tabIndex, getTabContexts().tabContext, nextFocusTabId);
+            setIsTabClicked(false);
           }}
           onTabDragEnd={(
             mouseX: number,
@@ -299,8 +299,8 @@ export function TabList(
         <For each={getTabContexts().tabContext}>
           {(tabCtx) => {
             return (
-              <Show when={getTabContexts().focusedTab === tabCtx.tab.id}>
-                <div style={{ width: "100%", height: `calc(100% - 3rem)` }}>
+              <div style={{ width: "100%", height: `calc(100% - 3rem)` }}>
+                <Tabs.Content value={tabCtx.tab.id}>
                   <tabPageContext.Provider
                     value={{
                       key: tabListProps.id,
@@ -312,8 +312,8 @@ export function TabList(
                   >
                     {props.children}
                   </tabPageContext.Provider>
-                </div>
-              </Show>
+                </Tabs.Content>
+              </div>
             );
           }}
         </For>
