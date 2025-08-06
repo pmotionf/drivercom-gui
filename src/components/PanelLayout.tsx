@@ -182,14 +182,16 @@ export function PanelLayout(props: PanelLayoutProps) {
                           getPanelContext(getPanelKey())[nextPanelIndex].id;
                         const prevTabContext =
                           tabContexts.get(nextPanelId)?.[0];
-                        tabContexts.get(nextPanelId)?.[1]("tabContext", [
-                          ...prevTabContext!.tabContext,
-                          draggedTab,
-                        ]);
-                        tabContexts.get(nextPanelId)?.[1](
-                          "focusedTab",
-                          draggedTab.tab.id,
-                        );
+
+                        setTimeout(() => {
+                          tabContexts.get(nextPanelId)?.[1]({
+                            tabContext: [
+                              ...prevTabContext!.tabContext,
+                              draggedTab,
+                            ],
+                            focusedTab: draggedTab.tab.id,
+                          });
+                        }, 200);
                       }
                     },
                   }}

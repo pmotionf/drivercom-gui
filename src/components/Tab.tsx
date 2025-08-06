@@ -21,8 +21,14 @@ export type TabType = {
 
 export type tabProps = JSX.HTMLAttributes<HTMLDivElement> & {
   key: string;
+  focusId: string;
   onTabDragging?: (clientX: number, clientY: number, tabId: string) => void;
-  onTabDragEnd?: (clientX: number, clientY: number, tabId: string) => void;
+  onTabDragEnd?: (
+    clientX: number,
+    clientY: number,
+    tabId: string,
+    tabIndex: number,
+  ) => void;
   onCreateTab?: () => void;
   onDeleteTab?: (index: number) => void;
 };
@@ -32,14 +38,6 @@ export function Tab(props: tabProps) {
 
   const getTabContexts = (): TabContext[] => {
     return tabContexts.get(props.key)![0].tabContext!;
-  };
-
-  const getFocusId = (): string => {
-    return tabContexts.get(props.key)![0].focusedTab!;
-  };
-
-  const setFocusId = (newFocus: string) => {
-    return tabContexts.get(props.key)?.[1]("focusedTab", newFocus);
   };
 
   const setTabName = (tabIndex: number, newName: string) => {
@@ -105,10 +103,10 @@ export function Tab(props: tabProps) {
 
   // This is a create effect for scrolling the tab list automatically.
   createEffect(() => {
-    const focusedTab = getFocusId();
+    const focusedTab = props.focusId;
     if (!focusedTab) return;
     const currentTabTrigger = document.getElementById(focusedTab);
-    if (scrollContainer) {
+    if (scrollContainer && currentTabTrigger) {
       scrollContainer.scrollTo({ left: currentTabTrigger!.offsetLeft });
     }
   });
@@ -208,8 +206,8 @@ export function Tab(props: tabProps) {
                       data.event.clientX,
                       data.event.clientY,
                       tabCtx.tab.id,
+                      tabIndex(),
                     );
-                    setFocusId(currentDraggingTabId()!);
                     setReorderTabIndex(null);
                     setCurrentDraggingTabId("");
                     refreshUI();
@@ -225,7 +223,7 @@ export function Tab(props: tabProps) {
                       ? currentDraggingTabId() === tabCtx.tab.id
                         ? "3px"
                         : "0px"
-                      : getFocusId() === tabCtx.tab.id
+                      : props.focusId === tabCtx.tab.id
                         ? "3px"
                         : "0px"
                   }
@@ -234,7 +232,7 @@ export function Tab(props: tabProps) {
                       ? currentDraggingTabId() === tabCtx.tab.id
                         ? `calc(0.5rem + 1px)`
                         : "0.5rem"
-                      : getFocusId() === tabCtx.tab.id
+                      : props.focusId === tabCtx.tab.id
                         ? `calc(0.5rem + 1px)`
                         : `0.5rem`
                   }

@@ -120,17 +120,9 @@ export function TabList(
     return tabIdList[nextFocusedTabIndex];
   };
 
-  const deleteTab = (
-    tabIndex: number,
-    tabListCtx: TabContext[],
-    nextFocusedTabId: string,
-  ) => {
+  const deleteTab = (tabIndex: number, tabListCtx: TabContext[]) => {
     const updateTab = [...tabListCtx.filter((_, index) => index !== tabIndex)];
-
-    setTimeout(() => {
-      setFocusTab(nextFocusedTabId);
-      setTabContexts(updateTab);
-    }, 10);
+    return updateTab;
   };
 
   const parseTabLocation = (
@@ -173,7 +165,11 @@ export function TabList(
     gap: 24,
   });
 
-  const [tabContextRender, setTabContextRender] = createSignal<boolean>(true);
+  const [currentFocusTab, setCurrentFocusTab] = createSignal<string>("");
+
+  createEffect(() => {
+    setCurrentFocusTab(getTabContexts().focusedTab);
+  });
 
   return (
     <>
@@ -181,13 +177,16 @@ export function TabList(
         id={tabListProps.id}
         width="100%"
         height="100%"
-        value={getTabContexts().focusedTab ? getTabContexts().focusedTab : ""}
+        value={currentFocusTab()}
         onValueChange={(tabDetails: { value: string }) => {
-          setFocusTab(tabDetails.value);
+          if (getTabContexts().focusedTab !== tabDetails.value) {
+            setFocusTab(tabDetails.value);
+          }
         }}
       >
         <Tab
           key={tabListProps.id}
+          focusId={currentFocusTab()}
           style={{
             height: "3rem",
           }}
@@ -202,14 +201,29 @@ export function TabList(
             }
           }}
           onDeleteTab={(tabIndex) => {
+            const deleteTabList = deleteTab(
+              tabIndex,
+              getTabContexts().tabContext,
+            );
             const nextFocusTabId = getNextFocusTabId(
               tabIndex,
               getTabContexts().focusedTab,
               getTabContexts().tabContext,
             );
-            deleteTab(tabIndex, getTabContexts().tabContext, nextFocusTabId);
+            setTimeout(() => {
+              tabContexts.get(tabListProps.id)![1]({
+                tabContext: deleteTabList,
+                focusedTab: nextFocusTabId,
+              });
+            }, 200);
           }}
-          onTabDragEnd={(mouseX: number, mouseY: number, tabId: string) => {
+          onTabDragEnd={(
+            mouseX: number,
+            mouseY: number,
+            tabId: string,
+            tabIndex: number,
+          ) => {
+            setFocusTab(tabId);
             const tabListId = `tabs:${tabListProps.id}`;
             const tabLocation = parseTabLocation(
               mouseX,
@@ -223,26 +237,23 @@ export function TabList(
               tabLocation === "leftSplitter" ||
               tabLocation === "otherPanel"
             ) {
-              const deleteTabIndex = getTabContexts()
-                .tabContext.map((tabCtx) => {
-                  return tabCtx.tab.id;
-                })
-                .indexOf(tabId);
+              const deleteTabList = deleteTab(
+                tabIndex,
+                getTabContexts().tabContext,
+              );
               const nextFocusTabId = getNextFocusTabId(
-                deleteTabIndex,
+                tabIndex,
                 getTabContexts().focusedTab,
                 getTabContexts().tabContext,
               );
-              deleteTab(
-                deleteTabIndex,
-                getTabContexts().tabContext,
-                nextFocusTabId,
-              );
+
+              tabContexts.get(tabListProps.id)![1]({
+                tabContext: deleteTabList,
+                focusedTab: nextFocusTabId,
+              });
             }
 
             tabListProps.onTabDragEnd?.(mouseX);
-            setTabContextRender(false);
-            setTabContextRender(true);
           }}
           onTabDragging={(mouseX: number, mouseY: number, tabId: string) => {
             const tabListId = `tabs:${tabListProps.id}`;
@@ -266,16 +277,11 @@ export function TabList(
             tabListProps.onDraggingTab?.(updateTabLocation, draggedTab, mouseX);
           }}
         />
-        <Show when={tabContextRender()}>
-          <For each={getTabContexts().tabContext}>
-            {(tabCtx) => {
-              return (
-                <Tabs.Content
-                  value={tabCtx.tab.id}
-                  width="100%"
-                  height={`calc(100% - 3rem)`}
-                  overflowY="auto"
-                >
+        <For each={getTabContexts().tabContext}>
+          {(tabCtx) => {
+            return (
+              <Show when={currentFocusTab() === tabCtx.tab.id}>
+                <div style={{ width: "100%", height: `calc(100% - 3rem)` }}>
                   <tabPageContext.Provider
                     value={{
                       key: tabListProps.id,
@@ -287,11 +293,11 @@ export function TabList(
                   >
                     {props.children}
                   </tabPageContext.Provider>
-                </Tabs.Content>
-              );
-            }}
-          </For>
-        </Show>
+                </div>
+              </Show>
+            );
+          }}
+        </For>
       </Tabs.Root>
       <Toast.Toaster toaster={toaster}>
         {(toast) => (
