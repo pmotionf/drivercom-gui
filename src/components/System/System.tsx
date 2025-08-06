@@ -1,4 +1,4 @@
-import { createEffect, JSX, Show } from "solid-js";
+import { JSX } from "solid-js";
 import { Line } from "./Line.tsx";
 import { Accordion } from "../ui/accordion.tsx";
 import { For } from "solid-js/web";
@@ -23,18 +23,13 @@ export type SystemProps = JSX.HTMLAttributes<HTMLDivElement> & {
 export function System(props: SystemProps) {
   if (props.value.lines.length === 0) return;
 
-  const [lines, setLines] = createSignal(props.value.lines);
-  createEffect(() => {
-    setLines(props.value.lines);
-  });
-
   const [accordionStates, setAccordionStates] = createSignal<string[]>(
     props.value.lines!.map((val) => val.line.name!),
   );
   const [dragging, setDragging] = createSignal<boolean>(false);
 
   const [items, setItems] = createSignal(
-    Array.from({ length: lines().length }, (_, i) => i),
+    Array.from({ length: props.value.lines.length }, (_, i) => i),
   );
   const ids = () => items();
 
@@ -71,55 +66,44 @@ export function System(props: SystemProps) {
           }
         }}
       >
-        <Show
-          when={items().length !== 1}
-          fallback={
-            <Line value={lines()[0].line} system={lines()[0].system}>
-              <Station>
-                <Axis />
-              </Station>
-            </Line>
-          }
+        <DragDropProvider
+          onDragStart={() => setDragging(true)}
+          //@ts-ignore Using Library
+          onDragEnd={onDragEnd}
+          collisionDetector={closestCenter}
         >
-          <DragDropProvider
-            onDragStart={() => setDragging(true)}
-            //@ts-ignore Using Library
-            onDragEnd={onDragEnd}
-            collisionDetector={closestCenter}
-          >
-            <DragDropSensors />
-            <SortableProvider ids={ids()}>
-              <For each={items()}>
-                {(item, i) => {
-                  const sortable = createSortable(item);
-                  //@ts-ignore Using Library
-                  const [state] = useDragDropContext();
+          <DragDropSensors />
+          <SortableProvider ids={ids()}>
+            <For each={items()}>
+              {(item) => {
+                const sortable = createSortable(item);
+                //@ts-ignore Using Library
+                const [state] = useDragDropContext();
 
-                  return (
-                    <div
-                      //@ts-ignore Using Library
-                      use:sortable
-                      class="sortable"
-                      classList={{
-                        "opacity-25": sortable.isActiveDraggable,
-                        "transition-transform": !!state.active.draggable,
-                      }}
+                return (
+                  <div
+                    //@ts-ignore Using Library
+                    use:sortable
+                    class="sortable"
+                    classList={{
+                      "opacity-25": sortable.isActiveDraggable,
+                      "transition-transform": !!state.active.draggable,
+                    }}
+                  >
+                    <Line
+                      value={props.value.lines[item].line}
+                      system={props.value.lines[item].system!}
                     >
-                      <Line
-                        value={lines()[i()].line}
-                        system={lines()[i()].system!}
-                      >
-                        <Station>
-                          <Axis />
-                        </Station>
-                      </Line>
-                    </div>
-                  );
-                }}
-              </For>
-            </SortableProvider>
-          </DragDropProvider>
-        </Show>
+                      <Station>
+                        <Axis />
+                      </Station>
+                    </Line>
+                  </div>
+                );
+              }}
+            </For>
+          </SortableProvider>
+        </DragDropProvider>
       </Accordion.Root>
     </div>
   );
