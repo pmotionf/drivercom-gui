@@ -134,11 +134,18 @@ export function TabList(
 
     const tab = document.getElementById(tabId);
     const tabHeight = tab!.offsetHeight;
+    const root = document.getElementById("root");
+    const divEnd = root!.offsetWidth;
+
+    const navBar = document.getElementById("radio-group:collapsed_side_bar");
+    const divStart = navBar!.offsetWidth;
 
     if (clientX >= tabListContainerEnd) {
-      return "otherPanel";
+      if (clientX >= divEnd) return "none";
+      else return "otherPanel";
     } else if (clientX <= tabListContainerStart) {
-      return "otherPanel";
+      if (clientX <= divStart) return "none";
+      else return "otherPanel";
     } else {
       if (clientY > tabHeight) {
         return clientX > tabListContainerStart &&
@@ -259,6 +266,7 @@ export function TabList(
             ) {
               const draggedTab = getTabContexts().tabContext[tabIndex];
               if (tabLocation !== "otherPanel") {
+                if (getTabContexts().tabContext.length <= 1) return;
                 newTabListKey = crypto.randomUUID();
                 createNewTabList(newTabListKey, draggedTab);
               } else {
@@ -299,21 +307,22 @@ export function TabList(
         <For each={getTabContexts().tabContext}>
           {(tabCtx) => {
             return (
-              <div style={{ width: "100%", height: `calc(100% - 3rem)` }}>
-                <Tabs.Content value={tabCtx.tab.id}>
-                  <tabPageContext.Provider
-                    value={{
-                      key: tabListProps.id,
-                      tabId: tabCtx.tab.id,
-                      onErrorMessage: (error) => {
-                        toaster.create(error);
-                      },
-                    }}
-                  >
-                    {props.children}
-                  </tabPageContext.Provider>
-                </Tabs.Content>
-              </div>
+              <Tabs.Content
+                value={tabCtx.tab.id}
+                style={{ width: "100%", height: `calc(100% - 3rem)` }}
+              >
+                <tabPageContext.Provider
+                  value={{
+                    key: tabListProps.id,
+                    tabId: tabCtx.tab.id,
+                    onErrorMessage: (error) => {
+                      toaster.create(error);
+                    },
+                  }}
+                >
+                  {props.children}
+                </tabPageContext.Provider>
+              </Tabs.Content>
             );
           }}
         </For>
