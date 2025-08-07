@@ -1,4 +1,11 @@
-import { createContext, createEffect, JSX, on, useContext } from "solid-js";
+import {
+  createContext,
+  createEffect,
+  JSX,
+  on,
+  Show,
+  useContext,
+} from "solid-js";
 import { Tabs } from "~/components/ui/tabs.tsx";
 import { Tab, TabType } from "~/components/Tab.tsx";
 import { For } from "solid-js/web";
@@ -199,6 +206,7 @@ export function TabList(
   });
 
   const [isTabClicked, setIsTabClicked] = createSignal<boolean>(true);
+  const [tabRender, setTabRender] = createSignal<boolean>(true);
 
   return (
     <>
@@ -220,90 +228,98 @@ export function TabList(
           }
         }}
       >
-        <Tab
-          key={tabListProps.id}
-          style={{
-            height: "3rem",
-          }}
-          onCreateTab={async () => {
-            if (props.onCreateTab) {
-              props.onCreateTab?.(tabListProps.id);
-            } else {
-              setTabContexts([
-                ...getTabContexts().tabContext,
-                { tab: { id: crypto.randomUUID(), tabName: "new Tab" } },
-              ]);
-            }
-          }}
-          onDeleteTab={(tabIndex) => {
-            const nextFocusTabId = getNextFocusTabId(
-              tabIndex,
-              getTabContexts().focusedTab,
-              getTabContexts().tabContext,
-            );
-            deleteTab(tabIndex, getTabContexts().tabContext, nextFocusTabId);
-            setIsTabClicked(false);
-          }}
-          onTabDragEnd={(
-            mouseX: number,
-            mouseY: number,
-            tabId: string,
-            tabIndex: number,
-          ) => {
-            const tabListId = `tabs:${tabListProps.id}`;
-            const tabLocation = parseTabLocation(
-              mouseX,
-              mouseY,
-              tabId,
-              tabListId,
-            );
-            let newTabListKey: string | undefined = undefined;
-
-            if (
-              tabLocation === "rightSplitter" ||
-              tabLocation === "leftSplitter" ||
-              tabLocation === "otherPanel"
-            ) {
-              const draggedTab = getTabContexts().tabContext[tabIndex];
-              if (tabLocation !== "otherPanel") {
-                if (getTabContexts().tabContext.length <= 1) return;
-                newTabListKey = crypto.randomUUID();
-                createNewTabList(newTabListKey, draggedTab);
+        <Show when={tabRender()}>
+          <Tab
+            key={tabListProps.id}
+            style={{
+              height: "3rem",
+            }}
+            onCreateTab={async () => {
+              if (props.onCreateTab) {
+                props.onCreateTab?.(tabListProps.id);
               } else {
-                moveTabToOtherTabList(mouseX, draggedTab);
+                setTabContexts([
+                  ...getTabContexts().tabContext,
+                  { tab: { id: crypto.randomUUID(), tabName: "new Tab" } },
+                ]);
               }
-
+            }}
+            onDeleteTab={(tabIndex) => {
               const nextFocusTabId = getNextFocusTabId(
                 tabIndex,
                 getTabContexts().focusedTab,
                 getTabContexts().tabContext,
               );
               deleteTab(tabIndex, getTabContexts().tabContext, nextFocusTabId);
-            } else {
-              setFocusTab(tabId);
-            }
+              setIsTabClicked(false);
+            }}
+            onTabDragEnd={(
+              mouseX: number,
+              mouseY: number,
+              tabId: string,
+              tabIndex: number,
+            ) => {
+              const tabListId = `tabs:${tabListProps.id}`;
+              const tabLocation = parseTabLocation(
+                mouseX,
+                mouseY,
+                tabId,
+                tabListId,
+              );
+              let newTabListKey: string | undefined = undefined;
 
-            tabListProps.onTabDragEnd?.(newTabListKey);
-          }}
-          onTabDragging={(mouseX: number, mouseY: number, tabId: string) => {
-            const tabListId = `tabs:${tabListProps.id}`;
-            const tabLocation = parseTabLocation(
-              mouseX,
-              mouseY,
-              tabId,
-              tabListId,
-            );
+              if (
+                tabLocation === "rightSplitter" ||
+                tabLocation === "leftSplitter" ||
+                tabLocation === "otherPanel"
+              ) {
+                const draggedTab = getTabContexts().tabContext[tabIndex];
+                if (tabLocation === "otherPanel") {
+                  moveTabToOtherTabList(mouseX, draggedTab);
+                } else {
+                  if (getTabContexts().tabContext.length <= 1) return;
+                  newTabListKey = crypto.randomUUID();
+                  createNewTabList(newTabListKey, draggedTab);
+                }
 
-            const tabList = getTabContexts().tabContext;
-            const updateTabLocation =
-              (tabLocation === "rightSplitter" && tabList.length <= 1) ||
-              (tabLocation === "leftSplitter" && tabList.length <= 1)
-                ? "centerSplitter"
-                : tabLocation;
+                const nextFocusTabId = getNextFocusTabId(
+                  tabIndex,
+                  getTabContexts().focusedTab,
+                  getTabContexts().tabContext,
+                );
+                deleteTab(
+                  tabIndex,
+                  getTabContexts().tabContext,
+                  nextFocusTabId,
+                );
+              } else {
+                setFocusTab(tabId);
+                setTabRender(false);
+                setTabRender(true);
+              }
 
-            tabListProps.onDraggingTab?.(updateTabLocation, mouseX);
-          }}
-        />
+              tabListProps.onTabDragEnd?.(newTabListKey);
+            }}
+            onTabDragging={(mouseX: number, mouseY: number, tabId: string) => {
+              const tabListId = `tabs:${tabListProps.id}`;
+              const tabLocation = parseTabLocation(
+                mouseX,
+                mouseY,
+                tabId,
+                tabListId,
+              );
+
+              const tabList = getTabContexts().tabContext;
+              const updateTabLocation =
+                (tabLocation === "rightSplitter" && tabList.length <= 1) ||
+                (tabLocation === "leftSplitter" && tabList.length <= 1)
+                  ? "centerSplitter"
+                  : tabLocation;
+
+              tabListProps.onDraggingTab?.(updateTabLocation, mouseX);
+            }}
+          />
+        </Show>
         <For each={getTabContexts().tabContext}>
           {(tabCtx) => {
             return (
