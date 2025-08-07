@@ -168,17 +168,6 @@ export function ConfigTabContent() {
       const parseFileToObject = JSON.parse(output);
       return parseFileToObject;
     } catch {
-      toaster.create({
-        title: "Invalid File Path",
-        description: "The file path is invalid.",
-        type: "error",
-      });
-      setRecentConfigFilePaths((prev) => {
-        const newRecentFiles = prev.filter(
-          (prevFilePath) => prevFilePath !== path,
-        );
-        return newRecentFiles;
-      });
       return null;
     }
   }
@@ -196,6 +185,27 @@ export function ConfigTabContent() {
       .toString();
 
     return newFileFormat;
+  }
+
+  function checkNullIncluded(format: object): boolean {
+    const values = Object.values(format);
+    if (values.some((val) => val === null)) {
+      return true;
+    } else {
+      let isNullIncluded = false;
+      const objectList: object[] = values.filter(
+        (val) => typeof val === "object",
+      );
+      for (let i = 0; i < objectList.length; i++) {
+        const object = objectList[i];
+        const result = checkNullIncluded(object);
+        if (result) {
+          isNullIncluded = true;
+          break;
+        }
+      }
+      return isNullIncluded;
+    }
   }
 
   function compareFileFormat(newFile: object, fileFormat: object): boolean {
@@ -381,6 +391,34 @@ export function ConfigTabContent() {
               const path = await openFileDialog();
               if (!path) return;
               const object = await readJsonFile(path);
+              if (!object) {
+                toaster.create({
+                  title: "Invalid File Path",
+                  description: "The file path is invalid.",
+                  type: "error",
+                });
+                setRecentConfigFilePaths((prev) => {
+                  const newRecentFiles = prev.filter(
+                    (prevFilePath) => prevFilePath !== path,
+                  );
+                  return newRecentFiles;
+                });
+                return;
+              }
+              if (checkNullIncluded(object)) {
+                toaster.create({
+                  title: "Invalid File",
+                  description: "The file is invalid.",
+                  type: "error",
+                });
+                setRecentConfigFilePaths((prev) => {
+                  const newRecentFiles = prev.filter(
+                    (prevFilePath) => prevFilePath !== path,
+                  );
+                  return newRecentFiles;
+                });
+                return;
+              }
               const checkObject = compareFileFormat(
                 object!,
                 configFormFileFormat(),
@@ -391,6 +429,12 @@ export function ConfigTabContent() {
                   description: "The file is invalid.",
                   type: "error",
                 });
+                setRecentConfigFilePaths((prev) => {
+                  const newRecentFiles = prev.filter(
+                    (prevFilePath) => prevFilePath !== path,
+                  );
+                  return newRecentFiles;
+                });
                 return;
               }
               setFormData(object!, path);
@@ -398,6 +442,34 @@ export function ConfigTabContent() {
             }}
             onOpenRecentFile={async (filePath: string) => {
               const object = await readJsonFile(filePath);
+              if (!object) {
+                toaster.create({
+                  title: "Invalid File Path",
+                  description: "The file path is invalid.",
+                  type: "error",
+                });
+                setRecentConfigFilePaths((prev) => {
+                  const newRecentFiles = prev.filter(
+                    (prevFilePath) => prevFilePath !== filePath,
+                  );
+                  return newRecentFiles;
+                });
+                return;
+              }
+              if (checkNullIncluded(object)) {
+                toaster.create({
+                  title: "Invalid File",
+                  description: "The file is invalid.",
+                  type: "error",
+                });
+                setRecentConfigFilePaths((prev) => {
+                  const newRecentFiles = prev.filter(
+                    (prevFilePath) => prevFilePath !== filePath,
+                  );
+                  return newRecentFiles;
+                });
+                return;
+              }
               const checkObject = compareFileFormat(
                 object!,
                 configFormFileFormat(),
@@ -421,6 +493,34 @@ export function ConfigTabContent() {
             onReloadFile={async () => {
               if (!getFilePath()) return;
               const object = await readJsonFile(getFilePath()!);
+              if (!object) {
+                toaster.create({
+                  title: "Invalid File Path",
+                  description: "The file path is invalid.",
+                  type: "error",
+                });
+                setRecentConfigFilePaths((prev) => {
+                  const newRecentFiles = prev.filter(
+                    (prevFilePath) => prevFilePath !== getFilePath(),
+                  );
+                  return newRecentFiles;
+                });
+                return;
+              }
+              if (checkNullIncluded(object)) {
+                toaster.create({
+                  title: "Invalid File",
+                  description: "The file is invalid.",
+                  type: "error",
+                });
+                setRecentConfigFilePaths((prev) => {
+                  const newRecentFiles = prev.filter(
+                    (prevFilePath) => prevFilePath !== getFilePath(),
+                  );
+                  return newRecentFiles;
+                });
+                return;
+              }
               const checkObject = compareFileFormat(
                 object!,
                 configFormFileFormat(),
