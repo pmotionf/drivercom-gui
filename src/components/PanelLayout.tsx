@@ -2,11 +2,9 @@ import { JSX } from "solid-js/jsx-runtime";
 import { Show } from "solid-js/web";
 import { For } from "solid-js/web";
 import { Splitter } from "~/components/ui/splitter.tsx";
-import { TabContext, TabLocation } from "./TabList.tsx";
+import { TabLocation } from "./TabList.tsx";
 import { createContext, createSignal, onMount } from "solid-js";
-import { panelContexts, panelKeys, tabContexts } from "~/GlobalState.ts";
-import { createStore } from "solid-js/store";
-import { TabListContext } from "./TabList.tsx";
+import { panelContexts, panelKeys } from "~/GlobalState.ts";
 import { panelProps } from "./Panel.tsx";
 
 export type PanelSizeContext = {
@@ -57,15 +55,15 @@ export function PanelLayout(props: PanelLayoutProps) {
     location: TabLocation,
     index: number,
     panels: PanelSizeContext[],
-  ): { panelContext: PanelSizeContext[]; nextTabListId: string } => {
+    newPanelKey: string,
+  ): PanelSizeContext[] => {
     const panelIndex = location === "rightSplitter" ? index + 1 : index;
-    const uuid = getCryptoUUID();
 
     const currentLength = panels.length + 1;
     const newSize = 100 / currentLength;
 
     const newPanel: PanelSizeContext = {
-      id: uuid,
+      id: newPanelKey,
       size: newSize,
     };
 
@@ -81,7 +79,7 @@ export function PanelLayout(props: PanelLayoutProps) {
       newPanel,
       ...newSizePanels.slice(panelIndex),
     ];
-    return { panelContext: updatePanels, nextTabListId: newPanel.id };
+    return updatePanels;
   };
 
   function getCryptoUUID(): string {
@@ -141,7 +139,7 @@ export function PanelLayout(props: PanelLayoutProps) {
                         );
                       }
                     },
-                    onSplitTab: (tabLocation, draggedTab, mouseX) => {
+                    onCreatePanel: (tabLocation, newPanelKey) => {
                       if (
                         tabLocation === "leftSplitter" ||
                         tabLocation === "rightSplitter"
@@ -150,46 +148,9 @@ export function PanelLayout(props: PanelLayoutProps) {
                           tabLocation,
                           index(),
                           getPanelContext(getPanelKey()),
+                          newPanelKey,
                         );
-                        tabContexts.set(
-                          newSplit.nextTabListId,
-                          createStore<TabListContext>({
-                            tabContext: [draggedTab] as TabContext[],
-                            focusedTab: draggedTab.tab.id,
-                          }),
-                        );
-                        setPanelContext(getPanelKey(), newSplit.panelContext);
-                      }
-
-                      if (tabLocation === "otherPanel") {
-                        let nextPanelIndex: number = 0;
-                        getPanelContext(getPanelKey()).forEach((panel, i) => {
-                          const panelElement = document.getElementById(
-                            `tabs:${panel.id}`,
-                          );
-
-                          if (
-                            panelElement!.offsetLeft < mouseX &&
-                            mouseX <
-                              panelElement!.offsetLeft +
-                                panelElement!.offsetWidth
-                          ) {
-                            nextPanelIndex = i;
-                          }
-                        });
-
-                        const nextPanelId =
-                          getPanelContext(getPanelKey())[nextPanelIndex].id;
-                        const prevTabContext =
-                          tabContexts.get(nextPanelId)?.[0];
-                        tabContexts.get(nextPanelId)?.[1]("tabContext", [
-                          ...prevTabContext!.tabContext,
-                          draggedTab,
-                        ]);
-                        tabContexts.get(nextPanelId)?.[1](
-                          "focusedTab",
-                          draggedTab.tab.id,
-                        );
+                        setPanelContext(getPanelKey(), newSplit);
                       }
                     },
                   }}

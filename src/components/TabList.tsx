@@ -1,7 +1,6 @@
 import {
   createContext,
   createEffect,
-  createSignal,
   JSX,
   on,
   Show,
@@ -20,6 +19,7 @@ import { Toast } from "./ui/toast.tsx";
 import { IconX } from "@tabler/icons-solidjs";
 import { panelContext } from "./Panel.tsx";
 import { ConfigTabPage } from "~/pages/Configuration/ConfigTabContent.tsx";
+import { createSignal } from "solid-js";
 
 type ValueOf<Obj> = Obj[keyof Obj];
 type OneOnly<Obj, Key extends keyof Obj> = {
@@ -51,12 +51,8 @@ export type TabLocation =
 
 export type TabListProps = {
   id: string;
-  onDraggingTab?: (
-    location: TabLocation,
-    draggedTab: TabContext,
-    mouseX: number,
-  ) => void;
-  onTabDragEnd?: (clientX: number) => void;
+  onDraggingTab?: (location: TabLocation, mouseX: number) => void;
+  onTabDragEnd?: (newPanelKey?: string) => void;
   onDeleteTabList?: () => void;
 };
 
@@ -123,14 +119,11 @@ export function TabList(
   const deleteTab = (
     tabIndex: number,
     tabListCtx: TabContext[],
-    nextFocusedTabId: string,
+    nextFocusId: string,
   ) => {
     const updateTab = [...tabListCtx.filter((_, index) => index !== tabIndex)];
-
-    setTimeout(() => {
-      setFocusTab(nextFocusedTabId);
-      setTabContexts(updateTab);
-    }, 10);
+    setTabContexts(updateTab);
+    setFocusTab(nextFocusId);
   };
 
   const parseTabLocation = (
@@ -148,11 +141,18 @@ export function TabList(
 
     const tab = document.getElementById(tabId);
     const tabHeight = tab!.offsetHeight;
+    const root = document.getElementById("root");
+    const divEnd = root!.offsetWidth;
+
+    const navBar = document.getElementById("radio-group:collapsed_side_bar");
+    const divStart = navBar!.offsetWidth;
 
     if (clientX >= tabListContainerEnd) {
-      return "otherPanel";
+      if (clientX >= divEnd) return "none";
+      else return "otherPanel";
     } else if (clientX <= tabListContainerStart) {
-      return "otherPanel";
+      if (clientX <= divStart) return "none";
+      else return "otherPanel";
     } else {
       if (clientY > tabHeight) {
         return clientX > tabListContainerStart &&
@@ -168,12 +168,45 @@ export function TabList(
     }
   };
 
+  const moveTabToOtherTabList = (mouseX: number, draggedTab: TabContext) => {
+    let nextPanelIndex: number = 0;
+    const tabContextKeys = Array.from(tabContexts.keys());
+    tabContextKeys.forEach((tab, i) => {
+      const panelElement = document.getElementById(`tabs:${tab}`);
+      if (
+        panelElement &&
+        panelElement!.offsetLeft < mouseX &&
+        mouseX < panelElement!.offsetLeft + panelElement!.offsetWidth
+      ) {
+        nextPanelIndex = i;
+      }
+    });
+    const nextTabList = tabContextKeys[nextPanelIndex];
+    const nextTabContext = tabContexts.get(nextTabList)?.[0];
+
+    tabContexts.get(nextTabList)?.[1]({
+      tabContext: [...nextTabContext!.tabContext, draggedTab],
+      focusedTab: draggedTab.tab.id,
+    });
+  };
+
+  const createNewTabList = (newKey: string, draggedTab: TabContext) => {
+    tabContexts.set(
+      newKey,
+      createStore<TabListContext>({
+        tabContext: [draggedTab] as TabContext[],
+        focusedTab: draggedTab.tab.id,
+      }),
+    );
+  };
+
   const toaster = Toast.createToaster({
     placement: "top-end",
     gap: 24,
   });
 
-  const [tabContextRender, setTabContextRender] = createSignal<boolean>(true);
+  const [isTabClicked, setIsTabClicked] = createSignal<boolean>(true);
+  const [tabRender, setTabRender] = createSignal<boolean>(true);
 
   return (
     <>
@@ -181,117 +214,134 @@ export function TabList(
         id={tabListProps.id}
         width="100%"
         height="100%"
-        value={getTabContexts().focusedTab ? getTabContexts().focusedTab : ""}
-        onValueChange={(tabDetails: { value: string }) => {
-          setFocusTab(tabDetails.value);
+        value={getTabContexts().focusedTab}
+        onValueChange={(tabDetails) => {
+          if (!isTabClicked()) {
+            setIsTabClicked(true);
+            return;
+          }
+          if (
+            getTabContexts().focusedTab !== tabDetails.value &&
+            tabDetails.value
+          ) {
+            setFocusTab(tabDetails.value);
+          }
         }}
       >
-        <Tab
-          key={tabListProps.id}
-          style={{
-            height: "3rem",
-          }}
-          onCreateTab={async () => {
-            if (props.onCreateTab) {
-              props.onCreateTab?.(tabListProps.id);
-            } else {
-              setTabContexts([
-                ...getTabContexts().tabContext,
-                { tab: { id: crypto.randomUUID(), tabName: "new Tab" } },
-              ]);
-            }
-          }}
-          onDeleteTab={(tabIndex) => {
-            const nextFocusTabId = getNextFocusTabId(
-              tabIndex,
-              getTabContexts().focusedTab,
-              getTabContexts().tabContext,
-            );
-            deleteTab(tabIndex, getTabContexts().tabContext, nextFocusTabId);
-          }}
-          onTabDragEnd={(mouseX: number, mouseY: number, tabId: string) => {
-            const tabListId = `tabs:${tabListProps.id}`;
-            const tabLocation = parseTabLocation(
-              mouseX,
-              mouseY,
-              tabId,
-              tabListId,
-            );
-
-            if (
-              tabLocation === "rightSplitter" ||
-              tabLocation === "leftSplitter" ||
-              tabLocation === "otherPanel"
-            ) {
-              const deleteTabIndex = getTabContexts()
-                .tabContext.map((tabCtx) => {
-                  return tabCtx.tab.id;
-                })
-                .indexOf(tabId);
+        <Show when={tabRender()}>
+          <Tab
+            key={tabListProps.id}
+            style={{
+              height: "3rem",
+            }}
+            onCreateTab={async () => {
+              if (props.onCreateTab) {
+                props.onCreateTab?.(tabListProps.id);
+              } else {
+                setTabContexts([
+                  ...getTabContexts().tabContext,
+                  { tab: { id: crypto.randomUUID(), tabName: "new Tab" } },
+                ]);
+              }
+            }}
+            onDeleteTab={(tabIndex) => {
               const nextFocusTabId = getNextFocusTabId(
-                deleteTabIndex,
+                tabIndex,
                 getTabContexts().focusedTab,
                 getTabContexts().tabContext,
               );
-              deleteTab(
-                deleteTabIndex,
-                getTabContexts().tabContext,
-                nextFocusTabId,
-              );
-            }
-
-            tabListProps.onTabDragEnd?.(mouseX);
-            setTabContextRender(false);
-            setTabContextRender(true);
-          }}
-          onTabDragging={(mouseX: number, mouseY: number, tabId: string) => {
-            const tabListId = `tabs:${tabListProps.id}`;
-            const tabLocation = parseTabLocation(
-              mouseX,
-              mouseY,
-              tabId,
-              tabListId,
-            );
-
-            const tabList = getTabContexts().tabContext;
-            const updateTabLocation =
-              (tabLocation === "rightSplitter" && tabList.length <= 1) ||
-              (tabLocation === "leftSplitter" && tabList.length <= 1)
-                ? "centerSplitter"
-                : tabLocation;
-
-            const draggedTab = tabList.filter(
-              (tabCtx) => tabCtx.tab.id === tabId,
-            )[0];
-            tabListProps.onDraggingTab?.(updateTabLocation, draggedTab, mouseX);
-          }}
-        />
-        <Show when={tabContextRender()}>
-          <For each={getTabContexts().tabContext}>
-            {(tabCtx) => {
-              return (
-                <Tabs.Content
-                  value={tabCtx.tab.id}
-                  width="100%"
-                  height={`calc(100% - 3rem)`}
-                  overflowY="auto"
-                >
-                  <tabPageContext.Provider
-                    value={{
-                      key: tabListProps.id,
-                      tabId: tabCtx.tab.id,
-                      onErrorMessage: (error) => {
-                        toaster.create(error);
-                      },
-                    }}
-                  >
-                    {props.children}
-                  </tabPageContext.Provider>
-                </Tabs.Content>
-              );
+              deleteTab(tabIndex, getTabContexts().tabContext, nextFocusTabId);
+              setIsTabClicked(false);
             }}
-          </For>
+            onTabDragEnd={(
+              mouseX: number,
+              mouseY: number,
+              tabId: string,
+              tabIndex: number,
+            ) => {
+              const tabListId = `tabs:${tabListProps.id}`;
+              const tabLocation = parseTabLocation(
+                mouseX,
+                mouseY,
+                tabId,
+                tabListId,
+              );
+              let newTabListKey: string | undefined = undefined;
+
+              if (
+                tabLocation === "rightSplitter" ||
+                tabLocation === "leftSplitter" ||
+                tabLocation === "otherPanel"
+              ) {
+                const draggedTab = getTabContexts().tabContext[tabIndex];
+                if (tabLocation === "otherPanel") {
+                  moveTabToOtherTabList(mouseX, draggedTab);
+                } else {
+                  if (getTabContexts().tabContext.length <= 1) return;
+                  newTabListKey = crypto.randomUUID();
+                  createNewTabList(newTabListKey, draggedTab);
+                }
+
+                const nextFocusTabId = getNextFocusTabId(
+                  tabIndex,
+                  getTabContexts().focusedTab,
+                  getTabContexts().tabContext,
+                );
+                deleteTab(
+                  tabIndex,
+                  getTabContexts().tabContext,
+                  nextFocusTabId,
+                );
+              } else {
+                setFocusTab(tabId);
+                setTabRender(false);
+                setTabRender(true);
+              }
+
+              tabListProps.onTabDragEnd?.(newTabListKey);
+            }}
+            onTabDragging={(mouseX: number, mouseY: number, tabId: string) => {
+              const tabListId = `tabs:${tabListProps.id}`;
+              const tabLocation = parseTabLocation(
+                mouseX,
+                mouseY,
+                tabId,
+                tabListId,
+              );
+
+              const tabList = getTabContexts().tabContext;
+              const updateTabLocation =
+                (tabLocation === "rightSplitter" && tabList.length <= 1) ||
+                (tabLocation === "leftSplitter" && tabList.length <= 1)
+                  ? "centerSplitter"
+                  : tabLocation;
+
+              tabListProps.onDraggingTab?.(updateTabLocation, mouseX);
+            }}
+          />
         </Show>
+        <For each={getTabContexts().tabContext}>
+          {(tabCtx) => {
+            return (
+              <Tabs.Content
+                value={tabCtx.tab.id}
+                style={{ width: "100%", height: `calc(100% - 3rem)` }}
+              >
+                <tabPageContext.Provider
+                  value={{
+                    key: tabListProps.id,
+                    tabId: tabCtx.tab.id,
+                    onErrorMessage: (error) => {
+                      toaster.create(error);
+                    },
+                  }}
+                >
+                  {props.children}
+                </tabPageContext.Provider>
+              </Tabs.Content>
+            );
+          }}
+        </For>
       </Tabs.Root>
       <Toast.Toaster toaster={toaster}>
         {(toast) => (
