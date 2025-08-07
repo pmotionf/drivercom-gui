@@ -1,0 +1,46 @@
+name: Bug Report
+description: File a bug report.
+labels: ["bug"]
+
+body:
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: What version of our software are you running?
+    validations:
+      required: true
+
+  - type: dropdown
+    id: OS
+    attributes:
+      label: OS
+      description: Which OS are you using?
+      multiple: false
+      options:
+        - Window
+        - Linux
+
+  - type: textarea
+    id: ToReproduce
+    attributes:
+      label: Steps To Reproduce
+      description: What is the order to observe the problem?
+    validations:
+      required: true
+
+  - type: textarea
+    id: ExpectedBehavior
+    attributes:
+      label: Expected Behavior
+      description: What did you expect to happen?
+    validations:
+      required: true
+
+  - type: textarea
+    id: ActualBehavior
+    attributes:
+      label: Actual Behavior
+      description: How does the current software behave when this error occurs?
+    validations:
+      required: true
