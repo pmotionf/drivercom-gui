@@ -1224,15 +1224,21 @@ export function Plot(props: PlotProps) {
 
                 <Stack width={`calc(100% - 1rem)`} direction="row">
                   <Stack
-                    width={`calc(100% - 3rem)`}
+                    width={`calc(100% - 1rem)`}
                     direction="row"
                     borderWidth="1px"
                     borderRadius="1rem"
                     paddingLeft="0.5rem"
-                    padding="0.3rem"
-                    gap="2"
+                    height="2rem"
+                    marginTop="0.3rem"
+                    gap="0"
                   >
-                    <IconSearch />
+                    <IconSearch
+                      style={{
+                        "margin-top": "0.2rem",
+                        "margin-right": "0.5rem",
+                      }}
+                    />
                     <input
                       value={searchInput()}
                       onInput={(e) => {
@@ -1246,18 +1252,19 @@ export function Plot(props: PlotProps) {
                         overflow: "hidden",
                         display: "block",
                         "text-overflow": "ellipsis",
-                        width: `calc(100% - 3rem)`,
+                        width: `calc(100% - 0.5rem)`,
                       }}
-                      height="2.5rem"
+                      height="1rem"
                     />
                     <IconButton
                       variant="ghost"
                       onClick={() => setSearchInput("")}
                       padding="0"
                       size="sm"
-                      width="3rem"
+                      width="1rem"
                       height="1.5rem"
                       borderRadius="3rem"
+                      marginTop="0.2rem"
                     >
                       <IconX />
                     </IconButton>
