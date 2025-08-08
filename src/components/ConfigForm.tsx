@@ -23,6 +23,7 @@ import {
   IconLinkOff,
   IconLock,
   IconLockOff,
+  IconExclamationCircle,
 } from "@tabler/icons-solidjs";
 import { Tooltip } from "./ui/tooltip.tsx";
 
@@ -542,7 +543,7 @@ function ConfigObject(props: ConfigObjectProps) {
               </Checkbox>
             );
           }
-          if (typeof value === "number" || value === "NaN") {
+          if (typeof value === "number") {
             let lockStatusKey = "";
             const lockStatus = props.gainLockStatuses;
             if (
@@ -578,14 +579,15 @@ function ConfigObject(props: ConfigObjectProps) {
                     "padding-right": "0.2rem",
                     "border-radius": "0.5rem",
                     "border-width": "1px",
+                    gap: "0",
                   }}
-                  borderColor="bg.disabled"
+                  borderColor={Number.isFinite(value) ? "bg.disabled" : "red"}
                   direction="row"
                 >
                   <input
                     style={{
                       width: lockStatus.has(lockStatusKey)
-                        ? `calc(100% - 1rem)`
+                        ? `calc(100% - 2rem)`
                         : "100%",
                       outline: "none",
                       opacity: lockStatus.has(lockStatusKey)
@@ -631,6 +633,9 @@ function ConfigObject(props: ConfigObjectProps) {
                       props.onItemChange?.();
                     }}
                   />
+                  <Show when={!Number.isFinite(value)}>
+                    <IconExclamationCircle color="red" />
+                  </Show>
                   <Show when={lockStatus.has(lockStatusKey)}>
                     <IconButton
                       type="button"
