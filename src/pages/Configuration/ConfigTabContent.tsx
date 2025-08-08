@@ -189,7 +189,12 @@ export function ConfigTabContent() {
 
   function checkNullIncluded(format: object): boolean {
     const values = Object.values(format);
-    if (values.some((val) => val === null)) {
+    if (
+      values.some(
+        (val) =>
+          val === null || (typeof val === "number" && !Number.isFinite(val)),
+      )
+    ) {
       return true;
     } else {
       let isNullIncluded = false;
@@ -226,8 +231,8 @@ export function ConfigTabContent() {
     });
   }
 
-  async function saveConfigAsFile() {
-    const json_str = JSON.stringify(getConfigForm(), null, "  ");
+  async function saveConfigAsFile(config: object) {
+    const json_str = JSON.stringify(config, null, "  ");
     const fileNameFromPath = getFilePath()
       ? getFilePath()!
           .match(/[^?!//]+$/)!
@@ -285,8 +290,8 @@ export function ConfigTabContent() {
     });
   }
 
-  async function saveConfigToPort(): Promise<string> {
-    const json_str = JSON.stringify(getConfigForm(), null, "  ");
+  async function saveConfigToPort(config: object): Promise<string> {
+    const json_str = JSON.stringify(config, null, "  ");
     const saveConfig = Command.sidecar("binaries/drivercom", [
       `--port`,
       portId(),
@@ -536,7 +541,18 @@ export function ConfigTabContent() {
               setFormData(object!, getFilePath()!);
               refresh();
             }}
-            onSaveFile={() => saveConfigAsFile()}
+            onSaveFile={() => {
+              if (checkNullIncluded(getConfigForm())) {
+                toaster.create({
+                  title: "Invalid File",
+                  description: "The file is invalid.",
+                  type: "error",
+                });
+                return;
+              } else {
+                saveConfigAsFile(getConfigForm());
+              }
+            }}
           />
           <PortMenu
             disabled={portId().length === 0}
@@ -559,7 +575,15 @@ export function ConfigTabContent() {
             }}
             onSaveToPort={async () => {
               if (portId().length === 0) return;
-              const outputError = await saveConfigToPort();
+              if (checkNullIncluded(getConfigForm())) {
+                toaster.create({
+                  title: "Invalid File",
+                  description: "The file is invalid.",
+                  type: "error",
+                });
+                return;
+              }
+              const outputError = await saveConfigToPort(getConfigForm());
               if (outputError.length !== 0) {
                 toaster.create({
                   title: "Communication Error",
