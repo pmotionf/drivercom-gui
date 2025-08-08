@@ -327,10 +327,10 @@ export function Plot(props: PlotProps) {
     getContext().visible ? getContext().visible.every((b) => b) : true,
   );
 
-  const [searchResults, setSearchResults] = createSignal<string[]>(
-    props.header,
-  );
   const [searchInput, setSearchInput] = createSignal<string>("");
+  const [legendIndex, setLegendIndex] = createSignal<number[]>(
+    props.header.map((_, i) => i),
+  );
 
   createEffect(() => {
     const searchInputValue = searchInput();
@@ -339,9 +339,12 @@ export function Plot(props: PlotProps) {
       props.header,
     );
     if (searchInputValue.length === 0) {
-      setSearchResults(props.header);
+      setLegendIndex(props.header.map((_, i) => i));
     } else {
-      setSearchResults(parseSearchResults);
+      const headerIndex = parseSearchResults.map((str) =>
+        props.header.indexOf(str),
+      );
+      setLegendIndex(headerIndex);
     }
   });
 
@@ -355,18 +358,23 @@ export function Plot(props: PlotProps) {
 
   const [prevCheck, setPrevCheck] = createSignal<number | null>(null);
   const [enterSplitter, setEnterSplitter] = createSignal<boolean>(false);
-  const multiSelect = (index: number, prevIndex: number) => {
+  const multiSelect = (
+    index: number,
+    prevIndex: number,
+    legendIndexes: number[],
+  ) => {
     const select = getContext().selected;
     const min = Math.min(index, prevIndex + 1);
-    const max = Math.max(index, prevIndex);
+    const max = Math.max(index + 1, prevIndex);
+    const indexList = legendIndexes.slice(min, max);
 
-    const shiftSelect = select.slice(min, max);
+    const shiftSelect = indexList.map((item) => select[item]);
     const shiftSelectState = [...new Set(shiftSelect)];
     const isAllSame = shiftSelectState.length !== 2;
 
     if (isAllSame) {
       const updateSelected = select.map((selected, i) => {
-        if (i >= min && i <= max) {
+        if (indexList.includes(i)) {
           return !shiftSelectState[0];
         } else {
           return selected;
@@ -1325,59 +1333,64 @@ export function Plot(props: PlotProps) {
                         readonly
                       />
                     </Stack>
-                    <For each={props.header}>
-                      {(header, index) => (
-                        <Show when={searchResults().includes(header)}>
+                    <For each={legendIndex()}>
+                      {(item, index) => {
+                        const header = props.header[item];
+                        return (
                           <Legend
                             plot={plot}
                             group={group()}
                             series={header}
                             cursorIdx={cursorIdx()}
                             showSelectCheckBox={showLegendCheckBox()}
-                            selected={getContext().selected[index()]}
+                            selected={getContext().selected[item]}
                             onSelectChange={(isChecked, shiftKey) => {
                               if (
                                 shiftKey === true &&
                                 typeof prevCheck() === "number"
                               ) {
-                                multiSelect(index(), prevCheck()!);
+                                multiSelect(
+                                  index(),
+                                  prevCheck()!,
+                                  legendIndex(),
+                                );
                                 setPrevCheck(null);
                                 return;
                               } else {
-                                setContext()("selected", index(), isChecked);
+                                setContext()("selected", item, isChecked);
                                 setPrevCheck(index());
                                 props.onContextChange?.(getContext());
                               }
                             }}
-                            visible={getContext().visible[index()]}
+                            visible={getContext().visible[item]}
                             onVisibleChange={(new_visible) => {
-                              setContext()("visible", index(), new_visible);
+                              setContext()("visible", item, new_visible);
                               // Index must add 1 to account for X-axis "Cycle" series
-                              plot.setSeries(index() + 1, {
+                              plot.setSeries(item + 1, {
                                 show: new_visible,
                               });
                               props.onContextChange?.(getContext());
                             }}
-                            color={getContext().color[index()]}
+                            color={getContext().color[item]}
                             onColorChange={(new_color) => {
-                              setContext()("color", index(), new_color);
+                              setContext()("color", item, new_color);
                               props.onContextChange?.(getContext());
                               plot.redraw();
                             }}
                             palette={getContext().palette}
                             width="min-content"
-                            stroke={getContext().style[index()]}
+                            stroke={getContext().style[item]}
                             onStrokeChange={(new_style) => {
-                              setContext()("style", index(), new_style);
-                              plot.delSeries(index() + 1);
+                              setContext()("style", item, new_style);
+                              plot.delSeries(item + 1);
                               const config = {
-                                stroke: getContext().color[index()],
+                                stroke: getContext().color[item],
                                 label: header,
-                                ...(getContext().style[index()] ===
+                                ...(getContext().style[item] ===
                                   LegendStroke.Dash && {
                                   dash: [10, 5],
                                 }),
-                                ...(getContext().style[index()] ===
+                                ...(getContext().style[item] ===
                                   LegendStroke.Dot && {
                                   dash: [0, 5],
                                   points: {
@@ -1388,15 +1401,15 @@ export function Plot(props: PlotProps) {
                                   },
                                 }),
                               };
-                              plot.addSeries(config, index() + 1);
+                              plot.addSeries(config, item + 1);
                               props.onContextChange?.(getContext());
                               setTimeout(() => {
                                 plot.redraw();
                               }, 200);
                             }}
                           />
-                        </Show>
-                      )}
+                        );
+                      }}
                     </For>
                   </Stack>
                 </Show>
