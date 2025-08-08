@@ -313,6 +313,22 @@ export function ConfigTabContent() {
     ),
   );
 
+  let scrollContainer: HTMLDivElement | undefined;
+  const scrollToWrongField = (scrollContainer: HTMLDivElement) => {
+    const top = Array.from(
+      document.querySelectorAll(`[data-name*="config_field_error"]`),
+    )[0].parentElement?.offsetTop;
+
+    if (top) {
+      const one_rem = parseFloat(
+        getComputedStyle(document.documentElement).fontSize,
+      );
+      scrollContainer.scrollTo({
+        top: top - scrollContainer.offsetTop - one_rem,
+      });
+    }
+  };
+
   return (
     <div
       id={configTabProps.key}
@@ -543,6 +559,9 @@ export function ConfigTabContent() {
             }}
             onSaveFile={() => {
               if (checkNullIncluded(getConfigForm())) {
+                if (scrollContainer) {
+                  scrollToWrongField(scrollContainer);
+                }
                 toaster.create({
                   title: "Invalid File",
                   description: "The file is invalid.",
@@ -576,6 +595,9 @@ export function ConfigTabContent() {
             onSaveToPort={async () => {
               if (portId().length === 0) return;
               if (checkNullIncluded(getConfigForm())) {
+                if (scrollContainer) {
+                  scrollToWrongField(scrollContainer);
+                }
                 toaster.create({
                   title: "Invalid File",
                   description: "The file is invalid.",
@@ -610,13 +632,25 @@ export function ConfigTabContent() {
           </PortMenu>
         </Stack>
         <Show when={render()}>
-          <ConfigForm
-            config={getConfigForm()!}
-            label={getTabName()}
-            linkedStatuses={getLinkedStatuses()!}
-            accordionStatuses={getAccordionStatuses()!}
-            gainLockStatuses={getGainLockStatuses()!}
-          />
+          <div
+            ref={scrollContainer}
+            style={{
+              "overflow-y": "auto",
+              width: "100%",
+              height: "100%",
+              "border-top-width": "1px",
+              "border-bottom-width": "1px",
+              "padding-bottom": "0.5rem",
+            }}
+          >
+            <ConfigForm
+              config={getConfigForm()!}
+              label={getTabName()}
+              linkedStatuses={getLinkedStatuses()!}
+              accordionStatuses={getAccordionStatuses()!}
+              gainLockStatuses={getGainLockStatuses()!}
+            />
+          </div>
         </Show>
         <Toast.Toaster toaster={toaster}>
           {(toast) => (
