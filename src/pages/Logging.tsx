@@ -166,7 +166,8 @@ export function Logging() {
     logStatus: string;
     cycle: number;
   }> {
-    if (portId().length === 0) return null;
+    if (portId().length === 0 || Array.from(logDownloads.values()).length > 0)
+      return null;
     const logStatus = Command.sidecar("binaries/drivercom", [
       `--port`,
       portId(),
