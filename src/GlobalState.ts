@@ -2,6 +2,7 @@ import { Accessor, createContext, createSignal, Setter } from "solid-js";
 import { createStore, SetStoreFunction, Store } from "solid-js/store";
 import { PanelSizeContext } from "./components/PanelLayout.tsx";
 import { TabListContext } from "./components/TabList.tsx";
+import { Child } from "@tauri-apps/plugin-shell";
 
 const [globalState, setGlobalState] = createStore({
   theme: "light",
@@ -78,3 +79,5 @@ export enum Pages {
 export const [page, setPage] = createSignal<Pages>(Pages.None);
 
 export const monitoringInputs: Map<string, string> = new Map();
+
+export const logDownloads: Map<number, Child> = new Map();
