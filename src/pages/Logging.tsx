@@ -1,6 +1,7 @@
 import { Stack } from "styled-system/jsx";
 import { Text } from "~/components/ui/text.tsx";
 import {
+  logDownloads,
   logFormFileFormat,
   Pages,
   panelContexts,
@@ -188,43 +189,66 @@ export function Logging() {
   const [logGetBtnLoading, setLogGetBtnLoading] = createSignal(false);
 
   // Save log.csv file && Display `Log Get` button loading while saving log.csv file
-  async function saveLogCsvFile(): Promise<
-    string | { title: string; description: string; type: string } | null
-  > {
+  async function saveLogCsvFile(filePath: string) {
     const logGet = Command.sidecar("binaries/drivercom", [
       `--port`,
       portId(),
       `--timeout`,
       `10000`,
       `log.get`,
+      `-f`,
+      filePath,
     ]);
-    const output = await logGet.execute();
 
-    if (output) {
-      const notEmptyLines = output.stdout
-        .split("\n")
-        .filter((line) => line.length > 0);
+    let pid: number | null = null;
 
-      if (output.stderr.length > 0) {
-        return {
-          title: "Communication Failure",
-          description: output.stderr,
+    logGet.on("close", (data) => {
+      if (data.code === null) {
+        toaster.create({
+          title: "Download Fail",
+          description: "Fail to download file.",
           type: "error",
-        };
+        });
+      } else {
+        if (data.code == 0) {
+          toaster.create({
+            title: "Download Success",
+            description: `The file is Downloaded at`,
+            type: "success",
+            action: {
+              label: `${filePath}`,
+              onClick: () => {
+                openNewTab(filePath);
+              },
+            },
+          });
+        } else {
+          toaster.create({
+            title: "Download Fail",
+            description: "Fail to download file.",
+            type: "error",
+          });
+        }
       }
 
-      if (notEmptyLines.length <= 1) {
-        return {
-          title: "Invalid Log",
-          description: "No log data found.",
+      logGet.on("error", (error) => {
+        toaster.create({
+          title: "Download Fail",
+          description: error,
           type: "error",
-        };
-      }
+        });
+      });
 
-      const csvFile = output.stdout;
-      return csvFile;
-    }
-    return null;
+      logGet.removeAllListeners();
+      if (pid) {
+        logDownloads.delete(pid);
+      }
+      setLogGetBtnLoading(false);
+    });
+
+    const child = await logGet.spawn();
+    pid = child.pid;
+    logDownloads.set(pid, child);
   }
 
   async function startLogging() {
@@ -698,26 +722,7 @@ export function Logging() {
                               return;
                             }
                             setLogGetBtnLoading(true);
-                            const csvFile = await saveLogCsvFile();
-                            setLogGetBtnLoading(false);
-                            if (csvFile) {
-                              if (typeof csvFile === "string") {
-                                await writeTextFile(path, csvFile);
-                                toaster.create({
-                                  title: "Download Success",
-                                  description: `The file is Downloaded at`,
-                                  type: "success",
-                                  action: {
-                                    label: `${path}`,
-                                    onClick: () => {
-                                      openNewTab(path);
-                                    },
-                                  },
-                                });
-                              } else {
-                                toaster.create(csvFile);
-                              }
-                            }
+                            await saveLogCsvFile(path);
                           }}
                           variant="ghost"
                           userSelect="none"
