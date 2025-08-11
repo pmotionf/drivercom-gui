@@ -15,6 +15,16 @@
         }
       ]
     },
+    {
+          "identifier": "shell:allow-spawn",
+          "allow": [
+            {
+              "args": true,
+              "name": "binaries/drivercom",
+              "sidecar": true
+            }
+          ]
+        },
     "shell:allow-open",
     "dialog:default",
     "fs:default",
