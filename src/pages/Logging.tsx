@@ -48,19 +48,37 @@ export function Logging() {
   const [renderLoggingForm, setRenderLoggingForm] =
     createSignal<boolean>(false);
 
-  onMount(() => {
+  onMount(async () => {
     setLogConfigure(JSON.parse(JSON.stringify(logFormFileFormat())));
     setRenderLoggingForm(true);
+    if (portId().length > 0) {
+      const logStatus = await getCurrentLogStatus();
+      setCurrentLogStatus(logStatus ? logStatus.logStatus : null);
+      setCyclesCompleted(logStatus ? logStatus.cycle : null);
+    }
   });
 
   createEffect(
     on(
       () => portId(),
       async () => {
-        const logState = await getCurrentLogStatus();
-        setCurrentLogStatus(logState ? logState.logStatus : null);
-        setCyclesCompleted(logState ? logState.cycle : null);
+        if (portId().length > 0) {
+          const logState = await getCurrentLogStatus();
+          setCurrentLogStatus(logState ? logState.logStatus : null);
+          setCyclesCompleted(logState ? logState.cycle : null);
+        } else {
+          setCurrentLogStatus(null);
+          setCyclesCompleted(null);
+        }
+
+        if (Array.from(logDownloads.values()).length > 0) {
+          Array.from(logDownloads.values()).forEach((child) => {
+            child.kill();
+            logDownloads.delete(child.pid);
+          });
+        }
       },
+      { defer: true },
     ),
   );
 
@@ -166,14 +184,14 @@ export function Logging() {
     logStatus: string;
     cycle: number;
   }> {
-    if (portId().length === 0 || Array.from(logDownloads.values()).length > 0)
-      return null;
+    if (portId().length === 0) return null;
     const logStatus = Command.sidecar("binaries/drivercom", [
       `--port`,
       portId(),
       `log.status`,
     ]);
     const output = await logStatus.execute();
+    if (output.stdout.length === 0) return null;
     const parseOutput = output.stdout.replaceAll(" ", "").replaceAll("\n", "");
     const currentLogStatusList = parseOutput.split(",").map((value) => {
       return value.split(":");
@@ -232,12 +250,18 @@ export function Logging() {
         }
       }
 
-      logGet.on("error", (error) => {
-        toaster.create({
-          title: "Download Fail",
-          description: error,
-          type: "error",
-        });
+      logGet.removeAllListeners();
+      if (pid) {
+        logDownloads.delete(pid);
+      }
+      setLogGetBtnLoading(false);
+    });
+
+    logGet.on("error", async (error) => {
+      toaster.create({
+        title: "Download Fail",
+        description: error,
+        type: "error",
       });
 
       logGet.removeAllListeners();
@@ -624,6 +648,14 @@ export function Logging() {
                             currentLogStatus() === "Log.Status.waiting"
                           }
                           onClick={async () => {
+                            if (Array.from(logDownloads.values()).length > 0) {
+                              toaster.create({
+                                title: "Invalid Log",
+                                description: "The log is invalid.",
+                                type: "error",
+                              });
+                              return;
+                            }
                             await startLogging();
                             setTimeout(async () => {
                               const logState = await getCurrentLogStatus();
@@ -677,10 +709,8 @@ export function Logging() {
                 <Show
                   when={
                     currentLogStatus() !== "Log.Status.stopped" ||
-                    portId().length === 0 ||
                     currentLogStatus() === "Log.Status.invalid" ||
-                    cyclesCompleted() === 0 ||
-                    portId().length === 0
+                    cyclesCompleted() === 0
                   }
                   fallback={
                     <Tooltip.Root>
@@ -744,7 +774,7 @@ export function Logging() {
                   <Tooltip.Root>
                     <Tooltip.Trigger>
                       <IconButton
-                        disabled={portId().length === 0 || logGetBtnLoading()}
+                        disabled={portId().length === 0}
                         onClick={async () => {
                           const logState = await getCurrentLogStatus();
                           setCurrentLogStatus(
