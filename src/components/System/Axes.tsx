@@ -1,15 +1,43 @@
 import { Stack } from "styled-system/jsx";
 import { Text } from "../ui/text.tsx";
 import { Show } from "solid-js/web";
-import { AxesContext } from "./Station.tsx";
-import { useContext } from "solid-js";
+import { useAxesContext } from "./Station.tsx";
 import { Badge } from "../ui/badge.tsx";
 //@ts-ignore Ignore test in git action
 import { mmc } from "../proto/mmc";
+import { Tooltip } from "../ui/tooltip.tsx";
 
-export function Axis() {
-  const axesContext = useContext(AxesContext);
-  if (!axesContext) return;
+export type AxisProps = {
+  axisInfo: mmc.info.Response.System.Axis.IInfo[];
+  axisError: mmc.info.Response.System.Axis.IError[];
+  carrier?: mmc.info.Response.System.Carrier.IInfo[] | null;
+};
+
+export function Axis(props: AxisProps) {
+  const axisContext = useAxesContext();
+  if (!axisContext) return;
+  const axisId = Number(axisContext.id.split(":")[1]);
+  const axisIndex = axisId - 1;
+
+  const axisInfo = (): mmc.info.Response.System.Axis.IInfo => {
+    return props.axisInfo[axisIndex];
+  };
+
+  const axisError = (): mmc.info.Response.System.Axis.IError => {
+    return props.axisError[axisIndex];
+  };
+
+  const carrier = (): mmc.info.Response.System.Carrier.IInfo | null => {
+    if (props.carrier && props.carrier.length > 0) {
+      const parseCarrier = props.carrier.filter(
+        (carrier) =>
+          carrier.axis!.auxiliary === axisId || carrier.axis!.main === axisId,
+      );
+      return parseCarrier.length > 0 ? parseCarrier[0] : null;
+    } else {
+      return null;
+    }
+  };
 
   return (
     <Stack
@@ -18,22 +46,18 @@ export function Axis() {
       borderRadius="0.5rem"
       borderWidth="1px"
       borderRightWidth={
-        axesContext.axes.hallAlarm && axesContext.axes.hallAlarm.front
-          ? "5px"
-          : "1px"
+        axisInfo().hallAlarm && axisInfo().hallAlarm!.front ? "5px" : "1px"
       }
       borderLeftWidth={
-        axesContext.axes.hallAlarm && axesContext.axes.hallAlarm.back
-          ? "5px"
-          : "1px"
+        axisInfo()!.hallAlarm && axisInfo()!.hallAlarm!.back ? "5px" : "1px"
       }
       borderRightColor={
-        axesContext.axes.hallAlarm && axesContext.axes.hallAlarm.front
+        axisInfo()!.hallAlarm && axisInfo()!.hallAlarm!.front
           ? "accent.customGreen"
           : undefined
       }
       borderLeftColor={
-        axesContext.axes.hallAlarm && axesContext.axes.hallAlarm.back
+        axisInfo()!.hallAlarm && axisInfo()!.hallAlarm!.back
           ? "accent.customGreen"
           : undefined
       }
@@ -54,9 +78,9 @@ export function Axis() {
         <Badge
           width="min-content"
           backgroundColor={
-            axesContext.axesErrors.overcurrent
+            axisError().overcurrent
               ? "red"
-              : axesContext.axes.motorEnabled
+              : axisInfo()!.motorEnabled
                 ? "accent.customGreen"
                 : "bg.emphasized"
           }
@@ -66,19 +90,15 @@ export function Axis() {
           borderWidth="0"
         >
           <Text
-            color={
-              axesContext.axesErrors.overcurrent ? "#ffffff" : "fg.default"
-            }
+            color={axisError().overcurrent ? "#ffffff" : "fg.default"}
             size="sm"
             fontWeight="medium"
           >
-            Axis {axesContext.id.split(":")[1]}
+            Axis {axisId}
           </Text>
         </Badge>
 
-        <Show
-          when={axesContext.axes.waitingPull || axesContext.axes.waitingPush}
-        >
+        <Show when={axisInfo()!.waitingPull || axisInfo()!.waitingPush}>
           <Badge
             width="min-content"
             height="min-content"
@@ -87,11 +107,11 @@ export function Axis() {
             borderWidth="0"
           >
             <Text width="100%" size="sm">
-              {axesContext.axes.waitingPush
-                ? axesContext.axes.waitingPull
+              {axisInfo()!.waitingPush
+                ? axisInfo()!.waitingPull
                   ? "Waiting pull push"
                   : "Waiting push"
-                : axesContext.axes.waitingPull
+                : axisInfo()!.waitingPull
                   ? "Waiting pull"
                   : ""}
             </Text>
@@ -99,7 +119,7 @@ export function Axis() {
         </Show>
       </Stack>
 
-      <Show when={axesContext.axes.carrierId}>
+      <Show when={carrier() && carrier()!.id}>
         <Text
           fontWeight="bold"
           height="1rem"
@@ -107,58 +127,52 @@ export function Axis() {
           color="fg.default"
           marginBottom="0.5rem"
         >
-          Carrier {axesContext.axes.carrierId}
+          Carrier {carrier()!.id}
         </Text>
-
-        <Stack direction="row" gap="0">
-          <Text width="3rem" size="sm" fontWeight="bold">
-            State
-          </Text>
-          <Text
-            width={`calc(100% - 3rem)`}
-            size="sm"
-            style={{
-              "white-space": "nowrap",
-              display: "block",
-              overflow: "hidden",
-              "text-overflow": `ellipsis`,
-              "user-select": "none",
-              "text-align": "left",
-            }}
-          >
-            {axesContext.carrierInfo && axesContext.carrierInfo.state
-              ? mmc.info.Response.System.Carrier.Info.State[
-                  `${axesContext.carrierInfo.state}` as keyof typeof mmc.info.Response.System.Carrier.Info.State
-                ]
-                  .toString()
-                  .replace("CARRIER_STATE_", "")
-              : ""}
-          </Text>
-        </Stack>
-        <Show when={axesContext.carrierInfo}>
+        <Show when={carrier()!.state}>
           <Stack direction="row" gap="0">
             <Text width="3rem" size="sm" fontWeight="bold">
-              CAS
+              State
             </Text>
-            <Show
-              when={
-                axesContext.carrierInfo &&
-                axesContext.carrierInfo.cas &&
-                axesContext.carrierInfo.cas.triggered
-              }
-            >
-              <Text size="sm">Triggered</Text>
-            </Show>
-            <Show
-              when={
-                axesContext.carrierInfo &&
-                axesContext.carrierInfo.cas &&
-                axesContext.carrierInfo.cas.enabled
-              }
-            >
-              <Text size="sm">Enabled</Text>
-            </Show>
+            <Tooltip.Root>
+              <Tooltip.Trigger width={`calc(100% - 3rem)`}>
+                <Text
+                  width="100%"
+                  size="sm"
+                  style={{
+                    "white-space": "nowrap",
+                    display: "block",
+                    overflow: "hidden",
+                    "text-overflow": `ellipsis`,
+                    "user-select": "none",
+                    "text-align": "left",
+                  }}
+                >
+                  {carrier()!.state
+                    ? mmc.info.Response.System.Carrier.Info.State[
+                        `${carrier()!.state}` as keyof typeof mmc.info.Response.System.Carrier.Info.State
+                      ]
+                        .toString()
+                        .replace("CARRIER_STATE_", "")
+                    : ""}
+                </Text>
+              </Tooltip.Trigger>
+              <Tooltip.Positioner>
+                <Tooltip.Content>
+                  {carrier()!.state
+                    ? mmc.info.Response.System.Carrier.Info.State[
+                        `${carrier()!.state}` as keyof typeof mmc.info.Response.System.Carrier.Info.State
+                      ]
+                        .toString()
+                        .replace("carrier_STATE_", "")
+                    : ""}
+                </Tooltip.Content>
+              </Tooltip.Positioner>
+            </Tooltip.Root>
           </Stack>
+        </Show>
+
+        <Show when={carrier()!.position}>
           <Stack direction="row" gap="0">
             <Text width="3rem" size="sm" fontWeight="bold">
               Pos
@@ -175,8 +189,19 @@ export function Axis() {
                 "font-family": "monospace",
               }}
             >
-              {axesContext.carrierInfo!.position!.toFixed(6)}
+              {carrier()!.position!.toFixed(6)}
             </Text>
+          </Stack>
+          <Stack direction="row" gap="0">
+            <Text width="3rem" size="sm" fontWeight="bold">
+              CAS
+            </Text>
+            <Show when={carrier()!.cas && carrier()!.cas!.triggered}>
+              <Text size="sm">Triggered</Text>
+            </Show>
+            <Show when={carrier()!.cas && carrier()!.cas!.enabled}>
+              <Text size="sm">Enabled</Text>
+            </Show>
           </Stack>
         </Show>
       </Show>

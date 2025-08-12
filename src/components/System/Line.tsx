@@ -1,28 +1,26 @@
-import { JSX } from "solid-js";
-import { For } from "solid-js/web";
+import { JSX, useContext, createContext } from "solid-js";
+import { For, Show } from "solid-js/web";
 import { Accordion } from "../ui/accordion.tsx";
 import { ChevronDownIcon } from "lucide-solid";
-import { createContext } from "solid-js";
 import { Stack } from "styled-system/jsx/stack";
-import { Show } from "solid-js/web";
 //@ts-ignore Ignore test in git action
 import { mmc } from "../proto/mmc";
 import { Text } from "../ui/text.tsx";
 import { Tooltip } from "../ui/tooltip.tsx";
 
 export type LineProps = JSX.HTMLAttributes<HTMLDivElement> & {
-  value: mmc.core.Response.LineConfig.ILine;
+  line: mmc.core.Response.LineConfig.ILine;
   system?: mmc.info.Response.ISystem;
 };
 
 export const LineContext = createContext<{
-  id: number;
-  axes: mmc.info.Response.System.Axis.IInfo[];
-  axesErrors: mmc.info.Response.System.Axis.IError[];
-  carrierInfo?: mmc.info.Response.System.Carrier.IInfo[];
-  driver?: mmc.info.Response.System.Driver.IInfo;
-  driverError?: mmc.info.Response.System.Driver.IError;
+  stationIndex: number;
 }>();
+
+export function useLineContext() {
+  const context = useContext(LineContext);
+  return context;
+}
 
 export function Line(props: LineProps) {
   const findErrorField = (error: object): string[] => {
@@ -69,7 +67,7 @@ export function Line(props: LineProps) {
 
   return (
     <Accordion.Item
-      value={props.value.name!}
+      value={props.line.name!}
       backgroundColor="bg.canvas"
       borderBottomWidth="1px"
     >
@@ -102,7 +100,7 @@ export function Line(props: LineProps) {
         </Show>
         <Tooltip.Root positioning={{ placement: "bottom-start" }}>
           <Tooltip.Trigger style={{ width: "100%", "text-align": "left" }}>
-            <Text>{props.value.name}</Text>
+            <Text>{props.line.name}</Text>
           </Tooltip.Trigger>
           <Show
             when={
@@ -124,10 +122,10 @@ export function Line(props: LineProps) {
                 >
                   {(error) => (
                     <Stack direction="row" width="100%">
-                      <Text overflow="hidden" width="25%">
+                      <Text overflow="hidden" width="30%">
                         {error.field}
                       </Text>
-                      <div style={{ width: "75%" }}>
+                      <div style={{ width: "70%" }}>
                         <For each={error.error}>
                           {(err) => (
                             <Text width="100%" fontWeight={"medium"}>
@@ -156,34 +154,19 @@ export function Line(props: LineProps) {
           overflowX="auto"
           gap="1rem"
         >
-          <Show when={props.system && props.system.axisInfos}>
-            <For
-              each={Array.from({ length: props.value.axes! / 3 }, (_, i) =>
-                props.system!.axisInfos!.slice(i * 3, i * 3 + 3),
-              )}
-            >
-              {(axis, index) => {
-                const axisError = props.system!.axisErrors!.slice(
-                  index() * 3,
-                  index() * 3 + 3,
-                );
-                return (
-                  <LineContext.Provider
-                    value={{
-                      id: index(),
-                      axes: axis,
-                      axesErrors: axisError,
-                      carrierInfo: props.system!.carrierInfos!,
-                      driver: props.system!.driverInfos![index()],
-                      driverError: props.system!.driverErrors![index()],
-                    }}
-                  >
-                    {props.children}
-                  </LineContext.Provider>
-                );
-              }}
-            </For>
-          </Show>
+          <For each={Array.from({ length: props.line.axes! / 3 }, (_, i) => i)}>
+            {(stationIndex) => {
+              return (
+                <LineContext.Provider
+                  value={{
+                    stationIndex: stationIndex,
+                  }}
+                >
+                  {props.children}
+                </LineContext.Provider>
+              );
+            }}
+          </For>
         </Stack>
       </Accordion.ItemContent>
     </Accordion.Item>
