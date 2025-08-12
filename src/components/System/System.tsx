@@ -1,10 +1,10 @@
-import { JSX } from "solid-js";
+import { JSX, Show, createSignal } from "solid-js";
 import { Line } from "./Line.tsx";
 import { Accordion } from "../ui/accordion.tsx";
 import { For } from "solid-js/web";
 import { Station } from "./Station.tsx";
 import { Axis } from "./Axes.tsx";
-import { createSignal } from "solid-js";
+import { Store } from "solid-js/store";
 
 import { useDragDropContext } from "@thisbeyond/solid-dnd";
 import {
@@ -17,7 +17,7 @@ import {
 import { SystemConfig } from "~/pages/Monitoring.tsx";
 
 export type SystemProps = JSX.HTMLAttributes<HTMLDivElement> & {
-  value: SystemConfig;
+  value: Store<SystemConfig>;
 };
 
 export function System(props: SystemProps) {
@@ -91,11 +91,27 @@ export function System(props: SystemProps) {
                     }}
                   >
                     <Line
-                      value={props.value.lines[item].line}
-                      system={props.value.lines[item].system!}
+                      line={props.value.lines[item].line}
+                      system={
+                        props.value.lines[item].system
+                          ? props.value.lines[item].system
+                          : undefined
+                      }
                     >
                       <Station>
-                        <Axis />
+                        <Show when={props.value.lines[item].system}>
+                          <Axis
+                            axisError={
+                              props.value.lines[item].system!.axisErrors!
+                            }
+                            axisInfo={
+                              props.value.lines[item].system!.axisInfos!
+                            }
+                            carrier={
+                              props.value.lines[item].system!.carrierInfos
+                            }
+                          />
+                        </Show>
                       </Station>
                     </Line>
                   </div>

@@ -1,25 +1,21 @@
-import { useContext } from "solid-js";
-import { LineContext } from "./Line.tsx";
+import { useContext, createContext, JSX } from "solid-js";
+import { useLineContext } from "./Line.tsx";
 import { Stack } from "styled-system/jsx";
 import { For } from "solid-js/web";
-import { createContext } from "solid-js";
-import { JSX } from "solid-js";
-//@ts-ignore Ignore test in git action
-import { mmc } from "../proto/mmc.js";
 
 export const AxesContext = createContext<{
   id: string;
-  axes: mmc.info.Response.System.Axis.IInfo;
-  axesErrors: mmc.info.Response.System.Axis.IError;
-  carrierInfo?: mmc.info.Response.System.Carrier.IInfo;
 }>();
+
+export const useAxesContext = () => {
+  return useContext(AxesContext);
+};
 
 export type StationProps = JSX.HTMLAttributes<HTMLDivElement>;
 
 export function Station(props: StationProps) {
-  const stationContext = useContext(LineContext);
-  if (!stationContext) return;
-
+  const lineCtx = useLineContext()!;
+  if (!lineCtx) return;
   const stationId = crypto.randomUUID();
 
   return (
@@ -32,31 +28,15 @@ export function Station(props: StationProps) {
       padding="0.5rem"
       borderWidth="1px"
     >
-      <For each={stationContext.axes}>
-        {(info, axesIndex) => {
-          const axisId = stationContext.id * 3 + axesIndex() + 1;
-          let currentCarrier:
-            | mmc.info.Response.System.Carrier.IInfo
-            | undefined = undefined;
-
-          if (
-            stationContext.carrierInfo &&
-            stationContext.carrierInfo.length > 0
-          ) {
-            const findCarrier = stationContext.carrierInfo.filter(
-              (carrier) => carrier.axis!.main === axisId,
-            );
-            if (findCarrier.length === 1) {
-              currentCarrier = findCarrier[0];
-            }
-          }
+      <For
+        each={Array.from({ length: 3 }, (_, i) => lineCtx.stationIndex * 3 + i)}
+      >
+        {(axisIndex) => {
+          const axisId = axisIndex + 1;
           return (
             <AxesContext.Provider
               value={{
-                axes: info,
                 id: `${stationId}:${axisId}`,
-                carrierInfo: currentCarrier,
-                axesErrors: stationContext.axesErrors[axesIndex()],
               }}
             >
               {props.children}
