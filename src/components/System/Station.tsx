@@ -1,24 +1,27 @@
-import { useContext } from "solid-js";
-import { LineContext } from "./Line.tsx";
+import { createEffect, on, useContext, createContext, JSX } from "solid-js";
+import { useLineContext } from "./Line.tsx";
 import { Stack } from "styled-system/jsx";
 import { For } from "solid-js/web";
-import { createContext } from "solid-js";
-import { JSX } from "solid-js";
 //@ts-ignore Ignore test in git action
-import { mmc } from "../proto/mmc.js";
+import { mmc } from "../proto/mmc";
+import { Store, createStore } from "solid-js/store";
 
 export const AxesContext = createContext<{
   id: string;
-  axes: mmc.info.Response.System.Axis.IInfo;
-  axesErrors: mmc.info.Response.System.Axis.IError;
-  carrierInfo?: mmc.info.Response.System.Carrier.IInfo;
+  axisInfo: Store<mmc.info.Response.System.Axis.IInfo>;
+  axisError: Store<mmc.info.Response.System.Axis.IError>;
+  carrierInfo: Store<mmc.info.Response.System.Carrier.IInfo>;
 }>();
+
+export const useAxesContext = () => {
+  return useContext(AxesContext);
+};
 
 export type StationProps = JSX.HTMLAttributes<HTMLDivElement>;
 
 export function Station(props: StationProps) {
-  const stationContext = useContext(LineContext);
-  if (!stationContext) return;
+  const stationCtx = useLineContext()!;
+  if (!stationCtx) return;
 
   const stationId = crypto.randomUUID();
 
@@ -32,31 +35,105 @@ export function Station(props: StationProps) {
       padding="0.5rem"
       borderWidth="1px"
     >
-      <For each={stationContext.axes}>
-        {(info, axesIndex) => {
-          const axisId = stationContext.id * 3 + axesIndex() + 1;
-          let currentCarrier:
-            | mmc.info.Response.System.Carrier.IInfo
-            | undefined = undefined;
+      <For
+        each={Array.from(
+          { length: 3 },
+          (_, i) => stationCtx.stationIndex * 3 + i,
+        )}
+      >
+        {(axisIndex) => {
+          const axisId = axisIndex + 1;
 
-          if (
-            stationContext.carrierInfo &&
-            stationContext.carrierInfo.length > 0
-          ) {
-            const findCarrier = stationContext.carrierInfo.filter(
-              (carrier) => carrier.axis!.main === axisId,
+          const [axisInfo, setAxisInfo] = createStore(
+            {} as mmc.info.Response.System.Axis.IInfo,
+          );
+          createEffect(
+            on(
+              () => stationCtx.system.axisInfos![axisIndex],
+              () => {
+                if (stationCtx.system.axisInfos![axisIndex]) {
+                  const newAxis = stationCtx.system.axisInfos![axisIndex];
+                  if (axisInfo.carrierId !== newAxis.carrierId) {
+                    setAxisInfo("carrierId", newAxis.carrierId);
+                  }
+
+                  if (axisInfo.hallAlarm !== newAxis.hallAlarm) {
+                    setAxisInfo("hallAlarm", newAxis.hallAlarm);
+                  }
+
+                  if (axisInfo.waitingPull !== newAxis.waitingPull) {
+                    setAxisInfo("waitingPull", newAxis.waitingPull);
+                  }
+
+                  if (axisInfo.waitingPush !== newAxis.waitingPush) {
+                    setAxisInfo("waitingPush", newAxis.waitingPush);
+                  }
+
+                  if (axisInfo.motorEnabled !== newAxis.motorEnabled) {
+                    setAxisInfo("motorEnabled", newAxis.motorEnabled);
+                  }
+                }
+              },
+              { defer: true },
+            ),
+          );
+
+          const [axisError, setAxisError] = createStore(
+            {} as mmc.info.Response.System.Axis.IError,
+          );
+          createEffect(
+            on(
+              () => stationCtx.system.axisErrors![axisIndex],
+              () => {
+                if (stationCtx.system.axisErrors![axisIndex]) {
+                  const newError = stationCtx.system.axisErrors![axisIndex];
+                  if (axisError.overcurrent !== newError.overcurrent) {
+                    setAxisError("overcurrent", newError.overcurrent);
+                  }
+                }
+              },
+              { defer: true },
+            ),
+          );
+
+          const [carrierInfo, setCarrierInfo] =
+            createStore<mmc.info.Response.System.Carrier.IInfo>(
+              {} as mmc.info.Response.System.Carrier.IInfo,
             );
-            if (findCarrier.length === 1) {
-              currentCarrier = findCarrier[0];
-            }
-          }
+          createEffect(
+            on(
+              () => stationCtx.system.carrierInfos,
+              () => {
+                if (
+                  stationCtx.system.carrierInfos &&
+                  stationCtx.system.carrierInfos!.length > 0
+                ) {
+                  const parseCarrierInfo =
+                    stationCtx.system.carrierInfos!.filter(
+                      //@ts-ignore Ignore test in git action
+                      (info) => info.axis!.main === axisId,
+                    );
+                  if (parseCarrierInfo.length === 1) {
+                    setCarrierInfo(parseCarrierInfo[0]);
+                  } else {
+                    setCarrierInfo(
+                      {} as mmc.info.Response.System.Carrier.IInfo,
+                    );
+                  }
+                } else {
+                  setCarrierInfo({} as mmc.info.Response.System.Carrier.IInfo);
+                }
+              },
+              { defer: true },
+            ),
+          );
           return (
             <AxesContext.Provider
               value={{
-                axes: info,
                 id: `${stationId}:${axisId}`,
-                carrierInfo: currentCarrier,
-                axesErrors: stationContext.axesErrors[axesIndex()],
+                axisInfo: axisInfo,
+                axisError: axisError,
+                carrierInfo: carrierInfo,
               }}
             >
               {props.children}

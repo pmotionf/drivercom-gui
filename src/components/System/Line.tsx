@@ -1,31 +1,70 @@
-import { JSX } from "solid-js";
-import { For } from "solid-js/web";
+import { createEffect, JSX, on, useContext, createContext } from "solid-js";
+import { For, Show } from "solid-js/web";
 import { Accordion } from "../ui/accordion.tsx";
 import { ChevronDownIcon } from "lucide-solid";
-import { createContext } from "solid-js";
 import { Stack } from "styled-system/jsx/stack";
-import { Show } from "solid-js/web";
 //@ts-ignore Ignore test in git action
 import { mmc } from "../proto/mmc";
+import { createStore, Store } from "solid-js/store";
 
 export type LineProps = JSX.HTMLAttributes<HTMLDivElement> & {
-  value: mmc.core.Response.LineConfig.ILine;
+  line: mmc.core.Response.LineConfig.ILine;
   system?: mmc.info.Response.ISystem;
 };
 
 export const LineContext = createContext<{
-  id: number;
-  axes: mmc.info.Response.System.Axis.IInfo[];
-  axesErrors: mmc.info.Response.System.Axis.IError[];
-  carrierInfo?: mmc.info.Response.System.Carrier.IInfo[];
-  driver?: mmc.info.Response.System.Driver.IInfo;
-  driverError?: mmc.info.Response.System.Driver.IError;
+  stationIndex: number;
+  system: Store<mmc.info.Response.ISystem>;
 }>();
 
+export function useLineContext() {
+  return useContext(LineContext);
+}
+
 export function Line(props: LineProps) {
+  const systemStore = createStore(
+    props.system ? props.system : ({} as mmc.info.Response.ISystem),
+  );
+
+  createEffect(
+    on(
+      () => props.system?.axisInfos,
+      () => {
+        if (props.system && props.system.axisInfos) {
+          systemStore[1]("axisInfos", props.system.axisInfos);
+        }
+      },
+      { defer: true },
+    ),
+  );
+
+  createEffect(
+    on(
+      () => props.system?.axisErrors,
+      () => {
+        if (props.system && props.system.axisErrors) {
+          systemStore[1]("axisErrors", props.system.axisErrors);
+        }
+      },
+      { defer: true },
+    ),
+  );
+
+  createEffect(
+    on(
+      () => props.system?.carrierInfos,
+      () => {
+        if (props.system && props.system.carrierInfos) {
+          systemStore[1]("carrierInfos", props.system.carrierInfos);
+        }
+      },
+      { defer: true },
+    ),
+  );
+
   return (
     <Accordion.Item
-      value={props.value.name!}
+      value={props.line.name!}
       backgroundColor="bg.canvas"
       borderBottomWidth="1px"
     >
@@ -34,7 +73,7 @@ export function Line(props: LineProps) {
         paddingLeft="1rem"
         paddingRight="1rem"
       >
-        {props.value.name}
+        {props.line.name}
         <Accordion.ItemIndicator class="cancel">
           <ChevronDownIcon />
         </Accordion.ItemIndicator>
@@ -53,30 +92,15 @@ export function Line(props: LineProps) {
         >
           <Show when={props.system && props.system.axisInfos}>
             <For
-              each={Array.from({ length: props.value.axes! / 3 }, (_, i) =>
-                props.system!.axisInfos!.slice(i * 3, i * 3 + 3),
-              )}
+              each={Array.from({ length: props.line.axes! / 3 }, (_, i) => i)}
             >
-              {(axis, index) => {
-                const axisError = props.system!.axisErrors!.slice(
-                  index() * 3,
-                  index() * 3 + 3,
-                );
-                return (
-                  <LineContext.Provider
-                    value={{
-                      id: index(),
-                      axes: axis,
-                      axesErrors: axisError,
-                      carrierInfo: props.system!.carrierInfos!,
-                      driver: props.system!.driverInfos![index()],
-                      driverError: props.system!.driverErrors![index()],
-                    }}
-                  >
-                    {props.children}
-                  </LineContext.Provider>
-                );
-              }}
+              {(stationIndex) => (
+                <LineContext.Provider
+                  value={{ stationIndex: stationIndex, system: systemStore[0] }}
+                >
+                  {props.children}
+                </LineContext.Provider>
+              )}
             </For>
           </Show>
         </Stack>
