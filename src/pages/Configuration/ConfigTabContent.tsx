@@ -214,6 +214,8 @@ export function ConfigTabContent() {
   }
 
   function compareFileFormat(newFile: object, fileFormat: object): boolean {
+    const checkNull = checkNullIncluded(newFile);
+    if (checkNull) return false;
     const newFileObject = checkFileFormat(newFile);
     const configFileObject = checkFileFormat(fileFormat);
     return newFileObject === configFileObject;
@@ -426,24 +428,11 @@ export function ConfigTabContent() {
                 });
                 return;
               }
-              if (checkNullIncluded(object)) {
-                toaster.create({
-                  title: "Invalid File",
-                  description: "The file is invalid.",
-                  type: "error",
-                });
-                setRecentConfigFilePaths((prev) => {
-                  const newRecentFiles = prev.filter(
-                    (prevFilePath) => prevFilePath !== path,
-                  );
-                  return newRecentFiles;
-                });
-                return;
-              }
               const checkObject = compareFileFormat(
                 object!,
                 configFormFileFormat(),
               );
+              console.log(checkObject);
               if (!checkObject) {
                 toaster.create({
                   title: "Invalid File",
@@ -467,20 +456,6 @@ export function ConfigTabContent() {
                 toaster.create({
                   title: "Invalid File Path",
                   description: "The file path is invalid.",
-                  type: "error",
-                });
-                setRecentConfigFilePaths((prev) => {
-                  const newRecentFiles = prev.filter(
-                    (prevFilePath) => prevFilePath !== filePath,
-                  );
-                  return newRecentFiles;
-                });
-                return;
-              }
-              if (checkNullIncluded(object)) {
-                toaster.create({
-                  title: "Invalid File",
-                  description: "The file is invalid.",
                   type: "error",
                 });
                 setRecentConfigFilePaths((prev) => {
@@ -528,20 +503,6 @@ export function ConfigTabContent() {
                 });
                 return;
               }
-              if (checkNullIncluded(object)) {
-                toaster.create({
-                  title: "Invalid File",
-                  description: "The file is invalid.",
-                  type: "error",
-                });
-                setRecentConfigFilePaths((prev) => {
-                  const newRecentFiles = prev.filter(
-                    (prevFilePath) => prevFilePath !== getFilePath(),
-                  );
-                  return newRecentFiles;
-                });
-                return;
-              }
               const checkObject = compareFileFormat(
                 object!,
                 configFormFileFormat(),
@@ -558,7 +519,7 @@ export function ConfigTabContent() {
               refresh();
             }}
             onSaveFile={() => {
-              if (checkNullIncluded(getConfigForm())) {
+              if (!compareFileFormat(getConfigForm(), configFormFileFormat())) {
                 if (scrollContainer) {
                   scrollToWrongField(scrollContainer);
                 }
@@ -594,7 +555,7 @@ export function ConfigTabContent() {
             }}
             onSaveToPort={async () => {
               if (portId().length === 0) return;
-              if (checkNullIncluded(getConfigForm())) {
+              if (compareFileFormat(getConfigForm(), configFormFileFormat())) {
                 if (scrollContainer) {
                   scrollToWrongField(scrollContainer);
                 }

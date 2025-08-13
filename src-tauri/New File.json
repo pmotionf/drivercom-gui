@@ -1,0 +1,208 @@
+{
+  "id": 0,
+  "station": 0,
+  "flags": {
+    "has_neighbor": {
+      "backward": false,
+      "forward": false
+    },
+    "uses_axis": {
+      "axis2": false,
+      "axis3": false
+    },
+    "calibration_completed": false,
+    "rockwell_magnet": false,
+    "flip_sensors": {
+      "axis1": false,
+      "axis2": false,
+      "axis3": false
+    }
+  },
+  "line": {
+    "axes": 0
+  },
+  "voltage": {
+    "target": 0,
+    "warmup": 0,
+    "limit": {
+      "lower": 0,
+      "upper": 0
+    }
+  },
+  "magnet": {
+    "pitch": 0,
+    "length": 0
+  },
+  "carrier": {
+    "mass": 0,
+    "arrival": {
+      "threshold": {
+        "position": 0,
+        "velocity": 0
+      }
+    },
+    "cas": {
+      "buffer": 0,
+      "acceleration": 0
+    }
+  },
+  "mechanical_angle_offset": 0,
+  "axis": {
+    "length": 0,
+    "center": {
+      "gain": {
+        "current": {
+          "p": 0,
+          "i": 0,
+          "denominator": 0
+        },
+        "velocity": {
+          "p": 0,
+          "i": 0,
+          "denominator": 0,
+          "denominator_pi": 0
+        },
+        "position": {
+          "p": 0,
+          "denominator": 0
+        }
+      }
+    },
+    "between": {
+      "gain": {
+        "current": {
+          "p": 0,
+          "i": 0,
+          "denominator": 300
+        },
+        "velocity": {
+          "p": 0,
+          "i": null,
+          "denominator": 0,
+          "denominator_pi": 0
+        },
+        "position": {
+          "p": 0,
+          "denominator": 0
+        }
+      }
+    }
+  },
+  "coil": {
+    "length": 0,
+    "max_current": 0,
+    "continuous_current": 0,
+    "rs": 0,
+    "ls": 0,
+    "center": {
+      "kf": 0
+    },
+    "between": {
+      "kf": 0
+    },
+    "kbm": 0
+  },
+  "sensor": {
+    "default_magnet_length": 0,
+    "ignore_distance": 0
+  },
+  "zero_position": 0,
+  "hall_sensors": [
+    {
+      "magnet_length": {
+        "backward": 0,
+        "forward": 0
+      },
+      "position": {
+        "on": {
+          "backward": 0,
+          "forward": 0
+        },
+        "off": {
+          "backward": 0,
+          "forward": 0
+        }
+      }
+    },
+    {
+      "magnet_length": {
+        "backward": 0,
+        "forward": 0
+      },
+      "position": {
+        "on": {
+          "backward": 0,
+          "forward": 0
+        },
+        "off": {
+          "backward": 0,
+          "forward": 0
+        }
+      }
+    },
+    {
+      "magnet_length": {
+        "backward": 0,
+        "forward": 0
+      },
+      "position": {
+        "on": {
+          "backward": 0,
+          "forward": 0
+        },
+        "off": {
+          "backward": 0,
+          "forward": 0
+        }
+      }
+    },
+    {
+      "magnet_length": {
+        "backward": 0,
+        "forward": 0
+      },
+      "position": {
+        "on": {
+          "backward": 0,
+          "forward": 0
+        },
+        "off": {
+          "backward": 0,
+          "forward": 0
+        }
+      }
+    },
+    {
+      "magnet_length": {
+        "backward": 0,
+        "forward": 0
+      },
+      "position": {
+        "on": {
+          "backward": 0,
+          "forward": 0
+        },
+        "off": {
+          "backward": 0,
+          "forward": 0
+        }
+      }
+    },
+    {
+      "magnet_length": {
+        "backward": 0,
+        "forward": 0
+      },
+      "position": {
+        "on": {
+          "backward": 0,
+          "forward": 0
+        },
+        "off": {
+          "backward": 0,
+          "forward": 0
+        }
+      }
+    }
+  ]
+}
