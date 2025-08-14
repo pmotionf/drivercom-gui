@@ -1,10 +1,9 @@
-import { JSX } from "solid-js";
+import { JSX, createSignal } from "solid-js";
 import { Line } from "./Line.tsx";
 import { Accordion } from "../ui/accordion.tsx";
 import { For } from "solid-js/web";
 import { Station } from "./Station.tsx";
 import { Axis } from "./Axes.tsx";
-import { createSignal } from "solid-js";
 
 import { useDragDropContext } from "@thisbeyond/solid-dnd";
 import {
@@ -91,7 +90,7 @@ export function System(props: SystemProps) {
                     }}
                   >
                     <Line
-                      value={props.value.lines[item].line}
+                      line={props.value.lines[item].line}
                       system={props.value.lines[item].system!}
                     >
                       <Station>
