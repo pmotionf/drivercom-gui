@@ -28,32 +28,16 @@ export function Line(props: LineProps) {
 
   createEffect(
     on(
-      () => props.system?.axisInfos,
+      () => props.system,
       () => {
         if (props.system && props.system.axisInfos) {
           systemStore[1]("axisInfos", props.system.axisInfos);
         }
-      },
-      { defer: true },
-    ),
-  );
 
-  createEffect(
-    on(
-      () => props.system?.axisErrors,
-      () => {
         if (props.system && props.system.axisErrors) {
           systemStore[1]("axisErrors", props.system.axisErrors);
         }
-      },
-      { defer: true },
-    ),
-  );
 
-  createEffect(
-    on(
-      () => props.system?.carrierInfos,
-      () => {
         if (props.system && props.system.carrierInfos) {
           systemStore[1]("carrierInfos", props.system.carrierInfos);
         }
