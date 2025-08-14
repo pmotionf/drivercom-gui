@@ -23,6 +23,7 @@ import {
   IconLinkOff,
   IconLock,
   IconLockOff,
+  IconExclamationCircle,
 } from "@tabler/icons-solidjs";
 import { Tooltip } from "./ui/tooltip.tsx";
 
@@ -327,24 +328,14 @@ export function ConfigForm(props: ConfigFormProps) {
   }
 
   return (
-    <div
-      style={{
-        "overflow-y": "auto",
-        width: "100%",
-        "border-top-width": "1px",
-        "border-bottom-width": "1px",
-        "padding-bottom": "0.5rem",
-      }}
-    >
-      <ConfigObject
-        object={config}
-        id_prefix={props.label}
-        accordionStatuses={props.accordionStatuses}
-        linkedStatuses={props.linkedStatuses}
-        gainLockStatuses={props.gainLockStatuses}
-        gainKinds={dynamic}
-      />
-    </div>
+    <ConfigObject
+      object={config}
+      id_prefix={props.label}
+      accordionStatuses={props.accordionStatuses}
+      linkedStatuses={props.linkedStatuses}
+      gainLockStatuses={props.gainLockStatuses}
+      gainKinds={dynamic}
+    />
   );
 }
 
@@ -542,7 +533,7 @@ function ConfigObject(props: ConfigObjectProps) {
               </Checkbox>
             );
           }
-          if (typeof value === "number" || value === "NaN") {
+          if (typeof value === "number") {
             let lockStatusKey = "";
             const lockStatus = props.gainLockStatuses;
             if (
@@ -570,112 +561,132 @@ function ConfigObject(props: ConfigObjectProps) {
                 <Text width="50%" marginTop="0.4rem" fontWeight="light">
                   {key}
                 </Text>
-                <Stack
-                  ref={divRef}
-                  style={{
-                    width: "50%",
-                    padding: "0.4rem",
-                    "padding-right": "0.2rem",
-                    "border-radius": "0.5rem",
-                    "border-width": "1px",
-                  }}
-                  borderColor="bg.disabled"
-                  direction="row"
-                >
-                  <input
+                <div style={{ width: "50%" }}>
+                  <Stack
+                    ref={divRef}
                     style={{
-                      width: lockStatus.has(lockStatusKey)
-                        ? `calc(100% - 1rem)`
-                        : "100%",
-                      outline: "none",
-                      opacity: lockStatus.has(lockStatusKey)
-                        ? lockStatus.get(lockStatusKey)![0]()
-                          ? "0.4"
-                          : "1"
-                        : "1",
+                      width: "100%",
+                      padding: "0.4rem",
+                      "padding-right": "0.2rem",
+                      "border-radius": "0.5rem",
+                      "border-width": "1px",
+                      gap: "0",
                     }}
-                    disabled={
-                      lockStatus.has(lockStatusKey)
-                        ? lockStatus.get(lockStatusKey)![0]()
-                        : false
+                    borderColor={
+                      Number.isFinite(Number(value)) ? "bg.disabled" : "red"
                     }
-                    onFocusIn={() => {
-                      divRef!.style.borderWidth = "2px";
-                      divRef!.style.borderColor = getComputedCSSVariableValue(
-                        "--colors-accent-default",
-                      );
-                    }}
-                    onFocusOut={() => {
-                      divRef!.style.borderWidth = "1px";
-                      divRef!.style.borderColor = getComputedCSSVariableValue(
-                        "--colors-bg-disabled",
-                      );
-                    }}
-                    placeholder={key}
-                    value={object[key as keyof typeof object]}
-                    onChange={(e) => {
-                      if (isNaN(Number(e.target.value))) {
-                        if (e.target.value.toLowerCase() !== "nan") {
-                          e.target.value = String(
-                            object[key as keyof typeof object],
-                          );
-                          return;
-                        }
-                      }
-                      setObject(
-                        key as keyof typeof object,
-                        // @ts-ignore: TSC unable to handle generic object type
-                        // in store
-                        Number(e.target.value),
-                      );
-                      props.onItemChange?.();
-                    }}
-                  />
-                  <Show when={lockStatus.has(lockStatusKey)}>
-                    <IconButton
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      borderRadius="3rem"
-                      height="min-content"
-                      paddingTop="0.2rem"
-                      paddingBottom="0.2rem"
-                      opacity={
-                        lockStatus.get(lockStatusKey)![0]() ? "1" : "0.5"
-                      }
-                      onClick={() => {
-                        lockStatus.get(lockStatusKey)![1](
-                          !lockStatus.get(lockStatusKey)![0](),
-                        );
-
-                        const split = lockStatusKey.split(".");
-                        const includingKeys = `${split[0]}.${split[1]}.`;
-                        const mapValues = Array.from(
-                          props.gainLockStatuses.entries(),
-                        )
-                          .filter((entries) =>
-                            entries[0].includes(includingKeys),
-                          )
-                          .map((entries) => entries[1][0]());
-                        const parseValues = [...new Set(mapValues)];
-                        if (parseValues.length !== 1) {
-                          lockStatus.get(includingKeys.slice(0, -1))![1](true);
-                        } else {
-                          lockStatus.get(includingKeys.slice(0, -1))![1](
-                            parseValues[0],
-                          );
-                        }
+                    direction="row"
+                  >
+                    <input
+                      style={{
+                        width: lockStatus.has(lockStatusKey)
+                          ? `calc(100% - 2rem)`
+                          : "100%",
+                        outline: "none",
+                        opacity: lockStatus.has(lockStatusKey)
+                          ? lockStatus.get(lockStatusKey)![0]()
+                            ? "0.4"
+                            : "1"
+                          : "1",
                       }}
-                    >
-                      <Show
-                        when={lockStatus.get(lockStatusKey)![0]()}
-                        fallback={<IconLockOff />}
+                      disabled={
+                        lockStatus.has(lockStatusKey)
+                          ? lockStatus.get(lockStatusKey)![0]()
+                          : false
+                      }
+                      onFocusIn={() => {
+                        divRef!.style.borderWidth = "2px";
+                        divRef!.style.borderColor = getComputedCSSVariableValue(
+                          "--colors-accent-default",
+                        );
+                      }}
+                      onFocusOut={(e) => {
+                        divRef!.style.borderWidth = "1px";
+                        divRef!.style.borderColor = !Number.isFinite(
+                          Number(e.target.value),
+                        )
+                          ? "red"
+                          : getComputedCSSVariableValue("--colors-bg-disabled");
+                      }}
+                      placeholder={key}
+                      value={object[key as keyof typeof object]}
+                      onChange={(e) => {
+                        if (isNaN(Number(e.target.value))) {
+                          if (e.target.value.toLowerCase() !== "nan") {
+                            e.target.value = String(
+                              object[key as keyof typeof object],
+                            );
+                            return;
+                          }
+                        }
+                        setObject(
+                          key as keyof typeof object,
+                          // @ts-ignore: TSC unable to handle generic object type
+                          // in store
+                          Number(e.target.value),
+                        );
+                        props.onItemChange?.();
+                      }}
+                    />
+                    <Show when={!Number.isFinite(value)}>
+                      <IconExclamationCircle
+                        color="red"
+                        data-name="config_field_error"
+                      />
+                    </Show>
+                    <Show when={lockStatus.has(lockStatusKey)}>
+                      <IconButton
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        borderRadius="3rem"
+                        height="min-content"
+                        paddingTop="0.2rem"
+                        paddingBottom="0.2rem"
+                        opacity={
+                          lockStatus.get(lockStatusKey)![0]() ? "1" : "0.5"
+                        }
+                        onClick={() => {
+                          lockStatus.get(lockStatusKey)![1](
+                            !lockStatus.get(lockStatusKey)![0](),
+                          );
+
+                          const split = lockStatusKey.split(".");
+                          const includingKeys = `${split[0]}.${split[1]}.`;
+                          const mapValues = Array.from(
+                            props.gainLockStatuses.entries(),
+                          )
+                            .filter((entries) =>
+                              entries[0].includes(includingKeys),
+                            )
+                            .map((entries) => entries[1][0]());
+                          const parseValues = [...new Set(mapValues)];
+                          if (parseValues.length !== 1) {
+                            lockStatus.get(includingKeys.slice(0, -1))![1](
+                              true,
+                            );
+                          } else {
+                            lockStatus.get(includingKeys.slice(0, -1))![1](
+                              parseValues[0],
+                            );
+                          }
+                        }}
                       >
-                        <IconLock />
-                      </Show>
-                    </IconButton>
+                        <Show
+                          when={lockStatus.get(lockStatusKey)![0]()}
+                          fallback={<IconLockOff />}
+                        >
+                          <IconLock />
+                        </Show>
+                      </IconButton>
+                    </Show>
+                  </Stack>
+                  <Show when={!Number.isFinite(value)}>
+                    <Text size="sm" color="red">
+                      {`Invalid ${typeof value}.`}
+                    </Text>
                   </Show>
-                </Stack>
+                </div>
               </Stack>
             );
           }
