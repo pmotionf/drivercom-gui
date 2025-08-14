@@ -20,22 +20,22 @@ export function Axis() {
       borderRadius="0.5rem"
       borderWidth="1px"
       borderRightWidth={
-        axesContext.axisInfo.hallAlarm && axesContext.axisInfo.hallAlarm!.front
+        axesContext.axisInfo.hallAlarm && axesContext.axisInfo.hallAlarm.front
           ? "5px"
           : "1px"
       }
       borderLeftWidth={
-        axesContext.axisInfo.hallAlarm && axesContext.axisInfo.hallAlarm!.back
+        axesContext.axisInfo.hallAlarm && axesContext.axisInfo.hallAlarm.back
           ? "5px"
           : "1px"
       }
       borderRightColor={
-        axesContext.axisInfo.hallAlarm && axesContext.axisInfo.hallAlarm!.front
+        axesContext.axisInfo.hallAlarm && axesContext.axisInfo.hallAlarm.front
           ? "accent.customGreen"
           : undefined
       }
       borderLeftColor={
-        axesContext.axisInfo.hallAlarm && axesContext.axisInfo.hallAlarm!.back
+        axesContext.axisInfo.hallAlarm && axesContext.axisInfo.hallAlarm.back
           ? "accent.customGreen"
           : undefined
       }
@@ -101,18 +101,16 @@ export function Axis() {
         </Show>
       </Stack>
 
-      <Show when={axesContext.carrierInfo}>
-        <Show when={axesContext.carrierInfo.id}>
-          <Text
-            fontWeight="bold"
-            height="1rem"
-            width="100%"
-            color="fg.default"
-            marginBottom="0.5rem"
-          >
-            Carrier {axesContext.carrierInfo!.id}
-          </Text>
-        </Show>
+      <Show when={axesContext.carrierInfo.id}>
+        <Text
+          fontWeight="bold"
+          height="1rem"
+          width="100%"
+          color="fg.default"
+          marginBottom="0.5rem"
+        >
+          Carrier {axesContext.carrierInfo.id}
+        </Text>
         <Show when={axesContext.carrierInfo.state}>
           <Stack direction="row" gap="0">
             <Text width="3rem" size="sm" fontWeight="bold">
@@ -132,7 +130,7 @@ export function Axis() {
                     "text-align": "left",
                   }}
                 >
-                  {axesContext.carrierInfo && axesContext.carrierInfo!.state
+                  {axesContext.carrierInfo.state
                     ? mmc.info.Response.System.Carrier.Info.State[
                         `${axesContext.carrierInfo!.state}` as keyof typeof mmc.info.Response.System.Carrier.Info.State
                       ]
@@ -143,9 +141,9 @@ export function Axis() {
               </Tooltip.Trigger>
               <Tooltip.Positioner>
                 <Tooltip.Content>
-                  {axesContext.carrierInfo && axesContext.carrierInfo!.state
+                  {axesContext.carrierInfo.state
                     ? mmc.info.Response.System.Carrier.Info.State[
-                        `${axesContext.carrierInfo!.state}` as keyof typeof mmc.info.Response.System.Carrier.Info.State
+                        `${axesContext.carrierInfo.state}` as keyof typeof mmc.info.Response.System.Carrier.Info.State
                       ]
                         .toString()
                         .replace("CARRIER_STATE_", "")
@@ -156,7 +154,7 @@ export function Axis() {
           </Stack>
         </Show>
 
-        <Show when={axesContext.carrierInfo!.position}>
+        <Show when={axesContext.carrierInfo.position}>
           <Stack direction="row" gap="0">
             <Text width="3rem" size="sm" fontWeight="bold">
               Pos
@@ -173,7 +171,7 @@ export function Axis() {
                 "font-family": "monospace",
               }}
             >
-              {axesContext.carrierInfo!.position!.toFixed(6)}
+              {axesContext.carrierInfo.position!.toFixed(6)}
             </Text>
           </Stack>
           <Stack direction="row" gap="0">
@@ -182,18 +180,16 @@ export function Axis() {
             </Text>
             <Show
               when={
-                axesContext.carrierInfo &&
-                axesContext.carrierInfo!.cas &&
-                axesContext.carrierInfo!.cas!.triggered
+                axesContext.carrierInfo.cas &&
+                axesContext.carrierInfo.cas.triggered
               }
             >
               <Text size="sm">Triggered</Text>
             </Show>
             <Show
               when={
-                axesContext.carrierInfo &&
-                axesContext.carrierInfo!.cas &&
-                axesContext.carrierInfo!.cas!.enabled
+                axesContext.carrierInfo.cas &&
+                axesContext.carrierInfo.cas.enabled
               }
             >
               <Text size="sm">Enabled</Text>

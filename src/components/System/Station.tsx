@@ -108,20 +108,27 @@ export function Station(props: StationProps) {
                   stationCtx.system.carrierInfos &&
                   stationCtx.system.carrierInfos!.length > 0
                 ) {
-                  const parseCarrierInfo =
-                    stationCtx.system.carrierInfos!.filter(
+                  let parseCarrierInfo = stationCtx.system.carrierInfos!.filter(
+                    //@ts-ignore Ignore test in git action
+                    (info) => info.axis!.main === axisId,
+                  );
+                  if (parseCarrierInfo.length < 1) {
+                    parseCarrierInfo = stationCtx.system.carrierInfos!.filter(
                       //@ts-ignore Ignore test in git action
-                      (info) => info.axis!.main === axisId,
-                    );
-                  if (parseCarrierInfo.length === 1) {
-                    setCarrierInfo(parseCarrierInfo[0]);
-                  } else {
-                    setCarrierInfo(
-                      {} as mmc.info.Response.System.Carrier.IInfo,
+                      (info) => info.axis!.auxiliary === axisId,
                     );
                   }
+                  if (parseCarrierInfo.length >= 1) {
+                    setCarrierInfo(parseCarrierInfo[0]);
+                  } else {
+                    setCarrierInfo({
+                      id: null,
+                    } as mmc.info.Response.System.Carrier.IInfo);
+                  }
                 } else {
-                  setCarrierInfo({} as mmc.info.Response.System.Carrier.IInfo);
+                  setCarrierInfo({
+                    id: null,
+                  } as mmc.info.Response.System.Carrier.IInfo);
                 }
               },
               { defer: true },
