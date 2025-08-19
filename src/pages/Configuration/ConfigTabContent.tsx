@@ -555,7 +555,7 @@ export function ConfigTabContent() {
             }}
             onSaveToPort={async () => {
               if (portId().length === 0) return;
-              if (compareFileFormat(getConfigForm(), configFormFileFormat())) {
+              if (!compareFileFormat(getConfigForm(), configFormFileFormat())) {
                 if (scrollContainer) {
                   scrollToWrongField(scrollContainer);
                 }
