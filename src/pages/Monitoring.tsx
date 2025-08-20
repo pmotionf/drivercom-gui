@@ -21,8 +21,9 @@ import { Toast } from "~/components/ui/toast.tsx";
 //@ts-ignore Ignore test in git action
 import { mmc } from "~/components/proto/mmc.js";
 import { UnlistenFn } from "@tauri-apps/api/event";
-import { monitoringInputs } from "~/GlobalState.ts";
+import { monitoringInputs, ipHistory, setIPHistory } from "~/GlobalState.ts";
 import { createStore } from "solid-js/store";
+import { IPHistory } from "~/components/System/IPHistory.tsx";
 
 export type SystemConfig = {
   lines: {
@@ -172,6 +173,33 @@ function Monitoring() {
 
   const [isConnecting, setIsConnecting] = createSignal<boolean>(false);
 
+  const connectServer = async (
+    cid: string,
+    address: string,
+  ): Promise<null | string> => {
+    try {
+      await connect(cid, address);
+      const payload: object = {
+        core: {
+          kind: "CORE_REQUEST_KIND_LINE_CONFIG",
+        },
+      };
+      const msg = mmc.Request.fromObject(payload);
+      const request: number[] = Array.from(mmc.Request.encode(msg).finish());
+
+      if (unlisten === null) {
+        unlisten = await listenFromServer();
+      }
+      await send(clientId(), request);
+    } catch (error) {
+      return error as string;
+    }
+    return null;
+  };
+
+  /* CSS Component height */
+  const connectAreaHeight = "12rem";
+
   return (
     <>
       <Splitter.Root
@@ -231,14 +259,21 @@ function Monitoring() {
             borderWidth="0"
             backgroundColor="transparent"
           >
-            <Stack direction="column" width="100%" height="100%">
+            <div style={{ width: "100%", height: "100%" }}>
               {/* Connect Area */}
-              <Stack padding="1rem" width="100%" borderBottomWidth="2px">
+              <Stack
+                style={{
+                  height: connectAreaHeight,
+                  width: "100%",
+                  "border-bottom-width": "2px",
+                  padding: "1rem",
+                }}
+              >
                 <Text size="lg" fontWeight="bold">
                   Connect
                 </Text>
-                <Stack direction="row" width="100%">
-                  <Stack width="50%">
+                <Stack style={{ width: "100%" }} direction="row">
+                  <div style={{ width: "50%" }}>
                     <Text
                       size="sm"
                       width="100%"
@@ -277,8 +312,8 @@ function Monitoring() {
                         }}
                       />
                     </Stack>
-                  </Stack>
-                  <Stack width="50%">
+                  </div>
+                  <div style={{ width: "50%" }}>
                     <Text
                       size="sm"
                       width="100%"
@@ -318,7 +353,7 @@ function Monitoring() {
                         }}
                       />
                     </Stack>
-                  </Stack>
+                  </div>
                 </Stack>
                 <Button
                   variant={
@@ -338,28 +373,25 @@ function Monitoring() {
                       const address = `${monitoringInputs.get("IP")}:${monitoringInputs.get("port")}`;
                       const cid = clientId();
 
-                      try {
-                        await connect(cid, address);
-                        const payload: object = {
-                          core: {
-                            kind: "CORE_REQUEST_KIND_LINE_CONFIG",
-                          },
-                        };
-                        const msg = mmc.Request.fromObject(payload);
-                        const request: number[] = Array.from(
-                          mmc.Request.encode(msg).finish(),
-                        );
-
-                        if (unlisten === null) {
-                          unlisten = await listenFromServer();
-                        }
-                        await send(clientId(), request);
-                      } catch (error) {
+                      const result = await connectServer(cid, address);
+                      if (typeof result === "string") {
                         toaster.create({
                           title: "Connection Error",
-                          description: error as string,
+                          description: result as string,
                           type: "error",
                         });
+                      } else {
+                        const newIp = {
+                          ip: `${monitoringInputs.get("IP")}`,
+                          port: `${monitoringInputs.get("port")}`,
+                        };
+                        setIPHistory([
+                          newIp,
+                          ...ipHistory().filter(
+                            ({ ip, port }) =>
+                              ip !== newIp.ip && port !== newIp.port,
+                          ),
+                        ]);
                       }
                       setIsConnecting(false);
                     }
@@ -368,7 +400,50 @@ function Monitoring() {
                   {systemConfig.lines.length === 0 ? "Connect" : "Cancel"}
                 </Button>
               </Stack>
-            </Stack>
+              {/* IP History Area */}
+              <Show when={ipHistory().length > 0}>
+                <div
+                  style={{
+                    width: "100%",
+                    height: `calc(100% - ${connectAreaHeight})`,
+                  }}
+                >
+                  <IPHistory
+                    onConnectServer={async (index) => {
+                      if (systemConfig.lines.length > 0) {
+                        toaster.create({
+                          title: "Duplicate Connection",
+                          description: "Sever is already connected",
+                          type: "error",
+                        });
+                        return;
+                      }
+                      setIsConnecting(true);
+                      const address = `${ipHistory()[index].ip}:${ipHistory()[index].port}`;
+                      const cid = clientId();
+
+                      const result = await connectServer(cid, address);
+                      if (typeof result === "string") {
+                        toaster.create({
+                          title: "Connection Error",
+                          description: result as string,
+                          type: "error",
+                        });
+                        setIPHistory([
+                          ...ipHistory().filter((_, i) => i !== index),
+                        ]);
+                      } else {
+                        setIPHistory([
+                          ipHistory()[index],
+                          ...ipHistory().filter((_, i) => i !== index),
+                        ]);
+                      }
+                      setIsConnecting(false);
+                    }}
+                  />
+                </div>
+              </Show>
+            </div>
           </Splitter.Panel>
         </Show>
       </Splitter.Root>
