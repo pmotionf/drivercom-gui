@@ -29,6 +29,7 @@
     "dialog:default",
     "fs:default",
     "fs:write-all",
-    "tcp:default"
+    "tcp:default",
+    "store:default"
   ]
 }
