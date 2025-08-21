@@ -1,7 +1,6 @@
 import { Stack } from "styled-system/jsx";
 import { Text } from "../ui/text";
 import { For, Show } from "solid-js";
-import { ipHistory, setIPHistory } from "~/GlobalState";
 import { IconButton } from "../ui/icon-button";
 import { IconX } from "@tabler/icons-solidjs";
 import { createSignal } from "solid-js";
@@ -9,7 +8,9 @@ import { createSignal } from "solid-js";
 export type IPAddress = { ip: string; port: string };
 
 export type IPHistoryProps = {
+  ipHistory: IPAddress[];
   onConnectServer?: (index: number) => void;
+  onDeleteIp: (index: number) => void;
 };
 
 export function IPHistory(props: IPHistoryProps) {
@@ -56,7 +57,7 @@ export function IPHistory(props: IPHistoryProps) {
           "min-height": "2rem",
         }}
       >
-        <For each={ipHistory()}>
+        <For each={props.ipHistory}>
           {(ipAddress, index) => (
             <Stack
               direction="row"
@@ -97,11 +98,7 @@ export function IPHistory(props: IPHistoryProps) {
                   variant="ghost"
                   size="xs"
                   style={{ width: "2rem", "border-radius": "2rem" }}
-                  onClick={() => {
-                    setIPHistory([
-                      ...ipHistory().filter((_, i) => i !== index()),
-                    ]);
-                  }}
+                  onClick={() => props.onDeleteIp(index())}
                 >
                   <IconX />
                 </IconButton>

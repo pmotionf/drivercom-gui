@@ -1,7 +1,7 @@
 import { Button } from "~/components/ui/button.tsx";
 import { Stack } from "styled-system/jsx";
 import { Text } from "~/components/ui/text";
-import { createSignal } from "solid-js";
+import { createSignal, onMount } from "solid-js";
 import { Splitter } from "../components/ui/splitter.tsx";
 import { IconButton } from "~/components/ui/icon-button.tsx";
 import {
@@ -21,9 +21,11 @@ import { Toast } from "~/components/ui/toast.tsx";
 //@ts-ignore Ignore test in git action
 import { mmc } from "~/components/proto/mmc.js";
 import { UnlistenFn } from "@tauri-apps/api/event";
-import { monitoringInputs, ipHistory, setIPHistory } from "~/GlobalState.ts";
+import { monitoringInputs } from "~/GlobalState.ts";
 import { createStore } from "solid-js/store";
 import { IPHistory } from "~/components/System/IPHistory.tsx";
+import { IpAddress } from "~/components/System/IpHistory.tsx";
+import { load } from "@tauri-apps/plugin-store";
 
 export type SystemConfig = {
   lines: {
@@ -199,6 +201,33 @@ function Monitoring() {
 
   /* CSS Component height */
   const connectAreaHeight = "12rem";
+
+  const [ipHistory, setIpHistory] = createSignal<IpAddress[]>([]);
+  onMount(async () => {
+    try {
+      const store = await load("store.json", { autoSave: false });
+      if (await store.has("ipHistory")) {
+        const value = await store.get<IpAddress[]>("ipHistory");
+        if (value) {
+          setIpHistory(value);
+        }
+      }
+    } catch (error) {
+      throw error;
+    }
+  });
+
+  createEffect(
+    on(
+      () => ipHistory(),
+      async () => {
+        const store = await load("store.json", { autoSave: false });
+        await store.set("ipHistory", ipHistory());
+        await store.save();
+      },
+      { defer: true },
+    ),
+  );
 
   return (
     <>
@@ -385,7 +414,7 @@ function Monitoring() {
                           ip: `${monitoringInputs.get("IP")}`,
                           port: `${monitoringInputs.get("port")}`,
                         };
-                        setIPHistory([
+                        setIpHistory([
                           newIp,
                           ...ipHistory().filter(
                             ({ ip, port }) =>
@@ -409,6 +438,12 @@ function Monitoring() {
                   }}
                 >
                   <IPHistory
+                    ipHistory={ipHistory()}
+                    onDeleteIp={(ipIndex) => {
+                      setIpHistory([
+                        ...ipHistory().filter((_, i) => i !== ipIndex),
+                      ]);
+                    }}
                     onConnectServer={async (index) => {
                       if (systemConfig.lines.length > 0) {
                         toaster.create({
@@ -429,11 +464,11 @@ function Monitoring() {
                           description: result as string,
                           type: "error",
                         });
-                        setIPHistory([
+                        setIpHistory([
                           ...ipHistory().filter((_, i) => i !== index),
                         ]);
                       } else {
-                        setIPHistory([
+                        setIpHistory([
                           ipHistory()[index],
                           ...ipHistory().filter((_, i) => i !== index),
                         ]);
