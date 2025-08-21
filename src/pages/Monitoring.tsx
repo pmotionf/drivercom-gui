@@ -23,8 +23,7 @@ import { mmc } from "~/components/proto/mmc.js";
 import { UnlistenFn } from "@tauri-apps/api/event";
 import { monitoringInputs } from "~/GlobalState.ts";
 import { createStore } from "solid-js/store";
-import { IPHistory } from "~/components/System/IPHistory.tsx";
-import { IpAddress } from "~/components/System/IpHistory.tsx";
+import { IpHistory, IpAddress } from "~/components/System/IpHistory.tsx";
 import { load } from "@tauri-apps/plugin-store";
 
 export type SystemConfig = {
@@ -437,14 +436,14 @@ function Monitoring() {
                     height: `calc(100% - ${connectAreaHeight})`,
                   }}
                 >
-                  <IPHistory
+                  <IpHistory
                     ipHistory={ipHistory()}
-                    onDeleteIp={(ipIndex) => {
+                    onDeleteIp={(ipIndex: number) => {
                       setIpHistory([
                         ...ipHistory().filter((_, i) => i !== ipIndex),
                       ]);
                     }}
-                    onConnectServer={async (index) => {
+                    onConnectServer={async (index: number) => {
                       if (systemConfig.lines.length > 0) {
                         toaster.create({
                           title: "Duplicate Connection",
