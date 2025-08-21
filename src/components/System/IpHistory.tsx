@@ -5,15 +5,15 @@ import { IconButton } from "../ui/icon-button";
 import { IconX } from "@tabler/icons-solidjs";
 import { createSignal } from "solid-js";
 
-export type IPAddress = { ip: string; port: string };
+export type IpAddress = { ip: string; port: string };
 
-export type IPHistoryProps = {
-  ipHistory: IPAddress[];
+export type IpHistoryProps = {
+  ipHistory: IpAddress[];
   onConnectServer?: (index: number) => void;
   onDeleteIp: (index: number) => void;
 };
 
-export function IPHistory(props: IPHistoryProps) {
+export function IpHistory(props: IpHistoryProps) {
   const [hoverDiv, setHoverDiv] = createSignal<number | null>(null);
   return (
     <div
