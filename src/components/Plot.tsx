@@ -323,10 +323,6 @@ export function Plot(props: PlotProps) {
   const [showLegendCheckBox, setShowLegendCheckBox] =
     createSignal<boolean>(false);
 
-  const [isAllVisible, setIsAllVisible] = createSignal<boolean>(
-    getContext().visible ? getContext().visible.every((b) => b) : true,
-  );
-
   const [searchInput, setSearchInput] = createSignal<string>("");
   const [legendIndex, setLegendIndex] = createSignal<number[]>(
     props.header.map((_, i) => i),
@@ -1314,10 +1310,15 @@ export function Plot(props: PlotProps) {
                         size="sm"
                         variant="link"
                         onClick={() => {
-                          setIsAllVisible(!isAllVisible());
+                          const newVisible = !getContext()
+                            .visible.filter((_, i) => legendIndex().includes(i))
+                            .includes(true);
                           setContext()(
                             "visible",
-                            getContext().visible.map(() => isAllVisible()),
+                            getContext().visible.map((visible, i) => {
+                              if (legendIndex().includes(i)) return newVisible;
+                              else return visible;
+                            }),
                           );
                           getContext().visible.forEach((val, i) => {
                             plot.setSeries(i + 1, {
@@ -1327,7 +1328,12 @@ export function Plot(props: PlotProps) {
                           props.onContextChange?.(getContext());
                         }}
                       >
-                        <Show when={isAllVisible()} fallback={<IconEye />}>
+                        <Show
+                          when={getContext()
+                            .visible.filter((_, i) => legendIndex().includes(i))
+                            .includes(true)}
+                          fallback={<IconEye />}
+                        >
                           <IconEyeOff />
                         </Show>
                       </IconButton>
