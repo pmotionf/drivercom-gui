@@ -55,39 +55,52 @@ export function Station(props: StationProps) {
           </Badge>
         </Tooltip.Trigger>
         <Tooltip.Positioner>
-          <Tooltip.Content>
+          <Tooltip.Content width="100%">
             <Show when={Object.keys(driverInfo()).length > 1}>
               <Text> Info </Text>
               <For each={Object.entries(driverInfo())}>
                 {([key, value]) => {
                   if (key !== "id")
                     return (
-                      <Text fontWeight="medium" width="100%">
-                        {`${key}: ${value ? "true" : "false"}`}
-                      </Text>
+                      <div style={{ display: "flex", width: "100%" }}>
+                        <Text fontWeight="medium" width="70%">
+                          {key}
+                        </Text>
+                        <Text fontWeight="medium" width="30%">
+                          {value ? "true" : "false"}
+                        </Text>
+                      </div>
                     );
                 }}
               </For>
             </Show>
             <Show when={Object.keys(driverError()).length > 1}>
-              <Text> Error </Text>
+              <Text marginTop="0.5rem"> Error </Text>
               <For each={Object.entries(driverError())}>
                 {([key, value]) => {
-                  if (key !== "id")
-                    if (typeof value === "boolean")
-                      return (
-                        <Text width="100%" fontWeight="medium">
-                          {`${key}: ${value ? "true" : "false"}`}
-                        </Text>
-                      );
-
-                  if (typeof value === "object")
+                  if (key !== "id" && value)
                     return (
-                      <Text width="100%" fontWeight="medium">
-                        {`${key}: ${Object.entries(value)
-                          .filter((entry) => entry[1] === true)
-                          .map(([key]) => key)}`}
-                      </Text>
+                      <div
+                        style={{
+                          display: "flex",
+                          width: "100%",
+                        }}
+                      >
+                        <Text
+                          fontWeight="medium"
+                          style={{
+                            "text-overflow": "hidden",
+                            "white-space": "nowrap",
+                            overflow: "hidden",
+                          }}
+                        >
+                          {typeof value === "boolean"
+                            ? key
+                            : `${key}: ${Object.entries(value)
+                                .filter((entry) => entry[1] === true)
+                                .map(([key]) => key)}`}
+                        </Text>
+                      </div>
                     );
                 }}
               </For>
