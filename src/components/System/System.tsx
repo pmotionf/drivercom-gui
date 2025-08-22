@@ -98,8 +98,15 @@ export function System(props: SystemProps) {
                           : undefined
                       }
                     >
-                      <Station>
-                        <Show when={props.value.lines[item].system}>
+                      <Show when={props.value.lines[item].system}>
+                        <Station
+                          driverInfo={
+                            props.value.lines[item].system!.driverInfos!
+                          }
+                          driverError={
+                            props.value.lines[item].system!.driverErrors!
+                          }
+                        >
                           <Axis
                             axisError={
                               props.value.lines[item].system!.axisErrors!
@@ -111,8 +118,8 @@ export function System(props: SystemProps) {
                               props.value.lines[item].system!.carrierInfos
                             }
                           />
-                        </Show>
-                      </Station>
+                        </Station>
+                      </Show>
                     </Line>
                   </div>
                 );
