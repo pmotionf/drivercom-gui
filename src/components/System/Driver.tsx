@@ -5,6 +5,7 @@ import { For } from "solid-js/web";
 import { Badge } from "../ui/badge.tsx";
 import { Text } from "../ui/text.tsx";
 import { Tooltip } from "../ui/tooltip.tsx";
+//@ts-ignore Ignore git action
 import { mmc } from "../proto/mmc";
 
 export const AxesContext = createContext<{
@@ -32,6 +33,26 @@ export function Driver(props: DriverProps) {
     return props.driverError[lineCtx.driverIndex];
   };
 
+  const findField = (driverError: object): string[] => {
+    const entry = Object.entries(driverError);
+    const errorField: string[] = [];
+    entry.forEach(([key, value]) => {
+      if (typeof value === "boolean") {
+        if (value === true) {
+          errorField.push(`${key[0].toUpperCase()}${key.slice(1, key.length)}`);
+        }
+      } else if (typeof value === "object") {
+        const field = findField(value);
+        if (field.length > 0) {
+          errorField.push(
+            `${key[0].toUpperCase()}${key.slice(1, key.length)}: ${field.toString()}`,
+          );
+        }
+      }
+    });
+    return errorField;
+  };
+
   return (
     <div
       id={driverId}
@@ -45,68 +66,48 @@ export function Driver(props: DriverProps) {
         <Tooltip.Trigger>
           <Badge
             background={
-              Object.keys(driverError()).length > 1 ? "red" : "bg.canvas"
+              findField(driverError()).length > 0 ? "red" : "bg.canvas"
             }
             color={
-              Object.keys(driverError()).length > 1 ? "#ffffff" : "fg.default"
+              findField(driverError()).length > 0 ? "#ffffff" : "fg.default"
             }
           >
             <Text fontWeight="bold">Driver {lineCtx.driverIndex + 1}</Text>
           </Badge>
         </Tooltip.Trigger>
-        <Tooltip.Positioner>
-          <Tooltip.Content width="100%">
-            <Show when={Object.keys(driverInfo()).length > 1}>
-              <Text> Info </Text>
-              <For each={Object.entries(driverInfo())}>
-                {([key, value]) => {
-                  if (key !== "id")
-                    return (
-                      <div style={{ display: "flex", width: "100%" }}>
-                        <Text fontWeight="medium" width="70%">
-                          {key}
-                        </Text>
-                        <Text fontWeight="medium" width="30%">
-                          {value ? "true" : "false"}
-                        </Text>
-                      </div>
-                    );
-                }}
-              </For>
-            </Show>
-            <Show when={Object.keys(driverError()).length > 1}>
-              <Text marginTop="0.5rem"> Error </Text>
-              <For each={Object.entries(driverError())}>
-                {([key, value]) => {
-                  if (key !== "id" && value)
-                    return (
-                      <div
-                        style={{
-                          display: "flex",
-                          width: "100%",
-                        }}
-                      >
-                        <Text
-                          fontWeight="medium"
-                          style={{
-                            "text-overflow": "hidden",
-                            "white-space": "nowrap",
-                            overflow: "hidden",
-                          }}
-                        >
-                          {typeof value === "boolean"
-                            ? key
-                            : `${key}: ${Object.entries(value)
-                                .filter((entry) => entry[1] === true)
-                                .map(([key]) => key)}`}
-                        </Text>
-                      </div>
-                    );
-                }}
-              </For>
-            </Show>
-          </Tooltip.Content>
-        </Tooltip.Positioner>
+        <Show
+          when={
+            findField(driverInfo()).length > 0 ||
+            findField(driverError()).length > 0
+          }
+        >
+          <Tooltip.Positioner>
+            <Tooltip.Content width="100%" minWidth="10rem">
+              <Show when={findField(driverInfo()).length > 0}>
+                <Text> Info </Text>
+                <For each={findField(driverInfo())}>
+                  {(field) => {
+                    return <Text fontWeight="medium">{field}</Text>;
+                  }}
+                </For>
+              </Show>
+              <Show when={findField(driverError()).length >= 1}>
+                <Text
+                  marginTop={
+                    findField(driverInfo()).length > 0 ? "0.5rem" : "0"
+                  }
+                >
+                  Error
+                </Text>
+                <For each={findField(driverError())}>
+                  {(errorField) => {
+                    return <Text fontWeight="medium">{errorField}</Text>;
+                  }}
+                </For>
+              </Show>
+            </Tooltip.Content>
+          </Tooltip.Positioner>
+        </Show>
       </Tooltip.Root>
 
       <Stack direction="row" gap="0.5rem" marginTop="0.5rem">
