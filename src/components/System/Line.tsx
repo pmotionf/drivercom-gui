@@ -14,7 +14,7 @@ export type LineProps = JSX.HTMLAttributes<HTMLDivElement> & {
 };
 
 export const LineContext = createContext<{
-  stationIndex: number;
+  driverIndex: number;
 }>();
 
 export function useLineContext() {
@@ -155,11 +155,11 @@ export function Line(props: LineProps) {
           gap="1rem"
         >
           <For each={Array.from({ length: props.line.axes! / 3 }, (_, i) => i)}>
-            {(stationIndex) => {
+            {(driverIndex) => {
               return (
                 <LineContext.Provider
                   value={{
-                    stationIndex: stationIndex,
+                    driverIndex: driverIndex,
                   }}
                 >
                   {props.children}

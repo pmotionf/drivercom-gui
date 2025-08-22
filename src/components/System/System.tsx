@@ -2,7 +2,7 @@ import { JSX, Show, createSignal } from "solid-js";
 import { Line } from "./Line.tsx";
 import { Accordion } from "../ui/accordion.tsx";
 import { For } from "solid-js/web";
-import { Station } from "./Station.tsx";
+import { Driver } from "./Driver.tsx";
 import { Axis } from "./Axes.tsx";
 import { Store } from "solid-js/store";
 
@@ -99,7 +99,7 @@ export function System(props: SystemProps) {
                       }
                     >
                       <Show when={props.value.lines[item].system}>
-                        <Station
+                        <Driver
                           driverInfo={
                             props.value.lines[item].system!.driverInfos!
                           }
@@ -118,7 +118,7 @@ export function System(props: SystemProps) {
                               props.value.lines[item].system!.carrierInfos
                             }
                           />
-                        </Station>
+                        </Driver>
                       </Show>
                     </Line>
                   </div>

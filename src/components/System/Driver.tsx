@@ -15,26 +15,26 @@ export const useAxesContext = () => {
   return useContext(AxesContext);
 };
 
-export type StationProps = JSX.HTMLAttributes<HTMLDivElement> & {
+export type DriverProps = JSX.HTMLAttributes<HTMLDivElement> & {
   driverInfo: mmc.info.Response.System.Driver.IInfo[];
   driverError: mmc.info.Response.System.Driver.IError[];
 };
 
-export function Station(props: StationProps) {
+export function Driver(props: DriverProps) {
   const lineCtx = useLineContext()!;
   if (!lineCtx) return;
-  const stationId = crypto.randomUUID();
+  const driverId = crypto.randomUUID();
 
   const driverInfo = () => {
-    return props.driverInfo[lineCtx.stationIndex];
+    return props.driverInfo[lineCtx.driverIndex];
   };
   const driverError = () => {
-    return props.driverError[lineCtx.stationIndex];
+    return props.driverError[lineCtx.driverIndex];
   };
 
   return (
     <div
-      id={stationId}
+      id={driverId}
       style={{
         "border-width": "1px",
         "border-radius": "0.2rem",
@@ -51,7 +51,7 @@ export function Station(props: StationProps) {
               Object.keys(driverError()).length > 1 ? "#ffffff" : "fg.default"
             }
           >
-            <Text fontWeight="bold">Driver {lineCtx.stationIndex + 1}</Text>
+            <Text fontWeight="bold">Driver {lineCtx.driverIndex + 1}</Text>
           </Badge>
         </Tooltip.Trigger>
         <Tooltip.Positioner>
@@ -113,7 +113,7 @@ export function Station(props: StationProps) {
         <For
           each={Array.from(
             { length: 3 },
-            (_, i) => lineCtx.stationIndex * 3 + i,
+            (_, i) => lineCtx.driverIndex * 3 + i,
           )}
         >
           {(axisIndex) => {
@@ -121,7 +121,7 @@ export function Station(props: StationProps) {
             return (
               <AxesContext.Provider
                 value={{
-                  id: `${stationId}:${axisId}`,
+                  id: `${driverId}:${axisId}`,
                 }}
               >
                 {props.children}
