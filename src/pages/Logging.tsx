@@ -410,11 +410,13 @@ export function Logging() {
                   refresh();
                 }}
                 onOpenFile={async () => {
+                  let newFile: object | null = null;
+                  let path: string | null = null;
                   try {
-                    const path = await file.openDialog("json");
-                    const newFile = await file.read(path);
+                    path = await file.openDialog("json");
+                    newFile = await file.read(path);
                     const isFormatMatch = file.isFormatMatch(
-                      newFile,
+                      newFile!,
                       logFormFileFormat(),
                     );
                     if (isFormatMatch) {
@@ -426,6 +428,7 @@ export function Logging() {
                     if (e) {
                       invalidFileMsg(e.toString());
                     }
+                    return;
                   }
                 }}
                 onOpenRecentFile={async (recentPath: string) => {

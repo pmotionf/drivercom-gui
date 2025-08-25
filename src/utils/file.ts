@@ -87,13 +87,13 @@ export function isFormatMatch(
   defaultFormat: object,
 ): boolean | never {
   const isNullIncluded = checkNullIncluded(file);
-  if (isNullIncluded) throw new Error("The file is invalid.");
+  if (isNullIncluded) throw new Error("The file is invalid. (null)");
 
   const newFile = checkFormat(file);
   const defaultFile = checkFormat(defaultFormat);
   const isFormatMatch = newFile === defaultFile;
   if (isFormatMatch) return isFormatMatch;
-  else throw new Error("The file is invalid.");
+  else throw new Error("The file is invalid. (format)");
 }
 
 function checkFormat(file: object): string {
@@ -116,20 +116,19 @@ function checkNullIncluded(format: object): boolean {
   let isNullIncluded = false;
   for (let i = 0; i < values.length; i++) {
     const val = values[i];
-    if (typeof val === "number" || !Number.isFinite(val)) {
-      isNullIncluded = true;
-      break;
-    } else if (typeof val === "object") {
-      const isNull = checkNullIncluded(val);
-      if (isNull) {
+    if (typeof val === "number") {
+      if (!Number.isFinite(val)) {
         isNullIncluded = true;
         break;
       }
-    } else if (val === null) {
-      isNullIncluded = true;
-      break;
+    } else if (typeof val === "object") {
+      if (checkNullIncluded(val)) {
+        isNullIncluded = true;
+        break;
+      }
     }
   }
+  console.log(isNullIncluded);
   return isNullIncluded;
 }
 
