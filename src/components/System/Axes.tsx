@@ -41,8 +41,8 @@ export function Axis(props: AxisProps) {
 
   return (
     <Stack
-      width="13rem"
-      height="8rem"
+      width="9rem"
+      height="7rem"
       borderRadius="0.5rem"
       borderWidth="1px"
       borderRightWidth={
@@ -120,15 +120,41 @@ export function Axis(props: AxisProps) {
       </Stack>
 
       <Show when={carrier() && carrier()!.id}>
-        <Text
-          fontWeight="bold"
-          height="1rem"
-          width="100%"
-          color="fg.default"
-          marginBottom="0.5rem"
-        >
-          Carrier {carrier()!.id}
-        </Text>
+        <div style={{ width: "100%", display: "flex" }}>
+          <Text
+            fontWeight="bold"
+            height="1rem"
+            width={`calc(100% - 2rem)`}
+            color="fg.default"
+            marginBottom="0.5rem"
+          >
+            Carrier {carrier()!.id}
+          </Text>
+          <Badge
+            style={{
+              width: "min-content",
+              "border-width": "0",
+              "margin-top": "0.2rem",
+            }}
+            size="sm"
+            backgroundColor={
+              carrier()!.cas
+                ? carrier()!.cas!.triggered
+                  ? "red"
+                  : carrier()!.cas!.enabled
+                    ? "accent.customGreen"
+                    : "bg.emphasized"
+                : "bg.emphasized"
+            }
+            color={
+              carrier()!.cas && carrier()!.cas!.triggered
+                ? "white"
+                : "fg.default"
+            }
+          >
+            CAS
+          </Badge>
+        </div>
         <Show when={carrier()!.state}>
           <Stack direction="row" gap="0">
             <Text width="3rem" size="sm" fontWeight="bold">
@@ -191,17 +217,6 @@ export function Axis(props: AxisProps) {
             >
               {carrier()!.position!.toFixed(6)}
             </Text>
-          </Stack>
-          <Stack direction="row" gap="0">
-            <Text width="3rem" size="sm" fontWeight="bold">
-              CAS
-            </Text>
-            <Show when={carrier()!.cas && carrier()!.cas!.triggered}>
-              <Text size="sm">Triggered</Text>
-            </Show>
-            <Show when={carrier()!.cas && carrier()!.cas!.enabled}>
-              <Text size="sm">Enabled</Text>
-            </Show>
           </Stack>
         </Show>
       </Show>
