@@ -23,8 +23,6 @@ import {
   IconReload,
   IconX,
 } from "@tabler/icons-solidjs";
-import { open, save } from "@tauri-apps/plugin-dialog";
-import { readTextFile, writeTextFile } from "@tauri-apps/plugin-fs";
 import { IconButton } from "~/components/ui/icon-button.tsx";
 import { onMount } from "solid-js";
 import { Editable } from "~/components/ui/editable.tsx";
@@ -38,6 +36,7 @@ import { ConnectButton } from "./Connect/ConnectButton.tsx";
 import { createStore } from "solid-js/store";
 import { TabContext, TabListContext } from "~/components/TabList.tsx";
 import { Button } from "~/components/ui/button.tsx";
+import { file } from "~/utils/file.ts";
 
 export function Logging() {
   const [logConfigure, setLogConfigure] = createSignal({});
@@ -93,64 +92,6 @@ export function Logging() {
     ]);
     const output = await sideCommand.execute();
     return { stdout: output.stdout, stderr: output.stderr };
-  }
-
-  async function openFileDialog(): Promise<
-    string | { title: string; description: string; type: string }
-  > {
-    const path = await open({
-      multiple: false,
-      filters: [{ name: "JSON", extensions: ["json"] }],
-    });
-
-    if (!path) {
-      return {
-        title: "Invalid File Path",
-        description: "The file path is invalid.",
-        type: "error",
-      };
-    }
-
-    const extension = path.split(".").pop();
-    if (extension != "json") {
-      return {
-        title: "Invalid File Extension",
-        description: "The file extension is invalid.",
-        type: "error",
-      };
-    }
-    return path.replaceAll("\\", "/");
-  }
-
-  function checkFileFormat(file: object): string {
-    const newFileFormat = Object.entries(file)
-      .map((entry) => {
-        const key = entry[0];
-        const value = entry[1];
-        if (typeof value !== "object") return [key, typeof value];
-        const parseValue = checkFileFormat(value);
-        return [key, parseValue];
-      })
-      .sort()
-      .toString();
-
-    return newFileFormat;
-  }
-
-  function compareFileFormat(newFile: object, fileFormat: object): boolean {
-    const newFileObject = checkFileFormat(newFile);
-    const logFileObject = checkFileFormat(fileFormat);
-    return newFileObject === logFileObject;
-  }
-
-  async function readJsonFile(path: string): Promise<object | null> {
-    try {
-      const output = await readTextFile(path);
-      const parseFileToObject = JSON.parse(output);
-      return parseFileToObject;
-    } catch {
-      return null;
-    }
   }
 
   function setLogFormData(form: object, path: string) {
@@ -294,53 +235,6 @@ export function Logging() {
     await logStop.execute();
   }
 
-  async function openSaveFileDialog(): Promise<string | null> {
-    const fileNameFromPath =
-      filePath! && filePath.length !== 0
-        ? filePath()
-            .match(/[^?!//]+$/)!
-            .toString()
-        : "";
-    const currentFilePath =
-      filePath! && filePath.length !== 0
-        ? formTitle() === fileNameFromPath
-          ? filePath()
-          : filePath().replace(fileNameFromPath, formTitle)
-        : formTitle();
-
-    const path = await save({
-      defaultPath:
-        currentFilePath!.split(".").pop()!.toLowerCase() === "json"
-          ? `${currentFilePath}`
-          : `${currentFilePath}.json`,
-      filters: [
-        {
-          name: "JSON",
-          extensions: ["json"],
-        },
-      ],
-    });
-    if (!path) {
-      return null;
-    }
-
-    const extension = path.split(".").pop();
-    if (extension != "json") {
-      return null;
-    }
-
-    return path;
-  }
-
-  async function saveLogAsFile(path: string, logForm: object) {
-    const json_str = JSON.stringify(logForm, null, "  ");
-    await writeTextFile(path, json_str);
-    setRecentLogFilePaths((prev) => {
-      const parseFilePath = prev.filter((prevPath) => prevPath !== path);
-      return [path.replaceAll("\\", "/"), ...parseFilePath];
-    });
-  }
-
   async function saveLogToPort(log: object): Promise<string> {
     const json_str = JSON.stringify(log, null, "  ");
     const logSave = Command.sidecar("binaries/drivercom", [
@@ -414,6 +308,27 @@ export function Logging() {
         setPage(Pages.LogViewer);
       }, 200);
     }
+  };
+
+  const invalidFileMsg = (desc: string) => {
+    return toaster.create({
+      title: "Invalid File",
+      description: desc.split(":")[1],
+      type: "error",
+    });
+  };
+
+  const addRecentFile = (path: string) => {
+    return setRecentLogFilePaths((prev) => [
+      path,
+      ...prev.filter((prevPath) => prevPath !== path),
+    ]);
+  };
+
+  const deleteRecentFile = (path: string) => {
+    return setRecentLogFilePaths((prev) =>
+      prev.filter((prevPath) => prevPath !== path),
+    );
   };
 
   return (
@@ -495,55 +410,37 @@ export function Logging() {
                   refresh();
                 }}
                 onOpenFile={async () => {
-                  const path = await openFileDialog();
-                  if (typeof path !== "string") {
-                    toaster.create(path);
+                  let newFile: object | null = null;
+                  let path: string | null = null;
+                  try {
+                    path = await file.openDialog("json");
+                    newFile = await file.read(path);
+                    const isFormatMatch = file.isFormatMatch(
+                      newFile!,
+                      logFormFileFormat(),
+                    );
+                    if (isFormatMatch) {
+                      setLogFormData(newFile, path);
+                      addRecentFile(path.replaceAll(`\\`, "/"));
+                      refresh();
+                    }
+                  } catch (e) {
+                    if (e) {
+                      invalidFileMsg(e.toString());
+                    }
                     return;
-                  }
-
-                  const logObj = await readJsonFile(path);
-                  if (!logObj) {
-                    toaster.create({
-                      title: "Invalid File Path",
-                      description: "The file path is invalid.",
-                      type: "error",
-                    });
-                    return;
-                  }
-
-                  if (compareFileFormat(logObj, logFormFileFormat())) {
-                    setLogFormData(logObj, path);
-                    setRecentLogFilePaths((prev) => {
-                      const newRecentFiles = prev.filter(
-                        (prevFilePath) => prevFilePath !== path,
-                      );
-                      return [path, ...newRecentFiles];
-                    });
-                    refresh();
-                  } else {
-                    toaster.create({
-                      title: "Invalid File",
-                      description: "File format is invalid.",
-                      type: "error",
-                    });
                   }
                 }}
-                onOpenRecentFile={async (filePath: string) => {
-                  const object = await readJsonFile(filePath);
-                  if (!object) {
-                    toaster.create({
-                      title: "Invalid File Path",
-                      description: "The file path is invalid.",
-                      type: "error",
-                    });
-                    setRecentLogFilePaths((prev) => {
-                      return prev.filter(
-                        (prevFilePath) => prevFilePath !== filePath,
-                      );
-                    });
-                    return;
+                onOpenRecentFile={async (recentPath: string) => {
+                  try {
+                    const recentFile = await file.read(recentPath);
+                    setLogFormData(recentFile, recentPath);
+                  } catch (e) {
+                    if (e) {
+                      invalidFileMsg(e.toString());
+                    }
+                    deleteRecentFile(recentPath);
                   }
-                  setLogFormData(object!, filePath);
                 }}
                 onDeleteRecentPath={(index: number) => {
                   setRecentLogFilePaths((prev: string[]) => {
@@ -554,36 +451,32 @@ export function Logging() {
                 }}
                 onReloadFile={async () => {
                   if (filePath().length === 0) return;
-                  setRenderLoggingForm(false);
-
-                  const logObj = await readJsonFile(filePath());
-                  if (!logObj) {
-                    toaster.create({
-                      title: "Invalid File Path",
-                      description: "The file path is invalid.",
-                      type: "error",
-                    });
-                    setRecentLogFilePaths((prev) => {
-                      return prev.filter(
-                        (prevFilePath) => prevFilePath !== filePath(),
-                      );
-                    });
-                    return;
+                  const recentPath = filePath();
+                  try {
+                    const recentFile = await file.read(recentPath);
+                    setLogConfigure(recentFile);
+                    refresh();
+                  } catch (e) {
+                    if (e) {
+                      invalidFileMsg(e.toString());
+                    }
+                    deleteRecentFile(recentPath);
                   }
-                  setLogConfigure(logObj);
-                  refresh();
                 }}
                 onSaveFile={async () => {
-                  const path = await openSaveFileDialog();
-                  if (!path) {
-                    toaster.create({
-                      title: "Invalid File Path",
-                      description: "The specified file path is invalid.",
-                      type: "error",
-                    });
-                    return;
+                  try {
+                    const path = await file.saveDialog(
+                      "json",
+                      filePath(),
+                      formTitle(),
+                    );
+                    await file.write(path, logConfigure());
+                    addRecentFile(path.replaceAll(`\\`, "/"));
+                  } catch (e) {
+                    if (e) {
+                      invalidFileMsg(e.toString());
+                    }
                   }
-                  await saveLogAsFile(path, logConfigure());
                 }}
               />
 
@@ -719,41 +612,18 @@ export function Logging() {
                           loading={logGetBtnLoading()}
                           onClick={async () => {
                             if (portId().length === 0) return;
-                            const path = await save({
-                              defaultPath:
-                                formTitle().split(".").pop()!.toLowerCase() ===
-                                "csv"
-                                  ? `${formTitle()}`
-                                  : `${formTitle()}.csv`,
-                              filters: [
-                                {
-                                  name: "CSV",
-                                  extensions: ["csv"],
-                                },
-                              ],
-                            });
-
-                            if (!path) {
-                              toaster.create({
-                                title: "Invalid File Path",
-                                description: "The file path is invalid.",
-                                type: "error",
-                              });
-                              setLogGetBtnLoading(false);
-                              return;
+                            try {
+                              const path = await file.saveDialog(
+                                filePath(),
+                                formTitle(),
+                              );
+                              setLogGetBtnLoading(true);
+                              await saveLogCsvFile(path);
+                            } catch (e) {
+                              if (e) {
+                                invalidFileMsg(e.toString());
+                              }
                             }
-                            const extension = path.split(".").pop();
-                            if (extension != "csv") {
-                              toaster.create({
-                                title: "Invalid File Extension",
-                                description: "The file extension is invalid.",
-                                type: "error",
-                              });
-                              setLogGetBtnLoading(false);
-                              return;
-                            }
-                            setLogGetBtnLoading(true);
-                            await saveLogCsvFile(path);
                           }}
                           variant="ghost"
                           userSelect="none"
