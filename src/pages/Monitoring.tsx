@@ -231,9 +231,13 @@ function Monitoring() {
   return (
     <>
       <Splitter.Root
+        id={clientId()}
         panels={[
           { id: `${clientId()}-panel` },
-          { id: `${clientId()}-sidebar` },
+          {
+            id: `${clientId()}-sidebar`,
+            minSize: 18,
+          },
         ]}
         size={[panelSize(), 100 - panelSize()]}
         onResize={(details) => {
@@ -259,13 +263,15 @@ function Monitoring() {
           size="sm"
           variant="ghost"
           onClick={() => setShowSideBar(!showSideBar())}
+          position="absolute"
+          top="0"
+          right="0"
         >
           <Show when={!showSideBar()} fallback={<IconChevronRightPipe />}>
             <IconChevronLeftPipe />
           </Show>
         </IconButton>
 
-        {/* Side bar */}
         <Show when={showSideBar()}>
           <Splitter.ResizeTrigger
             id={`${clientId()}-panel:${clientId()}-sidebar`}
@@ -278,14 +284,11 @@ function Monitoring() {
               "border-inline-width": "2px",
             }}
           />
-        </Show>
-
-        <Show when={showSideBar()}>
           <Splitter.Panel
-            minWidth="18rem"
             id={`${clientId()}-sidebar`}
             borderWidth="0"
             backgroundColor="transparent"
+            minWidth="18rem"
           >
             <div style={{ width: "100%", height: "100%" }}>
               {/* Connect Area */}
