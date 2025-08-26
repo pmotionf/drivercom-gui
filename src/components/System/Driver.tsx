@@ -66,10 +66,9 @@ export function Driver(props: DriverProps) {
         <Tooltip.Trigger>
           <Badge
             background={
-              findField(driverError()).length > 0 ? "red" : "bg.canvas"
-            }
-            color={
-              findField(driverError()).length > 0 ? "#ffffff" : "fg.default"
+              findField(driverError()).length > 0
+                ? "accent.customRed"
+                : "bg.canvas"
             }
           >
             <Text fontWeight="bold">Driver {lineCtx.driverIndex + 1}</Text>
