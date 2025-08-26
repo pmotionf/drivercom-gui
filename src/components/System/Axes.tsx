@@ -130,30 +130,44 @@ export function Axis(props: AxisProps) {
           >
             Carrier {carrier()!.id}
           </Text>
-          <Badge
-            style={{
-              width: "min-content",
-              "border-width": "0",
-              "margin-top": "0.2rem",
-            }}
-            size="sm"
-            backgroundColor={
-              carrier()!.cas
-                ? carrier()!.cas!.triggered
-                  ? "red"
-                  : carrier()!.cas!.enabled
-                    ? "accent.customGreen"
-                    : "bg.emphasized"
-                : "bg.emphasized"
-            }
-            color={
-              carrier()!.cas && carrier()!.cas!.triggered
-                ? "white"
-                : "fg.default"
-            }
-          >
-            CAS
-          </Badge>
+          <Tooltip.Root>
+            <Tooltip.Trigger width="min-content">
+              <Badge
+                style={{
+                  width: "min-content",
+                  "border-width": "0",
+                }}
+                size="sm"
+                backgroundColor={
+                  !carrier()!.cas || carrier()!.cas!.enabled !== true
+                    ? "red"
+                    : carrier()!.cas!.triggered
+                      ? "accent.customGreen"
+                      : "bg.emphasized"
+                }
+                color={
+                  !carrier()!.cas || carrier()!.cas!.enabled !== true
+                    ? "white"
+                    : "fg.default"
+                }
+              >
+                CAS
+              </Badge>
+            </Tooltip.Trigger>
+            <Tooltip.Positioner>
+              <Tooltip.Content>
+                <Text>
+                  {carrier()!.cas
+                    ? carrier()!.cas!.triggered
+                      ? "Triggered"
+                      : carrier()!.cas!.enabled
+                        ? "Enabled"
+                        : "Disabled"
+                    : "Disabled"}
+                </Text>
+              </Tooltip.Content>
+            </Tooltip.Positioner>
+          </Tooltip.Root>
         </div>
         <Show when={carrier()!.state}>
           <Stack direction="row" gap="0">
