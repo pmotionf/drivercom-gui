@@ -83,8 +83,20 @@ export default defineConfig({
             },
             customGreen: {
               value: {
-                _light: "#61dc58",
-                _dark: "#54be4c",
+                _light: "#a8dcab",
+                _dark: "#0f6b4c",
+              },
+            },
+            customRed: {
+              value: {
+                _light: "#fdc8c8",
+                _dark: "#bd2f31",
+              },
+            },
+            customOrange: {
+              value: {
+                _light: "#F7ce82",
+                _dark: "#b4820F",
               },
             },
           },

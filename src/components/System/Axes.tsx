@@ -81,7 +81,7 @@ export function Axis(props: AxisProps) {
               width="min-content"
               backgroundColor={
                 axisError().overcurrent
-                  ? "red"
+                  ? "accent.customRed"
                   : axisInfo()!.motorEnabled
                     ? "accent.customGreen"
                     : "bg.emphasized"
@@ -91,13 +91,7 @@ export function Axis(props: AxisProps) {
               height="min-content"
               borderWidth="0"
             >
-              <Text
-                color={axisError().overcurrent ? "#ffffff" : "fg.default"}
-                size="sm"
-                fontWeight="medium"
-              >
-                Axis {axisId}
-              </Text>
+              <Text size="sm">Axis {axisId}</Text>
             </Badge>
           </Tooltip.Trigger>
           <Show
@@ -147,7 +141,7 @@ export function Axis(props: AxisProps) {
               height: "0.4rem",
               "margin-top": "0.6rem",
               "border-radius": "1rem",
-              "background-color": "orange",
+              "background-color": "accent.customOrange",
             }}
           />
         </Show>
@@ -174,15 +168,10 @@ export function Axis(props: AxisProps) {
                 size="sm"
                 backgroundColor={
                   !carrier()!.cas || carrier()!.cas!.enabled !== true
-                    ? "orange"
+                    ? "accent.customOrange"
                     : carrier()!.cas!.triggered
                       ? "accent.customGreen"
                       : "bg.emphasized"
-                }
-                color={
-                  !carrier()!.cas || carrier()!.cas!.enabled !== true
-                    ? "white"
-                    : "fg.default"
                 }
               >
                 CAS

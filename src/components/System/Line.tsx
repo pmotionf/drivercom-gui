@@ -75,31 +75,16 @@ export function Line(props: LineProps) {
         padding="0.6rem"
         paddingLeft="1rem"
         paddingRight="1rem"
+        justifyContent="left"
       >
         <Accordion.ItemIndicator class="cancel">
           <ChevronDownIcon />
         </Accordion.ItemIndicator>
-        <Show
-          when={
-            (props.system &&
-              props.system.axisErrors &&
-              findErrorField(props.system.axisErrors).length > 0) ||
-            (props.system &&
-              props.system.driverErrors &&
-              findErrorField(props.system.driverErrors).length > 0)
-          }
-        >
-          <div
-            style={{
-              width: "0.5rem",
-              height: "0.5rem",
-              "background-color": "red",
-              "border-radius": "1rem",
-            }}
-          />
-        </Show>
+
         <Tooltip.Root positioning={{ placement: "bottom-start" }}>
-          <Tooltip.Trigger style={{ width: "100%", "text-align": "left" }}>
+          <Tooltip.Trigger
+            style={{ width: "min-content", "text-align": "left" }}
+          >
             <Text>{props.line.name}</Text>
           </Tooltip.Trigger>
           <Show
@@ -141,6 +126,26 @@ export function Line(props: LineProps) {
             </Tooltip.Positioner>
           </Show>
         </Tooltip.Root>
+        <Show
+          when={
+            (props.system &&
+              props.system.axisErrors &&
+              findErrorField(props.system.axisErrors).length > 0) ||
+            (props.system &&
+              props.system.driverErrors &&
+              findErrorField(props.system.driverErrors).length > 0)
+          }
+        >
+          <Stack
+            backgroundColor="red.9"
+            style={{
+              width: "0.5rem",
+              height: "0.5rem",
+              "border-radius": "1rem",
+              "margin-top": "0.3rem",
+            }}
+          />
+        </Show>
       </Accordion.ItemTrigger>
       <Accordion.ItemContent
         padding="0.5rem"
