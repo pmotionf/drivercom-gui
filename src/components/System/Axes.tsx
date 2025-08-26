@@ -1,6 +1,6 @@
 import { Stack } from "styled-system/jsx";
 import { Text } from "../ui/text.tsx";
-import { Show } from "solid-js/web";
+import { For, Show } from "solid-js/web";
 import { useAxesContext } from "./Driver.tsx";
 import { Badge } from "../ui/badge.tsx";
 //@ts-ignore Ignore test in git action
@@ -75,47 +75,81 @@ export function Axis(props: AxisProps) {
         borderColor="bg.muted"
         marginBottom="0.2rem"
       >
-        <Badge
-          width="min-content"
-          backgroundColor={
-            axisError().overcurrent
-              ? "red"
-              : axisInfo()!.motorEnabled
-                ? "accent.customGreen"
-                : "bg.emphasized"
-          }
-          paddingLeft="0.5rem"
-          paddingRight="0.5rem"
-          height="min-content"
-          borderWidth="0"
-        >
-          <Text
-            color={axisError().overcurrent ? "#ffffff" : "fg.default"}
-            size="sm"
-            fontWeight="medium"
+        <Tooltip.Root>
+          <Tooltip.Trigger width="min-content">
+            <Badge
+              width="min-content"
+              backgroundColor={
+                axisError().overcurrent
+                  ? "red"
+                  : axisInfo()!.motorEnabled
+                    ? "accent.customGreen"
+                    : "bg.emphasized"
+              }
+              paddingLeft="0.5rem"
+              paddingRight="0.5rem"
+              height="min-content"
+              borderWidth="0"
+            >
+              <Text
+                color={axisError().overcurrent ? "#ffffff" : "fg.default"}
+                size="sm"
+                fontWeight="medium"
+              >
+                Axis {axisId}
+              </Text>
+            </Badge>
+          </Tooltip.Trigger>
+          <Show
+            when={
+              Object.values(axisInfo()).includes(true) ||
+              Object.values(axisError()).includes(true)
+            }
           >
-            Axis {axisId}
-          </Text>
-        </Badge>
-
+            <Tooltip.Positioner>
+              <Tooltip.Content>
+                <Show when={Object.values(axisInfo()).includes(true)}>
+                  <Text>Info</Text>
+                  <For each={Object.entries(axisInfo())}>
+                    {([key, value]) => {
+                      if (typeof value == "boolean" && value) {
+                        const prettierLabel = `${key[0].toUpperCase()}${key.slice(1, key.length)}`;
+                        return <Text fontWeight="medium">{prettierLabel}</Text>;
+                      }
+                    }}
+                  </For>
+                </Show>
+                <Show when={Object.values(axisError()).includes(true)}>
+                  <Text
+                    marginTop={
+                      Object.values(axisInfo()).includes(true) ? "0.5rem" : "0"
+                    }
+                  >
+                    Error
+                  </Text>
+                  <For each={Object.entries(axisError())}>
+                    {([key, value]) => {
+                      if (key !== "id" && value) {
+                        const prettierLabel = `${key[0].toUpperCase()}${key.slice(1, key.length)}`;
+                        return <Text fontWeight="medium">{prettierLabel}</Text>;
+                      }
+                    }}
+                  </For>
+                </Show>
+              </Tooltip.Content>
+            </Tooltip.Positioner>
+          </Show>
+        </Tooltip.Root>
         <Show when={axisInfo()!.waitingPull || axisInfo()!.waitingPush}>
-          <Badge
-            width="min-content"
-            height="min-content"
-            paddingLeft="0.5rem"
-            paddingRight="0.5rem"
-            borderWidth="0"
-          >
-            <Text width="100%" size="sm">
-              {axisInfo()!.waitingPush
-                ? axisInfo()!.waitingPull
-                  ? "Waiting pull push"
-                  : "Waiting push"
-                : axisInfo()!.waitingPull
-                  ? "Waiting pull"
-                  : ""}
-            </Text>
-          </Badge>
+          <div
+            style={{
+              width: "0.4rem",
+              height: "0.4rem",
+              "margin-top": "0.6rem",
+              "border-radius": "1rem",
+              "background-color": "orange",
+            }}
+          />
         </Show>
       </Stack>
 
@@ -140,7 +174,7 @@ export function Axis(props: AxisProps) {
                 size="sm"
                 backgroundColor={
                   !carrier()!.cas || carrier()!.cas!.enabled !== true
-                    ? "red"
+                    ? "orange"
                     : carrier()!.cas!.triggered
                       ? "accent.customGreen"
                       : "bg.emphasized"
