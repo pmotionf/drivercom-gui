@@ -202,6 +202,8 @@ function Monitoring() {
   const connectAreaHeight = "12rem";
 
   const [ipHistory, setIpHistory] = createSignal<IpAddress[]>([]);
+  const [render, setRender] = createSignal<boolean>(false);
+
   onMount(async () => {
     try {
       const store = await load("store.json", { autoSave: false });
@@ -214,6 +216,14 @@ function Monitoring() {
     } catch (error) {
       throw error;
     }
+
+    if (!monitoringInputs.has("IP")) {
+      monitoringInputs.set("IP", createSignal<string>(""));
+    }
+    if (!monitoringInputs.has("port")) {
+      monitoringInputs.set("port", createSignal<string>(""));
+    }
+    setRender(true);
   });
 
   createEffect(
@@ -229,7 +239,7 @@ function Monitoring() {
   );
 
   return (
-    <>
+    <Show when={render()}>
       <Splitter.Root
         id={clientId()}
         panels={[
@@ -321,13 +331,13 @@ function Monitoring() {
                     >
                       <input
                         value={
-                          monitoringInputs.get("IP")
-                            ? monitoringInputs.get("IP")
+                          monitoringInputs.has("IP")
+                            ? monitoringInputs.get("IP")![0]()
                             : ""
                         }
                         onInput={(e) => {
                           if (typeof e.target.value === "string") {
-                            monitoringInputs.set("IP", e.target.value);
+                            monitoringInputs.get("IP")![1](e.target.value);
                           }
                         }}
                         style={{
@@ -362,13 +372,13 @@ function Monitoring() {
                     >
                       <input
                         value={
-                          monitoringInputs.get("port")
-                            ? monitoringInputs.get("port")
+                          monitoringInputs.has("port")
+                            ? monitoringInputs.get("port")![0]()
                             : ""
                         }
                         onInput={(e) => {
                           if (typeof e.target.value === "string") {
-                            monitoringInputs.set("port", e.target.value);
+                            monitoringInputs.get("port")![1](e.target.value);
                           }
                         }}
                         style={{
@@ -401,7 +411,7 @@ function Monitoring() {
                       setSystemConfig({ lines: [] });
                     } else {
                       setIsConnecting(true);
-                      const address = `${monitoringInputs.get("IP")}:${monitoringInputs.get("port")}`;
+                      const address = `${monitoringInputs.get("IP")![0]()}:${monitoringInputs.get("port")![0]()}`;
                       const cid = clientId();
 
                       const result = await connectServer(cid, address);
@@ -413,8 +423,8 @@ function Monitoring() {
                         });
                       } else {
                         const newIp = {
-                          ip: `${monitoringInputs.get("IP")}`,
-                          port: `${monitoringInputs.get("port")}`,
+                          ip: `${monitoringInputs.get("IP")![0]()}`,
+                          port: `${monitoringInputs.get("port")![0]()}`,
                         };
                         setIpHistory([
                           newIp,
@@ -474,6 +484,10 @@ function Monitoring() {
                           ipHistory()[index],
                           ...ipHistory().filter((_, i) => i !== index),
                         ]);
+                        monitoringInputs.get("IP")![1](ipHistory()[index].ip);
+                        monitoringInputs.get("port")![1](
+                          ipHistory()[index].port,
+                        );
                       }
                       setIsConnecting(false);
                     }}
@@ -495,7 +509,7 @@ function Monitoring() {
           </Toast.Root>
         )}
       </Toast.Toaster>
-    </>
+    </Show>
   );
 }
 
