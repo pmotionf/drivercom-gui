@@ -5,7 +5,7 @@ import { IconButton } from "../ui/icon-button";
 import { IconX } from "@tabler/icons-solidjs";
 import { createSignal } from "solid-js";
 
-export type IpAddress = { ip: string; port: string };
+export type IpAddress = { ip: string; port: string; name?: string };
 
 export type IpHistoryProps = {
   ipHistory: IpAddress[];
@@ -30,19 +30,22 @@ export function IpHistory(props: IpHistoryProps) {
           height: "2.5rem",
         }}
       >
-        {"IP History"}
+        {"Recent"}
       </Text>
       <div
         style={{
-          width: "100%",
+          width: `calc(100% - 2rem)`,
           display: "flex",
           height: "1.5rem",
         }}
       >
-        <Text width="50%" size="sm">
+        <Text width={"45%"} size="sm">
+          {"Name"}
+        </Text>
+        <Text width={`40%`} size="sm">
           {"IP"}
         </Text>
-        <Text width="50%" size="sm">
+        <Text size="sm" width="15%">
           {"Port"}
         </Text>
       </div>
@@ -87,11 +90,42 @@ export function IpHistory(props: IpHistoryProps) {
                 }}
               >
                 <Text
-                  style={{ width: `calc(50% + 1rem)`, "user-select": "none" }}
+                  style={{
+                    width: `45%`,
+                    "user-select": "none",
+                    "white-space": "nowrap",
+                    "text-overflow": "ellipsis",
+                    display: "block",
+                    overflow: "hidden",
+                    "padding-right": "0.5rem",
+                  }}
+                >
+                  {ipAddress.name ? ipAddress.name : ""}
+                </Text>
+                <Text
+                  style={{
+                    width: `40%`,
+                    "user-select": "none",
+                    "white-space": "nowrap",
+                    "text-overflow": "ellipsis",
+                    display: "block",
+                    overflow: "hidden",
+                  }}
                 >
                   {ipAddress.ip}
                 </Text>
-                <Text style={{ "user-select": "none" }}>{ipAddress.port}</Text>
+                <Text
+                  style={{
+                    "user-select": "none",
+                    width: "15%",
+                    "white-space": "nowrap",
+                    "text-overflow": "ellipsis",
+                    display: "block",
+                    overflow: "hidden",
+                  }}
+                >
+                  {ipAddress.port}
+                </Text>
               </Stack>
               <Show when={index() === hoverDiv()}>
                 <IconButton
