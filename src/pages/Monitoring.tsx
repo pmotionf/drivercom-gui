@@ -180,17 +180,26 @@ function Monitoring() {
   ): Promise<null | string> => {
     try {
       await connect(cid, address);
-      const payload: object = {
+      let payload: object = {
         core: {
           kind: "CORE_REQUEST_KIND_LINE_CONFIG",
         },
       };
-      const msg = mmc.Request.fromObject(payload);
-      const request: number[] = Array.from(mmc.Request.encode(msg).finish());
+      let msg = mmc.Request.fromObject(payload);
+      let request: number[] = Array.from(mmc.Request.encode(msg).finish());
 
       if (unlisten === null) {
         unlisten = await listenFromServer();
       }
+      await send(clientId(), request);
+
+      payload = {
+        core: {
+          kind: "CORE_REQUEST_KIND_SERVER_INFO",
+        },
+      };
+      msg = mmc.Request.fromObject(payload);
+      request = Array.from(mmc.Request.encode(msg).finish());
       await send(clientId(), request);
     } catch (error) {
       return error as string;
