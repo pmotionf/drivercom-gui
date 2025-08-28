@@ -172,14 +172,10 @@ function Monitoring() {
           const index = decode.info!.system!.lineId! - 1;
           if (isAutomatic()) {
             if (decode.info.system.driverErrors) {
-              const hasError = decode.info.system.driverErrors.map((error) =>
-                findErrorField(error),
-              );
-              const axisError = decode.info.system.axisErrors!.map((error) =>
-                findErrorField(error),
-              );
+              const hasDriverError = hasError(decode.info.system.driverErrors);
+              const hasAxisError = hasError(decode.info.system.axisErrors!);
 
-              if (hasError.includes(true) && !axisError.includes(true)) {
+              if (hasDriverError && !hasAxisError) {
                 const lineId = decode.info.system.lineId!;
                 if (
                   !isSending()
@@ -190,24 +186,21 @@ function Monitoring() {
                     ...prev,
                     { lineId: lineId, isSending: false },
                   ]);
-                  setSystemConfig("lines", index, "system", {
-                    ...decode.info!.system,
-                    driverErrors: decode.info.system.driverErrors.map(
-                      (error) => {
-                        return { id: error.id };
-                      },
-                    ),
-                  });
-                  return;
                 }
               }
             }
           }
+
           setSystemConfig("lines", index, "system", decode.info!.system);
         }
       }
     });
   }
+
+  const hasError = (fields: object[]): boolean => {
+    const findErrorFields = fields.map((field) => findErrorField(field));
+    return findErrorFields.includes(true);
+  };
 
   const findErrorField = (fields: object): boolean => {
     const values = Object.values(fields);
@@ -238,27 +231,18 @@ function Monitoring() {
     on(
       () => isSending(),
       async () => {
-        if (isSending().length < 1) {
-          return;
-        }
-        for (let i = 0; i < isSending().length; i++) {
-          const currentLine = isSending()[i];
-          if (currentLine.isSending) {
-            continue;
-          } else {
-            setIsSending((prev) => {
-              return prev.map((prev) => {
-                if (prev.lineId === currentLine.lineId) {
-                  return { ...prev, isSending: true };
-                } else {
-                  return prev;
-                }
-              });
-            });
-            await sendClearError(currentLine.lineId);
-            break;
-          }
-        }
+        if (isSending().length < 1) return;
+
+        const parseIsSending = isSending().map((send) => send.isSending);
+        const isSendingCommand = parseIsSending.includes(true);
+        if (isSendingCommand) return;
+
+        const lineId = isSending()[0].lineId;
+        setIsSending((prev) => [
+          { ...prev[0], isSending: true },
+          ...prev.slice(1, prev.length),
+        ]);
+        await sendClearError(lineId);
       },
       { defer: true },
     ),
@@ -283,11 +267,9 @@ function Monitoring() {
       ) {
         try {
           await send(clientId(), command).then(() => {
-            setTimeout(() => {
-              setIsSending((prev) =>
-                prev.filter((send) => send.lineId !== lineId),
-              );
-            }, 200);
+            setIsSending((prev) =>
+              prev.filter((send) => send.lineId !== lineId),
+            );
           });
         } catch {
           setIsSending([]);
