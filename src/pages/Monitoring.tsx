@@ -25,6 +25,8 @@ import { monitoringInputs } from "~/GlobalState.ts";
 import { createStore } from "solid-js/store";
 import { IpHistory, IpAddress } from "~/components/System/IpHistory.tsx";
 import { load } from "@tauri-apps/plugin-store";
+import { Tabs } from "~/components/ui/tabs.tsx";
+import { Switch } from "~/components/ui/switch.tsx";
 
 export type SystemConfig = {
   lines: {
@@ -136,7 +138,7 @@ function Monitoring() {
   }
 
   async function listenFromServer(): Promise<UnlistenFn> {
-    return await listen((x) => {
+    return await listen(async (x) => {
       if (
         x.payload.id === clientId() &&
         x.payload.event.message &&
@@ -145,21 +147,156 @@ function Monitoring() {
         const msg = Buffer.from(x.payload.event.message!.data);
         const decode = mmc.Response.decode(msg);
 
-        if (decode.core && decode.core.lineConfig) {
-          //@ts-ignore Ignore test in git action
-          const update = decode.core.lineConfig.lines!.map((line) => {
-            return { line: line };
-          });
-          setSystemConfig({ lines: update });
+        if (decode.core) {
+          if (decode.core.lineConfig) {
+            //@ts-ignore Ignore test in git action
+            const update = decode.core.lineConfig.lines!.map((line) => {
+              return { line: line };
+            });
+            setSystemConfig({ lines: update });
+          }
+
+          if (decode.core.server) {
+            const serverName = decode.core.server.name;
+
+            if (serverName) {
+              setIpHistory((prev) => [
+                { ...prev[0], name: serverName },
+                ...prev.slice(1, prev.length),
+              ]);
+            }
+          }
         }
 
         if (decode.info && decode.info.system) {
           const index = decode.info!.system!.lineId! - 1;
+          if (isAutomatic()) {
+            if (decode.info.system.driverErrors) {
+              const hasError = decode.info.system.driverErrors.map((error) =>
+                findErrorField(error),
+              );
+              const axisError = decode.info.system.axisErrors!.map((error) =>
+                findErrorField(error),
+              );
+
+              if (hasError.includes(true) && !axisError.includes(true)) {
+                const lineId = decode.info.system.lineId!;
+                if (
+                  !isSending()
+                    .map((send) => send.lineId)
+                    .includes(lineId)
+                ) {
+                  setIsSending((prev) => [
+                    ...prev,
+                    { lineId: lineId, isSending: false },
+                  ]);
+                  setSystemConfig("lines", index, "system", {
+                    ...decode.info!.system,
+                    driverErrors: decode.info.system.driverErrors.map(
+                      (error) => {
+                        return { id: error.id };
+                      },
+                    ),
+                  });
+                  return;
+                }
+              }
+            }
+          }
           setSystemConfig("lines", index, "system", decode.info!.system);
         }
       }
     });
   }
+
+  const findErrorField = (fields: object): boolean => {
+    const values = Object.values(fields);
+    let findError: boolean = false;
+
+    for (let i = 0; i < values.length; i++) {
+      const val = values[i];
+      if (typeof val === "boolean") {
+        if (val) {
+          findError = true;
+          break;
+        }
+      } else if (typeof val === "object") {
+        if (findErrorField(val)) {
+          findError = true;
+          break;
+        }
+      }
+    }
+    return findError;
+  };
+
+  const [isSending, setIsSending] = createSignal<
+    { lineId: number; isSending: boolean }[]
+  >([]);
+
+  createEffect(
+    on(
+      () => isSending(),
+      async () => {
+        if (isSending().length < 1) {
+          return;
+        }
+        for (let i = 0; i < isSending().length; i++) {
+          const currentLine = isSending()[i];
+          if (currentLine.isSending) {
+            continue;
+          } else {
+            setIsSending((prev) => {
+              return prev.map((prev) => {
+                if (prev.lineId === currentLine.lineId) {
+                  return { ...prev, isSending: true };
+                } else {
+                  return prev;
+                }
+              });
+            });
+            await sendClearError(currentLine.lineId);
+            break;
+          }
+        }
+      },
+      { defer: true },
+    ),
+  );
+
+  const sendClearError = async (lineId: number) => {
+    try {
+      const payload = {
+        command: {
+          clearErrors: {
+            lineId: lineId,
+          },
+        },
+      };
+      const msg = mmc.Request.fromObject(payload);
+      const command: number[] = Array.from(mmc.Request.encode(msg).finish());
+
+      if (
+        isSending()
+          .map((send) => send.lineId)
+          .includes(lineId)
+      ) {
+        try {
+          await send(clientId(), command).then(() => {
+            setTimeout(() => {
+              setIsSending((prev) =>
+                prev.filter((send) => send.lineId !== lineId),
+              );
+            }, 200);
+          });
+        } catch {
+          setIsSending([]);
+        }
+      }
+    } catch {
+      setSystemConfig("lines", []);
+    }
+  };
 
   onCleanup(async () => {
     if (systemConfig.lines.length > 0) {
@@ -247,6 +384,8 @@ function Monitoring() {
     ),
   );
 
+  const [isAutomatic, setIsAutomatic] = createSignal<boolean>(false);
+
   return (
     <Show when={render()}>
       <Splitter.Root
@@ -285,6 +424,7 @@ function Monitoring() {
           position="absolute"
           top="0"
           right="0"
+          zIndex="10"
         >
           <Show when={!showSideBar()} fallback={<IconChevronRightPipe />}>
             <IconChevronLeftPipe />
@@ -309,201 +449,251 @@ function Monitoring() {
             backgroundColor="transparent"
             minWidth="18rem"
           >
-            <div style={{ width: "100%", height: "100%" }}>
-              {/* Connect Area */}
-              <Stack
-                style={{
-                  height: connectAreaHeight,
-                  width: "100%",
-                  "border-bottom-width": "2px",
-                  padding: "1rem",
-                }}
+            <Tabs.Root
+              defaultValue="Connect"
+              style={{ width: "100%", height: "100%" }}
+            >
+              <Tabs.List>
+                <Tabs.Trigger value="Connect" paddingTop="0.5rem">
+                  {"Connect"}
+                </Tabs.Trigger>
+                <Tabs.Trigger value="Control" paddingTop="0.5rem">
+                  {"Control"}
+                </Tabs.Trigger>
+                <Tabs.Indicator />
+              </Tabs.List>
+              <Tabs.Content
+                value="Connect"
+                style={{ width: "100%", height: "100%" }}
               >
-                <Text size="lg" fontWeight="bold">
-                  Connect
-                </Text>
-                <Stack style={{ width: "100%" }} direction="row">
-                  <div style={{ width: "50%" }}>
-                    <Text
-                      size="sm"
-                      width="100%"
-                      color="fg.muted"
-                      marginTop="0.4rem"
-                    >
-                      IP
-                    </Text>
-                    <Stack
-                      background="bg.muted"
-                      width="100%"
-                      borderRadius="0.5rem"
-                      height="2rem"
-                    >
-                      <input
-                        value={
-                          monitoringInputs.has("IP")
-                            ? monitoringInputs.get("IP")![0]()
-                            : ""
-                        }
-                        onInput={(e) => {
-                          if (typeof e.target.value === "string") {
-                            monitoringInputs.get("IP")![1](e.target.value);
-                          }
-                        }}
-                        style={{
-                          width: "100%",
-                          height: "100%",
-                          border: "none",
-                          outline: "none",
-                          "white-space": "nowrap",
-                          overflow: "hidden",
-                          display: "block",
-                          "text-overflow": "ellipsis",
-                          "padding-left": "0.5rem",
-                        }}
-                      />
-                    </Stack>
-                  </div>
-                  <div style={{ width: "50%" }}>
-                    <Text
-                      size="sm"
-                      width="100%"
-                      color="fg.default"
-                      marginRight="0.5rem"
-                      marginTop="0.4rem"
-                    >
-                      Port
-                    </Text>
-                    <Stack
-                      background="bg.muted"
-                      width="100%"
-                      borderRadius="0.5rem"
-                      height="2rem"
-                    >
-                      <input
-                        value={
-                          monitoringInputs.has("port")
-                            ? monitoringInputs.get("port")![0]()
-                            : ""
-                        }
-                        onInput={(e) => {
-                          if (typeof e.target.value === "string") {
-                            monitoringInputs.get("port")![1](e.target.value);
-                          }
-                        }}
-                        style={{
-                          width: "100%",
-                          height: "100%",
-                          border: "none",
-                          outline: "none",
-                          "white-space": "nowrap",
-                          overflow: "hidden",
-                          display: "block",
-                          "text-overflow": "ellipsis",
-                          "padding-left": "0.5rem",
-                        }}
-                      />
-                    </Stack>
-                  </div>
-                </Stack>
-                <Button
-                  variant={
-                    systemConfig.lines.length === 0 ? "solid" : "outline"
-                  }
-                  loading={isConnecting()}
-                  onClick={async () => {
-                    if (systemConfig.lines.length > 0) {
-                      if (unlisten !== null) {
-                        unlisten();
-                        unlisten = null;
-                        await disconnectServer(clientId());
-                      }
-                      setSystemConfig({ lines: [] });
-                    } else {
-                      setIsConnecting(true);
-                      const address = `${monitoringInputs.get("IP")![0]()}:${monitoringInputs.get("port")![0]()}`;
-                      const cid = clientId();
-
-                      const result = await connectServer(cid, address);
-                      if (typeof result === "string") {
-                        toaster.create({
-                          title: "Connection Error",
-                          description: result as string,
-                          type: "error",
-                        });
-                      } else {
-                        const newIp = {
-                          ip: `${monitoringInputs.get("IP")![0]()}`,
-                          port: `${monitoringInputs.get("port")![0]()}`,
-                        };
-                        setIpHistory([
-                          newIp,
-                          ...ipHistory().filter(
-                            ({ ip, port }) =>
-                              ip !== newIp.ip && port !== newIp.port,
-                          ),
-                        ]);
-                      }
-                      setIsConnecting(false);
-                    }
+                {/* Connect Area */}
+                <Stack
+                  style={{
+                    height: connectAreaHeight,
+                    width: "100%",
+                    "border-bottom-width": "2px",
+                    padding: "1rem",
+                    "padding-top": "0rem",
                   }}
                 >
-                  {systemConfig.lines.length === 0 ? "Connect" : "Cancel"}
-                </Button>
-              </Stack>
-              {/* IP History Area */}
-              <Show when={ipHistory().length > 0}>
+                  <Text size="lg" fontWeight="bold">
+                    Connect
+                  </Text>
+
+                  <Stack style={{ width: "100%" }} direction="row">
+                    <div style={{ width: "50%" }}>
+                      <Text
+                        size="sm"
+                        width="100%"
+                        color="fg.muted"
+                        marginTop="0.4rem"
+                      >
+                        IP
+                      </Text>
+                      <Stack
+                        background="bg.muted"
+                        width="100%"
+                        borderRadius="0.5rem"
+                        height="2rem"
+                      >
+                        <input
+                          value={
+                            monitoringInputs.has("IP")
+                              ? monitoringInputs.get("IP")![0]()
+                              : ""
+                          }
+                          onInput={(e) => {
+                            if (typeof e.target.value === "string") {
+                              monitoringInputs.get("IP")![1](e.target.value);
+                            }
+                          }}
+                          style={{
+                            width: "100%",
+                            height: "100%",
+                            border: "none",
+                            outline: "none",
+                            "white-space": "nowrap",
+                            overflow: "hidden",
+                            display: "block",
+                            "text-overflow": "ellipsis",
+                            "padding-left": "0.5rem",
+                          }}
+                        />
+                      </Stack>
+                    </div>
+                    <div style={{ width: "50%" }}>
+                      <Text
+                        size="sm"
+                        width="100%"
+                        marginRight="0.5rem"
+                        marginTop="0.4rem"
+                      >
+                        Port
+                      </Text>
+                      <Stack
+                        background="bg.muted"
+                        width="100%"
+                        borderRadius="0.5rem"
+                        height="2rem"
+                      >
+                        <input
+                          value={
+                            monitoringInputs.has("port")
+                              ? monitoringInputs.get("port")![0]()
+                              : ""
+                          }
+                          onInput={(e) => {
+                            if (typeof e.target.value === "string") {
+                              monitoringInputs.get("port")![1](e.target.value);
+                            }
+                          }}
+                          style={{
+                            width: "100%",
+                            height: "100%",
+                            border: "none",
+                            outline: "none",
+                            "white-space": "nowrap",
+                            overflow: "hidden",
+                            display: "block",
+                            "text-overflow": "ellipsis",
+                            "padding-left": "0.5rem",
+                          }}
+                        />
+                      </Stack>
+                    </div>
+                  </Stack>
+
+                  <Button
+                    marginTop="0.5rem"
+                    variant={
+                      systemConfig.lines.length === 0 ? "solid" : "outline"
+                    }
+                    loading={isConnecting()}
+                    onClick={async () => {
+                      if (systemConfig.lines.length > 0) {
+                        if (unlisten !== null) {
+                          unlisten();
+                          unlisten = null;
+                          await disconnectServer(clientId());
+                        }
+                        setSystemConfig({ lines: [] });
+                      } else {
+                        setIsConnecting(true);
+                        const address = `${monitoringInputs.get("IP")![0]()}:${monitoringInputs.get("port")![0]()}`;
+                        const cid = clientId();
+
+                        const result = await connectServer(cid, address);
+                        if (typeof result === "string") {
+                          toaster.create({
+                            title: "Connection Error",
+                            description: result as string,
+                            type: "error",
+                          });
+                        } else {
+                          const newIp = {
+                            ip: `${monitoringInputs.get("IP")![0]()}`,
+                            port: `${monitoringInputs.get("port")![0]()}`,
+                          };
+                          setIpHistory([
+                            newIp,
+                            ...ipHistory().filter(
+                              ({ ip, port }) =>
+                                ip !== newIp.ip && port !== newIp.port,
+                            ),
+                          ]);
+                        }
+                        setIsConnecting(false);
+                      }
+                    }}
+                  >
+                    {systemConfig.lines.length === 0 ? "Connect" : "Disconnect"}
+                  </Button>
+                </Stack>
+                {/* IP History Area */}
+                <Show when={ipHistory().length > 0}>
+                  <div
+                    style={{
+                      width: "100%",
+                      height: `calc(100% - ${connectAreaHeight})`,
+                    }}
+                  >
+                    <IpHistory
+                      ipHistory={ipHistory()}
+                      onDeleteIp={(ipIndex: number) => {
+                        setIpHistory([
+                          ...ipHistory().filter((_, i) => i !== ipIndex),
+                        ]);
+                      }}
+                      onConnectServer={async (index: number) => {
+                        if (systemConfig.lines.length > 0) {
+                          toaster.create({
+                            title: "Duplicate Connection",
+                            description: "Sever is already connected",
+                            type: "error",
+                          });
+                          return;
+                        }
+                        setIsConnecting(true);
+                        const address = `${ipHistory()[index].ip}:${ipHistory()[index].port}`;
+                        const cid = clientId();
+
+                        const result = await connectServer(cid, address);
+                        if (typeof result === "string") {
+                          toaster.create({
+                            title: "Connection Error",
+                            description: result as string,
+                            type: "error",
+                          });
+                          setIpHistory([
+                            ...ipHistory().filter((_, i) => i !== index),
+                          ]);
+                        } else {
+                          setIpHistory([
+                            ipHistory()[index],
+                            ...ipHistory().filter((_, i) => i !== index),
+                          ]);
+                          monitoringInputs.get("IP")![1](ipHistory()[index].ip);
+                          monitoringInputs.get("port")![1](
+                            ipHistory()[index].port,
+                          );
+                        }
+                        setIsConnecting(false);
+                      }}
+                    />
+                  </div>
+                </Show>
+              </Tabs.Content>
+              <Tabs.Content value="Control">
+                <Text fontWeight="bold" size="lg" marginLeft="1rem">
+                  Settings
+                </Text>
                 <div
                   style={{
-                    width: "100%",
-                    height: `calc(100% - ${connectAreaHeight})`,
+                    padding: "1.5rem 1rem 1rem 1rem",
+                    "row-gap": "0.5rem",
+                    display: "flex",
+                    "flex-direction": "column",
                   }}
                 >
-                  <IpHistory
-                    ipHistory={ipHistory()}
-                    onDeleteIp={(ipIndex: number) => {
-                      setIpHistory([
-                        ...ipHistory().filter((_, i) => i !== ipIndex),
-                      ]);
-                    }}
-                    onConnectServer={async (index: number) => {
-                      if (systemConfig.lines.length > 0) {
-                        toaster.create({
-                          title: "Duplicate Connection",
-                          description: "Sever is already connected",
-                          type: "error",
-                        });
-                        return;
+                  <Switch
+                    checked={isAutomatic()}
+                    onCheckedChange={(e) => {
+                      setIsAutomatic(e.checked);
+                      if (!isAutomatic()) {
+                        setIsSending([]);
                       }
-                      setIsConnecting(true);
-                      const address = `${ipHistory()[index].ip}:${ipHistory()[index].port}`;
-                      const cid = clientId();
-
-                      const result = await connectServer(cid, address);
-                      if (typeof result === "string") {
-                        toaster.create({
-                          title: "Connection Error",
-                          description: result as string,
-                          type: "error",
-                        });
-                        setIpHistory([
-                          ...ipHistory().filter((_, i) => i !== index),
-                        ]);
-                      } else {
-                        setIpHistory([
-                          ipHistory()[index],
-                          ...ipHistory().filter((_, i) => i !== index),
-                        ]);
-                        monitoringInputs.get("IP")![1](ipHistory()[index].ip);
-                        monitoringInputs.get("port")![1](
-                          ipHistory()[index].port,
-                        );
-                      }
-                      setIsConnecting(false);
                     }}
-                  />
+                  >
+                    <Text size="sm" fontWeight="bold">
+                      {"Clear Errors Automatically"}
+                    </Text>
+                  </Switch>
+                  <Text size="sm">
+                    {"Clear only none-critical errors automatically."}
+                  </Text>
                 </div>
-              </Show>
-            </div>
+              </Tabs.Content>
+            </Tabs.Root>
           </Splitter.Panel>
         </Show>
       </Splitter.Root>
