@@ -36,19 +36,28 @@ export type SystemConfig = {
 };
 
 function Monitoring() {
-  const [clientId, setClientId] = createSignal<string>(crypto.randomUUID());
+  const [clientId, setClientId] = createSignal<{
+    command: string;
+    info: string;
+  }>({ command: crypto.randomUUID(), info: crypto.randomUUID() });
+  let infoUnlisten: UnlistenFn | null = null;
+  let commandUnlisten: UnlistenFn | null = null;
+
   const [showSideBar, setShowSideBar] = createSignal<boolean>(true);
   const [panelSize, setPanelSize] = createSignal<number>(100);
-  let unlisten: UnlistenFn | null = null;
 
   const [systemConfig, setSystemConfig] = createStore<SystemConfig>({
     lines: [],
   });
 
-  const disconnectServer = async (clientId: string) => {
+  const disconnectServer = async (clientId: {
+    command: string;
+    info: string;
+  }) => {
     try {
-      await disconnect(clientId);
-      setClientId(crypto.randomUUID());
+      await disconnect(clientId.command);
+      await disconnect(clientId.info);
+      setClientId({ command: crypto.randomUUID(), info: crypto.randomUUID() });
     } catch (e) {
       if (e) {
         toaster.create({
@@ -89,7 +98,7 @@ function Monitoring() {
     const msg = mmc.Request.fromObject(payload);
     const request: number[] = Array.from(mmc.Request.encode(msg).finish());
     try {
-      await send(clientId(), request);
+      await send(clientId().info, request);
       if (lineId + 1 <= lines.length) {
         requestSystemInfo(lineId + 1, lines);
       }
@@ -99,7 +108,7 @@ function Monitoring() {
   }
 
   async function sendRequestLoop() {
-    if (unlisten === null && systemConfig.lines.length < 0) return;
+    if (infoUnlisten === null && systemConfig.lines.length < 0) return;
     try {
       const sendSystemInfo = await requestSystemInfo(
         1,
@@ -109,9 +118,9 @@ function Monitoring() {
       if (sendSystemInfo !== null) {
         setTimeout(async () => {
           if (systemConfig.lines.length === 0) {
-            if (unlisten !== null) {
-              unlisten();
-              unlisten = null;
+            if (infoUnlisten !== null) {
+              infoUnlisten();
+              infoUnlisten = null;
               await disconnectServer(clientId());
               setSystemConfig({ lines: [] });
             }
@@ -120,33 +129,32 @@ function Monitoring() {
           await sendRequestLoop();
         }, 10);
       } else {
-        if (unlisten !== null) {
-          unlisten();
-          unlisten = null;
+        if (infoUnlisten !== null) {
+          infoUnlisten();
+          infoUnlisten = null;
           await disconnectServer(clientId());
           setSystemConfig({ lines: [] });
         }
       }
     } catch {
-      if (unlisten !== null) {
-        unlisten();
-        unlisten = null;
+      if (infoUnlisten !== null) {
+        infoUnlisten();
+        infoUnlisten = null;
         await disconnectServer(clientId());
         setSystemConfig({ lines: [] });
       }
     }
   }
 
-  async function listenFromServer(): Promise<UnlistenFn> {
+  async function commandListener(): Promise<UnlistenFn> {
     return await listen(async (x) => {
       if (
-        x.payload.id === clientId() &&
+        x.payload.id === clientId().command &&
         x.payload.event.message &&
         x.payload.event.message.data
       ) {
         const msg = Buffer.from(x.payload.event.message!.data);
         const decode = mmc.Response.decode(msg);
-
         if (decode.command) {
           if (decode.command.commandId) {
             const payload = {
@@ -156,7 +164,7 @@ function Monitoring() {
             };
             const msg = mmc.Request.fromObject(payload);
             const buffer = Array.from(mmc.Request.encode(msg).finish());
-            await send(clientId(), buffer);
+            await send(clientId().command, buffer);
             return;
           }
 
@@ -166,29 +174,6 @@ function Monitoring() {
               mmc.command.Response.CommandOperationStatus[commandOperation];
             if (parseOperation.includes("COMPLETED")) {
               setIsSending((prev) => prev.filter((send) => !send.isSending));
-            }
-            return;
-          }
-        }
-
-        if (decode.core) {
-          if (decode.core.lineConfig) {
-            //@ts-ignore Ignore test in git action
-            const update = decode.core.lineConfig.lines!.map((line) => {
-              return { line: line };
-            });
-            setSystemConfig({ lines: update });
-            return;
-          }
-
-          if (decode.core.server) {
-            const serverName = decode.core.server.name;
-
-            if (serverName) {
-              setIpHistory((prev) => [
-                { ...prev[0], name: serverName },
-                ...prev.slice(1, prev.length),
-              ]);
             }
             return;
           }
@@ -214,7 +199,7 @@ function Monitoring() {
               };
               const msg = mmc.Request.fromObject(payload);
               const buffer = Array.from(mmc.Request.encode(msg).finish());
-              await send(clientId(), buffer);
+              await send(clientId().command, buffer);
               return;
             } else {
               const payload = {
@@ -222,14 +207,51 @@ function Monitoring() {
                   command: { id: commandId },
                 },
               };
-
               const msg = mmc.Request.fromObject(payload);
               const buffer = Array.from(mmc.Request.encode(msg).finish());
-              await send(clientId(), buffer);
-
+              await send(clientId().command, buffer);
               return;
             }
           }
+        }
+      }
+    });
+  }
+
+  async function infoListener(): Promise<UnlistenFn> {
+    return await listen(async (x) => {
+      if (
+        x.payload.id === clientId().info &&
+        x.payload.event.message &&
+        x.payload.event.message.data
+      ) {
+        const msg = Buffer.from(x.payload.event.message!.data);
+        const decode = mmc.Response.decode(msg);
+
+        if (decode.core) {
+          if (decode.core.lineConfig) {
+            //@ts-ignore Ignore test in git action
+            const update = decode.core.lineConfig.lines!.map((line) => {
+              return { line: line };
+            });
+            setSystemConfig({ lines: update });
+            return;
+          }
+
+          if (decode.core.server) {
+            const serverName = decode.core.server.name;
+
+            if (serverName) {
+              setIpHistory((prev) => [
+                { ...prev[0], name: serverName },
+                ...prev.slice(1, prev.length),
+              ]);
+            }
+            return;
+          }
+        }
+
+        if (decode.info) {
           if (decode.info.system) {
             const index = decode.info!.system!.lineId! - 1;
             if (isAutomatic()) {
@@ -333,7 +355,7 @@ function Monitoring() {
       ) {
         try {
           setTimeout(async () => {
-            await send(clientId(), command);
+            await send(clientId().command, command);
           }, 200);
         } catch {
           setIsSending([]);
@@ -371,10 +393,11 @@ function Monitoring() {
       let msg = mmc.Request.fromObject(payload);
       let request: number[] = Array.from(mmc.Request.encode(msg).finish());
 
-      if (unlisten === null) {
-        unlisten = await listenFromServer();
+      if (infoUnlisten === null) {
+        infoUnlisten = await infoListener();
       }
-      await send(clientId(), request);
+
+      await send(clientId().info, request);
 
       payload = {
         core: {
@@ -383,7 +406,7 @@ function Monitoring() {
       };
       msg = mmc.Request.fromObject(payload);
       request = Array.from(mmc.Request.encode(msg).finish());
-      await send(clientId(), request);
+      await send(clientId().info, request);
     } catch (error) {
       return error as string;
     }
@@ -435,7 +458,7 @@ function Monitoring() {
   return (
     <Show when={render()}>
       <Splitter.Root
-        id={clientId()}
+        id={clientId().info}
         panels={[
           { id: `${clientId()}-panel` },
           {
@@ -617,18 +640,31 @@ function Monitoring() {
                     loading={isConnecting()}
                     onClick={async () => {
                       if (systemConfig.lines.length > 0) {
-                        if (unlisten !== null) {
-                          unlisten();
-                          unlisten = null;
-                          await disconnectServer(clientId());
+                        if (infoUnlisten !== null) {
+                          infoUnlisten();
+                          infoUnlisten = null;
                         }
+
+                        if (commandUnlisten !== null) {
+                          commandUnlisten();
+                          commandUnlisten = null;
+                        }
+                        await disconnectServer(clientId());
                         setSystemConfig({ lines: [] });
                       } else {
                         setIsConnecting(true);
                         const address = `${monitoringInputs.get("IP")![0]()}:${monitoringInputs.get("port")![0]()}`;
                         const cid = clientId();
 
-                        const result = await connectServer(cid, address);
+                        const result = await connectServer(cid.info, address);
+                        try {
+                          await connect(cid.command, address);
+                          if (commandUnlisten === null) {
+                            commandUnlisten = await commandListener();
+                          }
+                        } catch {
+                          await disconnectServer(clientId());
+                        }
                         if (typeof result === "string") {
                           toaster.create({
                             title: "Connection Error",
@@ -683,7 +719,12 @@ function Monitoring() {
                         const address = `${ipHistory()[index].ip}:${ipHistory()[index].port}`;
                         const cid = clientId();
 
-                        const result = await connectServer(cid, address);
+                        const result = await connectServer(cid.info, address);
+                        try {
+                          await connect(cid.command, address);
+                        } catch {
+                          await disconnectServer(clientId());
+                        }
                         if (typeof result === "string") {
                           toaster.create({
                             title: "Connection Error",
