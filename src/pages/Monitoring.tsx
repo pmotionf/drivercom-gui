@@ -147,6 +147,30 @@ function Monitoring() {
         const msg = Buffer.from(x.payload.event.message!.data);
         const decode = mmc.Response.decode(msg);
 
+        if (decode.command) {
+          if (decode.command.commandId) {
+            const payload = {
+              info: {
+                command: { id: decode.command.commandId },
+              },
+            };
+            const msg = mmc.Request.fromObject(payload);
+            const buffer = Array.from(mmc.Request.encode(msg).finish());
+            await send(clientId(), buffer);
+            return;
+          }
+
+          if (decode.command.commandOperation) {
+            const commandOperation = decode.command.commandOperation;
+            const parseOperation =
+              mmc.command.Response.CommandOperationStatus[commandOperation];
+            if (parseOperation.includes("COMPLETED")) {
+              setIsSending((prev) => prev.filter((send) => !send.isSending));
+            }
+            return;
+          }
+        }
+
         if (decode.core) {
           if (decode.core.lineConfig) {
             //@ts-ignore Ignore test in git action
@@ -154,6 +178,7 @@ function Monitoring() {
               return { line: line };
             });
             setSystemConfig({ lines: update });
+            return;
           }
 
           if (decode.core.server) {
@@ -165,33 +190,74 @@ function Monitoring() {
                 ...prev.slice(1, prev.length),
               ]);
             }
+            return;
           }
         }
 
-        if (decode.info && decode.info.system) {
-          const index = decode.info!.system!.lineId! - 1;
-          if (isAutomatic()) {
-            if (decode.info.system.driverErrors) {
-              const hasDriverError = hasError(decode.info.system.driverErrors);
-              const hasAxisError = hasError(decode.info.system.axisErrors!);
+        if (decode.info) {
+          if (decode.info.commands) {
+            const command = decode.info.commands.commands![0];
+            const commandStatus = command.status;
+            const commandId = command.id;
+            const parseStatus =
+              mmc.info.Response.Commands.Command.Status[
+                commandStatus as mmc.info.Response.Commands.Command.Status
+              ];
 
-              if (hasDriverError && !hasAxisError) {
-                const lineId = decode.info.system.lineId!;
-                if (
-                  !isSending()
-                    .map((send) => send.lineId)
-                    .includes(lineId)
-                ) {
-                  setIsSending((prev) => [
-                    ...prev,
-                    { lineId: lineId, isSending: false },
-                  ]);
+            if (parseStatus.includes("COMPLETED")) {
+              const payload = {
+                command: {
+                  clearCommand: {
+                    commandId: commandId,
+                  },
+                },
+              };
+              const msg = mmc.Request.fromObject(payload);
+              const buffer = Array.from(mmc.Request.encode(msg).finish());
+              await send(clientId(), buffer);
+              return;
+            } else {
+              const payload = {
+                info: {
+                  command: { id: commandId },
+                },
+              };
+
+              const msg = mmc.Request.fromObject(payload);
+              const buffer = Array.from(mmc.Request.encode(msg).finish());
+              await send(clientId(), buffer);
+
+              return;
+            }
+          }
+          if (decode.info.system) {
+            const index = decode.info!.system!.lineId! - 1;
+            if (isAutomatic()) {
+              if (decode.info.system.driverErrors) {
+                const hasDriverError = hasError(
+                  decode.info.system.driverErrors,
+                );
+                const hasAxisError = hasError(decode.info.system.axisErrors!);
+
+                if (hasDriverError && !hasAxisError) {
+                  const lineId = decode.info.system.lineId!;
+                  if (
+                    !isSending()
+                      .map((send) => send.lineId)
+                      .includes(lineId)
+                  ) {
+                    setIsSending((prev) => [
+                      ...prev,
+                      { lineId: lineId, isSending: false },
+                    ]);
+                  }
                 }
               }
             }
-          }
 
-          setSystemConfig("lines", index, "system", decode.info!.system);
+            setSystemConfig("lines", index, "system", decode.info!.system);
+            return;
+          }
         }
       }
     });
@@ -266,11 +332,9 @@ function Monitoring() {
           .includes(lineId)
       ) {
         try {
-          await send(clientId(), command).then(() => {
-            setIsSending((prev) =>
-              prev.filter((send) => send.lineId !== lineId),
-            );
-          });
+          setTimeout(async () => {
+            await send(clientId(), command);
+          }, 200);
         } catch {
           setIsSending([]);
         }
@@ -646,12 +710,9 @@ function Monitoring() {
                 </Show>
               </Tabs.Content>
               <Tabs.Content value="Control">
-                <Text fontWeight="bold" size="lg" marginLeft="1rem">
-                  Settings
-                </Text>
                 <div
                   style={{
-                    padding: "1.5rem 1rem 1rem 1rem",
+                    padding: "0rem 1rem 1rem 1rem",
                     "row-gap": "0.5rem",
                     display: "flex",
                     "flex-direction": "column",
