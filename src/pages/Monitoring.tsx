@@ -95,10 +95,8 @@ function Monitoring() {
         },
       },
     };
-    const msg = mmc.Request.fromObject(payload);
-    const request: number[] = Array.from(mmc.Request.encode(msg).finish());
     try {
-      await send(clientId().info, request);
+      await send(clientId().info, mmcRequest(payload));
       if (lineId + 1 <= lines.length) {
         requestSystemInfo(lineId + 1, lines);
       }
@@ -162,9 +160,7 @@ function Monitoring() {
                 command: { id: decode.command.commandId },
               },
             };
-            const msg = mmc.Request.fromObject(payload);
-            const buffer = Array.from(mmc.Request.encode(msg).finish());
-            await send(clientId().command, buffer);
+            await send(clientId().command, mmcRequest(payload));
             return;
           }
 
@@ -197,9 +193,7 @@ function Monitoring() {
                   },
                 },
               };
-              const msg = mmc.Request.fromObject(payload);
-              const buffer = Array.from(mmc.Request.encode(msg).finish());
-              await send(clientId().command, buffer);
+              await send(clientId().command, mmcRequest(payload));
               return;
             } else {
               const payload = {
@@ -207,9 +201,7 @@ function Monitoring() {
                   command: { id: commandId },
                 },
               };
-              const msg = mmc.Request.fromObject(payload);
-              const buffer = Array.from(mmc.Request.encode(msg).finish());
-              await send(clientId().command, buffer);
+              await send(clientId().command, mmcRequest(payload));
               return;
             }
           }
@@ -345,8 +337,6 @@ function Monitoring() {
           },
         },
       };
-      const msg = mmc.Request.fromObject(payload);
-      const command: number[] = Array.from(mmc.Request.encode(msg).finish());
 
       if (
         isSending()
@@ -355,7 +345,7 @@ function Monitoring() {
       ) {
         try {
           setTimeout(async () => {
-            await send(clientId().command, command);
+            await send(clientId().command, mmcRequest(payload));
           }, 200);
         } catch {
           setIsSending([]);
@@ -372,12 +362,14 @@ function Monitoring() {
     }
   });
 
-  const toaster = Toast.createToaster({
-    placement: "top-end",
-    gap: 16,
-  });
-
   const [isConnecting, setIsConnecting] = createSignal<boolean>(false);
+
+  const mmcRequest = (payload: object): number[] => {
+    const msg = mmc.Request.fromObject(payload);
+    const buffer = mmc.Request.encode(msg).finish();
+    const parseBuffer = Array.from(buffer);
+    return parseBuffer;
+  };
 
   const connectServer = async (
     cid: string,
@@ -390,23 +382,19 @@ function Monitoring() {
           kind: "CORE_REQUEST_KIND_LINE_CONFIG",
         },
       };
-      let msg = mmc.Request.fromObject(payload);
-      let request: number[] = Array.from(mmc.Request.encode(msg).finish());
 
       if (infoUnlisten === null) {
         infoUnlisten = await infoListener();
       }
 
-      await send(clientId().info, request);
+      await send(clientId().info, mmcRequest(payload));
 
       payload = {
         core: {
           kind: "CORE_REQUEST_KIND_SERVER_INFO",
         },
       };
-      msg = mmc.Request.fromObject(payload);
-      request = Array.from(mmc.Request.encode(msg).finish());
-      await send(clientId().info, request);
+      await send(clientId().info, mmcRequest(payload));
     } catch (error) {
       return error as string;
     }
@@ -454,6 +442,11 @@ function Monitoring() {
   );
 
   const [isAutomatic, setIsAutomatic] = createSignal<boolean>(false);
+
+  const toaster = Toast.createToaster({
+    placement: "top-end",
+    gap: 16,
+  });
 
   return (
     <Show when={render()}>
