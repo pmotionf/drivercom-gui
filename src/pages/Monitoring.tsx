@@ -106,6 +106,7 @@ function Monitoring() {
     command: string;
     info: string;
   }) => {
+    if (systemConfig.lines.length < 1) return;
     try {
       if (commandUnlisten !== null) {
         commandUnlisten();
@@ -118,7 +119,6 @@ function Monitoring() {
         infoUnlisten = null;
       }
       await disconnect(clientId.info);
-      setClientId({ command: crypto.randomUUID(), info: crypto.randomUUID() });
     } catch (e) {
       if (e) {
         toaster.create({
@@ -141,6 +141,7 @@ function Monitoring() {
     lineId: number,
     lines: mmc.core.Response.LineConfig.ILine[],
   ) {
+    if (infoUnlisten === null) return;
     const payload = {
       info: {
         system: {
@@ -153,31 +154,24 @@ function Monitoring() {
     };
     await sendRequest(clientId().info, payload);
     if (lineId + 1 <= lines.length) {
-      requestSystemInfo(lineId + 1, lines);
+      await requestSystemInfo(lineId + 1, lines);
     }
   }
 
   async function sendRequestLoop() {
     if (infoUnlisten === null && systemConfig.lines.length < 1) return;
     try {
-      const sendSystemInfo = await requestSystemInfo(
+      await requestSystemInfo(
         1,
         systemConfig.lines.map((line) => line.line),
       );
 
-      if (sendSystemInfo !== null) {
-        setTimeout(async () => {
-          if (systemConfig.lines.length === 0) {
-            await disconnectServer(clientId());
-            setSystemConfig({ lines: [] });
-            return;
-          }
-          await sendRequestLoop();
-        }, 10);
-      } else {
-        await disconnectServer(clientId());
-        setSystemConfig({ lines: [] });
-      }
+      setTimeout(async () => {
+        if (systemConfig.lines.length < 1) {
+          return;
+        }
+        await sendRequestLoop();
+      }, 10);
     } catch {
       await disconnectServer(clientId());
       setSystemConfig({ lines: [] });
@@ -328,6 +322,7 @@ function Monitoring() {
         .map((send) => send.lineId)
         .includes(lineId)
     ) {
+      // Giving timeout to show user the error is erasing
       setTimeout(async () => {
         await sendRequest(clientId().command, payload);
       }, 200);
@@ -629,6 +624,11 @@ function Monitoring() {
                       if (systemConfig.lines.length > 0) {
                         await disconnectServer(clientId());
                         setSystemConfig({ lines: [] });
+                        setIsSending([]);
+                        setClientId({
+                          command: crypto.randomUUID(),
+                          info: crypto.randomUUID(),
+                        });
                       } else {
                         setIsConnecting(true);
                         const address = `${monitoringInputs.get("IP")![0]()}:${monitoringInputs.get("port")![0]()}`;
@@ -736,7 +736,7 @@ function Monitoring() {
                     </Text>
                   </Switch>
                   <Text size="sm">
-                    {"Clear only none-critical errors automatically."}
+                    {"Clear non-critical errors automatically."}
                   </Text>
                 </div>
               </Tabs.Content>
