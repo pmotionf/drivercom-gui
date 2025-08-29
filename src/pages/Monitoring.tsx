@@ -324,7 +324,8 @@ function Monitoring() {
     ) {
       // Giving timeout to show user the error is erasing
       setTimeout(async () => {
-        await sendRequest(clientId().command, payload);
+        await sendRequest(clientId().info, payload);
+        setIsSending((prev) => prev.filter((send) => !send.isSending));
       }, 200);
     }
   };
@@ -622,9 +623,10 @@ function Monitoring() {
                     loading={isConnecting()}
                     onClick={async () => {
                       if (systemConfig.lines.length > 0) {
-                        await disconnectServer(clientId());
                         setSystemConfig({ lines: [] });
                         setIsSending([]);
+
+                        await disconnectServer(clientId());
                         setClientId({
                           command: crypto.randomUUID(),
                           info: crypto.randomUUID(),
