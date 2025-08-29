@@ -1,11 +1,10 @@
 import { listen, send, connect, disconnect } from "@kuyoonjo/tauri-plugin-tcp";
-import { ServerClientId } from "../Monitoring";
 import { UnlistenFn } from "@tauri-apps/api/event";
 //@ts-ignore Ignore test in git action
 import { mmc } from "~/components/proto/mmc.js";
 import { CreateToasterReturn } from "@ark-ui/solid";
 import { SetStoreFunction } from "solid-js/store";
-import { SystemConfig } from "../Monitoring";
+import { SystemConfig, ServerClientId } from "../Monitoring";
 import { Buffer } from "buffer";
 import { IpAddress } from "~/components/System/IpHistory";
 import { Setter, Accessor } from "solid-js";
@@ -26,45 +25,68 @@ export const sendRequest = async (
   }
 };
 
+const connectMultiClients = async (
+  clients: string[],
+  addr: string,
+): Promise<void | never> => {
+  for await (const cid of clients) {
+    try {
+      await connect(cid, addr);
+    } catch (e) {
+      throw new Error(e as string);
+    }
+  }
+  return;
+};
+
+const prepareInfos = async (cid: string) => {
+  let payload: object = {
+    core: {
+      kind: "CORE_REQUEST_KIND_LINE_CONFIG",
+    },
+  };
+  await sendRequest(cid, payload);
+
+  payload = {
+    core: {
+      kind: "CORE_REQUEST_KIND_SERVER_INFO",
+    },
+  };
+  await sendRequest(cid, payload);
+};
+
 export const connectServer = async (
   cid: ServerClientId,
   address: string,
 ): Promise<null | string> => {
   try {
-    await connect(cid.info, address);
-    await connect(cid.command, address);
-
-    let payload: object = {
-      core: {
-        kind: "CORE_REQUEST_KIND_LINE_CONFIG",
-      },
-    };
-    await sendRequest(cid.info, payload);
-
-    payload = {
-      core: {
-        kind: "CORE_REQUEST_KIND_SERVER_INFO",
-      },
-    };
-    await sendRequest(cid.info, payload);
+    await connectMultiClients(Object.values(cid), address);
+    await prepareInfos(cid.info);
   } catch (error) {
     return error as string;
   }
   return null;
 };
 
+const disconnectClients = async (clients: string[]): Promise<void | never> => {
+  for await (const cid of clients) {
+    try {
+      await disconnect(cid);
+    } catch (e) {
+      throw new Error(e as string);
+    }
+  }
+  return;
+};
+
 export const disconnectServer = async (
-  clientId: {
-    command: string;
-    info: string;
-  },
+  clientId: ServerClientId,
   isDisconnect: boolean,
   toast?: CreateToasterReturn,
 ) => {
   if (isDisconnect) return;
   try {
-    await disconnect(clientId.command);
-    await disconnect(clientId.info);
+    await disconnectClients(Object.values(clientId));
   } catch (e) {
     if (e) {
       if (toast) {
