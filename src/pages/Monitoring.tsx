@@ -8,8 +8,7 @@ import {
 } from "@tabler/icons-solidjs";
 import { css } from "styled-system/css/css";
 import { Show } from "solid-js/web";
-import { connect, disconnect, listen, send } from "@kuyoonjo/tauri-plugin-tcp";
-import { Buffer } from "buffer";
+
 import { System } from "~/components/System/System.tsx";
 import { Toast } from "~/components/ui/toast.tsx";
 //@ts-ignore Ignore test in git action
@@ -22,6 +21,14 @@ import { load } from "@tauri-apps/plugin-store";
 import { Tabs } from "~/components/ui/tabs.tsx";
 import { ControlPage } from "~/components/MonitoringSidebar/ControlPage.tsx";
 import { ConnectPage } from "~/components/MonitoringSidebar/ConnectPage.tsx";
+import {
+  commandListener,
+  connectServer,
+  requestClearError,
+  disconnectServer,
+  requestSystemInfo,
+  infoListener,
+} from "./Monitoring/ServerHandler.ts";
 
 export type SystemConfig = {
   lines: {
@@ -30,258 +37,129 @@ export type SystemConfig = {
   }[];
 };
 
-export type serverClientId = {
+export type ServerClientId = {
   command: string;
   info: string;
 };
 
+export type CurrentSendingCommand = {
+  lineId: number;
+  isSending: boolean;
+};
+
 function Monitoring() {
-  const [clientId, setClientId] = createSignal<serverClientId>({
+  const [clientId, setClientId] = createSignal<ServerClientId>({
     command: crypto.randomUUID(),
     info: crypto.randomUUID(),
   });
-  let infoUnlisten: UnlistenFn | null = null;
-  let commandUnlisten: UnlistenFn | null = null;
-
-  const [showSideBar, setShowSideBar] = createSignal<boolean>(true);
-  const [panelSize, setPanelSize] = createSignal<number>(100);
 
   const [systemConfig, setSystemConfig] = createStore<SystemConfig>({
     lines: [],
   });
-  const [isConnecting, setIsConnecting] = createSignal<boolean>(false);
-
-  const sendRequest = async (cid: string, payload: object) => {
-    const msg = mmc.Request.fromObject(payload);
-    const buffer = mmc.Request.encode(msg).finish();
-    const parseBuffer: number[] = Array.from(buffer);
-
-    try {
-      await send(cid, parseBuffer);
-    } catch {
-      setSystemConfig("lines", []);
-      setIsSending([]);
-    }
-  };
-
-  const connectServer = async (
-    cid: serverClientId,
-    address: string,
-  ): Promise<null | string> => {
-    try {
-      await connect(cid.info, address);
-      if (infoUnlisten === null) {
-        infoUnlisten = await infoListener();
-      }
-      await connect(cid.command, address);
-      if (commandUnlisten === null) {
-        commandUnlisten = await commandListener();
-      }
-
-      let payload: object = {
-        core: {
-          kind: "CORE_REQUEST_KIND_LINE_CONFIG",
-        },
-      };
-      await sendRequest(cid.info, payload);
-
-      payload = {
-        core: {
-          kind: "CORE_REQUEST_KIND_SERVER_INFO",
-        },
-      };
-      await sendRequest(cid.info, payload);
-    } catch (error) {
-      return error as string;
-    }
-    return null;
-  };
-
-  const disconnectServer = async (clientId: {
-    command: string;
-    info: string;
-  }) => {
-    if (systemConfig.lines.length < 1) return;
-    try {
-      if (commandUnlisten !== null) {
-        commandUnlisten();
-        commandUnlisten = null;
-      }
-      await disconnect(clientId.command);
-
-      if (infoUnlisten !== null) {
-        infoUnlisten();
-        infoUnlisten = null;
-      }
-      await disconnect(clientId.info);
-    } catch (e) {
-      if (e) {
-        toaster.create({
-          title: "Disconnect Error",
-          description: e as string,
-          type: "error",
-        });
-      }
-    }
-  };
-
-  onCleanup(async () => {
-    if (systemConfig.lines.length > 0) {
-      await disconnectServer(clientId());
-    }
-  });
-
-  // Request system info part
-  async function requestSystemInfo(
-    lineId: number,
-    lines: mmc.core.Response.LineConfig.ILine[],
-  ) {
-    if (infoUnlisten === null) return;
-    const payload = {
-      info: {
-        system: {
-          lineId: lineId,
-          driver: true,
-          axis: true,
-          carrier: true,
-        },
-      },
-    };
-    await sendRequest(clientId().info, payload);
-    if (lineId + 1 <= lines.length) {
-      await requestSystemInfo(lineId + 1, lines);
-    }
-  }
-
-  async function sendRequestLoop() {
-    if (infoUnlisten === null && systemConfig.lines.length < 1) return;
-    try {
-      await requestSystemInfo(
-        1,
-        systemConfig.lines.map((line) => line.line),
-      );
-
-      setTimeout(async () => {
-        if (systemConfig.lines.length < 1) {
-          return;
-        }
-        await sendRequestLoop();
-      }, 10);
-    } catch {
-      await disconnectServer(clientId());
-      setSystemConfig({ lines: [] });
-    }
-  }
 
   createEffect(
     on(
       () => systemConfig.lines,
       async () => {
         if (systemConfig.lines.length > 0) {
-          await sendRequestLoop();
+          await sendRequestLoop(isDisconnect());
         }
       },
       { defer: true },
     ),
   );
 
-  async function infoListener(): Promise<UnlistenFn> {
-    return await listen(async (x) => {
-      if (
-        x.payload.id === clientId().info &&
-        x.payload.event.message &&
-        x.payload.event.message.data
-      ) {
-        const msg = Buffer.from(x.payload.event.message!.data);
-        const decode = mmc.Response.decode(msg);
+  async function sendRequestLoop(isDisconnect: boolean) {
+    if (isDisconnect) return;
+    try {
+      const request = await requestSystemInfo(
+        clientId().info,
+        1,
+        systemConfig.lines.map((line) => line.line),
+      );
 
-        if (decode.core) {
-          if (decode.core.lineConfig) {
-            //@ts-ignore Ignore test in git action
-            const update = decode.core.lineConfig.lines!.map((line) => {
-              return { line: line };
-            });
-            setSystemConfig({ lines: update });
-            return;
-          }
-
-          if (decode.core.server) {
-            const serverName = decode.core.server.name;
-            if (serverName) {
-              setIpHistory((prev) => [
-                { ...prev[0], name: serverName },
-                ...prev.slice(1, prev.length),
-              ]);
-            }
-            return;
-          }
+      setTimeout(async () => {
+        if (request === null) {
+          closeListeners();
+          return;
         }
-
-        if (decode.info) {
-          if (decode.info.system) {
-            const index = decode.info!.system!.lineId! - 1;
-            if (isAutomatic()) {
-              if (decode.info.system.driverErrors) {
-                const hasDriverError = hasError(
-                  decode.info.system.driverErrors,
-                );
-                const hasAxisError = hasError(decode.info.system.axisErrors!);
-
-                if (hasDriverError && !hasAxisError) {
-                  const lineId = decode.info.system.lineId!;
-                  if (
-                    !isSending()
-                      .map((send) => send.lineId)
-                      .includes(lineId)
-                  ) {
-                    setIsSending((prev) => [
-                      ...prev,
-                      { lineId: lineId, isSending: false },
-                    ]);
-                  }
-                }
-              }
-            }
-
-            setSystemConfig("lines", index, "system", decode.info!.system);
-            return;
-          }
-        }
-      }
-    });
+        await sendRequestLoop(isDisconnect);
+      }, 10);
+    } catch {
+      await disconnectServer(clientId(), isDisconnect, toaster);
+      setSystemConfig({ lines: [] });
+    }
   }
 
-  const hasError = (fields: object[]): boolean => {
-    const findErrorFields = fields.map((field) => findErrorField(field));
-    return findErrorFields.includes(true);
-  };
+  const isConnect = () => systemConfig.lines.length > 0;
+  const isDisconnect = () => systemConfig.lines.length < 1;
 
-  const findErrorField = (fields: object): boolean => {
-    const values = Object.values(fields);
-    let findError: boolean = false;
+  const [isConnecting, setIsConnecting] = createSignal<boolean>(false);
 
-    for (let i = 0; i < values.length; i++) {
-      const val = values[i];
-      if (typeof val === "boolean") {
-        if (val) {
-          findError = true;
-          break;
-        }
-      } else if (typeof val === "object") {
-        if (findErrorField(val)) {
-          findError = true;
-          break;
-        }
-      }
+  let infoUnlisten: UnlistenFn | null = null;
+  let commandUnlisten: UnlistenFn | null = null;
+  const openListeners = async (cid: ServerClientId) => {
+    if (infoUnlisten === null) {
+      infoUnlisten = await infoListener(
+        clientId().info,
+        setSystemConfig,
+        isAutoClearMode,
+        setIpHistory,
+        (lineId) => {
+          if (
+            !isSending()
+              .map((send) => send.lineId)
+              .includes(lineId)
+          ) {
+            setIsSending((prev) => [
+              ...prev,
+              { lineId: lineId, isSending: false },
+            ]);
+          }
+        },
+      );
     }
-    return findError;
+    if (commandUnlisten === null) {
+      commandUnlisten = await commandListener(
+        cid.command,
+        //After Complete command
+        () => {
+          setIsSending((prev) => prev.filter((send) => !send.isSending));
+        },
+        // Catch error
+        async () => {
+          await disconnectServer(clientId(), isDisconnect(), toaster);
+          closeListeners();
+        },
+      );
+    }
   };
+
+  const closeListeners = () => {
+    if (infoUnlisten !== null) {
+      infoUnlisten();
+      infoUnlisten = null;
+    }
+    if (commandUnlisten !== null) {
+      commandUnlisten();
+      commandUnlisten = null;
+    }
+    setSystemConfig("lines", []);
+    setIsSending([]);
+  };
+
+  onCleanup(async () => {
+    if (isConnect()) {
+      closeListeners();
+      await disconnectServer(clientId(), isDisconnect(), toaster);
+    }
+  });
 
   //Send Command
   const [isSending, setIsSending] = createSignal<
     { lineId: number; isSending: boolean }[]
   >([]);
-  const [isAutomatic, setIsAutomatic] = createSignal<boolean>(false);
+  const [isAutoClearMode, setIsAutoClearMode] = createSignal<boolean>(false);
 
   createEffect(
     on(
@@ -298,93 +176,11 @@ function Monitoring() {
           { ...prev[0], isSending: true },
           ...prev.slice(1, prev.length),
         ]);
-        await sendClearError(lineId);
+        await requestClearError(lineId, clientId().command);
       },
       { defer: true },
     ),
   );
-
-  const sendClearError = async (lineId: number) => {
-    const payload = {
-      command: {
-        clearErrors: {
-          lineId: lineId,
-        },
-      },
-    };
-    if (
-      isSending()
-        .map((send) => send.lineId)
-        .includes(lineId)
-    ) {
-      // Giving timeout to show user the error is erasing
-      setTimeout(async () => {
-        await sendRequest(clientId().command, payload);
-      }, 200);
-    }
-  };
-
-  async function commandListener(): Promise<UnlistenFn> {
-    return await listen(async (x) => {
-      if (
-        x.payload.id === clientId().command &&
-        x.payload.event.message &&
-        x.payload.event.message.data
-      ) {
-        const msg = Buffer.from(x.payload.event.message!.data);
-        const decode = mmc.Response.decode(msg);
-        if (decode.command) {
-          if (decode.command.commandId) {
-            const payload = {
-              info: {
-                command: { id: decode.command.commandId },
-              },
-            };
-            await sendRequest(clientId().command, payload);
-          }
-
-          if (decode.command.commandOperation) {
-            const commandOperation = decode.command.commandOperation;
-            const parseOperation =
-              mmc.command.Response.CommandOperationStatus[commandOperation];
-            if (parseOperation.includes("COMPLETED")) {
-              setIsSending((prev) => prev.filter((send) => !send.isSending));
-            }
-          }
-        }
-
-        if (decode.info) {
-          if (decode.info.commands) {
-            const command = decode.info.commands.commands![0];
-            const commandStatus = command.status;
-            const commandId = command.id;
-            const parseStatus =
-              mmc.info.Response.Commands.Command.Status[
-                commandStatus as mmc.info.Response.Commands.Command.Status
-              ];
-
-            if (parseStatus.includes("COMPLETED")) {
-              const payload = {
-                command: {
-                  clearCommand: {
-                    commandId: commandId,
-                  },
-                },
-              };
-              await sendRequest(clientId().command, payload);
-            } else {
-              const payload = {
-                info: {
-                  command: { id: commandId },
-                },
-              };
-              await sendRequest(clientId().command, payload);
-            }
-          }
-        }
-      }
-    });
-  }
 
   // Get & Set recent ip history
   const [ipHistory, setIpHistory] = createSignal<IpAddress[]>([]);
@@ -429,6 +225,9 @@ function Monitoring() {
     gap: 16,
   });
 
+  const [showSideBar, setShowSideBar] = createSignal<boolean>(true);
+  const [panelSize, setPanelSize] = createSignal<number>(100);
+
   return (
     <Show when={render()}>
       <Splitter.Root
@@ -437,7 +236,7 @@ function Monitoring() {
           { id: `${clientId()}-panel` },
           {
             id: `${clientId()}-sidebar`,
-            minSize: 18,
+            minSize: 20,
           },
         ]}
         size={[panelSize(), 100 - panelSize()]}
@@ -518,6 +317,8 @@ function Monitoring() {
                   onConnectServer={async (address) => {
                     setIsConnecting(true);
                     const cid = clientId();
+                    await openListeners(cid);
+
                     const result = await connectServer(cid, address);
                     if (typeof result === "string") {
                       toaster.create({
@@ -525,29 +326,17 @@ function Monitoring() {
                         description: result as string,
                         type: "error",
                       });
-                      setIpHistory([
-                        ...ipHistory().filter(
-                          (history) =>
-                            `${history.ip}:${history.port}` !== address,
+
+                      setIpHistory((prev) =>
+                        prev.filter(
+                          (addr) => `${addr.ip}:${addr.port}` !== address,
                         ),
-                      ]);
-                    } else {
-                      const newIp = {
-                        ip: `${monitoringInputs.get("IP")![0]()}`,
-                        port: `${monitoringInputs.get("port")![0]()}`,
-                      };
-                      setIpHistory([
-                        newIp,
-                        ...ipHistory().filter(
-                          ({ ip, port }) =>
-                            ip !== newIp.ip && port !== newIp.port,
-                        ),
-                      ]);
+                      );
                     }
                     setIsConnecting(false);
                   }}
                   onDisconnectServer={async () => {
-                    await disconnectServer(clientId());
+                    await disconnectServer(clientId(), isDisconnect(), toaster);
                     setSystemConfig({ lines: [] });
                     setIsSending([]);
                     setClientId({
@@ -559,8 +348,8 @@ function Monitoring() {
               </Tabs.Content>
               <Tabs.Content value="Control">
                 <ControlPage
-                  isAutoMode={isAutomatic()}
-                  changeAutoMode={setIsAutomatic}
+                  isAutoMode={isAutoClearMode()}
+                  changeAutoMode={setIsAutoClearMode}
                 />
               </Tabs.Content>
             </Tabs.Root>
