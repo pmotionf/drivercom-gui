@@ -5,7 +5,7 @@ import { Splitter } from "~/components/ui/splitter.tsx";
 import { TabLocation } from "./TabList.tsx";
 import { createContext, createSignal, onMount } from "solid-js";
 import { panelContexts, panelKeys } from "~/GlobalState.ts";
-import { panelProps } from "./Panel.tsx";
+import { PanelProps } from "./Panel.tsx";
 
 export type PanelSizeContext = {
   id: string;
@@ -16,7 +16,7 @@ export type PanelLayoutProps = JSX.HTMLAttributes<HTMLDivElement> & {
   id: string;
 };
 
-export const panelLayoutContext = createContext<panelProps>();
+export const PanelLayoutContext = createContext<PanelProps>();
 
 export function PanelLayout(props: PanelLayoutProps) {
   if (!panelKeys.has(props.id)) {
@@ -126,7 +126,7 @@ export function PanelLayout(props: PanelLayoutProps) {
                     }}
                   />
                 </Show>
-                <panelLayoutContext.Provider
+                <PanelLayoutContext.Provider
                   value={{
                     id: id,
                     key: getPanelKey(),
@@ -156,7 +156,7 @@ export function PanelLayout(props: PanelLayoutProps) {
                   }}
                 >
                   {props.children}
-                </panelLayoutContext.Provider>
+                </PanelLayoutContext.Provider>
               </>
             );
           }}

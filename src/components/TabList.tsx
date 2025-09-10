@@ -17,7 +17,7 @@ import { tabContexts } from "~/GlobalState.ts";
 import { createStore } from "solid-js/store";
 import { Toast } from "./ui/toast.tsx";
 import { IconX } from "@tabler/icons-solidjs";
-import { panelContext } from "./Panel.tsx";
+import { PanelContext } from "./Panel.tsx";
 import { ConfigTabPage } from "~/pages/Configuration/ConfigTabContent.tsx";
 import { createSignal } from "solid-js";
 
@@ -56,14 +56,14 @@ export type TabListProps = {
   onDeleteTabList?: () => void;
 };
 
-export const tabPageContext = createContext<LogViewerTabPageContentProps>();
+export const TabPageContext = createContext<LogViewerTabPageContentProps>();
 
 export function TabList(
   props: JSX.HTMLAttributes<HTMLDivElement> & {
     onCreateTab?: (key: string) => void;
   },
 ) {
-  const tabListProps = useContext(panelContext);
+  const tabListProps = useContext(PanelContext);
   if (!tabListProps) return;
   if (!tabContexts.has(tabListProps.id)) {
     tabContexts.set(
@@ -234,7 +234,7 @@ export function TabList(
             style={{
               height: "3rem",
             }}
-            onCreateTab={async () => {
+            onCreateTab={() => {
               if (props.onCreateTab) {
                 props.onCreateTab?.(tabListProps.id);
               } else {
@@ -327,7 +327,7 @@ export function TabList(
                 value={tabCtx.tab.id}
                 style={{ width: "100%", height: `calc(100% - 3rem)` }}
               >
-                <tabPageContext.Provider
+                <TabPageContext.Provider
                   value={{
                     key: tabListProps.id,
                     tabId: tabCtx.tab.id,
@@ -337,7 +337,7 @@ export function TabList(
                   }}
                 >
                   {props.children}
-                </tabPageContext.Provider>
+                </TabPageContext.Provider>
               </Tabs.Content>
             );
           }}
