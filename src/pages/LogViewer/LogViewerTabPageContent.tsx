@@ -24,7 +24,7 @@ import { Tooltip } from "~/components/ui/tooltip";
 import { tabContexts } from "~/GlobalState.ts";
 import { on } from "solid-js";
 import { LegendStroke } from "~/components/Plot/Legend";
-import { tabPageContext } from "~/components/TabList";
+import { TabPageContext } from "~/components/TabList";
 
 export type ErrorMessage = {
   title: string;
@@ -49,7 +49,7 @@ export type LogViewerTabPage = {
 };
 
 export function LogViewerTabPageContent() {
-  const tabPageProps = useContext(tabPageContext);
+  const tabPageProps = useContext(TabPageContext);
   if (!tabPageProps) return;
   if (!tabContexts.get(tabPageProps.key)) return;
 

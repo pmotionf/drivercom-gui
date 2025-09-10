@@ -19,7 +19,7 @@ export type TabType = {
   tabName: string;
 };
 
-export type tabProps = JSX.HTMLAttributes<HTMLDivElement> & {
+export type TabProps = JSX.HTMLAttributes<HTMLDivElement> & {
   key: string;
   onTabDragging?: (clientX: number, clientY: number, tabId: string) => void;
   onTabDragEnd?: (
@@ -32,7 +32,7 @@ export type tabProps = JSX.HTMLAttributes<HTMLDivElement> & {
   onDeleteTab?: (index: number) => void;
 };
 
-export function Tab(props: tabProps) {
+export function Tab(props: TabProps) {
   if (!tabContexts.get(props.key)) return;
 
   const getTabContexts = (): TabContext[] => {

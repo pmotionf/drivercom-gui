@@ -6,24 +6,24 @@ import { Show } from "solid-js";
 import { Stack } from "styled-system/jsx/stack.mjs";
 import { panelContexts } from "~/GlobalState.ts";
 import { Splitter } from "./ui/splitter.tsx";
-import { panelLayoutContext } from "./PanelLayout.tsx";
+import { PanelLayoutContext } from "./PanelLayout.tsx";
 
 export type PanelContext = {
   id: string;
   tabContext: TabListContext[];
 };
 
-export type panelProps = {
+export type PanelProps = {
   id: string;
   key: string;
   onDeletePanel?: () => void;
   onCreatePanel?: (tabLocation: TabLocation, newPanelKey: string) => void;
 };
 
-export const panelContext = createContext<TabListProps>();
+export const PanelContext = createContext<TabListProps>();
 
 export function Panel(props: JSX.HTMLAttributes<HTMLDivElement>) {
-  const panelLayoutCtx = useContext(panelLayoutContext);
+  const panelLayoutCtx = useContext(PanelLayoutContext);
   if (!panelLayoutCtx) return;
   if (!panelContexts.get(panelLayoutCtx.key)) return;
 
@@ -64,7 +64,7 @@ export function Panel(props: JSX.HTMLAttributes<HTMLDivElement>) {
           height: "100%",
         }}
       >
-        <panelContext.Provider
+        <PanelContext.Provider
           value={{
             id: panelLayoutCtx.id,
             onDraggingTab: (tabLocation, mouseX) => {
@@ -96,7 +96,7 @@ export function Panel(props: JSX.HTMLAttributes<HTMLDivElement>) {
           }}
         >
           {props.children}
-        </panelContext.Provider>
+        </PanelContext.Provider>
       </Splitter.Panel>
       <Show when={isDragging()}>
         <Stack

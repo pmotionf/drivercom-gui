@@ -16,6 +16,7 @@ function Configuration() {
     const accordionStatuses: AccordionStatuses = new Map();
     const linkedStatuses: LinkedStatuses = new Map();
     const gainLockStatuses: GainLockStatuses = new Map();
+    const newForm = JSON.parse(JSON.stringify(configFormFileFormat()));
     const newTab = {
       tab: {
         id: id,
@@ -24,7 +25,7 @@ function Configuration() {
       tabPage: {
         configTabPage: {
           filePath: "",
-          configForm: JSON.parse(JSON.stringify(configFormFileFormat())),
+          configForm: newForm,
           configAccordionStatuses: accordionStatuses,
           configLinkedStatuses: linkedStatuses,
           configGainLockStatuses: gainLockStatuses,
