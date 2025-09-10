@@ -10,7 +10,7 @@
     "drivercom-fetch": "cd src-tauri/binaries && gh release download -R pmotionf/drivercom-cli -p '*-drivercom-cli-*.zip' --clobber",
     "drivercom-unpack": "bun unpack-drivercom.js",
     "drivercom": "bun run drivercom-prepare && bun run drivercom-fetch && bun run drivercom-unpack",
-    "fetch-mmc-api": "mkdir -p src/components/proto && cd src/components/proto && gh release download -R pmotionf/mmc-api -A 'zip' --clobber",
+    "fetch-mmc-api": "mkdir -p src/components/proto && cd src/components/proto && gh release download 0.4.0 -R pmotionf/mmc-api -A 'zip' --clobber",
     "unpack-mmc-api": "bun unpack-mmcApi.js",
     "convert-mmc-api": "bun pbjs -t static-module -w es6 -o src/components/proto/mmc.js src/components/proto/mmc.proto src/components/proto/mmc/core.proto src/components/proto/mmc/command.proto src/components/proto/mmc/info.proto && bun pbts -o src/components/proto/mmc.d.ts src/components/proto/mmc.js",
     "mmc-api": "bun run fetch-mmc-api && bun run unpack-mmc-api && bun run convert-mmc-api",
