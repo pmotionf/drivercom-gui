@@ -7,7 +7,7 @@ import { Stack } from "styled-system/jsx";
 import { ConfigForm } from "~/components/ConfigForm";
 import { FileMenu } from "~/components/FileMenu";
 import { PortMenu } from "~/components/PortMenu";
-import { tabPageContext } from "~/components/TabList";
+import { TabPageContext } from "~/components/TabList";
 import { Button } from "~/components/ui/button";
 import { Editable } from "~/components/ui/editable";
 import { Text } from "~/components/ui/text";
@@ -36,7 +36,7 @@ export type ConfigTabPage = {
 };
 
 export function ConfigTabContent() {
-  const configTabProps = useContext(tabPageContext);
+  const configTabProps = useContext(TabPageContext);
   if (!configTabProps) return;
   if (!tabContexts.get(configTabProps.key)) return;
 
@@ -72,6 +72,11 @@ export function ConfigTabContent() {
   const getTabName = () => {
     return tabContexts.get(configTabProps.key)![0].tabContext[getTabIndex()]
       .tab!.tabName;
+  };
+
+  const getTabId = () => {
+    return tabContexts.get(configTabProps.key)![0].tabContext[getTabIndex()].tab
+      .id;
   };
 
   const setTabName = (tabName: string) => {
@@ -432,7 +437,6 @@ export function ConfigTabContent() {
                 object!,
                 configFormFileFormat(),
               );
-              console.log(checkObject);
               if (!checkObject) {
                 toaster.create({
                   title: "Invalid File",
@@ -605,8 +609,8 @@ export function ConfigTabContent() {
             }}
           >
             <ConfigForm
+              id={getTabId()}
               config={getConfigForm()!}
-              label={getTabName()}
               linkedStatuses={getLinkedStatuses()!}
               accordionStatuses={getAccordionStatuses()!}
               gainLockStatuses={getGainLockStatuses()!}
