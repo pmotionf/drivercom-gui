@@ -28,8 +28,8 @@ import {
 import { Tooltip } from "./ui/tooltip.tsx";
 
 export type ConfigFormProps = JSX.HTMLAttributes<HTMLFormElement> & {
+  id: string;
   config: object;
-  label: string;
   accordionStatuses: AccordionStatuses;
   linkedStatuses: LinkedStatuses;
   gainLockStatuses: GainLockStatuses;
@@ -330,7 +330,7 @@ export function ConfigForm(props: ConfigFormProps) {
   return (
     <ConfigObject
       object={config}
-      id_prefix={props.label}
+      id_prefix={props.id}
       accordionStatuses={props.accordionStatuses}
       linkedStatuses={props.linkedStatuses}
       gainLockStatuses={props.gainLockStatuses}
@@ -524,6 +524,7 @@ function ConfigObject(props: ConfigObjectProps) {
                     // in store
                     e.checked,
                   );
+                  console.log(props.id_prefix);
                 }}
                 marginTop="1rem"
               >
