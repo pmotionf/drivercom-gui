@@ -127,10 +127,11 @@ export class ServerHandler implements IServerHandler {
           return;
         } else {
           this._clearErrorQueue = [];
-          throw new Error("Clear command error");
+          throw new Error("Command `Clear command` error");
         }
-      } catch {
+      } catch (e) {
         this._clearErrorQueue = [];
+        throw new Error(e as string);
       }
     }
   }
@@ -159,7 +160,7 @@ export class ServerHandler implements IServerHandler {
         throw new Error("Command Error");
       }
     }
-    throw new Error("Command Error");
+    throw new Error("No response.");
   }
 
   private async getCommandInfo(commandId: number): Promise<void> {
@@ -200,12 +201,12 @@ export class ServerHandler implements IServerHandler {
       ) {
         return response.info.commands.commands;
       } else {
-        throw new Error("Commnad operation not available");
+        throw new Error("Command operation not available");
       }
     }
     if (ConnectionState.Disconnect === this._connectionState)
       throw new Error("The server is disconnected.");
-    throw new Error("Commnad operation not available");
+    throw new Error("No response");
   }
 
   private async requestClearCommand(
@@ -233,7 +234,7 @@ export class ServerHandler implements IServerHandler {
       } else {
         if (ConnectionState.Disconnect === this._connectionState)
           throw new Error("The server is disconnected.");
-        throw new Error("Commnad operation not available");
+        throw new Error("Command operation not available");
       }
     }
     throw new Error("No response.");
@@ -259,7 +260,7 @@ export class ServerHandler implements IServerHandler {
       } else {
         if (ConnectionState.Disconnect === this._connectionState)
           throw new Error("The server is disconnected.");
-        throw new Error("No Response");
+        throw new Error("The response is invalid.");
       }
     } else {
       throw new Error("No Response");
@@ -296,7 +297,7 @@ export class ServerHandler implements IServerHandler {
     } else {
       if (ConnectionState.Disconnect === this._connectionState)
         throw new Error("Server disconnected");
-      throw new Error("The response is invalid.");
+      throw new Error("No response.");
     }
   }
 
