@@ -3,14 +3,19 @@ import { Text } from "../ui/text.tsx";
 import { For, Show } from "solid-js/web";
 import { useAxesContext } from "./Driver.tsx";
 import { Badge } from "../ui/badge.tsx";
-//@ts-ignore Ignore test in git action
-import { mmc } from "../proto/mmc";
 import { Tooltip } from "../ui/tooltip.tsx";
+import {
+  Response_Track_Axis_Error,
+  Response_Track_Axis_State,
+  Response_Track_Carrier_State,
+  Response_Track_Carrier_State_State,
+  /*@ts-ignore Ignore git acticon type check */
+} from "../proto/mmc/info_pb.ts";
 
 export type AxisProps = {
-  axisInfo: mmc.info.Response.System.Axis.IInfo[];
-  axisError: mmc.info.Response.System.Axis.IError[];
-  carrier?: mmc.info.Response.System.Carrier.IInfo[] | null;
+  axisInfo: Response_Track_Axis_State[];
+  axisError: Response_Track_Axis_Error[];
+  carrier?: Response_Track_Carrier_State[] | null;
 };
 
 export function Axis(props: AxisProps) {
@@ -19,19 +24,19 @@ export function Axis(props: AxisProps) {
   const axisId = Number(axisContext.id.split(":")[1]);
   const axisIndex = axisId - 1;
 
-  const axisInfo = (): mmc.info.Response.System.Axis.IInfo => {
+  const axisInfo = (): Response_Track_Axis_State => {
     return props.axisInfo[axisIndex];
   };
 
-  const axisError = (): mmc.info.Response.System.Axis.IError => {
+  const axisError = (): Response_Track_Axis_Error => {
     return props.axisError[axisIndex];
   };
 
-  const carrier = (): mmc.info.Response.System.Carrier.IInfo | null => {
+  const carrier = (): Response_Track_Carrier_State | null => {
     if (props.carrier && props.carrier.length > 0) {
       const parseCarrier = props.carrier.filter(
         (carrier) =>
-          carrier.axis!.auxiliary === axisId || carrier.axis!.main === axisId,
+          carrier.axisAuxiliary === axisId || carrier.axisMain === axisId,
       );
       return parseCarrier.length > 0 ? parseCarrier[0] : null;
     } else {
@@ -45,21 +50,13 @@ export function Axis(props: AxisProps) {
       height="7rem"
       borderRadius="0.5rem"
       borderWidth="1px"
-      borderRightWidth={
-        axisInfo().hallAlarm && axisInfo().hallAlarm!.front ? "5px" : "1px"
-      }
-      borderLeftWidth={
-        axisInfo()!.hallAlarm && axisInfo()!.hallAlarm!.back ? "5px" : "1px"
-      }
+      borderRightWidth={axisInfo().hallAlarmFront ? "5px" : "1px"}
+      borderLeftWidth={axisInfo().hallAlarmBack ? "5px" : "1px"}
       borderRightColor={
-        axisInfo()!.hallAlarm && axisInfo()!.hallAlarm!.front
-          ? "accent.customGreen"
-          : undefined
+        axisInfo().hallAlarmFront ? "accent.customGreen" : undefined
       }
       borderLeftColor={
-        axisInfo()!.hallAlarm && axisInfo()!.hallAlarm!.back
-          ? "accent.customGreen"
-          : undefined
+        axisInfo().hallAlarmBack ? "accent.customGreen" : undefined
       }
       backgroundColor="bg.default"
       padding="0.5rem"
@@ -82,7 +79,7 @@ export function Axis(props: AxisProps) {
               backgroundColor={
                 axisError().overcurrent
                   ? "accent.customRed"
-                  : axisInfo()!.motorEnabled
+                  : axisInfo().motorActive
                     ? "accent.customGreen"
                     : "bg.emphasized"
               }
@@ -167,9 +164,9 @@ export function Axis(props: AxisProps) {
                 }}
                 size="sm"
                 backgroundColor={
-                  !carrier()!.cas || carrier()!.cas!.enabled !== true
+                  carrier()!.casDisabled
                     ? "accent.customOrange"
-                    : carrier()!.cas!.triggered
+                    : carrier()!.casTriggered
                       ? "accent.customGreen"
                       : "bg.emphasized"
                 }
@@ -180,13 +177,11 @@ export function Axis(props: AxisProps) {
             <Tooltip.Positioner>
               <Tooltip.Content>
                 <Text>
-                  {carrier()!.cas
-                    ? carrier()!.cas!.triggered
+                  {carrier()!.casDisabled
+                    ? "Disabled"
+                    : carrier()!.casTriggered
                       ? "Triggered"
-                      : carrier()!.cas!.enabled
-                        ? "Enabled"
-                        : "Disabled"
-                    : "Disabled"}
+                      : "Enabled"}
                 </Text>
               </Tooltip.Content>
             </Tooltip.Positioner>
@@ -212,9 +207,7 @@ export function Axis(props: AxisProps) {
                   }}
                 >
                   {carrier()!.state
-                    ? mmc.info.Response.System.Carrier.Info.State[
-                        `${carrier()!.state}` as keyof typeof mmc.info.Response.System.Carrier.Info.State
-                      ]
+                    ? Response_Track_Carrier_State_State[carrier()!.state]
                         .toString()
                         .replace("CARRIER_STATE_", "")
                     : ""}
@@ -223,11 +216,9 @@ export function Axis(props: AxisProps) {
               <Tooltip.Positioner>
                 <Tooltip.Content>
                   {carrier()!.state
-                    ? mmc.info.Response.System.Carrier.Info.State[
-                        `${carrier()!.state}` as keyof typeof mmc.info.Response.System.Carrier.Info.State
-                      ]
+                    ? Response_Track_Carrier_State_State[carrier()!.state]
                         .toString()
-                        .replace("carrier_STATE_", "")
+                        .replace("CARRIER_STATE_", "")
                     : ""}
                 </Tooltip.Content>
               </Tooltip.Positioner>
@@ -252,7 +243,7 @@ export function Axis(props: AxisProps) {
                 "font-family": "monospace",
               }}
             >
-              {carrier()!.position!.toFixed(6)}
+              {`${carrier()!.position!.toFixed(6)}m`}
             </Text>
           </Stack>
         </Show>

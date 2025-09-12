@@ -5,8 +5,11 @@ import { For } from "solid-js/web";
 import { Badge } from "../ui/badge.tsx";
 import { Text } from "../ui/text.tsx";
 import { Tooltip } from "../ui/tooltip.tsx";
-//@ts-ignore Ignore git action
-import { mmc } from "../proto/mmc";
+import {
+  Response_Track_Driver_Error,
+  Response_Track_Driver_State,
+  /*@ts-ignore Ignore git acticon type check */
+} from "../proto/mmc/info_pb.ts";
 
 export const AxesContext = createContext<{
   id: string;
@@ -17,8 +20,8 @@ export const useAxesContext = () => {
 };
 
 export type DriverProps = JSX.HTMLAttributes<HTMLDivElement> & {
-  driverInfo: mmc.info.Response.System.Driver.IInfo[];
-  driverError: mmc.info.Response.System.Driver.IError[];
+  driverInfo: Response_Track_Driver_State[];
+  driverError: Response_Track_Driver_Error[];
 };
 
 export function Driver(props: DriverProps) {

@@ -3,14 +3,18 @@ import { For, Show } from "solid-js/web";
 import { Accordion } from "../ui/accordion.tsx";
 import { ChevronDownIcon } from "lucide-solid";
 import { Stack } from "styled-system/jsx/stack";
-//@ts-ignore Ignore test in git action
-import { mmc } from "../proto/mmc";
 import { Text } from "../ui/text.tsx";
 import { Tooltip } from "../ui/tooltip.tsx";
+import { TrackType, LineType } from "~/pages/Monitoring/ServerHandler.ts";
+import {
+  Response_Track_Axis_Error,
+  Response_Track_Driver_Error,
+  /*@ts-ignore Ignore git acticon type check */
+} from "../proto/mmc/info_pb.ts";
 
 export type LineProps = JSX.HTMLAttributes<HTMLDivElement> & {
-  line: mmc.core.Response.LineConfig.ILine;
-  system?: mmc.info.Response.ISystem;
+  line: LineType;
+  system?: TrackType;
 };
 
 export const LineContext = createContext<{
@@ -46,8 +50,8 @@ export function Line(props: LineProps) {
   };
 
   const showErrorStatus = (
-    axisErrors: mmc.info.Response.System.Axis.IError[],
-    driverError: mmc.info.Response.System.Driver.IError[],
+    axisErrors: Response_Track_Axis_Error[],
+    driverError: Response_Track_Driver_Error[],
   ): { field: string; error: string[] }[] => {
     const errorStates: { field: string; error: string[] }[] = [];
     driverError.forEach((error) => {
