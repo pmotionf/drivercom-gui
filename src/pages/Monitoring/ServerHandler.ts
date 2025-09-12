@@ -1,20 +1,43 @@
+import { create, toBinary } from "@bufbuild/protobuf";
 import { listen, send, connect, disconnect } from "@kuyoonjo/tauri-plugin-tcp";
 import { UnlistenFn } from "@tauri-apps/api/event";
-//@ts-ignore Ignore test in git action
-import { mmc } from "~/components/proto/mmc.js";
 import { Buffer } from "buffer";
+import {
+  Request_Kind,
+  Response_TrackConfig_Line,
+  /*@ts-ignore Ignore git acticon type check */
+} from "~/components/proto/mmc/core_pb";
+import {
+  Response_Command_Status,
+  Response_Track,
+  /*@ts-ignore Ignore git acticon type check */
+} from "~/components/proto/mmc/info_pb";
+import {
+  Request,
+  RequestSchema,
+  Response,
+  ResponseSchema,
+  /*@ts-ignore Ignore git acticon type check */
+} from "~/components/proto/mmc_pb";
+import { fromBinary } from "@bufbuild/protobuf";
 
 enum ConnectionState {
   Connect = "Connect",
   Disconnect = "Disconnect",
 }
 
+export type LineType = Omit<
+  Response_TrackConfig_Line,
+  "$typeName" | "$unknown"
+>;
+export type TrackType = Omit<Response_Track, "$typeName" | "$unknown">;
+
 interface IServerHandler {
   connect(ip: string, port: string): Promise<void | never>;
   disconnect(clientId: string): void;
   clearError(lindId: number, driverId?: number): void;
-  getSystemInfo(lineId: number): Promise<mmc.info.Response.ISystem | never>;
-  getLineConfig(): Promise<mmc.core.Response.ILineConfig | never>;
+  getSystemInfo(lineId: number, axesLength: number): Promise<TrackType | never>;
+  getLineConfig(): Promise<LineType[] | never>;
   getServerName(): Promise<string | null>;
 }
 
@@ -29,6 +52,8 @@ export class ServerHandler implements IServerHandler {
     clientId: crypto.randomUUID(),
   };
 
+  mmc: Request = create(RequestSchema);
+
   private _connectionState: ConnectionState = ConnectionState.Disconnect;
 
   private _lockRequest: boolean = false;
@@ -39,7 +64,7 @@ export class ServerHandler implements IServerHandler {
     this._lockRequest = false;
   }
 
-  private serverResponses: Map<string, mmc.IResponse> = new Map();
+  private serverResponses: Map<string, Response> = new Map();
   private _requestId: string | null = null;
 
   private _unlisten: null | UnlistenFn = null;
@@ -55,13 +80,11 @@ export class ServerHandler implements IServerHandler {
         x.payload.event.message &&
         x.payload.event.message.data
       ) {
-        const msg = Buffer.from(x.payload.event.message!.data);
-        const decode = mmc.Response.decode(msg);
-        if (decode) {
-          if (this._requestId) {
-            this.serverResponses.set(this._requestId, decode);
-            this.unlock();
-          }
+        const bytes = Buffer.from(x.payload.event.message.data);
+        const decode: Response = fromBinary(ResponseSchema, bytes);
+        if (this._requestId) {
+          this.serverResponses.set(this._requestId, decode);
+          this.unlock();
         }
       }
     });
@@ -116,18 +139,15 @@ export class ServerHandler implements IServerHandler {
         this._clearErrorQueue.push(lineId);
         const commandId = await this.requestClearError(lineId);
         if (!commandId) throw new Error("The response is invalid");
-
         await this.getCommandInfo(commandId);
-        const response = await this.requestClearCommand(commandId);
-        if (
-          response ===
-          mmc.command.Response.CommandOperationStatus.COMMAND_STATUS_COMPLETED
-        ) {
+
+        const clearedId = await this.requestRemoveCommand(commandId);
+        if (clearedId === commandId) {
           this._clearErrorQueue = [];
           return;
         } else {
           this._clearErrorQueue = [];
-          throw new Error("Command `Clear command` error");
+          throw new Error("Command `Remove command` error");
         }
       } catch (e) {
         this._clearErrorQueue = [];
@@ -138,12 +158,21 @@ export class ServerHandler implements IServerHandler {
 
   private async requestClearError(lineId: number): Promise<number | never> {
     if (!this._isQueueEmpty) throw new Error("Error queue is not empty");
-    const payload: mmc.IRequest = {
-      command: {
-        clearErrors: {
-          lineId: lineId,
+    const payload: Request = {
+      body: {
+        case: "command",
+        value: {
+          body: {
+            case: "clearErrors",
+            value: {
+              line: lineId,
+              $typeName: "mmc.command.Request.ClearErrors",
+            },
+          },
+          $typeName: "mmc.command.Request",
         },
       },
+      $typeName: "mmc.Request",
     };
     const requestId = crypto.randomUUID();
     this._requestId = requestId;
@@ -152,29 +181,34 @@ export class ServerHandler implements IServerHandler {
     await this.waitResponse();
 
     if (this.serverResponses.has(requestId)) {
-      const serverResponse = this.serverResponses.get(requestId)!;
+      const response = this.serverResponses.get(requestId)!;
       this.serverResponses.delete(requestId);
-      if (serverResponse.command && serverResponse.command.commandId) {
-        return serverResponse.command.commandId;
-      } else {
-        throw new Error("Command Error");
+
+      if (response.body.case === "command") {
+        const command = response.body.value;
+        if (command.body.case === "id") {
+          const commandId = command.body.value;
+          return commandId;
+        }
       }
+      throw new Error("Command Error");
     }
     throw new Error("No response.");
   }
 
-  private async getCommandInfo(commandId: number): Promise<void> {
-    if (this._isQueueEmpty || this._lockRequest) return;
+  private async getCommandInfo(commandId: number): Promise<void | never> {
+    if (this._lockRequest) return;
     const commandInfo = await this.requestCommandInfo(commandId);
     const commandStatus = commandInfo[0].status;
-    if (
-      commandStatus ===
-      mmc.info.Response.Commands.Command.Status.STATUS_COMPLETED
-    ) {
+    if (commandStatus === Response_Command_Status.COMMAND_STATUS_COMPLETED) {
       return;
-    } else {
+    } else if (
+      commandStatus === Response_Command_Status.COMMAND_STATUS_PROGRESSING
+    ) {
       this.delay(1);
       return await this.getCommandInfo(commandId);
+    } else {
+      throw new Error("Fail to request command info");
     }
   }
 
@@ -182,43 +216,61 @@ export class ServerHandler implements IServerHandler {
     if (!this._isQueueEmpty) throw new Error("Error queue is not empty");
     const requestId = crypto.randomUUID();
     this._requestId = requestId;
-    const payload = {
-      info: {
-        command: { id: commandId },
+    const payload: Request = {
+      body: {
+        case: "info",
+        value: {
+          $typeName: "mmc.info.Request",
+          body: {
+            case: "command",
+            value: {
+              $typeName: "mmc.info.Request.Command",
+              id: commandId,
+            },
+          },
+        },
       },
+      $typeName: "mmc.Request",
     };
     await this.sendRequest(this._ipAddress.clientId, payload);
     await this.waitResponse();
 
     if (this.serverResponses.has(requestId)) {
-      const response = this.serverResponses.get(requestId);
+      const response = this.serverResponses.get(requestId)!;
       this.serverResponses.delete(requestId);
-      if (
-        response &&
-        response.info &&
-        response.info.commands &&
-        response.info.commands.commands
-      ) {
-        return response.info.commands.commands;
-      } else {
-        throw new Error("Command operation not available");
+      if (response.body.case === "info") {
+        const info = response.body.value;
+        if (info.body.case === "command") {
+          const commandInfo = info.body.value;
+          return commandInfo.items;
+        }
       }
+      throw new Error("Invalid Response.");
     }
     if (ConnectionState.Disconnect === this._connectionState)
       throw new Error("The server is disconnected.");
     throw new Error("No response");
   }
 
-  private async requestClearCommand(
+  private async requestRemoveCommand(
     commandId: number,
-  ): Promise<mmc.command.Response.CommandOperationStatus | never> {
+  ): Promise<number | never> {
     if (!this._isQueueEmpty) throw new Error("Error queue is not empty");
-    const payload = {
-      command: {
-        clearCommand: {
-          commandId: commandId,
+    const payload: Request = {
+      body: {
+        case: "command",
+        value: {
+          body: {
+            case: "removeCommand",
+            value: {
+              $typeName: "mmc.command.Request.RemoveCommand",
+              command: commandId,
+            },
+          },
+          $typeName: "mmc.command.Request",
         },
       },
+      $typeName: "mmc.Request",
     };
     const requestId = crypto.randomUUID();
     this._requestId = requestId;
@@ -228,26 +280,35 @@ export class ServerHandler implements IServerHandler {
     if (this.serverResponses.has(requestId)) {
       const response = this.serverResponses.get(requestId);
       this.serverResponses.delete(requestId);
-      if (response && response.command && response.command.commandOperation) {
-        const commandOperation = response.command.commandOperation;
-        return commandOperation;
+      if (response) {
+        if (response.body.case === "command") {
+          const command = response.body.value;
+          if (command.body.case === "removedId") {
+            return command.body.value;
+          }
+        }
       } else {
         if (ConnectionState.Disconnect === this._connectionState)
           throw new Error("The server is disconnected.");
-        throw new Error("Command operation not available");
       }
+      throw new Error("Command operation not available");
     }
     throw new Error("No response.");
   }
 
-  async getLineConfig(): Promise<mmc.core.Response.ILineConfig | never> {
+  async getLineConfig(): Promise<LineType[] | never> {
     const requestId = crypto.randomUUID();
     this._requestId = requestId;
 
-    const payload: mmc.IRequest = {
-      core: {
-        kind: mmc.core.Request.Kind.CORE_REQUEST_KIND_LINE_CONFIG,
+    const payload: Request = {
+      body: {
+        case: "core",
+        value: {
+          kind: Request_Kind.CORE_REQUEST_KIND_TRACK_CONFIG,
+          $typeName: "mmc.core.Request",
+        },
       },
+      $typeName: "mmc.Request",
     };
     await this.sendRequest(this._ipAddress.clientId, payload);
     await this.waitResponse();
@@ -255,13 +316,28 @@ export class ServerHandler implements IServerHandler {
     if (this.serverResponses.has(requestId)) {
       const serverResponse = this.serverResponses.get(requestId)!;
       this.serverResponses.delete(requestId);
-      if (serverResponse.core && serverResponse.core.lineConfig) {
-        return serverResponse.core.lineConfig;
-      } else {
-        if (ConnectionState.Disconnect === this._connectionState)
-          throw new Error("The server is disconnected.");
-        throw new Error("The response is invalid.");
+      if (serverResponse.body.case === "core") {
+        const core = serverResponse.body.value;
+        if (core.body.case === "trackConfig") {
+          const trackConfig = core.body.value;
+          if (trackConfig.lines) {
+            const lines = trackConfig.lines.map(
+              (line: Response_TrackConfig_Line) => {
+                const newLine: LineType = {
+                  id: line.id,
+                  name: line.name,
+                  axes: line.axes,
+                  carrierLength: line.carrierLength,
+                  axisLength: line.axisLength,
+                };
+                return newLine;
+              },
+            );
+            return lines;
+          }
+        }
       }
+      throw new Error("Invalid Response");
     } else {
       throw new Error("No Response");
     }
@@ -269,31 +345,62 @@ export class ServerHandler implements IServerHandler {
 
   async getSystemInfo(
     lineId: number,
-  ): Promise<mmc.info.Response.ISystem | never> {
+    axesLength: number,
+  ): Promise<TrackType | never> {
     const requestId = crypto.randomUUID();
     this._requestId = requestId;
 
-    const payload = {
-      info: {
-        system: {
-          lineId: lineId,
-          driver: true,
-          axis: true,
-          carrier: true,
+    const payload: Request = {
+      body: {
+        case: "info",
+        value: {
+          $typeName: "mmc.info.Request",
+          body: {
+            case: "track",
+            value: {
+              $typeName: "mmc.info.Request.Track",
+              line: lineId,
+              infoAxisErrors: true,
+              infoCarrierState: true,
+              infoAxisState: true,
+              infoDriverErrors: true,
+              infoDriverState: true,
+              filter: {
+                case: "axes",
+                value: { start: 1, end: axesLength, $typeName: "Range" },
+              },
+            },
+          },
         },
       },
+      $typeName: "mmc.Request",
     };
+
     this.sendRequest(this._ipAddress.clientId, payload);
     await this.waitResponse();
 
     if (this.serverResponses.has(requestId)) {
-      const serverResponse = this.serverResponses.get(requestId)!;
+      const response = this.serverResponses.get(requestId)!;
       this.serverResponses.delete(requestId);
-      if (serverResponse.info && serverResponse.info.system) {
-        return serverResponse.info!.system;
-      } else {
-        throw new Error("The response is invalid.");
+      if (response.body.case === "info") {
+        const info = response.body.value;
+        if (info.body.case === "track") {
+          const track = response.body.value;
+          if (track.body.case === "track") {
+            const tracked = track.body.value;
+            const systemInfo: TrackType = {
+              line: tracked.line,
+              driverErrors: tracked.driverErrors,
+              driverState: tracked.driverState,
+              axisErrors: tracked.axisErrors,
+              axisState: tracked.axisState,
+              carrierState: tracked.carrierState,
+            };
+            return systemInfo;
+          }
+        }
       }
+      throw new Error("Invalid Response");
     } else {
       if (ConnectionState.Disconnect === this._connectionState)
         throw new Error("Server disconnected");
@@ -302,10 +409,15 @@ export class ServerHandler implements IServerHandler {
   }
 
   async getServerName(): Promise<string | null> {
-    const payload: mmc.IRequest = {
-      core: {
-        kind: mmc.core.Request.Kind.CORE_REQUEST_KIND_SERVER_INFO,
+    const payload: Request = {
+      body: {
+        case: "core",
+        value: {
+          kind: Request_Kind.CORE_REQUEST_KIND_SERVER_INFO,
+          $typeName: "mmc.core.Request",
+        },
       },
+      $typeName: "mmc.Request",
     };
     const requestId = crypto.randomUUID();
     this._requestId = requestId;
@@ -314,25 +426,23 @@ export class ServerHandler implements IServerHandler {
     await this.waitResponse();
 
     if (this.serverResponses.has(requestId)) {
-      const serverResponse = this.serverResponses.get(requestId)!;
+      const response = this.serverResponses.get(requestId)!;
       this.serverResponses.delete(requestId);
-      if (
-        serverResponse.core &&
-        serverResponse.core.server &&
-        serverResponse.core.server.name
-      ) {
-        return serverResponse.core.server.name;
-      } else {
-        return null;
+      if (response.body.case === "core") {
+        const core = response.body.value;
+        if (core.body.case === "server") {
+          const server = core.body.value;
+          return server.name;
+        }
       }
-    } else {
-      return null;
     }
+
+    return null;
   }
 
   private async sendRequest(
     cid: string,
-    payload: mmc.IRequest,
+    payload: Request,
   ): Promise<void | never> {
     if (this._lockRequest) {
       throw new Error("locked");
@@ -341,7 +451,7 @@ export class ServerHandler implements IServerHandler {
     this.lock();
     setTimeout(() => this.unlock(), 500);
 
-    const buffer = mmc.Request.encode(payload).finish();
+    const buffer = toBinary(RequestSchema, payload);
     const parseBuffer: number[] = Array.from(buffer);
 
     try {
