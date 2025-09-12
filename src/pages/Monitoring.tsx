@@ -8,11 +8,7 @@ import {
 } from "@tabler/icons-solidjs";
 import { css } from "styled-system/css/css";
 import { Show } from "solid-js/web";
-
-import { System } from "~/components/System/System.tsx";
 import { Toast } from "~/components/ui/toast.tsx";
-//@ts-ignore Ignore test in git action
-import { mmc } from "~/components/proto/mmc.js";
 import { monitoringInputs } from "~/GlobalState.ts";
 import { createStore } from "solid-js/store";
 import { IpAddress } from "~/components/System/IpHistory.tsx";
@@ -20,15 +16,15 @@ import { load } from "@tauri-apps/plugin-store";
 import { Tabs } from "~/components/ui/tabs.tsx";
 import { ControlPage } from "~/components/MonitoringSidebar/ControlPage.tsx";
 import { ConnectPage } from "~/components/MonitoringSidebar/ConnectPage.tsx";
-import { ServerHandler } from "./Monitoring/ServerHandler.ts";
+import {
+  LineType,
+  ServerHandler,
+  TrackType,
+} from "./Monitoring/ServerHandler.ts";
+import { System } from "~/components/System/System.tsx";
 
 export type SystemConfig = {
-  lines: Line[];
-};
-
-export type Line = {
-  line: mmc.core.Response.LineConfig.ILine;
-  system?: mmc.info.Response.ISystem;
+  lines: { line: LineType; system?: TrackType }[];
 };
 
 function Monitoring() {
@@ -70,7 +66,10 @@ function Monitoring() {
   const getSystemInfo = async (lineId: number): Promise<void> => {
     if (systemConfig.lines.length < 1) return;
     try {
-      const systemInfo = await serverHandler.getSystemInfo(lineId);
+      const systemInfo = await serverHandler.getSystemInfo(
+        lineId,
+        systemConfig.lines[lineId - 1].line.axes,
+      );
       if (systemInfo) {
         const lineIndex = lineId - 1;
         if (systemConfig.lines[lineIndex]) {
@@ -286,16 +285,14 @@ function Monitoring() {
                       try {
                         await serverHandler.connect(ip, port);
                         await addIpHistory(ip, port);
-
-                        const serverResponse: mmc.core.Response.ILineConfig =
+                        const serverResponse: LineType[] =
                           await serverHandler.getLineConfig();
-
-                        const lineConfig: Line[] = serverResponse.lines!.map(
-                          (line: mmc.core.Response.LineConfig.ILine) => {
+                        setSystemConfig(
+                          "lines",
+                          serverResponse.map((line) => {
                             return { line: line };
-                          },
+                          }),
                         );
-                        setSystemConfig("lines", lineConfig);
                       } catch {
                         deleteIpHistory(ip, port);
                       }
