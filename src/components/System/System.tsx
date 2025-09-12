@@ -101,21 +101,19 @@ export function System(props: SystemProps) {
                       <Show when={props.value.lines[item].system}>
                         <Driver
                           driverInfo={
-                            props.value.lines[item].system!.driverInfos!
+                            props.value.lines[item].system!.driverState
                           }
                           driverError={
-                            props.value.lines[item].system!.driverErrors!
+                            props.value.lines[item].system!.driverErrors
                           }
                         >
                           <Axis
                             axisError={
-                              props.value.lines[item].system!.axisErrors!
+                              props.value.lines[item].system!.axisErrors
                             }
-                            axisInfo={
-                              props.value.lines[item].system!.axisInfos!
-                            }
+                            axisInfo={props.value.lines[item].system!.axisState}
                             carrier={
-                              props.value.lines[item].system!.carrierInfos
+                              props.value.lines[item].system!.carrierState
                             }
                           />
                         </Driver>
