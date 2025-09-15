@@ -22,6 +22,12 @@ import {
   TrackType,
 } from "./Monitoring/ServerHandler.ts";
 import { System } from "~/components/System/System.tsx";
+import {
+  Response_Track_Axis_Error,
+  Response_Track_Driver_Error,
+  /*@ts-ignore Ignore git acticon type check */
+} from "~/components/proto/mmc/info_pb.ts";
+import { StatusPage } from "~/components/MonitoringSidebar/StatusPage.tsx";
 
 export type SystemConfig = {
   lines: { line: LineType; system?: TrackType }[];
@@ -193,6 +199,25 @@ function Monitoring() {
   const [panelSize, setPanelSize] = createSignal<number>(100);
   const [isConnecting, setIsConnecting] = createSignal<boolean>(false);
 
+  // Data for Status Page
+  const systemErrors = (): {
+    lineName: string;
+    axisErrors: Response_Track_Axis_Error[];
+    driverErrors: Response_Track_Driver_Error[];
+  }[] => {
+    return systemConfig.lines.map((line) => {
+      return {
+        lineName: line.line.name,
+        axisErrors:
+          line.system && line.system.axisErrors ? line.system.axisErrors : [],
+        driverErrors:
+          line.system && line.system.driverErrors
+            ? line.system!.driverErrors
+            : [],
+      };
+    });
+  };
+
   return (
     <>
       <Splitter.Root
@@ -259,11 +284,14 @@ function Monitoring() {
               defaultValue="Connect"
               style={{ width: "100%", height: "100%" }}
             >
-              <Tabs.List>
-                <Tabs.Trigger value="Connect" paddingTop="0.5rem">
+              <Tabs.List gap="0">
+                <Tabs.Trigger padding="0.5em" value="Connect">
                   {"Connect"}
                 </Tabs.Trigger>
-                <Tabs.Trigger value="Control" paddingTop="0.5rem">
+                <Tabs.Trigger value="Status" padding="0.5em">
+                  {"Status"}
+                </Tabs.Trigger>
+                <Tabs.Trigger value="Control" padding="0.5em">
                   {"Control"}
                 </Tabs.Trigger>
                 <Tabs.Indicator />
@@ -271,6 +299,7 @@ function Monitoring() {
               <Tabs.Content
                 value="Connect"
                 style={{ width: "100%", height: "100%" }}
+                overflowY="auto"
               >
                 <Show when={showConnectPage()}>
                   <ConnectPage
@@ -309,6 +338,9 @@ function Monitoring() {
                   isAutoMode={isAutoClearMode()}
                   changeAutoMode={setIsAutoClearMode}
                 />
+              </Tabs.Content>
+              <Tabs.Content value="Status" overflowY="auto">
+                <StatusPage systemErrors={systemErrors()} />
               </Tabs.Content>
             </Tabs.Root>
           </Splitter.Panel>
