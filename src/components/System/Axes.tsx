@@ -34,11 +34,11 @@ export function Axis(props: AxisProps) {
 
   const carrier = (): Response_Track_Carrier_State | null => {
     if (props.carrier && props.carrier.length > 0) {
-      const parseCarrier = props.carrier.filter(
+      const index = props.carrier.findIndex(
         (carrier) =>
-          carrier.axisAuxiliary === axisId || carrier.axisMain === axisId,
+          carrier.axisMain === axisId || carrier.axisAuxiliary === axisId,
       );
-      return parseCarrier.length > 0 ? parseCarrier[0] : null;
+      return index !== -1 ? props.carrier[index] : null;
     } else {
       return null;
     }
