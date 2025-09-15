@@ -17,7 +17,7 @@ export type StatusPageProps = {
 export const StatusPage = (props: StatusPageProps) => {
   return (
     <>
-      <Text fontWeight="bold" marginLeft="1em" size="lg" marginBottom="0.5em">
+      <Text fontWeight="bold" marginLeft="1em" size="lg">
         Status
       </Text>
       <ErrorTable systemErrors={props.systemErrors} />

@@ -8,10 +8,13 @@ import {
   /*@ts-ignore Ignore git acticon type check */
 } from "./proto/mmc/info_pb";
 import { Show } from "solid-js";
+import { IconButton } from "./ui/icon-button";
+import { IconFilter2 } from "@tabler/icons-solidjs";
+import { Menu } from "./ui/menu";
 
 type ErrorTable = {
   location: string;
-  errorInfo: string[];
+  error: string[];
 };
 
 type ErrorTableProps = JSX.HTMLAttributes<HTMLDivElement> & {
@@ -29,6 +32,8 @@ enum ErrorKind {
 
 export const ErrorTable = (props: ErrorTableProps) => {
   const systemErrors = () => props.systemErrors;
+
+  console.log(Object.values(ErrorKind));
 
   createEffect(
     on(
@@ -61,7 +66,7 @@ export const ErrorTable = (props: ErrorTableProps) => {
       if (hasError) {
         const newRow = {
           location: location,
-          errorInfo: track,
+          error: track,
         };
         addRow(newRow);
       } else {
@@ -103,9 +108,9 @@ export const ErrorTable = (props: ErrorTableProps) => {
     );
     const rowFound = rowIndex !== -1;
     if (rowFound) {
-      const currentErrorInfo = errorTable()[rowIndex].errorInfo;
+      const currentErrorInfo = errorTable()[rowIndex].error;
       const differentErrorInfo =
-        currentErrorInfo.toString() !== row.errorInfo.toString();
+        currentErrorInfo.toString() !== row.error.toString();
       if (differentErrorInfo) {
         setErrorTable((prev) => {
           const updatePrev = prev.map((prevRow, i) => {
@@ -131,21 +136,99 @@ export const ErrorTable = (props: ErrorTableProps) => {
     return hasRow;
   };
 
+  const locationFilter = () => {
+    return [
+      ...systemErrors().map((line) => line.lineName),
+      ...Object.values(ErrorKind),
+    ];
+  };
+
+  const errorFilter = () => {
+    // Need to find another way to find out
+    const axisErrorKeys: Array<keyof Response_Track_Axis_Error> = [
+      "overcurrent",
+    ];
+    const driverErrorKeys: Array<keyof Response_Track_Driver_Error> = [
+      "commErrorNext",
+      "commErrorPrev",
+      "controlLoopTimeExceeded",
+      "inverterOverheat",
+      "overvoltage",
+      "undervoltage",
+    ];
+    return [...axisErrorKeys, ...driverErrorKeys];
+  };
+
+  const [errorFilter, setErrorFilter] = createSignal<string[]>([]);
+
   return (
     <>
-      <Text
-        fontWeight="bold"
-        color="fg.subtle"
-        size="sm"
-        marginLeft="1.2em"
-        marginBottom="0.5em"
+      <div
+        style={{
+          width: "100%",
+          display: "flex",
+          "align-items": "center",
+          "justify-items": "center",
+          height: "3rem",
+          "padding-left": "1em",
+          "padding-right": "1em",
+        }}
       >
-        Error
-      </Text>
+        <Text
+          fontWeight="bold"
+          color="fg.subtle"
+          size="sm"
+          //width={`calc(100% - 2rem)`}
+          height="min-content"
+          alignItems="center"
+        >
+          Error
+        </Text>
+        <Show when={errorTable().length > 1}>
+          <Menu.Root positioning={{ placement: "bottom-start" }}>
+            <Menu.Trigger width="min-content">
+              <IconButton size="xs" variant="ghost">
+                <IconFilter2 />
+              </IconButton>
+            </Menu.Trigger>
+            <Menu.Positioner>
+              <Menu.Content>
+                <For each={Object.keys(errorTable()[0])}>
+                  {(filterKind) => {
+                    const prettierLabel = `${filterKind[0].toUpperCase()}${filterKind.slice(1, filterKind.length)}`;
+                    return (
+                      <Menu.Root positioning={{ placement: "right-start" }}>
+                        <Menu.TriggerItem>{prettierLabel}</Menu.TriggerItem>
+                        <Menu.Positioner>
+                          <Menu.Content>
+                            <For
+                              each={
+                                filterKind === "location"
+                                  ? locationFilter()
+                                  : errorFilter()
+                              }
+                            >
+                              {(filter) => {
+                                return (
+                                  <Menu.Item value={filter}>{filter}</Menu.Item>
+                                );
+                              }}
+                            </For>
+                          </Menu.Content>
+                        </Menu.Positioner>
+                      </Menu.Root>
+                    );
+                  }}
+                </For>
+              </Menu.Content>
+            </Menu.Positioner>
+          </Menu.Root>
+        </Show>
+      </div>
       <Show
         when={errorTable().length > 0}
         fallback={
-          <Text color="fg.subtle" size="sm" marginLeft="1.2em">
+          <Text color="fg.subtle" size="sm" marginLeft="1em">
             None errors.
           </Text>
         }
@@ -170,9 +253,7 @@ export const ErrorTable = (props: ErrorTableProps) => {
                     <Text>{row.location}</Text>
                   </Table.Cell>
                   <Table.Cell>
-                    <For each={row.errorInfo}>
-                      {(info) => <Text>{info}</Text>}
-                    </For>
+                    <For each={row.error}>{(info) => <Text>{info}</Text>}</For>
                   </Table.Cell>
                 </Table.Row>
               )}
