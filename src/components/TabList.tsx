@@ -20,6 +20,7 @@ import { IconX } from "@tabler/icons-solidjs";
 import { PanelContext } from "./Panel.tsx";
 import { ConfigTabPage } from "~/pages/Configuration/ConfigTabContent.tsx";
 import { createSignal } from "solid-js";
+import { Text } from "./ui/text.tsx";
 
 type ValueOf<Obj> = Obj[keyof Obj];
 type OneOnly<Obj, Key extends keyof Obj> = {
@@ -331,9 +332,7 @@ export function TabList(
                   value={{
                     key: tabListProps.id,
                     tabId: tabCtx.tab.id,
-                    onErrorMessage: (error) => {
-                      toaster.create(error);
-                    },
+                    toaster: toaster,
                   }}
                 >
                   {props.children}
@@ -348,6 +347,25 @@ export function TabList(
           <Toast.Root>
             <Toast.Title>{toast().title}</Toast.Title>
             <Toast.Description>{toast().description}</Toast.Description>
+            {toast().action && (
+              <Toast.ActionTrigger>
+                <Text
+                  size="sm"
+                  style={{
+                    width: "100%",
+                    height: "1rem",
+                    display: "block",
+                    "white-space": "none",
+                    overflow: "hidden",
+                    "text-overflow": "ellipsis",
+                    "text-decoration": "underline",
+                  }}
+                  fontWeight="bold"
+                >
+                  {toast().action?.label}
+                </Text>
+              </Toast.ActionTrigger>
+            )}
             <Toast.CloseTrigger>
               <IconX />
             </Toast.CloseTrigger>

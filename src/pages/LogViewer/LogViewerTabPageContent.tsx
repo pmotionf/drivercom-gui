@@ -25,8 +25,9 @@ import { Tooltip } from "~/components/ui/tooltip";
 import { tabContexts } from "~/GlobalState.ts";
 import { on } from "solid-js";
 import { LegendStroke } from "~/components/Plot/Legend";
-import { TabPageContext } from "~/components/TabList";
+import { TabContext, TabPageContext } from "~/components/TabList";
 import { save } from "@tauri-apps/plugin-dialog";
+import { CreateToasterReturn } from "@ark-ui/solid";
 
 export type ErrorMessage = {
   title: string;
@@ -37,7 +38,7 @@ export type ErrorMessage = {
 export type LogViewerTabPageContentProps = {
   key: string;
   tabId: string;
-  onErrorMessage?: (message: ErrorMessage) => void;
+  toaster: CreateToasterReturn;
 };
 
 export type LogViewerTabPage = {
@@ -71,6 +72,33 @@ export function LogViewerTabPageContent() {
         .logViewerTabPage!,
       currentIndex: index,
     };
+  };
+
+  const addNewTab = (newFilePath: string) => {
+    const tabCtxLength = tabContexts.get(tabPageProps.key)![0].tabContext
+      .length;
+    const setTabCtx = tabContexts.get(tabPageProps.key)![1];
+    const newTabID = crypto.randomUUID();
+    const newTab: TabContext = {
+      tab: {
+        id: newTabID,
+        tabName: newFilePath
+          .replaceAll("\\", "/")
+          .match(/[^?!//]+$/!)!
+          .toString()
+          .slice(0, -4) as string,
+      },
+      tabPage: {
+        logViewerTabPage: {
+          filePath: newFilePath,
+        },
+        configTabPage: null,
+      },
+    };
+    setTimeout(() => {
+      setTabCtx("tabContext", tabCtxLength, newTab);
+      setTabCtx("focusedTab", newTabID);
+    }, 200);
   };
 
   const filePath = () => {
@@ -224,7 +252,7 @@ export function LogViewerTabPageContent() {
         description: "Not enough rows.",
         type: "error",
       };
-      tabPageProps!.onErrorMessage?.(errorMessage);
+      tabPageProps!.toaster.create(errorMessage);
       return null;
     }
 
@@ -243,7 +271,7 @@ export function LogViewerTabPageContent() {
         description: `Data has ${data.length} columns, while header has ${local_header.length} labels.`,
         type: "error",
       };
-      tabPageProps!.onErrorMessage?.(errorMessage);
+      tabPageProps!.toaster.create(errorMessage);
       return null;
     }
 
@@ -611,6 +639,20 @@ export function LogViewerTabPageContent() {
                               visibleHeader,
                               visibleSeries,
                             );
+                            tabPageProps!.toaster.create({
+                              title: "Saved File Successfully",
+                              description: "The file is saved.",
+                              type: "success",
+                              action:
+                                path !== filePath()
+                                  ? {
+                                      label: path,
+                                      onClick: () => {
+                                        addNewTab(path);
+                                      },
+                                    }
+                                  : undefined,
+                            });
                           }
                           if (path === filePath()) {
                             setRender(false);
