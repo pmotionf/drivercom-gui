@@ -10,9 +10,10 @@ import {
 import { createStore } from "solid-js/store";
 import { Plot, PlotContext } from "~/components/Plot";
 import { inferSchema, initParser } from "udsv";
-import { readTextFile } from "@tauri-apps/plugin-fs";
+import { readTextFile, writeTextFile } from "@tauri-apps/plugin-fs";
 import { IconButton } from "~/components/ui/icon-button";
 import {
+  IconFileDownload,
   IconFold,
   IconRestore,
   IconSeparatorHorizontal,
@@ -25,6 +26,7 @@ import { tabContexts } from "~/GlobalState.ts";
 import { on } from "solid-js";
 import { LegendStroke } from "~/components/Plot/Legend";
 import { TabPageContext } from "~/components/TabList";
+import { save } from "@tauri-apps/plugin-dialog";
 
 export type ErrorMessage = {
   title: string;
@@ -69,6 +71,16 @@ export function LogViewerTabPageContent() {
         .logViewerTabPage!,
       currentIndex: index,
     };
+  };
+
+  const filePath = () => {
+    return getTabContext(tabPageProps.tabId).tabCtx.filePath!;
+  };
+
+  const tabName = () => {
+    return tabContexts.get(tabPageProps.key)![0].tabContext[
+      getTabContext(tabPageProps.tabId).currentIndex
+    ].tab.tabName;
   };
 
   const setSplitPlot = (tabIndex: number, newSplit: number[][]) => {
@@ -266,6 +278,10 @@ export function LogViewerTabPageContent() {
   }
 
   onMount(async () => {
+    await prepareCsvFile();
+  });
+
+  const prepareCsvFile = async () => {
     const csv_str = await readTextFile(
       getTabContext(tabPageProps.tabId).tabCtx.filePath!,
     );
@@ -309,7 +325,7 @@ export function LogViewerTabPageContent() {
     }
 
     setRender(true);
-  });
+  };
 
   function resetChart() {
     const indexArray = Array.from(
@@ -483,6 +499,67 @@ export function LogViewerTabPageContent() {
     ),
   );
 
+  async function openSaveFileDialog(): Promise<string | null> {
+    const fileNameFromPath =
+      filePath().length !== 0
+        ? filePath()
+            .match(/[^?!//]+$/)!
+            .toString()
+        : "";
+    const currentFilePath =
+      fileNameFromPath.split(`.`).shift() === tabName()
+        ? filePath()
+        : filePath().replace(fileNameFromPath, `${tabName()}.csv`);
+    const path = await save({
+      defaultPath: currentFilePath,
+      filters: [
+        {
+          name: "CSV",
+          extensions: ["csv"],
+        },
+      ],
+    });
+    if (!path) {
+      return null;
+    }
+
+    const extension = path.split(".").pop();
+    if (extension != "csv") {
+      return null;
+    }
+
+    return path;
+  }
+
+  async function saveArrayAsFile(
+    path: string,
+    header: string[],
+    series: number[][],
+  ) {
+    const csvText = Array.from(
+      { length: series[0].length },
+      (_, rowIndex) =>
+        `\n${Array.from(
+          { length: header.length },
+          (_, cellIndex) => series[cellIndex][rowIndex],
+        )},`,
+    );
+    const csvStr = [header.toString(), ...csvText].toString();
+    await writeTextFile(path, csvStr);
+  }
+
+  createEffect(
+    on(
+      () => render(),
+      () => {
+        if (!render()) {
+          prepareCsvFile();
+        }
+      },
+      { defer: true },
+    ),
+  );
+
   return (
     <Show when={render()}>
       <div style={{ width: "100%", height: "100%", "overflow-y": "auto" }}>
@@ -511,11 +588,49 @@ export function LogViewerTabPageContent() {
                   paddingRight="1.6rem"
                   style={{ overflow: "hidden" }}
                   height="3rem"
+                  gap="0.25em"
                 >
                   <Tooltip.Root>
                     <Tooltip.Trigger>
                       <IconButton
-                        size="sm"
+                        size="xs"
+                        variant={"outline"}
+                        onClick={async () => {
+                          const plotCtx = plots[index()].visible;
+                          const visibleHeader = currentHeader.filter(
+                            (_, i) => plotCtx[i],
+                          );
+                          const visibleSeries = currentItems.filter(
+                            (_, i) => plotCtx[i],
+                          );
+
+                          const path = await openSaveFileDialog();
+                          if (path) {
+                            await saveArrayAsFile(
+                              path,
+                              visibleHeader,
+                              visibleSeries,
+                            );
+                          }
+                          if (path === filePath()) {
+                            setRender(false);
+                          }
+                        }}
+                      >
+                        <IconFileDownload />
+                      </IconButton>
+                    </Tooltip.Trigger>
+                    <Tooltip.Positioner>
+                      <Tooltip.Content backgroundColor="bg.default">
+                        <Text color="fg.default">Save</Text>
+                      </Tooltip.Content>
+                    </Tooltip.Positioner>
+                  </Tooltip.Root>
+
+                  <Tooltip.Root>
+                    <Tooltip.Trigger>
+                      <IconButton
+                        size="xs"
                         onClick={() => {
                           setPrevSplitIndex(splitIndex());
                           splitPlot(index());
@@ -551,7 +666,7 @@ export function LogViewerTabPageContent() {
                           mergePlotIndexes().length < 2 ||
                           mergePlotIndexes().indexOf(index()) === -1
                         }
-                        size="sm"
+                        size="xs"
                       >
                         <IconFold />
                       </IconButton>
@@ -564,7 +679,7 @@ export function LogViewerTabPageContent() {
                   </Tooltip.Root>
 
                   <Checkbox
-                    width="8rem"
+                    width="7rem"
                     checked={mergePlotIndexes().indexOf(index()) !== -1}
                     onCheckedChange={(checkBoxState) => {
                       if (checkBoxState.checked === true) {
