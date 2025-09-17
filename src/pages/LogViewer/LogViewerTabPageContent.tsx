@@ -317,6 +317,7 @@ export function LogViewerTabPageContent() {
     if (!dataForPlot) return;
     setSeries(dataForPlot.series);
     setHeader(dataForPlot.header);
+    setPlotZoomState([0, series()[0].length]);
 
     if (getTabContext(tabPageProps.tabId)) {
       if (getTabContext(tabPageProps.tabId).tabCtx) {
@@ -563,13 +564,15 @@ export function LogViewerTabPageContent() {
     path: string,
     header: string[],
     series: number[][],
+    xMin: number,
+    xMax: number,
   ) {
     const csvText = Array.from(
-      { length: series[0].length },
+      { length: xMax - xMin },
       (_, rowIndex) =>
         `\n${Array.from(
           { length: header.length },
-          (_, cellIndex) => series[cellIndex][rowIndex],
+          (_, cellIndex) => series[cellIndex][rowIndex + xMin],
         )},`,
     );
     const csvStr = [header.toString(), ...csvText].toString();
@@ -624,13 +627,33 @@ export function LogViewerTabPageContent() {
                         size="xs"
                         variant={"outline"}
                         onClick={async () => {
-                          const plotCtx = plots[index()].visible;
+                          const visible = plots[index()].visible;
+                          if (!visible.includes(true)) {
+                            tabPageProps!.toaster.create({
+                              title: "Invalid Legend",
+                              description: "There is no visible legends.",
+                              type: "error",
+                            });
+                            return;
+                          }
                           const visibleHeader = currentHeader.filter(
-                            (_, i) => plotCtx[i],
+                            (_, i) => visible[i],
                           );
                           const visibleSeries = currentItems.filter(
-                            (_, i) => plotCtx[i],
+                            (_, i) => visible[i],
                           );
+
+                          const xMin = Math.floor(plotZoomState()[0]);
+                          const xMax = Math.floor(plotZoomState()[1]);
+                          if (xMax - xMin < 1) {
+                            tabPageProps!.toaster.create({
+                              title: "Invalid Range",
+                              description:
+                                "The x-axis dosen't have enough range.",
+                              type: "error",
+                            });
+                            return;
+                          }
 
                           const path = await openSaveFileDialog();
                           if (path) {
@@ -638,6 +661,8 @@ export function LogViewerTabPageContent() {
                               path,
                               visibleHeader,
                               visibleSeries,
+                              xMin,
+                              xMax,
                             );
                             tabPageProps!.toaster.create({
                               title: "Saved File Successfully",
