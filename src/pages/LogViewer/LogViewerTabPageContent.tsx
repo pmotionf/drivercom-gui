@@ -321,6 +321,10 @@ export function LogViewerTabPageContent() {
 
     if (getTabContext(tabPageProps.tabId)) {
       if (getTabContext(tabPageProps.tabId).tabCtx) {
+        if (getTabContext(tabPageProps.tabId).tabCtx.plotContext) {
+          setPlots(getTabContext(tabPageProps.tabId).tabCtx.plotContext!);
+        }
+
         if (
           typeof getTabContext(tabPageProps.tabId).tabCtx.plotSplitIndex! !==
           "undefined"
