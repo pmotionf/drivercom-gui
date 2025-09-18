@@ -327,15 +327,30 @@ export function ConfigForm(props: ConfigFormProps) {
     return p;
   }
 
+  const accordionIds = Object.entries(config)
+    .filter(
+      (entry) =>
+        typeof entry[1] === "object" && Object.values(entry[1]).length > 1,
+    )
+    .map((config) => props.id + config[0]);
+  const [accordionValue, setAccordionValue] =
+    createSignal<string[]>(accordionIds);
+
   return (
-    <ConfigObject
-      object={config}
-      id_prefix={props.id}
-      accordionStatuses={props.accordionStatuses}
-      linkedStatuses={props.linkedStatuses}
-      gainLockStatuses={props.gainLockStatuses}
-      gainKinds={dynamic}
-    />
+    <Accordion.Root
+      multiple
+      value={accordionValue()}
+      onValueChange={(details) => setAccordionValue(details.value)}
+    >
+      <ConfigObject
+        object={config}
+        id_prefix={props.id}
+        accordionStatuses={props.accordionStatuses}
+        linkedStatuses={props.linkedStatuses}
+        gainLockStatuses={props.gainLockStatuses}
+        gainKinds={dynamic}
+      />
+    </Accordion.Root>
   );
 }
 
@@ -432,85 +447,171 @@ function ConfigObject(props: ConfigObjectProps) {
                 );
               }
             }
-            return (
-              <fieldset
-                style={{
-                  "border-width": "1px",
-                  padding: "1rem",
-                  "padding-top": "0",
-                  "margin-bottom": "1rem",
-                  "border-radius": "0.5rem",
-                  "margin-top": "1rem",
-                }}
-              >
-                <legend style={{ display: "flex" }}>
-                  <Text fontWeight="bold" opacity="70%">
-                    {`${key[0].toUpperCase()}${Array.from(
-                      key.slice(1, key.length),
-                    )
-                      .map((char, index) => {
-                        if (key[index] === "_") {
-                          return char.toUpperCase();
-                        }
-                        return char;
-                      })
-                      .toString()
-                      .replaceAll(",", "")}`}
-                  </Text>
-                  <Show
-                    when={
-                      props.gainLockStatuses.has(`${key}.gain`) &&
-                      Object.keys(value).includes("gain")
-                    }
+
+            if (Object.values(value).length > 1) {
+              const accordionIds = Object.entries(value as object)
+                .filter(
+                  (entry) =>
+                    typeof entry[1] === "object" &&
+                    Object.values(entry[1]).length > 1,
+                )
+                .map((config) => props.id_prefix + key + config[0]);
+
+              const [accordionValue, setAccordionValue] =
+                createSignal<string[]>(accordionIds);
+              return (
+                <>
+                  <Accordion.Item
+                    value={props.id_prefix + key}
+                    borderWidth="1px"
+                    paddingTop="0.5rem"
+                    paddingBottom="0.5rem"
+                    marginTop="0.5rem"
+                    borderRadius="0.5em"
                   >
-                    <IconButton
-                      size="sm"
-                      width="1rem"
-                      height="min-content"
-                      paddingTop="0.2rem"
-                      paddingBottom="0.2rem"
-                      variant="ghost"
-                      opacity={
-                        props.gainLockStatuses.get(`${key}.gain`)![0]()
-                          ? "1"
-                          : "0.5"
-                      }
-                      onClick={() => {
-                        const lockStatus = props.gainLockStatuses.get(
-                          `${key}.gain`,
-                        )![0]();
-                        const mapKeys = Array.from(
-                          props.gainLockStatuses.keys(),
-                        ).filter((mapKey) => mapKey.includes(`${key}.gain`));
-                        mapKeys.forEach((mapKey) => {
-                          props.gainLockStatuses.get(mapKey)![1](!lockStatus);
-                        });
-                      }}
+                    <Accordion.ItemTrigger
+                      fontSize="md"
+                      padding="0 1rem 0 1rem"
                     >
-                      <Show
-                        when={props.gainLockStatuses.get(`${key}.gain`)![0]()}
-                        fallback={<IconLockOff />}
+                      <Stack direction="row">
+                        <Text fontWeight="bold" opacity="70%">
+                          {`${key[0].toUpperCase()}${Array.from(
+                            key.slice(1, key.length),
+                          )
+                            .map((char, index) => {
+                              if (key[index] === "_") {
+                                return char.toUpperCase();
+                              }
+                              return char;
+                            })
+                            .toString()
+                            .replaceAll(",", "")}`}
+                        </Text>
+                        <Show
+                          when={
+                            props.gainLockStatuses.has(`${key}.gain`) &&
+                            Object.keys(value).includes("gain")
+                          }
+                        >
+                          <IconButton
+                            size="sm"
+                            width="1rem"
+                            height="min-content"
+                            paddingTop="0.2rem"
+                            paddingBottom="0.2rem"
+                            variant="ghost"
+                            opacity={
+                              props.gainLockStatuses.get(`${key}.gain`)![0]()
+                                ? "1"
+                                : "0.5"
+                            }
+                            onClick={() => {
+                              const lockStatus = props.gainLockStatuses.get(
+                                `${key}.gain`,
+                              )![0]();
+                              const mapKeys = Array.from(
+                                props.gainLockStatuses.keys(),
+                              ).filter((mapKey) =>
+                                mapKey.includes(`${key}.gain`),
+                              );
+                              mapKeys.forEach((mapKey) => {
+                                props.gainLockStatuses.get(mapKey)![1](
+                                  !lockStatus,
+                                );
+                              });
+                            }}
+                          >
+                            <Show
+                              when={props.gainLockStatuses.get(
+                                `${key}.gain`,
+                              )![0]()}
+                              fallback={<IconLockOff />}
+                            >
+                              <IconLock />
+                            </Show>
+                          </IconButton>
+                        </Show>
+                      </Stack>
+                      <Accordion.ItemIndicator>
+                        <IconChevronDown />
+                      </Accordion.ItemIndicator>
+                    </Accordion.ItemTrigger>
+
+                    <Accordion.ItemContent
+                      borderWidth={"0"}
+                      padding="0 1rem 0 1rem"
+                    >
+                      <Accordion.Root
+                        borderWidth="0"
+                        value={accordionValue()}
+                        onValueChange={(details) =>
+                          setAccordionValue(details.value)
+                        }
+                        multiple
                       >
-                        <IconLock />
-                      </Show>
-                    </IconButton>
-                  </Show>
-                </legend>
-                <ConfigObject
-                  object={value}
-                  id_prefix={props.id_prefix + key}
-                  style={{ "padding-left": "1rem" }}
-                  onItemChange={() => {
-                    props.onItemChange?.();
-                  }}
-                  accordionStatuses={props.accordionStatuses}
-                  linkedStatuses={props.linkedStatuses}
-                  gainLockStatuses={props.gainLockStatuses}
-                  gainKinds={props.gainKinds}
-                  gainKey={gainkey}
-                />
-              </fieldset>
-            );
+                        <ConfigObject
+                          object={value}
+                          id_prefix={props.id_prefix + key}
+                          style={{ "padding-left": "1rem" }}
+                          onItemChange={() => {
+                            props.onItemChange?.();
+                          }}
+                          accordionStatuses={props.accordionStatuses}
+                          linkedStatuses={props.linkedStatuses}
+                          gainLockStatuses={props.gainLockStatuses}
+                          gainKinds={props.gainKinds}
+                          gainKey={gainkey}
+                        />
+                      </Accordion.Root>
+                    </Accordion.ItemContent>
+                  </Accordion.Item>
+                </>
+              );
+            } else {
+              return (
+                <>
+                  <fieldset
+                    style={{
+                      "border-width": "1px",
+                      padding: "1rem",
+                      "padding-top": "0",
+                      "margin-bottom": "1rem",
+                      "border-radius": "0.5rem",
+                      "margin-top": "1rem",
+                    }}
+                  >
+                    <legend>
+                      <Text fontWeight="bold" opacity="70%">
+                        {`${key[0].toUpperCase()}${Array.from(
+                          key.slice(1, key.length),
+                        )
+                          .map((char, index) => {
+                            if (key[index] === "_") {
+                              return char.toUpperCase();
+                            }
+                            return char;
+                          })
+                          .toString()
+                          .replaceAll(",", "")}`}
+                      </Text>
+                    </legend>
+                    <ConfigObject
+                      object={value}
+                      id_prefix={props.id_prefix + key}
+                      style={{ "padding-left": "1rem" }}
+                      onItemChange={() => {
+                        props.onItemChange?.();
+                      }}
+                      accordionStatuses={props.accordionStatuses}
+                      linkedStatuses={props.linkedStatuses}
+                      gainLockStatuses={props.gainLockStatuses}
+                      gainKinds={props.gainKinds}
+                      gainKey={gainkey}
+                    />
+                  </fieldset>
+                </>
+              );
+            }
           }
           if (typeof value === "boolean") {
             return (
@@ -524,7 +625,6 @@ function ConfigObject(props: ConfigObjectProps) {
                     // in store
                     e.checked,
                   );
-                  console.log(props.id_prefix);
                 }}
                 marginTop="1rem"
               >
@@ -776,7 +876,6 @@ function ConfigList(props: ConfigListProps) {
     <Accordion.Root
       multiple
       {...rest}
-      style={{ "border-bottom": "0", "border-top": "0" }}
       value={props.accordionStatuses.get(props.label)?.[0]()}
       onValueChange={(e) => {
         props.accordionStatuses.get(props.label)?.[1](e.value);
@@ -841,7 +940,10 @@ function ConfigList(props: ConfigListProps) {
                   </Accordion.ItemIndicator>
                 </Accordion.ItemTrigger>
               </Stack>
-              <Accordion.ItemContent padding="0">
+              <Accordion.ItemContent
+                paddingLeft="0.5rem"
+                paddingRight={"0.5rem"}
+              >
                 <ConfigObject
                   object={item}
                   id_prefix={props.id_prefix + title}
