@@ -20,6 +20,7 @@ type ErrorTableProps = JSX.HTMLAttributes<HTMLDivElement> & {
     axisErrors: Response_Track_Axis_Error[];
     driverErrors: Response_Track_Driver_Error[];
   }[];
+  clearErrorAuto: boolean;
 };
 
 enum ErrorKind {
@@ -40,11 +41,24 @@ export const ErrorTable = (props: ErrorTableProps) => {
         }
         for (const { lineName, axisErrors, driverErrors } of systemErrors()) {
           const prettierName = prettierLabel(lineName);
-          if (driverErrors) {
-            trackError(driverErrors, prettierName, ErrorKind.Driver);
-          }
           if (axisErrors) {
             trackError(axisErrors, prettierName, ErrorKind.Axis);
+          }
+
+          if (props.clearErrorAuto) {
+            if (
+              errorTable().some((table) =>
+                table.location.includes(ErrorKind.Driver),
+              )
+            ) {
+              trackError(driverErrors, prettierName, ErrorKind.Driver);
+            } else {
+              continue;
+            }
+          } else {
+            if (driverErrors) {
+              trackError(driverErrors, prettierName, ErrorKind.Driver);
+            }
           }
         }
       },

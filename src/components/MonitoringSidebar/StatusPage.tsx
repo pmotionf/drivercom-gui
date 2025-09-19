@@ -12,6 +12,7 @@ export type StatusPageProps = {
     axisErrors: Response_Track_Axis_Error[];
     driverErrors: Response_Track_Driver_Error[];
   }[];
+  clearErrorAuto: boolean;
 };
 
 export const StatusPage = (props: StatusPageProps) => {
@@ -20,7 +21,10 @@ export const StatusPage = (props: StatusPageProps) => {
       <Text fontWeight="bold" marginLeft="1em" size="lg" marginBottom="0.5em">
         Status
       </Text>
-      <ErrorTable systemErrors={props.systemErrors} />
+      <ErrorTable
+        systemErrors={props.systemErrors}
+        clearErrorAuto={props.clearErrorAuto}
+      />
     </>
   );
 };
