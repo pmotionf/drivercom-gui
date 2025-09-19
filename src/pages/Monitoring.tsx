@@ -340,7 +340,10 @@ function Monitoring() {
                 />
               </Tabs.Content>
               <Tabs.Content value="Status" overflowY="auto">
-                <StatusPage systemErrors={systemErrors()} />
+                <StatusPage
+                  systemErrors={systemErrors()}
+                  clearErrorAuto={isAutoClearMode()}
+                />
               </Tabs.Content>
             </Tabs.Root>
           </Splitter.Panel>
