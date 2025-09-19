@@ -187,7 +187,7 @@ export function Axis(props: AxisProps) {
             </Tooltip.Positioner>
           </Tooltip.Root>
         </div>
-        <Show when={carrier()!.state}>
+        <Show when={carrier()}>
           <Stack direction="row" gap="0">
             <Text width="3rem" size="sm" fontWeight="bold">
               State
@@ -206,7 +206,7 @@ export function Axis(props: AxisProps) {
                     "text-align": "left",
                   }}
                 >
-                  {carrier()!.state
+                  {carrier()
                     ? Response_Track_Carrier_State_State[carrier()!.state]
                         .toString()
                         .replace("CARRIER_STATE_", "")

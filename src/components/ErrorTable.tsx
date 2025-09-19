@@ -8,11 +8,16 @@ import {
   /*@ts-ignore Ignore git acticon type check */
 } from "./proto/mmc/info_pb";
 import { Show } from "solid-js";
-import { IconButton } from "./ui/icon-button";
-import { IconFilter2 } from "@tabler/icons-solidjs";
-import { Menu } from "./ui/menu";
+import { SearchFilterButton } from "./MonitoringSidebar/StausPage/SearchFilterButton";
+import { TagsInputs } from "./MonitoringSidebar/StausPage/TagsInput";
+import {
+  LocationFilter,
+  LocationFilterButton,
+} from "./MonitoringSidebar/StausPage/LocationFilterButton";
+import { Stack } from "styled-system/jsx";
 
 type ErrorTable = {
+  line: string;
   location: string;
   error: string[];
 };
@@ -30,10 +35,14 @@ enum ErrorKind {
   Axis = "Axis",
 }
 
+enum FilterType {
+  Line = "Line",
+  Location = "Location",
+  Error = "Error",
+}
+
 export const ErrorTable = (props: ErrorTableProps) => {
   const systemErrors = () => props.systemErrors;
-
-  console.log(Object.values(ErrorKind));
 
   createEffect(
     on(
@@ -62,16 +71,17 @@ export const ErrorTable = (props: ErrorTableProps) => {
     errors.forEach((error) => {
       const track = findError(error);
       const hasError = track.length > 0;
-      const location = `${lineName} ${kind} ${error["id" as keyof typeof error]}`;
+      const location = `${kind} ${error["id" as keyof typeof error]}`;
       if (hasError) {
         const newRow = {
+          line: lineName,
           location: location,
           error: track,
         };
         addRow(newRow);
       } else {
-        if (hasRow(location)) {
-          deleteRow(location);
+        if (hasRow(lineName, location)) {
+          deleteRow(lineName, location);
         }
       }
     });
@@ -104,7 +114,7 @@ export const ErrorTable = (props: ErrorTableProps) => {
 
   const addRow = (row: ErrorTable) => {
     const rowIndex = errorTable().findIndex(
-      (error) => error.location === row.location,
+      (error) => error.location === row.location && error.line === row.line,
     );
     const rowFound = rowIndex !== -1;
     if (rowFound) {
@@ -124,131 +134,392 @@ export const ErrorTable = (props: ErrorTableProps) => {
     }
   };
 
-  const deleteRow = (location: string) => {
+  const deleteRow = (line: string, location: string) => {
     return setErrorTable((prev) => {
-      const deleteRow = prev.filter((prevRow) => prevRow.location !== location);
+      const deleteRow = prev.filter(
+        (prevRow) => prevRow.location !== location && prevRow.line !== line,
+      );
       return deleteRow;
     });
   };
 
-  const hasRow = (location: string) => {
-    const hasRow = errorTable().some((row) => row.location === location);
+  const hasRow = (lineName: string, location: string) => {
+    const hasRow = errorTable().some(
+      (row) => row.location === location && row.line === lineName,
+    );
     return hasRow;
   };
 
-  const locationFilter = () => {
-    return [
-      ...systemErrors().map((line) => line.lineName),
-      ...Object.values(ErrorKind),
-    ];
-  };
+  const [lines, setLines] = createSignal<string[]>([]);
+  createEffect(
+    on(
+      () => systemErrors().map((system) => system.lineName),
+      () => {
+        const lineNames = systemErrors().map((system) => system.lineName);
+        if (lineNames.toString() !== lines().toString()) {
+          setLines(lineNames);
+        }
+      },
+      { defer: true },
+    ),
+  );
 
   const errorFilter = () => {
-    // Need to find another way to find out
-    const axisErrorKeys: Array<keyof Response_Track_Axis_Error> = [
-      "overcurrent",
-    ];
-    const driverErrorKeys: Array<keyof Response_Track_Driver_Error> = [
-      "commErrorNext",
-      "commErrorPrev",
-      "controlLoopTimeExceeded",
-      "inverterOverheat",
-      "overvoltage",
-      "undervoltage",
-    ];
-    return [...axisErrorKeys, ...driverErrorKeys];
+    const axisError: Omit<
+      Response_Track_Axis_Error,
+      "$typeName" | "$unknown" | "id"
+    > = { overcurrent: true };
+    const axisErrorKeys: string[] = Object.keys(axisError);
+
+    const driverError: Omit<
+      Response_Track_Driver_Error,
+      "$typeName" | "$unknown" | "id"
+    > = {
+      commErrorNext: true,
+      commErrorPrev: true,
+      controlLoopTimeExceeded: true,
+      undervoltage: true,
+      overvoltage: true,
+      inverterOverheat: true,
+    };
+    const driverAxisKeys: string[] = Object.keys(driverError);
+    return [...axisErrorKeys, ...driverAxisKeys];
   };
 
-  const [errorFilter, setErrorFilter] = createSignal<string[]>([]);
+  const [filterIndex, setFilterIndex] = createSignal<number[]>([]);
+
+  createEffect(
+    on([() => tableFilter(), () => errorTable()], () => {
+      if (tableFilter().length < 1) {
+        setFilterIndex(
+          Array.from({ length: errorTable().length }, (_, i) => i),
+        );
+      } else {
+        let table = errorTable();
+        const lineTypeFilter = tableFilter().filter(
+          (table) => table.type === FilterType.Line,
+        );
+        if (lineTypeFilter.length > 0) {
+          const lineFilters = lineTypeFilter.map((filter) =>
+            filter.filterName.toLowerCase(),
+          );
+          table = table.filter((filter) =>
+            lineFilters.includes(filter.line.toLowerCase()),
+          );
+        }
+
+        const locationFilter = tableFilter()
+          .filter((table) => table.type === FilterType.Location)
+          .map((filter) => filter.filterName.toLowerCase());
+
+        locationFilter.forEach((loc) => {
+          if (loc.includes(`~`)) {
+            const split = loc.split(" ");
+            const kind = split[0];
+            const range = split[1].split(`~`);
+            const minId = Number(range[0]);
+            const maxId = Number(range[1]);
+            const ids = Array.from(
+              { length: maxId - minId + 1 },
+              (_, i) => minId + i,
+            );
+            ids.forEach((id) => {
+              locationFilter.push(`${kind} ${id}`);
+            });
+          }
+        });
+
+        if (locationFilter.length > 0) {
+          table = table.filter(
+            (filter) =>
+              locationFilter.filter((loc) =>
+                filter.location.toLowerCase().includes(loc.toLowerCase()),
+              ).length > 0,
+          );
+        }
+
+        const errorFilter = tableFilter()
+          .filter((table) => table.type == FilterType.Error)
+          .map((filter) => filter.filterName.toLowerCase());
+        if (errorFilter.length > 0) {
+          table = table.filter(
+            (table) =>
+              table.error.filter((err) =>
+                errorFilter.includes(err.toLowerCase()),
+              ).length > 0,
+          );
+        }
+
+        const filterIndexes = table.map((filterRow) => {
+          const index = errorTable().findIndex(
+            (row) =>
+              filterRow.line === row.line &&
+              filterRow.location === row.location &&
+              filterRow.error.toString() === row.error.toString(),
+          );
+          return index;
+        });
+        setFilterIndex(filterIndexes);
+      }
+    }),
+  );
+
+  const [tableFilter, setTableFilter] = createSignal<
+    { type: FilterType; filterName: string }[]
+  >([]);
+  const [locationFilter, setLocationFilter] = createSignal<LocationFilter>({
+    axis: { show: false },
+    driver: { show: false },
+  });
 
   return (
     <>
-      <div
-        style={{
-          width: "100%",
-          display: "flex",
-          "align-items": "center",
-          "justify-items": "center",
-          height: "3rem",
-          "padding-left": "1em",
-          "padding-right": "1em",
-        }}
+      <Text
+        fontWeight="bold"
+        color="fg.subtle"
+        size="sm"
+        height="min-content"
+        alignItems="center"
+        marginLeft="1.2em"
+        marginBottom="0.5em"
       >
-        <Text
-          fontWeight="bold"
-          color="fg.subtle"
-          size="sm"
-          //width={`calc(100% - 2rem)`}
-          height="min-content"
-          alignItems="center"
-        >
-          Error
-        </Text>
-        <Show when={errorTable().length > 1}>
-          <Menu.Root positioning={{ placement: "bottom-start" }}>
-            <Menu.Trigger width="min-content">
-              <IconButton size="xs" variant="ghost">
-                <IconFilter2 />
-              </IconButton>
-            </Menu.Trigger>
-            <Menu.Positioner>
-              <Menu.Content>
-                <For each={Object.keys(errorTable()[0])}>
-                  {(filterKind) => {
-                    const prettierLabel = `${filterKind[0].toUpperCase()}${filterKind.slice(1, filterKind.length)}`;
-                    return (
-                      <Menu.Root positioning={{ placement: "right-start" }}>
-                        <Menu.TriggerItem>{prettierLabel}</Menu.TriggerItem>
-                        <Menu.Positioner>
-                          <Menu.Content>
-                            <For
-                              each={
-                                filterKind === "location"
-                                  ? locationFilter()
-                                  : errorFilter()
-                              }
-                            >
-                              {(filter) => {
-                                return (
-                                  <Menu.Item value={filter}>{filter}</Menu.Item>
-                                );
-                              }}
-                            </For>
-                          </Menu.Content>
-                        </Menu.Positioner>
-                      </Menu.Root>
+        Error
+      </Text>
+
+      <Table.Root
+        overflowX="hidden"
+        borderTopWidth="1px"
+        borderBottomWidth="1px"
+        marginBottom="1em"
+      >
+        <Table.Head>
+          <Show when={tableFilter().length > 0}>
+            <Table.Row padding={"0"}>
+              <Table.Cell colSpan={3} padding={"0"} height={"1rem"}>
+                <TagsInputs
+                  variant="ghost"
+                  style={{ width: "100%", "border-width": "0" }}
+                  value={tableFilter().map((table) => table.filterName)}
+                  onValueChange={(inputs) => {
+                    setTableFilter((prev) =>
+                      prev.filter((prev) => inputs.includes(prev.filterName)),
                     );
                   }}
-                </For>
-              </Menu.Content>
-            </Menu.Positioner>
-          </Menu.Root>
-        </Show>
-      </div>
-      <Show
-        when={errorTable().length > 0}
-        fallback={
-          <Text color="fg.subtle" size="sm" marginLeft="1em">
-            None errors.
-          </Text>
-        }
-      >
-        <Table.Root
-          overflowX="hidden"
-          borderTopWidth="1px"
-          borderBottomWidth="1px"
-          marginBottom="1em"
-        >
-          <Table.Head>
-            <Table.Row>
-              <Table.Header fontWeight="bold"> Location</Table.Header>
-              <Table.Header fontWeight="bold"> Error</Table.Header>
+                />
+              </Table.Cell>
             </Table.Row>
-          </Table.Head>
-          <Table.Body userSelect="none">
-            <For each={errorTable()}>
-              {(row) => (
+          </Show>
+          <Table.Row>
+            <Table.Header fontWeight={"bold"}>
+              <Stack direction="row" alignItems="center" gap="0">
+                <Text> {FilterType.Line}</Text>
+                <SearchFilterButton
+                  label={FilterType.Line}
+                  searchData={lines()}
+                  onApply={(inputs) => {
+                    const parseInputs = inputs
+                      .filter(
+                        (input) =>
+                          tableFilter().findIndex(
+                            (table) => table.filterName === input,
+                          ) === -1,
+                      )
+                      .map((input) => {
+                        return { type: FilterType.Line, filterName: input };
+                      });
+                    setTableFilter((prev) => [...prev, ...parseInputs]);
+                  }}
+                />
+              </Stack>
+            </Table.Header>
+            <Table.Header fontWeight="bold">
+              <Stack direction="row" alignItems="center" gap="0">
+                <Text>{FilterType.Location} </Text>
+                <LocationFilterButton
+                  locationFilter={locationFilter()}
+                  onApply={(filter) => {
+                    setLocationFilter(filter);
+                    if (filter.axis.show) {
+                      if (!filter.axis.ids) {
+                        if (
+                          tableFilter().findIndex(
+                            (filter) => filter.filterName === "axis",
+                          ) === -1
+                        ) {
+                          setTableFilter((prev) => [
+                            ...prev.filter(
+                              (prevFilter) =>
+                                !prevFilter.filterName.includes("axis"),
+                            ),
+                            { type: FilterType.Location, filterName: "axis" },
+                          ]);
+                        }
+                      } else {
+                        setTableFilter((prev) =>
+                          prev.filter((filter) => filter.filterName !== `axis`),
+                        );
+                        const minId = filter.axis.ids.min;
+                        const maxId = filter.axis.ids.max;
+
+                        if (!maxId) {
+                          const fieldName = `axis ${minId}`;
+                          if (
+                            tableFilter().findIndex(
+                              (filter) => filter.filterName === fieldName,
+                            ) === -1
+                          ) {
+                            setTableFilter((prev) => [
+                              ...prev,
+                              {
+                                type: FilterType.Location,
+                                filterName: fieldName,
+                              },
+                            ]);
+                          }
+                        } else {
+                          const rangeFilterName = `axis ${minId}~${maxId}`;
+                          if (
+                            tableFilter().findIndex(
+                              (filter) => filter.filterName === rangeFilterName,
+                            ) === -1
+                          ) {
+                            const ids = Array.from(
+                              { length: maxId - minId + 1 },
+                              (_, i) => minId + i,
+                            );
+                            ids.forEach((id) => {
+                              const filterName = `axis ${id}`;
+                              setTableFilter((prev) =>
+                                prev.filter(
+                                  (prevFilter) =>
+                                    prevFilter.filterName !== filterName,
+                                ),
+                              );
+                            });
+                            setTableFilter((prev) => [
+                              ...prev,
+                              {
+                                type: FilterType.Location,
+                                filterName: rangeFilterName,
+                              },
+                            ]);
+                          }
+                        }
+                      }
+                    }
+
+                    if (filter.driver.show) {
+                      if (!filter.driver.ids) {
+                        if (
+                          tableFilter().findIndex(
+                            (filter) => filter.filterName === "driver",
+                          ) === -1
+                        ) {
+                          setTableFilter((prev) => [
+                            ...prev.filter(
+                              (prevFilter) =>
+                                !prevFilter.filterName.includes("driver"),
+                            ),
+                            { type: FilterType.Location, filterName: "driver" },
+                          ]);
+                        }
+                      } else {
+                        setTableFilter((prev) =>
+                          prev.filter(
+                            (filter) => filter.filterName !== `driver`,
+                          ),
+                        );
+                        const minId = filter.driver.ids.min;
+                        const maxId = filter.driver.ids.max;
+
+                        if (!maxId) {
+                          const fieldName = `driver ${minId}`;
+                          if (
+                            tableFilter().findIndex(
+                              (filter) => filter.filterName === fieldName,
+                            ) === -1
+                          ) {
+                            setTableFilter((prev) => [
+                              ...prev,
+                              {
+                                type: FilterType.Location,
+                                filterName: fieldName,
+                              },
+                            ]);
+                          }
+                        } else {
+                          const rangeFilterName = `driver ${minId}~${maxId}`;
+
+                          if (
+                            tableFilter().findIndex(
+                              (filter) => filter.filterName === rangeFilterName,
+                            ) === -1
+                          ) {
+                            const ids = Array.from(
+                              { length: maxId - minId + 1 },
+                              (_, i) => minId + i,
+                            );
+                            ids.forEach((id) => {
+                              const filterName = `driver ${id}`;
+                              setTableFilter((prev) =>
+                                prev.filter(
+                                  (prevFilter) =>
+                                    prevFilter.filterName !== filterName,
+                                ),
+                              );
+                            });
+                            setTableFilter((prev) => [
+                              ...prev,
+                              {
+                                type: FilterType.Location,
+                                filterName: rangeFilterName,
+                              },
+                            ]);
+                          }
+                        }
+                      }
+                    }
+                    setLocationFilter({
+                      axis: { show: false },
+                      driver: { show: false },
+                    });
+                  }}
+                />
+              </Stack>
+            </Table.Header>
+            <Table.Header fontWeight="bold">
+              <Stack direction="row" alignItems="center" gap="0">
+                <Text>Error</Text>
+                <SearchFilterButton
+                  label={FilterType.Error}
+                  searchData={errorFilter()}
+                  onApply={(inputs) => {
+                    const parseInputs = inputs
+                      .filter(
+                        (input) =>
+                          tableFilter().findIndex(
+                            (table) => table.filterName === input,
+                          ) === -1,
+                      )
+                      .map((input) => {
+                        return { type: FilterType.Error, filterName: input };
+                      });
+                    setTableFilter((prev) => [...prev, ...parseInputs]);
+                  }}
+                />
+              </Stack>
+            </Table.Header>
+          </Table.Row>
+        </Table.Head>
+        <Table.Body userSelect="none">
+          <For each={filterIndex()}>
+            {(index) => {
+              const row = errorTable()[index];
+              return (
                 <Table.Row style={{ padding: "0" }}>
+                  <Table.Cell style={{ height: "min-content", margin: "0" }}>
+                    <Text>{row.line}</Text>
+                  </Table.Cell>
                   <Table.Cell style={{ height: "min-content", margin: "0" }}>
                     <Text>{row.location}</Text>
                   </Table.Cell>
@@ -256,11 +527,11 @@ export const ErrorTable = (props: ErrorTableProps) => {
                     <For each={row.error}>{(info) => <Text>{info}</Text>}</For>
                   </Table.Cell>
                 </Table.Row>
-              )}
-            </For>
-          </Table.Body>
-        </Table.Root>
-      </Show>
+              );
+            }}
+          </For>
+        </Table.Body>
+      </Table.Root>
     </>
   );
 };
