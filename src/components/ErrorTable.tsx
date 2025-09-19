@@ -25,22 +25,24 @@ export const ErrorTable = (props: ErrorTableProps) => {
 
   const showTable = () => {
     const findSystemError = systemError().map((system) => {
-      const findAxisErrors = system.axisErrors
-        .map((axis) => Object.values(axis).includes(true))
-        .includes(true);
+      const findAxisErrors = findError(system.axisErrors);
       if (findAxisErrors) {
         return true;
       } else {
         if (!props.clearErrorAuto) {
-          const findDriverErrors = system.driverErrors
-            .map((driver) => Object.values(driver).includes(true))
-            .includes(true);
-          return findDriverErrors;
+          return findError(system.driverErrors);
         }
       }
       return false;
     });
     return findSystemError.includes(true);
+  };
+
+  const findError = (errors: object[]): boolean => {
+    const detectError = errors
+      .map((axis) => Object.values(axis).includes(true))
+      .includes(true);
+    return detectError;
   };
 
   return (
@@ -116,13 +118,13 @@ type ErrorTableRowProps = {
 const ErrorTableRows = (props: ErrorTableRowProps) => {
   return (
     <For each={props.errors}>
-      {(axis, i) => {
+      {(error, i) => {
         if (
-          Object.values(axis).some(
+          Object.values(error).some(
             (value) => typeof value === "boolean" && value,
           )
         ) {
-          const keys = Object.entries(axis)
+          const keys = Object.entries(error)
             .filter((entry) => typeof entry[1] === "boolean" && entry[1])
             .map((entry) => entry[0]);
           const locationKindId = i() + 1;
