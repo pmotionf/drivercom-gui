@@ -327,30 +327,15 @@ export function ConfigForm(props: ConfigFormProps) {
     return p;
   }
 
-  const accordionIds = Object.entries(config)
-    .filter(
-      (entry) =>
-        typeof entry[1] === "object" && Object.values(entry[1]).length > 1,
-    )
-    .map((config) => props.id + config[0]);
-  const [accordionValue, setAccordionValue] =
-    createSignal<string[]>(accordionIds);
-
   return (
-    <Accordion.Root
-      multiple
-      value={accordionValue()}
-      onValueChange={(details) => setAccordionValue(details.value)}
-    >
-      <ConfigObject
-        object={config}
-        id_prefix={props.id}
-        accordionStatuses={props.accordionStatuses}
-        linkedStatuses={props.linkedStatuses}
-        gainLockStatuses={props.gainLockStatuses}
-        gainKinds={dynamic}
-      />
-    </Accordion.Root>
+    <ConfigObject
+      object={config}
+      id_prefix={props.id}
+      accordionStatuses={props.accordionStatuses}
+      linkedStatuses={props.linkedStatuses}
+      gainLockStatuses={props.gainLockStatuses}
+      gainKinds={dynamic}
+    />
   );
 }
 
@@ -448,21 +433,31 @@ function ConfigObject(props: ConfigObjectProps) {
               }
             }
 
-            if (Object.values(value).length > 1) {
-              const accordionIds = Object.entries(value as object)
-                .filter(
-                  (entry) =>
-                    typeof entry[1] === "object" &&
-                    Object.values(entry[1]).length > 1,
-                )
-                .map((config) => props.id_prefix + key + config[0]);
-
+            if (
+              Object.values(value).length > 1 ||
+              Object.values(value).some((val) => typeof val === "object")
+            ) {
+              const itemId = props.id_prefix + key;
+              if (!props.accordionStatuses.has(itemId)) {
+                props.accordionStatuses.set(
+                  itemId,
+                  createSignal<string[]>([itemId]),
+                );
+              }
               const [accordionValue, setAccordionValue] =
-                createSignal<string[]>(accordionIds);
+                props.accordionStatuses.get(itemId)!;
+
               return (
-                <>
+                <Accordion.Root
+                  borderWidth="0"
+                  value={accordionValue()}
+                  onValueChange={(details) => {
+                    setAccordionValue(details.value);
+                  }}
+                  multiple
+                >
                   <Accordion.Item
-                    value={props.id_prefix + key}
+                    value={itemId}
                     borderWidth="1px"
                     paddingTop="0.5rem"
                     paddingBottom="0.5rem"
@@ -474,7 +469,7 @@ function ConfigObject(props: ConfigObjectProps) {
                       padding="0 1rem 0 1rem"
                     >
                       <Stack direction="row">
-                        <Text fontWeight="bold" opacity="70%">
+                        <Text fontWeight="bold" color="fg.subtle">
                           {`${key[0].toUpperCase()}${Array.from(
                             key.slice(1, key.length),
                           )
@@ -541,60 +536,48 @@ function ConfigObject(props: ConfigObjectProps) {
                       borderWidth={"0"}
                       padding="0 1rem 0 1rem"
                     >
-                      <Accordion.Root
-                        borderWidth="0"
-                        value={accordionValue()}
-                        onValueChange={(details) =>
-                          setAccordionValue(details.value)
-                        }
-                        multiple
-                      >
-                        <ConfigObject
-                          object={value}
-                          id_prefix={props.id_prefix + key}
-                          style={{ "padding-left": "1rem" }}
-                          onItemChange={() => {
-                            props.onItemChange?.();
-                          }}
-                          accordionStatuses={props.accordionStatuses}
-                          linkedStatuses={props.linkedStatuses}
-                          gainLockStatuses={props.gainLockStatuses}
-                          gainKinds={props.gainKinds}
-                          gainKey={gainkey}
-                        />
-                      </Accordion.Root>
+                      <ConfigObject
+                        object={value}
+                        id_prefix={props.id_prefix + key}
+                        style={{ "padding-left": "1rem" }}
+                        onItemChange={() => {
+                          props.onItemChange?.();
+                        }}
+                        accordionStatuses={props.accordionStatuses}
+                        linkedStatuses={props.linkedStatuses}
+                        gainLockStatuses={props.gainLockStatuses}
+                        gainKinds={props.gainKinds}
+                        gainKey={gainkey}
+                      />
                     </Accordion.ItemContent>
                   </Accordion.Item>
-                </>
+                </Accordion.Root>
               );
             } else {
               return (
                 <>
-                  <fieldset
+                  <div
                     style={{
                       "border-width": "1px",
-                      padding: "1rem",
-                      "padding-top": "0",
-                      "margin-bottom": "1rem",
-                      "border-radius": "0.5rem",
-                      "margin-top": "1rem",
+                      padding: "0.5rem 1rem 0.5rem 1rem",
+                      "margin-top": "0.5rem",
+                      "border-radius": "0.5em",
                     }}
                   >
-                    <legend>
-                      <Text fontWeight="bold" opacity="70%">
-                        {`${key[0].toUpperCase()}${Array.from(
-                          key.slice(1, key.length),
-                        )
-                          .map((char, index) => {
-                            if (key[index] === "_") {
-                              return char.toUpperCase();
-                            }
-                            return char;
-                          })
-                          .toString()
-                          .replaceAll(",", "")}`}
-                      </Text>
-                    </legend>
+                    <Text fontWeight="bold" color="fg.subtle">
+                      {`${key[0].toUpperCase()}${Array.from(
+                        key.slice(1, key.length),
+                      )
+                        .map((char, index) => {
+                          if (key[index] === "_") {
+                            return char.toUpperCase();
+                          }
+                          return char;
+                        })
+                        .toString()
+                        .replaceAll(",", "")}`}
+                    </Text>
+
                     <ConfigObject
                       object={value}
                       id_prefix={props.id_prefix + key}
@@ -608,7 +591,7 @@ function ConfigObject(props: ConfigObjectProps) {
                       gainKinds={props.gainKinds}
                       gainKey={gainkey}
                     />
-                  </fieldset>
+                  </div>
                 </>
               );
             }
@@ -874,6 +857,7 @@ function ConfigList(props: ConfigListProps) {
 
   return (
     <Accordion.Root
+      borderWidth="0"
       multiple
       {...rest}
       value={props.accordionStatuses.get(props.label)?.[0]()}
@@ -922,7 +906,7 @@ function ConfigList(props: ConfigListProps) {
                   </Tooltip.Positioner>
                 </Tooltip.Root>
                 <Accordion.ItemTrigger>
-                  <Text fontWeight="bold" size="md" opacity="70%">
+                  <Text fontWeight="bold" size="md" color="fg.subtle">
                     {`${title[0].toUpperCase()}${Array.from(
                       title.slice(1, title.length),
                     )
