@@ -9,8 +9,6 @@ import {
 } from "solid-js";
 import { createStore } from "solid-js/store";
 import { Plot, PlotContext } from "~/components/Plot";
-import { inferSchema, initParser } from "udsv";
-import { readTextFile, writeTextFile } from "@tauri-apps/plugin-fs";
 import { IconButton } from "~/components/ui/icon-button";
 import {
   IconFileDownload,
@@ -26,8 +24,8 @@ import { tabContexts } from "~/GlobalState.ts";
 import { on } from "solid-js";
 import { LegendStroke } from "~/components/Plot/Legend";
 import { TabContext, TabPageContext } from "~/components/TabList";
-import { save } from "@tauri-apps/plugin-dialog";
 import { CreateToasterReturn } from "@ark-ui/solid";
+import { FileHandler } from "../utils/FileHandler";
 
 export type ErrorMessage = {
   title: string;
@@ -98,6 +96,21 @@ export function LogViewerTabPageContent() {
     setTimeout(() => {
       setTabCtx("tabContext", tabCtxLength, newTab);
       setTabCtx("focusedTab", newTabID);
+    }, 200);
+  };
+
+  const deleteTab = () => {
+    const tabCtx = tabContexts.get(tabPageProps.key)![0];
+    const tabIndex = getTabContext(tabPageProps.tabId).currentIndex;
+    const filteredTabCtx = tabCtx.tabContext.filter(
+      (tabCtx) => tabCtx.tab.id !== tabPageProps.tabId,
+    );
+    const setTabCtx = tabContexts.get(tabPageProps.key)![1];
+    const nextFocusTabIndex = tabIndex === 0 ? 1 : tabIndex - 1;
+
+    setTimeout(() => {
+      setTabCtx("focusedTab", tabCtx.tabContext[nextFocusTabIndex].tab.id);
+      setTabCtx("tabContext", filteredTabCtx);
     }, 200);
   };
 
@@ -240,84 +253,24 @@ export function LogViewerTabPageContent() {
   const [header, setHeader] = createSignal<string[]>([]);
   const [series, setSeries] = createSignal<number[][]>([]);
 
-  function parseCsvForPlot(csv_str: string): {
-    header: string[];
-    series: number[][];
-    splitIndex: number[][];
-  } | null {
-    const rows = csv_str.split("\n");
-    if (rows.length < 2) {
-      const errorMessage: ErrorMessage = {
-        title: "Invalid Log File",
-        description: "Not enough rows.",
-        type: "error",
-      };
-      tabPageProps!.toaster.create(errorMessage);
-      return null;
-    }
-
-    const schema = inferSchema(csv_str);
-    const parser = initParser(schema);
-    const local_header: string[] = rows[0].replace(/,\s*$/, "").split(",");
-    const data: number[][] = parser.typedCols(csv_str).map((row) =>
-      row.map((val) => {
-        if (typeof val === "boolean") return val ? 1 : 0;
-        return val;
-      }),
-    );
-    if (data.length < local_header.length) {
-      const errorMessage: ErrorMessage = {
-        title: "Invalid Log File",
-        description: `Data has ${data.length} columns, while header has ${local_header.length} labels.`,
-        type: "error",
-      };
-      tabPageProps!.toaster.create(errorMessage);
-      return null;
-    }
-
-    // Parse Enum name-value array to avoid plot errors
-    const parsedSeriesForPlot: number[][] = data
-      .slice(0, local_header.length)
-      .map((series) => {
-        const parsedEnumForPlot = series.map((value) => {
-          if (
-            value.toString().indexOf("(") !== -1 &&
-            value.toString().indexOf(")") !== -1
-          ) {
-            const parseValue = value.toString().match(/\((\d+)\)/)![1];
-            return Number(parseValue);
-          } else {
-            return value;
-          }
-        });
-        return parsedEnumForPlot;
-      });
-
-    const indexArray = Array.from(
-      { length: local_header.length },
-      (_, index) => index,
-    );
-
-    return {
-      header: local_header,
-      series: parsedSeriesForPlot,
-      splitIndex: [indexArray],
-    };
-  }
-
   onMount(async () => {
     await prepareCsvFile();
   });
 
   const prepareCsvFile = async () => {
-    const csv_str = await readTextFile(
-      getTabContext(tabPageProps.tabId).tabCtx.filePath!,
-    );
-    const dataForPlot = parseCsvForPlot(csv_str);
-    if (!dataForPlot) return;
-    setSeries(dataForPlot.series);
-    setHeader(dataForPlot.header);
-    setPlotZoomState([0, series()[0].length]);
+    try {
+      const csvFile = await fileHandler.readCsvFile(filePath());
+      setSeries(csvFile.series);
+      setHeader(csvFile.header);
+      setPlotZoomState([0, series()[0].length]);
+    } catch (e) {
+      tabPageProps.toaster.create({
+        title: "Invalid File",
+        description: e as string,
+        type: "error",
+      });
+      deleteTab();
+    }
 
     if (getTabContext(tabPageProps.tabId)) {
       if (getTabContext(tabPageProps.tabId).tabCtx) {
@@ -344,7 +297,11 @@ export function LogViewerTabPageContent() {
     }
 
     if (splitIndex().length === 0) {
-      setSplitIndex(dataForPlot.splitIndex);
+      const indexArray = Array.from(
+        { length: header().length },
+        (_, index) => index,
+      );
+      setSplitIndex([indexArray]);
     }
 
     if (plotYScales().length === 0) {
@@ -532,55 +489,18 @@ export function LogViewerTabPageContent() {
     ),
   );
 
-  async function openSaveFileDialog(): Promise<string | null> {
-    const fileNameFromPath =
-      filePath().length !== 0
-        ? filePath()
-            .match(/[^?!//]+$/)!
-            .toString()
-        : "";
-    const currentFilePath =
-      fileNameFromPath.split(`.`).shift() === tabName()
-        ? filePath()
-        : filePath().replace(fileNameFromPath, `${tabName()}.csv`);
-    const path = await save({
-      defaultPath: currentFilePath,
-      filters: [
-        {
-          name: "CSV",
-          extensions: ["csv"],
-        },
-      ],
-    });
-    if (!path) {
-      return null;
-    }
-
-    const extension = path.split(".").pop();
-    if (extension != "csv") {
-      return null;
-    }
-
-    return path;
-  }
-
-  async function saveArrayAsFile(
+  async function saveCsvFile(
     path: string,
     header: string[],
     series: number[][],
     xMin: number,
     xMax: number,
   ) {
-    const csvText = Array.from(
-      { length: xMax - xMin },
-      (_, rowIndex) =>
-        `\n${Array.from(
-          { length: header.length },
-          (_, cellIndex) => series[cellIndex][rowIndex + xMin],
-        )},`,
-    );
-    const csvStr = [header.toString(), ...csvText].toString();
-    await writeTextFile(path, csvStr);
+    const parseSeries = series.map((series) => series.slice(xMin, xMax));
+    await fileHandler.writeCsvFile(path, {
+      header: header,
+      series: parseSeries,
+    });
   }
 
   createEffect(
@@ -594,6 +514,8 @@ export function LogViewerTabPageContent() {
       { defer: true },
     ),
   );
+
+  const fileHandler = new FileHandler();
 
   return (
     <Show when={render()}>
@@ -659,9 +581,13 @@ export function LogViewerTabPageContent() {
                             return;
                           }
 
-                          const path = await openSaveFileDialog();
+                          const path = await fileHandler.saveFileDialog(
+                            "csv",
+                            filePath(),
+                            tabName(),
+                          );
                           if (path) {
-                            await saveArrayAsFile(
+                            await saveCsvFile(
                               path,
                               visibleHeader,
                               visibleSeries,
