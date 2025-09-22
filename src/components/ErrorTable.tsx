@@ -85,13 +85,11 @@ export const ErrorTable = (props: ErrorTableProps) => {
                   <Show when={!props.clearErrorAuto}>
                     <ErrorTableRows
                       location={systemError.lineName}
-                      locationKind={LocationKind.Driver}
                       errors={systemError.driverErrors}
                     />
                   </Show>
                   <ErrorTableRows
                     location={systemError.lineName}
-                    locationKind={LocationKind.Axis}
                     errors={systemError.axisErrors}
                   />
                 </>
@@ -104,15 +102,9 @@ export const ErrorTable = (props: ErrorTableProps) => {
   );
 };
 
-enum LocationKind {
-  Driver = "driver",
-  Axis = "axis",
-}
-
 type ErrorTableRowProps = {
-  errors: object[];
+  errors: Response_Track_Axis_Error[] | Response_Track_Driver_Error[];
   location: string;
-  locationKind: LocationKind;
 };
 
 const ErrorTableRows = (props: ErrorTableRowProps) => {
@@ -127,14 +119,13 @@ const ErrorTableRows = (props: ErrorTableRowProps) => {
           const keys = Object.entries(error)
             .filter((entry) => typeof entry[1] === "boolean" && entry[1])
             .map((entry) => entry[0]);
-          const locationKindId = i() + 1;
+          const locationKind = error.$typeName.split(`.`)[4].toLowerCase();
+          const locationId = i() + 1;
 
           return (
             <Table.Row style={{ padding: "0" }}>
               <Table.Cell style={{ height: "min-content", margin: "0" }}>
-                <Text>
-                  {`${props.location} ${props.locationKind} ${locationKindId}`}
-                </Text>
+                <Text>{`${props.location} ${locationKind} ${locationId}`}</Text>
               </Table.Cell>
               <Table.Cell>
                 <For each={keys}>
