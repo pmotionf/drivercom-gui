@@ -1,6 +1,4 @@
 import { IconX } from "@tabler/icons-solidjs";
-import { open, save } from "@tauri-apps/plugin-dialog";
-import { readTextFile, writeTextFile } from "@tauri-apps/plugin-fs";
 import { Command } from "@tauri-apps/plugin-shell";
 import { createEffect, createSignal, on, Show, useContext } from "solid-js";
 import { Stack } from "styled-system/jsx";
@@ -26,6 +24,7 @@ import {
   LinkedStatuses,
   GainLockStatuses,
 } from "~/components/ConfigForm";
+import { FileHandler } from "../utils/FileHandler";
 
 export type ConfigTabPage = {
   filePath?: string;
@@ -127,6 +126,8 @@ export function ConfigTabContent() {
     setRender(true);
   };
 
+  const fileHandler = new FileHandler();
+
   async function getConfigFromPort(): Promise<{
     stdout: string;
     stderr: string;
@@ -140,92 +141,6 @@ export function ConfigTabContent() {
     return { stdout: output.stdout, stderr: output.stderr };
   }
 
-  async function openFileDialog(): Promise<string | null> {
-    const path = await open({
-      multiple: false,
-      filters: [{ name: "JSON", extensions: ["json"] }],
-    });
-
-    if (!path) {
-      toaster.create({
-        title: "Invalid File Path",
-        description: "The file path is invalid.",
-        type: "error",
-      });
-      return null;
-    }
-
-    const extension = path.split(".").pop();
-    if (extension != "json") {
-      toaster.create({
-        title: "Invalid File Extension",
-        description: "The file extension is invalid.",
-        type: "error",
-      });
-      return null;
-    }
-    return path.replaceAll("\\", "/");
-  }
-
-  async function readJsonFile(path: string): Promise<object | null> {
-    try {
-      const output = await readTextFile(path);
-      const parseFileToObject = JSON.parse(output);
-      return parseFileToObject;
-    } catch {
-      return null;
-    }
-  }
-
-  function checkFileFormat(file: object): string {
-    const newFileFormat = Object.entries(file)
-      .map((line) => {
-        const key = line[0];
-        const value = line[1];
-        if (typeof value !== "object") return [key, typeof value];
-        const parseValue = checkFileFormat(value);
-        return [key, parseValue];
-      })
-      .sort()
-      .toString();
-
-    return newFileFormat;
-  }
-
-  function checkNullIncluded(format: object): boolean {
-    const values = Object.values(format);
-    if (
-      values.some(
-        (val) =>
-          val === null || (typeof val === "number" && !Number.isFinite(val)),
-      )
-    ) {
-      return true;
-    } else {
-      let isNullIncluded = false;
-      const objectList: object[] = values.filter(
-        (val) => typeof val === "object",
-      );
-      for (let i = 0; i < objectList.length; i++) {
-        const object = objectList[i];
-        const result = checkNullIncluded(object);
-        if (result) {
-          isNullIncluded = true;
-          break;
-        }
-      }
-      return isNullIncluded;
-    }
-  }
-
-  function compareFileFormat(newFile: object, fileFormat: object): boolean {
-    const checkNull = checkNullIncluded(newFile);
-    if (checkNull) return false;
-    const newFileObject = checkFileFormat(newFile);
-    const configFileObject = checkFileFormat(fileFormat);
-    return newFileObject === configFileObject;
-  }
-
   function setFormData(data: object, path: string) {
     setConfigForm(data);
     setFilePath(path);
@@ -235,65 +150,6 @@ export function ConfigTabContent() {
         (prevFilePath) => prevFilePath !== path,
       );
       return [path, ...newRecentFiles];
-    });
-  }
-
-  async function saveConfigAsFile(config: object) {
-    const json_str = JSON.stringify(config, null, "  ");
-    const fileNameFromPath = getFilePath()
-      ? getFilePath()!
-          .match(/[^?!//]+$/)!
-          .toString()
-      : "";
-    const currentFilePath = getFilePath()
-      ? getTabName() === fileNameFromPath
-        ? getFilePath()
-        : getFilePath()!.replace(fileNameFromPath, getTabName()!)
-      : getTabName();
-
-    const path = await save({
-      defaultPath:
-        currentFilePath!.split(".").pop()!.toLowerCase() === "json"
-          ? `${currentFilePath}`
-          : `${currentFilePath}.json`,
-      filters: [
-        {
-          name: "JSON",
-          extensions: ["json"],
-        },
-      ],
-    });
-    if (!path) {
-      toaster.create({
-        title: "Invalid File Path",
-        description: "The specified file path is invalid.",
-        type: "error",
-      });
-      return;
-    }
-    const extension = path.split(".").pop();
-    if (extension != "json") {
-      toaster.create({
-        title: "Invalid File Extension",
-        description: "The specified file extension is invalid.",
-        type: "error",
-      });
-      return;
-    }
-
-    if (!getFilePath()) {
-      const parsePath = path.replaceAll("\\", "/");
-      setFilePath(parsePath);
-      const currentPathFileName = parsePath.match(/[^//]+$/)!.toString();
-      setTabName(currentPathFileName);
-    }
-
-    await writeTextFile(path, json_str);
-    setRecentConfigFilePaths((prev) => {
-      const newRecentFiles = prev.filter(
-        (prevFilePath) => prevFilePath !== path,
-      );
-      return [path.replaceAll("\\", "/"), ...newRecentFiles];
     });
   }
 
@@ -416,28 +272,17 @@ export function ConfigTabContent() {
               refresh();
             }}
             onOpenFile={async () => {
-              const path = await openFileDialog();
+              const extension = "json";
+              const path = await fileHandler.openFileDialog(extension);
               if (!path) return;
-              const object = await readJsonFile(path);
-              if (!object) {
-                toaster.create({
-                  title: "Invalid File Path",
-                  description: "The file path is invalid.",
-                  type: "error",
-                });
-                setRecentConfigFilePaths((prev) => {
-                  const newRecentFiles = prev.filter(
-                    (prevFilePath) => prevFilePath !== path,
-                  );
-                  return newRecentFiles;
-                });
-                return;
-              }
-              const checkObject = compareFileFormat(
-                object!,
-                configFormFileFormat(),
-              );
-              if (!checkObject) {
+              try {
+                const file = await fileHandler.readFile(
+                  path,
+                  configFormFileFormat(),
+                );
+                setFormData(file, path);
+                refresh();
+              } catch {
                 toaster.create({
                   title: "Invalid File",
                   description: "The file is invalid.",
@@ -451,12 +296,16 @@ export function ConfigTabContent() {
                 });
                 return;
               }
-              setFormData(object!, path);
-              refresh();
             }}
             onOpenRecentFile={async (filePath: string) => {
-              const object = await readJsonFile(filePath);
-              if (!object) {
+              try {
+                const file = await fileHandler.readFile(
+                  filePath,
+                  configFormFileFormat(),
+                );
+                setFormData(file!, filePath);
+                refresh();
+              } catch {
                 toaster.create({
                   title: "Invalid File Path",
                   description: "The file path is invalid.",
@@ -470,20 +319,6 @@ export function ConfigTabContent() {
                 });
                 return;
               }
-              const checkObject = compareFileFormat(
-                object!,
-                configFormFileFormat(),
-              );
-              if (!checkObject) {
-                toaster.create({
-                  title: "Invalid File",
-                  description: "The file is invalid.",
-                  type: "error",
-                });
-                return;
-              }
-              setFormData(object!, filePath);
-              refresh();
             }}
             onDeleteRecentPath={(index: number) => {
               setRecentConfigFilePaths((prev) => {
@@ -492,8 +327,14 @@ export function ConfigTabContent() {
             }}
             onReloadFile={async () => {
               if (!getFilePath()) return;
-              const object = await readJsonFile(getFilePath()!);
-              if (!object) {
+              try {
+                const file = await fileHandler.readFile(
+                  getFilePath()!,
+                  configFormFileFormat(),
+                );
+                setFormData(file!, getFilePath()!);
+                refresh();
+              } catch {
                 toaster.create({
                   title: "Invalid File Path",
                   description: "The file path is invalid.",
@@ -501,29 +342,20 @@ export function ConfigTabContent() {
                 });
                 setRecentConfigFilePaths((prev) => {
                   const newRecentFiles = prev.filter(
-                    (prevFilePath) => prevFilePath !== getFilePath(),
+                    (prevFilePath) => prevFilePath !== getFilePath()!,
                   );
                   return newRecentFiles;
                 });
                 return;
               }
-              const checkObject = compareFileFormat(
-                object!,
-                configFormFileFormat(),
-              );
-              if (!checkObject) {
-                toaster.create({
-                  title: "Invalid File",
-                  description: "The file is invalid.",
-                  type: "error",
-                });
-                return;
-              }
-              setFormData(object!, getFilePath()!);
-              refresh();
             }}
-            onSaveFile={() => {
-              if (!compareFileFormat(getConfigForm(), configFormFileFormat())) {
+            onSaveFile={async () => {
+              if (
+                !fileHandler.matchFileFormat(
+                  getConfigForm,
+                  configFormFileFormat(),
+                )
+              ) {
                 if (scrollContainer) {
                   scrollToWrongField(scrollContainer);
                 }
@@ -533,8 +365,25 @@ export function ConfigTabContent() {
                   type: "error",
                 });
                 return;
-              } else {
-                saveConfigAsFile(getConfigForm());
+              }
+              try {
+                const path = await fileHandler.saveFileDialog(
+                  "json",
+                  getFilePath()!,
+                  getTabName(),
+                );
+                await fileHandler.writeFile(
+                  path,
+                  getConfigForm()!,
+                  configFormFileFormat(),
+                );
+              } catch {
+                toaster.create({
+                  title: "Invalid File",
+                  description: "The file is invalid.",
+                  type: "error",
+                });
+                return;
               }
             }}
           />
@@ -559,7 +408,12 @@ export function ConfigTabContent() {
             }}
             onSaveToPort={async () => {
               if (portId().length === 0) return;
-              if (!compareFileFormat(getConfigForm(), configFormFileFormat())) {
+              if (
+                !fileHandler.matchFileFormat(
+                  getConfigForm(),
+                  configFormFileFormat(),
+                )
+              ) {
                 if (scrollContainer) {
                   scrollToWrongField(scrollContainer);
                 }
