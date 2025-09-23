@@ -1,5 +1,8 @@
 import { open, save } from "@tauri-apps/plugin-dialog";
 import { readTextFile, writeTextFile } from "@tauri-apps/plugin-fs";
+import { inferSchema, initParser } from "udsv";
+
+type CsvFile = { header: string[]; series: number[][] };
 
 interface IFileHandler {
   openFileDialog(extension: string): Promise<string | never>;
@@ -9,11 +12,13 @@ interface IFileHandler {
     formTitle?: string,
   ): Promise<string | never>;
   readFile(path: string, fileFormat?: object): Promise<object | never>;
+  readCsvFile(path: string): Promise<CsvFile | never>;
   writeFile(
     path: string,
     file: object | string,
     fileFormat?: object,
   ): Promise<void | never>;
+  writeCsvFile(path: string, csvFile: CsvFile): Promise<void | never>;
   matchFileFormat(file: object, defaultFormat: object): boolean;
 }
 
@@ -48,9 +53,10 @@ export class FileHandler implements IFileHandler {
     }
     const path = await save({
       defaultPath:
-        dialogPath!.split(".").pop()!.toLowerCase() === "json"
+        dialogPath!.split(".").pop()!.toLowerCase() ===
+        defaultExtension.toLowerCase()
           ? `${dialogPath}`
-          : `${dialogPath}.json`,
+          : `${dialogPath}.${defaultExtension.toLowerCase()}`,
       filters: [
         {
           name: defaultExtension.toUpperCase(),
@@ -152,9 +158,58 @@ export class FileHandler implements IFileHandler {
     }
   }
 
+  async readCsvFile(path: string): Promise<CsvFile | never> {
+    try {
+      const csv_str = await readTextFile(path);
+      const rows = csv_str.split("\n");
+      if (rows.length < 2) {
+        throw new Error("Not enough rows.");
+      }
+
+      const schema = inferSchema(csv_str);
+      const parser = initParser(schema);
+      const local_header: string[] = rows[0].replace(/,\s*$/, "").split(",");
+      const data: number[][] = parser.typedCols(csv_str).map((row) =>
+        row.map((val) => {
+          if (typeof val === "boolean") return val ? 1 : 0;
+          return val;
+        }),
+      );
+
+      if (data.length < local_header.length) {
+        const desc = `Data has ${data.length} columns, while header has ${local_header.length} labels.`;
+        throw new Error(desc);
+      }
+
+      const parsedSeriesForPlot: number[][] = data
+        .slice(0, local_header.length)
+        .map((series) => {
+          const parsedEnumForPlot = series.map((value) => {
+            if (
+              value.toString().indexOf("(") !== -1 &&
+              value.toString().indexOf(")") !== -1
+            ) {
+              const parseValue = value.toString().match(/\((\d+)\)/)![1];
+              return Number(parseValue);
+            } else {
+              return value;
+            }
+          });
+          return parsedEnumForPlot;
+        });
+
+      return {
+        header: local_header,
+        series: parsedSeriesForPlot,
+      };
+    } catch (e) {
+      throw new Error(e as string);
+    }
+  }
+
   async writeFile(
     path: string,
-    file: object | string,
+    file: object,
     fileFormat?: object,
   ): Promise<void | never> {
     if (fileFormat) {
@@ -162,14 +217,31 @@ export class FileHandler implements IFileHandler {
         throw new Error("The file format is invalid.");
       }
     }
+    const file_str = JSON.stringify(file, null, "  ");
 
     try {
-      const file_str =
-        typeof file === "string" ? file : JSON.stringify(file, null, "  ");
       await writeTextFile(path, file_str);
       return;
     } catch (e) {
       throw new Error(e ? (e as string) : "Fail to save file.");
+    }
+  }
+
+  async writeCsvFile(path: string, csvFile: CsvFile): Promise<void | never> {
+    const parseSeries = Array.from(
+      { length: csvFile.series[0].length },
+      (_, rowIndex) =>
+        `\n${Array.from(
+          { length: csvFile.header.length },
+          (_, cellIndex) => csvFile.series[cellIndex][rowIndex],
+        )}`,
+    );
+    const csv_str = csvFile.header.toString() + "," + parseSeries + ",";
+    try {
+      await writeTextFile(path, csv_str);
+      return;
+    } catch (e) {
+      throw new Error(e as string);
     }
   }
 }
