@@ -26,6 +26,8 @@ import {
   IconExclamationCircle,
 } from "@tabler/icons-solidjs";
 import { Tooltip } from "./ui/tooltip.tsx";
+import { Form } from "./Form.tsx";
+import { trackStore } from "@solid-primitives/deep";
 
 export type ConfigFormProps = JSX.HTMLAttributes<HTMLFormElement> & {
   id: string;
@@ -42,7 +44,7 @@ export type AccordionStatuses = Map<
 
 export type LinkedStatuses = Map<
   string,
-  [Accessor<[boolean, number]>, Setter<[boolean, number]>]
+  [Accessor<[boolean, number | null]>, Setter<[boolean, number | null]>]
 >;
 
 export type GainLockStatuses = Map<
@@ -328,14 +330,16 @@ export function ConfigForm(props: ConfigFormProps) {
   }
 
   return (
-    <ConfigObject
-      object={config}
-      id_prefix={props.id}
-      accordionStatuses={props.accordionStatuses}
-      linkedStatuses={props.linkedStatuses}
-      gainLockStatuses={props.gainLockStatuses}
-      gainKinds={dynamic}
-    />
+    <>
+      <ConfigObject
+        object={config}
+        id_prefix={props.id}
+        accordionStatuses={props.accordionStatuses}
+        linkedStatuses={props.linkedStatuses}
+        gainLockStatuses={props.gainLockStatuses}
+        gainKinds={dynamic}
+      />
+    </>
   );
 }
 
@@ -382,7 +386,7 @@ function ConfigObject(props: ConfigObjectProps) {
             if (!props.linkedStatuses.has(key)) {
               props.linkedStatuses.set(
                 key,
-                createSignal<[boolean, number]>([false, 0]),
+                createSignal<[boolean, number | null]>([false, null]),
               );
             }
             return (
@@ -802,48 +806,84 @@ function ConfigList(props: ConfigListProps) {
   // directly on the `items` store will cause an infinite effects loop.
   const [recentEditedItem, setRecentEditedItem] = createSignal<string>("");
 
-  const changedItemIndex = props.linkedStatuses.get(props.label)?.[0]()[1];
-  if (changedItemIndex !== undefined) {
+  const [link, setLink] = props.linkedStatuses.get(props.label)!;
+  const changedItemIndex = link()[1];
+  if (changedItemIndex) {
     setRecentEditedItem(JSON.stringify(items[changedItemIndex]));
   }
 
+  items.forEach((item, index) => {
+    createEffect(
+      on(
+        () => trackStore(item),
+        () => {
+          if (link()[0] && !link()[1]) {
+            setLink([link()[0], index]);
+          }
+        },
+        { defer: true },
+      ),
+    );
+  });
+
   createEffect(
     on(
-      () => JSON.stringify(items),
+      () => link()[1],
       () => {
-        if (
-          props.linkedStatuses.get(props.label) &&
-          props.linkedStatuses.get(props.label)?.[0]()[1]
-        ) {
-          const index = props.linkedStatuses.get(props.label)![0]()[1];
+        if (link()[1]) {
+          const index: number = link()[1]!;
+          const editItem = JSON.stringify(items[index]);
+          items.forEach((_, i) => {
+            console.log(i, JSON.parse(editItem));
+          });
+
+          setLink((prev) => [prev[0], null]);
+        }
+      },
+      { defer: true },
+    ),
+  );
+
+  /*createEffect(
+    on(
+      () => recentEditedItem(),
+      () => {
+        console.log(recentEditedItem());
+      },
+    ),
+  );*/
+
+  /*createEffect(
+    on(
+      () => trackStore(items),
+      () => {
+        if (link()[1]) {
+          const index = link()[1];
           setRecentEditedItem(JSON.stringify(items[index]));
         }
       },
       { defer: true },
     ),
-  );
+  );*/
 
-  createEffect(
+  /*createEffect(
     on(
-      [
-        () => recentEditedItem(),
-        () => props.linkedStatuses.get(props.label)?.[0]()[0],
-      ],
+      [() => recentEditedItem(), () => link()[0]],
       () => {
         if (!Array.isArray(items)) return;
-        if (props.linkedStatuses.get(props.label)?.[0]()[0]) {
+        if (link()[0]) {
+          console.log(recentEditedItem());
+
           items.forEach((_, index) => {
             const item = JSON.parse(recentEditedItem().replaceAll("null", "0"));
-            if (index === props.linkedStatuses.get(props.label)?.[0]()[1]) {
-              return;
-            }
             setItems(index, item);
           });
+          setLink([link()[0], null]);
         }
       },
       { defer: true },
     ),
-  );
+  );*/
 
   // Converts label to have uppercase letters at the start of each word.
   const prettifiedLabel = Array.from(props.label)
@@ -876,15 +916,11 @@ function ConfigList(props: ConfigListProps) {
                     <IconButton
                       variant="ghost"
                       onClick={() => {
-                        const linked = props.linkedStatuses.get(
-                          props.label,
-                        )?.[0]()[0];
-
-                        props.linkedStatuses.get(props.label)?.[1]([
-                          !linked,
-                          index(),
+                        setLink((prev) => [
+                          !prev[0],
+                          !prev[0] ? index() : null,
                         ]);
-                        setRecentEditedItem(JSON.stringify(item));
+                        console.log(link());
                       }}
                       marginTop="0.5rem"
                     >
@@ -931,7 +967,7 @@ function ConfigList(props: ConfigListProps) {
                 <ConfigObject
                   object={item}
                   id_prefix={props.id_prefix + title}
-                  onItemChange={() => {
+                  /*onItemChange={() => {
                     props.onItemChange?.();
                     const linked = props.linkedStatuses.get(
                       props.label,
@@ -942,7 +978,7 @@ function ConfigList(props: ConfigListProps) {
                         index(),
                       ]);
                     }
-                  }}
+                    }}*/
                   accordionStatuses={props.accordionStatuses}
                   linkedStatuses={props.linkedStatuses}
                   gainLockStatuses={props.gainLockStatuses}
