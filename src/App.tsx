@@ -43,6 +43,8 @@ import {
   setLogStartCombinatorList,
   setPage,
   Theme,
+  setLogForm,
+  logFormFileFormat,
 } from "./GlobalState.ts";
 
 import { Button } from "~/components/ui/button.tsx";
@@ -171,6 +173,7 @@ function App(props: RouteSectionProps) {
     const output = await logConfig.execute();
     const logFormatToJson = JSON.parse(output.stdout);
     setLogFormFileFormat(logFormatToJson);
+    setLogForm("logConfig", JSON.parse(JSON.stringify(logFormFileFormat())));
   }
 
   async function buildEmptyDriverConfiguration() {
