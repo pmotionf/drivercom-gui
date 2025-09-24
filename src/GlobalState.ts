@@ -3,6 +3,7 @@ import { createStore, SetStoreFunction, Store } from "solid-js/store";
 import { PanelSizeContext } from "./components/PanelLayout.tsx";
 import { TabListContext } from "./components/TabList.tsx";
 import { Child } from "@tauri-apps/plugin-shell";
+import { LoggingFormType } from "./pages/Logging.tsx";
 
 const [globalState, setGlobalState] = createStore({
   theme: "light",
@@ -82,3 +83,9 @@ export type MonitoringInputs = Map<string, [Accessor<string>, Setter<string>]>;
 export const monitoringInputs: MonitoringInputs = new Map();
 
 export const logDownloads: Map<number, Child> = new Map();
+
+export const [logForm, setLogForm] = createStore<LoggingFormType>({
+  title: "New file",
+  filePath: "",
+  logConfig: {},
+});
