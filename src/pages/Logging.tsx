@@ -37,18 +37,20 @@ import { createStore } from "solid-js/store";
 import { TabContext, TabListContext } from "~/components/TabList.tsx";
 import { Button } from "~/components/ui/button.tsx";
 import { FileHandler } from "./utils/FileHandler.ts";
+import { logForm, setLogForm } from "~/GlobalState.ts";
+
+export type LoggingFormType = {
+  title: string;
+  filePath: string;
+  logConfig: object;
+};
 
 export function Logging() {
-  const [logConfigure, setLogConfigure] = createSignal({});
-  const [formTitle, setFormTitle] = createSignal<string>("");
-  const [filePath, setFilePath] = createSignal<string>("");
-
   // This signal is needed in UI when reload the file or port.
   const [renderLoggingForm, setRenderLoggingForm] =
     createSignal<boolean>(false);
 
   onMount(async () => {
-    setLogConfigure(JSON.parse(JSON.stringify(logFormFileFormat())));
     setRenderLoggingForm(true);
     if (portId().length > 0) {
       const logStatus = await getCurrentLogStatus();
@@ -95,9 +97,11 @@ export function Logging() {
   }
 
   function setLogFormData(form: object, path: string) {
-    setLogConfigure(form);
-    setFormTitle(path.split("/").pop()!);
-    setFilePath(path);
+    setLogForm({
+      title: path.split("/").pop()!,
+      filePath: path,
+      logConfig: form,
+    });
     refresh();
   }
 
@@ -347,10 +351,10 @@ export function Logging() {
                 <Tooltip.Trigger width={`calc(100% - 13.5rem)`}>
                   <Editable.Root
                     placeholder="File name"
-                    defaultValue={formTitle()}
+                    defaultValue={logForm.title}
                     activationMode="dblclick"
                     onValueCommit={(e) => {
-                      setFormTitle(e.value);
+                      setLogForm("title", e.value);
                     }}
                     fontWeight="bold"
                     fontSize="2xl"
@@ -369,25 +373,27 @@ export function Logging() {
                     </Editable.Area>
                   </Editable.Root>
                 </Tooltip.Trigger>
-                <Show when={filePath().length !== 0}>
+                <Show when={logForm.filePath.length !== 0}>
                   <Tooltip.Positioner>
                     <Tooltip.Content backgroundColor="bg.default">
-                      <Text color="fg.default">{filePath()}</Text>
+                      <Text color="fg.default">{logForm.filePath}</Text>
                     </Tooltip.Content>
                   </Tooltip.Positioner>
                 </Show>
               </Tooltip.Root>
 
               <FileMenu
-                filePath={filePath()}
+                filePath={logForm.filePath}
                 recentFiles={recentLogFilePaths()}
                 onNewFile={() => {
                   const newEmptyFile = JSON.parse(
                     JSON.stringify(logFormFileFormat()),
                   );
-                  setFormTitle("New File");
-                  setLogConfigure(newEmptyFile);
-                  setFilePath("");
+                  setLogForm({
+                    title: "New File",
+                    logConfig: newEmptyFile,
+                    filePath: "",
+                  });
                   refresh();
                 }}
                 onOpenFile={async () => {
@@ -442,14 +448,14 @@ export function Logging() {
                   });
                 }}
                 onReloadFile={async () => {
-                  if (filePath().length === 0) return;
+                  if (logForm.filePath.length === 0) return;
                   setRenderLoggingForm(false);
                   try {
                     const file = await fileHandler.readFile(
-                      filePath(),
+                      logForm.filePath,
                       logFormFileFormat(),
                     );
-                    setLogConfigure(file);
+                    setLogForm("logConfig", file);
                   } catch {
                     toaster.create({
                       title: "Invalid File Path",
@@ -458,7 +464,7 @@ export function Logging() {
                     });
                     setRecentLogFilePaths((prev) => {
                       return prev.filter(
-                        (prevFilePath) => prevFilePath !== filePath(),
+                        (prevFilePath) => prevFilePath !== logForm.filePath,
                       );
                     });
                   }
@@ -468,10 +474,10 @@ export function Logging() {
                   try {
                     const path = await fileHandler.saveFileDialog(
                       "json",
-                      filePath(),
-                      formTitle(),
+                      logForm.filePath,
+                      logForm.title,
                     );
-                    await fileHandler.writeFile(path, logConfigure());
+                    await fileHandler.writeFile(path, logForm.logConfig);
                   } catch {
                     toaster.create({
                       title: "Invalid File",
@@ -502,13 +508,15 @@ export function Logging() {
                       });
                       return;
                     }
-                    setFormTitle(portId());
-                    setLogConfigure(JSON.parse(output.stdout));
-                    setFilePath("");
+                    setLogForm({
+                      title: portId(),
+                      filePath: "",
+                      logConfig: JSON.parse(output.stdout),
+                    });
                     refresh();
                   }}
                   onSaveToPort={async () => {
-                    const outputError = await saveLogToPort(logConfigure());
+                    const outputError = await saveLogToPort(logForm.logConfig);
                     if (outputError.length !== 0) {
                       toaster.create({
                         title: "Communication Error",
@@ -617,8 +625,8 @@ export function Logging() {
                             try {
                               const path = await fileHandler.saveFileDialog(
                                 "csv",
-                                filePath(),
-                                formTitle(),
+                                logForm.filePath,
+                                logForm.title,
                               );
                               setLogGetBtnLoading(true);
                               await saveLogCsvFile(path);
@@ -675,7 +683,7 @@ export function Logging() {
               </Stack>
             </Stack>
 
-            <LoggingForm formData={logConfigure()} />
+            <LoggingForm formData={logForm.logConfig} />
           </Show>
         </Stack>
       </div>
