@@ -482,7 +482,7 @@ function App(props: RouteSectionProps) {
                     textAlign="center"
                     marginTop="0.5rem"
                   >
-                    <i>Copyright © 2024 PMF, Inc.</i>
+                    <i>Copyright © 2024-2025 PMF, Inc.</i>
                   </Text>
                 </Drawer.Footer>
               </Drawer.Content>
