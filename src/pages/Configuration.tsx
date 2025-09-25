@@ -1,7 +1,13 @@
-import { configFormFileFormat, Pages, tabContexts } from "~/GlobalState.ts";
+import {
+  configFormFileFormat,
+  Pages,
+  panelKeys,
+  tabContexts,
+  panelContexts,
+} from "~/GlobalState.ts";
 import { Panel } from "~/components/Panel.tsx";
-import { PanelLayout } from "~/components/PanelLayout.tsx";
-import { TabContext, TabList } from "~/components/TabList.tsx";
+import { PanelLayout, PanelSizeContext } from "~/components/PanelLayout.tsx";
+import { TabContext, TabList, TabListContext } from "~/components/TabList.tsx";
 import { ConfigTabContent } from "./Configuration/ConfigTabContent.tsx";
 import {
   AccordionStatuses,
@@ -9,8 +15,31 @@ import {
   LinkedStatuses,
 } from "~/components/ConfigForm.tsx";
 import { ConnectButton } from "./Connect/ConnectButton.tsx";
+import { createSignal, onMount, Show } from "solid-js";
+import { createStore } from "solid-js/store";
 
 function Configuration() {
+  const [render, setRender] = createSignal<boolean>(false);
+
+  onMount(() => {
+    if (!panelKeys.has(Pages.Configuration)) {
+      const panelKey = crypto.randomUUID();
+      panelKeys.set(Pages.Configuration, panelKey);
+
+      const panelTabId = crypto.randomUUID();
+      panelContexts.set(
+        panelKey,
+        createSignal<PanelSizeContext[]>([{ id: panelTabId, size: 100 }]),
+      );
+      tabContexts.set(
+        panelTabId,
+        createStore<TabListContext>({ tabContext: [], focusedTab: "" }),
+      );
+      createTab(panelTabId);
+    }
+    setRender(true);
+  });
+
   const createTab = (key: string) => {
     const id = crypto.randomUUID();
     const accordionStatuses: AccordionStatuses = new Map();
@@ -43,7 +72,7 @@ function Configuration() {
   };
 
   return (
-    <>
+    <Show when={render()}>
       <PanelLayout id={Pages.Configuration}>
         <Panel>
           <TabList onCreateTab={(key) => createTab(key)}>
@@ -54,7 +83,7 @@ function Configuration() {
       <ConnectButton
         style={{ position: "absolute", top: "4rem", right: "1rem" }}
       />
-    </>
+    </Show>
   );
 }
 
