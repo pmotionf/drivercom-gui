@@ -352,7 +352,7 @@ export function ConfigTabContent() {
             onSaveFile={async () => {
               if (
                 !fileHandler.matchFileFormat(
-                  getConfigForm,
+                  getConfigForm(),
                   configFormFileFormat(),
                 )
               ) {
