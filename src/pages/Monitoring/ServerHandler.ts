@@ -449,7 +449,7 @@ export class ServerHandler implements IServerHandler {
     }
 
     this.lock();
-    setTimeout(() => this.unlock(), 500);
+    const timeout = setTimeout(() => this.unlock(), 500);
 
     const buffer = toBinary(RequestSchema, payload);
     const parseBuffer: number[] = Array.from(buffer);
@@ -458,27 +458,42 @@ export class ServerHandler implements IServerHandler {
       if (this._connectionState === ConnectionState.Disconnect)
         throw new Error("Server Disconnected");
       await send(cid, parseBuffer);
+      clearTimeout(timeout);
     } catch (e) {
       this.unlock();
+      clearTimeout(timeout);
       throw new Error(e as string);
     }
   }
 
   private delay = (ms: number) =>
-    new Promise((resolve) => setTimeout(resolve, ms));
+    new Promise<NodeJS.Timeout>((resolve) => {
+      setTimeout(resolve, ms);
+    });
 
   private async waitResponse() {
+    let timeout: NodeJS.Timeout | null = null;
     while (this._lockRequest) {
       if (this._connectionState === ConnectionState.Disconnect) break;
-      await this.delay(1);
+      if (timeout !== null) {
+        clearTimeout(timeout);
+      }
+      timeout = await this.delay(1);
     }
 
     if (this._requestId) {
       while (!this.serverResponses.has(this._requestId)) {
         if (this._connectionState === ConnectionState.Disconnect) break;
-        await this.delay(1);
+        if (timeout !== null) {
+          clearTimeout(timeout);
+        }
+        timeout = await this.delay(1);
       }
       this._requestId = null;
+    }
+
+    if (timeout !== null) {
+      clearTimeout(timeout);
     }
     return;
   }

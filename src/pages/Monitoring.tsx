@@ -62,7 +62,7 @@ function Monitoring() {
           }
           return;
         } else {
-          await requestSystemInfo(1)
+          await requestSystemInfo(1);
         }
       },
       { defer: true },
@@ -75,12 +75,12 @@ function Monitoring() {
 
   const requestSystemInfo = async (lineId: number): Promise<void> => {
     if (systemConfig.lines.length < 1) return;
-    await getSystemInfo(lineId)
-      const nextId = getNextId(lineId)
-      return void + await requestSystemInfo(nextId)
+    await getSystemInfo(lineId);
+    const nextId = getNextId(lineId);
+    await requestSystemInfo(nextId);
   };
 
-  const getSystemInfo = async (lineId : number) : Promise<void> => {
+  const getSystemInfo = async (lineId: number): Promise<void> => {
     try {
       const systemInfo = await serverHandler.getSystemInfo(
         lineId,
@@ -105,7 +105,7 @@ function Monitoring() {
       }
       return;
     }
-  }
+  };
 
   const hasError = (systemErrors: object[]): boolean => {
     const findErrorFields = systemErrors.map((errors) =>
