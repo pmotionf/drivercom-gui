@@ -62,15 +62,25 @@ function Monitoring() {
           }
           return;
         } else {
-          await getSystemInfo(1);
+          await requestSystemInfo(1)
         }
       },
       { defer: true },
     ),
   );
 
-  const getSystemInfo = async (lineId: number): Promise<void> => {
+  const getNextId = (lineId: number): number => {
+    return lineId + 1 <= systemConfig.lines.length ? lineId + 1 : 1;
+  };
+
+  const requestSystemInfo = async (lineId: number): Promise<void> => {
     if (systemConfig.lines.length < 1) return;
+    await getSystemInfo(lineId)
+      const nextId = getNextId(lineId)
+      return void + await requestSystemInfo(nextId)
+  };
+
+  const getSystemInfo = async (lineId : number) : Promise<void> => {
     try {
       const systemInfo = await serverHandler.getSystemInfo(
         lineId,
@@ -78,9 +88,7 @@ function Monitoring() {
       );
       if (systemInfo) {
         const lineIndex = lineId - 1;
-        if (systemConfig.lines[lineIndex]) {
-          setSystemConfig("lines", lineIndex, "system", systemInfo);
-        }
+        setSystemConfig("lines", lineIndex, "system", systemInfo);
         if (isAutoClearMode()) {
           if (systemInfo.driverErrors && hasError(systemInfo.driverErrors)) {
             if (!systemInfo.axisErrors || !hasError(systemInfo.axisErrors)) {
@@ -88,9 +96,6 @@ function Monitoring() {
             }
           }
         }
-        return await getSystemInfo(
-          systemConfig.lines.length >= lineId + 1 ? lineId + 1 : 1,
-        );
       } else {
         return;
       }
@@ -100,7 +105,7 @@ function Monitoring() {
       }
       return;
     }
-  };
+  }
 
   const hasError = (systemErrors: object[]): boolean => {
     const findErrorFields = systemErrors.map((errors) =>
