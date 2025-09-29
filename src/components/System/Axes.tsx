@@ -1,7 +1,6 @@
 import { Stack } from "styled-system/jsx";
 import { Text } from "../ui/text.tsx";
 import { For, Show } from "solid-js/web";
-import { useAxesContext } from "./Driver.tsx";
 import { Badge } from "../ui/badge.tsx";
 import { Tooltip } from "../ui/tooltip.tsx";
 import {
@@ -13,50 +12,27 @@ import {
 } from "../proto/mmc/info_pb.ts";
 
 export type AxisProps = {
-  axisInfo: Response_Track_Axis_State[];
-  axisError: Response_Track_Axis_Error[];
-  carrier?: Response_Track_Carrier_State[] | null;
+  id: string;
+  axisInfo: Response_Track_Axis_State;
+  axisError: Response_Track_Axis_Error;
+  carrier?: Response_Track_Carrier_State | null;
 };
 
 export function Axis(props: AxisProps) {
-  const axisContext = useAxesContext();
-  if (!axisContext) return;
-  const axisId = Number(axisContext.id.split(":")[1]);
-  const axisIndex = axisId - 1;
-
-  const axisInfo = (): Response_Track_Axis_State => {
-    return props.axisInfo[axisIndex];
-  };
-
-  const axisError = (): Response_Track_Axis_Error => {
-    return props.axisError[axisIndex];
-  };
-
-  const carrier = (): Response_Track_Carrier_State | null => {
-    if (props.carrier && props.carrier.length > 0) {
-      const index = props.carrier.findIndex(
-        (carrier) =>
-          carrier.axisMain === axisId || carrier.axisAuxiliary === axisId,
-      );
-      return index !== -1 ? props.carrier[index] : null;
-    } else {
-      return null;
-    }
-  };
-
+  const axisId = Number(props.id.split(":")[1]);
   return (
     <Stack
       width="9rem"
       height="7rem"
       borderRadius="0.5rem"
       borderWidth="1px"
-      borderRightWidth={axisInfo().hallAlarmFront ? "5px" : "1px"}
-      borderLeftWidth={axisInfo().hallAlarmBack ? "5px" : "1px"}
+      borderRightWidth={props.axisInfo.hallAlarmFront ? "5px" : "1px"}
+      borderLeftWidth={props.axisInfo.hallAlarmBack ? "5px" : "1px"}
       borderRightColor={
-        axisInfo().hallAlarmFront ? "accent.customGreen" : undefined
+        props.axisInfo.hallAlarmFront ? "accent.customGreen" : undefined
       }
       borderLeftColor={
-        axisInfo().hallAlarmBack ? "accent.customGreen" : undefined
+        props.axisInfo.hallAlarmBack ? "accent.customGreen" : undefined
       }
       backgroundColor="bg.default"
       padding="0.5rem"
@@ -77,9 +53,9 @@ export function Axis(props: AxisProps) {
             <Badge
               width="min-content"
               backgroundColor={
-                axisError().overcurrent
+                props.axisError.overcurrent
                   ? "accent.customRed"
-                  : axisInfo().motorActive
+                  : props.axisInfo.motorActive
                     ? "accent.customGreen"
                     : "bg.emphasized"
               }
@@ -93,15 +69,15 @@ export function Axis(props: AxisProps) {
           </Tooltip.Trigger>
           <Show
             when={
-              Object.values(axisInfo()).includes(true) ||
-              Object.values(axisError()).includes(true)
+              Object.values(props.axisInfo).includes(true) ||
+              Object.values(props.axisError).includes(true)
             }
           >
             <Tooltip.Positioner>
               <Tooltip.Content>
-                <Show when={Object.values(axisInfo()).includes(true)}>
+                <Show when={Object.values(props.axisInfo).includes(true)}>
                   <Text>Info</Text>
-                  <For each={Object.entries(axisInfo())}>
+                  <For each={Object.entries(props.axisInfo)}>
                     {([key, value]) => {
                       if (typeof value == "boolean" && value) {
                         const prettierLabel = `${key[0].toUpperCase()}${key.slice(1, key.length)}`;
@@ -110,15 +86,17 @@ export function Axis(props: AxisProps) {
                     }}
                   </For>
                 </Show>
-                <Show when={Object.values(axisError()).includes(true)}>
+                <Show when={Object.values(props.axisError).includes(true)}>
                   <Text
                     marginTop={
-                      Object.values(axisInfo()).includes(true) ? "0.5rem" : "0"
+                      Object.values(props.axisInfo).includes(true)
+                        ? "0.5rem"
+                        : "0"
                     }
                   >
                     Error
                   </Text>
-                  <For each={Object.entries(axisError())}>
+                  <For each={Object.entries(props.axisError)}>
                     {([key, value]) => {
                       if (key !== "id" && value) {
                         const prettierLabel = `${key[0].toUpperCase()}${key.slice(1, key.length)}`;
@@ -131,7 +109,7 @@ export function Axis(props: AxisProps) {
             </Tooltip.Positioner>
           </Show>
         </Tooltip.Root>
-        <Show when={axisInfo()!.waitingPull || axisInfo()!.waitingPush}>
+        <Show when={props.axisInfo!.waitingPull || props.axisInfo!.waitingPush}>
           <div
             style={{
               width: "0.4rem",
@@ -144,7 +122,7 @@ export function Axis(props: AxisProps) {
         </Show>
       </Stack>
 
-      <Show when={carrier() && carrier()!.id}>
+      <Show when={props.carrier && props.carrier!.id}>
         <div style={{ width: "100%", display: "flex" }}>
           <Text
             fontWeight="bold"
@@ -153,7 +131,7 @@ export function Axis(props: AxisProps) {
             color="fg.default"
             marginBottom="0.5rem"
           >
-            Carrier {carrier()!.id}
+            Carrier {props.carrier!.id}
           </Text>
           <Tooltip.Root>
             <Tooltip.Trigger width="min-content">
@@ -164,9 +142,9 @@ export function Axis(props: AxisProps) {
                 }}
                 size="sm"
                 backgroundColor={
-                  carrier()!.casDisabled
+                  props.carrier!.casDisabled
                     ? "accent.customOrange"
-                    : carrier()!.casTriggered
+                    : props.carrier!.casTriggered
                       ? "accent.customGreen"
                       : "bg.emphasized"
                 }
@@ -177,9 +155,9 @@ export function Axis(props: AxisProps) {
             <Tooltip.Positioner>
               <Tooltip.Content>
                 <Text>
-                  {carrier()!.casDisabled
+                  {props.carrier!.casDisabled
                     ? "Disabled"
-                    : carrier()!.casTriggered
+                    : props.carrier!.casTriggered
                       ? "Triggered"
                       : "Enabled"}
                 </Text>
@@ -187,7 +165,7 @@ export function Axis(props: AxisProps) {
             </Tooltip.Positioner>
           </Tooltip.Root>
         </div>
-        <Show when={carrier()!.state}>
+        <Show when={props.carrier!.state}>
           <Stack direction="row" gap="0">
             <Text width="3rem" size="sm" fontWeight="bold">
               State
@@ -206,8 +184,8 @@ export function Axis(props: AxisProps) {
                     "text-align": "left",
                   }}
                 >
-                  {carrier()!.state
-                    ? Response_Track_Carrier_State_State[carrier()!.state]
+                  {props.carrier!.state
+                    ? Response_Track_Carrier_State_State[props.carrier!.state]
                         .toString()
                         .replace("CARRIER_STATE_", "")
                     : ""}
@@ -215,8 +193,8 @@ export function Axis(props: AxisProps) {
               </Tooltip.Trigger>
               <Tooltip.Positioner>
                 <Tooltip.Content>
-                  {carrier()!.state
-                    ? Response_Track_Carrier_State_State[carrier()!.state]
+                  {props.carrier!.state
+                    ? Response_Track_Carrier_State_State[props.carrier!.state]
                         .toString()
                         .replace("CARRIER_STATE_", "")
                     : ""}
@@ -226,7 +204,7 @@ export function Axis(props: AxisProps) {
           </Stack>
         </Show>
 
-        <Show when={carrier()!.position}>
+        <Show when={props.carrier!.position}>
           <Stack direction="row" gap="0">
             <Text width="3rem" size="sm" fontWeight="bold">
               Pos
@@ -243,7 +221,7 @@ export function Axis(props: AxisProps) {
                 "font-family": "monospace",
               }}
             >
-              {`${carrier()!.position!.toFixed(6)}m`}
+              {`${props.carrier!.position!.toFixed(6)}m`}
             </Text>
           </Stack>
         </Show>

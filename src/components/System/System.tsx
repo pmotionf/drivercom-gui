@@ -15,10 +15,11 @@ import {
   closestCenter,
 } from "@thisbeyond/solid-dnd";
 import { Lines, Systems } from "~/pages/Monitoring.tsx";
+import { Stack } from "styled-system/jsx/stack";
 
 export type SystemProps = JSX.HTMLAttributes<HTMLDivElement> & {
-  lines: Store<Lines>,
-  systems: Store<Systems>
+  lines: Store<Lines>;
+  systems: Store<Systems>;
 };
 
 export function System(props: SystemProps) {
@@ -91,32 +92,89 @@ export function System(props: SystemProps) {
                       "transition-transform": !!state.active.draggable,
                     }}
                   >
-                    <Line
-                      line={props.lines[item]}
-                      system={
-                        props.systems[item]
-                          
-                      }
-                    >
+                    <Line line={props.lines[item]} system={props.systems[item]}>
                       <Show when={props.systems[item]}>
-                        <Driver
-                          driverInfo={
-                            props.systems[item].driverState
-                          }
-                          driverError={
-                            props.systems[item].driverErrors
-                          }
+                        <Stack
+                          width="100%"
+                          height="100%"
+                          direction="row"
+                          overflowX="auto"
+                          gap="1rem"
                         >
-                          <Axis
-                            axisError={
-                              props.systems[item].axisErrors
-                            }
-                            axisInfo={props.systems[item].axisState}
-                            carrier={
-                              props.systems[item].carrierState
-                            }
-                          />
-                        </Driver>
+                          <For
+                            each={Array.from(
+                              { length: props.lines[item].axes! / 3 },
+                              (_, i) => i,
+                            )}
+                          >
+                            {(driverIndex) => {
+                              return (
+                                <div>
+                                  <Driver
+                                    id={`${driverIndex + 1}`}
+                                    driverInfo={
+                                      props.systems[item].driverState[
+                                        driverIndex
+                                      ]
+                                    }
+                                    driverError={
+                                      props.systems[item].driverErrors[
+                                        driverIndex
+                                      ]
+                                    }
+                                  >
+                                    <Stack
+                                      direction="row"
+                                      gap="0.5rem"
+                                      marginTop="0.5rem"
+                                    >
+                                      <For
+                                        each={Array.from(
+                                          { length: 3 },
+                                          (_, i) => driverIndex * 3 + i,
+                                        )}
+                                      >
+                                        {(axisIndex) => {
+                                          const axisId = axisIndex + 1;
+                                          const carrierIndex = props.systems[
+                                            item
+                                          ].carrierState.findIndex(
+                                            (carrier) =>
+                                              carrier.axisMain === axisId ||
+                                              carrier.axisAuxiliary === axisId,
+                                          );
+                                          return (
+                                            <Axis
+                                              id={`${driverIndex + 1}:${axisId}`}
+                                              axisError={
+                                                props.systems[item].axisErrors[
+                                                  axisIndex
+                                                ]
+                                              }
+                                              axisInfo={
+                                                props.systems[item].axisState[
+                                                  axisIndex
+                                                ]
+                                              }
+                                              carrier={
+                                                carrierIndex > -1
+                                                  ? props.systems[item]
+                                                      .carrierState[
+                                                      carrierIndex
+                                                    ]
+                                                  : null
+                                              }
+                                            />
+                                          );
+                                        }}
+                                      </For>
+                                    </Stack>
+                                  </Driver>
+                                </div>
+                              );
+                            }}
+                          </For>
+                        </Stack>
                       </Show>
                     </Line>
                   </div>

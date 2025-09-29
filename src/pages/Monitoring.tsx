@@ -29,15 +29,12 @@ import {
 } from "~/components/proto/mmc/info_pb.ts";
 import { StatusPage } from "~/components/MonitoringSidebar/StatusPage.tsx";
 
-export type Lines = LineType[]
-export type Systems = TrackType[]
+export type Lines = LineType[];
+export type Systems = TrackType[];
 
 function Monitoring() {
-  /*const [systemConfig, setSystemConfig] = createStore<SystemConfig>({
-    lines: [],
-  });*/
-  const [lines, setLines] = createStore<Lines>([])
-  const [systems, setSystems] = createStore<Systems>([])
+  const [lines, setLines] = createStore<Lines>([]);
+  const [systems, setSystems] = createStore<Systems>([]);
 
   const [isAutoClearMode, setIsAutoClearMode] = createSignal<boolean>(false);
   const serverHandler = new ServerHandler();
@@ -90,7 +87,7 @@ function Monitoring() {
       );
       if (systemInfo) {
         const lineIndex = lineId - 1;
-        setSystems(lineIndex, systemInfo)
+        setSystems(lineIndex, systemInfo);
         if (isAutoClearMode()) {
           if (systemInfo.driverErrors && hasError(systemInfo.driverErrors)) {
             if (!systemInfo.axisErrors || !hasError(systemInfo.axisErrors)) {
@@ -103,8 +100,8 @@ function Monitoring() {
       }
     } catch {
       if (lines.length > 0) {
-        setLines([])
-        setSystems([])
+        setLines([]);
+        setSystems([]);
       }
       return;
     }
@@ -216,12 +213,8 @@ function Monitoring() {
     return systems.map((system, i) => {
       return {
         lineName: lines.length > 0 ? lines[i].name : "",
-        axisErrors:
-          system.axisErrors ? system.axisErrors : [],
-        driverErrors:
-          system.driverErrors
-            ? system.driverErrors
-            : [],
+        axisErrors: system.axisErrors ? system.axisErrors : [],
+        driverErrors: system.driverErrors ? system.driverErrors : [],
       };
     });
   };
@@ -251,7 +244,7 @@ function Monitoring() {
           backgroundColor="transparent"
         >
           <Show when={lines.length > 0}>
-            <System lines={lines} systems={systems}/>
+            <System lines={lines} systems={systems} />
           </Show>
         </Splitter.Panel>
 
@@ -324,15 +317,15 @@ function Monitoring() {
                         await addIpHistory(ip, port);
                         const serverResponse: LineType[] =
                           await serverHandler.getLineConfig();
-                        setLines(serverResponse)
+                        setLines(serverResponse);
                       } catch {
                         deleteIpHistory(ip, port);
                       }
                       setIsConnecting(false);
                     }}
                     onDisconnectServer={() => {
-                      setLines([])
-                      setSystems([])
+                      setLines([]);
+                      setSystems([]);
                     }}
                   />
                 </Show>
