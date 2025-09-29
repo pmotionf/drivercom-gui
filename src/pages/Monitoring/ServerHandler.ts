@@ -1,4 +1,4 @@
-import { create, toBinary } from "@bufbuild/protobuf";
+import { toBinary } from "@bufbuild/protobuf";
 import { listen, send, connect, disconnect } from "@kuyoonjo/tauri-plugin-tcp";
 import { UnlistenFn } from "@tauri-apps/api/event";
 import { Buffer } from "buffer";
@@ -52,8 +52,6 @@ export class ServerHandler implements IServerHandler {
     clientId: crypto.randomUUID(),
   };
 
-  mmc: Request = create(RequestSchema);
-
   private _connectionState: ConnectionState = ConnectionState.Disconnect;
 
   private _lockRequest: boolean = false;
@@ -64,7 +62,6 @@ export class ServerHandler implements IServerHandler {
     this._lockRequest = false;
   }
 
-  //private serverResponses: Map<string, Response> = new Map();
   private serverResponses: Response[] = [];
   private addResponse(res: Response) {
     this.serverResponses.push(res);
@@ -452,7 +449,6 @@ export class ServerHandler implements IServerHandler {
 
     this.lock();
     const timeout = setTimeout(() => this.unlock(), 500);
-
     const buffer = toBinary(RequestSchema, payload);
     const parseBuffer: number[] = Array.from(buffer);
 
@@ -460,6 +456,7 @@ export class ServerHandler implements IServerHandler {
       if (this._connectionState === ConnectionState.Disconnect)
         throw new Error("Server Disconnected");
       await send(cid, parseBuffer);
+      this.unlock();
       clearTimeout(timeout);
     } catch (e) {
       this.unlock();
@@ -476,21 +473,24 @@ export class ServerHandler implements IServerHandler {
   private async waitResponse() {
     while (this._lockRequest) {
       if (this._connectionState === ConnectionState.Disconnect) break;
-      const timeout = await this.delay(1);
-      clearTimeout(timeout);
+      await this.delay(1).then((result) => {
+        clearTimeout(result);
+      });
     }
 
     if (this._requestId) {
       while (this.serverResponses.length <= 0) {
         if (this._connectionState === ConnectionState.Disconnect) break;
-        const timeout = await this.delay(1);
-        clearTimeout(timeout);
+        await this.delay(1).then((result) => {
+          clearTimeout(result);
+        });
       }
       this._requestId = null;
     }
 
-    const timeout = await this.delay(1);
-    clearTimeout(timeout);
+    await this.delay(1).then((result) => {
+      clearTimeout(result);
+    });
     return;
   }
 }
