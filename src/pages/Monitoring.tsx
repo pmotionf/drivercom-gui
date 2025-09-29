@@ -28,6 +28,7 @@ import {
   /*@ts-ignore Ignore git acticon type check */
 } from "~/components/proto/mmc/info_pb.ts";
 import { StatusPage } from "~/components/MonitoringSidebar/StatusPage.tsx";
+import { reconcile } from "solid-js/store";
 
 export type Lines = LineType[];
 export type Systems = TrackType[];
@@ -87,7 +88,7 @@ function Monitoring() {
       );
       if (systemInfo) {
         const lineIndex = lineId - 1;
-        setSystems(lineIndex, systemInfo);
+        setSystems(lineIndex, reconcile(systemInfo));
         if (isAutoClearMode()) {
           if (systemInfo.driverErrors && hasError(systemInfo.driverErrors)) {
             if (!systemInfo.axisErrors || !hasError(systemInfo.axisErrors)) {
