@@ -156,27 +156,7 @@ export function Line(props: LineProps) {
         paddingLeft="1rem"
         paddingRight="1rem"
       >
-        <Stack
-          width="100%"
-          height="100%"
-          direction="row"
-          overflowX="auto"
-          gap="1rem"
-        >
-          <For each={Array.from({ length: props.line.axes! / 3 }, (_, i) => i)}>
-            {(driverIndex) => {
-              return (
-                <LineContext.Provider
-                  value={{
-                    driverIndex: driverIndex,
-                  }}
-                >
-                  {props.children}
-                </LineContext.Provider>
-              );
-            }}
-          </For>
-        </Stack>
+        {props.children}
       </Accordion.ItemContent>
     </Accordion.Item>
   );
