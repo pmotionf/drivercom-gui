@@ -64,7 +64,17 @@ export class ServerHandler implements IServerHandler {
     this._lockRequest = false;
   }
 
-  private serverResponses: Map<string, Response> = new Map();
+  //private serverResponses: Map<string, Response> = new Map();
+  private serverResponses: Response[] = [];
+  private addResponse(res: Response) {
+    this.serverResponses.push(res);
+  }
+  private getResponse() {
+    const res = this.serverResponses[0];
+    this.serverResponses.shift();
+    return res;
+  }
+
   private _requestId: string | null = null;
 
   private _unlisten: null | UnlistenFn = null;
@@ -82,10 +92,8 @@ export class ServerHandler implements IServerHandler {
       ) {
         const bytes = Buffer.from(x.payload.event.message.data);
         const decode: Response = fromBinary(ResponseSchema, bytes);
-        if (this._requestId) {
-          this.serverResponses.set(this._requestId, decode);
-          this.unlock();
-        }
+        this.addResponse(decode);
+        this.unlock();
       }
     });
   }
@@ -120,7 +128,7 @@ export class ServerHandler implements IServerHandler {
         this._unlisten = null;
       }
       await disconnect(this._ipAddress.clientId);
-      this.serverResponses = new Map();
+      this.serverResponses = [];
       this._ipAddress.clientId = crypto.randomUUID();
       this._requestId = null;
       this._connectionState = ConnectionState.Disconnect;
@@ -180,9 +188,8 @@ export class ServerHandler implements IServerHandler {
     await this.sendRequest(this._ipAddress.clientId, payload);
     await this.waitResponse();
 
-    if (this.serverResponses.has(requestId)) {
-      const response = this.serverResponses.get(requestId)!;
-      this.serverResponses.delete(requestId);
+    if (this.serverResponses.length > 0) {
+      const response = this.getResponse();
 
       if (response.body.case === "command") {
         const command = response.body.value;
@@ -235,9 +242,8 @@ export class ServerHandler implements IServerHandler {
     await this.sendRequest(this._ipAddress.clientId, payload);
     await this.waitResponse();
 
-    if (this.serverResponses.has(requestId)) {
-      const response = this.serverResponses.get(requestId)!;
-      this.serverResponses.delete(requestId);
+    if (this.serverResponses.length > 0) {
+      const response = this.getResponse();
       if (response.body.case === "info") {
         const info = response.body.value;
         if (info.body.case === "command") {
@@ -277,9 +283,8 @@ export class ServerHandler implements IServerHandler {
     await this.sendRequest(this._ipAddress.clientId, payload);
     await this.waitResponse();
 
-    if (this.serverResponses.has(requestId)) {
-      const response = this.serverResponses.get(requestId);
-      this.serverResponses.delete(requestId);
+    if (this.serverResponses.length > 0) {
+      const response = this.getResponse();
       if (response) {
         if (response.body.case === "command") {
           const command = response.body.value;
@@ -313,9 +318,8 @@ export class ServerHandler implements IServerHandler {
     await this.sendRequest(this._ipAddress.clientId, payload);
     await this.waitResponse();
 
-    if (this.serverResponses.has(requestId)) {
-      const serverResponse = this.serverResponses.get(requestId)!;
-      this.serverResponses.delete(requestId);
+    if (this.serverResponses.length > 0) {
+      const serverResponse = this.getResponse();
       if (serverResponse.body.case === "core") {
         const core = serverResponse.body.value;
         if (core.body.case === "trackConfig") {
@@ -379,9 +383,8 @@ export class ServerHandler implements IServerHandler {
     this.sendRequest(this._ipAddress.clientId, payload);
     await this.waitResponse();
 
-    if (this.serverResponses.has(requestId)) {
-      const response = this.serverResponses.get(requestId)!;
-      this.serverResponses.delete(requestId);
+    if (this.serverResponses.length > 0) {
+      const response = this.getResponse();
       if (response.body.case === "info") {
         const info = response.body.value;
         if (info.body.case === "track") {
@@ -425,9 +428,8 @@ export class ServerHandler implements IServerHandler {
     await this.sendRequest(this._ipAddress.clientId, payload);
     await this.waitResponse();
 
-    if (this.serverResponses.has(requestId)) {
-      const response = this.serverResponses.get(requestId)!;
-      this.serverResponses.delete(requestId);
+    if (this.serverResponses.length > 0) {
+      const response = this.getResponse();
       if (response.body.case === "core") {
         const core = response.body.value;
         if (core.body.case === "server") {
@@ -472,29 +474,23 @@ export class ServerHandler implements IServerHandler {
     });
 
   private async waitResponse() {
-    let timeout: NodeJS.Timeout | null = null;
     while (this._lockRequest) {
       if (this._connectionState === ConnectionState.Disconnect) break;
-      if (timeout !== null) {
-        clearTimeout(timeout);
-      }
-      timeout = await this.delay(1);
+      const timeout = await this.delay(1);
+      clearTimeout(timeout);
     }
 
     if (this._requestId) {
-      while (!this.serverResponses.has(this._requestId)) {
+      while (this.serverResponses.length <= 0) {
         if (this._connectionState === ConnectionState.Disconnect) break;
-        if (timeout !== null) {
-          clearTimeout(timeout);
-        }
-        timeout = await this.delay(1);
+        const timeout = await this.delay(1);
+        clearTimeout(timeout);
       }
       this._requestId = null;
     }
 
-    if (timeout !== null) {
-      clearTimeout(timeout);
-    }
+    const timeout = await this.delay(1);
+    clearTimeout(timeout);
     return;
   }
 }
