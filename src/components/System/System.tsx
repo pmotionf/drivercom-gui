@@ -14,22 +14,23 @@ import {
   createSortable,
   closestCenter,
 } from "@thisbeyond/solid-dnd";
-import { SystemConfig } from "~/pages/Monitoring.tsx";
+import { Lines, Systems } from "~/pages/Monitoring.tsx";
 
 export type SystemProps = JSX.HTMLAttributes<HTMLDivElement> & {
-  value: Store<SystemConfig>;
+  lines: Store<Lines>,
+  systems: Store<Systems>
 };
 
 export function System(props: SystemProps) {
-  if (props.value.lines.length === 0) return;
+  if (props.lines.length === 0) return;
 
   const [accordionStates, setAccordionStates] = createSignal<string[]>(
-    props.value.lines!.map((val) => val.line.name!),
+    props.lines!.map((val) => val.name!),
   );
   const [dragging, setDragging] = createSignal<boolean>(false);
 
   const [items, setItems] = createSignal(
-    Array.from({ length: props.value.lines.length }, (_, i) => i),
+    Array.from({ length: props.lines.length }, (_, i) => i),
   );
   const ids = () => items();
 
@@ -91,29 +92,28 @@ export function System(props: SystemProps) {
                     }}
                   >
                     <Line
-                      line={props.value.lines[item].line}
+                      line={props.lines[item]}
                       system={
-                        props.value.lines[item].system
-                          ? props.value.lines[item].system
-                          : undefined
+                        props.systems[item]
+                          
                       }
                     >
-                      <Show when={props.value.lines[item].system}>
+                      <Show when={props.systems[item]}>
                         <Driver
                           driverInfo={
-                            props.value.lines[item].system!.driverState
+                            props.systems[item].driverState
                           }
                           driverError={
-                            props.value.lines[item].system!.driverErrors
+                            props.systems[item].driverErrors
                           }
                         >
                           <Axis
                             axisError={
-                              props.value.lines[item].system!.axisErrors
+                              props.systems[item].axisErrors
                             }
-                            axisInfo={props.value.lines[item].system!.axisState}
+                            axisInfo={props.systems[item].axisState}
                             carrier={
-                              props.value.lines[item].system!.carrierState
+                              props.systems[item].carrierState
                             }
                           />
                         </Driver>

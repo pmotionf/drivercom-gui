@@ -29,28 +29,30 @@ import {
 } from "~/components/proto/mmc/info_pb.ts";
 import { StatusPage } from "~/components/MonitoringSidebar/StatusPage.tsx";
 
-export type SystemConfig = {
-  lines: { line: LineType; system?: TrackType }[];
-};
+export type Lines = LineType[]
+export type Systems = TrackType[]
 
 function Monitoring() {
-  const [systemConfig, setSystemConfig] = createStore<SystemConfig>({
+  /*const [systemConfig, setSystemConfig] = createStore<SystemConfig>({
     lines: [],
-  });
+  });*/
+  const [lines, setLines] = createStore<Lines>([])
+  const [systems, setSystems] = createStore<Systems>([])
+
   const [isAutoClearMode, setIsAutoClearMode] = createSignal<boolean>(false);
   const serverHandler = new ServerHandler();
 
   onCleanup(async () => {
-    if (systemConfig.lines.length > 0) {
+    if (lines.length > 0) {
       await serverHandler.disconnect();
     }
   });
 
   createEffect(
     on(
-      () => systemConfig.lines.length,
+      () => lines.length,
       async () => {
-        if (systemConfig.lines.length < 1) {
+        if (lines.length < 1) {
           try {
             await serverHandler.disconnect();
           } catch (e) {
@@ -70,11 +72,11 @@ function Monitoring() {
   );
 
   const getNextId = (lineId: number): number => {
-    return lineId + 1 <= systemConfig.lines.length ? lineId + 1 : 1;
+    return lineId + 1 <= lines.length ? lineId + 1 : 1;
   };
 
   const requestSystemInfo = async (lineId: number): Promise<void> => {
-    if (systemConfig.lines.length < 1) return;
+    if (lines.length < 1) return;
     await getSystemInfo(lineId);
     const nextId = getNextId(lineId);
     await requestSystemInfo(nextId);
@@ -84,11 +86,11 @@ function Monitoring() {
     try {
       const systemInfo = await serverHandler.getSystemInfo(
         lineId,
-        systemConfig.lines[lineId - 1].line.axes,
+        lines[lineId - 1].axes,
       );
       if (systemInfo) {
         const lineIndex = lineId - 1;
-        setSystemConfig("lines", lineIndex, "system", systemInfo);
+        setSystems(lineIndex, systemInfo)
         if (isAutoClearMode()) {
           if (systemInfo.driverErrors && hasError(systemInfo.driverErrors)) {
             if (!systemInfo.axisErrors || !hasError(systemInfo.axisErrors)) {
@@ -100,8 +102,9 @@ function Monitoring() {
         return;
       }
     } catch {
-      if (systemConfig.lines.length > 0) {
-        setSystemConfig("lines", []);
+      if (lines.length > 0) {
+        setLines([])
+        setSystems([])
       }
       return;
     }
@@ -210,14 +213,14 @@ function Monitoring() {
     axisErrors: Response_Track_Axis_Error[];
     driverErrors: Response_Track_Driver_Error[];
   }[] => {
-    return systemConfig.lines.map((line) => {
+    return systems.map((system, i) => {
       return {
-        lineName: line.line.name,
+        lineName: lines.length > 0 ? lines[i].name : "",
         axisErrors:
-          line.system && line.system.axisErrors ? line.system.axisErrors : [],
+          system.axisErrors ? system.axisErrors : [],
         driverErrors:
-          line.system && line.system.driverErrors
-            ? line.system!.driverErrors
+          system.driverErrors
+            ? system.driverErrors
             : [],
       };
     });
@@ -247,8 +250,8 @@ function Monitoring() {
           borderWidth="0"
           backgroundColor="transparent"
         >
-          <Show when={systemConfig.lines.length > 0}>
-            <System value={systemConfig} />
+          <Show when={lines.length > 0}>
+            <System lines={lines} systems={systems}/>
           </Show>
         </Splitter.Panel>
 
@@ -312,7 +315,7 @@ function Monitoring() {
                     inputs={monitoringInputs}
                     ipHistory={ipHistory()}
                     changeIpHistory={setIpHistory}
-                    isConnect={systemConfig.lines.length > 0}
+                    isConnect={lines.length > 0}
                     isConnecting={isConnecting()}
                     onConnectServer={async (ip: string, port: string) => {
                       setIsConnecting(true);
@@ -321,19 +324,15 @@ function Monitoring() {
                         await addIpHistory(ip, port);
                         const serverResponse: LineType[] =
                           await serverHandler.getLineConfig();
-                        setSystemConfig(
-                          "lines",
-                          serverResponse.map((line) => {
-                            return { line: line };
-                          }),
-                        );
+                        setLines(serverResponse)
                       } catch {
                         deleteIpHistory(ip, port);
                       }
                       setIsConnecting(false);
                     }}
                     onDisconnectServer={() => {
-                      setSystemConfig("lines", []);
+                      setLines([])
+                      setSystems([])
                     }}
                   />
                 </Show>
