@@ -6,7 +6,6 @@ import { Tooltip } from "../ui/tooltip.tsx";
 import {
   Response_Track_Driver_Error,
   Response_Track_Driver_State,
-  /*@ts-ignore Ignore git acticon type check */
 } from "../proto/mmc/info_pb.ts";
 
 export const AxesContext = createContext<{

@@ -5,7 +5,6 @@ import { Text } from "./ui/text";
 import {
   Response_Track_Axis_Error,
   Response_Track_Driver_Error,
-  /*@ts-ignore Ignore git acticon type check */
 } from "./proto/mmc/info_pb";
 import { Show } from "solid-js";
 
@@ -60,7 +59,7 @@ export const ErrorTable = (props: ErrorTableProps) => {
         when={showTable()}
         fallback={
           <Text color="fg.subtle" size="sm" marginLeft="1.2em">
-            None errors.
+            No errors.
           </Text>
         }
       >
