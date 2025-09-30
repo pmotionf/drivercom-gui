@@ -40,6 +40,11 @@ jobs:
       - name: Check formatting
         run: bun run fmt-check
 
+      - name: Generate proto files
+        run: bun run mmc-api
+        env:
+          GH_TOKEN: ${{ secrets.DRIVERCOM_CLI_RELEASE_ACCESS_TOKEN }}
+
       - name: Check lints and types
         run: bun run check
 
