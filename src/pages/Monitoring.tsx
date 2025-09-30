@@ -25,7 +25,6 @@ import { System } from "~/components/System/System.tsx";
 import {
   Response_Track_Axis_Error,
   Response_Track_Driver_Error,
-  /*@ts-ignore Ignore git acticon type check */
 } from "~/components/proto/mmc/info_pb.ts";
 import { StatusPage } from "~/components/MonitoringSidebar/StatusPage.tsx";
 import { reconcile } from "solid-js/store";

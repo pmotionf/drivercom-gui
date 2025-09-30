@@ -8,7 +8,6 @@ import {
   Response_Track_Axis_State,
   Response_Track_Carrier_State,
   Response_Track_Carrier_State_State,
-  /*@ts-ignore Ignore git acticon type check */
 } from "../proto/mmc/info_pb.ts";
 
 export type AxisProps = {

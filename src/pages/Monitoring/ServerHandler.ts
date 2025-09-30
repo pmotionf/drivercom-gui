@@ -5,19 +5,16 @@ import { Buffer } from "buffer";
 import {
   Request_Kind,
   Response_TrackConfig_Line,
-  /*@ts-ignore Ignore git acticon type check */
 } from "~/components/proto/mmc/core_pb";
 import {
   Response_Command_Status,
   Response_Track,
-  /*@ts-ignore Ignore git acticon type check */
 } from "~/components/proto/mmc/info_pb";
 import {
   Request,
   RequestSchema,
   Response,
   ResponseSchema,
-  /*@ts-ignore Ignore git acticon type check */
 } from "~/components/proto/mmc_pb";
 import { fromBinary } from "@bufbuild/protobuf";
 
@@ -330,6 +327,7 @@ export class ServerHandler implements IServerHandler {
                   axes: line.axes,
                   carrierLength: line.carrierLength,
                   axisLength: line.axisLength,
+                  drivers: line.drivers,
                 };
                 return newLine;
               },

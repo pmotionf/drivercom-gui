@@ -9,7 +9,6 @@ import { TrackType, LineType } from "~/pages/Monitoring/ServerHandler.ts";
 import {
   Response_Track_Axis_Error,
   Response_Track_Driver_Error,
-  /*@ts-ignore Ignore git acticon type check */
 } from "../proto/mmc/info_pb.ts";
 
 export type LineProps = JSX.HTMLAttributes<HTMLDivElement> & {
