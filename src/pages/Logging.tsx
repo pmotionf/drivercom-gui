@@ -538,7 +538,7 @@ export function Logging() {
                 />
 
                 <Show
-                  when={currentLogStatus() === "Log.Status.started"}
+                  when={currentLogStatus() === ".started"}
                   fallback={
                     <Tooltip.Root>
                       <Tooltip.Trigger>
@@ -546,9 +546,9 @@ export function Logging() {
                           disabled={
                             portId().length === 0 ||
                             logGetBtnLoading() ||
-                            currentLogStatus() === "Log.Status.invalid" ||
-                            currentLogStatus() === "Log.Status.started" ||
-                            currentLogStatus() === "Log.Status.waiting"
+                            currentLogStatus() === ".invalid" ||
+                            currentLogStatus() === ".started" ||
+                            currentLogStatus() === ".waiting"
                           }
                           onClick={async () => {
                             if (Array.from(logDownloads.values()).length > 0) {
@@ -611,8 +611,8 @@ export function Logging() {
 
                 <Show
                   when={
-                    currentLogStatus() !== "Log.Status.stopped" ||
-                    currentLogStatus() === "Log.Status.invalid" ||
+                    currentLogStatus() !== ".stopped" ||
+                    currentLogStatus() === ".invalid" ||
                     cyclesCompleted() === 0
                   }
                   fallback={
