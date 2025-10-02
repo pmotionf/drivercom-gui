@@ -6,26 +6,15 @@ import {
   JSX,
   on,
   type Setter,
-  Show,
-  splitProps,
 } from "solid-js";
 import { createStore } from "solid-js/store";
 
-import { Accordion } from "~/components/ui/accordion.tsx";
-import { Checkbox } from "~/components/ui/checkbox.tsx";
-
 import { Stack } from "styled-system/jsx";
 import { Text } from "./ui/text.tsx";
-import { IconButton } from "./ui/icon-button.tsx";
-import {
-  IconChevronDown,
-  IconLink,
-  IconLinkOff,
-  IconLock,
-  IconLockOff,
-  IconExclamationCircle,
-} from "@tabler/icons-solidjs";
-import { Tooltip } from "./ui/tooltip.tsx";
+import { FormCheckBox } from "./Form/FormCheckBox.tsx";
+import { FormNumberInput } from "./Form/FormNumberInput.tsx";
+import { FormCollapsibleObject } from "./Form/FormCollapsibleObject.tsx";
+import { FormList } from "./Form/FormList.tsx";
 
 export type ConfigFormProps = JSX.HTMLAttributes<HTMLFormElement> & {
   id: string;
@@ -350,24 +339,8 @@ type ConfigObjectProps = JSX.HTMLAttributes<HTMLDivElement> & {
   gainKey?: string;
 };
 
-function ConfigObject(props: ConfigObjectProps) {
+export function ConfigObject(props: ConfigObjectProps) {
   const [object, setObject] = createStore(props.object);
-
-  function getComputedCSSVariableValue(variable: string) {
-    let value = getComputedStyle(document.documentElement).getPropertyValue(
-      variable,
-    );
-
-    while (value.startsWith("var(")) {
-      // Extract the name of the referenced variable
-      const referencedVarName = value.slice(4, value.length - 1);
-      value = getComputedStyle(document.documentElement).getPropertyValue(
-        referencedVarName,
-      );
-    }
-
-    return value.trim();
-  }
 
   return (
     <div>
@@ -398,7 +371,7 @@ function ConfigObject(props: ConfigObjectProps) {
                     "padding-bottom": "0.5rem",
                   }}
                 >
-                  <ConfigList
+                  <FormList
                     label={key}
                     items={value}
                     onItemChange={() => props.onItemChange?.()}
@@ -437,121 +410,18 @@ function ConfigObject(props: ConfigObjectProps) {
               Object.values(value).length > 1 ||
               Object.values(value).some((val) => typeof val === "object")
             ) {
-              const itemId = props.id_prefix + key;
-              if (!props.accordionStatuses.has(itemId)) {
-                props.accordionStatuses.set(
-                  itemId,
-                  createSignal<string[]>([itemId]),
-                );
-              }
-              const [accordionValue, setAccordionValue] =
-                props.accordionStatuses.get(itemId)!;
-
               return (
-                <Accordion.Root
-                  borderWidth="0"
-                  value={accordionValue()}
-                  onValueChange={(details) => {
-                    setAccordionValue(details.value);
-                  }}
-                  multiple
-                >
-                  <Accordion.Item
-                    value={itemId}
-                    borderWidth="1px"
-                    paddingTop="0.5rem"
-                    paddingBottom="0.5rem"
-                    marginTop="0.5rem"
-                    borderRadius="0.5em"
-                  >
-                    <Accordion.ItemTrigger
-                      fontSize="md"
-                      padding="0 1rem 0 1rem"
-                    >
-                      <Stack direction="row">
-                        <Text fontWeight="bold" color="fg.subtle">
-                          {`${key[0].toUpperCase()}${Array.from(
-                            key.slice(1, key.length),
-                          )
-                            .map((char, index) => {
-                              if (key[index] === "_") {
-                                return char.toUpperCase();
-                              }
-                              return char;
-                            })
-                            .toString()
-                            .replaceAll(",", "")}`}
-                        </Text>
-                        <Show
-                          when={
-                            props.gainLockStatuses.has(`${key}.gain`) &&
-                            Object.keys(value).includes("gain")
-                          }
-                        >
-                          <IconButton
-                            size="sm"
-                            width="1rem"
-                            height="min-content"
-                            paddingTop="0.2rem"
-                            paddingBottom="0.2rem"
-                            variant="ghost"
-                            opacity={
-                              props.gainLockStatuses.get(`${key}.gain`)![0]()
-                                ? "1"
-                                : "0.5"
-                            }
-                            onClick={() => {
-                              const lockStatus = props.gainLockStatuses.get(
-                                `${key}.gain`,
-                              )![0]();
-                              const mapKeys = Array.from(
-                                props.gainLockStatuses.keys(),
-                              ).filter((mapKey) =>
-                                mapKey.includes(`${key}.gain`),
-                              );
-                              mapKeys.forEach((mapKey) => {
-                                props.gainLockStatuses.get(mapKey)![1](
-                                  !lockStatus,
-                                );
-                              });
-                            }}
-                          >
-                            <Show
-                              when={props.gainLockStatuses.get(
-                                `${key}.gain`,
-                              )![0]()}
-                              fallback={<IconLockOff />}
-                            >
-                              <IconLock />
-                            </Show>
-                          </IconButton>
-                        </Show>
-                      </Stack>
-                      <Accordion.ItemIndicator>
-                        <IconChevronDown />
-                      </Accordion.ItemIndicator>
-                    </Accordion.ItemTrigger>
-
-                    <Accordion.ItemContent
-                      borderWidth={"0"}
-                      padding="0 1rem 0 1rem"
-                    >
-                      <ConfigObject
-                        object={value}
-                        id_prefix={props.id_prefix + key}
-                        style={{ "padding-left": "1rem" }}
-                        onItemChange={() => {
-                          props.onItemChange?.();
-                        }}
-                        accordionStatuses={props.accordionStatuses}
-                        linkedStatuses={props.linkedStatuses}
-                        gainLockStatuses={props.gainLockStatuses}
-                        gainKinds={props.gainKinds}
-                        gainKey={gainkey}
-                      />
-                    </Accordion.ItemContent>
-                  </Accordion.Item>
-                </Accordion.Root>
+                <FormCollapsibleObject
+                  id_prefix={props.id_prefix}
+                  key={key}
+                  object={value}
+                  gainKey={gainkey}
+                  gainKinds={props.gainKinds}
+                  accordionStatuses={props.accordionStatuses}
+                  linkedStatuses={props.linkedStatuses}
+                  gainLockStatuses={props.gainLockStatuses}
+                  onItemChange={() => props.onItemChange?.()}
+                />
               );
             } else {
               return (
@@ -598,23 +468,19 @@ function ConfigObject(props: ConfigObjectProps) {
           }
           if (typeof value === "boolean") {
             return (
-              <Checkbox
+              <FormCheckBox
                 id={props.id_prefix + key}
+                label={key}
                 checked={object[key as keyof typeof object]}
-                onCheckedChange={(e) => {
+                onCheckedChange={(checked) =>
                   setObject(
                     key as keyof typeof object,
                     // @ts-ignore: TSC unable to handle generic object type
                     // in store
-                    e.checked,
-                  );
-                }}
-                marginTop="1rem"
-              >
-                <Text fontWeight="light" userSelect="none">
-                  {key}
-                </Text>
-              </Checkbox>
+                    checked,
+                  )
+                }
+              />
             );
           }
           if (typeof value === "number") {
@@ -633,326 +499,29 @@ function ConfigObject(props: ConfigObjectProps) {
               }
             }
 
-            let divRef: HTMLDivElement | undefined;
-
             return (
-              <Stack
-                direction="row"
-                width="100%"
-                marginTop="1rem"
-                marginBottom="0.5rem"
-              >
-                <Text width="50%" marginTop="0.4rem" fontWeight="light">
-                  {key}
-                </Text>
-                <div style={{ width: "50%" }}>
-                  <Stack
-                    ref={divRef}
-                    style={{
-                      width: "100%",
-                      padding: "0.4rem",
-                      "padding-right": "0.2rem",
-                      "border-radius": "0.5rem",
-                      "border-width": "1px",
-                      gap: "0",
-                    }}
-                    borderColor={
-                      Number.isFinite(Number(value)) ? "bg.disabled" : "red"
-                    }
-                    direction="row"
-                  >
-                    <input
-                      style={{
-                        width: lockStatus.has(lockStatusKey)
-                          ? `calc(100% - 2rem)`
-                          : "100%",
-                        outline: "none",
-                        opacity: lockStatus.has(lockStatusKey)
-                          ? lockStatus.get(lockStatusKey)![0]()
-                            ? "0.4"
-                            : "1"
-                          : "1",
-                      }}
-                      disabled={
-                        lockStatus.has(lockStatusKey)
-                          ? lockStatus.get(lockStatusKey)![0]()
-                          : false
-                      }
-                      onFocusIn={() => {
-                        divRef!.style.borderWidth = "2px";
-                        divRef!.style.borderColor = getComputedCSSVariableValue(
-                          "--colors-accent-default",
-                        );
-                      }}
-                      onFocusOut={(e) => {
-                        divRef!.style.borderWidth = "1px";
-                        divRef!.style.borderColor = !Number.isFinite(
-                          Number(e.target.value),
-                        )
-                          ? "red"
-                          : getComputedCSSVariableValue("--colors-bg-disabled");
-                      }}
-                      placeholder={key}
-                      value={object[key as keyof typeof object]}
-                      onChange={(e) => {
-                        if (isNaN(Number(e.target.value))) {
-                          if (e.target.value.toLowerCase() !== "nan") {
-                            e.target.value = String(
-                              object[key as keyof typeof object],
-                            );
-                            return;
-                          }
-                        }
-                        setObject(
-                          key as keyof typeof object,
-                          // @ts-ignore: TSC unable to handle generic object type
-                          // in store
-                          Number(e.target.value),
-                        );
-                        props.onItemChange?.();
-                      }}
-                    />
-                    <Show when={!Number.isFinite(value)}>
-                      <IconExclamationCircle
-                        color="red"
-                        data-name="config_field_error"
-                      />
-                    </Show>
-                    <Show when={lockStatus.has(lockStatusKey)}>
-                      <IconButton
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        borderRadius="3rem"
-                        height="min-content"
-                        paddingTop="0.2rem"
-                        paddingBottom="0.2rem"
-                        opacity={
-                          lockStatus.get(lockStatusKey)![0]() ? "1" : "0.5"
-                        }
-                        onClick={() => {
-                          lockStatus.get(lockStatusKey)![1](
-                            !lockStatus.get(lockStatusKey)![0](),
-                          );
-
-                          const split = lockStatusKey.split(".");
-                          const includingKeys = `${split[0]}.${split[1]}.`;
-                          const mapValues = Array.from(
-                            props.gainLockStatuses.entries(),
-                          )
-                            .filter((entries) =>
-                              entries[0].includes(includingKeys),
-                            )
-                            .map((entries) => entries[1][0]());
-                          const parseValues = [...new Set(mapValues)];
-                          if (parseValues.length !== 1) {
-                            lockStatus.get(includingKeys.slice(0, -1))![1](
-                              true,
-                            );
-                          } else {
-                            lockStatus.get(includingKeys.slice(0, -1))![1](
-                              parseValues[0],
-                            );
-                          }
-                        }}
-                      >
-                        <Show
-                          when={lockStatus.get(lockStatusKey)![0]()}
-                          fallback={<IconLockOff />}
-                        >
-                          <IconLock />
-                        </Show>
-                      </IconButton>
-                    </Show>
-                  </Stack>
-                  <Show when={!Number.isFinite(value)}>
-                    <Text size="sm" color="red">
-                      {`Invalid ${typeof value}.`}
-                    </Text>
-                  </Show>
-                </div>
-              </Stack>
+              <FormNumberInput
+                id={props.id_prefix + key}
+                label={key}
+                lockStatus={lockStatus}
+                lockStatusKey={
+                  lockStatusKey.length > 0 ? lockStatusKey : undefined
+                }
+                inputValue={object[key as keyof typeof object]}
+                onInputChange={(value) => {
+                  setObject(
+                    key as keyof typeof object,
+                    // @ts-ignore: TSC unable to handle generic object type
+                    // in store
+                    value,
+                  );
+                  props.onItemChange?.();
+                }}
+              />
             );
           }
         }}
       </For>
     </div>
-  );
-}
-
-type ConfigListProps = Accordion.RootProps & {
-  id_prefix: string;
-  label: string;
-  items: object[];
-  onItemChange?: () => void;
-  accordionStatuses: AccordionStatuses;
-  linkedStatuses: LinkedStatuses;
-  gainLockStatuses: GainLockStatuses;
-  gainKinds: string[];
-};
-
-function ConfigList(props: ConfigListProps) {
-  const [, rest] = splitProps(props, ["items"]);
-
-  const [items, setItems] = createStore<object[]>(props.items);
-
-  // Store a deep copy string of the most recently edited item object. This is
-  // necessary over storing e.g. the item index, as the signal that sets other
-  // items to be a copy cannot depend on the `items` store itself. Depending
-  // directly on the `items` store will cause an infinite effects loop.
-  const [recentEditedItem, setRecentEditedItem] = createSignal<string>("");
-
-  const changedItemIndex = props.linkedStatuses.get(props.label)?.[0]()[1];
-  if (changedItemIndex !== undefined) {
-    setRecentEditedItem(JSON.stringify(items[changedItemIndex]));
-  }
-
-  createEffect(
-    on(
-      () => JSON.stringify(items),
-      () => {
-        if (
-          props.linkedStatuses.get(props.label) &&
-          props.linkedStatuses.get(props.label)?.[0]()[1]
-        ) {
-          const index = props.linkedStatuses.get(props.label)![0]()[1];
-          setRecentEditedItem(JSON.stringify(items[index]));
-        }
-      },
-      { defer: true },
-    ),
-  );
-
-  createEffect(
-    on(
-      [
-        () => recentEditedItem(),
-        () => props.linkedStatuses.get(props.label)?.[0]()[0],
-      ],
-      () => {
-        if (!Array.isArray(items)) return;
-        if (props.linkedStatuses.get(props.label)?.[0]()[0]) {
-          items.forEach((_, index) => {
-            const item = JSON.parse(recentEditedItem().replaceAll("null", "0"));
-            if (index === props.linkedStatuses.get(props.label)?.[0]()[1]) {
-              return;
-            }
-            setItems(index, item);
-          });
-        }
-      },
-      { defer: true },
-    ),
-  );
-
-  // Converts label to have uppercase letters at the start of each word.
-  const prettifiedLabel = Array.from(props.label)
-    .map((char, i) => {
-      if (i === 0) return char.toUpperCase();
-      else if (props.label[i - 1] === "_") return char.toUpperCase();
-      else return char;
-    })
-    .toString()
-    .replaceAll(",", "");
-
-  return (
-    <Accordion.Root
-      borderWidth="0"
-      multiple
-      {...rest}
-      value={props.accordionStatuses.get(props.label)?.[0]()}
-      onValueChange={(e) => {
-        props.accordionStatuses.get(props.label)?.[1](e.value);
-      }}
-    >
-      <For each={props.items}>
-        {(item, index) => {
-          const title = props.label + " " + (index() + 1).toString();
-          return (
-            <Accordion.Item value={title}>
-              <Stack direction="row">
-                <Tooltip.Root>
-                  <Tooltip.Trigger>
-                    <IconButton
-                      variant="ghost"
-                      onClick={() => {
-                        const linked = props.linkedStatuses.get(
-                          props.label,
-                        )?.[0]()[0];
-
-                        props.linkedStatuses.get(props.label)?.[1]([
-                          !linked,
-                          index(),
-                        ]);
-                        setRecentEditedItem(JSON.stringify(item));
-                      }}
-                      marginTop="0.5rem"
-                    >
-                      <Show
-                        when={props.linkedStatuses.get(props.label)?.[0]()[0]}
-                        fallback={<IconLinkOff />}
-                      >
-                        <IconLink />
-                      </Show>
-                    </IconButton>
-                  </Tooltip.Trigger>
-
-                  <Tooltip.Positioner>
-                    <Tooltip.Content backgroundColor="bg.default">
-                      <Text color="fg.default">
-                        Link {`${prettifiedLabel}`}
-                      </Text>
-                    </Tooltip.Content>
-                  </Tooltip.Positioner>
-                </Tooltip.Root>
-                <Accordion.ItemTrigger>
-                  <Text fontWeight="bold" size="md" color="fg.subtle">
-                    {`${title[0].toUpperCase()}${Array.from(
-                      title.slice(1, title.length),
-                    )
-                      .map((char, index) => {
-                        if (title[index] === "_") {
-                          return char.toUpperCase();
-                        }
-                        return char;
-                      })
-                      .toString()
-                      .replaceAll(",", "")}`}
-                  </Text>
-                  <Accordion.ItemIndicator>
-                    <IconChevronDown />
-                  </Accordion.ItemIndicator>
-                </Accordion.ItemTrigger>
-              </Stack>
-              <Accordion.ItemContent
-                paddingLeft="0.5rem"
-                paddingRight={"0.5rem"}
-              >
-                <ConfigObject
-                  object={item}
-                  id_prefix={props.id_prefix + title}
-                  onItemChange={() => {
-                    props.onItemChange?.();
-                    const linked = props.linkedStatuses.get(
-                      props.label,
-                    )?.[0]()[0];
-                    if (linked) {
-                      props.linkedStatuses.get(props.label)?.[1]([
-                        linked,
-                        index(),
-                      ]);
-                    }
-                  }}
-                  accordionStatuses={props.accordionStatuses}
-                  linkedStatuses={props.linkedStatuses}
-                  gainLockStatuses={props.gainLockStatuses}
-                  gainKinds={props.gainKinds}
-                />
-              </Accordion.ItemContent>
-            </Accordion.Item>
-          );
-        }}
-      </For>
-    </Accordion.Root>
   );
 }
