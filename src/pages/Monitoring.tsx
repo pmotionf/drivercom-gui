@@ -81,10 +81,7 @@ function Monitoring() {
 
   const getSystemInfo = async (lineId: number): Promise<void> => {
     try {
-      const systemInfo = await serverHandler.getSystemInfo(
-        lineId,
-        lines[lineId - 1].axes,
-      );
+      const systemInfo = await serverHandler.getSystemInfo(lineId);
       if (systemInfo) {
         const lineIndex = lineId - 1;
         setSystems(lineIndex, reconcile(systemInfo));
