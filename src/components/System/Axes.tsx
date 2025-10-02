@@ -14,11 +14,23 @@ export type AxisProps = {
   id: string;
   axisInfo: Response_Track_Axis_State;
   axisError: Response_Track_Axis_Error;
-  carrier?: Response_Track_Carrier_State | null;
+  carrier: Response_Track_Carrier_State[] | null;
 };
 
 export function Axis(props: AxisProps) {
   const axisId = Number(props.id.split(":")[1]);
+
+  const carrierState = () => {
+    if (!props.carrier) return null;
+    const carrier = props.carrier!.filter(
+      (carrier) => carrier.axisMain === axisId,
+    );
+    if (carrier[0]) {
+      return carrier[0];
+    }
+    return null;
+  };
+
   return (
     <Stack
       width="9rem"
@@ -121,7 +133,7 @@ export function Axis(props: AxisProps) {
         </Show>
       </Stack>
 
-      <Show when={props.carrier && props.carrier!.id}>
+      <Show when={carrierState()}>
         <div style={{ width: "100%", display: "flex" }}>
           <Text
             fontWeight="bold"
@@ -130,7 +142,7 @@ export function Axis(props: AxisProps) {
             color="fg.default"
             marginBottom="0.5rem"
           >
-            Carrier {props.carrier!.id}
+            Carrier {carrierState()!.id}
           </Text>
           <Tooltip.Root>
             <Tooltip.Trigger width="min-content">
@@ -141,9 +153,9 @@ export function Axis(props: AxisProps) {
                 }}
                 size="sm"
                 backgroundColor={
-                  props.carrier!.casDisabled
+                  carrierState()!.casDisabled
                     ? "accent.customOrange"
-                    : props.carrier!.casTriggered
+                    : carrierState()!.casTriggered
                       ? "accent.customGreen"
                       : "bg.emphasized"
                 }
@@ -154,9 +166,9 @@ export function Axis(props: AxisProps) {
             <Tooltip.Positioner>
               <Tooltip.Content>
                 <Text>
-                  {props.carrier!.casDisabled
+                  {carrierState()!.casDisabled
                     ? "Disabled"
-                    : props.carrier!.casTriggered
+                    : carrierState()!.casTriggered
                       ? "Triggered"
                       : "Enabled"}
                 </Text>
@@ -164,7 +176,7 @@ export function Axis(props: AxisProps) {
             </Tooltip.Positioner>
           </Tooltip.Root>
         </div>
-        <Show when={props.carrier!.state}>
+        <Show when={carrierState()!.state}>
           <Stack direction="row" gap="0">
             <Text width="3rem" size="sm" fontWeight="bold">
               State
@@ -183,8 +195,8 @@ export function Axis(props: AxisProps) {
                     "text-align": "left",
                   }}
                 >
-                  {props.carrier!.state
-                    ? Response_Track_Carrier_State_State[props.carrier!.state]
+                  {carrierState()!.state
+                    ? Response_Track_Carrier_State_State[carrierState()!.state]
                         .toString()
                         .replace("CARRIER_STATE_", "")
                     : ""}
@@ -192,8 +204,8 @@ export function Axis(props: AxisProps) {
               </Tooltip.Trigger>
               <Tooltip.Positioner>
                 <Tooltip.Content>
-                  {props.carrier!.state
-                    ? Response_Track_Carrier_State_State[props.carrier!.state]
+                  {carrierState()!.state
+                    ? Response_Track_Carrier_State_State[carrierState()!.state]
                         .toString()
                         .replace("CARRIER_STATE_", "")
                     : ""}
@@ -203,7 +215,7 @@ export function Axis(props: AxisProps) {
           </Stack>
         </Show>
 
-        <Show when={props.carrier!.position}>
+        <Show when={carrierState()!.position}>
           <Stack direction="row" gap="0">
             <Text width="3rem" size="sm" fontWeight="bold">
               Pos
@@ -220,7 +232,7 @@ export function Axis(props: AxisProps) {
                 "font-family": "monospace",
               }}
             >
-              {`${props.carrier!.position!.toFixed(6)}m`}
+              {`${carrierState()!.position!.toFixed(6)}m`}
             </Text>
           </Stack>
         </Show>

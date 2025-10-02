@@ -136,13 +136,6 @@ export function System(props: SystemProps) {
                                       >
                                         {(axisIndex) => {
                                           const axisId = axisIndex + 1;
-                                          const carrierIndex = props.systems[
-                                            item
-                                          ].carrierState.findIndex(
-                                            (carrier) =>
-                                              carrier.axisMain === axisId ||
-                                              carrier.axisAuxiliary === axisId,
-                                          );
                                           return (
                                             <Axis
                                               id={`${driverIndex + 1}:${axisId}`}
@@ -157,11 +150,9 @@ export function System(props: SystemProps) {
                                                 ]
                                               }
                                               carrier={
-                                                carrierIndex > -1
+                                                props.systems[item].carrierState
                                                   ? props.systems[item]
-                                                      .carrierState[
-                                                      carrierIndex
-                                                    ]
+                                                      .carrierState
                                                   : null
                                               }
                                             />
