@@ -33,7 +33,7 @@ interface IServerHandler {
   connect(ip: string, port: string): Promise<void | never>;
   disconnect(clientId: string): void;
   clearError(lindId: number, driverId?: number): void;
-  getSystemInfo(lineId: number, axesLength: number): Promise<TrackType | never>;
+  getSystemInfo(lineId: number): Promise<TrackType | never>;
   getLineConfig(): Promise<LineType[] | never>;
   getServerName(): Promise<string | null>;
 }
@@ -342,10 +342,7 @@ export class ServerHandler implements IServerHandler {
     }
   }
 
-  async getSystemInfo(
-    lineId: number,
-    axesLength: number,
-  ): Promise<TrackType | never> {
+  async getSystemInfo(lineId: number): Promise<TrackType | never> {
     const requestId = crypto.randomUUID();
     this._requestId = requestId;
 
@@ -365,8 +362,8 @@ export class ServerHandler implements IServerHandler {
               infoDriverErrors: true,
               infoDriverState: true,
               filter: {
-                case: "axes",
-                value: { start: 1, end: axesLength, $typeName: "Range" },
+                case: undefined,
+                value: undefined,
               },
             },
           },

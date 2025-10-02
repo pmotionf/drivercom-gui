@@ -22,8 +22,10 @@ export function Axis(props: AxisProps) {
 
   const carrierState = () => {
     if (!props.carrier) return null;
+    const carrierId = props.axisInfo.carrier;
+    if (carrierId === 0) return null;
     const carrier = props.carrier!.filter(
-      (carrier) => carrier.axisMain === axisId,
+      (carrier) => carrier.id === carrierId,
     );
     if (carrier[0]) {
       return carrier[0];
