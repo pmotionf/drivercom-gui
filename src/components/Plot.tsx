@@ -3,6 +3,7 @@ import {
   createSignal,
   For,
   JSX,
+  on,
   onCleanup,
   onMount,
   Show,
@@ -151,29 +152,35 @@ export function Plot(props: PlotProps) {
     );
   });
 
-  createEffect(() => {
-    if (getContext().style.every((v) => v != LegendStroke.Dot)) return;
-    const df = dotFilter();
-    setTimeout(() => {
-      if (df.length > 0) {
-        getContext().style.forEach((style, index) => {
-          if (style === LegendStroke.Dot) {
-            plot.series[index + 1].points!.filter = checkDotFilter;
+  createEffect(
+    on(
+      () => dotFilter(),
+      () => {
+        if (getContext().style.every((v) => v != LegendStroke.Dot)) return;
+        const df = dotFilter();
+        setTimeout(() => {
+          if (df.length > 0) {
+            getContext().style.forEach((style, index) => {
+              if (style === LegendStroke.Dot) {
+                plot.series[index + 1].points!.filter = checkDotFilter;
+              }
+            });
+            plot.redraw();
+          } else {
+            let need_redraw: boolean = false;
+            plot.series.forEach((series) => {
+              if (series.points?.filter === checkDotFilter) {
+                series.points!.filter = () => null;
+                need_redraw = true;
+              }
+            });
+            if (need_redraw) plot.redraw();
           }
-        });
-        plot.redraw();
-      } else {
-        let need_redraw: boolean = false;
-        plot.series.forEach((series) => {
-          if (series.points?.filter === checkDotFilter) {
-            series.points!.filter = () => null;
-            need_redraw = true;
-          }
-        });
-        if (need_redraw) plot.redraw();
-      }
-    }, 100);
-  });
+        }, 100);
+      },
+      { defer: true },
+    ),
+  );
 
   // Store whether zoom reset button should be disabled.
   const [zoomReset, setZoomReset] = createSignal(true);
@@ -222,7 +229,7 @@ export function Plot(props: PlotProps) {
       );
 
       if (zoomReset() && plot.scales.y.min && plot.scales.y.max) {
-        const yScales = getPlotYScales(plot);
+        const yScales = getPlotYScale(plot);
         setZoomReset(
           !(
             plot.scales.y.min! > yScales.yMin ||
@@ -352,7 +359,7 @@ export function Plot(props: PlotProps) {
     }
   });
 
-  const [prevCheck, setPrevCheck] = createSignal<number | null>(null);
+  const [prevSelect, setPrevSelect] = createSignal<number | null>(null);
   const [enterSplitter, setEnterSplitter] = createSignal<boolean>(false);
   const multiSelect = (
     index: number,
@@ -381,7 +388,7 @@ export function Plot(props: PlotProps) {
     }
   };
 
-  const getPlotYScales = (u: uPlot): { yMin: number; yMax: number } => {
+  const getPlotYScale = (u: uPlot): { yMin: number; yMax: number } => {
     const parseData = u.data.filter(
       (_, i) => u.series[i].show === true && u.series[i].scale === "y",
     );
@@ -437,7 +444,7 @@ export function Plot(props: PlotProps) {
 
             xRange = xMax - xMin;
 
-            const yScales = getPlotYScales(u);
+            const yScales = getPlotYScale(u);
             yMin = yScales.yMin;
             yMax = yScales.yMax;
 
@@ -501,7 +508,7 @@ export function Plot(props: PlotProps) {
       <div {...rest}>
         <Splitter.Root
           id={props.id}
-          style={{ width: "100%", height: "100%", "padding-right": "0.5rem" }}
+          style={{ width: "100%", height: "100%", "padding-right": "0.5em" }}
           panels={[{ id: `plot-${props.id}` }, { id: `legend-${props.id}` }]}
           size={
             props.legendPanelSize
@@ -535,7 +542,7 @@ export function Plot(props: PlotProps) {
                       }, 10);
                     } else {
                       setTimeout(() => {
-                        const yScales = getPlotYScales(plot);
+                        const yScales = getPlotYScale(plot);
                         plot.setScale("y", {
                           min: yScales.yMin,
                           max: yScales.yMax,
@@ -672,7 +679,7 @@ export function Plot(props: PlotProps) {
                             const xUnitsPerPx =
                               u.posToVal(1, "x") - u.posToVal(0, "x");
 
-                            const yScales = getPlotYScales(u);
+                            const yScales = getPlotYScale(u);
                             const yMin = yScales.yMin;
                             const yMax = yScales.yMax;
 
@@ -859,7 +866,7 @@ export function Plot(props: PlotProps) {
                           });
                         } else if (cursorMode() === CursorMode.Vertical) {
                           uPlot.sync(group()).plots.forEach((up) => {
-                            const yScales = getPlotYScales(up);
+                            const yScales = getPlotYScale(up);
                             up.setScale("y", {
                               min: yScales.yMin,
                               max: yScales.yMax,
@@ -991,7 +998,7 @@ export function Plot(props: PlotProps) {
                     : false,
                 );
               }}
-              marginRight={props.legendShrink ? "1rem" : "0rem"}
+              marginRight={props.legendShrink ? "1em" : "0em"}
             >
               <Show
                 when={props.legendShrink}
@@ -1018,7 +1025,7 @@ export function Plot(props: PlotProps) {
                   ? "0"
                   : document.getElementById(`toolBox:${props.id}`)
                     ? `${document.getElementById(`toolBox:${props.id}`)!.offsetWidth}px`
-                    : "15rem",
+                    : "15em",
               }}
               onMouseEnter={() => {
                 setEnterSplitter(true);
@@ -1035,15 +1042,15 @@ export function Plot(props: PlotProps) {
                 <Stack
                   direction="row-reverse"
                   style={{
-                    height: "2.5rem",
+                    height: "2.5em",
                     width: "100%",
                   }}
                 >
                   <Stack
                     direction="row"
                     id={`toolBox:${props.id}`}
-                    width="15rem"
-                    gap="1rem"
+                    width="15em"
+                    gap="1em"
                   >
                     <Tooltip.Root>
                       <Tooltip.Trigger>
@@ -1055,7 +1062,7 @@ export function Plot(props: PlotProps) {
                               const xMax = Number(up.data[0].length - 1);
                               up.setScale("x", { min: 0, max: xMax });
 
-                              const yScales = getPlotYScales(up);
+                              const yScales = getPlotYScale(up);
                               up.setScale("y", {
                                 min: yScales.yMin,
                                 max: yScales.yMax,
@@ -1218,21 +1225,21 @@ export function Plot(props: PlotProps) {
                   </Stack>
                 </Stack>
 
-                <Stack width={`calc(100% - 1rem)`} direction="row">
+                <Stack width={`calc(100% - 1em)`} direction="row">
                   <Stack
-                    width={`calc(100% - 1rem)`}
+                    width={`calc(100% - 1em)`}
                     direction="row"
                     borderWidth="1px"
-                    borderRadius="1rem"
-                    paddingLeft="0.5rem"
-                    height="2rem"
-                    marginTop="0.3rem"
+                    borderRadius="1em"
+                    paddingLeft="0.5em"
+                    height="2em"
+                    marginTop="0.3em"
                     gap="0"
                   >
                     <IconSearch
                       style={{
-                        "margin-top": "0.2rem",
-                        "margin-right": "0.5rem",
+                        "margin-top": "0.2em",
+                        "margin-right": "0.5em",
                       }}
                     />
                     <input
@@ -1248,19 +1255,19 @@ export function Plot(props: PlotProps) {
                         overflow: "hidden",
                         display: "block",
                         "text-overflow": "ellipsis",
-                        width: `calc(100% - 0.5rem)`,
+                        width: `calc(100% - 0.5em)`,
                       }}
-                      height="1rem"
+                      height="1em"
                     />
                     <IconButton
                       variant="ghost"
                       onClick={() => setSearchInput("")}
                       padding="0"
                       size="sm"
-                      width="1rem"
-                      height="1.5rem"
-                      borderRadius="3rem"
-                      marginTop="0.2rem"
+                      width="1em"
+                      height="1.5em"
+                      borderRadius="3em"
+                      marginTop="0.2em"
                     >
                       <IconX />
                     </IconButton>
@@ -1297,10 +1304,10 @@ export function Plot(props: PlotProps) {
                 <Show when={render()}>
                   <Stack
                     style={{
-                      "padding-bottom": "0.5rem",
+                      "padding-bottom": "0.5em",
                       float: "left",
                       width: "100%",
-                      "max-height": "calc(100% - 1.5rem - 6rem)",
+                      "max-height": "calc(100% - 1.5em - 6em)",
                       "overflow-x": "auto",
                       "overflow-y": "auto",
                     }}
@@ -1360,18 +1367,18 @@ export function Plot(props: PlotProps) {
                             onSelectChange={(isChecked, shiftKey) => {
                               if (
                                 shiftKey === true &&
-                                typeof prevCheck() === "number"
+                                typeof prevSelect() === "number"
                               ) {
                                 multiSelect(
                                   index(),
-                                  prevCheck()!,
+                                  prevSelect()!,
                                   legendIndex(),
                                 );
-                                setPrevCheck(null);
+                                setPrevSelect(null);
                                 return;
                               } else {
                                 setContext()("selected", item, isChecked);
-                                setPrevCheck(index());
+                                setPrevSelect(index());
                                 props.onContextChange?.(getContext());
                               }
                             }}
