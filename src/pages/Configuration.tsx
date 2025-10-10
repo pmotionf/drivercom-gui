@@ -9,11 +9,8 @@ import { Panel } from "~/components/Panel.tsx";
 import { PanelLayout, PanelSizeContext } from "~/components/PanelLayout.tsx";
 import { TabContext, TabList, TabListContext } from "~/components/TabList.tsx";
 import { ConfigTabContent } from "./Configuration/ConfigTabContent.tsx";
-import {
-  AccordionStatuses,
-  GainLockStatuses,
-  LinkedStatuses,
-} from "~/components/ConfigForm.tsx";
+import { GainLockStatuses, LinkedStatuses } from "~/components/ConfigForm.tsx";
+import { AccordionStatuses } from "~/components/Form.tsx";
 import { ConnectButton } from "./Connect/ConnectButton.tsx";
 import { createSignal, onMount, Show } from "solid-js";
 import { createStore } from "solid-js/store";

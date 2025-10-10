@@ -19,12 +19,9 @@ import {
   tabContexts,
 } from "~/GlobalState";
 
-import {
-  AccordionStatuses,
-  LinkedStatuses,
-  GainLockStatuses,
-} from "~/components/ConfigForm";
+import { LinkedStatuses, GainLockStatuses } from "~/components/ConfigForm";
 import { FileHandler } from "../utils/FileHandler";
+import { AccordionStatuses } from "~/components/Form";
 
 export type ConfigTabPage = {
   filePath?: string;
