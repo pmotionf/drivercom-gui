@@ -6,6 +6,8 @@ export type FormCheckBoxProps = {
   label: string;
   checked: boolean;
   onCheckedChange?: (checked: boolean) => void;
+  onClick?: () => void;
+  onShiftClick?: () => void;
 };
 
 export const FormCheckBox = (props: FormCheckBoxProps) => {
@@ -18,6 +20,13 @@ export const FormCheckBox = (props: FormCheckBoxProps) => {
         props.onCheckedChange?.(e.checked === true ? true : false);
       }}
       marginTop="1rem"
+      onClick={(e) => {
+        if (!e.shiftKey) {
+          props.onClick?.();
+        } else {
+          props.onShiftClick?.();
+        }
+      }}
     >
       <Text fontWeight="light" userSelect="none">
         {key}

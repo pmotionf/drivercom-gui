@@ -3,24 +3,23 @@ import { Text } from "../ui/text";
 import { Stack } from "styled-system/jsx";
 import { IconButton } from "../ui/icon-button";
 import { Show } from "solid-js";
-import {
-  AccordionStatuses,
-  ConfigObject,
-  GainLockStatuses,
-  LinkedStatuses,
-} from "../ConfigForm";
+import { GainLockStatuses, LinkedStatuses } from "../ConfigForm";
+import { AccordionStatuses, Form } from "../Form";
 import { createSignal } from "solid-js";
 import { IconLock, IconLockOff, IconChevronDown } from "@tabler/icons-solidjs";
+import { ListCollection } from "@ark-ui/solid";
 
 export type FormCollapsibleObjectProps = {
   id_prefix: string;
   key: string;
   object: object;
   gainKey: string;
-  gainKinds: string[];
-  gainLockStatuses: GainLockStatuses;
+  gainKinds?: string[];
+  gainLockStatuses?: GainLockStatuses;
   accordionStatuses: AccordionStatuses;
-  linkedStatuses: LinkedStatuses;
+  linkedStatuses?: LinkedStatuses;
+  logStartConditions?: ListCollection;
+  logStartCombinators?: ListCollection;
   onItemChange?: () => void;
 };
 
@@ -67,6 +66,7 @@ export const FormCollapsibleObject = (props: FormCollapsibleObjectProps) => {
             </Text>
             <Show
               when={
+                props.gainLockStatuses &&
                 props.gainLockStatuses.has(`${key}.gain`) &&
                 Object.keys(value).includes("gain")
               }
@@ -79,22 +79,22 @@ export const FormCollapsibleObject = (props: FormCollapsibleObjectProps) => {
                 paddingBottom="0.2rem"
                 variant="ghost"
                 opacity={
-                  props.gainLockStatuses.get(`${key}.gain`)![0]() ? "1" : "0.5"
+                  props.gainLockStatuses!.get(`${key}.gain`)![0]() ? "1" : "0.5"
                 }
                 onClick={() => {
-                  const lockStatus = props.gainLockStatuses.get(
+                  const lockStatus = props.gainLockStatuses!.get(
                     `${key}.gain`,
                   )![0]();
                   const mapKeys = Array.from(
-                    props.gainLockStatuses.keys(),
+                    props.gainLockStatuses!.keys(),
                   ).filter((mapKey) => mapKey.includes(`${key}.gain`));
                   mapKeys.forEach((mapKey) => {
-                    props.gainLockStatuses.get(mapKey)![1](!lockStatus);
+                    props.gainLockStatuses!.get(mapKey)![1](!lockStatus);
                   });
                 }}
               >
                 <Show
-                  when={props.gainLockStatuses.get(`${key}.gain`)![0]()}
+                  when={props.gainLockStatuses!.get(`${key}.gain`)![0]()}
                   fallback={<IconLockOff />}
                 >
                   <IconLock />
@@ -108,9 +108,9 @@ export const FormCollapsibleObject = (props: FormCollapsibleObjectProps) => {
         </Accordion.ItemTrigger>
 
         <Accordion.ItemContent borderWidth={"0"} padding="0 1rem 0 1rem">
-          <ConfigObject
+          <Form
             object={value}
-            id_prefix={props.id_prefix + key}
+            id_prefix={`${props.id_prefix}.${key}`}
             style={{ "padding-left": "1rem" }}
             onItemChange={() => {
               props.onItemChange?.();
@@ -120,6 +120,8 @@ export const FormCollapsibleObject = (props: FormCollapsibleObjectProps) => {
             gainLockStatuses={props.gainLockStatuses}
             gainKinds={props.gainKinds}
             gainKey={props.gainKey}
+            logStartCombinators={props.logStartCombinators}
+            logStartConditions={props.logStartConditions}
           />
         </Accordion.ItemContent>
       </Accordion.Item>

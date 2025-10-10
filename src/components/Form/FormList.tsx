@@ -1,6 +1,14 @@
 import { Accordion } from "../ui/accordion";
-import { AccordionStatuses, LinkedStatuses, GainLockStatuses, ConfigObject } from "../ConfigForm";
-import { splitProps, createSignal, on, createEffect, For, Show } from "solid-js";
+import { LinkedStatuses, GainLockStatuses } from "../ConfigForm";
+import { AccordionStatuses, Form } from "../Form";
+import {
+  splitProps,
+  createSignal,
+  on,
+  createEffect,
+  For,
+  Show,
+} from "solid-js";
 import { Stack } from "styled-system/jsx";
 import { Tooltip } from "../ui/tooltip";
 import { createStore } from "solid-js/store";
@@ -85,7 +93,7 @@ export function FormList(props: FormListProps) {
 
   return (
     <Accordion.Root
-    style={{"border-width": "0"}}
+      style={{ "border-width": "0" }}
       multiple
       {...rest}
       value={props.accordionStatuses.get(props.label)?.[0]()}
@@ -156,7 +164,7 @@ export function FormList(props: FormListProps) {
                 paddingLeft="0.5rem"
                 paddingRight={"0.5rem"}
               >
-                <ConfigObject
+                <Form
                   object={item}
                   id_prefix={props.id_prefix + title}
                   onItemChange={() => {
