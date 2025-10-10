@@ -38,11 +38,13 @@ import { TabContext, TabListContext } from "~/components/TabList.tsx";
 import { Button } from "~/components/ui/button.tsx";
 import { FileHandler } from "./utils/FileHandler.ts";
 import { logForm, setLogForm } from "~/GlobalState.ts";
+import { AccordionStatuses } from "~/components/Form.tsx";
 
 export type LoggingFormType = {
   title: string;
   filePath: string;
   logConfig: object;
+  accordionStatuses: AccordionStatuses;
 };
 
 export function Logging() {
@@ -683,7 +685,11 @@ export function Logging() {
               </Stack>
             </Stack>
 
-            <LoggingForm formData={logForm.logConfig} />
+            <LoggingForm
+              id={crypto.randomUUID()}
+              formData={logForm.logConfig}
+              accordionStatuses={logForm.accordionStatuses}
+            />
           </Show>
         </Stack>
       </div>
