@@ -19,16 +19,16 @@ import {
   tabContexts,
 } from "~/GlobalState";
 
-import { LinkedStatuses, GainLockStatuses } from "~/components/ConfigForm";
+import { LinkStates, GainLockStates } from "~/components/ConfigForm";
 import { FileHandler } from "../utils/FileHandler";
-import { AccordionStatuses } from "~/components/Form";
+import { AccordionStates } from "~/components/Form";
 
 export type ConfigTabPage = {
   filePath?: string;
   configForm?: object;
-  configAccordionStatuses?: AccordionStatuses;
-  configLinkedStatuses?: LinkedStatuses;
-  configGainLockStatuses?: GainLockStatuses;
+  configAccordionStatuses?: AccordionStates;
+  configLinkedStatuses?: LinkStates;
+  configGainLockStatuses?: GainLockStates;
 };
 
 export function ConfigTabContent() {
