@@ -55,7 +55,7 @@ function Monitoring() {
           } catch (e) {
             toaster.create({
               title: "Server Connection Error",
-              description: e as string,
+              description: e ? e.toString() : "The server is disconnected.",
               type: "error",
             });
           }
@@ -75,6 +75,7 @@ function Monitoring() {
   const requestSystemInfo = async (lineId: number): Promise<void> => {
     if (lines.length < 1) return;
     await getSystemInfo(lineId);
+
     const nextId = getNextId(lineId);
     await requestSystemInfo(nextId);
   };
@@ -85,6 +86,7 @@ function Monitoring() {
       if (systemInfo) {
         const lineIndex = lineId - 1;
         setSystems(lineIndex, reconcile(systemInfo));
+
         if (isAutoClearMode()) {
           if (systemInfo.driverErrors && hasError(systemInfo.driverErrors)) {
             if (!systemInfo.axisErrors || !hasError(systemInfo.axisErrors)) {
@@ -92,7 +94,6 @@ function Monitoring() {
             }
           }
         }
-      } else {
         return;
       }
     } catch {
