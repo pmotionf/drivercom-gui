@@ -372,7 +372,7 @@ export class ServerHandler implements IServerHandler {
       $typeName: "mmc.Request",
     };
 
-    this.sendRequest(this._ipAddress.clientId, payload);
+    await this.sendRequest(this._ipAddress.clientId, payload);
     await this.waitResponse();
 
     if (this.serverResponses.length > 0) {
@@ -443,7 +443,9 @@ export class ServerHandler implements IServerHandler {
     }
 
     this.lock();
-    const timeout = setTimeout(() => this.unlock(), 500);
+    const timeout = setTimeout(() => {
+      this.unlock();
+    }, 500);
     const buffer = toBinary(RequestSchema, payload);
     const parseBuffer: number[] = Array.from(buffer);
 
@@ -451,10 +453,9 @@ export class ServerHandler implements IServerHandler {
       if (this._connectionState === ConnectionState.Disconnect)
         throw new Error("Server Disconnected");
       await send(cid, parseBuffer);
-      this.unlock();
       clearTimeout(timeout);
     } catch (e) {
-      this.unlock();
+      this._connectionState = ConnectionState.Disconnect;
       clearTimeout(timeout);
       throw new Error(e as string);
     }
@@ -466,8 +467,12 @@ export class ServerHandler implements IServerHandler {
     });
 
   private async waitResponse() {
+    const timeout = setTimeout(() => {
+      this.unlock();
+    }, 500);
     while (this._lockRequest) {
       if (this._connectionState === ConnectionState.Disconnect) break;
+      if (!this._lockRequest) break;
       await this.delay(1).then((result) => {
         clearTimeout(result);
       });
@@ -476,6 +481,7 @@ export class ServerHandler implements IServerHandler {
     if (this._requestId) {
       while (this.serverResponses.length <= 0) {
         if (this._connectionState === ConnectionState.Disconnect) break;
+        if (this._lockRequest === false) break;
         await this.delay(1).then((result) => {
           clearTimeout(result);
         });
@@ -486,6 +492,9 @@ export class ServerHandler implements IServerHandler {
     await this.delay(1).then((result) => {
       clearTimeout(result);
     });
+    clearTimeout(timeout);
+    this.unlock();
+
     return;
   }
 }
