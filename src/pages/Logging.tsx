@@ -5,7 +5,7 @@ import {
   logFormFileFormat,
   Pages,
   panelContexts,
-  panelKeys,
+  pageKeys,
   portId,
   recentLogFilePaths,
   setPage,
@@ -53,7 +53,11 @@ export function Logging() {
     createSignal<boolean>(false);
 
   onMount(async () => {
+    if (!pageKeys.has(Pages.Logging)) {
+      pageKeys.set(Pages.Logging, crypto.randomUUID());
+    }
     setRenderLoggingForm(true);
+
     if (portId().length > 0) {
       const logStatus = await getCurrentLogStatus();
       setCurrentLogStatus(logStatus ? logStatus.logStatus : null);
@@ -264,12 +268,12 @@ export function Logging() {
   });
 
   const openNewTab = (newFilePath: string) => {
-    if (!panelKeys.has(Pages.LogViewer)) {
+    if (!pageKeys.has(Pages.LogViewer)) {
       const uuid = crypto.randomUUID();
-      panelKeys.set(Pages.LogViewer, uuid);
+      pageKeys.set(Pages.LogViewer, uuid);
       panelContexts.set(uuid, createSignal<PanelSizeContext[]>([]));
     }
-    const panelKey = panelKeys.get(Pages.LogViewer);
+    const panelKey = pageKeys.get(Pages.LogViewer);
     if (panelKey && panelContexts.get(panelKey)) {
       const panelContext = panelContexts.get(panelKey)!;
       if (panelContext[0]().length === 0) {
@@ -686,7 +690,7 @@ export function Logging() {
             </Stack>
 
             <LoggingForm
-              id={crypto.randomUUID()}
+              id={pageKeys.get(Pages.Logging)!}
               formData={logForm.logConfig}
               accordionStates={logForm.accordionStates}
             />
