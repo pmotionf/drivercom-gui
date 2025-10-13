@@ -4,13 +4,12 @@ import {
   logDownloads,
   logFormFileFormat,
   Pages,
-  panelContexts,
   pageKeys,
   portId,
   recentLogFilePaths,
-  setPage,
   setRecentLogFilePaths,
-  tabContexts,
+  csvFileDownloads,
+  setCsvFileDownloads,
 } from "~/GlobalState.ts";
 import { Command } from "@tauri-apps/plugin-shell";
 import { createSignal, Show } from "solid-js";
@@ -29,16 +28,14 @@ import { Editable } from "~/components/ui/editable.tsx";
 import { Tooltip } from "~/components/ui/tooltip.tsx";
 import { createEffect } from "solid-js";
 import { on } from "solid-js";
-import { PanelSizeContext } from "~/components/PanelLayout.tsx";
 import { FileMenu } from "~/components/FileMenu.tsx";
 import { PortMenu } from "~/components/PortMenu.tsx";
 import { ConnectButton } from "./Connect/ConnectButton.tsx";
-import { createStore } from "solid-js/store";
-import { TabContext, TabListContext } from "~/components/TabList.tsx";
 import { Button } from "~/components/ui/button.tsx";
 import { FileHandler } from "./utils/FileHandler.ts";
 import { logForm, setLogForm } from "~/GlobalState.ts";
 import { AccordionStates } from "~/components/Form.tsx";
+import { DownloadStates, DownloadStatus } from "~/components/DownloadList.tsx";
 
 export type LoggingFormType = {
   title: string;
@@ -171,6 +168,12 @@ export function Logging() {
     ]);
 
     let pid: number | null = null;
+    const newDownload: DownloadStates = {
+      filePath: filePath,
+      status: DownloadStatus.Progressing,
+      port: portId(),
+    };
+    setCsvFileDownloads([newDownload, ...csvFileDownloads]);
 
     logGet.on("close", (data) => {
       if (data.code === null) {
@@ -179,25 +182,21 @@ export function Logging() {
           description: "Fail to download file.",
           type: "error",
         });
+        const index = csvFileDownloads.findIndex(
+          (download) => download.filePath === filePath,
+        );
+        setCsvFileDownloads(index, "status", DownloadStatus.Error);
       } else {
         if (data.code == 0) {
-          toaster.create({
-            title: "Download Success",
-            description: `The file is Downloaded at`,
-            type: "success",
-            action: {
-              label: `${filePath}`,
-              onClick: () => {
-                openNewTab(filePath);
-              },
-            },
-          });
+          const index = csvFileDownloads.findIndex(
+            (download) => download.filePath === filePath,
+          );
+          setCsvFileDownloads(index, "status", DownloadStatus.Success);
         } else {
-          toaster.create({
-            title: "Download Fail",
-            description: "Fail to download file.",
-            type: "error",
-          });
+          const index = csvFileDownloads.findIndex(
+            (download) => download.filePath === filePath,
+          );
+          setCsvFileDownloads(index, "status", DownloadStatus.Error);
         }
       }
 
@@ -214,6 +213,11 @@ export function Logging() {
         description: error,
         type: "error",
       });
+
+      const index = csvFileDownloads.findIndex(
+        (download) => download.filePath === filePath,
+      );
+      setCsvFileDownloads(index, "status", DownloadStatus.Error);
 
       logGet.removeAllListeners();
       if (pid) {
@@ -266,59 +270,6 @@ export function Logging() {
     placement: "top-end",
     gap: 24,
   });
-
-  const openNewTab = (newFilePath: string) => {
-    if (!pageKeys.has(Pages.LogViewer)) {
-      const uuid = crypto.randomUUID();
-      pageKeys.set(Pages.LogViewer, uuid);
-      panelContexts.set(uuid, createSignal<PanelSizeContext[]>([]));
-    }
-    const panelKey = pageKeys.get(Pages.LogViewer);
-    if (panelKey && panelContexts.get(panelKey)) {
-      const panelContext = panelContexts.get(panelKey)!;
-      if (panelContext[0]().length === 0) {
-        panelContext[1]([{ id: crypto.randomUUID(), size: 100 }]);
-      }
-      const ctx = panelContext[0]();
-      const tabListId = ctx[0].id;
-      if (!tabContexts.has(tabListId)) {
-        tabContexts.set(
-          tabListId,
-          createStore<TabListContext>({ tabContext: [], focusedTab: "" }),
-        );
-      }
-      const tabCtx = tabContexts.get(tabListId);
-      const newTabID = crypto.randomUUID();
-      const newTab: TabContext = {
-        tab: {
-          id: newTabID,
-          tabName: newFilePath
-            .replaceAll("\\", "/")
-            .match(/[^?!//]+$/!)!
-            .toString()
-            .slice(0, -4) as string,
-        },
-        tabPage: {
-          logViewerTabPage: {
-            filePath: newFilePath,
-          },
-          configTabPage: null,
-        },
-      };
-      setTimeout(() => {
-        tabCtx![1]({
-          tabContext: [
-            ...(tabCtx![0].tabContext.length !== 0
-              ? tabCtx![0].tabContext
-              : []),
-            newTab,
-          ],
-          focusedTab: newTabID,
-        });
-        setPage(Pages.LogViewer);
-      }, 200);
-    }
-  };
 
   const fileHandler = new FileHandler();
 
@@ -503,7 +454,12 @@ export function Logging() {
                 gap="0"
               >
                 <PortMenu
-                  disabled={portId().length === 0 || logGetBtnLoading()}
+                  disabled={
+                    portId().length === 0 ||
+                    csvFileDownloads.some(
+                      (file) => file.status === DownloadStatus.Progressing,
+                    )
+                  }
                   onGetFromPort={async () => {
                     const output = await GetLogConfigFromPort();
                     if (output.stderr.length !== 0) {
@@ -554,7 +510,11 @@ export function Logging() {
                             logGetBtnLoading() ||
                             currentLogStatus() === ".invalid" ||
                             currentLogStatus() === ".started" ||
-                            currentLogStatus() === ".waiting"
+                            currentLogStatus() === ".waiting" ||
+                            csvFileDownloads.some(
+                              (file) =>
+                                file.status === DownloadStatus.Progressing,
+                            )
                           }
                           onClick={async () => {
                             if (Array.from(logDownloads.values()).length > 0) {
@@ -625,7 +585,10 @@ export function Logging() {
                     <Tooltip.Root>
                       <Tooltip.Trigger>
                         <Button
-                          loading={logGetBtnLoading()}
+                          loading={csvFileDownloads.some(
+                            (file) =>
+                              file.status === DownloadStatus.Progressing,
+                          )}
                           onClick={async () => {
                             if (portId().length === 0) return;
                             try {
@@ -699,33 +662,13 @@ export function Logging() {
       </div>
 
       <ConnectButton
-        style={{ position: "absolute", right: "0.5rem", top: "1rem" }}
+        style={{ position: "absolute", top: "1rem", right: "1rem" }}
       />
-
       <Toast.Toaster toaster={toaster}>
         {(toast) => (
           <Toast.Root>
             <Toast.Title>{toast().title}</Toast.Title>
             <Toast.Description>{toast().description}</Toast.Description>
-            {toast().action && (
-              <Toast.ActionTrigger>
-                <Text
-                  size="sm"
-                  style={{
-                    width: "100%",
-                    height: "1rem",
-                    display: "block",
-                    "white-space": "none",
-                    overflow: "hidden",
-                    "text-overflow": "ellipsis",
-                    "text-decoration": "underline",
-                  }}
-                  fontWeight="bold"
-                >
-                  {toast().action?.label}
-                </Text>
-              </Toast.ActionTrigger>
-            )}
             <Toast.CloseTrigger>
               <IconX />
             </Toast.CloseTrigger>
