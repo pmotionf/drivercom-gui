@@ -54,8 +54,8 @@ export const [logStartCombinatorList, setLogStartCombinatorList] = createSignal<
   string[]
 >([]);
 
-type PanelKeys = Map<string, string>;
-export const panelKeys: PanelKeys = new Map();
+type PageKeys = Map<string, string>;
+export const pageKeys: PageKeys = new Map();
 
 type PanelContexts = Map<
   string,
