@@ -60,7 +60,9 @@ export function Driver(props: DriverProps) {
             background={
               findField(props.driverError).length > 0
                 ? "accent.customRed"
-                : "bg.canvas"
+                : props.driverInfo.connected
+                  ? "accent.customGreen"
+                  : "bg.canvas"
             }
           >
             <Text fontWeight="bold">Driver {props.id}</Text>
