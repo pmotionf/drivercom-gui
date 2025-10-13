@@ -1,6 +1,6 @@
 import { Stack } from "styled-system/jsx";
 import { Text } from "../ui/text";
-import { GainLockStatuses } from "../ConfigForm";
+import { GainLockStates } from "../ConfigForm";
 import { Show } from "solid-js";
 import {
   IconExclamationCircle,
@@ -12,7 +12,7 @@ import { IconButton } from "../ui/icon-button";
 export type FormNumberInputProps = {
   id: string;
   label: string;
-  lockStatus?: GainLockStatuses;
+  lockStatus?: GainLockStates;
   lockStatusKey?: string;
   inputValue: number;
   onInputChange?: (input: number) => void;

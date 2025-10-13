@@ -88,5 +88,5 @@ export const [logForm, setLogForm] = createStore<LoggingFormType>({
   title: "New file",
   filePath: "",
   logConfig: {},
-  accordionStatuses: new Map(),
+  accordionStates: new Map(),
 });

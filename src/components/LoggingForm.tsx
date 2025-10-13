@@ -2,12 +2,12 @@ import { JSX } from "solid-js";
 import { logStartCombinatorList, logStartConditionList } from "~/GlobalState";
 import { createListCollection } from "~/components/ui/select";
 import { ListCollection } from "@ark-ui/solid/collection";
-import { AccordionStatuses, Form } from "./Form";
+import { AccordionStates, Form } from "./Form";
 
 export type LoggingFormProps = JSX.HTMLAttributes<Element> & {
   id: string;
   formData: object;
-  accordionStatuses: AccordionStatuses;
+  accordionStates: AccordionStates;
 };
 
 export function LoggingForm(props: LoggingFormProps) {
@@ -39,11 +39,11 @@ export function LoggingForm(props: LoggingFormProps) {
       }}
     >
       <Form
-        id_prefix={props.id}
+        id={props.id}
         object={logForm}
         logStartCombinators={logStartCombinators}
         logStartConditions={logStartConditions}
-        accordionStatuses={props.accordionStatuses}
+        accordionStates={props.accordionStates}
       />
     </div>
   );

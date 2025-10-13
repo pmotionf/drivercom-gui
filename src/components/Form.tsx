@@ -8,20 +8,20 @@ import { FormList } from "./Form/FormList.tsx";
 import { ListCollection } from "@ark-ui/solid";
 import { Select } from "./ui/select.tsx";
 import { createStore } from "solid-js/store";
-import { LinkedStatuses, GainLockStatuses } from "./ConfigForm.tsx";
+import { LinkStates, GainLockStates } from "./ConfigForm.tsx";
 
-export type AccordionStatuses = Map<
+export type AccordionStates = Map<
   string,
   [Accessor<string[]>, Setter<string[]>]
 >;
 
 export type FormProps = JSX.HTMLAttributes<HTMLDivElement> & {
-  id_prefix: string;
+  id: string;
   object: object;
   onItemChange?: () => void;
-  accordionStatuses: AccordionStatuses;
-  linkedStatuses?: LinkedStatuses;
-  gainLockStatuses?: GainLockStatuses;
+  accordionStates: AccordionStates;
+  linkStates?: LinkStates;
+  gainLockStatuses?: GainLockStates;
   gainKinds?: string[];
   gainKey?: string;
   logStartConditions?: ListCollection;
@@ -60,14 +60,14 @@ export function Form(props: FormProps) {
           if (
             value.constructor === Array &&
             props.gainLockStatuses &&
-            props.linkedStatuses &&
+            props.linkStates &&
             props.gainKinds
           ) {
-            if (!props.accordionStatuses.has(key)) {
-              props.accordionStatuses.set(key, createSignal<string[]>([]));
+            if (!props.accordionStates.has(key)) {
+              props.accordionStates.set(key, createSignal<string[]>([]));
             }
-            if (props.linkedStatuses && !props.linkedStatuses.has(key)) {
-              props.linkedStatuses.set(
+            if (props.linkStates && !props.linkStates.has(key)) {
+              props.linkStates.set(
                 key,
                 createSignal<[boolean, number]>([false, 0]),
               );
@@ -89,9 +89,9 @@ export function Form(props: FormProps) {
                     label={key}
                     items={value}
                     onItemChange={() => props.onItemChange?.()}
-                    id_prefix={props.id_prefix}
-                    accordionStatuses={props.accordionStatuses}
-                    linkedStatuses={props.linkedStatuses}
+                    id_prefix={props.id}
+                    accordionStatuses={props.accordionStates}
+                    linkedStatuses={props.linkStates}
                     gainLockStatuses={props.gainLockStatuses}
                     gainKinds={props.gainKinds}
                   />
@@ -128,15 +128,13 @@ export function Form(props: FormProps) {
             ) {
               return (
                 <FormCollapsibleObject
-                  id_prefix={props.id_prefix}
+                  id={props.id}
                   key={key}
                   object={value}
                   gainKey={gainkey}
                   gainKinds={props.gainKinds ? props.gainKinds : undefined}
-                  accordionStatuses={props.accordionStatuses}
-                  linkedStatuses={
-                    props.linkedStatuses ? props.linkedStatuses : undefined
-                  }
+                  accordionStates={props.accordionStates}
+                  linkStates={props.linkStates ? props.linkStates : undefined}
                   gainLockStatuses={
                     props.gainLockStatuses ? props.gainLockStatuses : undefined
                   }
@@ -180,13 +178,13 @@ export function Form(props: FormProps) {
 
                     <Form
                       object={value}
-                      id_prefix={`${props.id_prefix}.${key}`}
+                      id={`${props.id}.${key}`}
                       style={{ "padding-left": "1rem" }}
                       onItemChange={() => {
                         props.onItemChange?.();
                       }}
-                      accordionStatuses={props.accordionStatuses}
-                      linkedStatuses={props.linkedStatuses}
+                      accordionStates={props.accordionStates}
+                      linkStates={props.linkStates}
                       gainLockStatuses={props.gainLockStatuses}
                       gainKinds={props.gainKinds}
                       gainKey={gainkey}
@@ -200,11 +198,11 @@ export function Form(props: FormProps) {
           }
           if (typeof value === "boolean") {
             const label = !isNaN(Number(key))
-              ? `${props.id_prefix.split(`.`).pop()} ${Number(key) + 1}`
+              ? `${props.id.split(`.`).pop()} ${Number(key) + 1}`
               : key;
             return (
               <FormCheckBox
-                id={`${props.id_prefix}.${key}`}
+                id={`${props.id}.${key}`}
                 label={label}
                 checked={object[key as keyof typeof object]}
                 onCheckedChange={(checked) =>
@@ -231,7 +229,7 @@ export function Form(props: FormProps) {
           if (typeof value === "number") {
             if (key === "_") return;
             const label = !isNaN(Number(key))
-              ? `${props.id_prefix.split(`.`).pop()} ${Number(key) + 1}`
+              ? `${props.id.split(`.`).pop()} ${Number(key) + 1}`
               : key;
             let lockStatusKey = "";
             const lockStatus = props.gainLockStatuses!;
@@ -251,7 +249,7 @@ export function Form(props: FormProps) {
 
             return (
               <FormNumberInput
-                id={`${props.id_prefix}.${key}`}
+                id={`${props.id}.${key}`}
                 label={label}
                 lockStatus={lockStatus}
                 lockStatusKey={

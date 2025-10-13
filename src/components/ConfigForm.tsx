@@ -1,24 +1,21 @@
 import { type Accessor, createEffect, JSX, on, type Setter } from "solid-js";
 import { createStore } from "solid-js/store";
-import { AccordionStatuses, Form } from "./Form";
+import { AccordionStates, Form } from "./Form";
 
 export type ConfigFormProps = JSX.HTMLAttributes<HTMLFormElement> & {
   id: string;
   config: object;
-  accordionStatuses: AccordionStatuses;
-  linkedStatuses: LinkedStatuses;
-  gainLockStatuses: GainLockStatuses;
+  accordionStatuses: AccordionStates;
+  linkedStatuses: LinkStates;
+  gainLockStatuses: GainLockStates;
 };
 
-export type LinkedStatuses = Map<
+export type LinkStates = Map<
   string,
   [Accessor<[boolean, number]>, Setter<[boolean, number]>]
 >;
 
-export type GainLockStatuses = Map<
-  string,
-  [Accessor<boolean>, Setter<boolean>]
->;
+export type GainLockStates = Map<string, [Accessor<boolean>, Setter<boolean>]>;
 
 export function ConfigForm(props: ConfigFormProps) {
   const [config, setConfig] = createStore(props.config);
@@ -300,9 +297,9 @@ export function ConfigForm(props: ConfigFormProps) {
   return (
     <Form
       object={config}
-      id_prefix={props.id}
-      accordionStatuses={props.accordionStatuses}
-      linkedStatuses={props.linkedStatuses}
+      id={props.id}
+      accordionStates={props.accordionStatuses}
+      linkStates={props.linkedStatuses}
       gainLockStatuses={props.gainLockStatuses}
       gainKinds={dynamic}
     />

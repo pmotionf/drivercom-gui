@@ -3,33 +3,21 @@ import { Text } from "../ui/text";
 import { Stack } from "styled-system/jsx";
 import { IconButton } from "../ui/icon-button";
 import { Show } from "solid-js";
-import { GainLockStatuses, LinkedStatuses } from "../ConfigForm";
-import { AccordionStatuses, Form } from "../Form";
+import { Form, FormProps } from "../Form";
 import { createSignal } from "solid-js";
 import { IconLock, IconLockOff, IconChevronDown } from "@tabler/icons-solidjs";
-import { ListCollection } from "@ark-ui/solid";
 
-export type FormCollapsibleObjectProps = {
-  id_prefix: string;
+export type FormCollapsibleObjectProps = FormProps & {
   key: string;
-  object: object;
-  gainKey: string;
-  gainKinds?: string[];
-  gainLockStatuses?: GainLockStatuses;
-  accordionStatuses: AccordionStatuses;
-  linkedStatuses?: LinkedStatuses;
-  logStartConditions?: ListCollection;
-  logStartCombinators?: ListCollection;
-  onItemChange?: () => void;
 };
 
 export const FormCollapsibleObject = (props: FormCollapsibleObjectProps) => {
-  const itemId = props.id_prefix + props.key;
-  if (!props.accordionStatuses.has(itemId)) {
-    props.accordionStatuses.set(itemId, createSignal<string[]>([itemId]));
+  const itemId = props.id + props.key;
+  if (!props.accordionStates.has(itemId)) {
+    props.accordionStates.set(itemId, createSignal<string[]>([itemId]));
   }
   const [accordionValue, setAccordionValue] =
-    props.accordionStatuses.get(itemId)!;
+    props.accordionStates.get(itemId)!;
 
   const key = props.key;
   const value = props.object;
@@ -110,13 +98,13 @@ export const FormCollapsibleObject = (props: FormCollapsibleObjectProps) => {
         <Accordion.ItemContent borderWidth={"0"} padding="0 1rem 0 1rem">
           <Form
             object={value}
-            id_prefix={`${props.id_prefix}.${key}`}
+            id={`${props.id}.${key}`}
             style={{ "padding-left": "1rem" }}
             onItemChange={() => {
               props.onItemChange?.();
             }}
-            accordionStatuses={props.accordionStatuses}
-            linkedStatuses={props.linkedStatuses}
+            accordionStates={props.accordionStates}
+            linkStates={props.linkStates}
             gainLockStatuses={props.gainLockStatuses}
             gainKinds={props.gainKinds}
             gainKey={props.gainKey}

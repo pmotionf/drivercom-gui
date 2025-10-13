@@ -1,6 +1,6 @@
 import { Accordion } from "../ui/accordion";
-import { LinkedStatuses, GainLockStatuses } from "../ConfigForm";
-import { AccordionStatuses, Form } from "../Form";
+import { LinkStates, GainLockStates } from "../ConfigForm";
+import { AccordionStates, Form } from "../Form";
 import {
   splitProps,
   createSignal,
@@ -21,9 +21,9 @@ export type FormListProps = Accordion.RootProps & {
   label: string;
   items: object[];
   onItemChange?: () => void;
-  accordionStatuses: AccordionStatuses;
-  linkedStatuses: LinkedStatuses;
-  gainLockStatuses: GainLockStatuses;
+  accordionStatuses: AccordionStates;
+  linkedStatuses: LinkStates;
+  gainLockStatuses: GainLockStates;
   gainKinds: string[];
 };
 
@@ -166,7 +166,7 @@ export function FormList(props: FormListProps) {
               >
                 <Form
                   object={item}
-                  id_prefix={props.id_prefix + title}
+                  id={props.id_prefix + title}
                   onItemChange={() => {
                     props.onItemChange?.();
                     const linked = props.linkedStatuses.get(
@@ -179,8 +179,8 @@ export function FormList(props: FormListProps) {
                       ]);
                     }
                   }}
-                  accordionStatuses={props.accordionStatuses}
-                  linkedStatuses={props.linkedStatuses}
+                  accordionStates={props.accordionStatuses}
+                  linkStates={props.linkedStatuses}
                   gainLockStatuses={props.gainLockStatuses}
                   gainKinds={props.gainKinds}
                 />
