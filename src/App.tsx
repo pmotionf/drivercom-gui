@@ -53,6 +53,7 @@ import { SegmentGroup } from "~/components/ui/segment-group.tsx";
 import { Text } from "~/components/ui/text.tsx";
 
 import { Command } from "@tauri-apps/plugin-shell";
+import { DownloadList } from "./components/DownloadList.tsx";
 
 type PageMeta = {
   icon: ValidComponent;
@@ -544,6 +545,11 @@ function App(props: RouteSectionProps) {
       >
         {props.children}
       </div>
+      <Show when={page() !== Pages.None}>
+        <DownloadList
+          style={{ position: "absolute", right: "1rem", bottom: "1rem" }}
+        />
+      </Show>
     </GlobalStateContext.Provider>
   );
 }
