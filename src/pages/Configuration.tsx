@@ -1,7 +1,7 @@
 import {
   configFormFileFormat,
   Pages,
-  panelKeys,
+  pageKeys,
   tabContexts,
   panelContexts,
 } from "~/GlobalState.ts";
@@ -19,9 +19,9 @@ function Configuration() {
   const [render, setRender] = createSignal<boolean>(false);
 
   onMount(() => {
-    if (!panelKeys.has(Pages.Configuration)) {
+    if (!pageKeys.has(Pages.Configuration)) {
       const panelKey = crypto.randomUUID();
-      panelKeys.set(Pages.Configuration, panelKey);
+      pageKeys.set(Pages.Configuration, panelKey);
 
       const panelTabId = crypto.randomUUID();
       panelContexts.set(
