@@ -80,47 +80,42 @@ export function Axis(props: AxisProps) {
               <Text size="sm">Axis {axisId}</Text>
             </Badge>
           </Tooltip.Trigger>
-          <Show
-            when={
-              Object.values(props.axisInfo).includes(true) ||
-              Object.values(props.axisError).includes(true)
-            }
-          >
-            <Tooltip.Positioner>
-              <Tooltip.Content>
-                <Show when={Object.values(props.axisInfo).includes(true)}>
-                  <Text>Info</Text>
-                  <For each={Object.entries(props.axisInfo)}>
-                    {([key, value]) => {
-                      if (typeof value == "boolean" && value) {
-                        const prettierLabel = `${key[0].toUpperCase()}${key.slice(1, key.length)}`;
-                        return <Text fontWeight="medium">{prettierLabel}</Text>;
-                      }
-                    }}
-                  </For>
-                </Show>
-                <Show when={Object.values(props.axisError).includes(true)}>
-                  <Text
-                    marginTop={
-                      Object.values(props.axisInfo).includes(true)
-                        ? "0.5rem"
-                        : "0"
+          <Tooltip.Positioner>
+            <Tooltip.Content>
+              <Text>Info {axisId}</Text>
+              <For each={Object.entries(props.axisInfo)}>
+                {([key, value]) => {
+                  if (typeof value == "boolean" && key.includes("waiting")) {
+                    const prettierLabel = `${key[0].toUpperCase()}${key.slice(1, key.length)}`;
+                    return (
+                      <Text fontWeight="medium" opacity={value ? "1" : "0.4"}>
+                        {prettierLabel}
+                      </Text>
+                    );
+                  }
+                }}
+              </For>
+              <Show when={Object.values(props.axisError).includes(true)}>
+                <Text
+                  marginTop={
+                    Object.values(props.axisInfo).includes(true)
+                      ? "0.5rem"
+                      : "0"
+                  }
+                >
+                  Error
+                </Text>
+                <For each={Object.entries(props.axisError)}>
+                  {([key, value]) => {
+                    if (key !== "id" && value) {
+                      const prettierLabel = `${key[0].toUpperCase()}${key.slice(1, key.length)}`;
+                      return <Text fontWeight="medium">{prettierLabel}</Text>;
                     }
-                  >
-                    Error
-                  </Text>
-                  <For each={Object.entries(props.axisError)}>
-                    {([key, value]) => {
-                      if (key !== "id" && value) {
-                        const prettierLabel = `${key[0].toUpperCase()}${key.slice(1, key.length)}`;
-                        return <Text fontWeight="medium">{prettierLabel}</Text>;
-                      }
-                    }}
-                  </For>
-                </Show>
-              </Tooltip.Content>
-            </Tooltip.Positioner>
-          </Show>
+                  }}
+                </For>
+              </Show>
+            </Tooltip.Content>
+          </Tooltip.Positioner>
         </Tooltip.Root>
         <Show when={props.axisInfo!.waitingPull || props.axisInfo!.waitingPush}>
           <div
