@@ -62,24 +62,43 @@ export function Axis(props: AxisProps) {
         marginBottom="0.2rem"
       >
         <Tooltip.Root>
-          <Tooltip.Trigger width="min-content">
-            <Badge
-              width="min-content"
-              backgroundColor={
-                props.axisError.overcurrent
-                  ? "accent.customRed"
-                  : props.axisInfo.motorActive
+          <div
+            style={{
+              display: "flex",
+              "align-items": "center",
+              height: "100%",
+              width: "100%",
+            }}
+          >
+            <Tooltip.Trigger width="min-content">
+              <Badge
+                width="min-content"
+                backgroundColor={
+                  props.axisInfo.motorActive
                     ? "accent.customGreen"
                     : "bg.emphasized"
-              }
-              paddingLeft="0.5rem"
-              paddingRight="0.5rem"
-              height="min-content"
-              borderWidth="0"
-            >
-              <Text size="sm">Axis {axisId}</Text>
-            </Badge>
-          </Tooltip.Trigger>
+                }
+                paddingLeft="0.5rem"
+                paddingRight="0.5rem"
+                height="min-content"
+                borderWidth="0"
+              >
+                <Text size="sm">Axis {axisId}</Text>
+              </Badge>
+            </Tooltip.Trigger>
+            <Show when={props.axisError.overcurrent}>
+              <Stack
+                backgroundColor="red.9"
+                style={{
+                  width: "0.5rem",
+                  height: "0.5rem",
+                  "border-radius": "1rem",
+                  "margin-left": "0.5em",
+                }}
+              />
+            </Show>
+          </div>
+
           <Tooltip.Positioner>
             <Tooltip.Content>
               <Text>Info {axisId}</Text>

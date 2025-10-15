@@ -7,6 +7,7 @@ import {
   Response_Track_Driver_Error,
   Response_Track_Driver_State,
 } from "../proto/mmc/info_pb.ts";
+import { Stack } from "styled-system/jsx/stack";
 
 export const AxesContext = createContext<{
   id: string;
@@ -55,19 +56,28 @@ export function Driver(props: DriverProps) {
       }}
     >
       <Tooltip.Root positioning={{ placement: "bottom-start" }}>
-        <Tooltip.Trigger>
-          <Badge
-            background={
-              findField(props.driverError).length > 0
-                ? "accent.customRed"
-                : props.driverInfo.connected
-                  ? "accent.customGreen"
-                  : "bg.canvas"
-            }
-          >
-            <Text fontWeight="bold">Driver {props.id}</Text>
-          </Badge>
-        </Tooltip.Trigger>
+        <div style={{ display: "flex", "align-items": "center" }}>
+          <Tooltip.Trigger>
+            <Badge
+              background={
+                props.driverInfo.connected ? "accent.customGreen" : "bg.canvas"
+              }
+            >
+              <Text fontWeight="bold">Driver {props.id}</Text>
+            </Badge>
+          </Tooltip.Trigger>
+          <Show when={findField(props.driverError).length > 0}>
+            <Stack
+              backgroundColor="red.9"
+              style={{
+                width: "0.5rem",
+                height: "0.5rem",
+                "border-radius": "1rem",
+                "margin-left": "0.5em",
+              }}
+            />
+          </Show>
+        </div>
         <Show
           when={
             findField(props.driverInfo).length > 0 ||
