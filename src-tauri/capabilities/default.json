@@ -30,6 +30,7 @@
     "fs:default",
     "fs:write-all",
     "tcp:default",
-    "store:default"
+    "store:default",
+    "shell:allow-kill"
   ]
 }
