@@ -28,6 +28,7 @@ export function Axis(props: AxisProps) {
       (carrier) => carrier.id === carrierId,
     );
     if (carrier[0]) {
+      console.log(carrier[0]);
       return carrier[0];
     }
     return null;
@@ -192,44 +193,48 @@ export function Axis(props: AxisProps) {
             </Tooltip.Positioner>
           </Tooltip.Root>
         </div>
-        <Show when={carrierState()!.state}>
-          <Stack direction="row" gap="0">
-            <Text width="3rem" size="sm" fontWeight="bold">
-              State
-            </Text>
-            <Tooltip.Root>
-              <Tooltip.Trigger width={`calc(100% - 3rem)`}>
-                <Text
-                  width="100%"
-                  size="sm"
-                  style={{
-                    "white-space": "nowrap",
-                    display: "block",
-                    overflow: "hidden",
-                    "text-overflow": `ellipsis`,
-                    "user-select": "none",
-                    "text-align": "left",
-                  }}
-                >
-                  {carrierState()!.state
-                    ? Response_Track_Carrier_State_State[carrierState()!.state]
-                        .toString()
-                        .replace("CARRIER_STATE_", "")
-                    : ""}
-                </Text>
-              </Tooltip.Trigger>
-              <Tooltip.Positioner>
-                <Tooltip.Content>
-                  {carrierState()!.state
-                    ? Response_Track_Carrier_State_State[carrierState()!.state]
-                        .toString()
-                        .replace("CARRIER_STATE_", "")
-                    : ""}
-                </Tooltip.Content>
-              </Tooltip.Positioner>
-            </Tooltip.Root>
-          </Stack>
-        </Show>
+        <Stack direction="row" gap="0">
+          <Text width="3rem" size="sm" fontWeight="bold">
+            State
+          </Text>
+          <Tooltip.Root>
+            <Tooltip.Trigger width={`calc(100% - 3rem)`}>
+              <Text
+                width="100%"
+                size="sm"
+                style={{
+                  "white-space": "nowrap",
+                  display: "block",
+                  overflow: "hidden",
+                  "text-overflow": `ellipsis`,
+                  "user-select": "none",
+                  "text-align": "left",
+                }}
+              >
+                {typeof carrierState()!.state === "number"
+                  ? Response_Track_Carrier_State_State[carrierState()!.state]
+                      .toString()
+                      .split(`_`)
+                      .splice(2)
+                      .toString()
+                      .replaceAll(`,`, " ")
+                  : ""}
+              </Text>
+            </Tooltip.Trigger>
+            <Tooltip.Positioner>
+              <Tooltip.Content>
+                {typeof carrierState()!.state === "number"
+                  ? Response_Track_Carrier_State_State[carrierState()!.state]
+                      .toString()
+                      .split(`_`)
+                      .splice(2)
+                      .toString()
+                      .replaceAll(`,`, " ")
+                  : ""}
+              </Tooltip.Content>
+            </Tooltip.Positioner>
+          </Tooltip.Root>
+        </Stack>
 
         <Show when={carrierState()!.position}>
           <Stack direction="row" gap="0">
