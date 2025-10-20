@@ -385,7 +385,9 @@ export function ConfigTabContent() {
             }}
           />
           <PortMenu
-            disabled={portId().length === 0}
+            portId={portId}
+            variant="outline"
+            borderColor="bg.disabled"
             onGetFromPort={async () => {
               if (portId().length === 0) return;
               setFilePath(null);
