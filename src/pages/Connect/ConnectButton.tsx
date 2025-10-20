@@ -91,23 +91,8 @@ export function ConnectButton(props: ConnectButtonProps) {
       positioning={{ placement: "bottom-start" }}
       onOpenChange={(e: { open: boolean }) => setIsOpen(e.open)}
     >
-      <Popover.Trigger
-        maxWidth="min-content"
-        gap="0"
-        padding="0"
-        {...props}
-        disabled={
-          csvFileDownloads.findIndex(
-            (file) => file.status === DownloadStatus.Progressing,
-          ) !== -1
-        }
-      >
+      <Popover.Trigger maxWidth="min-content" gap="0" padding="0" {...props}>
         <Button
-          disabled={
-            csvFileDownloads.findIndex(
-              (file) => file.status === DownloadStatus.Progressing,
-            ) !== -1
-          }
           variant="outline"
           borderColor="bg.disabled"
           backgroundColor="bg.default"
@@ -185,6 +170,11 @@ export function ConnectButton(props: ConnectButtonProps) {
                 await detectPort();
                 setPortId("");
               }}
+              disabled={
+                csvFileDownloads.findIndex(
+                  (file) => file.status === DownloadStatus.Progressing,
+                ) !== -1
+              }
             >
               Scan
             </Button>
