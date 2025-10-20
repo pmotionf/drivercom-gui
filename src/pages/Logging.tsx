@@ -454,12 +454,8 @@ export function Logging() {
                 gap="0"
               >
                 <PortMenu
-                  disabled={
-                    portId().length === 0 ||
-                    csvFileDownloads.some(
-                      (file) => file.status === DownloadStatus.Progressing,
-                    )
-                  }
+                  portId={portId}
+                  variant={"ghost"}
                   onGetFromPort={async () => {
                     const output = await GetLogConfigFromPort();
                     if (output.stderr.length !== 0) {
