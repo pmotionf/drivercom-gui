@@ -95,25 +95,25 @@ export function ConnectButton(props: ConnectButtonProps) {
           borderColor="bg.disabled"
           backgroundColor="bg.default"
           style={{
-            "padding-right": "0.5rem",
-            "padding-left": "0rem",
+            "padding-right": "0.5em",
+            "padding-left": "0em",
             "padding-top": "0",
             "padding-bottom": "0",
             "border-width": "1px",
-            width: "4rem",
-            height: "2rem",
+            width: "4em",
+            height: "2em",
           }}
         >
           <Tooltip.Root>
             <Tooltip.Trigger
-              width="2rem"
-              paddingLeft="0.5rem"
+              width="2em"
+              paddingLeft="0.5em"
               borderRightWidth="1px"
               color={portId().length === 0 ? "fg.subtle" : "fg.default"}
             >
               <div
                 style={{
-                  width: "2rem",
+                  width: "2em",
                 }}
               >
                 {portId().length === 0 ? (
@@ -141,27 +141,32 @@ export function ConnectButton(props: ConnectButtonProps) {
         </Button>
       </Popover.Trigger>
       <Popover.Positioner>
-        <Popover.Content padding="0.5rem" width="16rem" maxHeight="11rem">
-          <Stack height="2rem" direction="row" width="100%" gap="0">
+        <Popover.Content
+          padding="0.5em"
+          width="100%"
+          maxHeight="11em"
+          minWidth={"16em"}
+        >
+          <Stack height="2em" direction="row" width="100%" gap="0">
             <Text
               fontWeight="bold"
-              width="12rem"
-              paddingTop="0.3rem"
+              width={`calc(100% - 3em)`}
+              paddingTop="0.3em"
               opacity={portList().length === 0 ? "30%" : "100%"}
               size="md"
               textAlign="left"
               textOverflow="ellipsis"
               overflow="hidden"
               whiteSpace="nowrap"
-              paddingRight="1rem"
+              paddingRight="1em"
             >
               Ports
             </Text>
 
             <Button
               size="sm"
-              width="3rem"
-              height="2rem"
+              width="3em"
+              height="2em"
               variant="outline"
               fontWeight="medium"
               onClick={async () => {
@@ -175,11 +180,11 @@ export function ConnectButton(props: ConnectButtonProps) {
           <Show when={portList().length > 0}>
             <div
               style={{
-                height: `calc(100% - 2.5rem)`,
+                height: `calc(100% - 2.5em)`,
                 "overflow-y": "auto",
                 "border-bottom-width": "1px",
                 "border-top-width": "1px",
-                "margin-top": "0.5rem",
+                "margin-top": "0.5em",
               }}
             >
               <For each={portList()}>
@@ -197,22 +202,22 @@ export function ConnectButton(props: ConnectButtonProps) {
                         onClick={() => {
                           setPortId(port.id);
                         }}
-                        paddingLeft="0.2rem"
+                        paddingLeft="0.2em"
                       >
                         <Text
-                          width="11rem"
+                          width="11em"
                           textAlign="left"
                           textOverflow="ellipsis"
                           overflow="hidden"
                           whiteSpace="nowrap"
                           size="sm"
-                          paddingRight="0.5rem"
+                          paddingRight="0.5em"
                         >
                           {port.id}
                         </Text>
 
                         <Text
-                          width="2.5rem"
+                          width="2.5em"
                           textAlign="left"
                           opacity="60%"
                           textOverflow="ellipsis"
@@ -227,12 +232,12 @@ export function ConnectButton(props: ConnectButtonProps) {
                         </Text>
                         <Show
                           when={port.id === portId()}
-                          fallback={<div style={{ width: "2.5rem" }} />}
+                          fallback={<div style={{ width: "2.5em" }} />}
                         >
                           <IconButton
                             size="sm"
-                            width="2rem"
-                            borderRadius="3rem"
+                            width="2em"
+                            borderRadius="3em"
                             onClick={() => {
                               setTimeout(() => {
                                 setPortId("");
