@@ -55,8 +55,8 @@ export function Driver(props: DriverProps) {
         padding: "0.5rem",
       }}
     >
-      <Tooltip.Root positioning={{ placement: "bottom-start" }}>
-        <div style={{ display: "flex", "align-items": "center" }}>
+      <div style={{ display: "flex", "align-items": "center" }}>
+        <Tooltip.Root positioning={{ placement: "bottom-start" }}>
           <Tooltip.Trigger>
             <Badge
               background={
@@ -66,53 +66,47 @@ export function Driver(props: DriverProps) {
               <Text fontWeight="bold">Driver {props.id}</Text>
             </Badge>
           </Tooltip.Trigger>
-          <Show when={findField(props.driverError).length > 0}>
-            <Stack
-              backgroundColor="red.9"
-              style={{
-                width: "0.5rem",
-                height: "0.5rem",
-                "border-radius": "1rem",
-                "margin-left": "0.5em",
-              }}
-            />
-          </Show>
-        </div>
-        <Show
-          when={
-            findField(props.driverInfo).length > 0 ||
-            findField(props.driverError).length > 0
-          }
-        >
-          <Tooltip.Positioner>
-            <Tooltip.Content width="100%" minWidth="10rem">
-              <Show when={findField(props.driverInfo).length > 0}>
+          <Show when={findField(props.driverInfo).length > 0}>
+            <Tooltip.Positioner>
+              <Tooltip.Content width="100%" minWidth="10rem">
                 <Text> Info </Text>
                 <For each={findField(props.driverInfo)}>
                   {(field) => {
                     return <Text fontWeight="medium">{field}</Text>;
                   }}
                 </For>
-              </Show>
-              <Show when={findField(props.driverError).length >= 1}>
-                <Text
-                  marginTop={
-                    findField(props.driverInfo).length > 0 ? "0.5rem" : "0"
-                  }
-                >
-                  Error
-                </Text>
+              </Tooltip.Content>
+            </Tooltip.Positioner>
+          </Show>
+        </Tooltip.Root>
+
+        <Show when={findField(props.driverError).length > 0}>
+          <Tooltip.Root positioning={{ placement: "bottom-start" }}>
+            <Tooltip.Trigger>
+              <Stack
+                backgroundColor="red.9"
+                style={{
+                  width: "0.5rem",
+                  height: "0.5rem",
+                  "border-radius": "1rem",
+                  "margin-left": "0.5em",
+                }}
+              />
+            </Tooltip.Trigger>
+
+            <Tooltip.Positioner>
+              <Tooltip.Content width="100%" minWidth="10rem">
+                <Text>Error</Text>
                 <For each={findField(props.driverError)}>
                   {(errorField) => {
                     return <Text fontWeight="medium">{errorField}</Text>;
                   }}
                 </For>
-              </Show>
-            </Tooltip.Content>
-          </Tooltip.Positioner>
+              </Tooltip.Content>
+            </Tooltip.Positioner>
+          </Tooltip.Root>
         </Show>
-      </Tooltip.Root>
-
+      </div>
       {props.children}
     </div>
   );

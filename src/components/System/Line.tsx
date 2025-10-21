@@ -83,23 +83,32 @@ export function Line(props: LineProps) {
         <Accordion.ItemIndicator class="cancel">
           <ChevronDownIcon />
         </Accordion.ItemIndicator>
+        <Text>{props.line.name}</Text>
 
-        <Tooltip.Root positioning={{ placement: "bottom-start" }}>
-          <Tooltip.Trigger
-            style={{ width: "min-content", "text-align": "left" }}
-          >
-            <Text>{props.line.name}</Text>
-          </Tooltip.Trigger>
-          <Show
-            when={
-              (props.system &&
-                props.system.axisErrors &&
-                findErrorField(props.system.axisErrors).length > 0) ||
-              (props.system &&
-                props.system.driverErrors &&
-                findErrorField(props.system.driverErrors).length > 0)
-            }
-          >
+        <Show
+          when={
+            (props.system &&
+              props.system.axisErrors &&
+              findErrorField(props.system.axisErrors).length > 0) ||
+            (props.system &&
+              props.system.driverErrors &&
+              findErrorField(props.system.driverErrors).length > 0)
+          }
+        >
+          <Tooltip.Root positioning={{ placement: "bottom-start" }}>
+            <Tooltip.Trigger
+              style={{ width: "min-content", "text-align": "left" }}
+            >
+              <Stack
+                backgroundColor="red.9"
+                style={{
+                  width: "0.5rem",
+                  height: "0.5rem",
+                  "border-radius": "1rem",
+                  "margin-top": "0.3rem",
+                }}
+              />
+            </Tooltip.Trigger>
             <Tooltip.Positioner>
               <Tooltip.Content>
                 <For
@@ -109,7 +118,7 @@ export function Line(props: LineProps) {
                   )}
                 >
                   {(error) => (
-                    <Stack direction="row" width="100%">
+                    <Stack direction="row" width="100%" minWidth={"16em"}>
                       <Text overflow="hidden" width="30%">
                         {error.field}
                       </Text>
@@ -127,27 +136,7 @@ export function Line(props: LineProps) {
                 </For>
               </Tooltip.Content>
             </Tooltip.Positioner>
-          </Show>
-        </Tooltip.Root>
-        <Show
-          when={
-            (props.system &&
-              props.system.axisErrors &&
-              findErrorField(props.system.axisErrors).length > 0) ||
-            (props.system &&
-              props.system.driverErrors &&
-              findErrorField(props.system.driverErrors).length > 0)
-          }
-        >
-          <Stack
-            backgroundColor="red.9"
-            style={{
-              width: "0.5rem",
-              height: "0.5rem",
-              "border-radius": "1rem",
-              "margin-top": "0.3rem",
-            }}
-          />
+          </Tooltip.Root>
         </Show>
       </Accordion.ItemTrigger>
       <Accordion.ItemContent
