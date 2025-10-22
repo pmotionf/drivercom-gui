@@ -49,42 +49,38 @@ function Monitoring() {
     on(
       () => lines.length,
       async () => {
-        if (lines.length < 1) {
-          try {
-            await serverHandler.disconnect();
-          } catch (e) {
-            toaster.create({
-              title: "Server Connection Error",
-              description: e ? e.toString() : "The server is disconnected.",
-              type: "error",
-            });
-          }
-          return;
-        } else {
-          await requestSystemInfo(1);
+        if (lines.length >= 1) {
+          const lineId = lines[0].id;
+          await requestSystemInfo(lineId, lines);
         }
       },
       { defer: true },
     ),
   );
 
-  const getNextId = (lineId: number): number => {
-    return lineId + 1 <= lines.length ? lineId + 1 : 1;
-  };
-
-  const requestSystemInfo = async (lineId: number): Promise<void> => {
+  const requestSystemInfo = async (
+    lineId: number,
+    lineConfig: Lines,
+  ): Promise<void> => {
     if (lines.length < 1) return;
     await getSystemInfo(lineId);
 
-    const nextId = getNextId(lineId);
-    await requestSystemInfo(nextId);
+    const lineIndex = lineConfig.findIndex((line) => line.id === lineId);
+    if (lineIndex !== -1) {
+      const nextLineIndex =
+        lineIndex + 1 >= lineConfig.length ? 0 : lineIndex + 1;
+      const nextId = lineConfig[nextLineIndex].id;
+      await requestSystemInfo(nextId, lines);
+    }
+    return;
   };
 
   const getSystemInfo = async (lineId: number): Promise<void> => {
     try {
       const systemInfo = await serverHandler.getSystemInfo(lineId);
       if (systemInfo) {
-        const lineIndex = lineId - 1;
+        const lineIndex = lines.findIndex((line) => line.id === lineId);
+        if (lineIndex === -1) return;
         setSystems(lineIndex, reconcile(systemInfo));
 
         if (isAutoClearMode()) {
@@ -96,10 +92,15 @@ function Monitoring() {
         }
         return;
       }
-    } catch {
+    } catch (e) {
       if (lines.length > 0) {
         setLines([]);
         setSystems([]);
+        toaster.create({
+          title: "Server Connection Error",
+          description: e ? e.toString() : "The server is disconnected.",
+          type: "error",
+        });
       }
       return;
     }
@@ -322,9 +323,10 @@ function Monitoring() {
                       }
                       setIsConnecting(false);
                     }}
-                    onDisconnectServer={() => {
+                    onDisconnectServer={async () => {
                       setLines([]);
                       setSystems([]);
+                      await serverHandler.disconnect();
                     }}
                   />
                 </Show>
