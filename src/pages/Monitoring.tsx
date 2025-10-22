@@ -178,10 +178,11 @@ function Monitoring() {
       port: port,
       name: serverName ? serverName : "",
     };
+
     setIpHistory((prev) => [
       newIp,
       ...prev.filter(
-        (prevIp) => prevIp.ip !== newIp.ip && prevIp.port !== newIp.port,
+        (prevIp) => prevIp.ip !== newIp.ip || prevIp.port !== newIp.port,
       ),
     ]);
   };
