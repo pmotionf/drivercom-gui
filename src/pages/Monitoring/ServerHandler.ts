@@ -1,7 +1,5 @@
 import { toBinary } from "@bufbuild/protobuf";
-import { listen, send, connect, disconnect } from "@kuyoonjo/tauri-plugin-tcp";
-import { UnlistenFn } from "@tauri-apps/api/event";
-import { Buffer } from "buffer";
+import { Blob } from "buffer";
 import {
   Request_Kind,
   Response_TrackConfig_Line,
@@ -18,11 +16,6 @@ import {
 } from "~/components/proto/mmc_pb";
 import { fromBinary } from "@bufbuild/protobuf";
 
-enum ConnectionState {
-  Connect = "Connect",
-  Disconnect = "Disconnect",
-}
-
 export type LineType = Omit<
   Response_TrackConfig_Line,
   "$typeName" | "$unknown"
@@ -30,7 +23,7 @@ export type LineType = Omit<
 export type TrackType = Omit<Response_Track, "$typeName" | "$unknown">;
 
 interface IServerHandler {
-  connect(ip: string, port: string): Promise<void | never>;
+  connect(ip: string, port: string): void;
   disconnect(clientId: string): void;
   clearError(lindId: number, driverId?: number): void;
   getSystemInfo(lineId: number): Promise<TrackType | never>;
@@ -42,14 +35,12 @@ export class ServerHandler implements IServerHandler {
   private _ipAddress: {
     ip: string;
     port: string;
-    clientId: string;
   } = {
     ip: "",
     port: "",
-    clientId: crypto.randomUUID(),
   };
 
-  private _connectionState: ConnectionState = ConnectionState.Disconnect;
+  private _socket: WebSocket | null = null;
 
   private _lockRequest: boolean = false;
   private lock() {
@@ -69,70 +60,89 @@ export class ServerHandler implements IServerHandler {
     return res;
   }
 
-  private _requestId: string | null = null;
-
-  private _unlisten: null | UnlistenFn = null;
-
   private _clearErrorQueue: number[] = [];
 
   private _isQueueEmpty: boolean = this._clearErrorQueue.length === 0;
 
-  private async listener(): Promise<UnlistenFn> {
-    return await listen(async (x) => {
-      if (
-        x.payload.id === this._ipAddress.clientId &&
-        x.payload.event.message &&
-        x.payload.event.message.data
-      ) {
-        const bytes = Buffer.from(x.payload.event.message.data);
-        const decode: Response = fromBinary(ResponseSchema, bytes);
-        this.addResponse(decode);
+  async connect(ip: string, port: string) {
+    if (!this._socket) {
+      this._socket = new WebSocket(`ws://${ip}:${port}`);
+
+      this._socket.onopen = () => {
+        this._ipAddress.ip = ip;
+        this._ipAddress.port = port;
+      };
+
+      this._socket.onclose = () => {
+        this.serverResponses = [];
+        this._clearErrorQueue = [];
         this.unlock();
-      }
-    });
-  }
+      };
 
-  async connect(ip: string, port: string): Promise<void | never> {
-    if (this._connectionState === ConnectionState.Connect) {
-      throw new Error("The server is connected.");
+      this._socket.onerror = () => {
+        if (this._socket && this._socket.readyState == WebSocket.CLOSED) {
+          this._socket = null;
+        }
+        this.serverResponses = [];
+        this._clearErrorQueue = [];
+        this.unlock();
+      };
+
+      this._socket.onmessage = async (message) => {
+        const msg: Blob = message.data;
+        const bytes = await msg.arrayBuffer();
+        const buffer = new Uint8Array(bytes);
+        const decode: Response = fromBinary(ResponseSchema, buffer);
+        this.addResponse(decode);
+      };
     }
 
-    const clientId = this._ipAddress.clientId;
-    try {
-      await connect(clientId, `${ip}:${port}`);
-      this._unlisten = await this.listener();
-      this._ipAddress.ip = ip;
-      this._ipAddress.port = port;
-      this._connectionState = ConnectionState.Connect;
-    } catch (e) {
-      if (e) {
-        throw new Error(e as string);
+    let connect = true;
+    const timeout = setTimeout(() => {
+      connect = false;
+    }, 60000);
+
+    while (this._socket.readyState !== WebSocket.OPEN) {
+      if (!connect) {
+        break;
       }
+      await this.delay(1).then((result) => clearTimeout(result));
     }
-    return;
+    clearTimeout(timeout);
+
+    if (!this._socket || this._socket.readyState !== WebSocket.OPEN) {
+      this._socket = null;
+      throw new Error("Invalid Ip address");
+    } else {
+      return;
+    }
   }
 
   async disconnect(): Promise<void | never> {
-    if (this._connectionState === ConnectionState.Disconnect) {
-      throw new Error("The server is disconnected.");
-    }
-    try {
-      if (this._unlisten) {
-        this._unlisten();
-        this._unlisten = null;
+    if (this._socket) {
+      this._socket.close();
+      let disconnect = true;
+
+      const timeout = setTimeout(() => {
+        disconnect = false;
+      }, 30000);
+      while (this._socket.readyState !== WebSocket.CLOSED) {
+        if (!disconnect) {
+          break;
+        }
+        await this.delay(1).then((result) => clearTimeout(result));
       }
-      await disconnect(this._ipAddress.clientId);
-      this.serverResponses = [];
-      this._ipAddress.clientId = crypto.randomUUID();
-      this._requestId = null;
-      this._connectionState = ConnectionState.Disconnect;
-      this.unlock();
-      return;
-    } catch (e) {
-      if (e) {
-        throw new Error(e as string);
+      if (this._socket.readyState !== WebSocket.CLOSED) {
+        this._socket = null;
+        clearTimeout(timeout);
+        throw new Error("Failed to disconenct");
       }
+      this._socket = null;
+      clearTimeout(timeout);
+    } else {
+      throw new Error("Server is already disconnected.");
     }
+    return;
   }
 
   async clearError(lineId: number): Promise<void | never> {
@@ -176,10 +186,8 @@ export class ServerHandler implements IServerHandler {
       },
       $typeName: "mmc.Request",
     };
-    const requestId = crypto.randomUUID();
-    this._requestId = requestId;
 
-    await this.sendRequest(this._ipAddress.clientId, payload);
+    await this.sendRequest(payload);
     await this.waitResponse();
 
     if (this.serverResponses.length > 0) {
@@ -215,8 +223,6 @@ export class ServerHandler implements IServerHandler {
 
   private async requestCommandInfo(commandId: number) {
     if (!this._isQueueEmpty) throw new Error("Error queue is not empty");
-    const requestId = crypto.randomUUID();
-    this._requestId = requestId;
     const payload: Request = {
       body: {
         case: "info",
@@ -233,7 +239,7 @@ export class ServerHandler implements IServerHandler {
       },
       $typeName: "mmc.Request",
     };
-    await this.sendRequest(this._ipAddress.clientId, payload);
+    await this.sendRequest(payload);
     await this.waitResponse();
 
     if (this.serverResponses.length > 0) {
@@ -247,7 +253,10 @@ export class ServerHandler implements IServerHandler {
       }
       throw new Error("Invalid Response.");
     }
-    if (ConnectionState.Disconnect === this._connectionState)
+    if (
+      !this._socket ||
+      (this._socket && this._socket.readyState === WebSocket.CLOSED)
+    )
       throw new Error("The server is disconnected.");
     throw new Error("No response");
   }
@@ -272,9 +281,7 @@ export class ServerHandler implements IServerHandler {
       },
       $typeName: "mmc.Request",
     };
-    const requestId = crypto.randomUUID();
-    this._requestId = requestId;
-    await this.sendRequest(this._ipAddress.clientId, payload);
+    await this.sendRequest(payload);
     await this.waitResponse();
 
     if (this.serverResponses.length > 0) {
@@ -287,7 +294,10 @@ export class ServerHandler implements IServerHandler {
           }
         }
       } else {
-        if (ConnectionState.Disconnect === this._connectionState)
+        if (
+          !this._socket ||
+          (this._socket && this._socket.readyState === WebSocket.CLOSED)
+        )
           throw new Error("The server is disconnected.");
       }
       throw new Error("Command operation not available");
@@ -296,9 +306,6 @@ export class ServerHandler implements IServerHandler {
   }
 
   async getLineConfig(): Promise<LineType[] | never> {
-    const requestId = crypto.randomUUID();
-    this._requestId = requestId;
-
     const payload: Request = {
       body: {
         case: "core",
@@ -309,7 +316,7 @@ export class ServerHandler implements IServerHandler {
       },
       $typeName: "mmc.Request",
     };
-    await this.sendRequest(this._ipAddress.clientId, payload);
+    await this.sendRequest(payload);
     await this.waitResponse();
 
     if (this.serverResponses.length > 0) {
@@ -343,9 +350,6 @@ export class ServerHandler implements IServerHandler {
   }
 
   async getSystemInfo(lineId: number): Promise<TrackType | never> {
-    const requestId = crypto.randomUUID();
-    this._requestId = requestId;
-
     const payload: Request = {
       body: {
         case: "info",
@@ -372,34 +376,35 @@ export class ServerHandler implements IServerHandler {
       $typeName: "mmc.Request",
     };
 
-    await this.sendRequest(this._ipAddress.clientId, payload);
-    await this.waitResponse();
+    try {
+      await this.sendRequest(payload);
+      await this.waitResponse();
 
-    if (this.serverResponses.length > 0) {
-      const response = this.getResponse();
-      if (response.body.case === "info") {
-        const info = response.body.value;
-        if (info.body.case === "track") {
-          const track = response.body.value;
-          if (track.body.case === "track") {
-            const tracked = track.body.value;
-            const systemInfo: TrackType = {
-              line: tracked.line,
-              driverErrors: tracked.driverErrors,
-              driverState: tracked.driverState,
-              axisErrors: tracked.axisErrors,
-              axisState: tracked.axisState,
-              carrierState: tracked.carrierState,
-            };
-            return systemInfo;
+      if (this.serverResponses.length > 0) {
+        const response = this.getResponse();
+        if (response.body.case === "info") {
+          const info = response.body.value;
+          if (info.body.case === "track") {
+            const track = response.body.value;
+            if (track.body.case === "track") {
+              const tracked = track.body.value;
+              const systemInfo: TrackType = {
+                line: tracked.line,
+                driverErrors: tracked.driverErrors,
+                driverState: tracked.driverState,
+                axisErrors: tracked.axisErrors,
+                axisState: tracked.axisState,
+                carrierState: tracked.carrierState,
+              };
+              return systemInfo;
+            }
           }
         }
+        throw new Error("Invalid Response");
       }
       throw new Error("Invalid Response");
-    } else {
-      if (ConnectionState.Disconnect === this._connectionState)
-        throw new Error("Server disconnected");
-      throw new Error("No response.");
+    } catch (e) {
+      throw new Error(e as string);
     }
   }
 
@@ -414,10 +419,8 @@ export class ServerHandler implements IServerHandler {
       },
       $typeName: "mmc.Request",
     };
-    const requestId = crypto.randomUUID();
-    this._requestId = requestId;
 
-    await this.sendRequest(this._ipAddress.clientId, payload);
+    await this.sendRequest(payload);
     await this.waitResponse();
 
     if (this.serverResponses.length > 0) {
@@ -434,67 +437,49 @@ export class ServerHandler implements IServerHandler {
     return null;
   }
 
-  private async sendRequest(
-    cid: string,
-    payload: Request,
-  ): Promise<void | never> {
+  private async sendRequest(payload: Request): Promise<void | never> {
     if (this._lockRequest) {
       throw new Error("locked");
     }
 
-    this.lock();
+    if (this._socket && this._socket.readyState === WebSocket.OPEN) {
+      const buffer: Uint8Array = toBinary(RequestSchema, payload);
+      if (this._socket.readyState !== WebSocket.OPEN)
+        throw new Error("Websocket is not open");
+      this._socket.send(buffer);
+      this.lock();
+    } else {
+      throw new Error("Invalid websocket");
+    }
+  }
+
+  private async waitResponse() {
     const timeout = setTimeout(() => {
       this.unlock();
     }, 500);
-    const buffer = toBinary(RequestSchema, payload);
-    const parseBuffer: number[] = Array.from(buffer);
 
-    try {
-      if (this._connectionState === ConnectionState.Disconnect)
-        throw new Error("Server Disconnected");
-      await send(cid, parseBuffer);
-      clearTimeout(timeout);
-    } catch (e) {
-      this._connectionState = ConnectionState.Disconnect;
-      clearTimeout(timeout);
-      throw new Error(e as string);
+    while (this.serverResponses.length <= 0) {
+      if (
+        !this._socket ||
+        (this._socket && this._socket.readyState !== WebSocket.OPEN)
+      ) {
+        throw new Error("Invalid websocket");
+      }
+      if (!this._lockRequest) {
+        throw new Error("Command lock");
+      }
+      await this.delay(1).then((result) => {
+        clearTimeout(result);
+      });
     }
+    clearTimeout(timeout);
+    this.unlock();
+
+    return;
   }
 
   private delay = (ms: number) =>
     new Promise<NodeJS.Timeout>((resolve) => {
       setTimeout(resolve, ms);
     });
-
-  private async waitResponse() {
-    const timeout = setTimeout(() => {
-      this.unlock();
-    }, 500);
-    while (this._lockRequest) {
-      if (this._connectionState === ConnectionState.Disconnect) break;
-      if (!this._lockRequest) break;
-      await this.delay(1).then((result) => {
-        clearTimeout(result);
-      });
-    }
-
-    if (this._requestId) {
-      while (this.serverResponses.length <= 0) {
-        if (this._connectionState === ConnectionState.Disconnect) break;
-        if (this._lockRequest === false) break;
-        await this.delay(1).then((result) => {
-          clearTimeout(result);
-        });
-      }
-      this._requestId = null;
-    }
-
-    await this.delay(1).then((result) => {
-      clearTimeout(result);
-    });
-    clearTimeout(timeout);
-    this.unlock();
-
-    return;
-  }
 }
