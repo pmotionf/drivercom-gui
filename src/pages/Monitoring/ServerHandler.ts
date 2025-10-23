@@ -106,7 +106,8 @@ export class ServerHandler implements IServerHandler {
       if (!connect) {
         break;
       }
-      await this.delay(1).then((result) => clearTimeout(result));
+      const wait = await this.delay(1)
+      clearTimeout(wait)
     }
     clearTimeout(timeout);
 
@@ -130,7 +131,8 @@ export class ServerHandler implements IServerHandler {
         if (!disconnect) {
           break;
         }
-        await this.delay(1).then((result) => clearTimeout(result));
+        const wait = await this.delay(1)
+        clearTimeout(wait)
       }
       if (this._socket.readyState !== WebSocket.CLOSED) {
         this._socket = null;
@@ -214,7 +216,8 @@ export class ServerHandler implements IServerHandler {
     } else if (
       commandStatus === Response_Command_Status.COMMAND_STATUS_PROGRESSING
     ) {
-      this.delay(1);
+      const timeout = await this.delay(1);
+      clearTimeout(timeout)
       return await this.getCommandInfo(commandId);
     } else {
       throw new Error("Fail to request command info");
@@ -468,9 +471,8 @@ export class ServerHandler implements IServerHandler {
       if (!this._lockRequest) {
         throw new Error("Command lock");
       }
-      await this.delay(1).then((result) => {
-        clearTimeout(result);
-      });
+      const wait = await this.delay(1)
+      clearTimeout(wait)
     }
     clearTimeout(timeout);
     this.unlock();
