@@ -97,19 +97,20 @@ export class ServerHandler implements IServerHandler {
       };
     }
 
-    let connect = true;
+    this.lock();
     const timeout = setTimeout(() => {
-      connect = false;
+      this.unlock();
     }, 60000);
 
     while (this._socket.readyState !== WebSocket.OPEN) {
-      if (!connect) {
+      if (!this._lockRequest) {
         break;
       }
-      const wait = await this.delay(1)
-      clearTimeout(wait)
+      const wait = await this.delay(1);
+      clearTimeout(wait);
     }
     clearTimeout(timeout);
+    this.unlock();
 
     if (!this._socket || this._socket.readyState !== WebSocket.OPEN) {
       this._socket = null;
@@ -122,17 +123,17 @@ export class ServerHandler implements IServerHandler {
   async disconnect(): Promise<void | never> {
     if (this._socket) {
       this._socket.close();
-      let disconnect = true;
+      this.lock();
 
       const timeout = setTimeout(() => {
-        disconnect = false;
+        this.unlock();
       }, 30000);
       while (this._socket.readyState !== WebSocket.CLOSED) {
-        if (!disconnect) {
+        if (!this._lockRequest) {
           break;
         }
-        const wait = await this.delay(1)
-        clearTimeout(wait)
+        const wait = await this.delay(1);
+        clearTimeout(wait);
       }
       if (this._socket.readyState !== WebSocket.CLOSED) {
         this._socket = null;
@@ -141,6 +142,7 @@ export class ServerHandler implements IServerHandler {
       }
       this._socket = null;
       clearTimeout(timeout);
+      this.unlock();
     } else {
       throw new Error("Server is already disconnected.");
     }
@@ -217,7 +219,7 @@ export class ServerHandler implements IServerHandler {
       commandStatus === Response_Command_Status.COMMAND_STATUS_PROGRESSING
     ) {
       const timeout = await this.delay(1);
-      clearTimeout(timeout)
+      clearTimeout(timeout);
       return await this.getCommandInfo(commandId);
     } else {
       throw new Error("Fail to request command info");
@@ -471,8 +473,8 @@ export class ServerHandler implements IServerHandler {
       if (!this._lockRequest) {
         throw new Error("Command lock");
       }
-      const wait = await this.delay(1)
-      clearTimeout(wait)
+      const wait = await this.delay(1);
+      clearTimeout(wait);
     }
     clearTimeout(timeout);
     this.unlock();
