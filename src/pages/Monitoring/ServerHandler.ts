@@ -76,7 +76,6 @@ export class ServerHandler implements IServerHandler {
       this._socket.onclose = () => {
         this.serverResponses = [];
         this._clearErrorQueue = [];
-        this.unlock();
       };
 
       this._socket.onerror = () => {
@@ -121,6 +120,12 @@ export class ServerHandler implements IServerHandler {
   }
 
   async disconnect(): Promise<void | never> {
+    if (this._lockRequest) {
+      while (this._lockRequest) {
+        const timeout = await this.delay(1);
+        clearTimeout(timeout);
+      }
+    }
     if (this._socket) {
       this._socket.close();
       this.lock();
@@ -135,13 +140,14 @@ export class ServerHandler implements IServerHandler {
         const wait = await this.delay(1);
         clearTimeout(wait);
       }
+      clearTimeout(timeout);
+
       if (this._socket.readyState !== WebSocket.CLOSED) {
         this._socket = null;
         clearTimeout(timeout);
         throw new Error("Failed to disconenct");
       }
       this._socket = null;
-      clearTimeout(timeout);
       this.unlock();
     } else {
       throw new Error("Server is already disconnected.");
@@ -311,6 +317,7 @@ export class ServerHandler implements IServerHandler {
   }
 
   async getLineConfig(): Promise<LineType[] | never> {
+    if (this._lockRequest) throw new Error("Command Locked");
     const payload: Request = {
       body: {
         case: "core",
@@ -321,36 +328,41 @@ export class ServerHandler implements IServerHandler {
       },
       $typeName: "mmc.Request",
     };
-    await this.sendRequest(payload);
-    await this.waitResponse();
 
-    if (this.serverResponses.length > 0) {
-      const serverResponse = this.getResponse();
-      if (serverResponse.body.case === "core") {
-        const core = serverResponse.body.value;
-        if (core.body.case === "trackConfig") {
-          const trackConfig = core.body.value;
-          if (trackConfig.lines) {
-            const lines = trackConfig.lines.map(
-              (line: Response_TrackConfig_Line) => {
-                const newLine: LineType = {
-                  id: line.id,
-                  name: line.name,
-                  axes: line.axes,
-                  carrierLength: line.carrierLength,
-                  axisLength: line.axisLength,
-                  drivers: line.drivers,
-                };
-                return newLine;
-              },
-            );
-            return lines;
+    try {
+      await this.sendRequest(payload);
+      await this.waitResponse();
+
+      if (this.serverResponses.length > 0) {
+        const serverResponse = this.getResponse();
+        if (serverResponse.body.case === "core") {
+          const core = serverResponse.body.value;
+          if (core.body.case === "trackConfig") {
+            const trackConfig = core.body.value;
+            if (trackConfig.lines) {
+              const lines = trackConfig.lines.map(
+                (line: Response_TrackConfig_Line) => {
+                  const newLine: LineType = {
+                    id: line.id,
+                    name: line.name,
+                    axes: line.axes,
+                    carrierLength: line.carrierLength,
+                    axisLength: line.axisLength,
+                    drivers: line.drivers,
+                  };
+                  return newLine;
+                },
+              );
+              return lines;
+            }
           }
         }
+        throw new Error("Invalid Response");
+      } else {
+        throw new Error("No Response");
       }
-      throw new Error("Invalid Response");
-    } else {
-      throw new Error("No Response");
+    } catch (e) {
+      throw new Error(e as string);
     }
   }
 
