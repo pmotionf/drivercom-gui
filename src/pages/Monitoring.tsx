@@ -202,7 +202,7 @@ function Monitoring() {
   // Signals only for UI
   const [showSideBar, setShowSideBar] = createSignal<boolean>(true);
   const [panelSize, setPanelSize] = createSignal<number>(100);
-  const [isConnecting, setIsConnecting] = createSignal<boolean>(false);
+  const [connectBtnLoading, setConnetBtnLoading] = createSignal<boolean>(false);
 
   // Data for Status Page
   const systemErrors = (): {
@@ -309,24 +309,33 @@ function Monitoring() {
                     ipHistory={ipHistory()}
                     changeIpHistory={setIpHistory}
                     isConnect={lines.length > 0}
-                    isConnecting={isConnecting()}
+                    loading={connectBtnLoading()}
                     onConnectServer={async (ip: string, port: string) => {
-                      setIsConnecting(true);
+                      setConnetBtnLoading(true);
                       try {
                         await serverHandler.connect(ip, port);
-                        await addIpHistory(ip, port);
                         const serverResponse: LineType[] =
                           await serverHandler.getLineConfig();
+                        await addIpHistory(ip, port);
                         setLines(serverResponse);
                       } catch {
-                        deleteIpHistory(ip, port);
+                        if (
+                          ipHistory().some(
+                            (addr) => addr.ip === ip && addr.port === port,
+                          )
+                        ) {
+                          deleteIpHistory(ip, port);
+                        }
+                        await serverHandler.disconnect();
                       }
-                      setIsConnecting(false);
+                      setConnetBtnLoading(false);
                     }}
                     onDisconnectServer={async () => {
+                      setConnetBtnLoading(true);
                       setLines([]);
                       setSystems([]);
                       await serverHandler.disconnect();
+                      setConnetBtnLoading(false);
                     }}
                   />
                 </Show>

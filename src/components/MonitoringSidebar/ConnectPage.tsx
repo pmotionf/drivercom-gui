@@ -9,7 +9,7 @@ import { css } from "styled-system/css";
 
 export type ConnectPageProps = {
   isConnect: boolean;
-  isConnecting: boolean;
+  loading: boolean;
   onDisconnectServer?: () => void;
   onConnectServer?: (ip: string, port: string) => void;
   ipHistory: IpAddress[];
@@ -118,7 +118,7 @@ export const ConnectPage = (props: ConnectPageProps) => {
           <Button
             marginTop="0.8em"
             variant={!props.isConnect ? "solid" : "outline"}
-            loading={props.isConnecting}
+            loading={props.loading}
             onClick={async () => {
               if (props.isConnect) {
                 props.onDisconnectServer?.();
@@ -158,7 +158,7 @@ export const ConnectPage = (props: ConnectPageProps) => {
             onConnectServer={async (index: number) => {
               const newIp = props.ipHistory[index].ip;
               const newPort = props.ipHistory[index].port;
-              if (props.isConnecting) {
+              if (props.loading) {
                 toaster.create({
                   title: "Already Connecting",
                   description:
