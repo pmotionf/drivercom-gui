@@ -28,7 +28,6 @@ export function Axis(props: AxisProps) {
       (carrier) => carrier.id === carrierId,
     );
     if (carrier[0]) {
-      console.log(carrier[0]);
       return carrier[0];
     }
     return null;
@@ -36,7 +35,7 @@ export function Axis(props: AxisProps) {
 
   return (
     <Stack
-      width="9rem"
+      width="11rem"
       height="7rem"
       borderRadius="0.5rem"
       borderWidth="1px"
@@ -70,44 +69,56 @@ export function Axis(props: AxisProps) {
             width: "100%",
           }}
         >
-          <Tooltip.Root>
-            <Tooltip.Trigger width="min-content">
-              <Badge
-                width="min-content"
-                backgroundColor={
-                  props.axisInfo.motorActive
-                    ? "accent.customGreen"
-                    : "bg.emphasized"
-                }
-                paddingLeft="0.5rem"
-                paddingRight="0.5rem"
-                height="min-content"
-                borderWidth="0"
-              >
-                <Text size="sm">Axis {axisId}</Text>
-              </Badge>
-            </Tooltip.Trigger>
+          <Badge
+            width="min-content"
+            backgroundColor={
+              props.axisInfo.motorActive
+                ? "accent.customGreen"
+                : "bg.emphasized"
+            }
+            paddingLeft="0.5rem"
+            paddingRight="0.5rem"
+            height="min-content"
+            borderWidth="0"
+          >
+            <Text size="sm">Axis {axisId}</Text>
+          </Badge>
+          <Badge
+            marginLeft={"0.3em"}
+            width="min-content"
+            paddingLeft="0.5rem"
+            paddingRight="0.5rem"
+            height="min-content"
+            backgroundColor={
+              props.axisInfo.waitingPull
+                ? "accent.customGreen"
+                : "bg.emphasized"
+            }
+            opacity={props.axisInfo.waitingPull ? 1 : 0.3}
+          >
+            {"pull"}
+          </Badge>
+          <Badge
+            marginLeft={"0.3em"}
+            width="min-content"
+            paddingLeft="0.5rem"
+            paddingRight="0.5rem"
+            height="min-content"
+            backgroundColor={
+              props.axisInfo.waitingPush
+                ? "accent.customGreen"
+                : "bg.emphasized"
+            }
+            opacity={props.axisInfo.waitingPush ? 1 : 0.3}
+          >
+            {"push"}
+          </Badge>
 
-            <Tooltip.Positioner>
-              <Tooltip.Content>
-                <Text>Info {axisId}</Text>
-                <For each={Object.entries(props.axisInfo)}>
-                  {([key, value]) => {
-                    if (typeof value == "boolean" && key.includes("waiting")) {
-                      const prettierLabel = `${key[0].toUpperCase()}${key.slice(1, key.length)}`;
-                      return (
-                        <Text fontWeight="medium" opacity={value ? "1" : "0.4"}>
-                          {prettierLabel}
-                        </Text>
-                      );
-                    }
-                  }}
-                </For>
-              </Tooltip.Content>
-            </Tooltip.Positioner>
-          </Tooltip.Root>
-
-          <Show when={props.axisError.overcurrent}>
+          <Show
+            when={Object.values(props.axisError).some(
+              (error) => typeof error === "boolean" && error,
+            )}
+          >
             <Tooltip.Root>
               <Tooltip.Trigger width="min-content">
                 <Stack
@@ -116,7 +127,7 @@ export function Axis(props: AxisProps) {
                     width: "0.5rem",
                     height: "0.5rem",
                     "border-radius": "1rem",
-                    "margin-left": "0.5em",
+                    "margin-left": "0.2em",
                   }}
                 />
               </Tooltip.Trigger>
