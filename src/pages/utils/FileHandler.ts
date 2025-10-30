@@ -103,7 +103,19 @@ export class FileHandler implements IFileHandler {
       .map((entry) => {
         const key = entry[0];
         const value = entry[1];
-        if (typeof value !== "object") return [key, typeof value];
+        if (typeof value !== "object") {
+          if (typeof value === "string") {
+            return [
+              key,
+              value === "NaN"
+                ? "number"
+                : isNaN(Number(value))
+                  ? typeof value
+                  : "number",
+            ];
+          }
+          return [key, typeof value];
+        }
         const parseValue = this.checkFormat(value);
         return [key, parseValue];
       })
@@ -115,12 +127,7 @@ export class FileHandler implements IFileHandler {
 
   private checkNullIncluded(format: object): boolean {
     const values = Object.values(format);
-    if (
-      values.some(
-        (val) =>
-          val === null || (typeof val === "number" && !Number.isFinite(val)),
-      )
-    ) {
+    if (values.some((val) => val === null)) {
       return true;
     } else {
       let isNullIncluded = false;
@@ -143,6 +150,32 @@ export class FileHandler implements IFileHandler {
     try {
       const output = await readTextFile(path);
       const parseFileToObject = JSON.parse(output);
+      if (fileFormat) {
+        if (!this.matchFileFormat(parseFileToObject, fileFormat)) {
+          throw new Error("Invalid file format.");
+        }
+      }
+      return parseFileToObject;
+    } catch (e) {
+      if (e) {
+        throw new Error(e.toString());
+      } else {
+        throw new Error("The file is invalid.");
+      }
+    }
+  }
+
+  async readNaNFile(
+    path: string,
+    fileFormat?: object,
+  ): Promise<object | never> {
+    try {
+      const output = (await readTextFile(path))
+        .replaceAll("NaN", `"NaN"`)
+        .replaceAll("infinity", `"infinity"`)
+        .replaceAll(`-"infinity"`, `"-infinity"`);
+      const parseFileToObject = JSON.parse(output);
+
       if (fileFormat) {
         if (!this.matchFileFormat(parseFileToObject, fileFormat)) {
           throw new Error("Invalid file format.");
@@ -242,6 +275,29 @@ export class FileHandler implements IFileHandler {
       return;
     } catch (e) {
       throw new Error(e as string);
+    }
+  }
+
+  async writeNaNFile(
+    path: string,
+    file: object,
+    fileFormat?: object,
+  ): Promise<void | never> {
+    if (fileFormat) {
+      if (!this.matchFileFormat(file, fileFormat)) {
+        throw new Error("The file format is invalid.");
+      }
+    }
+    const fileStr = JSON.stringify(file, null, "  ")
+      .replaceAll(`"NaN"`, `NaN`)
+      .replaceAll(`"-infinity"`, `-infinity`)
+      .replaceAll(`"infinity"`, `infinity`);
+
+    try {
+      await writeTextFile(path, fileStr);
+      return;
+    } catch (e) {
+      throw new Error(e ? (e as string) : "Fail to save file.");
     }
   }
 }
