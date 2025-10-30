@@ -273,7 +273,7 @@ export function ConfigTabContent() {
               const path = await fileHandler.openFileDialog(extension);
               if (!path) return;
               try {
-                const file = await fileHandler.readFile(
+                const file = await fileHandler.readNaNFile(
                   path,
                   configFormFileFormat(),
                 );
@@ -296,7 +296,7 @@ export function ConfigTabContent() {
             }}
             onOpenRecentFile={async (filePath: string) => {
               try {
-                const file = await fileHandler.readFile(
+                const file = await fileHandler.readNaNFile(
                   filePath,
                   configFormFileFormat(),
                 );
@@ -325,7 +325,7 @@ export function ConfigTabContent() {
             onReloadFile={async () => {
               if (!getFilePath()) return;
               try {
-                const file = await fileHandler.readFile(
+                const file = await fileHandler.readNaNFile(
                   getFilePath()!,
                   configFormFileFormat(),
                 );
@@ -369,7 +369,7 @@ export function ConfigTabContent() {
                   getFilePath()!,
                   getTabName(),
                 );
-                await fileHandler.writeFile(
+                await fileHandler.writeNaNFile(
                   path,
                   getConfigForm()!,
                   configFormFileFormat(),
