@@ -86,7 +86,14 @@ export function ConfigForm(props: ConfigFormProps) {
             config.coil.ls,
           );
           //@ts-ignore Below fields guaranteed to exist due to above checks
-          setConfig("axis", dynPos, "gain", "current", "p", p);
+          setConfig(
+            "axis",
+            dynPos,
+            "gain",
+            "current",
+            "p",
+            Number.isFinite(p) ? p : `${p}`,
+          );
         },
         { defer: true },
       ),
@@ -112,7 +119,14 @@ export function ConfigForm(props: ConfigFormProps) {
             config.coil.rs,
           );
           //@ts-ignore Below fields guaranteed to exist due to above checks
-          setConfig("axis", dynPos, "gain", "current", "i", i);
+          setConfig(
+            "axis",
+            dynPos,
+            "gain",
+            "current",
+            "i",
+            Number.isFinite(i) ? i : `${i}`,
+          );
         },
         { defer: true },
       ),
@@ -155,7 +169,14 @@ export function ConfigForm(props: ConfigFormProps) {
             config.coil[dynPos].kf,
           );
           //@ts-ignore Below fields guaranteed to exist due to above checks
-          setConfig("axis", dynPos, "gain", "velocity", "p", p);
+          setConfig(
+            "axis",
+            dynPos,
+            "gain",
+            "velocity",
+            "p",
+            Number.isFinite(p) ? p : `${p}`,
+          );
         },
         { defer: true },
       ),
@@ -188,7 +209,14 @@ export function ConfigForm(props: ConfigFormProps) {
             config.axis[dynPos].gain.velocity.p,
           );
           //@ts-ignore Below fields guaranteed to exist due to above checks
-          setConfig("axis", dynPos, "gain", "velocity", "i", i);
+          setConfig(
+            "axis",
+            dynPos,
+            "gain",
+            "velocity",
+            "i",
+            Number.isFinite(i) ? i : `${i}`,
+          );
         },
         { defer: true },
       ),
@@ -222,7 +250,14 @@ export function ConfigForm(props: ConfigFormProps) {
             config.axis[dynPos].gain.position.denominator,
           );
           //@ts-ignore Below fields guaranteed to exist due to above checks
-          setConfig("axis", dynPos, "gain", "position", "p", p);
+          setConfig(
+            "axis",
+            dynPos,
+            "gain",
+            "position",
+            "p",
+            Number.isFinite(p) ? p : `${p}`,
+          );
         },
         { defer: true },
       ),
