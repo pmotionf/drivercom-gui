@@ -316,9 +316,11 @@ function Monitoring() {
                         await serverHandler.connect(ip, port);
                         const serverResponse: LineType[] =
                           await serverHandler.getLineConfig();
+                        setConnetBtnLoading(false);
                         await addIpHistory(ip, port);
                         setLines(serverResponse);
                       } catch {
+                        setConnetBtnLoading(false);
                         if (
                           ipHistory().some(
                             (addr) => addr.ip === ip && addr.port === port,
@@ -328,7 +330,6 @@ function Monitoring() {
                         }
                         await serverHandler.disconnect();
                       }
-                      setConnetBtnLoading(false);
                     }}
                     onDisconnectServer={async () => {
                       setConnetBtnLoading(true);
