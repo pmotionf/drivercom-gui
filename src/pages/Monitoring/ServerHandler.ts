@@ -188,6 +188,7 @@ export class ServerHandler implements IServerHandler {
             case: "clearErrors",
             value: {
               line: lineId,
+              target: { case: undefined },
               $typeName: "mmc.command.Request.ClearErrors",
             },
           },
