@@ -226,7 +226,12 @@ export function Form(props: FormProps) {
               />
             );
           }
-          if (typeof value === "number") {
+          if (
+            typeof value === "number" ||
+            (typeof value === "string" && value === "NaN") ||
+            (typeof value === "string" && value === "Infinity") ||
+            (typeof value === "string" && value === "-Infinity")
+          ) {
             if (key === "_") return;
             const label = !isNaN(Number(key))
               ? `${props.id.split(`.`).pop()} ${Number(key) + 1}`
@@ -255,13 +260,13 @@ export function Form(props: FormProps) {
                 lockStatusKey={
                   lockStatusKey.length > 0 ? lockStatusKey : undefined
                 }
-                inputValue={object[key as keyof typeof object]}
-                onInputChange={(value) => {
+                inputValue={Number(object[key as keyof typeof object])}
+                onInputChange={(val) => {
                   setObject(
                     key as keyof typeof object,
                     // @ts-ignore: TSC unable to handle generic object type
                     // in store
-                    value,
+                    isFinite(val) ? val : `${val}`,
                   );
                   props.onItemChange?.();
                 }}
