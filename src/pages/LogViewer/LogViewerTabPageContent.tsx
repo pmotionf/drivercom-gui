@@ -45,6 +45,7 @@ export type LogViewerTabPageContentProps = {
 
 export type LogViewerTabPage = {
   filePath?: string;
+  plotNames?: string[];
   plotSplitIndex?: number[][];
   plotContext?: PlotContext[];
   plotXScale?: [number, number];
@@ -201,22 +202,6 @@ export function LogViewerTabPageContent() {
   );
 
   const [splitIndex, setSplitIndex] = createSignal([] as number[][]);
-
-  createEffect(
-    on(
-      () => splitIndex(),
-      () => {
-        setTimeout(() => {
-          setSplitPlot(
-            getTabContext(tabPageProps.tabId).currentIndex,
-            splitIndex(),
-          );
-        }, 200);
-      },
-      { defer: true },
-    ),
-  );
-
   const [mergePlotIndexes, setMergePlotIndexes] = createSignal<number[]>([]);
 
   createEffect(
@@ -254,6 +239,25 @@ export function LogViewerTabPageContent() {
     ),
   );
 
+  const [plotNames, setPlotNames] = createStore([] as string[]);
+  createEffect(
+    on(
+      () => plotNames,
+      () => {
+        const names = plotNames;
+        tabContexts.get(tabPageProps.key)?.[1](
+          "tabContext",
+          getTabContext(tabPageProps.tabId).currentIndex,
+          "tabPage",
+          "logViewerTabPage",
+          "plotNames",
+          names,
+        );
+      },
+      { defer: true },
+    ),
+  );
+
   const [header, setHeader] = createSignal<string[]>([]);
   const [series, setSeries] = createSignal<number[][]>([]);
 
@@ -283,7 +287,7 @@ export function LogViewerTabPageContent() {
         }
 
         if (
-          typeof getTabContext(tabPageProps.tabId).tabCtx.plotSplitIndex! !==
+          typeof getTabContext(tabPageProps.tabId).tabCtx.plotSplitIndex !==
           "undefined"
         ) {
           setSplitIndex([
@@ -292,10 +296,17 @@ export function LogViewerTabPageContent() {
         }
 
         if (
-          typeof getTabContext(tabPageProps.tabId).tabCtx.plotYScales! !==
+          typeof getTabContext(tabPageProps.tabId).tabCtx.plotYScales !==
           "undefined"
         ) {
           setPlotYScales(getTabContext(tabPageProps.tabId).tabCtx.plotYScales!);
+        }
+
+        if (
+          typeof getTabContext(tabPageProps.tabId).tabCtx.plotNames !==
+          "undefined"
+        ) {
+          setPlotNames(getTabContext(tabPageProps.tabId).tabCtx.plotNames!);
         }
       }
     }
@@ -316,6 +327,14 @@ export function LogViewerTabPageContent() {
         },
       );
       setPlotYScales(newYScales);
+    }
+
+    if (plotNames.length <= 0) {
+      const newNames = Array.from(
+        { length: splitIndex().length },
+        (_, i) => `Graph ${i + 1}`,
+      );
+      setPlotNames(newNames);
     }
 
     setRender(true);
@@ -363,6 +382,15 @@ export function LogViewerTabPageContent() {
       ];
       return newUpdate;
     });
+
+    setPlotNames((prev) => {
+      const newUpdate = [
+        ...prev.slice(0, plot_index + 1),
+        `Graph ${prev.length + 1}`,
+        ...prev.slice(plot_index + 1, prev.length),
+      ];
+      return newUpdate;
+    });
   }
 
   function mergePlot(plot_indexes: number[]) {
@@ -371,6 +399,9 @@ export function LogViewerTabPageContent() {
 
     const prevYRange = [...plotYScales()];
     let mergeYRange: { min: number; max: number } = prevYRange[plot_indexes[0]];
+
+    const prevName = [...plotNames];
+    const mergeNames = prevName[plot_indexes[0]];
 
     let smallestIndex = plot_indexes[0];
     plot_indexes.forEach((plot_index) => {
@@ -402,6 +433,16 @@ export function LogViewerTabPageContent() {
       ...newYRange.slice(smallestIndex, newYRange.length),
     ];
     setPlotYScales(updateYRange);
+
+    const newNames = prevName.filter(
+      (_, index) => !plot_indexes.includes(index),
+    );
+    const updateNames = [
+      ...newNames.slice(0, smallestIndex),
+      mergeNames,
+      ...newNames.slice(smallestIndex, newNames.length),
+    ];
+    setPlotNames(updateNames);
   }
 
   const allSelected = (index: number) => {
@@ -541,6 +582,15 @@ export function LogViewerTabPageContent() {
         ...updatePlotContexts.splice(fromIndex, 1),
       );
       setPlots(updatePlotContexts);
+
+      // plotNames
+      const updatePlotNames = plotNames.slice();
+      updatePlotNames.splice(
+        nextIndex,
+        0,
+        ...updatePlotNames.splice(fromIndex, 1),
+      );
+      setPlotNames(updatePlotNames);
     }
   };
 
@@ -831,7 +881,7 @@ export function LogViewerTabPageContent() {
                       }
                     }}
                   >
-                    <Text fontWeight="bold">Graph {index() + 1}</Text>
+                    <Text fontWeight="bold">{plotNames[index()]}</Text>
                   </Checkbox>
 
                   <Stack direction="row" width={`calc(100% - 16rem)`}>
@@ -967,10 +1017,9 @@ export function LogViewerTabPageContent() {
               "border-width": "1px",
             }}
           >
-            <Text
-              size="xs"
-              fontWeight={"bold"}
-            >{`Graph ${dragging()! + 1}`}</Text>
+            <Text size="xs" fontWeight={"bold"}>
+              {plotNames[dragging()!]}
+            </Text>
           </Stack>
         </Portal>
       </Show>
