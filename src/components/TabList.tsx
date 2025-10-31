@@ -326,7 +326,11 @@ export function TabList(
             return (
               <Tabs.Content
                 value={tabCtx.tab.id}
-                style={{ width: "100%", height: `calc(100% - 3rem)` }}
+                style={{
+                  width: "100%",
+                  height: `calc(100% - 3rem)`,
+                  padding: "0",
+                }}
               >
                 <TabPageContext.Provider
                   value={{
