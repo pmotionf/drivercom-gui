@@ -30,6 +30,7 @@ import { FileHandler } from "../utils/FileHandler";
 import { createDraggable } from "@neodrag/solid";
 import { css } from "styled-system/css";
 import { Portal } from "solid-js/web";
+import { Editable } from "~/components/ui/editable";
 
 export type ErrorMessage = {
   title: string;
@@ -242,7 +243,7 @@ export function LogViewerTabPageContent() {
   const [plotNames, setPlotNames] = createStore([] as string[]);
   createEffect(
     on(
-      () => plotNames,
+      () => trackStore(plotNames),
       () => {
         const names = plotNames;
         tabContexts.get(tabPageProps.key)?.[1](
@@ -881,7 +882,34 @@ export function LogViewerTabPageContent() {
                       }
                     }}
                   >
-                    <Text fontWeight="bold">{plotNames[index()]}</Text>
+                    <Editable.Root
+                      activationMode="dblclick"
+                      value={plotNames[index()]}
+                      onValueChange={(details) =>
+                        setPlotNames(index(), details.value)
+                      }
+                      fontWeight="bold"
+                      width={"5rem"}
+                      style={{
+                        display: "block",
+                        "text-overflow": "ellipsis",
+                        "white-space": "none",
+                        overflow: "hidden",
+                      }}
+                    >
+                      <Editable.Area>
+                        <Editable.Input width={"100%"} />
+                        <Editable.Preview
+                          width={"100%"}
+                          style={{
+                            display: "block",
+                            "text-overflow": "ellipsis",
+                            "white-space": "none",
+                            overflow: "hidden",
+                          }}
+                        />
+                      </Editable.Area>
+                    </Editable.Root>
                   </Checkbox>
 
                   <Stack direction="row" width={`calc(100% - 16rem)`}>
