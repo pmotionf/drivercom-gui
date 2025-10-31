@@ -14,6 +14,7 @@ import {
   IconFileDownload,
   IconFold,
   IconRestore,
+  IconArrowAutofitHeight,
   IconSeparatorHorizontal,
 } from "@tabler/icons-solidjs";
 import { Stack } from "styled-system/jsx";
@@ -26,6 +27,9 @@ import { LegendStroke } from "~/components/Plot/Legend";
 import { TabContext, TabPageContext } from "~/components/TabList";
 import { CreateToasterReturn } from "@ark-ui/solid";
 import { FileHandler } from "../utils/FileHandler";
+import { createDraggable } from "@neodrag/solid";
+import { css } from "styled-system/css";
+import { Portal } from "solid-js/web";
 
 export type ErrorMessage = {
   title: string;
@@ -296,7 +300,7 @@ export function LogViewerTabPageContent() {
       }
     }
 
-    if (splitIndex().length === 0) {
+    if (splitIndex().length === 0 || splitIndex().length > header().length) {
       const indexArray = Array.from(
         { length: header().length },
         (_, index) => index,
@@ -503,23 +507,70 @@ export function LogViewerTabPageContent() {
     });
   }
 
-  createEffect(
-    on(
-      () => render(),
-      () => {
-        if (!render()) {
-          prepareCsvFile();
-        }
-      },
-      { defer: true },
-    ),
-  );
-
   const fileHandler = new FileHandler();
+
+  const [dragging, setDragging] = createSignal<number | null>(null);
+
+  //@ts-ignore This is need for using neo-drag dependency.
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { draggable: dragOptions } = createDraggable();
+  let scrollContainer: HTMLDivElement | undefined;
+
+  const [dragOverIndex, setDragOverIndex] = createSignal<number | null>(null);
+
+  const reorderPlots = (fromIndex: number, nextIndex: number | null) => {
+    if (typeof nextIndex === "number" && fromIndex !== nextIndex) {
+      const updatedItems = splitIndex().slice();
+      updatedItems.splice(nextIndex, 0, ...updatedItems.splice(fromIndex, 1));
+      setSplitIndex(updatedItems);
+
+      //plotYscalses
+      const updatedPlotYScales = plotYScales().slice();
+      updatedPlotYScales.splice(
+        nextIndex,
+        0,
+        ...updatedPlotYScales.splice(fromIndex, 1),
+      );
+      setPlotYScales(updatedPlotYScales);
+
+      // plotContext
+      const updatePlotContexts = plots.slice();
+      updatePlotContexts.splice(
+        nextIndex,
+        0,
+        ...updatePlotContexts.splice(fromIndex, 1),
+      );
+      setPlots(updatePlotContexts);
+    }
+  };
+
+  const divId = crypto.randomUUID();
+  const [overlayTop, setOverlayTop] = createSignal<number | null>(null);
+  const [overlayBottom, setOverlayBottom] = createSignal<number | null>(null);
+
+  const [clientX, setClientX] = createSignal<number | null>(null);
+  const [clientY, setClientY] = createSignal<number | null>(null);
+
+  const dragOverScroll = (
+    offsetY: number,
+    scrollContainer: HTMLDivElement | undefined,
+  ) => {
+    if (!scrollContainer) return;
+    const movement = offsetY * 0.05;
+    scrollContainer.scrollBy({ top: movement });
+  };
 
   return (
     <Show when={render()}>
-      <div style={{ width: "100%", height: "100%", "overflow-y": "auto" }}>
+      <div
+        style={{
+          width: "100%",
+          height: "100%",
+          "overflow-y": "auto",
+          "overflow-x": "hidden",
+        }}
+        ref={scrollContainer}
+      >
         <For each={splitIndex()}>
           {(item, index) => {
             // Header and items need not be derived state, as they will not
@@ -533,10 +584,80 @@ export function LogViewerTabPageContent() {
 
             return (
               <div
+                id={`${divId}:${index()}`}
+                class={css({ background: "bg.default" })}
                 style={{
                   height: `calc(100% / ${splitIndex().length})`,
                   width: "100%",
                   "min-height": "20rem",
+                  position: dragging() === index() ? "relative" : undefined,
+                  "z-index": dragging() === index() ? "10" : "0",
+                  opacity: dragging() === index() ? "0" : "1",
+                  "padding-top": "0.5em",
+                }}
+                use:dragOptions={{
+                  handle: ".handle",
+                  onDragStart: () => {
+                    setDragging(index());
+                  },
+                  onDrag: (data) => {
+                    dragOverScroll(data.offsetY, scrollContainer);
+                    setClientX(data.event.clientX);
+
+                    const clientY =
+                      data.event.clientY; /*+ scrollContainer!.scrollTop*/
+                    setClientY(clientY);
+                    let dragIndex: number | null = null;
+
+                    for (let num = 0; num < splitIndex().length; num++) {
+                      if (
+                        typeof dragging() === "number" &&
+                        dragging() !== num
+                      ) {
+                        const plotId = `${divId}:${num}`;
+                        const element = document.getElementById(plotId);
+                        if (element) {
+                          const clientRec = element.getBoundingClientRect();
+                          const top = clientRec.top;
+                          const bottom = clientRec.bottom;
+                          if (top < clientY && clientY < bottom) {
+                            setOverlayTop(clientRec.top);
+                            setOverlayBottom(clientRec.bottom);
+                            dragIndex = num;
+                            break;
+                          }
+                        }
+                      }
+                    }
+                    setDragOverIndex(dragIndex);
+                  },
+                  onDragEnd: () => {
+                    setTimeout(() => {
+                      setRender(false);
+                      const dragOver = dragOverIndex();
+                      reorderPlots(index(), dragOverIndex());
+                      setDragging(null);
+                      setDragOverIndex(null);
+                      setRender(true);
+                      if (scrollContainer) {
+                        const plotId = `${divId}:${dragOver}`;
+                        const element = document.getElementById(plotId);
+                        if (element) {
+                          const top = element.getBoundingClientRect().y;
+
+                          scrollContainer.scrollTo({
+                            top: top - scrollContainer.offsetTop,
+                          });
+                        }
+                      }
+
+                      setOverlayBottom(null);
+                      setOverlayTop(null);
+
+                      setClientX(null);
+                      setClientY(null);
+                    }, 200);
+                  },
                 }}
               >
                 <Stack
@@ -611,6 +732,9 @@ export function LogViewerTabPageContent() {
                           }
                           if (path === filePath()) {
                             setRender(false);
+                            setTimeout(async () => {
+                              await prepareCsvFile();
+                            }, 200);
                           }
                         }}
                       >
@@ -694,8 +818,9 @@ export function LogViewerTabPageContent() {
                   >
                     <Text fontWeight="bold">Graph {index() + 1}</Text>
                   </Checkbox>
-                  <Show when={index() === 0}>
-                    <Stack direction="row" width={`calc(100% - 16rem)`}>
+
+                  <Stack direction="row" width={`calc(100% - 16rem)`}>
+                    <Show when={index() === 0}>
                       <Tooltip.Root>
                         <Tooltip.Trigger>
                           <IconButton
@@ -717,9 +842,20 @@ export function LogViewerTabPageContent() {
                           </Tooltip.Content>
                         </Tooltip.Positioner>
                       </Tooltip.Root>
-                    </Stack>
-                  </Show>
+                    </Show>
+                    <Show when={splitIndex().length > 1}>
+                      <IconButton
+                        variant={"outline"}
+                        class="handle"
+                        size="sm"
+                        marginTop="0.4em"
+                      >
+                        <IconArrowAutofitHeight />
+                      </IconButton>
+                    </Show>
+                  </Stack>
                 </Stack>
+
                 <Plot
                   id={currentID()}
                   group={tabPageProps.tabId}
@@ -740,7 +876,10 @@ export function LogViewerTabPageContent() {
                   }}
                   xScale={plotZoomState()}
                   onXScaleChange={(xRange) => {
-                    if (plotZoomState() !== xRange) {
+                    if (
+                      plotZoomState()[0] !== xRange[0] &&
+                      plotZoomState()[1] !== xRange[1]
+                    ) {
                       setPlotZoomState(xRange);
                     }
                   }}
@@ -782,6 +921,42 @@ export function LogViewerTabPageContent() {
           }}
         </For>
       </div>
+      <Show when={typeof dragOverIndex() === "number"}>
+        <Stack
+          background={"fg.default"}
+          opacity={"0.1"}
+          style={{
+            position: "absolute",
+            top: `max(${overlayTop()}px, 3rem)`,
+            width: `${document.getElementById(`${divId}:${dragOverIndex()}`)!.offsetWidth}px`,
+            left: `${document.getElementById(`${divId}:${dragOverIndex()}`)!.offsetLeft}px`,
+            height: `calc(${overlayBottom()!}px - max(${overlayTop()}px, 3rem)) `,
+          }}
+        />
+      </Show>
+
+      <Show when={typeof dragging() === "number"}>
+        <Portal>
+          <Stack
+            background={"bg.default"}
+            borderRadius={"0.2em"}
+            style={{
+              position: "absolute",
+              top: `${clientY()}px`,
+              width: "max-content",
+              left: `${clientX()}px`,
+              height: `min-content`,
+              padding: "0.5em",
+              "border-width": "1px",
+            }}
+          >
+            <Text
+              size="xs"
+              fontWeight={"bold"}
+            >{`Graph ${dragging()! + 1}`}</Text>
+          </Stack>
+        </Portal>
+      </Show>
     </Show>
   );
 }
