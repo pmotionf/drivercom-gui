@@ -507,6 +507,7 @@ export function Plot(props: PlotProps) {
     <>
       <div {...rest}>
         <Splitter.Root
+          background="bg.default"
           id={props.id}
           style={{ width: "100%", height: "100%", "padding-right": "0.5em" }}
           panels={[{ id: `plot-${props.id}` }, { id: `legend-${props.id}` }]}
@@ -529,6 +530,7 @@ export function Plot(props: PlotProps) {
           >
             <div id={props.id} style={{ width: "100%", height: "100%" }}>
               <SolidUplot
+                style={{ cursor: "default" }}
                 onCreate={(e) => {
                   plot = e as uPlot;
                   setRender(true);
@@ -594,43 +596,30 @@ export function Plot(props: PlotProps) {
                           }
 
                           if (cursorMode() === CursorMode.Horizontal) {
-                            const uOverLeft = u.over.offsetLeft;
-                            const uPlotDivLeft = document.getElementById(
-                              props.id,
-                            )!.offsetLeft;
-                            const uPlotDivTop = document.getElementById(
-                              props.id,
-                            )!.offsetTop;
-                            const uPlotDivWidth = document.getElementById(
-                              props.id,
-                            )!.offsetWidth;
-                            const sideBar = document.getElementById(
-                              "radio-group:collapsed_side_bar",
-                            )!.offsetWidth;
+                            const domRect = u.over.getBoundingClientRect();
+                            const uPlotDivLeft = domRect.left;
+                            const uPlotDivTop = domRect.y;
+                            const uPlotDivWidth = domRect.width;
 
-                            const clientX0 = e.clientX - sideBar;
+                            const clientX0 = e.clientX;
                             const left0 = u.posToVal(
-                              clientX0 - uPlotDivLeft - uOverLeft,
+                              clientX0 - uPlotDivLeft,
                               "x",
                             );
-                            setYMin(uPlotDivTop + u.over.offsetTop);
-                            setYMax(
-                              uPlotDivTop +
-                                u.over.offsetTop +
-                                u.over.offsetHeight,
-                            );
+                            setYMin(uPlotDivTop);
+                            setYMax(uPlotDivTop + domRect.height);
 
-                            let clientX1 = e.clientX - sideBar;
+                            let clientX1 = e.clientX;
                             const onmove = (e: MouseEvent) => {
-                              if (e.clientX - sideBar <= uPlotDivLeft) {
+                              if (e.clientX <= uPlotDivLeft) {
                                 clientX1 = uPlotDivLeft;
                               } else if (
-                                e.clientX - sideBar >=
+                                e.clientX >=
                                 uPlotDivLeft + uPlotDivWidth
                               ) {
                                 clientX1 = uPlotDivLeft + uPlotDivWidth;
                               } else {
-                                clientX1 = e.clientX - sideBar;
+                                clientX1 = e.clientX;
                               }
 
                               setSelectionLeft(Math.min(clientX0, clientX1));
@@ -642,7 +631,7 @@ export function Plot(props: PlotProps) {
 
                             const onup = () => {
                               const left1 = u.posToVal(
-                                clientX1 - uPlotDivLeft - uOverLeft,
+                                clientX1 - uPlotDivLeft,
                                 "x",
                               );
                               uPlot.sync(group()).plots.forEach((up) => {
@@ -756,27 +745,20 @@ export function Plot(props: PlotProps) {
                             document.addEventListener("mouseup", onup);
                           } else if (cursorMode() === CursorMode.Vertical) {
                             const y0 = e.clientY;
-
                             setYMin(e.clientY);
-                            setSelectionLeft(
-                              document.getElementById(props.id)!.offsetLeft +
-                                u.over.offsetLeft,
-                            );
+                            const domRec = u.over.getBoundingClientRect();
+                            setSelectionLeft(domRec.x);
                             setSelectionWidth(u.over.offsetWidth);
 
                             let y1: number | null = null;
-                            const uOverTop = u.over.offsetTop;
-                            const uOverHeight = u.over.offsetHeight;
-                            const uPlotDivTop = document.getElementById(
-                              props.id,
-                            )!.offsetTop;
+                            const uOverTop = domRec.top;
+                            const uOverHeight = domRec.height;
 
                             const onmove = (e: MouseEvent) => {
                               y1 = e.clientY;
-                              const uPlotTop = uPlotDivTop + uOverTop;
-                              const uPlotBottom = uPlotTop + uOverHeight;
-                              if (y1 <= uPlotTop) {
-                                setYMax(uPlotTop);
+                              const uPlotBottom = uOverTop + uOverHeight;
+                              if (y1 <= uOverTop) {
+                                setYMax(uOverTop);
                               } else if (y1 >= uPlotBottom) {
                                 setYMax(uPlotBottom);
                               } else {
@@ -788,31 +770,19 @@ export function Plot(props: PlotProps) {
                               if (y1) {
                                 let startNumber = Math.min(y0, y1);
                                 let endNumber = Math.max(y0, y1);
-                                if (
-                                  endNumber - uPlotDivTop - uOverTop >=
-                                  uOverHeight
-                                ) {
+                                if (endNumber - uOverTop >= uOverHeight) {
                                   endNumber = uOverHeight;
                                 }
 
-                                if (startNumber - uPlotDivTop - uOverTop <= 0) {
+                                if (startNumber - uOverTop <= 0) {
                                   startNumber = 0;
                                 }
 
-                                const cursorMin =
-                                  startNumber - uPlotDivTop - uOverTop;
-                                const cursorMax =
-                                  endNumber - uPlotDivTop - uOverTop;
+                                const cursorMin = startNumber - uOverTop;
+                                const cursorMax = endNumber - uOverTop;
 
-                                const yMin = u.scales.y.min!;
-                                const yMax = u.scales.y.max!;
-                                const yRange = yMax - yMin;
-
-                                const minPercent = cursorMin / uOverHeight;
-                                const scaleYMin = yMax - yRange * minPercent;
-
-                                const maxPercent = cursorMax / uOverHeight;
-                                const scaleYMax = yMax - yRange * maxPercent;
+                                const scaleYMin = u.posToVal(cursorMin, "y");
+                                const scaleYMax = u.posToVal(cursorMax, "y");
 
                                 u.setScale("y", {
                                   min: scaleYMin,
@@ -1439,18 +1409,20 @@ export function Plot(props: PlotProps) {
         </Splitter.Root>
       </div>
       <Show when={yMin() && yMax()}>
-        <Stack
-          position="absolute"
-          pointerEvents="none"
-          backgroundColor="fg.subtle"
-          style={{
-            top: `${Math.min(yMax()!, yMin()!)}px`,
-            left: `${selectionLeft()}px`,
-            width: `${selectionWidth()}px`,
-            height: `${Math.max(yMax()!, yMin()!) - Math.min(yMax()!, yMin()!)}px`,
-            opacity: "0.1",
-          }}
-        />
+        <Portal>
+          <Stack
+            position="absolute"
+            pointerEvents="none"
+            backgroundColor="fg.subtle"
+            style={{
+              top: `${Math.min(yMax()!, yMin()!)}px`,
+              left: `${selectionLeft()}px`,
+              width: `${selectionWidth()}px`,
+              height: `${Math.max(yMax()!, yMin()!) - Math.min(yMax()!, yMin()!)}px`,
+              opacity: "0.1",
+            }}
+          />
+        </Portal>
       </Show>
     </>
   );
