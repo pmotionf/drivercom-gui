@@ -14,7 +14,7 @@ import {
   IconFileDownload,
   IconFold,
   IconRestore,
-  IconArrowAutofitHeight,
+  IconGridDots,
   IconSeparatorHorizontal,
 } from "@tabler/icons-solidjs";
 import { Stack } from "styled-system/jsx";
@@ -553,10 +553,22 @@ export function LogViewerTabPageContent() {
 
   const dragOverScroll = (
     offsetY: number,
+    clientY: number,
     scrollContainer: HTMLDivElement | undefined,
   ) => {
     if (!scrollContainer) return;
     const movement = offsetY * 0.05;
+    let scrollHeight = 0;
+    const children = scrollContainer.children;
+    if (children) {
+      for (let i = 0; i < children.length; i++) {
+        const item = children.item(i);
+        if (item) {
+          scrollHeight = scrollHeight + item.clientHeight;
+        }
+      }
+    }
+    if (scrollContainer.scrollTop + movement + clientY > scrollHeight) return;
     scrollContainer.scrollBy({ top: movement });
   };
 
@@ -568,6 +580,8 @@ export function LogViewerTabPageContent() {
           height: "100%",
           "overflow-y": "auto",
           "overflow-x": "hidden",
+          "scrollbar-width":
+            typeof dragging() === "number" ? "none" : undefined,
         }}
         ref={scrollContainer}
       >
@@ -590,8 +604,6 @@ export function LogViewerTabPageContent() {
                   height: `calc(100% / ${splitIndex().length})`,
                   width: "100%",
                   "min-height": "20rem",
-                  position: dragging() === index() ? "relative" : undefined,
-                  "z-index": dragging() === index() ? "10" : "0",
                   opacity: dragging() === index() ? "0" : "1",
                   "padding-top": "0.5em",
                 }}
@@ -601,11 +613,14 @@ export function LogViewerTabPageContent() {
                     setDragging(index());
                   },
                   onDrag: (data) => {
-                    dragOverScroll(data.offsetY, scrollContainer);
+                    dragOverScroll(
+                      data.offsetY,
+                      data.event.clientY,
+                      scrollContainer,
+                    );
                     setClientX(data.event.clientX);
 
-                    const clientY =
-                      data.event.clientY; /*+ scrollContainer!.scrollTop*/
+                    const clientY = data.event.clientY;
                     setClientY(clientY);
                     let dragIndex: number | null = null;
 
@@ -850,7 +865,7 @@ export function LogViewerTabPageContent() {
                         size="sm"
                         marginTop="0.4em"
                       >
-                        <IconArrowAutofitHeight />
+                        <IconGridDots />
                       </IconButton>
                     </Show>
                   </Stack>
@@ -884,7 +899,9 @@ export function LogViewerTabPageContent() {
                     }
                   }}
                   yScale={
-                    plotYScales()[index()] ? plotYScales()[index()] : undefined
+                    plotYScales() && plotYScales()[index()]
+                      ? plotYScales()[index()]
+                      : undefined
                   }
                   onYScaleChange={(yRange) => {
                     const yScales = plotYScales();
