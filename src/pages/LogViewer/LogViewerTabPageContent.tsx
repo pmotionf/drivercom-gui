@@ -676,7 +676,7 @@ export function LogViewerTabPageContent() {
                   </Tooltip.Root>
 
                   <Checkbox
-                    width="7rem"
+                    width="8rem"
                     checked={mergePlotIndexes().indexOf(index()) !== -1}
                     onCheckedChange={(checkBoxState) => {
                       if (checkBoxState.checked === true) {
@@ -695,7 +695,7 @@ export function LogViewerTabPageContent() {
                     <Text fontWeight="bold">Graph {index() + 1}</Text>
                   </Checkbox>
                   <Show when={index() === 0}>
-                    <Stack direction="row" width={`calc(100% - 16rem)`}>
+                    <Stack direction="row" width={`calc(100% - 17rem)`}>
                       <Tooltip.Root>
                         <Tooltip.Trigger>
                           <IconButton
