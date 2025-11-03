@@ -508,7 +508,7 @@ export function LogViewerTabPageContent() {
       () => render(),
       () => {
         if (!render()) {
-          prepareCsvFile();
+          //prepareCsvFile();
         }
       },
       { defer: true },
@@ -516,6 +516,41 @@ export function LogViewerTabPageContent() {
   );
 
   const fileHandler = new FileHandler();
+
+  const createNewSeries = (head: string, plotIndex: number) => {
+    const xScale = plotZoomState();
+    const yScale = plotYScales();
+
+    setRender(false);
+
+    setTimeout(() => {
+      setHeader((prev) => [...prev, `derivative.${head}`]);
+      const prevSeries = series()[header().indexOf(head)];
+      const newSeries = prevSeries.map((val, i) => {
+        return prevSeries[i + 1] - val;
+      });
+
+      const sortSeries = newSeries.sort((a, b) => b - a);
+      setSeries((prev) => [...prev, [newSeries[0], ...newSeries.slice(0, -1)]]);
+      setSplitIndex((prev) =>
+        prev.map((split, i) =>
+          i === plotIndex ? [...split, series().length - 1] : split,
+        ),
+      );
+      setPlotZoomState(xScale);
+      setPlotYScales(
+        yScale.map((yScale, i) =>
+          i === plotIndex
+            ? {
+                min: Math.max(yScale.min, sortSeries[0]),
+                max: Math.min(yScale.max, sortSeries.pop()!),
+              }
+            : yScale,
+        ),
+      );
+      setRender(true);
+    }, 400);
+  };
 
   return (
     <Show when={render()}>
@@ -770,6 +805,9 @@ export function LogViewerTabPageContent() {
                   legendShrink={isLegendShrink()}
                   onLegendShrinkChange={(newState) => {
                     setIsLegendShrink(newState);
+                  }}
+                  onCreateSeries={(head) => {
+                    createNewSeries(head, index());
                   }}
                   style={{
                     width: "100%",
