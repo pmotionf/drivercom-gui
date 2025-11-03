@@ -26,7 +26,6 @@ import { LegendStroke } from "~/components/Plot/Legend";
 import { TabContext, TabPageContext } from "~/components/TabList";
 import { CreateToasterReturn } from "@ark-ui/solid";
 import { FileHandler } from "../utils/FileHandler";
-import { Properties } from "solid-js/web";
 
 export type ErrorMessage = {
   title: string;
@@ -565,11 +564,21 @@ export function LogViewerTabPageContent() {
     setTimeout(() => {
       setHeader((prev) => [...prev, `derivative.${head}`]);
       const prevSeries = series()[header().indexOf(head)];
-      const newSeries = prevSeries.map((val, i) => {
-        return prevSeries[i + 1] - val;
-      });
+      const newSeries: number[] = [];
+      for (let i = 0; i < prevSeries.length; i++) {
+        if (i === 0) {
+          const currentVal = prevSeries[i];
+          const nextVal = prevSeries[i + 1];
+          const value = nextVal - currentVal;
+          newSeries.push(value);
+        } else {
+          const currentVal = prevSeries[i];
+          const prevVal = prevSeries[i - 1];
+          const value = currentVal - prevVal;
+          newSeries.push(value);
+        }
+      }
 
-      const sortSeries = newSeries.sort((a, b) => b - a);
       setSeries((prev) => [...prev, [newSeries[0], ...newSeries.slice(0, -1)]]);
       setSplitIndex((prev) =>
         prev.map((split, i) =>
@@ -577,6 +586,8 @@ export function LogViewerTabPageContent() {
         ),
       );
       setPlotZoomState(xScale);
+
+      const sortSeries = newSeries.sort((a, b) => b - a);
       setPlotYScales(
         yScale.map((yScale, i) =>
           i === plotIndex
@@ -587,8 +598,22 @@ export function LogViewerTabPageContent() {
             : yScale,
         ),
       );
+
+      const prevPlotCtx = plots[plotIndex];
+      const plotPalette = prevPlotCtx.palette;
+
+      setPlots(plotIndex, {
+        style: [...prevPlotCtx.style, LegendStroke.Line],
+        visible: [...prevPlotCtx.visible, true],
+        color: [
+          ...prevPlotCtx.color,
+          plotPalette[prevPlotCtx.color.length % plotPalette.length],
+        ],
+        palette: plotPalette,
+        selected: [...prevPlotCtx.selected, false],
+      });
       setRender(true);
-    }, 400);
+    }, 200);
   };
 
   return (
