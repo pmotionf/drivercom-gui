@@ -605,9 +605,12 @@ export function LogViewerTabPageContent() {
   const dragOverScroll = (
     offsetY: number,
     clientY: number,
+    clientX: number,
     scrollContainer: HTMLDivElement | undefined,
   ) => {
     if (!scrollContainer) return;
+    const clientRef = scrollContainer.getBoundingClientRect()
+    if(clientRef.left > clientX || clientX > clientRef.right) return
     const movement = offsetY * 0.05;
     let scrollHeight = 0;
     const children = scrollContainer.children;
@@ -667,6 +670,7 @@ export function LogViewerTabPageContent() {
                     dragOverScroll(
                       data.offsetY,
                       data.event.clientY,
+                      data.event.clientX,
                       scrollContainer,
                     );
                     setClientX(data.event.clientX);
@@ -684,6 +688,11 @@ export function LogViewerTabPageContent() {
                         const element = document.getElementById(plotId);
                         if (element) {
                           const clientRec = element.getBoundingClientRect();
+                          if (
+                            clientRec.left > data.event.clientX ||
+                            data.event.clientX > clientRec.right
+                          )
+                            break;
                           const top = clientRec.top;
                           const bottom = clientRec.bottom;
                           if (top < clientY && clientY < bottom) {
