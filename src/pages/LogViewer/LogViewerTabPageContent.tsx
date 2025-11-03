@@ -26,6 +26,7 @@ import { LegendStroke } from "~/components/Plot/Legend";
 import { TabContext, TabPageContext } from "~/components/TabList";
 import { CreateToasterReturn } from "@ark-ui/solid";
 import { FileHandler } from "../utils/FileHandler";
+import { Properties } from "solid-js/web";
 
 export type ErrorMessage = {
   title: string;
@@ -41,6 +42,8 @@ export type LogViewerTabPageContentProps = {
 
 export type LogViewerTabPage = {
   filePath?: string;
+  series?: number[][];
+  header?: string[];
   plotSplitIndex?: number[][];
   plotContext?: PlotContext[];
   plotXScale?: [number, number];
@@ -253,46 +256,94 @@ export function LogViewerTabPageContent() {
   const [header, setHeader] = createSignal<string[]>([]);
   const [series, setSeries] = createSignal<number[][]>([]);
 
+  createEffect(
+    on(
+      () => header(),
+      () => {
+        const headers = header();
+        tabContexts.get(tabPageProps.key)?.[1](
+          "tabContext",
+          getTabContext(tabPageProps.tabId).currentIndex,
+          "tabPage",
+          "logViewerTabPage",
+          "header",
+          headers,
+        );
+      },
+      { defer: true },
+    ),
+  );
+
+  createEffect(
+    on(
+      () => series(),
+      () => {
+        const currentSeries = series();
+        tabContexts.get(tabPageProps.key)?.[1](
+          "tabContext",
+          getTabContext(tabPageProps.tabId).currentIndex,
+          "tabPage",
+          "logViewerTabPage",
+          "series",
+          currentSeries,
+        );
+      },
+      { defer: true },
+    ),
+  );
+
   onMount(async () => {
     await prepareCsvFile();
   });
 
   const prepareCsvFile = async () => {
-    try {
-      const csvFile = await fileHandler.readCsvFile(filePath());
-      setSeries(csvFile.series);
-      setHeader(csvFile.header);
-      setPlotZoomState([0, series()[0].length]);
-    } catch (e) {
-      tabPageProps.toaster.create({
-        title: "Invalid File",
-        description: e as string,
-        type: "error",
-      });
-      deleteTab();
+    const tabContext = getTabContext(tabPageProps.tabId).tabCtx;
+    if (
+      !tabContext.header ||
+      !tabContext.series ||
+      tabContext.header.length < 1 ||
+      tabContext.series.length < 1
+    ) {
+      try {
+        const csvFile = await fileHandler.readCsvFile(filePath());
+        setSeries(csvFile.series);
+        setHeader(csvFile.header);
+        setPlotZoomState([0, series()[0].length]);
+      } catch (e) {
+        tabPageProps.toaster.create({
+          title: "Invalid File",
+          description: e as string,
+          type: "error",
+        });
+        deleteTab();
+      }
     }
 
-    if (getTabContext(tabPageProps.tabId)) {
-      if (getTabContext(tabPageProps.tabId).tabCtx) {
-        if (getTabContext(tabPageProps.tabId).tabCtx.plotContext) {
-          setPlots(getTabContext(tabPageProps.tabId).tabCtx.plotContext!);
-        }
+    if (tabContext) {
+      if (
+        typeof tabContext.header !== "undefined" &&
+        tabContext.header.length > 0
+      ) {
+        setHeader(tabContext.header!);
+      }
 
-        if (
-          typeof getTabContext(tabPageProps.tabId).tabCtx.plotSplitIndex! !==
-          "undefined"
-        ) {
-          setSplitIndex([
-            ...getTabContext(tabPageProps.tabId).tabCtx.plotSplitIndex!,
-          ]);
-        }
+      if (
+        typeof tabContext.series !== "undefined" &&
+        tabContext.series.length > 0
+      ) {
+        setSeries(tabContext.series!);
+      }
 
-        if (
-          typeof getTabContext(tabPageProps.tabId).tabCtx.plotYScales! !==
-          "undefined"
-        ) {
-          setPlotYScales(getTabContext(tabPageProps.tabId).tabCtx.plotYScales!);
-        }
+      if (tabContext.plotContext) {
+        setPlots(tabContext.plotContext!);
+      }
+
+      if (typeof tabContext.plotSplitIndex! !== "undefined") {
+        setSplitIndex([...tabContext.plotSplitIndex!]);
+      }
+
+      if (typeof tabContext.plotYScales! !== "undefined") {
+        setPlotYScales(tabContext.plotYScales!);
       }
     }
 
@@ -503,18 +554,6 @@ export function LogViewerTabPageContent() {
     });
   }
 
-  createEffect(
-    on(
-      () => render(),
-      () => {
-        if (!render()) {
-          //prepareCsvFile();
-        }
-      },
-      { defer: true },
-    ),
-  );
-
   const fileHandler = new FileHandler();
 
   const createNewSeries = (head: string, plotIndex: number) => {
@@ -643,9 +682,6 @@ export function LogViewerTabPageContent() {
                                     }
                                   : undefined,
                             });
-                          }
-                          if (path === filePath()) {
-                            setRender(false);
                           }
                         }}
                       >
