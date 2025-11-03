@@ -22,6 +22,7 @@ import {
   IconArrowsMove,
   IconArrowsMoveHorizontal,
   IconArrowsMoveVertical,
+  IconChevronDown,
   IconChevronLeftPipe,
   IconChevronRightPipe,
   IconCrosshair,
@@ -30,6 +31,7 @@ import {
   IconLocation,
   IconLocationOff,
   IconSearch,
+  IconTimelineEventPlus,
   IconX,
   IconZoomReset,
 } from "@tabler/icons-solidjs";
@@ -46,6 +48,9 @@ import type { UplotPluginFactory } from "@dschz/solid-uplot";
 
 import { cursor, tooltip } from "@dschz/solid-uplot/plugins";
 import { PlotToolTip } from "./Plot/PlotTooltip";
+import { Popover } from "./ui/popover";
+import { createListCollection, Select } from "./ui/select";
+import { Button } from "./ui/button";
 
 export type PlotProps = JSX.HTMLAttributes<HTMLDivElement> & {
   id: string;
@@ -63,6 +68,7 @@ export type PlotProps = JSX.HTMLAttributes<HTMLDivElement> & {
   onLegendPanelSize?: (size: number) => void;
   legendShrink?: boolean;
   onLegendShrinkChange?: (isShrink: boolean) => void;
+  onCreateSeries?: (header: string) => void;
 };
 
 export type PlotContext = {
@@ -502,6 +508,8 @@ export function Plot(props: PlotProps) {
   const [yMax, setYMax] = createSignal<number | null>(null);
   const [selectionLeft, setSelectionLeft] = createSignal<number | null>(null);
   const [selectionWidth, setSelectionWidth] = createSignal<number | null>(null);
+
+  const [selectedHeader, setSelectedHeader] = createSignal<string>("");
 
   return (
     <>
@@ -995,7 +1003,7 @@ export function Plot(props: PlotProps) {
                   ? "0"
                   : document.getElementById(`toolBox:${props.id}`)
                     ? `${document.getElementById(`toolBox:${props.id}`)!.offsetWidth}px`
-                    : "15em",
+                    : "16em",
               }}
               onMouseEnter={() => {
                 setEnterSplitter(true);
@@ -1019,12 +1027,13 @@ export function Plot(props: PlotProps) {
                   <Stack
                     direction="row"
                     id={`toolBox:${props.id}`}
-                    width="15em"
-                    gap="1em"
+                    width="16em"
+                    gap="0.6em"
                   >
                     <Tooltip.Root>
                       <Tooltip.Trigger>
                         <IconButton
+                          size="sm"
                           variant="outline"
                           disabled={zoomReset()}
                           onclick={() => {
@@ -1053,6 +1062,8 @@ export function Plot(props: PlotProps) {
                     </Tooltip.Root>
 
                     <ToggleGroup.Root
+                      size="sm"
+                      height="min-content"
                       value={[CursorMode[lastCursorMode()]]}
                       onValueChange={(details) => {
                         if (details.value.length > 0) {
@@ -1069,7 +1080,10 @@ export function Plot(props: PlotProps) {
                       }}
                     >
                       <Tooltip.Root>
-                        <Tooltip.Trigger>
+                        <Tooltip.Trigger
+                          width="min-content"
+                          height="min-content"
+                        >
                           <ToggleGroup.Item
                             value={CursorMode[CursorMode.Pan]}
                             aria-label="Toggle Pan"
@@ -1099,7 +1113,10 @@ export function Plot(props: PlotProps) {
                       </Tooltip.Root>
 
                       <Tooltip.Root>
-                        <Tooltip.Trigger>
+                        <Tooltip.Trigger
+                          width="min-content"
+                          height="min-content"
+                        >
                           <ToggleGroup.Item
                             value={CursorMode[CursorMode.Horizontal]}
                             aria-label="Toggle Selection Zoom"
@@ -1131,7 +1148,10 @@ export function Plot(props: PlotProps) {
                       </Tooltip.Root>
 
                       <Tooltip.Root>
-                        <Tooltip.Trigger>
+                        <Tooltip.Trigger
+                          width="min-content"
+                          height="min-content"
+                        >
                           <ToggleGroup.Item
                             value={CursorMode[CursorMode.Vertical]}
                             aria-label="Toggle Cursor Lock"
@@ -1163,7 +1183,10 @@ export function Plot(props: PlotProps) {
                       </Tooltip.Root>
 
                       <Tooltip.Root>
-                        <Tooltip.Trigger>
+                        <Tooltip.Trigger
+                          width="min-content"
+                          height="min-content"
+                        >
                           <ToggleGroup.Item
                             value={CursorMode[CursorMode.Lock]}
                             aria-label="Toggle Cursor Lock"
@@ -1192,6 +1215,114 @@ export function Plot(props: PlotProps) {
                         </Portal>
                       </Tooltip.Root>
                     </ToggleGroup.Root>
+
+                    <Popover.Root>
+                      <Popover.Trigger width="min-content">
+                        <Tooltip.Root>
+                          <Tooltip.Trigger>
+                            <IconButton size="sm" variant="outline">
+                              <IconTimelineEventPlus />
+                            </IconButton>
+                          </Tooltip.Trigger>
+                          <Tooltip.Positioner>
+                            <Tooltip.Content backgroundColor="bg.default">
+                              <Text color="fg.default">Create Series</Text>
+                            </Tooltip.Content>
+                          </Tooltip.Positioner>
+                        </Tooltip.Root>
+                      </Popover.Trigger>
+                      <Popover.Positioner>
+                        <Popover.Content width="15em">
+                          <Select.Root
+                            positioning={{ sameWidth: true }}
+                            width="15em"
+                            onValueChange={(details) => {
+                              setSelectedHeader(details.value[0]);
+                            }}
+                            collection={createListCollection({
+                              items: props.header.map((head) => {
+                                return {
+                                  label: head,
+                                  value: head.toLowerCase(),
+                                };
+                              }),
+                            })}
+                          >
+                            <Select.Label>
+                              Select series to derivative
+                            </Select.Label>
+                            <Select.Control>
+                              <Select.Trigger>
+                                <Select.ValueText
+                                  style={{
+                                    overflow: "hidden",
+                                    "white-space": "none",
+                                    "text-overflow": "ellipsis",
+                                    display: "block",
+                                  }}
+                                  placeholder="Select a Framework"
+                                />
+                                <IconChevronDown />
+                              </Select.Trigger>
+                            </Select.Control>
+                            <Select.Positioner>
+                              <Select.Content
+                                height={"100%"}
+                                maxHeight={"15em"}
+                                overflowY={"auto"}
+                              >
+                                <Select.ItemGroup>
+                                  <Select.ItemGroupLabel>
+                                    Series
+                                  </Select.ItemGroupLabel>
+                                  <For each={props.header}>
+                                    {(item) => (
+                                      <Select.Item item={item.toLowerCase()}>
+                                        <Tooltip.Root>
+                                          <Tooltip.Trigger
+                                            width={"min-content"}
+                                          >
+                                            <Select.ItemText
+                                              width="11em"
+                                              textAlign={"left"}
+                                              style={{
+                                                overflow: "hidden",
+                                                "white-space": "none",
+                                                "text-overflow": "ellipsis",
+                                                display: "block",
+                                              }}
+                                            >
+                                              {item}
+                                            </Select.ItemText>
+                                          </Tooltip.Trigger>
+                                          <Tooltip.Positioner>
+                                            <Tooltip.Content backgroundColor="bg.default">
+                                              <Text color="fg.default">
+                                                {item}
+                                              </Text>
+                                            </Tooltip.Content>
+                                          </Tooltip.Positioner>
+                                        </Tooltip.Root>
+                                      </Select.Item>
+                                    )}
+                                  </For>
+                                </Select.ItemGroup>
+                              </Select.Content>
+                            </Select.Positioner>
+                          </Select.Root>
+                          <Button
+                            marginTop="0.5em"
+                            onClick={() => {
+                              if (props.header.includes(selectedHeader())) {
+                                props.onCreateSeries?.(selectedHeader());
+                              }
+                            }}
+                          >
+                            {"Create Series"}
+                          </Button>
+                        </Popover.Content>
+                      </Popover.Positioner>
+                    </Popover.Root>
                   </Stack>
                 </Stack>
 
@@ -1245,6 +1376,7 @@ export function Plot(props: PlotProps) {
                   <Tooltip.Root>
                     <Tooltip.Trigger>
                       <IconButton
+                        size="sm"
                         variant="outline"
                         onClick={() => {
                           if (showLegendCheckBox()) {
