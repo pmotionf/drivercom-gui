@@ -883,13 +883,13 @@ export function LogViewerTabPageContent() {
                     }}
                   >
                     <Editable.Root
-                      activationMode="dblclick"
+                      activationMode="focus"
                       value={plotNames[index()]}
                       onValueChange={(details) =>
                         setPlotNames(index(), details.value)
                       }
                       fontWeight="bold"
-                      width={"5rem"}
+                      width={"5em"}
                       style={{
                         display: "block",
                         "text-overflow": "ellipsis",
