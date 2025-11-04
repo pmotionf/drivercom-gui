@@ -31,6 +31,8 @@
     "fs:write-all",
     "tcp:default",
     "store:default",
-    "shell:allow-kill"
+    "shell:allow-kill",
+    "network:allow-all", 
+    "network:allow-get-interfaces"
   ]
 }
