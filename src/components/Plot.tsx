@@ -1248,8 +1248,8 @@ export function Plot(props: PlotProps) {
                               }),
                             })}
                           >
-                            <Select.Label>
-                              Select series to derivative
+                            <Select.Label fontWeight={"bold"}>
+                              {"Select series to derive."}
                             </Select.Label>
                             <Select.Control>
                               <Select.Trigger>
@@ -1260,7 +1260,7 @@ export function Plot(props: PlotProps) {
                                     "text-overflow": "ellipsis",
                                     display: "block",
                                   }}
-                                  placeholder="Select a Framework"
+                                  placeholder="Select a series."
                                 />
                                 <IconChevronDown />
                               </Select.Trigger>
