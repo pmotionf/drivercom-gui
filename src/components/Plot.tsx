@@ -1266,48 +1266,60 @@ export function Plot(props: PlotProps) {
                               </Select.Trigger>
                             </Select.Control>
                             <Select.Positioner>
-                              <Select.Content
-                                height={"100%"}
-                                maxHeight={"15em"}
-                                overflowY={"auto"}
+                              <Show
+                                when={
+                                  getContext().visible &&
+                                  getContext().visible.length > 0 &&
+                                  getContext().visible.includes(true)
+                                }
                               >
-                                <Select.ItemGroup>
-                                  <Select.ItemGroupLabel>
-                                    Series
-                                  </Select.ItemGroupLabel>
-                                  <For each={props.header}>
-                                    {(item) => (
-                                      <Select.Item item={item.toLowerCase()}>
-                                        <Tooltip.Root>
-                                          <Tooltip.Trigger
-                                            width={"min-content"}
-                                          >
-                                            <Select.ItemText
-                                              width="11em"
-                                              textAlign={"left"}
-                                              style={{
-                                                overflow: "hidden",
-                                                "white-space": "none",
-                                                "text-overflow": "ellipsis",
-                                                display: "block",
-                                              }}
+                                <Select.Content
+                                  height={"100%"}
+                                  maxHeight={"15em"}
+                                  overflowY={"auto"}
+                                >
+                                  <Select.ItemGroup>
+                                    <Select.ItemGroupLabel>
+                                      Series
+                                    </Select.ItemGroupLabel>
+                                    <For
+                                      each={props.header.filter(
+                                        (_, i) => getContext().visible[i],
+                                      )}
+                                    >
+                                      {(item) => (
+                                        <Select.Item item={item.toLowerCase()}>
+                                          <Tooltip.Root>
+                                            <Tooltip.Trigger
+                                              width={"min-content"}
                                             >
-                                              {item}
-                                            </Select.ItemText>
-                                          </Tooltip.Trigger>
-                                          <Tooltip.Positioner>
-                                            <Tooltip.Content backgroundColor="bg.default">
-                                              <Text color="fg.default">
+                                              <Select.ItemText
+                                                width="11em"
+                                                textAlign={"left"}
+                                                style={{
+                                                  overflow: "hidden",
+                                                  "white-space": "none",
+                                                  "text-overflow": "ellipsis",
+                                                  display: "block",
+                                                }}
+                                              >
                                                 {item}
-                                              </Text>
-                                            </Tooltip.Content>
-                                          </Tooltip.Positioner>
-                                        </Tooltip.Root>
-                                      </Select.Item>
-                                    )}
-                                  </For>
-                                </Select.ItemGroup>
-                              </Select.Content>
+                                              </Select.ItemText>
+                                            </Tooltip.Trigger>
+                                            <Tooltip.Positioner>
+                                              <Tooltip.Content backgroundColor="bg.default">
+                                                <Text color="fg.default">
+                                                  {item}
+                                                </Text>
+                                              </Tooltip.Content>
+                                            </Tooltip.Positioner>
+                                          </Tooltip.Root>
+                                        </Select.Item>
+                                      )}
+                                    </For>
+                                  </Select.ItemGroup>
+                                </Select.Content>
+                              </Show>
                             </Select.Positioner>
                           </Select.Root>
                           <Button
