@@ -68,7 +68,7 @@ export type PlotProps = JSX.HTMLAttributes<HTMLDivElement> & {
   onLegendPanelSize?: (size: number) => void;
   legendShrink?: boolean;
   onLegendShrinkChange?: (isShrink: boolean) => void;
-  onCreateSeries?: (header: string) => void;
+  onCreateSeries?: (index: number) => void;
 };
 
 export type PlotContext = {
@@ -1240,10 +1240,10 @@ export function Plot(props: PlotProps) {
                               setSelectedHeader(details.value[0]);
                             }}
                             collection={createListCollection({
-                              items: props.header.map((head) => {
+                              items: props.header.map((head, index) => {
                                 return {
                                   label: head,
-                                  value: head.toLowerCase(),
+                                  value: `${head.toLowerCase()}:${index}`,
                                 };
                               }),
                             })}
@@ -1283,12 +1283,17 @@ export function Plot(props: PlotProps) {
                                       Series
                                     </Select.ItemGroupLabel>
                                     <For
-                                      each={props.header.filter(
-                                        (_, i) => getContext().visible[i],
-                                      )}
+                                      each={props.header
+                                        .map(
+                                          (head, i) =>
+                                            `${head.toLowerCase()}:${i}`,
+                                        )
+                                        .filter(
+                                          (_, i) => getContext().visible[i],
+                                        )}
                                     >
                                       {(item) => (
-                                        <Select.Item item={item.toLowerCase()}>
+                                        <Select.Item item={item}>
                                           <Tooltip.Root>
                                             <Tooltip.Trigger
                                               width={"min-content"}
@@ -1303,13 +1308,13 @@ export function Plot(props: PlotProps) {
                                                   display: "block",
                                                 }}
                                               >
-                                                {item}
+                                                {item.split(":").shift()}
                                               </Select.ItemText>
                                             </Tooltip.Trigger>
                                             <Tooltip.Positioner>
                                               <Tooltip.Content backgroundColor="bg.default">
                                                 <Text color="fg.default">
-                                                  {item}
+                                                  {item.split(":").shift()}
                                                 </Text>
                                               </Tooltip.Content>
                                             </Tooltip.Positioner>
@@ -1324,9 +1329,18 @@ export function Plot(props: PlotProps) {
                           </Select.Root>
                           <Button
                             marginTop="0.5em"
+                            disabled={selectedHeader().length === 0}
                             onClick={() => {
-                              if (props.header.includes(selectedHeader())) {
-                                props.onCreateSeries?.(selectedHeader());
+                              const parseHeader = selectedHeader()
+                                .split(":")
+                                .shift();
+                              if (
+                                parseHeader &&
+                                props.header.includes(parseHeader)
+                              ) {
+                                props.onCreateSeries?.(
+                                  Number(selectedHeader().split(":").pop()),
+                                );
                               }
                             }}
                           >

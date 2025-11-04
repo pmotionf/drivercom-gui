@@ -541,65 +541,64 @@ export function LogViewerTabPageContent() {
 
   const fileHandler = new FileHandler();
 
-  const createNewSeries = (head: string, plotIndex: number) => {
+  const createNewSeries = (headIndex: number, plotIndex: number) => {
     const xScale = plotZoomState();
     const yScale = plotYScales();
 
     setRender(false);
 
-    setTimeout(() => {
-      setHeader((prev) => [...prev, `derivative.${head}`]);
-      const prevSeries = series()[header().indexOf(head)];
-      const newSeries: number[] = [];
-      for (let i = 0; i < prevSeries.length; i++) {
-        if (i === 0) {
-          const currentVal = prevSeries[i];
-          const nextVal = prevSeries[i + 1];
-          const value = nextVal - currentVal;
-          newSeries.push(value);
-        } else {
-          const currentVal = prevSeries[i];
-          const prevVal = prevSeries[i - 1];
-          const value = currentVal - prevVal;
-          newSeries.push(value);
-        }
+    const newHeaderIndex = splitIndex()[plotIndex][headIndex];
+    setHeader((prev) => [...prev, `derivative.${header()[newHeaderIndex]}`]);
+    const prevSeries = series()[header().indexOf(header()[newHeaderIndex])];
+    const newSeries: number[] = [];
+    for (let i = 0; i < prevSeries.length; i++) {
+      if (i === 0) {
+        const currentVal = prevSeries[i];
+        const nextVal = prevSeries[i + 1];
+        const value = nextVal - currentVal;
+        newSeries.push(value);
+      } else {
+        const currentVal = prevSeries[i];
+        const prevVal = prevSeries[i - 1];
+        const value = currentVal - prevVal;
+        newSeries.push(value);
       }
+    }
 
-      setSeries((prev) => [...prev, [newSeries[0], ...newSeries.slice(0, -1)]]);
-      setSplitIndex((prev) =>
-        prev.map((split, i) =>
-          i === plotIndex ? [...split, series().length - 1] : split,
-        ),
-      );
-      setPlotZoomState(xScale);
+    setSeries((prev) => [...prev, [newSeries[0], ...newSeries.slice(0, -1)]]);
+    setSplitIndex((prev) =>
+      prev.map((split, i) =>
+        i === plotIndex ? [...split, series().length - 1] : split,
+      ),
+    );
+    setPlotZoomState(xScale);
 
-      const sortSeries = newSeries.sort((a, b) => b - a);
-      setPlotYScales(
-        yScale.map((yScale, i) =>
-          i === plotIndex
-            ? {
-                min: Math.max(yScale.min, sortSeries[0]),
-                max: Math.min(yScale.max, sortSeries.pop()!),
-              }
-            : yScale,
-        ),
-      );
+    const sortSeries = newSeries.sort((a, b) => b - a);
+    setPlotYScales(
+      yScale.map((yScale, i) =>
+        i === plotIndex
+          ? {
+              min: Math.max(yScale.min, sortSeries[0]),
+              max: Math.min(yScale.max, sortSeries.pop()!),
+            }
+          : yScale,
+      ),
+    );
 
-      const prevPlotCtx = plots[plotIndex];
-      const plotPalette = prevPlotCtx.palette;
+    const prevPlotCtx = plots[plotIndex];
+    const plotPalette = prevPlotCtx.palette;
 
-      setPlots(plotIndex, {
-        style: [...prevPlotCtx.style, LegendStroke.Line],
-        visible: [...prevPlotCtx.visible, true],
-        color: [
-          ...prevPlotCtx.color,
-          plotPalette[prevPlotCtx.color.length % plotPalette.length],
-        ],
-        palette: plotPalette,
-        selected: [...prevPlotCtx.selected, false],
-      });
-      setRender(true);
-    }, 200);
+    setPlots(plotIndex, {
+      style: [...prevPlotCtx.style, LegendStroke.Line],
+      visible: [...prevPlotCtx.visible, true],
+      color: [
+        ...prevPlotCtx.color,
+        plotPalette[prevPlotCtx.color.length % plotPalette.length],
+      ],
+      palette: plotPalette,
+      selected: [...prevPlotCtx.selected, false],
+    });
+    setRender(true);
   };
 
   return (
