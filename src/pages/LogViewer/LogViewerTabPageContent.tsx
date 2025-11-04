@@ -179,9 +179,6 @@ export function LogViewerTabPageContent() {
   const [plotZoomState, setPlotZoomState] = createSignal<[number, number]>([
     0, 0,
   ]);
-  if (getTabContext(tabPageProps.tabId).tabCtx.plotXScale) {
-    setPlotZoomState(getTabContext(tabPageProps.tabId).tabCtx.plotXScale!);
-  }
 
   createEffect(
     on(
@@ -292,10 +289,6 @@ export function LogViewerTabPageContent() {
   );
 
   onMount(async () => {
-    await prepareCsvFile();
-  });
-
-  const prepareCsvFile = async () => {
     const tabContext = getTabContext(tabPageProps.tabId).tabCtx;
     if (
       !tabContext.header ||
@@ -316,37 +309,21 @@ export function LogViewerTabPageContent() {
         });
         deleteTab();
       }
+    } else {
+      setHeader(tabContext.header!);
+      setSeries(tabContext.series!);
     }
 
-    if (tabContext) {
-      if (
-        typeof tabContext.header !== "undefined" &&
-        tabContext.header.length > 0
-      ) {
-        setHeader(tabContext.header!);
-      }
-
-      if (
-        typeof tabContext.series !== "undefined" &&
-        tabContext.series.length > 0
-      ) {
-        setSeries(tabContext.series!);
-      }
-
-      if (tabContext.plotContext) {
-        setPlots(tabContext.plotContext!);
-      }
-
-      if (typeof tabContext.plotSplitIndex! !== "undefined") {
-        setSplitIndex([...tabContext.plotSplitIndex!]);
-      }
-
-      if (typeof tabContext.plotYScales! !== "undefined") {
-        setPlotYScales(tabContext.plotYScales!);
-      }
+    if (tabContext.plotContext) {
+      setPlots(tabContext.plotContext!);
     }
 
-    if (splitIndex().length === 0) {
+    if (
+      typeof tabContext.plotSplitIndex !== "undefined" &&
+      tabContext.plotSplitIndex.length > 0
+    ) {
+      setSplitIndex([...tabContext.plotSplitIndex!]);
+    } else {
       const indexArray = Array.from(
         { length: header().length },
         (_, index) => index,
@@ -354,7 +331,12 @@ export function LogViewerTabPageContent() {
       setSplitIndex([indexArray]);
     }
 
-    if (plotYScales().length === 0) {
+    if (
+      typeof tabContext.plotYScales !== "undefined" &&
+      tabContext.plotYScales.length > 0
+    ) {
+      setPlotYScales(tabContext.plotYScales!);
+    } else {
       const newYScales: { min: number; max: number }[] = Array.from(
         { length: splitIndex().length },
         () => {
@@ -364,8 +346,12 @@ export function LogViewerTabPageContent() {
       setPlotYScales(newYScales);
     }
 
+    if (tabContext.plotXScale) {
+      setPlotZoomState(getTabContext(tabPageProps.tabId).tabCtx.plotXScale!);
+    }
+
     setRender(true);
-  };
+  });
 
   function resetChart() {
     const indexArray = Array.from(
