@@ -69,6 +69,8 @@ export type PlotProps = JSX.HTMLAttributes<HTMLDivElement> & {
   legendShrink?: boolean;
   onLegendShrinkChange?: (isShrink: boolean) => void;
   onCreateSeries?: (index: number) => void;
+  searchInput?: string;
+  onSearch?: (input: string) => void;
 };
 
 export type PlotContext = {
@@ -337,25 +339,34 @@ export function Plot(props: PlotProps) {
     createSignal<boolean>(false);
 
   const [searchInput, setSearchInput] = createSignal<string>("");
+  if (props.searchInput) {
+    setSearchInput(props.searchInput);
+  }
   const [legendIndex, setLegendIndex] = createSignal<number[]>(
     props.header.map((_, i) => i),
   );
 
-  createEffect(() => {
-    const searchInputValue = searchInput();
-    const parseSearchResults: string[] = fuzzySearch(
-      searchInputValue,
-      props.header,
-    );
-    if (searchInputValue.length === 0) {
-      setLegendIndex(props.header.map((_, i) => i));
-    } else {
-      const headerIndex = parseSearchResults.map((str) =>
-        props.header.indexOf(str),
-      );
-      setLegendIndex(headerIndex);
-    }
-  });
+  createEffect(
+    on(
+      () => searchInput(),
+      () => {
+        const searchInputValue = searchInput();
+        const parseSearchResults: string[] = fuzzySearch(
+          searchInputValue,
+          props.header,
+        );
+        if (searchInputValue.length === 0) {
+          setLegendIndex(props.header.map((_, i) => i));
+        } else {
+          const headerIndex = parseSearchResults.map((str) =>
+            props.header.indexOf(str),
+          );
+          setLegendIndex(headerIndex);
+        }
+        props.onSearch?.(searchInputValue);
+      },
+    ),
+  );
 
   const bus = createPluginBus<CursorPluginMessageBus>();
 

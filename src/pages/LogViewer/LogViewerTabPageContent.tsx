@@ -47,6 +47,7 @@ export type LogViewerTabPage = {
   plotContext?: PlotContext[];
   plotXScale?: [number, number];
   plotYScales?: { min: number; max: number }[];
+  plotSearchedSeries?: string;
   legendPanelSize?: number;
   legendShrink?: boolean;
 };
@@ -854,6 +855,22 @@ export function LogViewerTabPageContent() {
                   }}
                   onCreateSeries={(head) => {
                     createNewSeries(head, index());
+                  }}
+                  searchInput={
+                    getTabContext(tabPageProps.tabId).tabCtx.plotSearchedSeries
+                      ? getTabContext(tabPageProps.tabId).tabCtx
+                          .plotSearchedSeries
+                      : undefined
+                  }
+                  onSearch={(input) => {
+                    tabContexts.get(tabPageProps.key)?.[1](
+                      "tabContext",
+                      getTabContext(tabPageProps.tabId).currentIndex,
+                      "tabPage",
+                      "logViewerTabPage",
+                      "plotSearchedSeries",
+                      input,
+                    );
                   }}
                   style={{
                     width: "100%",
