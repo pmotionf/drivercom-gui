@@ -14,6 +14,7 @@ import {
   IconFileDownload,
   IconFold,
   IconRestore,
+  IconGridDots,
   IconSeparatorHorizontal,
 } from "@tabler/icons-solidjs";
 import { Stack } from "styled-system/jsx";
@@ -26,6 +27,10 @@ import { LegendStroke } from "~/components/Plot/Legend";
 import { TabContext, TabPageContext } from "~/components/TabList";
 import { CreateToasterReturn } from "@ark-ui/solid";
 import { FileHandler } from "../utils/FileHandler";
+import { createDraggable } from "@neodrag/solid";
+import { css } from "styled-system/css";
+import { Portal } from "solid-js/web";
+import { Editable } from "~/components/ui/editable";
 
 export type ErrorMessage = {
   title: string;
@@ -41,6 +46,7 @@ export type LogViewerTabPageContentProps = {
 
 export type LogViewerTabPage = {
   filePath?: string;
+  plotNames?: string[];
   plotSplitIndex?: number[][];
   plotContext?: PlotContext[];
   plotXScale?: [number, number];
@@ -197,22 +203,6 @@ export function LogViewerTabPageContent() {
   );
 
   const [splitIndex, setSplitIndex] = createSignal([] as number[][]);
-
-  createEffect(
-    on(
-      () => splitIndex(),
-      () => {
-        setTimeout(() => {
-          setSplitPlot(
-            getTabContext(tabPageProps.tabId).currentIndex,
-            splitIndex(),
-          );
-        }, 200);
-      },
-      { defer: true },
-    ),
-  );
-
   const [mergePlotIndexes, setMergePlotIndexes] = createSignal<number[]>([]);
 
   createEffect(
@@ -250,6 +240,25 @@ export function LogViewerTabPageContent() {
     ),
   );
 
+  const [plotNames, setPlotNames] = createStore([] as string[]);
+  createEffect(
+    on(
+      () => trackStore(plotNames),
+      () => {
+        const names = plotNames;
+        tabContexts.get(tabPageProps.key)?.[1](
+          "tabContext",
+          getTabContext(tabPageProps.tabId).currentIndex,
+          "tabPage",
+          "logViewerTabPage",
+          "plotNames",
+          names,
+        );
+      },
+      { defer: true },
+    ),
+  );
+
   const [header, setHeader] = createSignal<string[]>([]);
   const [series, setSeries] = createSignal<number[][]>([]);
 
@@ -279,7 +288,7 @@ export function LogViewerTabPageContent() {
         }
 
         if (
-          typeof getTabContext(tabPageProps.tabId).tabCtx.plotSplitIndex! !==
+          typeof getTabContext(tabPageProps.tabId).tabCtx.plotSplitIndex !==
           "undefined"
         ) {
           setSplitIndex([
@@ -288,15 +297,22 @@ export function LogViewerTabPageContent() {
         }
 
         if (
-          typeof getTabContext(tabPageProps.tabId).tabCtx.plotYScales! !==
+          typeof getTabContext(tabPageProps.tabId).tabCtx.plotYScales !==
           "undefined"
         ) {
           setPlotYScales(getTabContext(tabPageProps.tabId).tabCtx.plotYScales!);
         }
+
+        if (
+          typeof getTabContext(tabPageProps.tabId).tabCtx.plotNames !==
+          "undefined"
+        ) {
+          setPlotNames(getTabContext(tabPageProps.tabId).tabCtx.plotNames!);
+        }
       }
     }
 
-    if (splitIndex().length === 0) {
+    if (splitIndex().length === 0 || splitIndex().length > header().length) {
       const indexArray = Array.from(
         { length: header().length },
         (_, index) => index,
@@ -312,6 +328,14 @@ export function LogViewerTabPageContent() {
         },
       );
       setPlotYScales(newYScales);
+    }
+
+    if (plotNames.length <= 0) {
+      const newNames = Array.from(
+        { length: splitIndex().length },
+        (_, i) => `Graph ${i + 1}`,
+      );
+      setPlotNames(newNames);
     }
 
     setRender(true);
@@ -359,6 +383,15 @@ export function LogViewerTabPageContent() {
       ];
       return newUpdate;
     });
+
+    setPlotNames((prev) => {
+      const newUpdate = [
+        ...prev.slice(0, plot_index + 1),
+        `Graph ${prev.length + 1}`,
+        ...prev.slice(plot_index + 1, prev.length),
+      ];
+      return newUpdate;
+    });
   }
 
   function mergePlot(plot_indexes: number[]) {
@@ -367,6 +400,9 @@ export function LogViewerTabPageContent() {
 
     const prevYRange = [...plotYScales()];
     let mergeYRange: { min: number; max: number } = prevYRange[plot_indexes[0]];
+
+    const prevName = [...plotNames];
+    const mergeNames = prevName[plot_indexes[0]];
 
     let smallestIndex = plot_indexes[0];
     plot_indexes.forEach((plot_index) => {
@@ -398,6 +434,16 @@ export function LogViewerTabPageContent() {
       ...newYRange.slice(smallestIndex, newYRange.length),
     ];
     setPlotYScales(updateYRange);
+
+    const newNames = prevName.filter(
+      (_, index) => !plot_indexes.includes(index),
+    );
+    const updateNames = [
+      ...newNames.slice(0, smallestIndex),
+      mergeNames,
+      ...newNames.slice(smallestIndex, newNames.length),
+    ];
+    setPlotNames(updateNames);
   }
 
   const allSelected = (index: number) => {
@@ -503,285 +549,522 @@ export function LogViewerTabPageContent() {
     });
   }
 
-  createEffect(
-    on(
-      () => render(),
-      () => {
-        if (!render()) {
-          prepareCsvFile();
-        }
-      },
-      { defer: true },
-    ),
-  );
-
   const fileHandler = new FileHandler();
 
+  const [dragging, setDragging] = createSignal<number | null>(null);
+
+  //@ts-ignore This is need for using neo-drag dependency.
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { draggable: dragOptions } = createDraggable();
+  let scrollContainer: HTMLDivElement | undefined;
+
+  const [dragOverIndex, setDragOverIndex] = createSignal<number | null>(null);
+
+  const reorderPlots = (fromIndex: number, nextIndex: number | null) => {
+    if (typeof nextIndex === "number" && fromIndex !== nextIndex) {
+      const updatedItems = splitIndex().slice();
+      updatedItems.splice(nextIndex, 0, ...updatedItems.splice(fromIndex, 1));
+      setSplitIndex(updatedItems);
+
+      //plotYscalses
+      const updatedPlotYScales = plotYScales().slice();
+      updatedPlotYScales.splice(
+        nextIndex,
+        0,
+        ...updatedPlotYScales.splice(fromIndex, 1),
+      );
+      setPlotYScales(updatedPlotYScales);
+
+      // plotContext
+      const updatePlotContexts = plots.slice();
+      updatePlotContexts.splice(
+        nextIndex,
+        0,
+        ...updatePlotContexts.splice(fromIndex, 1),
+      );
+      setPlots(updatePlotContexts);
+
+      // plotNames
+      const updatePlotNames = plotNames.slice();
+      updatePlotNames.splice(
+        nextIndex,
+        0,
+        ...updatePlotNames.splice(fromIndex, 1),
+      );
+      setPlotNames(updatePlotNames);
+    }
+  };
+
+  const divId = crypto.randomUUID();
+  const [overlayTop, setOverlayTop] = createSignal<number | null>(null);
+  const [overlayBottom, setOverlayBottom] = createSignal<number | null>(null);
+
+  const [clientX, setClientX] = createSignal<number | null>(null);
+  const [clientY, setClientY] = createSignal<number | null>(null);
+
+  const dragOverScroll = (
+    offsetY: number,
+    clientY: number,
+    clientX: number,
+    scrollContainer: HTMLDivElement | undefined,
+  ) => {
+    if (!scrollContainer) return;
+    const clientRef = scrollContainer.getBoundingClientRect();
+    if (clientRef.left > clientX || clientX > clientRef.right) return;
+    const movement = offsetY * 0.05;
+    let scrollHeight = 0;
+    const children = scrollContainer.children;
+    if (children) {
+      for (let i = 0; i < children.length; i++) {
+        const item = children.item(i);
+        if (item) {
+          scrollHeight = scrollHeight + item.clientHeight;
+        }
+      }
+    }
+    if (scrollContainer.scrollTop + movement + clientY > scrollHeight) return;
+    scrollContainer.scrollBy({ top: movement });
+  };
+
+  const plotToolBoxWidth = "12em";
+
   return (
-    <Show when={render()}>
-      <div style={{ width: "100%", height: "100%", "overflow-y": "auto" }}>
-        <For each={splitIndex()}>
-          {(item, index) => {
-            // Header and items need not be derived state, as they will not
-            // change within a plot.
-            const currentHeader = item.map((i) => header()[i]);
-            const currentItems = item.map((i) => series()[i]);
+    <>
+      <div
+        style={{
+          width: "100%",
+          height: `100%`,
+          "overflow-y": "auto",
+          "overflow-x": "hidden",
+          "scrollbar-width":
+            typeof dragging() === "number" ? "none" : undefined,
+        }}
+        ref={scrollContainer}
+      >
+        <Show when={render()}>
+          <For each={splitIndex()}>
+            {(item, index) => {
+              // Header and items need not be derived state, as they will not
+              // change within a plot.
+              const currentHeader = item.map((i) => header()[i]);
+              const currentItems = item.map((i) => series()[i]);
 
-            // Current ID must be derived state as index can change based on
-            // added/merged plots.
-            const currentID = () => tabPageProps.tabId + index();
+              // Current ID must be derived state as index can change based on
+              // added/merged plots.
+              const currentID = () => tabPageProps.tabId + index();
 
-            return (
-              <div
-                style={{
-                  height: `calc(100% / ${splitIndex().length})`,
-                  width: "100%",
-                  "min-height": "20rem",
-                }}
-              >
-                <Stack
-                  direction="row-reverse"
-                  width="100%"
-                  paddingRight="1.6rem"
-                  style={{ overflow: "hidden" }}
-                  height="3rem"
-                  gap="0.25em"
+              return (
+                <div
+                  id={`${divId}:${index()}`}
+                  class={css({ background: "bg.default" })}
+                  style={{
+                    height: `calc(100% / ${splitIndex().length})`,
+                    width: "100%",
+                    "min-height": "20rem",
+                    opacity: dragging() === index() ? "0" : "1",
+                    "padding-top": "0.5em",
+                  }}
+                  use:dragOptions={{
+                    handle: ".handle",
+                    onDragStart: () => {
+                      setDragging(index());
+                    },
+                    onDrag: (data) => {
+                      dragOverScroll(
+                        data.offsetY,
+                        data.event.clientY,
+                        data.event.clientX,
+                        scrollContainer,
+                      );
+                      setClientX(data.event.clientX);
+
+                      const clientY = data.event.clientY;
+                      setClientY(clientY);
+                      let dragIndex: number | null = null;
+
+                      for (let num = 0; num < splitIndex().length; num++) {
+                        if (
+                          typeof dragging() === "number" &&
+                          dragging() !== num
+                        ) {
+                          const plotId = `${divId}:${num}`;
+                          const element = document.getElementById(plotId);
+                          if (element) {
+                            const clientRec = element.getBoundingClientRect();
+                            if (
+                              clientRec.left > data.event.clientX ||
+                              data.event.clientX > clientRec.right
+                            )
+                              break;
+                            const top = clientRec.top;
+                            const bottom = clientRec.bottom;
+                            if (top < clientY && clientY < bottom) {
+                              setOverlayTop(clientRec.top);
+                              setOverlayBottom(clientRec.bottom);
+                              dragIndex = num;
+                              break;
+                            }
+                          }
+                        }
+                      }
+                      setDragOverIndex(dragIndex);
+                    },
+                    onDragEnd: () => {
+                      setTimeout(() => {
+                        setRender(false);
+                        const dragOver = dragOverIndex();
+                        reorderPlots(index(), dragOverIndex());
+                        setDragging(null);
+                        setDragOverIndex(null);
+                        setRender(true);
+                        if (scrollContainer) {
+                          const plotId = `${divId}:${dragOver}`;
+                          const element = document.getElementById(plotId);
+                          if (element) {
+                            const top = element.getBoundingClientRect().y;
+
+                            scrollContainer.scrollTo({
+                              top: top - scrollContainer.offsetTop,
+                            });
+                          }
+                        }
+
+                        setOverlayBottom(null);
+                        setOverlayTop(null);
+
+                        setClientX(null);
+                        setClientY(null);
+                      }, 200);
+                    },
+                  }}
                 >
-                  <Tooltip.Root>
-                    <Tooltip.Trigger>
-                      <IconButton
-                        size="xs"
-                        variant={"outline"}
-                        onClick={async () => {
-                          const visible = plots[index()].visible;
-                          if (!visible.includes(true)) {
-                            tabPageProps!.toaster.create({
-                              title: "Invalid Legend",
-                              description: "There is no visible legends.",
-                              type: "error",
-                            });
-                            return;
-                          }
-                          const visibleHeader = currentHeader.filter(
-                            (_, i) => visible[i],
-                          );
-                          const visibleSeries = currentItems.filter(
-                            (_, i) => visible[i],
-                          );
-
-                          const xMin = Math.floor(plotZoomState()[0]);
-                          const xMax = Math.floor(plotZoomState()[1]);
-                          if (xMax - xMin < 1) {
-                            tabPageProps!.toaster.create({
-                              title: "Invalid Range",
-                              description:
-                                "The x-axis dosen't have enough range.",
-                              type: "error",
-                            });
-                            return;
-                          }
-
-                          const path = await fileHandler.saveFileDialog(
-                            "csv",
-                            filePath(),
-                            tabName(),
-                          );
-                          if (path) {
-                            await saveCsvFile(
-                              path,
-                              visibleHeader,
-                              visibleSeries,
-                              xMin,
-                              xMax,
+                  <Stack
+                    direction="row"
+                    width="100%"
+                    padding={"0 1.5em 0em 1.5em"}
+                    style={{ overflow: "hidden" }}
+                    height="3em"
+                    gap="0.25em"
+                  >
+                    <Stack
+                      direction="row"
+                      width={`calc(100% - ${plotToolBoxWidth})`}
+                    >
+                      <Show when={index() === 0}>
+                        <Tooltip.Root>
+                          <Tooltip.Trigger>
+                            <IconButton
+                              variant="outline"
+                              disabled={splitIndex().length <= 1}
+                              onclick={() => {
+                                setPrevSplitIndex(splitIndex());
+                                resetChart();
+                                setMergePlotIndexes([]);
+                              }}
+                              size="sm"
+                            >
+                              <IconRestore />
+                            </IconButton>
+                          </Tooltip.Trigger>
+                          <Tooltip.Positioner>
+                            <Tooltip.Content backgroundColor="bg.default">
+                              <Text color="fg.default">Reset</Text>
+                            </Tooltip.Content>
+                          </Tooltip.Positioner>
+                        </Tooltip.Root>
+                      </Show>
+                      <Show when={splitIndex().length > 1}>
+                        <IconButton
+                          variant={"outline"}
+                          class="handle"
+                          size="sm"
+                          marginTop="0.4em"
+                          onClick={() => {
+                            setDragging(index());
+                          }}
+                        >
+                          <IconGridDots />
+                        </IconButton>
+                      </Show>
+                    </Stack>
+                    <Checkbox
+                      width="7rem"
+                      checked={mergePlotIndexes().indexOf(index()) !== -1}
+                      onCheckedChange={(checkBoxState) => {
+                        if (checkBoxState.checked === true) {
+                          setMergePlotIndexes((prev) => {
+                            return [...prev, index()];
+                          });
+                        } else {
+                          setMergePlotIndexes((prev) => {
+                            return prev.filter(
+                              (graphIndex) => graphIndex !== index(),
                             );
-                            tabPageProps!.toaster.create({
-                              title: "Saved File Successfully",
-                              description: "The file is saved.",
-                              type: "success",
-                              action:
-                                path !== filePath()
-                                  ? {
-                                      label: path,
-                                      onClick: () => {
-                                        addNewTab(path);
-                                      },
-                                    }
-                                  : undefined,
-                            });
-                          }
-                          if (path === filePath()) {
-                            setRender(false);
-                          }
-                        }}
-                      >
-                        <IconFileDownload />
-                      </IconButton>
-                    </Tooltip.Trigger>
-                    <Tooltip.Positioner>
-                      <Tooltip.Content backgroundColor="bg.default">
-                        <Text color="fg.default">Save</Text>
-                      </Tooltip.Content>
-                    </Tooltip.Positioner>
-                  </Tooltip.Root>
-
-                  <Tooltip.Root>
-                    <Tooltip.Trigger>
-                      <IconButton
-                        size="xs"
-                        onClick={() => {
-                          setPrevSplitIndex(splitIndex());
-                          splitPlot(index());
-                          setMergePlotIndexes([]);
-                        }}
-                        disabled={
-                          currentHeader.length <= 1 ||
-                          !plots[index()] ||
-                          !plots[index()].selected ||
-                          allSelected(index()) ||
-                          allNotSelected(index())
+                          });
                         }
-                      >
-                        <IconSeparatorHorizontal />
-                      </IconButton>
-                    </Tooltip.Trigger>
-                    <Tooltip.Positioner>
-                      <Tooltip.Content backgroundColor="bg.default">
-                        <Text color="fg.default">Split</Text>
-                      </Tooltip.Content>
-                    </Tooltip.Positioner>
-                  </Tooltip.Root>
-
-                  <Tooltip.Root>
-                    <Tooltip.Trigger>
-                      <IconButton
-                        onClick={() => {
-                          setPrevSplitIndex(splitIndex());
-                          mergePlot(mergePlotIndexes());
-                          setMergePlotIndexes([]);
-                        }}
-                        disabled={
-                          mergePlotIndexes().length < 2 ||
-                          mergePlotIndexes().indexOf(index()) === -1
+                      }}
+                    >
+                      <Editable.Root
+                        activationMode="focus"
+                        value={plotNames[index()]}
+                        onValueChange={(details) =>
+                          setPlotNames(index(), details.value)
                         }
-                        size="xs"
+                        fontWeight="bold"
+                        width={"5em"}
+                        style={{
+                          display: "block",
+                          "text-overflow": "ellipsis",
+                          "white-space": "none",
+                          overflow: "hidden",
+                        }}
                       >
-                        <IconFold />
-                      </IconButton>
-                    </Tooltip.Trigger>
-                    <Tooltip.Positioner>
-                      <Tooltip.Content backgroundColor="bg.default">
-                        <Text color="fg.default">Merge</Text>
-                      </Tooltip.Content>
-                    </Tooltip.Positioner>
-                  </Tooltip.Root>
+                        <Editable.Area>
+                          <Editable.Input width={"100%"} />
+                          <Editable.Preview
+                            width={"100%"}
+                            style={{
+                              display: "block",
+                              "text-overflow": "ellipsis",
+                              "white-space": "none",
+                              overflow: "hidden",
+                            }}
+                          />
+                        </Editable.Area>
+                      </Editable.Root>
+                    </Checkbox>
+                    <Tooltip.Root>
+                      <Tooltip.Trigger>
+                        <IconButton
+                          onClick={() => {
+                            setPrevSplitIndex(splitIndex());
+                            mergePlot(mergePlotIndexes());
+                            setMergePlotIndexes([]);
+                          }}
+                          disabled={
+                            mergePlotIndexes().length < 2 ||
+                            mergePlotIndexes().indexOf(index()) === -1
+                          }
+                          size="xs"
+                        >
+                          <IconFold />
+                        </IconButton>
+                      </Tooltip.Trigger>
+                      <Tooltip.Positioner>
+                        <Tooltip.Content backgroundColor="bg.default">
+                          <Text color="fg.default">Merge</Text>
+                        </Tooltip.Content>
+                      </Tooltip.Positioner>
+                    </Tooltip.Root>
+                    <Tooltip.Root>
+                      <Tooltip.Trigger>
+                        <IconButton
+                          size="xs"
+                          onClick={() => {
+                            setPrevSplitIndex(splitIndex());
+                            splitPlot(index());
+                            setMergePlotIndexes([]);
+                          }}
+                          disabled={
+                            currentHeader.length <= 1 ||
+                            !plots[index()] ||
+                            !plots[index()].selected ||
+                            allSelected(index()) ||
+                            allNotSelected(index())
+                          }
+                        >
+                          <IconSeparatorHorizontal />
+                        </IconButton>
+                      </Tooltip.Trigger>
+                      <Tooltip.Positioner>
+                        <Tooltip.Content backgroundColor="bg.default">
+                          <Text color="fg.default">Split</Text>
+                        </Tooltip.Content>
+                      </Tooltip.Positioner>
+                    </Tooltip.Root>
+                    <Tooltip.Root>
+                      <Tooltip.Trigger>
+                        <IconButton
+                          size="xs"
+                          variant={"outline"}
+                          onClick={async () => {
+                            const visible = plots[index()].visible;
+                            if (!visible.includes(true)) {
+                              tabPageProps!.toaster.create({
+                                title: "Invalid Legend",
+                                description: "There is no visible legends.",
+                                type: "error",
+                              });
+                              return;
+                            }
+                            const visibleHeader = currentHeader.filter(
+                              (_, i) => visible[i],
+                            );
+                            const visibleSeries = currentItems.filter(
+                              (_, i) => visible[i],
+                            );
 
-                  <Checkbox
-                    width="7rem"
-                    checked={mergePlotIndexes().indexOf(index()) !== -1}
-                    onCheckedChange={(checkBoxState) => {
-                      if (checkBoxState.checked === true) {
-                        setMergePlotIndexes((prev) => {
-                          return [...prev, index()];
-                        });
-                      } else {
-                        setMergePlotIndexes((prev) => {
-                          return prev.filter(
-                            (graphIndex) => graphIndex !== index(),
-                          );
+                            const xMin = Math.floor(plotZoomState()[0]);
+                            const xMax = Math.floor(plotZoomState()[1]);
+                            if (xMax - xMin < 1) {
+                              tabPageProps!.toaster.create({
+                                title: "Invalid Range",
+                                description:
+                                  "The x-axis dosen't have enough range.",
+                                type: "error",
+                              });
+                              return;
+                            }
+
+                            const path = await fileHandler.saveFileDialog(
+                              "csv",
+                              filePath(),
+                              tabName(),
+                            );
+                            if (path) {
+                              await saveCsvFile(
+                                path,
+                                visibleHeader,
+                                visibleSeries,
+                                xMin,
+                                xMax,
+                              );
+                              tabPageProps!.toaster.create({
+                                title: "Saved File Successfully",
+                                description: "The file is saved.",
+                                type: "success",
+                                action:
+                                  path !== filePath()
+                                    ? {
+                                        label: path,
+                                        onClick: () => {
+                                          addNewTab(path);
+                                        },
+                                      }
+                                    : undefined,
+                              });
+                            }
+                            if (path === filePath()) {
+                              setRender(false);
+                              setTimeout(async () => {
+                                await prepareCsvFile();
+                              }, 200);
+                            }
+                          }}
+                        >
+                          <IconFileDownload />
+                        </IconButton>
+                      </Tooltip.Trigger>
+                      <Tooltip.Positioner>
+                        <Tooltip.Content backgroundColor="bg.default">
+                          <Text color="fg.default">Save</Text>
+                        </Tooltip.Content>
+                      </Tooltip.Positioner>
+                    </Tooltip.Root>
+                  </Stack>
+                  <Plot
+                    id={currentID()}
+                    group={tabPageProps.tabId}
+                    name=""
+                    header={currentHeader}
+                    series={currentItems}
+                    context={plots[index()]}
+                    legendPanelSize={legendSplitterSize()}
+                    onLegendPanelSize={(size) => {
+                      setLegendSplitterSize(size);
+                    }}
+                    onContextChange={(ctx) => {
+                      if (
+                        JSON.stringify(ctx) !== JSON.stringify(plots[index()])
+                      ) {
+                        setPlots(index(), ctx);
+                      }
+                    }}
+                    xScale={plotZoomState()}
+                    onXScaleChange={(xRange) => {
+                      if (
+                        plotZoomState()[0] !== xRange[0] &&
+                        plotZoomState()[1] !== xRange[1]
+                      ) {
+                        setPlotZoomState(xRange);
+                      }
+                    }}
+                    yScale={
+                      plotYScales() && plotYScales()[index()]
+                        ? plotYScales()[index()]
+                        : undefined
+                    }
+                    onYScaleChange={(yRange) => {
+                      const yScales = plotYScales();
+                      const currentYScale = yScales[index()];
+                      if (isNaN(yRange.min) || isNaN(yRange.max)) return;
+                      if (
+                        currentYScale.max !== yRange.max ||
+                        currentYScale.min !== yRange.min
+                      ) {
+                        setPlotYScales((prev) => {
+                          const update = prev.map((prevRange, i) => {
+                            if (i === index()) {
+                              return yRange;
+                            } else {
+                              return prevRange;
+                            }
+                          });
+                          return update;
                         });
                       }
                     }}
-                  >
-                    <Text fontWeight="bold">Graph {index() + 1}</Text>
-                  </Checkbox>
-                  <Show when={index() === 0}>
-                    <Stack direction="row" width={`calc(100% - 16rem)`}>
-                      <Tooltip.Root>
-                        <Tooltip.Trigger>
-                          <IconButton
-                            variant="outline"
-                            disabled={splitIndex().length <= 1}
-                            onclick={() => {
-                              setPrevSplitIndex(splitIndex());
-                              resetChart();
-                              setMergePlotIndexes([]);
-                            }}
-                            size="sm"
-                          >
-                            <IconRestore />
-                          </IconButton>
-                        </Tooltip.Trigger>
-                        <Tooltip.Positioner>
-                          <Tooltip.Content backgroundColor="bg.default">
-                            <Text color="fg.default">Reset</Text>
-                          </Tooltip.Content>
-                        </Tooltip.Positioner>
-                      </Tooltip.Root>
-                    </Stack>
-                  </Show>
-                </Stack>
-                <Plot
-                  id={currentID()}
-                  group={tabPageProps.tabId}
-                  name=""
-                  header={currentHeader}
-                  series={currentItems}
-                  context={plots[index()]}
-                  legendPanelSize={legendSplitterSize()}
-                  onLegendPanelSize={(size) => {
-                    setLegendSplitterSize(size);
-                  }}
-                  onContextChange={(ctx) => {
-                    if (
-                      JSON.stringify(ctx) !== JSON.stringify(plots[index()])
-                    ) {
-                      setPlots(index(), ctx);
-                    }
-                  }}
-                  xScale={plotZoomState()}
-                  onXScaleChange={(xRange) => {
-                    if (plotZoomState() !== xRange) {
-                      setPlotZoomState(xRange);
-                    }
-                  }}
-                  yScale={
-                    plotYScales()[index()] ? plotYScales()[index()] : undefined
-                  }
-                  onYScaleChange={(yRange) => {
-                    const yScales = plotYScales();
-                    const currentYScale = yScales[index()];
-                    if (isNaN(yRange.min) || isNaN(yRange.max)) return;
-                    if (
-                      currentYScale.max !== yRange.max ||
-                      currentYScale.min !== yRange.min
-                    ) {
-                      setPlotYScales((prev) => {
-                        const update = prev.map((prevRange, i) => {
-                          if (i === index()) {
-                            return yRange;
-                          } else {
-                            return prevRange;
-                          }
-                        });
-                        return update;
-                      });
-                    }
-                  }}
-                  legendShrink={isLegendShrink()}
-                  onLegendShrinkChange={(newState) => {
-                    setIsLegendShrink(newState);
-                  }}
-                  style={{
-                    width: "100%",
-                    height: `calc(100% - 3rem)`,
-                    "min-height": "17rem",
-                  }}
-                />
-              </div>
-            );
-          }}
-        </For>
+                    legendShrink={isLegendShrink()}
+                    onLegendShrinkChange={(newState) => {
+                      setIsLegendShrink(newState);
+                    }}
+                    style={{
+                      width: "100%",
+                      height: `calc(100% - 4em)`,
+                      "min-height": "17em",
+                    }}
+                  />
+                </div>
+              );
+            }}
+          </For>
+        </Show>
       </div>
-    </Show>
+      <Show when={typeof dragOverIndex() === "number"}>
+        <Stack
+          background={"fg.default"}
+          opacity={"0.1"}
+          style={{
+            position: "absolute",
+            top: `max(${overlayTop()}px, 3rem)`,
+            width: `${document.getElementById(`${divId}:${dragOverIndex()}`)!.offsetWidth}px`,
+            left: `${document.getElementById(`${divId}:${dragOverIndex()}`)!.offsetLeft}px`,
+            height: `calc(${overlayBottom()!}px - max(${overlayTop()}px, 3rem)) `,
+          }}
+        />
+      </Show>
+
+      <Show when={typeof dragging() === "number"}>
+        <Portal>
+          <Stack
+            background={"bg.default"}
+            borderRadius={"0.2em"}
+            style={{
+              position: "absolute",
+              top: `${clientY()}px`,
+              width: "max-content",
+              left: `${clientX()}px`,
+              height: `min-content`,
+              padding: "0.5em",
+              "border-width": "1px",
+            }}
+          >
+            <Text size="xs" fontWeight={"bold"}>
+              {plotNames[dragging()!]}
+            </Text>
+          </Stack>
+        </Portal>
+      </Show>
+    </>
   );
 }

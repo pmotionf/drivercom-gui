@@ -176,6 +176,7 @@ export function Panel(props: JSX.HTMLAttributes<HTMLDivElement>) {
               )!.offsetTop
             }px`,
             position: "absolute",
+            "z-index": 10,
           }}
           backgroundColor="fg.default"
           pointerEvent="none"
