@@ -609,8 +609,8 @@ export function LogViewerTabPageContent() {
     scrollContainer: HTMLDivElement | undefined,
   ) => {
     if (!scrollContainer) return;
-    const clientRef = scrollContainer.getBoundingClientRect()
-    if(clientRef.left > clientX || clientX > clientRef.right) return
+    const clientRef = scrollContainer.getBoundingClientRect();
+    if (clientRef.left > clientX || clientX > clientRef.right) return;
     const movement = offsetY * 0.05;
     let scrollHeight = 0;
     const children = scrollContainer.children;
@@ -626,12 +626,14 @@ export function LogViewerTabPageContent() {
     scrollContainer.scrollBy({ top: movement });
   };
 
+  const plotToolBoxWidth = "12em";
+
   return (
-    <Show when={render()}>
+    <>
       <div
         style={{
           width: "100%",
-          height: "100%",
+          height: `100%`,
           "overflow-y": "auto",
           "overflow-x": "hidden",
           "scrollbar-width":
@@ -639,391 +641,394 @@ export function LogViewerTabPageContent() {
         }}
         ref={scrollContainer}
       >
-        <For each={splitIndex()}>
-          {(item, index) => {
-            // Header and items need not be derived state, as they will not
-            // change within a plot.
-            const currentHeader = item.map((i) => header()[i]);
-            const currentItems = item.map((i) => series()[i]);
+        <Show when={render()}>
+          <For each={splitIndex()}>
+            {(item, index) => {
+              // Header and items need not be derived state, as they will not
+              // change within a plot.
+              const currentHeader = item.map((i) => header()[i]);
+              const currentItems = item.map((i) => series()[i]);
 
-            // Current ID must be derived state as index can change based on
-            // added/merged plots.
-            const currentID = () => tabPageProps.tabId + index();
+              // Current ID must be derived state as index can change based on
+              // added/merged plots.
+              const currentID = () => tabPageProps.tabId + index();
 
-            return (
-              <div
-                id={`${divId}:${index()}`}
-                class={css({ background: "bg.default" })}
-                style={{
-                  height: `calc(100% / ${splitIndex().length})`,
-                  width: "100%",
-                  "min-height": "20rem",
-                  opacity: dragging() === index() ? "0" : "1",
-                  "padding-top": "0.5em",
-                }}
-                use:dragOptions={{
-                  handle: ".handle",
-                  onDragStart: () => {
-                    setDragging(index());
-                  },
-                  onDrag: (data) => {
-                    dragOverScroll(
-                      data.offsetY,
-                      data.event.clientY,
-                      data.event.clientX,
-                      scrollContainer,
-                    );
-                    setClientX(data.event.clientX);
+              return (
+                <div
+                  id={`${divId}:${index()}`}
+                  class={css({ background: "bg.default" })}
+                  style={{
+                    height: `calc(100% / ${splitIndex().length})`,
+                    width: "100%",
+                    "min-height": "20rem",
+                    opacity: dragging() === index() ? "0" : "1",
+                    "padding-top": "0.5em",
+                  }}
+                  use:dragOptions={{
+                    handle: ".handle",
+                    onDragStart: () => {
+                      setDragging(index());
+                    },
+                    onDrag: (data) => {
+                      dragOverScroll(
+                        data.offsetY,
+                        data.event.clientY,
+                        data.event.clientX,
+                        scrollContainer,
+                      );
+                      setClientX(data.event.clientX);
 
-                    const clientY = data.event.clientY;
-                    setClientY(clientY);
-                    let dragIndex: number | null = null;
+                      const clientY = data.event.clientY;
+                      setClientY(clientY);
+                      let dragIndex: number | null = null;
 
-                    for (let num = 0; num < splitIndex().length; num++) {
-                      if (
-                        typeof dragging() === "number" &&
-                        dragging() !== num
-                      ) {
-                        const plotId = `${divId}:${num}`;
-                        const element = document.getElementById(plotId);
-                        if (element) {
-                          const clientRec = element.getBoundingClientRect();
-                          if (
-                            clientRec.left > data.event.clientX ||
-                            data.event.clientX > clientRec.right
-                          )
-                            break;
-                          const top = clientRec.top;
-                          const bottom = clientRec.bottom;
-                          if (top < clientY && clientY < bottom) {
-                            setOverlayTop(clientRec.top);
-                            setOverlayBottom(clientRec.bottom);
-                            dragIndex = num;
-                            break;
+                      for (let num = 0; num < splitIndex().length; num++) {
+                        if (
+                          typeof dragging() === "number" &&
+                          dragging() !== num
+                        ) {
+                          const plotId = `${divId}:${num}`;
+                          const element = document.getElementById(plotId);
+                          if (element) {
+                            const clientRec = element.getBoundingClientRect();
+                            if (
+                              clientRec.left > data.event.clientX ||
+                              data.event.clientX > clientRec.right
+                            )
+                              break;
+                            const top = clientRec.top;
+                            const bottom = clientRec.bottom;
+                            if (top < clientY && clientY < bottom) {
+                              setOverlayTop(clientRec.top);
+                              setOverlayBottom(clientRec.bottom);
+                              dragIndex = num;
+                              break;
+                            }
                           }
                         }
                       }
-                    }
-                    setDragOverIndex(dragIndex);
-                  },
-                  onDragEnd: () => {
-                    setTimeout(() => {
-                      setRender(false);
-                      const dragOver = dragOverIndex();
-                      reorderPlots(index(), dragOverIndex());
-                      setDragging(null);
-                      setDragOverIndex(null);
-                      setRender(true);
-                      if (scrollContainer) {
-                        const plotId = `${divId}:${dragOver}`;
-                        const element = document.getElementById(plotId);
-                        if (element) {
-                          const top = element.getBoundingClientRect().y;
+                      setDragOverIndex(dragIndex);
+                    },
+                    onDragEnd: () => {
+                      setTimeout(() => {
+                        setRender(false);
+                        const dragOver = dragOverIndex();
+                        reorderPlots(index(), dragOverIndex());
+                        setDragging(null);
+                        setDragOverIndex(null);
+                        setRender(true);
+                        if (scrollContainer) {
+                          const plotId = `${divId}:${dragOver}`;
+                          const element = document.getElementById(plotId);
+                          if (element) {
+                            const top = element.getBoundingClientRect().y;
 
-                          scrollContainer.scrollTo({
-                            top: top - scrollContainer.offsetTop,
+                            scrollContainer.scrollTo({
+                              top: top - scrollContainer.offsetTop,
+                            });
+                          }
+                        }
+
+                        setOverlayBottom(null);
+                        setOverlayTop(null);
+
+                        setClientX(null);
+                        setClientY(null);
+                      }, 200);
+                    },
+                  }}
+                >
+                  <Stack
+                    direction="row"
+                    width="100%"
+                    padding={"0 1.5em 0em 1.5em"}
+                    style={{ overflow: "hidden" }}
+                    height="3em"
+                    gap="0.25em"
+                  >
+                    <Stack
+                      direction="row"
+                      width={`calc(100% - ${plotToolBoxWidth})`}
+                    >
+                      <Show when={index() === 0}>
+                        <Tooltip.Root>
+                          <Tooltip.Trigger>
+                            <IconButton
+                              variant="outline"
+                              disabled={splitIndex().length <= 1}
+                              onclick={() => {
+                                setPrevSplitIndex(splitIndex());
+                                resetChart();
+                                setMergePlotIndexes([]);
+                              }}
+                              size="sm"
+                            >
+                              <IconRestore />
+                            </IconButton>
+                          </Tooltip.Trigger>
+                          <Tooltip.Positioner>
+                            <Tooltip.Content backgroundColor="bg.default">
+                              <Text color="fg.default">Reset</Text>
+                            </Tooltip.Content>
+                          </Tooltip.Positioner>
+                        </Tooltip.Root>
+                      </Show>
+                      <Show when={splitIndex().length > 1}>
+                        <IconButton
+                          variant={"outline"}
+                          class="handle"
+                          size="sm"
+                          marginTop="0.4em"
+                          onClick={() => {
+                            setDragging(index());
+                          }}
+                        >
+                          <IconGridDots />
+                        </IconButton>
+                      </Show>
+                    </Stack>
+                    <Checkbox
+                      width="7rem"
+                      checked={mergePlotIndexes().indexOf(index()) !== -1}
+                      onCheckedChange={(checkBoxState) => {
+                        if (checkBoxState.checked === true) {
+                          setMergePlotIndexes((prev) => {
+                            return [...prev, index()];
+                          });
+                        } else {
+                          setMergePlotIndexes((prev) => {
+                            return prev.filter(
+                              (graphIndex) => graphIndex !== index(),
+                            );
                           });
                         }
-                      }
-
-                      setOverlayBottom(null);
-                      setOverlayTop(null);
-
-                      setClientX(null);
-                      setClientY(null);
-                    }, 200);
-                  },
-                }}
-              >
-                <Stack
-                  direction="row-reverse"
-                  width="100%"
-                  paddingRight="1.6rem"
-                  style={{ overflow: "hidden" }}
-                  height="3rem"
-                  gap="0.25em"
-                >
-                  <Tooltip.Root>
-                    <Tooltip.Trigger>
-                      <IconButton
-                        size="xs"
-                        variant={"outline"}
-                        onClick={async () => {
-                          const visible = plots[index()].visible;
-                          if (!visible.includes(true)) {
-                            tabPageProps!.toaster.create({
-                              title: "Invalid Legend",
-                              description: "There is no visible legends.",
-                              type: "error",
-                            });
-                            return;
+                      }}
+                    >
+                      <Editable.Root
+                        activationMode="focus"
+                        value={plotNames[index()]}
+                        onValueChange={(details) =>
+                          setPlotNames(index(), details.value)
+                        }
+                        fontWeight="bold"
+                        width={"5em"}
+                        style={{
+                          display: "block",
+                          "text-overflow": "ellipsis",
+                          "white-space": "none",
+                          overflow: "hidden",
+                        }}
+                      >
+                        <Editable.Area>
+                          <Editable.Input width={"100%"} />
+                          <Editable.Preview
+                            width={"100%"}
+                            style={{
+                              display: "block",
+                              "text-overflow": "ellipsis",
+                              "white-space": "none",
+                              overflow: "hidden",
+                            }}
+                          />
+                        </Editable.Area>
+                      </Editable.Root>
+                    </Checkbox>
+                    <Tooltip.Root>
+                      <Tooltip.Trigger>
+                        <IconButton
+                          onClick={() => {
+                            setPrevSplitIndex(splitIndex());
+                            mergePlot(mergePlotIndexes());
+                            setMergePlotIndexes([]);
+                          }}
+                          disabled={
+                            mergePlotIndexes().length < 2 ||
+                            mergePlotIndexes().indexOf(index()) === -1
                           }
-                          const visibleHeader = currentHeader.filter(
-                            (_, i) => visible[i],
-                          );
-                          const visibleSeries = currentItems.filter(
-                            (_, i) => visible[i],
-                          );
-
-                          const xMin = Math.floor(plotZoomState()[0]);
-                          const xMax = Math.floor(plotZoomState()[1]);
-                          if (xMax - xMin < 1) {
-                            tabPageProps!.toaster.create({
-                              title: "Invalid Range",
-                              description:
-                                "The x-axis dosen't have enough range.",
-                              type: "error",
-                            });
-                            return;
+                          size="xs"
+                        >
+                          <IconFold />
+                        </IconButton>
+                      </Tooltip.Trigger>
+                      <Tooltip.Positioner>
+                        <Tooltip.Content backgroundColor="bg.default">
+                          <Text color="fg.default">Merge</Text>
+                        </Tooltip.Content>
+                      </Tooltip.Positioner>
+                    </Tooltip.Root>
+                    <Tooltip.Root>
+                      <Tooltip.Trigger>
+                        <IconButton
+                          size="xs"
+                          onClick={() => {
+                            setPrevSplitIndex(splitIndex());
+                            splitPlot(index());
+                            setMergePlotIndexes([]);
+                          }}
+                          disabled={
+                            currentHeader.length <= 1 ||
+                            !plots[index()] ||
+                            !plots[index()].selected ||
+                            allSelected(index()) ||
+                            allNotSelected(index())
                           }
-
-                          const path = await fileHandler.saveFileDialog(
-                            "csv",
-                            filePath(),
-                            tabName(),
-                          );
-                          if (path) {
-                            await saveCsvFile(
-                              path,
-                              visibleHeader,
-                              visibleSeries,
-                              xMin,
-                              xMax,
+                        >
+                          <IconSeparatorHorizontal />
+                        </IconButton>
+                      </Tooltip.Trigger>
+                      <Tooltip.Positioner>
+                        <Tooltip.Content backgroundColor="bg.default">
+                          <Text color="fg.default">Split</Text>
+                        </Tooltip.Content>
+                      </Tooltip.Positioner>
+                    </Tooltip.Root>
+                    <Tooltip.Root>
+                      <Tooltip.Trigger>
+                        <IconButton
+                          size="xs"
+                          variant={"outline"}
+                          onClick={async () => {
+                            const visible = plots[index()].visible;
+                            if (!visible.includes(true)) {
+                              tabPageProps!.toaster.create({
+                                title: "Invalid Legend",
+                                description: "There is no visible legends.",
+                                type: "error",
+                              });
+                              return;
+                            }
+                            const visibleHeader = currentHeader.filter(
+                              (_, i) => visible[i],
                             );
-                            tabPageProps!.toaster.create({
-                              title: "Saved File Successfully",
-                              description: "The file is saved.",
-                              type: "success",
-                              action:
-                                path !== filePath()
-                                  ? {
-                                      label: path,
-                                      onClick: () => {
-                                        addNewTab(path);
-                                      },
-                                    }
-                                  : undefined,
-                            });
-                          }
-                          if (path === filePath()) {
-                            setRender(false);
-                            setTimeout(async () => {
-                              await prepareCsvFile();
-                            }, 200);
-                          }
-                        }}
-                      >
-                        <IconFileDownload />
-                      </IconButton>
-                    </Tooltip.Trigger>
-                    <Tooltip.Positioner>
-                      <Tooltip.Content backgroundColor="bg.default">
-                        <Text color="fg.default">Save</Text>
-                      </Tooltip.Content>
-                    </Tooltip.Positioner>
-                  </Tooltip.Root>
+                            const visibleSeries = currentItems.filter(
+                              (_, i) => visible[i],
+                            );
 
-                  <Tooltip.Root>
-                    <Tooltip.Trigger>
-                      <IconButton
-                        size="xs"
-                        onClick={() => {
-                          setPrevSplitIndex(splitIndex());
-                          splitPlot(index());
-                          setMergePlotIndexes([]);
-                        }}
-                        disabled={
-                          currentHeader.length <= 1 ||
-                          !plots[index()] ||
-                          !plots[index()].selected ||
-                          allSelected(index()) ||
-                          allNotSelected(index())
-                        }
-                      >
-                        <IconSeparatorHorizontal />
-                      </IconButton>
-                    </Tooltip.Trigger>
-                    <Tooltip.Positioner>
-                      <Tooltip.Content backgroundColor="bg.default">
-                        <Text color="fg.default">Split</Text>
-                      </Tooltip.Content>
-                    </Tooltip.Positioner>
-                  </Tooltip.Root>
+                            const xMin = Math.floor(plotZoomState()[0]);
+                            const xMax = Math.floor(plotZoomState()[1]);
+                            if (xMax - xMin < 1) {
+                              tabPageProps!.toaster.create({
+                                title: "Invalid Range",
+                                description:
+                                  "The x-axis dosen't have enough range.",
+                                type: "error",
+                              });
+                              return;
+                            }
 
-                  <Tooltip.Root>
-                    <Tooltip.Trigger>
-                      <IconButton
-                        onClick={() => {
-                          setPrevSplitIndex(splitIndex());
-                          mergePlot(mergePlotIndexes());
-                          setMergePlotIndexes([]);
-                        }}
-                        disabled={
-                          mergePlotIndexes().length < 2 ||
-                          mergePlotIndexes().indexOf(index()) === -1
-                        }
-                        size="xs"
-                      >
-                        <IconFold />
-                      </IconButton>
-                    </Tooltip.Trigger>
-                    <Tooltip.Positioner>
-                      <Tooltip.Content backgroundColor="bg.default">
-                        <Text color="fg.default">Merge</Text>
-                      </Tooltip.Content>
-                    </Tooltip.Positioner>
-                  </Tooltip.Root>
-
-                  <Checkbox
-                    width="7rem"
-                    checked={mergePlotIndexes().indexOf(index()) !== -1}
-                    onCheckedChange={(checkBoxState) => {
-                      if (checkBoxState.checked === true) {
-                        setMergePlotIndexes((prev) => {
-                          return [...prev, index()];
-                        });
-                      } else {
-                        setMergePlotIndexes((prev) => {
-                          return prev.filter(
-                            (graphIndex) => graphIndex !== index(),
-                          );
+                            const path = await fileHandler.saveFileDialog(
+                              "csv",
+                              filePath(),
+                              tabName(),
+                            );
+                            if (path) {
+                              await saveCsvFile(
+                                path,
+                                visibleHeader,
+                                visibleSeries,
+                                xMin,
+                                xMax,
+                              );
+                              tabPageProps!.toaster.create({
+                                title: "Saved File Successfully",
+                                description: "The file is saved.",
+                                type: "success",
+                                action:
+                                  path !== filePath()
+                                    ? {
+                                        label: path,
+                                        onClick: () => {
+                                          addNewTab(path);
+                                        },
+                                      }
+                                    : undefined,
+                              });
+                            }
+                            if (path === filePath()) {
+                              setRender(false);
+                              setTimeout(async () => {
+                                await prepareCsvFile();
+                              }, 200);
+                            }
+                          }}
+                        >
+                          <IconFileDownload />
+                        </IconButton>
+                      </Tooltip.Trigger>
+                      <Tooltip.Positioner>
+                        <Tooltip.Content backgroundColor="bg.default">
+                          <Text color="fg.default">Save</Text>
+                        </Tooltip.Content>
+                      </Tooltip.Positioner>
+                    </Tooltip.Root>
+                  </Stack>
+                  <Plot
+                    id={currentID()}
+                    group={tabPageProps.tabId}
+                    name=""
+                    header={currentHeader}
+                    series={currentItems}
+                    context={plots[index()]}
+                    legendPanelSize={legendSplitterSize()}
+                    onLegendPanelSize={(size) => {
+                      setLegendSplitterSize(size);
+                    }}
+                    onContextChange={(ctx) => {
+                      if (
+                        JSON.stringify(ctx) !== JSON.stringify(plots[index()])
+                      ) {
+                        setPlots(index(), ctx);
+                      }
+                    }}
+                    xScale={plotZoomState()}
+                    onXScaleChange={(xRange) => {
+                      if (
+                        plotZoomState()[0] !== xRange[0] &&
+                        plotZoomState()[1] !== xRange[1]
+                      ) {
+                        setPlotZoomState(xRange);
+                      }
+                    }}
+                    yScale={
+                      plotYScales() && plotYScales()[index()]
+                        ? plotYScales()[index()]
+                        : undefined
+                    }
+                    onYScaleChange={(yRange) => {
+                      const yScales = plotYScales();
+                      const currentYScale = yScales[index()];
+                      if (isNaN(yRange.min) || isNaN(yRange.max)) return;
+                      if (
+                        currentYScale.max !== yRange.max ||
+                        currentYScale.min !== yRange.min
+                      ) {
+                        setPlotYScales((prev) => {
+                          const update = prev.map((prevRange, i) => {
+                            if (i === index()) {
+                              return yRange;
+                            } else {
+                              return prevRange;
+                            }
+                          });
+                          return update;
                         });
                       }
                     }}
-                  >
-                    <Editable.Root
-                      activationMode="focus"
-                      value={plotNames[index()]}
-                      onValueChange={(details) =>
-                        setPlotNames(index(), details.value)
-                      }
-                      fontWeight="bold"
-                      width={"5em"}
-                      style={{
-                        display: "block",
-                        "text-overflow": "ellipsis",
-                        "white-space": "none",
-                        overflow: "hidden",
-                      }}
-                    >
-                      <Editable.Area>
-                        <Editable.Input width={"100%"} />
-                        <Editable.Preview
-                          width={"100%"}
-                          style={{
-                            display: "block",
-                            "text-overflow": "ellipsis",
-                            "white-space": "none",
-                            overflow: "hidden",
-                          }}
-                        />
-                      </Editable.Area>
-                    </Editable.Root>
-                  </Checkbox>
-
-                  <Stack direction="row" width={`calc(100% - 16rem)`}>
-                    <Show when={index() === 0}>
-                      <Tooltip.Root>
-                        <Tooltip.Trigger>
-                          <IconButton
-                            variant="outline"
-                            disabled={splitIndex().length <= 1}
-                            onclick={() => {
-                              setPrevSplitIndex(splitIndex());
-                              resetChart();
-                              setMergePlotIndexes([]);
-                            }}
-                            size="sm"
-                          >
-                            <IconRestore />
-                          </IconButton>
-                        </Tooltip.Trigger>
-                        <Tooltip.Positioner>
-                          <Tooltip.Content backgroundColor="bg.default">
-                            <Text color="fg.default">Reset</Text>
-                          </Tooltip.Content>
-                        </Tooltip.Positioner>
-                      </Tooltip.Root>
-                    </Show>
-                    <Show when={splitIndex().length > 1}>
-                      <IconButton
-                        variant={"outline"}
-                        class="handle"
-                        size="sm"
-                        marginTop="0.4em"
-                      >
-                        <IconGridDots />
-                      </IconButton>
-                    </Show>
-                  </Stack>
-                </Stack>
-
-                <Plot
-                  id={currentID()}
-                  group={tabPageProps.tabId}
-                  name=""
-                  header={currentHeader}
-                  series={currentItems}
-                  context={plots[index()]}
-                  legendPanelSize={legendSplitterSize()}
-                  onLegendPanelSize={(size) => {
-                    setLegendSplitterSize(size);
-                  }}
-                  onContextChange={(ctx) => {
-                    if (
-                      JSON.stringify(ctx) !== JSON.stringify(plots[index()])
-                    ) {
-                      setPlots(index(), ctx);
-                    }
-                  }}
-                  xScale={plotZoomState()}
-                  onXScaleChange={(xRange) => {
-                    if (
-                      plotZoomState()[0] !== xRange[0] &&
-                      plotZoomState()[1] !== xRange[1]
-                    ) {
-                      setPlotZoomState(xRange);
-                    }
-                  }}
-                  yScale={
-                    plotYScales() && plotYScales()[index()]
-                      ? plotYScales()[index()]
-                      : undefined
-                  }
-                  onYScaleChange={(yRange) => {
-                    const yScales = plotYScales();
-                    const currentYScale = yScales[index()];
-                    if (isNaN(yRange.min) || isNaN(yRange.max)) return;
-                    if (
-                      currentYScale.max !== yRange.max ||
-                      currentYScale.min !== yRange.min
-                    ) {
-                      setPlotYScales((prev) => {
-                        const update = prev.map((prevRange, i) => {
-                          if (i === index()) {
-                            return yRange;
-                          } else {
-                            return prevRange;
-                          }
-                        });
-                        return update;
-                      });
-                    }
-                  }}
-                  legendShrink={isLegendShrink()}
-                  onLegendShrinkChange={(newState) => {
-                    setIsLegendShrink(newState);
-                  }}
-                  style={{
-                    width: "100%",
-                    height: `calc(100% - 3rem)`,
-                    "min-height": "17rem",
-                  }}
-                />
-              </div>
-            );
-          }}
-        </For>
+                    legendShrink={isLegendShrink()}
+                    onLegendShrinkChange={(newState) => {
+                      setIsLegendShrink(newState);
+                    }}
+                    style={{
+                      width: "100%",
+                      height: `calc(100% - 4em)`,
+                      "min-height": "17em",
+                    }}
+                  />
+                </div>
+              );
+            }}
+          </For>
+        </Show>
       </div>
       <Show when={typeof dragOverIndex() === "number"}>
         <Stack
@@ -1060,6 +1065,6 @@ export function LogViewerTabPageContent() {
           </Stack>
         </Portal>
       </Show>
-    </Show>
+    </>
   );
 }
