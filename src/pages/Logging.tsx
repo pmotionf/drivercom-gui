@@ -36,7 +36,7 @@ import { FileHandler } from "./utils/FileHandler.ts";
 import { logForm, setLogForm } from "~/GlobalState.ts";
 import { AccordionStates } from "~/components/Form.tsx";
 import { DownloadStates, DownloadStatus } from "~/components/DownloadList.tsx";
-import JSON5 from 'json5'
+import JSON5 from "json5";
 
 export type LoggingFormType = {
   title: string;
@@ -274,6 +274,22 @@ export function Logging() {
 
   const fileHandler = new FileHandler();
 
+  let scrollContainer: HTMLDivElement | undefined;
+  const scrollToWrongField = (scrollContainer: HTMLDivElement) => {
+    const top = Array.from(
+      document.querySelectorAll(`[data-name*="config_field_error"]`),
+    )[0].parentElement?.offsetTop;
+
+    if (top) {
+      const one_rem = parseFloat(
+        getComputedStyle(document.documentElement).fontSize,
+      );
+      scrollContainer.scrollTo({
+        top: top - scrollContainer.offsetTop - one_rem,
+      });
+    }
+  };
+
   return (
     <>
       <div
@@ -430,6 +446,20 @@ export function Logging() {
                 }}
                 onSaveFile={async () => {
                   try {
+                    if (
+                      scrollContainer &&
+                      document.querySelectorAll(
+                        `[data-name*="config_field_error"]`,
+                      ).length > 0
+                    ) {
+                      scrollToWrongField(scrollContainer);
+                      toaster.create({
+                        title: "Invalid File",
+                        description: "The file is invalid.",
+                        type: "error",
+                      });
+                      return;
+                    }
                     const path = await fileHandler.saveFileDialog(
                       "json",
                       logForm.filePath,
@@ -475,6 +505,20 @@ export function Logging() {
                     refresh();
                   }}
                   onSaveToPort={async () => {
+                    if (
+                      scrollContainer &&
+                      document.querySelectorAll(
+                        `[data-name*="config_field_error"]`,
+                      ).length > 0
+                    ) {
+                      scrollToWrongField(scrollContainer);
+                      toaster.create({
+                        title: "Invalid File",
+                        description: "The file is invalid.",
+                        type: "error",
+                      });
+                      return;
+                    }
                     const outputError = await saveLogToPort(logForm.logConfig);
                     if (outputError.length !== 0) {
                       toaster.create({
@@ -653,6 +697,7 @@ export function Logging() {
               id={pageKeys.get(Pages.Logging)!}
               formData={logForm.logConfig}
               accordionStates={logForm.accordionStates}
+              ref={scrollContainer}
             />
           </Show>
         </Stack>
