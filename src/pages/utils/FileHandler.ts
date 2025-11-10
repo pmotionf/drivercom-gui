@@ -1,6 +1,7 @@
 import { open, save } from "@tauri-apps/plugin-dialog";
 import { readTextFile, writeTextFile } from "@tauri-apps/plugin-fs";
 import { inferSchema, initParser } from "udsv";
+import JSON5 from "json5";
 
 type CsvFile = { header: string[]; series: number[][] };
 
@@ -88,9 +89,6 @@ export class FileHandler implements IFileHandler {
   };
 
   matchFileFormat(file: object, defaultFormat: object): boolean {
-    const isNullIncluded = this.checkNullIncluded(file);
-    if (isNullIncluded) return false;
-
     const newFile = this.checkFormat(file);
     const defaultFile = this.checkFormat(defaultFormat);
     const isFormatMatch = newFile === defaultFile;
@@ -113,36 +111,11 @@ export class FileHandler implements IFileHandler {
     return format;
   }
 
-  private checkNullIncluded(format: object): boolean {
-    const values = Object.values(format);
-    if (
-      values.some(
-        (val) =>
-          val === null || (typeof val === "number" && !Number.isFinite(val)),
-      )
-    ) {
-      return true;
-    } else {
-      let isNullIncluded = false;
-      const objectList: object[] = values.filter(
-        (val) => typeof val === "object",
-      );
-      for (let i = 0; i < objectList.length; i++) {
-        const object = objectList[i];
-        const result = this.checkNullIncluded(object);
-        if (result) {
-          isNullIncluded = true;
-          break;
-        }
-      }
-      return isNullIncluded;
-    }
-  }
-
   async readFile(path: string, fileFormat?: object): Promise<object | never> {
     try {
       const output = await readTextFile(path);
-      const parseFileToObject = JSON.parse(output);
+      const parseFileToObject = JSON5.parse(output);
+
       if (fileFormat) {
         if (!this.matchFileFormat(parseFileToObject, fileFormat)) {
           throw new Error("Invalid file format.");
@@ -217,7 +190,7 @@ export class FileHandler implements IFileHandler {
         throw new Error("The file format is invalid.");
       }
     }
-    const file_str = JSON.stringify(file, null, "  ");
+    const file_str = JSON5.stringify(file, null, "  ");
 
     try {
       await writeTextFile(path, file_str);
