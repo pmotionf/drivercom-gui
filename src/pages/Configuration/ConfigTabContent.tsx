@@ -22,6 +22,7 @@ import {
 import { LinkStates, GainLockStates } from "~/components/ConfigForm";
 import { FileHandler } from "../utils/FileHandler";
 import { AccordionStates } from "~/components/Form";
+import JSON5 from 'json5'
 
 export type ConfigTabPage = {
   filePath?: string;
@@ -399,7 +400,7 @@ export function ConfigTabContent() {
                   type: "error",
                 });
               } else {
-                const parseConfigToObject = JSON.parse(output.stdout);
+                const parseConfigToObject = JSON5.parse(output.stdout);
                 setTabName(portId());
                 setConfigForm(parseConfigToObject);
                 refresh();
