@@ -36,6 +36,7 @@ import { FileHandler } from "./utils/FileHandler.ts";
 import { logForm, setLogForm } from "~/GlobalState.ts";
 import { AccordionStates } from "~/components/Form.tsx";
 import { DownloadStates, DownloadStatus } from "~/components/DownloadList.tsx";
+import JSON5 from 'json5'
 
 export type LoggingFormType = {
   title: string;
@@ -469,7 +470,7 @@ export function Logging() {
                     setLogForm({
                       title: portId(),
                       filePath: "",
-                      logConfig: JSON.parse(output.stdout),
+                      logConfig: JSON5.parse(output.stdout),
                     });
                     refresh();
                   }}
