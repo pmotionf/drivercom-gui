@@ -38,6 +38,7 @@
     "@tauri-apps/plugin-shell": "^2.3.0",
     "@tauri-apps/plugin-store": "~2",
     "@thisbeyond/solid-dnd": "^0.7.5",
+    "json5": "^2.2.3",
     "lucide-solid": "^0.525.0",
     "solid-js": "^1.9.7",
     "udsv": "^0.7.3",
