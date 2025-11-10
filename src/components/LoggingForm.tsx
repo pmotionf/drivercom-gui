@@ -4,7 +4,7 @@ import { createListCollection } from "~/components/ui/select";
 import { ListCollection } from "@ark-ui/solid/collection";
 import { AccordionStates, Form } from "./Form";
 
-export type LoggingFormProps = JSX.HTMLAttributes<Element> & {
+export type LoggingFormProps = JSX.HTMLAttributes<HTMLDivElement> & {
   id: string;
   formData: object;
   accordionStates: AccordionStates;
@@ -31,6 +31,7 @@ export function LoggingForm(props: LoggingFormProps) {
 
   return (
     <div
+      ref={props.ref}
       style={{
         "overflow-y": "auto",
         "border-top-width": "1px",

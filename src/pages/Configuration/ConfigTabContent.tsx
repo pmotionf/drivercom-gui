@@ -22,7 +22,7 @@ import {
 import { LinkStates, GainLockStates } from "~/components/ConfigForm";
 import { FileHandler } from "../utils/FileHandler";
 import { AccordionStates } from "~/components/Form";
-import JSON5 from 'json5'
+import JSON5 from "json5";
 
 export type ConfigTabPage = {
   filePath?: string;
@@ -348,22 +348,6 @@ export function ConfigTabContent() {
               }
             }}
             onSaveFile={async () => {
-              if (
-                !fileHandler.matchFileFormat(
-                  getConfigForm(),
-                  configFormFileFormat(),
-                )
-              ) {
-                if (scrollContainer) {
-                  scrollToWrongField(scrollContainer);
-                }
-                toaster.create({
-                  title: "Invalid File",
-                  description: "The file is invalid.",
-                  type: "error",
-                });
-                return;
-              }
               try {
                 const path = await fileHandler.saveFileDialog(
                   "json",
@@ -409,14 +393,11 @@ export function ConfigTabContent() {
             onSaveToPort={async () => {
               if (portId().length === 0) return;
               if (
-                !fileHandler.matchFileFormat(
-                  getConfigForm(),
-                  configFormFileFormat(),
-                )
+                scrollContainer &&
+                document.querySelectorAll(`[data-name*="config_field_error"]`)
+                  .length > 0
               ) {
-                if (scrollContainer) {
-                  scrollToWrongField(scrollContainer);
-                }
+                scrollToWrongField(scrollContainer);
                 toaster.create({
                   title: "Invalid File",
                   description: "The file is invalid.",
