@@ -535,7 +535,6 @@ export function Plot(props: PlotProps) {
           const updatedSize = size[1];
           props.onLegendPanelSize?.(updatedSize);
         }}
-        position={"fixed"}
       >
         <Splitter.Panel id={`plot-${props.id}`} borderWidth="0">
           <div id={props.id} style={{ width: "100%", height: "100%" }}>
@@ -951,9 +950,7 @@ export function Plot(props: PlotProps) {
               plugins={[
                 cursor(),
                 wheelZoomPlugin({ factor: 0.75, group: group() }),
-                tooltip(PlotToolTip, {
-                  placement: "top-right",
-                }),
+                tooltip(PlotToolTip),
               ]}
               pluginBus={bus}
             />
