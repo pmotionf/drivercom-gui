@@ -26,8 +26,9 @@ export const PlotToolTip = (props: TooltipProps) => {
 
   const [cursorY, setCursorY] = createSignal<number | null>(null);
   const [cursorX, setCursorX] = createSignal<number | null>(null);
+  const [positionY, setPositionY] = createSignal<number | null>(null);
 
-  const one_rem = parseFloat(
+  const oneRem = parseFloat(
     getComputedStyle(document.documentElement).fontSize,
   );
 
@@ -39,14 +40,15 @@ export const PlotToolTip = (props: TooltipProps) => {
           document.getElementById(props.cursor.plotId)!.offsetHeight * 0.5;
         setCursorY(
           props.cursor.position.top < halfHeight
-            ? props.cursor.position.top + one_rem * 2
+            ? props.cursor.position.top + oneRem * 2
             : props.cursor.position.top -
                 document.getElementById(props.cursor.plotId + "tooltip")!
                   .offsetHeight,
         );
         if (props.cursor.position.left) {
-          setCursorX(props.cursor.position.left + one_rem * 5);
+          setCursorX(props.cursor.position.left + oneRem * 5);
         }
+        setPositionY(props.cursor.position.top);
       },
     ),
   );
@@ -81,61 +83,25 @@ export const PlotToolTip = (props: TooltipProps) => {
         <For each={props.seriesData}>
           {(series, i) => {
             const currentSeries = props.u.series[i() + 1];
-            let matchedSeriesName: string = "";
             let enumMappingIndex: number | null = null;
-
-            const lineName = enumSeries().filter(
-              (data) => series.label === data[0],
-            )[0];
-            if (lineName) {
-              matchedSeriesName = lineName[1];
-              enumMappingIndex = enumMappings()
-                .map((mapping) => mapping[0])
-                .indexOf(matchedSeriesName);
-            }
-
-            createEffect(() => {
-              if (!seriesValues.get(i())) return;
-              const val: number = props.u.data[i() + 1][props.cursor.xValue]!;
-              const cursorY = props.cursor.position.top;
-
-              const one_rem = parseFloat(
-                getComputedStyle(document.documentElement).fontSize,
+            const lineIndex = enumSeries().findIndex(
+              (enumSeries) => enumSeries[0] === series.label,
+            );
+            if (lineIndex !== -1) {
+              enumMappingIndex = enumMappings().findIndex(
+                (mapping) => mapping[0] === enumSeries()[lineIndex][1],
               );
-
-              const yMin = props.u.posToVal(cursorY - one_rem * 0.6, "y");
-              const yMax = props.u.posToVal(cursorY + one_rem * 0.6, "y");
-
-              if (val > yMin || val < yMax) {
-                seriesValues.get(i())![1]("");
-                return;
-              }
-
-              if (enumMappingIndex !== null) {
-                const array: [number, string][] =
-                  enumMappings()[enumMappingIndex][1];
-                const index = array
-                  .map((arr) => {
-                    return arr[0];
-                  })
-                  .indexOf(val);
-
-                if (array[val]) {
-                  const enumValue = array[index][0];
-                  const enumKind = array[index][1];
-                  const seriesValue = `${enumKind} (${enumValue})`;
-                  seriesValues.get(i())![1](seriesValue);
-                }
-              } else {
-                seriesValues.get(i())![1](val);
-              }
-            });
+            }
+            const cursorRange = oneRem * 0.6;
 
             return (
               <Show
                 when={
-                  props.u.series[i() + 1].show &&
-                  seriesValues.get(i())![0]().toString().length > 0
+                  props.u.data[i() + 1][props.cursor.idx]! >
+                    props.u.posToVal(positionY()! + cursorRange, "y") &&
+                  props.u.data[i() + 1][props.cursor.idx]! <
+                    props.u.posToVal(positionY()! - cursorRange, "y") &&
+                  props.u.series[i() + 1].show
                 }
               >
                 <Stack direction="row" gap="0.5em" padding="0.2em">
@@ -155,7 +121,11 @@ export const PlotToolTip = (props: TooltipProps) => {
                   <Text size="sm" fontWeight="bold">
                     {series.label}:
                   </Text>
-                  <Text size="sm">{seriesValues.get(i())![0]()}</Text>
+                  <Text size="sm">
+                    {enumMappingIndex
+                      ? `${enumMappings()[enumMappingIndex][1][props.u.data[i() + 1][props.cursor.xValue]!][1]}(${props.u.data[i() + 1][props.cursor.xValue]})`
+                      : props.u.data[i() + 1][props.cursor.xValue]}
+                  </Text>
                 </Stack>
               </Show>
             );
