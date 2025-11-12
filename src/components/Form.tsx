@@ -35,18 +35,24 @@ export function Form(props: FormProps) {
     null,
   );
 
-  const checkBoxShiftClick = (index: number) => {
-    if (prevCheckBoxIndex() === null) return;
-    const startNumber = Math.min(prevCheckBoxIndex()!, index);
-    const endNumber = Math.max(prevCheckBoxIndex()!, index);
+  const checkBoxShiftClick = (
+    prevIndex: number,
+    nextIndex: number,
+    form: object,
+  ) => {
+    const startNumber = prevIndex > nextIndex ? nextIndex : prevIndex + 1;
+    const endNumber = prevIndex < nextIndex ? nextIndex + 1 : prevIndex;
+    const values = Object.values(form);
+    const parseValues = values.slice(startNumber, endNumber);
+    if (parseValues.includes(values[prevIndex])) return;
 
-    const keys = Object.keys(object).slice(startNumber, endNumber + 1);
+    const keys = Object.keys(form).slice(startNumber, endNumber);
     keys.forEach((key) => {
       setObject(
         key as keyof typeof object,
         // @ts-ignore : TSC unable to handle generic object type
         // in store
-        true,
+        values[prevIndex],
       );
     });
   };
@@ -214,14 +220,13 @@ export function Form(props: FormProps) {
                   )
                 }
                 onClick={() => {
-                  if (value as keyof typeof object) {
-                    setPrevCheckBoxIndex(null);
-                    return;
-                  }
                   setPrevCheckBoxIndex(index());
                 }}
                 onShiftClick={() => {
-                  checkBoxShiftClick(index());
+                  if (typeof prevCheckBoxIndex() === "number") {
+                    checkBoxShiftClick(prevCheckBoxIndex()!, index(), object);
+                    setPrevCheckBoxIndex(null);
+                  }
                 }}
               />
             );
