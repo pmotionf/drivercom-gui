@@ -123,7 +123,13 @@ export const PlotToolTip = (props: TooltipProps) => {
                   </Text>
                   <Text size="sm">
                     {enumMappingIndex
-                      ? `${enumMappings()[enumMappingIndex][1][props.u.data[i() + 1][props.cursor.xValue]!][1]}(${props.u.data[i() + 1][props.cursor.xValue]})`
+                      ? !enumMappings()[enumMappingIndex][1].findIndex(
+                          (mapping) =>
+                            mapping[0] ===
+                            props.u.data[i() + 1][props.cursor.xValue],
+                        )
+                        ? `${enumMappings()[enumMappingIndex][1][enumMappings()[enumMappingIndex][1].findIndex((mapping) => mapping[0] === props.u.data[i() + 1][props.cursor.xValue])][1]}(${props.u.data[i() + 1][props.cursor.xValue]})`
+                        : `${enumMappings()[enumMappingIndex][1][enumMappings()[enumMappingIndex][1].findIndex((mapping) => mapping[0] === props.u.data[i() + 1][props.cursor.xValue])]}(${props.u.data[i() + 1][props.cursor.xValue]})`
                       : props.u.data[i() + 1][props.cursor.xValue]}
                   </Text>
                 </Stack>

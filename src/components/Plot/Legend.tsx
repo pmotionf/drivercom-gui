@@ -145,14 +145,12 @@ export function Legend(props: LegendProps) {
       const val = props.plot.data[seriesIndex][data_index];
       if (val != null) {
         if (enumMappingsIndex() != null) {
-          let name = "";
-          for (const mapping of enumMappings()[enumMappingsIndex()!][1]) {
-            if (mapping[0] == val) {
-              name = mapping[1];
-              break;
-            }
-          }
-          setValue(`${name} (${val})`);
+          const enumNameIndex = enumMappings()[
+            enumMappingsIndex()!
+          ][1].findIndex((mapping) => mapping[0] === val);
+          const enumKind =
+            enumMappings()[enumMappingsIndex()!][1][enumNameIndex];
+          setValue(`${!enumKind ? enumKind : enumKind[1]} (${val})`);
         } else {
           setValue(val);
         }
