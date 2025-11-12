@@ -31,6 +31,7 @@ import { createDraggable } from "@neodrag/solid";
 import { css } from "styled-system/css";
 import { Portal } from "solid-js/web";
 import { Editable } from "~/components/ui/editable";
+import { Spinner } from "~/components/ui/spinner";
 
 export type ErrorMessage = {
   title: string;
@@ -641,7 +642,44 @@ export function LogViewerTabPageContent() {
         }}
         ref={scrollContainer}
       >
-        <Show when={render()}>
+        <Show
+          when={render()}
+          fallback={
+            <div
+              style={{
+                display: "flex",
+                "align-items": "center",
+                "justify-content": "center",
+                width: "100%",
+                height: "100%",
+              }}
+            >
+              <div>
+                <Spinner
+                  display="flex"
+                  justifySelf={"center"}
+                  size="xl"
+                  borderLeftColor={"bg.muted"}
+                  borderBottomColor={"bg.muted"}
+                  borderRightColor={"fg.muted"}
+                  borderTopColor={"fg.muted"}
+                  borderWidth={"5px"}
+                />
+                <Text
+                  marginTop="1em"
+                  size="lg"
+                  fontWeight={"bold"}
+                >{`Open "${filePath()}"`}</Text>
+                <Text
+                  display="flex"
+                  justifySelf={"center"}
+                  marginTop="0.5em"
+                  size="md"
+                >{`Your file will be opened...`}</Text>
+              </div>
+            </div>
+          }
+        >
           <For each={splitIndex()}>
             {(item, index) => {
               // Header and items need not be derived state, as they will not
