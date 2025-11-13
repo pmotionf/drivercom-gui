@@ -207,27 +207,25 @@ export function Plot(props: PlotProps) {
 
   const cursorModeActivate = (event: KeyboardEvent) => {
     if (event.key === "Control") {
-      setCursorMode(CursorMode.Lock);
+      setCursorMode(CursorMode.Vertical);
     } else if (event.key === "Shift") {
       if (enterSplitter()) {
         return;
       }
       setCursorMode(CursorMode.Horizontal);
     } else if (event.key === "Alt") {
-      // TODO: Handle alt click
-      setCursorMode(CursorMode.Vertical);
+      setCursorMode(CursorMode.Lock);
     }
   };
   const cursorModeRelease = (event: KeyboardEvent) => {
-    if (event.key === "Control" && cursorMode() === CursorMode.Lock) {
+    if (event.key === "Control" && cursorMode() === CursorMode.Vertical) {
       setCursorMode(lastCursorMode());
     } else if (
       event.key === "Shift" &&
       cursorMode() === CursorMode.Horizontal
     ) {
       setCursorMode(lastCursorMode());
-    } else if (event.key === "Alt" && cursorMode() === CursorMode.Vertical) {
-      // TODO: Handle alt click
+    } else if (event.key === "Alt" && cursorMode() === CursorMode.Lock) {
       setCursorMode(lastCursorMode());
     }
   };
@@ -535,6 +533,7 @@ export function Plot(props: PlotProps) {
           const updatedSize = size[1];
           props.onLegendPanelSize?.(updatedSize);
         }}
+        position="fixed"
       >
         <Splitter.Panel id={`plot-${props.id}`} borderWidth="0">
           <div id={props.id} style={{ width: "100%", height: "100%" }}>
@@ -1154,7 +1153,7 @@ export function Plot(props: PlotProps) {
                       <Portal>
                         <Tooltip.Positioner>
                           <Tooltip.Content backgroundColor="bg.default">
-                            <Text color="fg.default">Vertical Zoom (Alt)</Text>
+                            <Text color="fg.default">Vertical Zoom (Ctrl)</Text>
                           </Tooltip.Content>
                         </Tooltip.Positioner>
                       </Portal>
@@ -1184,7 +1183,7 @@ export function Plot(props: PlotProps) {
                       <Portal>
                         <Tooltip.Positioner>
                           <Tooltip.Content backgroundColor="bg.default">
-                            <Text color="fg.default">Cursor Lock (Ctrl)</Text>
+                            <Text color="fg.default">Cursor Lock (Alt)</Text>
                           </Tooltip.Content>
                         </Tooltip.Positioner>
                       </Portal>
