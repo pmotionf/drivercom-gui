@@ -25,7 +25,7 @@ import {
 } from "@tabler/icons-solidjs";
 import { Heading } from "../ui/heading";
 import { Portal } from "solid-js/web";
-import { enumMappings, enumSeries } from "~/GlobalState";
+import { enumMappings, enumSeriesMap } from "~/GlobalState";
 import { Checkbox } from "../ui/checkbox";
 
 export type LegendProps = Omit<StackProps, "stroke"> & {
@@ -109,26 +109,15 @@ export function Legend(props: LegendProps) {
   const [enumMappingsIndex, setEnumMappingsIndex] = createSignal<number | null>(
     null,
   );
-
-  createEffect(() => {
-    let matchedSeriesName = "";
-    for (let i = 0; i < enumSeries().length; i++) {
-      const enumSeriesName = enumSeries()[i][0];
-      if (props.series === enumSeriesName) {
-        matchedSeriesName = enumSeries()[i][1];
-
-        break;
-      }
+  if (enumSeriesMap.has(props.series)) {
+    const seriesEnumType = enumSeriesMap.get(props.series);
+    const enumMappingsIndex = enumMappings().findIndex(
+      (mapping) => mapping.enumTypeName === seriesEnumType,
+    );
+    if (enumMappingsIndex !== -1) {
+      setEnumMappingsIndex(enumMappingsIndex);
     }
-    if (matchedSeriesName.length == 0) return;
-
-    for (let i = 0; i < enumMappings().length; i++) {
-      const enumTypeName = enumMappings()[i][0];
-      if (matchedSeriesName === enumTypeName) {
-        setEnumMappingsIndex(i);
-      }
-    }
-  });
+  }
 
   const updateValue = (data_index: number | null | undefined) => {
     if (props.visible != null) {
@@ -145,12 +134,12 @@ export function Legend(props: LegendProps) {
       const val = props.plot.data[seriesIndex][data_index];
       if (val != null) {
         if (enumMappingsIndex() != null) {
-          const enumNameIndex = enumMappings()[
-            enumMappingsIndex()!
-          ][1].findIndex((mapping) => mapping[0] === val);
-          const enumKind =
-            enumMappings()[enumMappingsIndex()!][1][enumNameIndex];
-          setValue(`${!enumKind ? enumKind : enumKind[1]} (${val})`);
+          const enumValues = enumMappings()[enumMappingsIndex()!].enumValues;
+          if (enumValues.has(val)) {
+            setValue(`${enumValues.get(val)}(${val})`);
+          } else {
+            setValue(`undefined(${val})`);
+          }
         } else {
           setValue(val);
         }

@@ -10,7 +10,7 @@ import {
 } from "solid-js";
 import { Stack } from "styled-system/jsx";
 import { Text } from "../ui/text";
-import { enumSeries, enumMappings } from "~/GlobalState";
+import { enumSeriesMap, enumMappings } from "~/GlobalState";
 import { IconLine, IconLineDashed, IconPoint } from "@tabler/icons-solidjs";
 import { Dynamic, Portal } from "solid-js/web";
 
@@ -84,13 +84,14 @@ export const PlotToolTip = (props: TooltipProps) => {
           {(series, i) => {
             const currentSeries = props.u.series[i() + 1];
             let enumMappingIndex: number | null = null;
-            const lineIndex = enumSeries().findIndex(
-              (enumSeries) => enumSeries[0] === series.label,
-            );
-            if (lineIndex !== -1) {
-              enumMappingIndex = enumMappings().findIndex(
-                (mapping) => mapping[0] === enumSeries()[lineIndex][1],
+            if (enumSeriesMap.has(series.label)) {
+              const seriesEnumTypeName = enumSeriesMap.get(series.label);
+              const findIndex = enumMappings().findIndex(
+                (mapping) => mapping.enumTypeName === seriesEnumTypeName,
               );
+              if (findIndex !== -1) {
+                enumMappingIndex = findIndex;
+              }
             }
             const cursorRange = oneRem * 0.6;
 
@@ -123,13 +124,7 @@ export const PlotToolTip = (props: TooltipProps) => {
                   </Text>
                   <Text size="sm">
                     {enumMappingIndex
-                      ? !enumMappings()[enumMappingIndex][1].findIndex(
-                          (mapping) =>
-                            mapping[0] ===
-                            props.u.data[i() + 1][props.cursor.xValue],
-                        )
-                        ? `${enumMappings()[enumMappingIndex][1][enumMappings()[enumMappingIndex][1].findIndex((mapping) => mapping[0] === props.u.data[i() + 1][props.cursor.xValue])][1]}(${props.u.data[i() + 1][props.cursor.xValue]})`
-                        : `${enumMappings()[enumMappingIndex][1][enumMappings()[enumMappingIndex][1].findIndex((mapping) => mapping[0] === props.u.data[i() + 1][props.cursor.xValue])]}(${props.u.data[i() + 1][props.cursor.xValue]})`
+                      ? `${enumMappings()[enumMappingIndex!].enumValues.get(props.u.data[i() + 1][props.cursor.xValue]!)}(${props.u.data[i() + 1][props.cursor.xValue]})`
                       : props.u.data[i() + 1][props.cursor.xValue]}
                   </Text>
                 </Stack>
