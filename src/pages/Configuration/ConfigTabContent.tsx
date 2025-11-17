@@ -261,8 +261,8 @@ export function ConfigTabContent() {
             filePath={getFilePath() ? getFilePath()! : ""}
             recentFiles={recentConfigFilePaths()}
             onNewFile={() => {
-              const newEmptyFile = JSON.parse(
-                JSON.stringify(configFormFileFormat()),
+              const newEmptyFile = JSON5.parse(
+                JSON5.stringify(configFormFileFormat()),
               );
               setTabName("New File");
               setConfigForm(newEmptyFile);
@@ -270,7 +270,7 @@ export function ConfigTabContent() {
               refresh();
             }}
             onOpenFile={async () => {
-              const extension = "json";
+              const extension = "json5";
               const path = await fileHandler.openFileDialog(extension);
               if (!path) return;
               try {
@@ -350,7 +350,7 @@ export function ConfigTabContent() {
             onSaveFile={async () => {
               try {
                 const path = await fileHandler.saveFileDialog(
-                  "json",
+                  "json5",
                   getFilePath()!,
                   getTabName(),
                 );

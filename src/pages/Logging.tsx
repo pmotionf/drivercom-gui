@@ -360,8 +360,8 @@ export function Logging() {
                 filePath={logForm.filePath}
                 recentFiles={recentLogFilePaths()}
                 onNewFile={() => {
-                  const newEmptyFile = JSON.parse(
-                    JSON.stringify(logFormFileFormat()),
+                  const newEmptyFile = JSON5.parse(
+                    JSON5.stringify(logFormFileFormat()),
                   );
                   setLogForm({
                     title: "New File",
@@ -372,7 +372,7 @@ export function Logging() {
                 }}
                 onOpenFile={async () => {
                   try {
-                    const extension = "json";
+                    const extension = "json5";
                     const path = await fileHandler.openFileDialog(extension);
                     const file = await fileHandler.readFile(
                       path,
@@ -461,7 +461,7 @@ export function Logging() {
                       return;
                     }
                     const path = await fileHandler.saveFileDialog(
-                      "json",
+                      "json5",
                       logForm.filePath,
                       logForm.title,
                     );
