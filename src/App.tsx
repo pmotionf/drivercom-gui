@@ -36,7 +36,6 @@ import {
   setConfigFormFileFormat,
   setDriverComVersion,
   setEnumMappings,
-  setEnumSeries,
   setGlobalState,
   setLogFormFileFormat,
   setLogStartConditionList,
@@ -45,6 +44,8 @@ import {
   Theme,
   setLogForm,
   logFormFileFormat,
+  enumMappings,
+  enumSeriesMap,
 } from "./GlobalState.ts";
 
 import { Button } from "~/components/ui/button.tsx";
@@ -130,20 +131,18 @@ function App(props: RouteSectionProps) {
       .map((e) => {
         return e.split(":");
       });
-    setEnumSeries(
-      seriesMappings.map((seriesMapping) => [
-        seriesMapping[0], // Series name
-        seriesMapping[1], // Series enum type name
-      ]),
-    );
+    seriesMappings.forEach((seriesMapping) => {
+      enumSeriesMap.set(seriesMapping[0], seriesMapping[1]);
+    });
 
     const enumTypeNames: string[] = enumMappingsLines.map((line) => {
       const closingBracketIndex = line.indexOf("]");
       return line.slice(1, closingBracketIndex);
     });
 
-    const enumCodeMappings: [number, string][][] = enumMappingsLines.map(
+    const enumCodeMappings: Map<number, string>[] = enumMappingsLines.map(
       (line) => {
+        const mappingValues = new Map<number, string>();
         const equalsIndex = line.indexOf("=");
         const mappingsString = line.slice(equalsIndex + 1);
         const mappingsList = mappingsString
@@ -152,19 +151,23 @@ function App(props: RouteSectionProps) {
         const mappingsSplitList = mappingsList
           .map((mappingString) => mappingString.split(":"))
           .filter((mappingSplit) => mappingSplit.length == 2);
-        return mappingsSplitList.map((mappingSplit) => [
-          Number(mappingSplit[0]), // Enum integer code
-          mappingSplit[1], // Enum name
-        ]);
+        mappingsSplitList.forEach((mappingSplit) => {
+          mappingValues.set(Number(mappingSplit[0]), mappingSplit[1]);
+        });
+        return mappingValues;
       },
     );
 
     setEnumMappings(
-      enumTypeNames.map((enumTypeName, index) => [
-        enumTypeName,
-        enumCodeMappings[index],
-      ]),
+      enumTypeNames.map((enumTypeName, index) => {
+        return {
+          enumTypeName: enumTypeName,
+          enumValues: enumCodeMappings[index],
+        };
+      }),
     );
+
+    console.log(enumMappings(), enumSeriesMap);
   }
 
   async function buildEmptyLogConfiguration() {
