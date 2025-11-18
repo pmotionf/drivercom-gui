@@ -86,7 +86,12 @@ export const [page, setPage] = createSignal<Pages>(Pages.None);
 export type MonitoringInputs = Map<string, [Accessor<string>, Setter<string>]>;
 export const monitoringInputs: MonitoringInputs = new Map();
 
-export const logDownloads: Map<number, Child> = new Map();
+export type PortCommand = {
+  port: string;
+  child: Child;
+};
+
+export const portCommands: Map<number, PortCommand> = new Map();
 
 export const [logForm, setLogForm] = createStore<LoggingFormType>({
   title: "New file",
