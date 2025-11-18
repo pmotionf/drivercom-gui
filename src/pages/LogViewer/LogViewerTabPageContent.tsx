@@ -605,26 +605,14 @@ export function LogViewerTabPageContent() {
 
   const dragOverScroll = (
     offsetY: number,
-    clientY: number,
     clientX: number,
     scrollContainer: HTMLDivElement | undefined,
   ) => {
     if (!scrollContainer) return;
     const clientRef = scrollContainer.getBoundingClientRect();
     if (clientRef.left > clientX || clientX > clientRef.right) return;
-    const movement = offsetY * 0.05;
-    let scrollHeight = 0;
-    const children = scrollContainer.children;
-    if (children) {
-      for (let i = 0; i < children.length; i++) {
-        const item = children.item(i);
-        if (item) {
-          scrollHeight = scrollHeight + item.clientHeight;
-        }
-      }
-    }
-    if (scrollContainer.scrollTop + movement + clientY > scrollHeight) return;
-    scrollContainer.scrollBy({ top: movement });
+    const movement = offsetY;
+    scrollContainer.scrollTo({ top: movement });
   };
 
   const plotToolBoxWidth = "12em";
@@ -704,12 +692,12 @@ export function LogViewerTabPageContent() {
                   }}
                   use:dragOptions={{
                     handle: ".handle",
+                    bounds: "parent",
                     onDragStart: () => {
                       setDragging(index());
                     },
                     onDrag: (data) => {
                       dragOverScroll(
-                        data.offsetY,
                         data.event.clientY,
                         data.event.clientX,
                         scrollContainer,
