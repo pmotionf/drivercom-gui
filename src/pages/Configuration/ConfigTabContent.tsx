@@ -13,6 +13,7 @@ import { Toast } from "~/components/ui/toast";
 import { Tooltip } from "~/components/ui/tooltip";
 import {
   configFormFileFormat,
+  portCommands,
   portId,
   recentConfigFilePaths,
   setRecentConfigFilePaths,
@@ -126,17 +127,38 @@ export function ConfigTabContent() {
 
   const fileHandler = new FileHandler();
 
-  async function getConfigFromPort(): Promise<{
-    stdout: string;
-    stderr: string;
-  }> {
+  async function getConfigFromPort(portId: string): Promise<object> {
     const configGet = Command.sidecar("binaries/drivercom", [
       `--port`,
-      portId(),
+      portId,
       `config.get`,
     ]);
-    const output = await configGet.execute();
-    return { stdout: output.stdout, stderr: output.stderr };
+
+    let stdout = "";
+    configGet.stdout.on("data", (data) => {
+      stdout = stdout + data;
+    });
+
+    let stderr = "";
+    configGet.stderr.on("data", (data) => {
+      stderr = stderr + data;
+    });
+
+    const child = await configGet.spawn();
+    const pid = child.pid;
+    portCommands.set(pid, { port: portId, child: child });
+
+    return new Promise((resolve, reject) => {
+      configGet.on("close", () => {
+        portCommands.delete(pid);
+        return resolve(JSON5.parse(stdout));
+      });
+
+      configGet.on("error", () => {
+        portCommands.delete(pid);
+        return reject(stderr);
+      });
+    });
   }
 
   function setFormData(data: object, path: string) {
@@ -189,6 +211,42 @@ export function ConfigTabContent() {
       });
     }
   };
+
+  const checkAvailablePort = (portId: string): boolean => {
+    if (portId.length <= 0) {
+      return false;
+    }
+    if (
+      Array.from(portCommands.values()).some(
+        (command) => command.port === portId,
+      )
+    ) {
+      toaster.create({
+        title: "Communication error",
+        description: "Port is already in use.",
+        type: "error",
+      });
+      return false;
+    }
+    return true;
+  };
+
+  createEffect(
+    on(
+      () => portId(),
+      () => {
+        if (Array.from(portCommands.values()).length > 0) {
+          Array.from(portCommands.values()).forEach((command) => {
+            if (command.port !== portId()) {
+              command.child.kill();
+              portCommands.delete(command.child.pid);
+            }
+          });
+        }
+      },
+      { defer: true },
+    ),
+  );
 
   return (
     <div
@@ -374,20 +432,19 @@ export function ConfigTabContent() {
             variant="outline"
             borderColor="bg.disabled"
             onGetFromPort={async () => {
-              if (portId().length === 0) return;
+              if (!checkAvailablePort(portId())) return;
               setFilePath(null);
-              const output = await getConfigFromPort();
-              if (output.stderr.length !== 0) {
+              try {
+                const config = await getConfigFromPort(portId());
+                setTabName(portId());
+                setConfigForm(config);
+                refresh();
+              } catch (e) {
                 toaster.create({
                   title: "Communication Error",
-                  description: output.stderr,
+                  description: e as string,
                   type: "error",
                 });
-              } else {
-                const parseConfigToObject = JSON5.parse(output.stdout);
-                setTabName(portId());
-                setConfigForm(parseConfigToObject);
-                refresh();
               }
             }}
             onSaveToPort={async () => {
