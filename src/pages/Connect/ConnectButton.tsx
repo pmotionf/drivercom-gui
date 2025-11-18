@@ -16,7 +16,7 @@ import { Command } from "@tauri-apps/plugin-shell";
 import { Toast } from "~/components/ui/toast.tsx";
 import { For } from "solid-js";
 import { Tooltip } from "~/components/ui/tooltip.tsx";
-import { Button } from "~/components/ui/styled/button.tsx";
+import { Button } from "~/components/ui/button.tsx";
 import { Portal } from "solid-js/web";
 import { csvFileDownloads } from "../../GlobalState.ts";
 import { DownloadStatus } from "~/components/DownloadList.tsx";
@@ -24,6 +24,8 @@ import { DownloadStatus } from "~/components/DownloadList.tsx";
 export type ConnectButtonProps = JSX.HTMLAttributes<HTMLButtonElement>;
 
 export function ConnectButton(props: ConnectButtonProps) {
+  const [isDectecting, setIsDetecting] = createSignal<boolean>(false);
+
   async function detectPort() {
     const drivercom = Command.sidecar("binaries/drivercom", ["port.detect"]);
     const output = await drivercom.execute();
@@ -171,9 +173,12 @@ export function ConnectButton(props: ConnectButtonProps) {
               height="2em"
               variant="outline"
               fontWeight="medium"
+              loading={isDectecting()}
               onClick={async () => {
+                setIsDetecting(true);
                 await detectPort();
                 setPortId("");
+                setIsDetecting(false);
               }}
               disabled={
                 csvFileDownloads.findIndex(
