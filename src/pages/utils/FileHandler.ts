@@ -2,6 +2,7 @@ import { open, save } from "@tauri-apps/plugin-dialog";
 import { readTextFile, writeTextFile } from "@tauri-apps/plugin-fs";
 import { inferSchema, initParser } from "udsv";
 import JSON5 from "json5";
+import { enumMappings, enumSeriesMap } from "~/GlobalState";
 
 type CsvFile = { header: string[]; series: number[][] };
 
@@ -144,10 +145,26 @@ export class FileHandler implements IFileHandler {
       const local_header: string[] = rows[0].replace(/,\s*$/, "").split(",");
       const data: number[][] = parser.typedCols(csv_str).map((row) =>
         row.map((val) => {
-          if (typeof val === "boolean") return val ? 1 : 0;
-          return val;
+          if (typeof val === "boolean") {
+            return val ? 1 : 0;
+          } else if (typeof val === "string" && isNaN(Number(val))) {
+            const stringVal: string = val;
+            const removeParentheses = stringVal
+              .replace(/^[^(]*\(/, "")
+              .replace(/\)[^(]*$/, "");
+            return Number(removeParentheses);
+          } else {
+            return val;
+          }
         }),
       );
+
+      const checkFinate = data
+        .slice(0, -1)
+        .map((checkData) => checkData.some((val) => Number.isFinite(val)));
+      if (!checkFinate.every((val) => val)) {
+        throw new Error(`Data has invalid value.`);
+      }
 
       if (data.length < local_header.length) {
         const desc = `Data has ${data.length} columns, while header has ${local_header.length} labels.`;
@@ -204,10 +221,21 @@ export class FileHandler implements IFileHandler {
     const parseSeries = Array.from(
       { length: csvFile.series[0].length },
       (_, rowIndex) =>
-        `\n${Array.from(
-          { length: csvFile.header.length },
-          (_, cellIndex) => csvFile.series[cellIndex][rowIndex],
-        )}`,
+        `\n${Array.from({ length: csvFile.header.length }, (_, cellIndex) => {
+          if (enumSeriesMap.has(csvFile.header[cellIndex])) {
+            const seriesEnumName = enumSeriesMap.get(
+              csvFile.header[cellIndex],
+            )!;
+            const enumMappingIndex = enumMappings().findIndex(
+              (mapping) => mapping.enumTypeName === seriesEnumName,
+            );
+            const values = enumMappings()[enumMappingIndex].enumValues;
+            const val = csvFile.series[cellIndex][rowIndex];
+            return `${values.get(val) ? values.get(val) : undefined}(${val})`;
+          } else {
+            return csvFile.series[cellIndex][rowIndex];
+          }
+        })}`,
     );
     const csv_str = csvFile.header.toString() + "," + parseSeries + ",";
     try {
