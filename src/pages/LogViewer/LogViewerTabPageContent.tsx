@@ -783,6 +783,7 @@ export function LogViewerTabPageContent() {
                     style={{ overflow: "hidden" }}
                     height="3em"
                     gap="0.25em"
+                    alignItems={"center"}
                   >
                     <Stack
                       direction="row"
@@ -826,7 +827,6 @@ export function LogViewerTabPageContent() {
                       </Show>
                     </Stack>
                     <Checkbox
-                      width="7rem"
                       checked={mergePlotIndexes().indexOf(index()) !== -1}
                       onCheckedChange={(checkBoxState) => {
                         if (checkBoxState.checked === true) {
@@ -841,36 +841,34 @@ export function LogViewerTabPageContent() {
                           });
                         }
                       }}
+                    />
+                    <Editable.Root
+                      height="2em"
+                      width="5.5em"
+                      value={plotNames[index()]}
+                      onValueChange={(details) =>
+                        setPlotNames(index(), details.value)
+                      }
+                      fontWeight="bold"
+                      style={{
+                        display: "block",
+                        "text-overflow": "ellipsis",
+                        "white-space": "none",
+                        overflow: "hidden",
+                      }}
                     >
-                      <Editable.Root
-                        activationMode="focus"
-                        value={plotNames[index()]}
-                        onValueChange={(details) =>
-                          setPlotNames(index(), details.value)
-                        }
-                        fontWeight="bold"
-                        width={"5em"}
-                        style={{
-                          display: "block",
-                          "text-overflow": "ellipsis",
-                          "white-space": "none",
-                          overflow: "hidden",
-                        }}
-                      >
-                        <Editable.Area>
-                          <Editable.Input width={"100%"} />
-                          <Editable.Preview
-                            width={"100%"}
-                            style={{
-                              display: "block",
-                              "text-overflow": "ellipsis",
-                              "white-space": "none",
-                              overflow: "hidden",
-                            }}
-                          />
-                        </Editable.Area>
-                      </Editable.Root>
-                    </Checkbox>
+                      <Editable.Area padding="0.2em">
+                        <Editable.Input width={"100%"} />
+                        <Editable.Preview
+                          style={{
+                            display: "block",
+                            "text-overflow": "ellipsis",
+                            "white-space": "none",
+                            overflow: "hidden",
+                          }}
+                        />
+                      </Editable.Area>
+                    </Editable.Root>
                     <Tooltip.Root>
                       <Tooltip.Trigger>
                         <IconButton
