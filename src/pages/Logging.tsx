@@ -1,7 +1,7 @@
 import { Stack } from "styled-system/jsx";
 import { Text } from "~/components/ui/text.tsx";
 import {
-  logDownloads,
+  portCommands,
   logFormFileFormat,
   Pages,
   pageKeys,
@@ -10,6 +10,7 @@ import {
   setRecentLogFilePaths,
   csvFileDownloads,
   setCsvFileDownloads,
+  setPortId,
 } from "~/GlobalState.ts";
 import { Command } from "@tauri-apps/plugin-shell";
 import { createSignal, Show } from "solid-js";
@@ -57,9 +58,15 @@ export function Logging() {
     setRenderLoggingForm(true);
 
     if (portId().length > 0) {
-      const logStatus = await getCurrentLogStatus();
-      setCurrentLogStatus(logStatus ? logStatus.logStatus : null);
-      setCyclesCompleted(logStatus ? logStatus.cycle : null);
+      try {
+        if (checkAvailablePort(portId())) return;
+        const logStatus = await getCurrentLogStatus(portId());
+        setCurrentLogStatus(logStatus.logStatus);
+        setCyclesCompleted(logStatus.cycle);
+      } catch {
+        setCurrentLogStatus(null);
+        setCyclesCompleted(null);
+      }
     }
   });
 
@@ -68,18 +75,23 @@ export function Logging() {
       () => portId(),
       async () => {
         if (portId().length > 0) {
-          const logState = await getCurrentLogStatus();
-          setCurrentLogStatus(logState ? logState.logStatus : null);
-          setCyclesCompleted(logState ? logState.cycle : null);
-        } else {
-          setCurrentLogStatus(null);
-          setCyclesCompleted(null);
+          try {
+            if (checkAvailablePort(portId())) return;
+            const logStatus = await getCurrentLogStatus(portId());
+            setCurrentLogStatus(logStatus.logStatus);
+            setCyclesCompleted(logStatus.cycle);
+          } catch {
+            setCurrentLogStatus(null);
+            setCyclesCompleted(null);
+          }
         }
 
-        if (Array.from(logDownloads.values()).length > 0) {
-          Array.from(logDownloads.values()).forEach((child) => {
-            child.kill();
-            logDownloads.delete(child.pid);
+        if (Array.from(portCommands.values()).length > 0) {
+          Array.from(portCommands.values()).forEach((command) => {
+            if (command.port !== portId()) {
+              command.child.kill();
+              portCommands.delete(command.child.pid);
+            }
           });
         }
       },
@@ -87,17 +99,56 @@ export function Logging() {
     ),
   );
 
-  async function GetLogConfigFromPort(): Promise<{
-    stdout: string;
-    stderr: string;
-  }> {
+  const checkAvailablePort = (portId: string): boolean => {
+    if (portId.length <= 0) {
+      return false;
+    }
+    if (
+      Array.from(portCommands.values()).some(
+        (command) => command.port === portId,
+      )
+    ) {
+      toaster.create({
+        title: "Communication error",
+        description: "Port is already in use.",
+        type: "error",
+      });
+      return false;
+    }
+    return true;
+  };
+
+  async function GetLogConfigFromPort(portId: string): Promise<object> {
     const sideCommand = Command.sidecar("binaries/drivercom", [
       `--port`,
-      portId(),
+      portId,
       `log.config.get`,
     ]);
-    const output = await sideCommand.execute();
-    return { stdout: output.stdout, stderr: output.stderr };
+
+    let stdout = "";
+    sideCommand.stdout.on("data", (data) => {
+      stdout = stdout + data;
+    });
+
+    let stderr = "";
+    sideCommand.stderr.on("data", (data) => {
+      stderr = stderr + data;
+    });
+    const child = await sideCommand.spawn();
+    const pid = child.pid;
+    portCommands.set(pid, { port: portId, child: child });
+
+    return new Promise((resolve, reject) => {
+      sideCommand.on("close", () => {
+        portCommands.delete(pid);
+        return resolve(JSON5.parse(stdout));
+      });
+
+      sideCommand.on("error", () => {
+        portCommands.delete(pid);
+        return reject(stderr);
+      });
+    });
   }
 
   function setLogFormData(form: object, path: string) {
@@ -129,38 +180,65 @@ export function Logging() {
     ),
   );
 
-  async function getCurrentLogStatus(): Promise<null | {
+  async function getCurrentLogStatus(portId: string): Promise<{
     logStatus: string;
     cycle: number;
   }> {
-    if (portId().length === 0) return null;
     const logStatus = Command.sidecar("binaries/drivercom", [
       `--port`,
-      portId(),
+      portId,
       `log.status`,
     ]);
-    const output = await logStatus.execute();
-    if (output.stdout.length === 0) return null;
-    const parseOutput = output.stdout.replaceAll(" ", "").replaceAll("\n", "");
-    const currentLogStatusList = parseOutput.split(",").map((value) => {
-      return value.split(":");
+
+    let stdout = "";
+    logStatus.stdout.on("data", (data) => {
+      stdout = stdout + data;
     });
 
-    const currentCompletedLogCycle = Number(currentLogStatusList[1][1]);
-    const currentLogState = currentLogStatusList[0][1];
+    let stderr = "";
+    logStatus.stderr.on("data", (data) => {
+      stderr = stderr + data;
+    });
 
-    if (!currentLogState || isNaN(currentCompletedLogCycle)) return null;
-    return { logStatus: currentLogState, cycle: currentCompletedLogCycle };
+    const child = await logStatus.spawn();
+    const pid = child.pid;
+    portCommands.set(pid, { port: portId, child: child });
+
+    return new Promise((resolve, reject) => {
+      logStatus.on("close", async () => {
+        portCommands.delete(pid);
+        if (stdout.length < 1) return reject("Invalid log status.");
+        const parseOutput = stdout.replaceAll(" ", "").replaceAll("\n", "");
+        const currentLogStatusList = parseOutput.split(",").map((value) => {
+          return value.split(":");
+        });
+
+        const currentCompletedLogCycle = Number(currentLogStatusList[1][1]);
+        const currentLogState = currentLogStatusList[0][1];
+
+        if (!currentLogState || isNaN(currentCompletedLogCycle))
+          return reject("Invalid log status.");
+        return resolve({
+          logStatus: currentLogState,
+          cycle: currentCompletedLogCycle,
+        });
+      });
+
+      logStatus.on("error", async () => {
+        portCommands.delete(pid);
+        return reject(stderr);
+      });
+    });
   }
 
   // Signal for display Log Get button loading while saving log.csv file.
   const [logGetBtnLoading, setLogGetBtnLoading] = createSignal(false);
 
   // Save log.csv file && Display `Log Get` button loading while saving log.csv file
-  async function saveLogCsvFile(filePath: string) {
+  async function saveLogCsvFile(filePath: string, portId: string) {
     const logGet = Command.sidecar("binaries/drivercom", [
       `--port`,
-      portId(),
+      portId,
       `--timeout`,
       `10000`,
       `log.get`,
@@ -169,12 +247,6 @@ export function Logging() {
     ]);
 
     let pid: number | null = null;
-    const newDownload: DownloadStates = {
-      filePath: filePath,
-      status: DownloadStatus.Progressing,
-      port: portId(),
-    };
-    setCsvFileDownloads([newDownload, ...csvFileDownloads]);
 
     logGet.on("close", (data) => {
       if (data.code === null) {
@@ -203,7 +275,7 @@ export function Logging() {
 
       logGet.removeAllListeners();
       if (pid) {
-        logDownloads.delete(pid);
+        portCommands.delete(pid);
       }
       setLogGetBtnLoading(false);
     });
@@ -222,44 +294,108 @@ export function Logging() {
 
       logGet.removeAllListeners();
       if (pid) {
-        logDownloads.delete(pid);
+        portCommands.delete(pid);
       }
       setLogGetBtnLoading(false);
     });
 
     const child = await logGet.spawn();
     pid = child.pid;
-    logDownloads.set(pid, child);
+    portCommands.set(pid, { port: portId, child: child });
+    const newDownload: DownloadStates = {
+      filePath: filePath,
+      status: DownloadStatus.Progressing,
+      port: portId,
+    };
+    setCsvFileDownloads([newDownload, ...csvFileDownloads]);
   }
 
-  async function startLogging() {
+  async function startLogging(portId: string): Promise<void> {
     const logStart = Command.sidecar("binaries/drivercom", [
       `--port`,
-      portId(),
+      portId,
       `log.start`,
     ]);
-    await logStart.execute();
+
+    let stderr = "";
+    logStart.stderr.on("data", (data) => {
+      stderr = stderr + data;
+    });
+
+    const child = await logStart.spawn();
+    const pid = child.pid;
+    portCommands.set(pid, { port: portId, child: child });
+
+    return new Promise((resolve, reject) => {
+      logStart.on("close", () => {
+        portCommands.delete(pid);
+        return resolve();
+      });
+
+      logStart.on("error", () => {
+        portCommands.delete(pid);
+        return reject(stderr);
+      });
+    });
   }
 
-  async function stopLogging() {
+  async function stopLogging(portId: string): Promise<void> {
     const logStop = Command.sidecar("binaries/drivercom", [
       `--port`,
-      portId(),
+      portId,
       `log.stop`,
     ]);
-    await logStop.execute();
+
+    let stderr = "";
+    logStop.stderr.on("data", (data) => {
+      stderr = stderr + data;
+    });
+    const child = await logStop.spawn();
+    const pid = child.pid;
+    portCommands.set(pid, { port: portId, child: child });
+
+    return new Promise((resolve, reject) => {
+      logStop.on("close", () => {
+        portCommands.delete(pid);
+        return resolve();
+      });
+
+      logStop.on("error", () => {
+        portCommands.delete(pid);
+        return reject(stderr);
+      });
+    });
   }
 
-  async function saveLogToPort(log: object): Promise<string> {
+  async function saveLogToPort(log: object, portId: string): Promise<void> {
     const json_str = JSON.stringify(log, null, "  ");
     const logSave = Command.sidecar("binaries/drivercom", [
       `--port`,
-      portId(),
+      portId,
       `log.config.set`,
       json_str,
     ]);
-    const output = await logSave.execute();
-    return output.stderr;
+
+    let stderr = "";
+    logSave.stderr.on("data", (data) => {
+      stderr = stderr + data;
+    });
+
+    const child = await logSave.spawn();
+    const pid = child.pid;
+    portCommands.set(pid, { port: portId, child: child });
+
+    return new Promise((resolve, reject) => {
+      logSave.on("close", () => {
+        portCommands.delete(pid);
+        return resolve();
+      });
+
+      logSave.on("error", () => {
+        portCommands.delete(pid);
+        return reject(stderr);
+      });
+    });
   }
 
   const refresh = () => {
@@ -488,21 +624,24 @@ export function Logging() {
                   portId={portId}
                   variant={"ghost"}
                   onGetFromPort={async () => {
-                    const output = await GetLogConfigFromPort();
-                    if (output.stderr.length !== 0) {
+                    try {
+                      if (!checkAvailablePort(portId())) return;
+                      const logConfig = await GetLogConfigFromPort(portId());
+                      setLogForm({
+                        title: portId(),
+                        filePath: "",
+                        logConfig: logConfig,
+                      });
+                      refresh();
+                    } catch (e) {
+                      setPortId("");
                       toaster.create({
                         title: "Communication Error",
-                        description: output.stderr,
+                        description: e as string,
                         type: "error",
                       });
                       return;
                     }
-                    setLogForm({
-                      title: portId(),
-                      filePath: "",
-                      logConfig: JSON5.parse(output.stdout),
-                    });
-                    refresh();
                   }}
                   onSaveToPort={async () => {
                     if (
@@ -519,24 +658,28 @@ export function Logging() {
                       });
                       return;
                     }
-                    const outputError = await saveLogToPort(logForm.logConfig);
-                    if (outputError.length !== 0) {
+
+                    try {
+                      if (!checkAvailablePort(portId())) return;
+                      await saveLogToPort(logForm.logConfig, portId());
                       toaster.create({
-                        title: "Communication Error",
-                        description: outputError,
+                        title: "Communication Success",
+                        description: "Log saved to port successfully.",
                         type: "error",
                       });
+                      const logStatus = await getCurrentLogStatus(portId());
+                      setCurrentLogStatus(logStatus.logStatus);
+                      setCyclesCompleted(logStatus.cycle);
+                    } catch (e) {
+                      toaster.create({
+                        title: "Communication Error",
+                        description: e as string,
+                        type: "error",
+                      });
+                      setCurrentLogStatus(null);
+                      setCyclesCompleted(null);
                       return;
                     }
-                    toaster.create({
-                      title: "Communication Success",
-                      description: "Log saved to port successfully.",
-                      type: "error",
-                    });
-
-                    const logState = await getCurrentLogStatus();
-                    setCurrentLogStatus(logState ? logState.logStatus : null);
-                    setCyclesCompleted(logState ? logState.cycle : null);
                   }}
                 />
 
@@ -558,24 +701,21 @@ export function Logging() {
                             )
                           }
                           onClick={async () => {
-                            if (Array.from(logDownloads.values()).length > 0) {
+                            try {
+                              if (!checkAvailablePort(portId())) return;
+                              await startLogging(portId());
+                              const logState =
+                                await getCurrentLogStatus(portId());
+                              setCurrentLogStatus(logState.logStatus);
+                              setCyclesCompleted(logState.cycle);
+                            } catch (e) {
                               toaster.create({
-                                title: "Invalid Log",
-                                description: "The log is invalid.",
+                                title: "Communication Error",
+                                description: e as string,
                                 type: "error",
                               });
                               return;
                             }
-                            await startLogging();
-                            setTimeout(async () => {
-                              const logState = await getCurrentLogStatus();
-                              setCurrentLogStatus(
-                                logState ? logState.logStatus : null,
-                              );
-                              setCyclesCompleted(
-                                logState ? logState.cycle : null,
-                              );
-                            }, 100);
                           }}
                           size="sm"
                           variant="ghost"
@@ -595,12 +735,21 @@ export function Logging() {
                     <Tooltip.Trigger>
                       <IconButton
                         onClick={async () => {
-                          await stopLogging();
-                          const logState = await getCurrentLogStatus();
-                          setCurrentLogStatus(
-                            logState ? logState.logStatus : null,
-                          );
-                          setCyclesCompleted(logState ? logState.cycle : null);
+                          try {
+                            if (!checkAvailablePort(portId())) return;
+                            await stopLogging(portId());
+                            const logState =
+                              await getCurrentLogStatus(portId());
+                            setCurrentLogStatus(logState.logStatus);
+                            setCyclesCompleted(logState.cycle);
+                          } catch (e) {
+                            toaster.create({
+                              title: "Communication Error",
+                              description: e as string,
+                              type: "error",
+                            });
+                            return;
+                          }
                         }}
                         size="sm"
                         variant="ghost"
@@ -633,13 +782,14 @@ export function Logging() {
                           onClick={async () => {
                             if (portId().length === 0) return;
                             try {
+                              if (!checkAvailablePort(portId())) return;
                               const path = await fileHandler.saveFileDialog(
                                 "csv",
                                 logForm.filePath,
                                 logForm.title,
                               );
                               setLogGetBtnLoading(true);
-                              await saveLogCsvFile(path);
+                              await saveLogCsvFile(path, portId());
                             } catch {
                               toaster.create({
                                 title: "Invalid File",
@@ -670,11 +820,16 @@ export function Logging() {
                       <IconButton
                         disabled={portId().length === 0}
                         onClick={async () => {
-                          const logState = await getCurrentLogStatus();
-                          setCurrentLogStatus(
-                            logState ? logState.logStatus : null,
-                          );
-                          setCyclesCompleted(logState ? logState.cycle : null);
+                          try {
+                            if (!checkAvailablePort(portId())) return;
+                            const logState =
+                              await getCurrentLogStatus(portId());
+                            setCurrentLogStatus(logState.logStatus);
+                            setCyclesCompleted(logState.cycle);
+                          } catch {
+                            setCurrentLogStatus(null);
+                            setCyclesCompleted(null);
+                          }
                         }}
                         variant="ghost"
                         size="sm"
