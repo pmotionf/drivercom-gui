@@ -636,35 +636,37 @@ export function LogViewerTabPageContent() {
             <div
               style={{
                 display: "flex",
+                "flex-direction": "column",
                 "align-items": "center",
                 "justify-content": "center",
                 width: "100%",
                 height: "100%",
               }}
             >
-              <div>
-                <Spinner
-                  display="flex"
-                  justifySelf={"center"}
-                  size="xl"
-                  borderLeftColor={"bg.muted"}
-                  borderBottomColor={"bg.muted"}
-                  borderRightColor={"fg.muted"}
-                  borderTopColor={"fg.muted"}
-                  borderWidth={"5px"}
-                />
-                <Text
-                  marginTop="1em"
-                  size="lg"
-                  fontWeight={"bold"}
-                >{`Open "${filePath()}"`}</Text>
-                <Text
-                  display="flex"
-                  justifySelf={"center"}
-                  marginTop="0.5em"
-                  size="md"
-                >{`Your file will be opened...`}</Text>
-              </div>
+              <Spinner
+                display="flex"
+                justifySelf={"center"}
+                justifyItems={"center"}
+                size="xl"
+                borderLeftColor={"bg.muted"}
+                borderBottomColor={"bg.muted"}
+                borderRightColor={"fg.muted"}
+                borderTopColor={"fg.muted"}
+                borderWidth={"5px"}
+              />
+              <Text
+                marginTop="1em"
+                size="lg"
+                fontWeight={"bold"}
+                maxWidth="50%"
+                textAlign="center"
+              >{`Open "${filePath()}"`}</Text>
+              <Text
+                display="flex"
+                justifySelf={"center"}
+                marginTop="0.5em"
+                size="md"
+              >{`Your file will be opened...`}</Text>
             </div>
           }
         >
