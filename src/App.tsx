@@ -35,7 +35,6 @@ import {
   setCliVersion,
   setConfigFormFileFormat,
   setDriverComVersion,
-  setEnumMappings,
   setGlobalState,
   setLogFormFileFormat,
   setLogStartConditionList,
@@ -44,7 +43,6 @@ import {
   Theme,
   setLogForm,
   logFormFileFormat,
-  enumSeriesMap,
 } from "./GlobalState.ts";
 
 import { Button } from "~/components/ui/button.tsx";
@@ -77,7 +75,6 @@ function App(props: RouteSectionProps) {
     setGlobalState("theme", theme_str);
 
     detectCliVersion();
-    parseEnumMappings();
     buildEmptyLogConfiguration();
     buildEmptyDriverConfiguration();
     getLogStartCombinator();
@@ -94,77 +91,6 @@ function App(props: RouteSectionProps) {
 
     setCliVersion(cliVersion);
     setDriverComVersion(drivercomVersion);
-  }
-
-  async function parseEnumMappings() {
-    const drivercom = Command.sidecar("binaries/drivercom", [
-      "log.util.list_code_names",
-      "--compact",
-    ]);
-    const output = await drivercom.execute();
-
-    const namedFieldsStr = "named fields:";
-    const namedFieldsIndex = output.stdout.search(
-      new RegExp(namedFieldsStr, "i"),
-    );
-
-    const namedFieldKindsStr = "named field kinds:";
-    const namedFieldKindsIndex = output.stdout.search(
-      new RegExp(namedFieldKindsStr, "i"),
-    );
-
-    const namedFieldsLine = output.stdout
-      .slice(namedFieldsIndex + namedFieldsStr.length, namedFieldKindsIndex)
-      .trim();
-    const namedFieldKindsLines = output.stdout
-      .slice(namedFieldKindsIndex + namedFieldKindsStr.length)
-      .split("\n");
-
-    const enumMappingsLines = namedFieldKindsLines
-      .map((line) => line.trim())
-      .filter((line) => line.length > 0 && line[0] == "[");
-
-    const seriesMappings = namedFieldsLine
-      .split(",")
-      .filter((seriesChunk) => seriesChunk.length > 1)
-      .map((e) => {
-        return e.split(":");
-      });
-    seriesMappings.forEach((seriesMapping) => {
-      enumSeriesMap.set(seriesMapping[0], seriesMapping[1]);
-    });
-
-    const enumTypeNames: string[] = enumMappingsLines.map((line) => {
-      const closingBracketIndex = line.indexOf("]");
-      return line.slice(1, closingBracketIndex);
-    });
-
-    const enumCodeMappings: Map<number, string>[] = enumMappingsLines.map(
-      (line) => {
-        const mappingValues = new Map<number, string>();
-        const equalsIndex = line.indexOf("=");
-        const mappingsString = line.slice(equalsIndex + 1);
-        const mappingsList = mappingsString
-          .split(",")
-          .filter((mappingString) => mappingString.length > 0);
-        const mappingsSplitList = mappingsList
-          .map((mappingString) => mappingString.split(":"))
-          .filter((mappingSplit) => mappingSplit.length == 2);
-        mappingsSplitList.forEach((mappingSplit) => {
-          mappingValues.set(Number(mappingSplit[0]), mappingSplit[1]);
-        });
-        return mappingValues;
-      },
-    );
-
-    setEnumMappings(
-      enumTypeNames.map((enumTypeName, index) => {
-        return {
-          enumTypeName: enumTypeName,
-          enumValues: enumCodeMappings[index],
-        };
-      }),
-    );
   }
 
   async function buildEmptyLogConfiguration() {
