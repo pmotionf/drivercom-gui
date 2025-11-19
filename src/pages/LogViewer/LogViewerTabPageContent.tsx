@@ -262,6 +262,10 @@ export function LogViewerTabPageContent() {
 
   const [header, setHeader] = createSignal<string[]>([]);
   const [series, setSeries] = createSignal<number[][]>([]);
+  const [enumMappings, setEnumMappings] = createSignal<Map<
+    string,
+    Map<number, string>
+  > | null>(null);
 
   onMount(async () => {
     await prepareCsvFile();
@@ -272,6 +276,9 @@ export function LogViewerTabPageContent() {
       const csvFile = await fileHandler.readCsvFile(filePath());
       setSeries(csvFile.series);
       setHeader(csvFile.header);
+      if (csvFile.enumSeriesMap) {
+        setEnumMappings(csvFile.enumSeriesMap);
+      }
       setPlotZoomState([0, series()[0].length]);
     } catch (e) {
       tabPageProps.toaster.create({
@@ -542,11 +549,13 @@ export function LogViewerTabPageContent() {
     series: number[][],
     xMin: number,
     xMax: number,
+    enumMappings?: Map<string, Map<number, string>>,
   ) {
     const parseSeries = series.map((series) => series.slice(xMin, xMax));
     await fileHandler.writeCsvFile(path, {
       header: header,
       series: parseSeries,
+      enumSeriesMap: enumMappings,
     });
   }
 
@@ -966,6 +975,7 @@ export function LogViewerTabPageContent() {
                                 visibleSeries,
                                 xMin,
                                 xMax,
+                                enumMappings() ? enumMappings()! : undefined,
                               );
                               tabPageProps!.toaster.create({
                                 title: "Saved File Successfully",
@@ -1007,6 +1017,7 @@ export function LogViewerTabPageContent() {
                     header={currentHeader}
                     series={currentItems}
                     context={plots[index()]}
+                    enumMapping={enumMappings() ? enumMappings()! : undefined}
                     legendPanelSize={legendSplitterSize()}
                     onLegendPanelSize={(size) => {
                       setLegendSplitterSize(size);

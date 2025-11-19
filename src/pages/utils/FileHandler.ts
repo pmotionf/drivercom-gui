@@ -2,9 +2,12 @@ import { open, save } from "@tauri-apps/plugin-dialog";
 import { readTextFile, writeTextFile } from "@tauri-apps/plugin-fs";
 import { inferSchema, initParser } from "udsv";
 import JSON5 from "json5";
-import { enumMappings, enumSeriesMap } from "~/GlobalState";
 
-type CsvFile = { header: string[]; series: number[][] };
+type CsvFile = {
+  header: string[];
+  series: number[][];
+  enumSeriesMap?: Map<string, Map<number, string>>;
+};
 
 interface IFileHandler {
   openFileDialog(extension: string): Promise<string | never>;
@@ -139,11 +142,12 @@ export class FileHandler implements IFileHandler {
       if (rows.length < 2) {
         throw new Error("Not enough rows.");
       }
+      const enumMappings: Map<string, Map<number, string>> = new Map();
 
       const schema = inferSchema(csv_str);
       const parser = initParser(schema);
       const local_header: string[] = rows[0].replace(/,\s*$/, "").split(",");
-      const data: number[][] = parser.typedCols(csv_str).map((row) =>
+      const data: number[][] = parser.typedCols(csv_str).map((row, rowIndex) =>
         row.map((val) => {
           if (typeof val === "boolean") {
             return val ? 1 : 0;
@@ -152,6 +156,33 @@ export class FileHandler implements IFileHandler {
             const removeParentheses = stringVal
               .replace(/^[^(]*\(/, "")
               .replace(/\)[^(]*$/, "");
+
+            const enumSeriesName = local_header[rowIndex];
+            if (enumMappings.has(enumSeriesName)) {
+              if (
+                !enumMappings
+                  .get(enumSeriesName)!
+                  .has(Number(removeParentheses))
+              ) {
+                const enumTypeName = stringVal
+                  .match(/^[^(]*\(/)!
+                  .toString()
+                  .slice(0, -1);
+                if (enumTypeName) {
+                  enumMappings
+                    .get(enumSeriesName)!
+                    .set(Number(removeParentheses), enumTypeName.toString());
+                }
+              }
+            } else {
+              const enumValues: Map<number, string> = new Map();
+              const enumTypeName = stringVal
+                .match(/^[^(]*\(/)!
+                .toString()
+                .slice(0, -1);
+              enumValues.set(Number(removeParentheses), enumTypeName);
+              enumMappings.set(enumSeriesName, enumValues);
+            }
             return Number(removeParentheses);
           } else {
             return val;
@@ -191,6 +222,8 @@ export class FileHandler implements IFileHandler {
       return {
         header: local_header,
         series: parsedSeriesForPlot,
+        enumSeriesMap:
+          Array.from(enumMappings.keys()).length > 0 ? enumMappings : undefined,
       };
     } catch (e) {
       throw new Error(e as string);
@@ -222,16 +255,15 @@ export class FileHandler implements IFileHandler {
       { length: csvFile.series[0].length },
       (_, rowIndex) =>
         `\n${Array.from({ length: csvFile.header.length }, (_, cellIndex) => {
-          if (enumSeriesMap.has(csvFile.header[cellIndex])) {
-            const seriesEnumName = enumSeriesMap.get(
+          if (
+            csvFile.enumSeriesMap &&
+            csvFile.enumSeriesMap.has(csvFile.header[cellIndex])
+          ) {
+            const seriesEnumName = csvFile.enumSeriesMap.get(
               csvFile.header[cellIndex],
             )!;
-            const enumMappingIndex = enumMappings().findIndex(
-              (mapping) => mapping.enumTypeName === seriesEnumName,
-            );
-            const values = enumMappings()[enumMappingIndex].enumValues;
             const val = csvFile.series[cellIndex][rowIndex];
-            return `${values.get(val) ? values.get(val) : undefined}(${val})`;
+            return `${seriesEnumName.get(val) ? seriesEnumName.get(val) : undefined}(${val})`;
           } else {
             return csvFile.series[cellIndex][rowIndex];
           }
