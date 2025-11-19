@@ -33,14 +33,6 @@ export const [driverComVersion, setDriverComVersion] = createSignal<string>("");
 export const [portId, setPortId] = createSignal<string>("");
 export const [portList, setPortList] = createSignal<Port[]>([]);
 
-export const enumSeriesMap = new Map<string, string>();
-export const [enumMappings, setEnumMappings] = createSignal<
-  {
-    enumTypeName: string;
-    enumValues: Map<number, string>;
-  }[]
->([]);
-
 export const [logFormFileFormat, setLogFormFileFormat] = createSignal({});
 export const [configFormFileFormat, setConfigFormFileFormat] = createSignal({});
 
