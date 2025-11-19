@@ -536,10 +536,7 @@ export function Plot(props: PlotProps) {
         }}
       >
         <Splitter.Panel id={`plot-${props.id}`} borderWidth="0">
-          <div
-            id={props.id}
-            style={{ width: "100%", height: "100%" }}
-          >
+          <div id={props.id} style={{ width: "100%", height: "100%" }}>
             <SolidUplot
               style={{ cursor: "default" }}
               onCreate={(e) => {
@@ -952,7 +949,12 @@ export function Plot(props: PlotProps) {
               plugins={[
                 cursor(),
                 wheelZoomPlugin({ factor: 0.75, group: group() }),
-                tooltip(PlotToolTip),
+                tooltip((tooltipProps) =>
+                  PlotToolTip({
+                    ...tooltipProps,
+                    enumMapping: props.enumMapping,
+                  }),
+                ),
               ]}
               pluginBus={bus}
             />
@@ -991,13 +993,12 @@ export function Plot(props: PlotProps) {
             id={`legend-${props.id}`}
             borderWidth="0"
             style={{
-              "min-width": props.legendShrink
-                ? "0"
-                : document.getElementById(`toolBox:${props.id}`)
-                  ? `${document.getElementById(`toolBox:${props.id}`)!.offsetWidth}px`
-                  : "15em",
+              "min-width": props.legendShrink ? "0" : "15.5em",
               width: "100%",
               height: "100%",
+              padding: "0",
+              "align-items": "normal",
+              "padding-right": "0.2em",
             }}
             onMouseEnter={() => {
               setEnterSplitter(true);
@@ -1009,324 +1010,329 @@ export function Plot(props: PlotProps) {
               }
               setEnterSplitter(false);
             }}
+            flexDir={"column"}
           >
-            <Stack width="100%" height="100%">
+            <Stack
+              direction="row-reverse"
+              style={{
+                height: "2.5em",
+                width: "100%",
+              }}
+            >
               <Stack
-                direction="row-reverse"
-                style={{
-                  height: "2.5em",
-                  width: "100%",
-                }}
+                direction="row"
+                id={`toolBox:${props.id}`}
+                width="15em"
+                gap="1em"
               >
-                <Stack
-                  direction="row"
-                  id={`toolBox:${props.id}`}
-                  width="15em"
-                  gap="1em"
-                >
-                  <Tooltip.Root>
-                    <Tooltip.Trigger>
-                      <IconButton
-                        variant="outline"
-                        disabled={zoomReset()}
-                        onclick={() => {
-                          uPlot.sync(group()).plots.forEach((up: uPlot) => {
-                            const xMax = Number(up.data[0].length - 1);
-                            up.setScale("x", { min: 0, max: xMax });
-
-                            const yScales = getPlotYScale(up);
-                            up.setScale("y", {
-                              min: yScales.yMin,
-                              max: yScales.yMax,
-                            });
-                            setXRange(xMax);
-                            props.onXScaleChange?.([0, xMax]);
-                          });
-                        }}
-                      >
-                        <IconZoomReset />
-                      </IconButton>
-                    </Tooltip.Trigger>
-                    <Tooltip.Positioner>
-                      <Tooltip.Content backgroundColor="bg.default">
-                        <Text color="fg.default">Zoom Reset</Text>
-                      </Tooltip.Content>
-                    </Tooltip.Positioner>
-                  </Tooltip.Root>
-
-                  <ToggleGroup.Root
-                    value={[CursorMode[lastCursorMode()]]}
-                    onValueChange={(details) => {
-                      if (details.value.length > 0) {
-                        setCursorMode(
-                          CursorMode[
-                            details.value[0] as keyof typeof CursorMode
-                          ],
-                        );
-                        setLastCursorMode(cursorMode());
-                      } else {
-                        setCursorMode(CursorMode.None);
-                        setCursorMode(lastCursorMode());
-                      }
-                    }}
-                  >
-                    <Tooltip.Root>
-                      <Tooltip.Trigger>
-                        <ToggleGroup.Item
-                          value={CursorMode[CursorMode.Pan]}
-                          aria-label="Toggle Pan"
-                          color={
-                            cursorMode() === CursorMode.Pan
-                              ? "fg.default"
-                              : "fg.muted"
-                          }
-                          bgColor={
-                            cursorMode() === CursorMode.Pan
-                              ? "bg.emphasized"
-                              : lastCursorMode() === CursorMode.Pan
-                                ? "bg.subtle"
-                                : "bg.default"
-                          }
-                        >
-                          <IconArrowsMove />
-                        </ToggleGroup.Item>
-                      </Tooltip.Trigger>
-                      <Portal>
-                        <Tooltip.Positioner>
-                          <Tooltip.Content backgroundColor="bg.default">
-                            <Text color="fg.default">Plot Panning</Text>
-                          </Tooltip.Content>
-                        </Tooltip.Positioner>
-                      </Portal>
-                    </Tooltip.Root>
-
-                    <Tooltip.Root>
-                      <Tooltip.Trigger>
-                        <ToggleGroup.Item
-                          value={CursorMode[CursorMode.Horizontal]}
-                          aria-label="Toggle Selection Zoom"
-                          color={
-                            cursorMode() === CursorMode.Horizontal
-                              ? "fg.default"
-                              : "fg.muted"
-                          }
-                          bgColor={
-                            cursorMode() === CursorMode.Horizontal
-                              ? "bg.emphasized"
-                              : lastCursorMode() === CursorMode.Horizontal
-                                ? "bg.subtle"
-                                : "bg.default"
-                          }
-                        >
-                          <IconArrowsMoveHorizontal />
-                        </ToggleGroup.Item>
-                      </Tooltip.Trigger>
-                      <Portal>
-                        <Tooltip.Positioner>
-                          <Tooltip.Content backgroundColor="bg.default">
-                            <Text color="fg.default">
-                              Horizontal Zoom (Shift)
-                            </Text>
-                          </Tooltip.Content>
-                        </Tooltip.Positioner>
-                      </Portal>
-                    </Tooltip.Root>
-
-                    <Tooltip.Root>
-                      <Tooltip.Trigger>
-                        <ToggleGroup.Item
-                          value={CursorMode[CursorMode.Vertical]}
-                          aria-label="Toggle Cursor Lock"
-                          color={
-                            cursorMode() === CursorMode.Vertical
-                              ? "fg.default"
-                              : "fg.muted"
-                          }
-                          bgColor={
-                            cursorMode() === CursorMode.Vertical
-                              ? "bg.emphasized"
-                              : lastCursorMode() === CursorMode.Vertical
-                                ? "bg.subtle"
-                                : "bg.default"
-                          }
-                        >
-                          <IconArrowsMoveVertical />
-                        </ToggleGroup.Item>
-                      </Tooltip.Trigger>
-                      <Portal>
-                        <Tooltip.Positioner>
-                          <Tooltip.Content backgroundColor="bg.default">
-                            <Text color="fg.default">Vertical Zoom (Ctrl)</Text>
-                          </Tooltip.Content>
-                        </Tooltip.Positioner>
-                      </Portal>
-                    </Tooltip.Root>
-
-                    <Tooltip.Root>
-                      <Tooltip.Trigger>
-                        <ToggleGroup.Item
-                          value={CursorMode[CursorMode.Lock]}
-                          aria-label="Toggle Cursor Lock"
-                          color={
-                            cursorMode() === CursorMode.Lock
-                              ? "fg.default"
-                              : "fg.muted"
-                          }
-                          bgColor={
-                            cursorMode() === CursorMode.Lock
-                              ? "bg.emphasized"
-                              : lastCursorMode() === CursorMode.Lock
-                                ? "bg.subtle"
-                                : "bg.default"
-                          }
-                        >
-                          <IconCrosshair />
-                        </ToggleGroup.Item>
-                      </Tooltip.Trigger>
-                      <Portal>
-                        <Tooltip.Positioner>
-                          <Tooltip.Content backgroundColor="bg.default">
-                            <Text color="fg.default">Cursor Lock (Alt)</Text>
-                          </Tooltip.Content>
-                        </Tooltip.Positioner>
-                      </Portal>
-                    </Tooltip.Root>
-                  </ToggleGroup.Root>
-                </Stack>
-              </Stack>
-
-              <Stack width={`calc(100% - 1em)`} direction="row">
-                <Stack
-                  width={`calc(100% - 1em)`}
-                  direction="row"
-                  borderWidth="1px"
-                  borderRadius="1em"
-                  paddingLeft="0.5em"
-                  height="2em"
-                  marginTop="0.3em"
-                  gap="0"
-                >
-                  <IconSearch
-                    style={{
-                      "margin-top": "0.2em",
-                      "margin-right": "0.5em",
-                    }}
-                  />
-                  <input
-                    value={searchInput()}
-                    onInput={(e) => {
-                      setSearchInput(e.target.value);
-                    }}
-                    placeholder="Search series"
-                    style={{
-                      border: "none",
-                      outline: "none",
-                      "white-space": "nowrap",
-                      overflow: "hidden",
-                      display: "block",
-                      "text-overflow": "ellipsis",
-                      width: `calc(100% - 0.5em)`,
-                    }}
-                    height="1em"
-                  />
-                  <IconButton
-                    variant="ghost"
-                    onClick={() => setSearchInput("")}
-                    padding="0"
-                    size="sm"
-                    width="1em"
-                    height="1.5em"
-                    borderRadius="3em"
-                    marginTop="0.2em"
-                  >
-                    <IconX />
-                  </IconButton>
-                </Stack>
                 <Tooltip.Root>
                   <Tooltip.Trigger>
                     <IconButton
                       variant="outline"
-                      onClick={() => {
-                        if (showLegendCheckBox()) {
-                          setContext()(
-                            "selected",
-                            props.header.map(() => false),
-                          );
-                        }
-                        setShowLegendCheckBox(!showLegendCheckBox());
+                      disabled={zoomReset()}
+                      onclick={() => {
+                        uPlot.sync(group()).plots.forEach((up: uPlot) => {
+                          const xMax = Number(up.data[0].length - 1);
+                          up.setScale("x", { min: 0, max: xMax });
+
+                          const yScales = getPlotYScale(up);
+                          up.setScale("y", {
+                            min: yScales.yMin,
+                            max: yScales.yMax,
+                          });
+                          setXRange(xMax);
+                          props.onXScaleChange?.([0, xMax]);
+                        });
                       }}
                     >
-                      <Show
-                        when={showLegendCheckBox()}
-                        fallback={<IconLocationOff />}
-                      >
-                        <IconLocation />
-                      </Show>
+                      <IconZoomReset />
                     </IconButton>
                   </Tooltip.Trigger>
                   <Tooltip.Positioner>
                     <Tooltip.Content backgroundColor="bg.default">
-                      <Text color="fg.default">Select</Text>
+                      <Text color="fg.default">Zoom Reset</Text>
                     </Tooltip.Content>
                   </Tooltip.Positioner>
                 </Tooltip.Root>
-              </Stack>
-              <Stack
-                style={{
-                  "padding-bottom": "0.5em",
-                  float: "left",
-                  width: "100%",
-                  "max-height": "calc(100% - 1.5em - 6em)",
-                  "overflow-x": "auto",
-                  "overflow-y": "auto",
-                }}
-              >
-                <Show when={render()}>
-                  <Stack direction="row" gap="1.5">
-                    <IconButton
-                      size="sm"
-                      variant="link"
-                      onClick={() => {
-                        const newVisible = !getContext()
-                          .visible.filter((_, i) => legendIndex().includes(i))
-                          .includes(true);
-                        setContext()(
-                          "visible",
-                          getContext().visible.map((visible, i) => {
-                            if (legendIndex().includes(i)) return newVisible;
-                            else return visible;
-                          }),
-                        );
-                        getContext().visible.forEach((val, i) => {
-                          plot.setSeries(i + 1, {
-                            show: val,
-                          });
-                        });
-                        props.onContextChange?.(getContext());
-                      }}
-                    >
-                      <Show
-                        when={getContext()
-                          .visible.filter((_, i) => legendIndex().includes(i))
-                          .includes(true)}
-                        fallback={<IconEye />}
+
+                <ToggleGroup.Root
+                  value={[CursorMode[lastCursorMode()]]}
+                  onValueChange={(details) => {
+                    if (details.value.length > 0) {
+                      setCursorMode(
+                        CursorMode[details.value[0] as keyof typeof CursorMode],
+                      );
+                      setLastCursorMode(cursorMode());
+                    } else {
+                      setCursorMode(CursorMode.None);
+                      setCursorMode(lastCursorMode());
+                    }
+                  }}
+                >
+                  <Tooltip.Root>
+                    <Tooltip.Trigger>
+                      <ToggleGroup.Item
+                        value={CursorMode[CursorMode.Pan]}
+                        aria-label="Toggle Pan"
+                        color={
+                          cursorMode() === CursorMode.Pan
+                            ? "fg.default"
+                            : "fg.muted"
+                        }
+                        bgColor={
+                          cursorMode() === CursorMode.Pan
+                            ? "bg.emphasized"
+                            : lastCursorMode() === CursorMode.Pan
+                              ? "bg.subtle"
+                              : "bg.default"
+                        }
                       >
-                        <IconEyeOff />
-                      </Show>
-                    </IconButton>
-                    <Legend
-                      plot={plot!}
-                      series="Cycle"
-                      group={group()}
-                      width="min-content"
-                      cursorIdx={cursorIdx()}
-                      readonly
-                    />
-                  </Stack>
-                  <For each={legendIndex()}>
-                    {(item, index) => {
-                      const header = props.header[item];
-                      return (
+                        <IconArrowsMove />
+                      </ToggleGroup.Item>
+                    </Tooltip.Trigger>
+                    <Portal>
+                      <Tooltip.Positioner>
+                        <Tooltip.Content backgroundColor="bg.default">
+                          <Text color="fg.default">Plot Panning</Text>
+                        </Tooltip.Content>
+                      </Tooltip.Positioner>
+                    </Portal>
+                  </Tooltip.Root>
+
+                  <Tooltip.Root>
+                    <Tooltip.Trigger>
+                      <ToggleGroup.Item
+                        value={CursorMode[CursorMode.Horizontal]}
+                        aria-label="Toggle Selection Zoom"
+                        color={
+                          cursorMode() === CursorMode.Horizontal
+                            ? "fg.default"
+                            : "fg.muted"
+                        }
+                        bgColor={
+                          cursorMode() === CursorMode.Horizontal
+                            ? "bg.emphasized"
+                            : lastCursorMode() === CursorMode.Horizontal
+                              ? "bg.subtle"
+                              : "bg.default"
+                        }
+                      >
+                        <IconArrowsMoveHorizontal />
+                      </ToggleGroup.Item>
+                    </Tooltip.Trigger>
+                    <Portal>
+                      <Tooltip.Positioner>
+                        <Tooltip.Content backgroundColor="bg.default">
+                          <Text color="fg.default">
+                            Horizontal Zoom (Shift)
+                          </Text>
+                        </Tooltip.Content>
+                      </Tooltip.Positioner>
+                    </Portal>
+                  </Tooltip.Root>
+
+                  <Tooltip.Root>
+                    <Tooltip.Trigger>
+                      <ToggleGroup.Item
+                        value={CursorMode[CursorMode.Vertical]}
+                        aria-label="Toggle Cursor Lock"
+                        color={
+                          cursorMode() === CursorMode.Vertical
+                            ? "fg.default"
+                            : "fg.muted"
+                        }
+                        bgColor={
+                          cursorMode() === CursorMode.Vertical
+                            ? "bg.emphasized"
+                            : lastCursorMode() === CursorMode.Vertical
+                              ? "bg.subtle"
+                              : "bg.default"
+                        }
+                      >
+                        <IconArrowsMoveVertical />
+                      </ToggleGroup.Item>
+                    </Tooltip.Trigger>
+                    <Portal>
+                      <Tooltip.Positioner>
+                        <Tooltip.Content backgroundColor="bg.default">
+                          <Text color="fg.default">Vertical Zoom (Ctrl)</Text>
+                        </Tooltip.Content>
+                      </Tooltip.Positioner>
+                    </Portal>
+                  </Tooltip.Root>
+
+                  <Tooltip.Root>
+                    <Tooltip.Trigger>
+                      <ToggleGroup.Item
+                        value={CursorMode[CursorMode.Lock]}
+                        aria-label="Toggle Cursor Lock"
+                        color={
+                          cursorMode() === CursorMode.Lock
+                            ? "fg.default"
+                            : "fg.muted"
+                        }
+                        bgColor={
+                          cursorMode() === CursorMode.Lock
+                            ? "bg.emphasized"
+                            : lastCursorMode() === CursorMode.Lock
+                              ? "bg.subtle"
+                              : "bg.default"
+                        }
+                      >
+                        <IconCrosshair />
+                      </ToggleGroup.Item>
+                    </Tooltip.Trigger>
+                    <Portal>
+                      <Tooltip.Positioner>
+                        <Tooltip.Content backgroundColor="bg.default">
+                          <Text color="fg.default">Cursor Lock (Alt)</Text>
+                        </Tooltip.Content>
+                      </Tooltip.Positioner>
+                    </Portal>
+                  </Tooltip.Root>
+                </ToggleGroup.Root>
+              </Stack>
+            </Stack>
+
+            <Stack
+              width={`calc(100% - 1em)`}
+              height={"2.5em"}
+              direction="row"
+              marginTop={"0.5em"}
+            >
+              <Stack
+                width="100%"
+                direction="row"
+                borderWidth="1px"
+                borderRadius="1em"
+                paddingLeft="0.5em"
+                height="2em"
+                marginTop="0.3em"
+                gap="0"
+              >
+                <IconSearch
+                  style={{
+                    "margin-top": "0.2em",
+                    "margin-right": "0.5em",
+                  }}
+                />
+                <input
+                  value={searchInput()}
+                  onInput={(e) => {
+                    setSearchInput(e.target.value);
+                  }}
+                  placeholder="Search series"
+                  style={{
+                    border: "none",
+                    outline: "none",
+                    "white-space": "nowrap",
+                    overflow: "hidden",
+                    display: "block",
+                    "text-overflow": "ellipsis",
+                    width: `calc(100% - 0.5em)`,
+                  }}
+                  height="1em"
+                />
+                <IconButton
+                  variant="ghost"
+                  onClick={() => setSearchInput("")}
+                  padding="0"
+                  size="sm"
+                  width="1em"
+                  height="1.5em"
+                  borderRadius="3em"
+                  marginTop="0.2em"
+                >
+                  <IconX />
+                </IconButton>
+              </Stack>
+              <Tooltip.Root>
+                <Tooltip.Trigger>
+                  <IconButton
+                    variant="outline"
+                    onClick={() => {
+                      if (showLegendCheckBox()) {
+                        setContext()(
+                          "selected",
+                          props.header.map(() => false),
+                        );
+                      }
+                      setShowLegendCheckBox(!showLegendCheckBox());
+                    }}
+                  >
+                    <Show
+                      when={showLegendCheckBox()}
+                      fallback={<IconLocationOff />}
+                    >
+                      <IconLocation />
+                    </Show>
+                  </IconButton>
+                </Tooltip.Trigger>
+                <Tooltip.Positioner>
+                  <Tooltip.Content backgroundColor="bg.default">
+                    <Text color="fg.default">Select</Text>
+                  </Tooltip.Content>
+                </Tooltip.Positioner>
+              </Tooltip.Root>
+            </Stack>
+            <Stack
+              style={{
+                "padding-bottom": "0.5em",
+                width: "100%",
+                "margin-right": "1em",
+                position: "relative",
+                height: `calc(100% - 5em)`,
+                "overflow-x": "auto",
+                "overflow-y": "auto",
+              }}
+            >
+              <Show when={render()}>
+                <Stack direction="row" gap="1.5">
+                  <IconButton
+                    size="sm"
+                    variant="link"
+                    onClick={() => {
+                      const newVisible = !getContext()
+                        .visible.filter((_, i) => legendIndex().includes(i))
+                        .includes(true);
+                      setContext()(
+                        "visible",
+                        getContext().visible.map((visible, i) => {
+                          if (legendIndex().includes(i)) return newVisible;
+                          else return visible;
+                        }),
+                      );
+                      getContext().visible.forEach((val, i) => {
+                        plot.setSeries(i + 1, {
+                          show: val,
+                        });
+                      });
+                      props.onContextChange?.(getContext());
+                    }}
+                  >
+                    <Show
+                      when={getContext()
+                        .visible.filter((_, i) => legendIndex().includes(i))
+                        .includes(true)}
+                      fallback={<IconEye />}
+                    >
+                      <IconEyeOff />
+                    </Show>
+                  </IconButton>
+                  <Legend
+                    plot={plot!}
+                    series="Cycle"
+                    group={group()}
+                    width="min-content"
+                    cursorIdx={cursorIdx()}
+                    readonly
+                  />
+                </Stack>
+                <For each={legendIndex()}>
+                  {(item, index) => {
+                    const header = props.header[item];
+                    return (
+                      <div style={{ width: "100% " }}>
                         <Legend
                           plot={plot}
                           group={group()}
@@ -1403,11 +1409,11 @@ export function Plot(props: PlotProps) {
                             }, 200);
                           }}
                         />
-                      );
-                    }}
-                  </For>
-                </Show>
-              </Stack>
+                      </div>
+                    );
+                  }}
+                </For>
+              </Show>
             </Stack>
           </Splitter.Panel>
         </Show>

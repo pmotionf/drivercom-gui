@@ -10,11 +10,12 @@ import {
 } from "solid-js";
 import { Stack } from "styled-system/jsx";
 import { Text } from "../ui/text";
-import { enumSeriesMap, enumMappings } from "~/GlobalState";
 import { IconLine, IconLineDashed, IconPoint } from "@tabler/icons-solidjs";
 import { Dynamic, Portal } from "solid-js/web";
 
-export const PlotToolTip = (props: TooltipProps) => {
+export const PlotToolTip = (
+  props: TooltipProps & { enumMapping?: Map<string, Map<number, string>> },
+) => {
   if (!props.u.cursor.event) return;
   const seriesValues: Map<
     number,
@@ -83,15 +84,14 @@ export const PlotToolTip = (props: TooltipProps) => {
         <For each={props.seriesData}>
           {(series, i) => {
             const currentSeries = props.u.series[i() + 1];
-            let enumMappingIndex: number | null = null;
-            if (enumSeriesMap.has(series.label)) {
-              const seriesEnumTypeName = enumSeriesMap.get(series.label);
-              const findIndex = enumMappings().findIndex(
-                (mapping) => mapping.enumTypeName === seriesEnumTypeName,
-              );
-              if (findIndex !== -1) {
-                enumMappingIndex = findIndex;
-              }
+            let enumValues: Map<number, string> | null = null;
+            if (
+              props.enumMapping &&
+              props.enumMapping.has(currentSeries.label as string)
+            ) {
+              enumValues = props.enumMapping.get(
+                currentSeries.label as string,
+              )!;
             }
             const cursorRange = oneRem * 0.6;
 
@@ -123,8 +123,8 @@ export const PlotToolTip = (props: TooltipProps) => {
                     {series.label}:
                   </Text>
                   <Text size="sm">
-                    {enumMappingIndex
-                      ? `${enumMappings()[enumMappingIndex!].enumValues.get(props.u.data[i() + 1][props.cursor.xValue]!)}(${props.u.data[i() + 1][props.cursor.xValue]})`
+                    {enumValues
+                      ? `${enumValues.get(props.u.data[i() + 1][props.cursor.xValue]!)}(${props.u.data[i() + 1][props.cursor.xValue]})`
                       : props.u.data[i() + 1][props.cursor.xValue]}
                   </Text>
                 </Stack>
