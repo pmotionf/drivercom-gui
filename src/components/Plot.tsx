@@ -53,6 +53,7 @@ export type PlotProps = JSX.HTMLAttributes<HTMLDivElement> & {
   name: string;
   header: string[];
   series: number[][];
+  enumMapping?: Map<string, Map<number, string>>;
   context?: PlotContext;
   onContextChange?: (context: PlotContext) => void;
   xScale?: [number, number];
@@ -533,10 +534,12 @@ export function Plot(props: PlotProps) {
           const updatedSize = size[1];
           props.onLegendPanelSize?.(updatedSize);
         }}
-        position="fixed"
       >
         <Splitter.Panel id={`plot-${props.id}`} borderWidth="0">
-          <div id={props.id} style={{ width: "100%", height: "100%" }}>
+          <div
+            id={props.id}
+            style={{ width: "100%", height: "100%" }}
+          >
             <SolidUplot
               style={{ cursor: "default" }}
               onCreate={(e) => {
@@ -1329,6 +1332,11 @@ export function Plot(props: PlotProps) {
                           group={group()}
                           series={header}
                           cursorIdx={cursorIdx()}
+                          enumValuesMapping={
+                            props.enumMapping && props.enumMapping.has(header)
+                              ? props.enumMapping.get(header)
+                              : undefined
+                          }
                           showSelectCheckBox={showLegendCheckBox()}
                           selected={getContext().selected[item]}
                           onSelectChange={(isChecked, shiftKey) => {

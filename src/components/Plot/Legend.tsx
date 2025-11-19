@@ -25,7 +25,6 @@ import {
 } from "@tabler/icons-solidjs";
 import { Heading } from "../ui/heading";
 import { Portal } from "solid-js/web";
-import { enumMappings, enumSeriesMap } from "~/GlobalState";
 import { Checkbox } from "../ui/checkbox";
 
 export type LegendProps = Omit<StackProps, "stroke"> & {
@@ -33,6 +32,7 @@ export type LegendProps = Omit<StackProps, "stroke"> & {
   group?: string;
   series: string;
   visible?: boolean;
+  enumValuesMapping?: Map<number, string>;
   onVisibleChange?: (new_visible: boolean) => void;
   color?: string;
   onColorChange?: (new_color: string) => void;
@@ -106,19 +106,6 @@ export function Legend(props: LegendProps) {
     setColor(new_color);
   }
 
-  const [enumMappingsIndex, setEnumMappingsIndex] = createSignal<number | null>(
-    null,
-  );
-  if (enumSeriesMap.has(props.series)) {
-    const seriesEnumType = enumSeriesMap.get(props.series);
-    const enumMappingsIndex = enumMappings().findIndex(
-      (mapping) => mapping.enumTypeName === seriesEnumType,
-    );
-    if (enumMappingsIndex !== -1) {
-      setEnumMappingsIndex(enumMappingsIndex);
-    }
-  }
-
   const updateValue = (data_index: number | null | undefined) => {
     if (props.visible != null) {
       if (!props.visible) {
@@ -133,10 +120,9 @@ export function Legend(props: LegendProps) {
     if (data_index != null) {
       const val = props.plot.data[seriesIndex][data_index];
       if (val != null) {
-        if (enumMappingsIndex() != null) {
-          const enumValues = enumMappings()[enumMappingsIndex()!].enumValues;
-          if (enumValues.has(val)) {
-            setValue(`${enumValues.get(val)}(${val})`);
+        if (props.enumValuesMapping) {
+          if (props.enumValuesMapping.has(val)) {
+            setValue(`${props.enumValuesMapping.get(val)}(${val})`);
           } else {
             setValue(`undefined(${val})`);
           }
