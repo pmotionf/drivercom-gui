@@ -136,17 +136,31 @@ export class FileHandler implements IFileHandler {
   }
 
   async readCsvFile(path: string): Promise<CsvFile | never> {
-    try {
-      const csv_str = await readTextFile(path);
-      const rows = csv_str.split("\n");
+    const csv_str = await readTextFile(path);
+    if (!csv_str) {
+      throw new Error("File is empty");
+    }
+    return new Promise<CsvFile>((resolve, reject) => {
+      const rows = csv_str.endsWith("\n")
+        ? csv_str.slice(0, -2).split("\n")
+        : csv_str.split("\n");
       if (rows.length < 2) {
-        throw new Error("Not enough rows.");
+        return reject("Not enough rows.");
       }
+
       const enumMappings: Map<string, Map<number, string>> = new Map();
 
       const schema = inferSchema(csv_str);
       const parser = initParser(schema);
       const local_header: string[] = rows[0].replace(/,\s*$/, "").split(",");
+      const checkRowLength = rows.some(
+        (row) =>
+          row.replace(/,\s*$/, "").split(",").length !== local_header.length,
+      );
+      if (checkRowLength) {
+        return reject("Header and data length mismatch.");
+      }
+
       const data: number[][] = parser.typedCols(csv_str).map((row, rowIndex) =>
         row.map((val) => {
           if (typeof val === "boolean") {
@@ -194,12 +208,12 @@ export class FileHandler implements IFileHandler {
         .slice(0, -1)
         .map((checkData) => checkData.some((val) => Number.isFinite(val)));
       if (!checkFinate.every((val) => val)) {
-        throw new Error(`Data has invalid value.`);
+        return reject(`Data has invalid value.`);
       }
 
       if (data.length < local_header.length) {
         const desc = `Data has ${data.length} columns, while header has ${local_header.length} labels.`;
-        throw new Error(desc);
+        return reject(desc);
       }
 
       const parsedSeriesForPlot: number[][] = data
@@ -219,15 +233,13 @@ export class FileHandler implements IFileHandler {
           return parsedEnumForPlot;
         });
 
-      return {
+      return resolve({
         header: local_header,
         series: parsedSeriesForPlot,
         enumSeriesMap:
           Array.from(enumMappings.keys()).length > 0 ? enumMappings : undefined,
-      };
-    } catch (e) {
-      throw new Error(e as string);
-    }
+      });
+    });
   }
 
   async writeFile(

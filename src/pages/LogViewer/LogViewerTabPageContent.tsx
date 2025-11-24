@@ -116,7 +116,12 @@ export function LogViewerTabPageContent() {
     const nextFocusTabIndex = tabIndex === 0 ? 1 : tabIndex - 1;
 
     setTimeout(() => {
-      setTabCtx("focusedTab", tabCtx.tabContext[nextFocusTabIndex].tab.id);
+      setTabCtx(
+        "focusedTab",
+        tabCtx.tabContext[nextFocusTabIndex]
+          ? tabCtx.tabContext[nextFocusTabIndex].tab.id
+          : "",
+      );
       setTabCtx("tabContext", filteredTabCtx);
     }, 200);
   };
@@ -283,7 +288,7 @@ export function LogViewerTabPageContent() {
     } catch (e) {
       tabPageProps.toaster.create({
         title: "Invalid File",
-        description: e as string,
+        description: e ? e.toString() : "The file is invalid.",
         type: "error",
       });
       deleteTab();
