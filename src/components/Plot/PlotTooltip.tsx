@@ -35,7 +35,7 @@ export const PlotToolTip = (
 
   createEffect(
     on(
-      () => props.cursor.idx,
+      () => props.cursor.position,
       () => {
         const halfHeight =
           document.getElementById(props.cursor.plotId)!.offsetHeight * 0.5;
