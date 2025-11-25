@@ -1,9 +1,21 @@
-import { type Accessor, createEffect, JSX, on, type Setter } from "solid-js";
+import {
+  type Accessor,
+  createEffect,
+  For,
+  JSX,
+  on,
+  type Setter,
+} from "solid-js";
 import { createStore } from "solid-js/store";
 import { AccordionStates, Form } from "./Form";
+import { Tabs } from "./ui/tabs";
+import { FormNumberInput } from "./Form/FormNumberInput";
+import { FormCheckBox } from "./Form/FormCheckBox";
 
 export type ConfigFormProps = JSX.HTMLAttributes<HTMLFormElement> & {
   id: string;
+  focusedTab?: string;
+  onFocustTabChange?: (tabId: string) => void;
   config: object;
   accordionStatuses: AccordionStates;
   linkedStatuses: LinkStates;
@@ -295,13 +307,154 @@ export function ConfigForm(props: ConfigFormProps) {
   }
 
   return (
-    <Form
-      object={config}
-      id={props.id}
-      accordionStates={props.accordionStatuses}
-      linkStates={props.linkedStatuses}
-      gainLockStatuses={props.gainLockStatuses}
-      gainKinds={dynamic}
-    />
+    <Tabs.Root
+      value={props.focusedTab ? props.focusedTab : props.id + "driver"}
+      onValueChange={(details) => props.onFocustTabChange?.(details.value)}
+      orientation="vertical"
+      variant="outline"
+      width="100%"
+      height="100% "
+    >
+      <Tabs.List
+        height={"100%"}
+        background={"bg.canvas"}
+        padding="0.5em"
+        borderWidth={"1px"}
+        borderRadius={"0.5em 0 0 0.5em"}
+      >
+        <Tabs.Trigger
+          value={props.id + "driver"}
+          _selected={{
+            background: "bg.default",
+            opacity: "1",
+            borderColor: "bg.disabled",
+            borderRadius: "0.5em",
+          }}
+          opacity={"0.5"}
+        >
+          {"Driver"}
+        </Tabs.Trigger>
+        <For
+          each={Object.entries(config).filter(
+            (entry) => typeof entry === "object",
+          )}
+        >
+          {(entry) => {
+            const key = entry[0];
+            const value = entry[1];
+            const label = Array.from(key)
+              .map((char, i) => {
+                if (i === 0) return char.toUpperCase();
+                if (char === "_") return " ";
+                if (key[i - 1] === "_") return char.toUpperCase();
+                return char.toLowerCase();
+              })
+              .join("");
+            if (typeof value === "object") {
+              return (
+                <Tabs.Trigger
+                  value={props.id + key}
+                  _selected={{
+                    background: "bg.default",
+                    opacity: "1",
+                    borderColor: "bg.disabled",
+                    borderRadius: "0.5em",
+                  }}
+                  opacity={"0.5"}
+                >
+                  {label}
+                </Tabs.Trigger>
+              );
+            }
+          }}
+        </For>
+        <Tabs.Indicator />
+      </Tabs.List>
+
+      <Tabs.Content
+        value={props.id + "driver"}
+        width="100%"
+        style={{ "padding-top": "0" }}
+        height="100%"
+        borderRadius={"0 0.5em 0.5em 0"}
+      >
+        <For
+          each={Object.entries(config).filter(
+            (entry) => typeof entry[1] !== "object",
+          )}
+        >
+          {(entry) => {
+            const key: string = entry[0];
+            const value = entry[1];
+            if (typeof value === "number") {
+              return (
+                <FormNumberInput
+                  id={`${props.id}.${key}`}
+                  label={key}
+                  inputValue={config[key as keyof typeof config]}
+                  onInputChange={(inputValue) => {
+                    setConfig(
+                      key as keyof typeof config,
+                      // @ts-ignore: TSC unable to handle generic object type
+                      // in store
+                      inputValue,
+                    );
+                  }}
+                />
+              );
+            } else if (typeof value === "boolean") {
+              return (
+                <FormCheckBox
+                  id={`${props.id}.${key}`}
+                  label={key}
+                  checked={config[key as keyof typeof config]}
+                  onCheckedChange={(checked) =>
+                    setConfig(
+                      key as keyof typeof config,
+                      // @ts-ignore: TSC unable to handle generic object type
+                      // in store
+                      checked,
+                    )
+                  }
+                />
+              );
+            }
+          }}
+        </For>
+      </Tabs.Content>
+      <For
+        each={Object.entries(config).filter(
+          (entry) => typeof entry === "object",
+        )}
+      >
+        {(entry) => {
+          const key = entry[0];
+          const value = entry[1];
+          if (typeof value === "object") {
+            return (
+              <Tabs.Content
+                value={props.id + key}
+                style={{
+                  "overflow-y": "auto",
+                  width: " 100%",
+                  height: "100%",
+                  "padding-top": "0",
+                }}
+                borderRadius={"0 0.5em 0.5em 0"}
+              >
+                <Form
+                  object={value}
+                  id={`${props.id}.${key}`}
+                  accordionStates={props.accordionStatuses}
+                  linkStates={props.linkedStatuses}
+                  gainLockStatuses={props.gainLockStatuses}
+                  gainKinds={dynamic}
+                />
+              </Tabs.Content>
+            );
+          }
+        }}
+      </For>
+    </Tabs.Root>
   );
 }

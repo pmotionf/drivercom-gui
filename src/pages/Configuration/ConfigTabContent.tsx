@@ -28,6 +28,7 @@ import JSON5 from "json5";
 export type ConfigTabPage = {
   filePath?: string;
   configForm?: object;
+  focusedTab?: string;
   configAccordionStatuses?: AccordionStates;
   configLinkedStatuses?: LinkStates;
   configGainLockStatuses?: GainLockStates;
@@ -75,6 +76,22 @@ export function ConfigTabContent() {
   const getTabId = () => {
     return tabContexts.get(configTabProps.key)![0].tabContext[getTabIndex()].tab
       .id;
+  };
+
+  const getFocusedTab = () => {
+    return tabContexts.get(configTabProps.key)![0].tabContext[getTabIndex()]
+      .tabPage?.configTabPage?.focusedTab;
+  };
+
+  const setFocusedTab = (focusedTab: string) => {
+    return tabContexts.get(configTabProps.key)![1](
+      "tabContext",
+      getTabIndex(),
+      "tabPage",
+      "configTabPage",
+      "focusedTab",
+      focusedTab,
+    );
   };
 
   const setTabName = (tabName: string) => {
@@ -261,14 +278,14 @@ export function ConfigTabContent() {
     >
       <Stack
         style={{
-          width: "40%",
+          width: "50%",
           height: `calc(100% - 1rem)`,
           "margin-top": "0.5rem",
           "padding-top": "1rem",
           "padding-bottom": "1rem",
           "padding-left": "1rem",
           "padding-right": "1rem",
-          "min-width": "30rem",
+          "min-width": "35rem",
           "border-radius": "0.5rem",
           "box-shadow": "0px 0px 15px 1px rgb(0,0,0,0.05)",
           "border-width": "1px",
@@ -276,7 +293,7 @@ export function ConfigTabContent() {
         borderColor="bg.muted"
         backgroundColor="bg.default"
       >
-        <Stack direction="row" width="100%">
+        <Stack direction="row" width="100%" height="3em">
           <Tooltip.Root positioning={{ placement: "bottom-start" }}>
             <Tooltip.Trigger width={`calc(100% - 9rem)`}>
               <Editable.Root
@@ -492,16 +509,15 @@ export function ConfigTabContent() {
           <div
             ref={scrollContainer}
             style={{
-              "overflow-y": "auto",
               width: "100%",
-              height: "100%",
-              "border-top-width": "1px",
-              "border-bottom-width": "1px",
+              height: `calc(100% - 4em)`,
               "padding-bottom": "0.5rem",
             }}
           >
             <ConfigForm
               id={getTabId()}
+              focusedTab={getFocusedTab()}
+              onFocustTabChange={(tabId) => setFocusedTab(tabId)}
               config={getConfigForm()!}
               linkedStatuses={getLinkedStatuses()!}
               accordionStatuses={getAccordionStatuses()!}
