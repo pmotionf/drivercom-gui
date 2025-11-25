@@ -135,7 +135,11 @@ export function Form(props: FormProps) {
               return (
                 <FormCollapsibleObject
                   id={props.id}
-                  key={key}
+                  key={
+                    isNaN(Number(key))
+                      ? key
+                      : `${props.id.split(".").pop()} ${Number(key) + 1}`
+                  }
                   object={value}
                   gainKey={gainkey}
                   gainKinds={props.gainKinds ? props.gainKinds : undefined}
