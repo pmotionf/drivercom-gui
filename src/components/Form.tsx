@@ -1,10 +1,8 @@
 import { For, createSignal, JSX, type Setter, type Accessor } from "solid-js";
-import { Stack } from "styled-system/jsx";
 import { Text } from "./ui/text.tsx";
 import { FormCheckBox } from "./Form/FormCheckBox.tsx";
 import { FormNumberInput } from "./Form/FormNumberInput.tsx";
 import { FormCollapsibleObject } from "./Form/FormCollapsibleObject.tsx";
-import { FormList } from "./Form/FormList.tsx";
 import { ListCollection } from "@ark-ui/solid";
 import { Select } from "./ui/select.tsx";
 import { createStore } from "solid-js/store";
@@ -63,48 +61,7 @@ export function Form(props: FormProps) {
         {(entry, index) => {
           const key = entry[0];
           const value = entry[1];
-          if (
-            value.constructor === Array &&
-            props.gainLockStatuses &&
-            props.linkStates &&
-            props.gainKinds
-          ) {
-            if (!props.accordionStates.has(key)) {
-              props.accordionStates.set(key, createSignal<string[]>([]));
-            }
-            if (props.linkStates && !props.linkStates.has(key)) {
-              props.linkStates.set(
-                key,
-                createSignal<[boolean, number]>([false, 0]),
-              );
-            }
-            return (
-              <>
-                <Stack
-                  style={{
-                    "border-width": "1px",
-                    "padding-right": "1rem",
-                    "padding-left": "1rem",
-                    "margin-top": "1rem",
-                    "border-radius": "0.5rem",
-                    "margin-bottom": "0.5rem",
-                    "padding-bottom": "0.5rem",
-                  }}
-                >
-                  <FormList
-                    label={key}
-                    items={value}
-                    onItemChange={() => props.onItemChange?.()}
-                    id_prefix={props.id}
-                    accordionStatuses={props.accordionStates}
-                    linkedStatuses={props.linkStates}
-                    gainLockStatuses={props.gainLockStatuses}
-                    gainKinds={props.gainKinds}
-                  />
-                </Stack>
-              </>
-            );
-          }
+
           if (typeof value === "object") {
             let gainkey = props.gainKey ? props.gainKey : "";
             if (gainkey.length !== 0) {
@@ -133,33 +90,48 @@ export function Form(props: FormProps) {
               Object.values(value).some((val) => typeof val === "object")
             ) {
               return (
-                <FormCollapsibleObject
-                  id={props.id}
-                  key={
-                    isNaN(Number(key))
-                      ? key
-                      : `${props.id.split(".").pop()} ${Number(key) + 1}`
-                  }
-                  object={value}
-                  gainKey={gainkey}
-                  gainKinds={props.gainKinds ? props.gainKinds : undefined}
-                  accordionStates={props.accordionStates}
-                  linkStates={props.linkStates ? props.linkStates : undefined}
-                  gainLockStatuses={
-                    props.gainLockStatuses ? props.gainLockStatuses : undefined
-                  }
-                  logStartCombinators={
-                    props.logStartCombinators
-                      ? props.logStartCombinators
-                      : undefined
-                  }
-                  logStartConditions={
-                    props.logStartConditions
-                      ? props.logStartConditions
-                      : undefined
-                  }
-                  onItemChange={() => props.onItemChange?.()}
-                />
+                <div
+                  style={{
+                    "border-top-width": index() === 0 ? "0px" : "1px",
+                    "border-bottom-width": Object.values(object).some(
+                      (val) => typeof val !== "object",
+                    )
+                      ? typeof Object.values(object)[index() + 1] !== "object"
+                        ? "1px"
+                        : "0"
+                      : "0px",
+                  }}
+                >
+                  <FormCollapsibleObject
+                    id={props.id}
+                    key={
+                      isNaN(Number(key))
+                        ? key
+                        : `${props.id.split(".").pop()} ${Number(key) + 1}`
+                    }
+                    object={value}
+                    gainKey={gainkey}
+                    gainKinds={props.gainKinds ? props.gainKinds : undefined}
+                    accordionStates={props.accordionStates}
+                    linkStates={props.linkStates ? props.linkStates : undefined}
+                    gainLockStatuses={
+                      props.gainLockStatuses
+                        ? props.gainLockStatuses
+                        : undefined
+                    }
+                    logStartCombinators={
+                      props.logStartCombinators
+                        ? props.logStartCombinators
+                        : undefined
+                    }
+                    logStartConditions={
+                      props.logStartConditions
+                        ? props.logStartConditions
+                        : undefined
+                    }
+                    onItemChange={() => props.onItemChange?.()}
+                  />
+                </div>
               );
             } else {
               return (
@@ -172,7 +144,7 @@ export function Form(props: FormProps) {
                       "border-radius": "0.5em",
                     }}
                   >
-                    <Text fontWeight="bold" color="fg.subtle">
+                    <Text fontWeight="bold" color="fg.subtle" size="sm">
                       {`${key[0].toUpperCase()}${Array.from(
                         key.slice(1, key.length),
                       )
@@ -211,28 +183,30 @@ export function Form(props: FormProps) {
               ? `${props.id.split(`.`).pop()} ${Number(key) + 1}`
               : key;
             return (
-              <FormCheckBox
-                id={`${props.id}.${key}`}
-                label={label}
-                checked={object[key as keyof typeof object]}
-                onCheckedChange={(checked) =>
-                  setObject(
-                    key as keyof typeof object,
-                    // @ts-ignore: TSC unable to handle generic object type
-                    // in store
-                    checked,
-                  )
-                }
-                onClick={() => {
-                  setPrevCheckBoxIndex(index());
-                }}
-                onShiftClick={() => {
-                  if (typeof prevCheckBoxIndex() === "number") {
-                    checkBoxShiftClick(prevCheckBoxIndex()!, index(), object);
-                    setPrevCheckBoxIndex(null);
+              <div style={{ "margin-bottom": "0.5em" }}>
+                <FormCheckBox
+                  id={`${props.id}.${key}`}
+                  label={label}
+                  checked={object[key as keyof typeof object]}
+                  onCheckedChange={(checked) =>
+                    setObject(
+                      key as keyof typeof object,
+                      // @ts-ignore: TSC unable to handle generic object type
+                      // in store
+                      checked,
+                    )
                   }
-                }}
-              />
+                  onClick={() => {
+                    setPrevCheckBoxIndex(index());
+                  }}
+                  onShiftClick={() => {
+                    if (typeof prevCheckBoxIndex() === "number") {
+                      checkBoxShiftClick(prevCheckBoxIndex()!, index(), object);
+                      setPrevCheckBoxIndex(null);
+                    }
+                  }}
+                />
+              </div>
             );
           }
           if (typeof value === "number") {
