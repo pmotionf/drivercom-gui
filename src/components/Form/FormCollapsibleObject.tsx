@@ -31,17 +31,10 @@ export const FormCollapsibleObject = (props: FormCollapsibleObjectProps) => {
       }}
       multiple
     >
-      <Accordion.Item
-        value={itemId}
-        borderWidth="1px"
-        paddingTop="0.5rem"
-        paddingBottom="0.5rem"
-        marginTop="0.5rem"
-        borderRadius="0.5em"
-      >
-        <Accordion.ItemTrigger fontSize="md" padding="0 1rem 0 1rem">
+      <Accordion.Item value={itemId} padding="0 0.5em 0 0.5em">
+        <Accordion.ItemTrigger>
           <Stack direction="row">
-            <Text fontWeight="bold" color="fg.subtle">
+            <Text fontWeight="bold" color="fg.subtle" size="sm">
               {`${key[0].toUpperCase()}${Array.from(key.slice(1, key.length))
                 .map((char, index) => {
                   if (key[index] === "_") {
@@ -95,7 +88,12 @@ export const FormCollapsibleObject = (props: FormCollapsibleObjectProps) => {
           </Accordion.ItemIndicator>
         </Accordion.ItemTrigger>
 
-        <Accordion.ItemContent borderWidth={"0"} padding="0 1rem 0 1rem">
+        <Accordion.ItemContent
+          borderWidth={"1px"}
+          padding="0 0.5em 0 0.5em"
+          borderRadius={"0.5em"}
+          marginBottom="1em"
+        >
           <Form
             object={value}
             id={`${props.id}.${key}`}
