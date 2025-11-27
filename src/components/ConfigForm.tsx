@@ -320,7 +320,7 @@ export function ConfigForm(props: ConfigFormProps) {
         background={"bg.canvas"}
         padding="0.5em"
         borderWidth={"1px"}
-        borderRadius={"0.5em 0 0 0.5em"}
+        borderBottomLeftRadius={"0.5em"}
       >
         <Tabs.Trigger
           value={props.id + "driver"}
@@ -374,9 +374,9 @@ export function ConfigForm(props: ConfigFormProps) {
       <Tabs.Content
         value={props.id + "driver"}
         width="100%"
-        style={{ "padding-top": "0" }}
+        style={{ "padding-top": "0", "padding-bottom": "0" }}
         height="100%"
-        borderRadius={"0 0.5em 0.5em 0"}
+        borderBottomRightRadius={"0.5em"}
       >
         <For
           each={Object.entries(config).filter(
@@ -440,7 +440,7 @@ export function ConfigForm(props: ConfigFormProps) {
                   height: "100%",
                   "padding-top": "0",
                 }}
-                borderRadius={"0 0.5em 0.5em 0"}
+                borderBottomRightRadius={"0.5em"}
               >
                 <Form
                   object={value}
