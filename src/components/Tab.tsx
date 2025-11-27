@@ -133,7 +133,8 @@ export function Tab(props: TabProps) {
       gap="0"
       width="100%"
       ref={scrollContainer}
-      style={{ "overflow-y": "hidden", "overflow-x": "auto" }}
+      background={"bg.muted"}
+      style={{ "overflow-y": "hidden", "overflow-x": "auto", padding: "0" }}
     >
       <For each={getTabContexts()}>
         {(tabCtx, tabIndex) => {
@@ -212,25 +213,15 @@ export function Tab(props: TabProps) {
                 value={tabCtx.tab.id}
                 paddingRight="0rem"
                 paddingLeft="0.5rem"
-                borderBottomWidth={
-                  currentDraggingTabId().length > 0
-                    ? currentDraggingTabId() === tabCtx.tab.id
-                      ? "3px"
-                      : "0px"
-                    : getFocusTabId() === tabCtx.tab.id
-                      ? "3px"
-                      : "0px"
-                }
-                marginTop={
-                  currentDraggingTabId().length > 0
-                    ? currentDraggingTabId() === tabCtx.tab.id
-                      ? `calc(0.5rem + 1px)`
-                      : "0.5rem"
-                    : getFocusTabId() === tabCtx.tab.id
-                      ? `calc(0.5rem + 1px)`
-                      : `0.5rem`
-                }
-                borderBottomColor="accent.emphasized"
+                height="100%"
+                alignContent={"center"}
+                paddingTop={"0.5em"}
+                borderWidth={"0px 1px 0px 0px"}
+                borderColor={"bg.disabled"}
+                _selected={{
+                  background: "bg.default",
+                }}
+                margin="0"
               >
                 <Editable.Root
                   value={tabCtx.tab.tabName}
@@ -276,17 +267,16 @@ export function Tab(props: TabProps) {
                 {currentDraggingTabId() === tabCtx.tab.id && (
                   <Stack
                     direction="row"
-                    borderBottomColor="accent.emphasized"
-                    background="bg.default"
+                    background={"bg.default"}
                     style={{
                       position: "absolute",
                       top: `${currentMousePointerPosition().y}px`,
                       left: `${currentMousePointerPosition().x}px`,
                       "padding-left": "0.5rem",
-                      "padding-bottom": "0.5rem",
                       "pointer-events": "none",
                       "z-index": "15",
-                      "border-bottom-width": "2px",
+                      height: "3rem",
+                      "padding-top": "0.2em",
                     }}
                   >
                     <Text
