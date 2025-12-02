@@ -17,13 +17,13 @@ import {
   setPage,
   tabContexts,
 } from "~/GlobalState.ts";
-import { Spinner } from "./ui/spinner";
 import { trackStore } from "@solid-primitives/deep";
 import { createStore } from "solid-js/store";
 import { PanelSizeContext } from "./PanelLayout";
 import { TabContext } from "./TabList";
 import { TabListContext } from "./TabList";
 import { css } from "styled-system/css";
+import { Progress } from "@ark-ui/solid/progress";
 
 export enum DownloadStatus {
   Progressing,
@@ -159,37 +159,8 @@ export const DownloadList = (props: JSX.HTMLAttributes<HTMLDivElement>) => {
                     gap="0"
                   >
                     <Stack
-                      width="2em"
-                      height="100%"
-                      paddingTop="1em"
-                      onClick={() => {
-                        if (download.status === DownloadStatus.Success) {
-                          openNewTab(download.filePath);
-                          setCsvFileDownloads(
-                            csvFileDownloads.filter((_, i) => i !== index()),
-                          );
-                        }
-                      }}
-                    >
-                      <Show when={download.status === DownloadStatus.Success}>
-                        <IconFileCheck />
-                      </Show>
-                      <Show when={download.status === DownloadStatus.Error}>
-                        <IconExclamationCircle />
-                      </Show>
-                      <Show
-                        when={download.status === DownloadStatus.Progressing}
-                      >
-                        <Spinner
-                          width="1.1em"
-                          height="1.1em"
-                          borderWidth="1.5px"
-                        />
-                      </Show>
-                    </Stack>
-                    <Stack
                       gap="0"
-                      width={`calc(100% - 5em)`}
+                      width={`calc(100% - 2.5em)`}
                       onClick={() => {
                         if (download.status === DownloadStatus.Success) {
                           openNewTab(download.filePath);
@@ -250,29 +221,68 @@ export const DownloadList = (props: JSX.HTMLAttributes<HTMLDivElement>) => {
                       <Show
                         when={download.status === DownloadStatus.Progressing}
                       >
-                        <Text
-                          height="min-content"
-                          size="sm"
-                          color="fg.muted"
-                          fontWeight="medium"
+                        <div
+                          style={{ display: "flex", "align-items": "center" }}
                         >
-                          {"Downloading..."}
-                        </Text>
+                          <Text width="2.5em" textAlign="center" size="xs">
+                            {"1%"}
+                          </Text>
+                          <div style={{ width: `calc(100% - 3em)` }}>
+                            <Progress.Root
+                              value={null}
+                              orientation="horizontal"
+                              style={{ width: `calc(100% - 2ems)` }}
+                            >
+                              <Progress.Track
+                                class={css({ background: "bg.disabled" })}
+                              >
+                                <Progress.Range
+                                  style={{ "border-width": "3px" }}
+                                  class={css({ borderColor: "fg.default" })}
+                                />
+                              </Progress.Track>
+                            </Progress.Root>
+                          </div>
+                        </div>
                       </Show>
                     </Stack>
-                    <IconButton
-                      size="xs"
-                      width="1.5em"
-                      variant="ghost"
-                      borderRadius="3em"
-                      onClick={() =>
-                        setCsvFileDownloads((prev) =>
-                          prev.filter((_, i) => i !== index()),
-                        )
-                      }
+                    <Stack
+                      width="2em"
+                      height="100%"
+                      paddingTop="1em"
+                      alignItems={"center"}
+                      onClick={() => {
+                        if (download.status === DownloadStatus.Success) {
+                          openNewTab(download.filePath);
+                          setCsvFileDownloads(
+                            csvFileDownloads.filter((_, i) => i !== index()),
+                          );
+                        }
+                      }}
                     >
-                      <IconX />
-                    </IconButton>
+                      <Show when={download.status === DownloadStatus.Success}>
+                        <IconFileCheck />
+                      </Show>
+                      <Show when={download.status === DownloadStatus.Error}>
+                        <IconExclamationCircle />
+                      </Show>
+                      <Show
+                        when={download.status === DownloadStatus.Progressing}
+                      >
+                        <IconButton
+                          width="2em"
+                          size="xs"
+                          variant={"ghost"}
+                          onClick={() => {
+                            setCsvFileDownloads(
+                              csvFileDownloads.filter((_, i) => i !== index()),
+                            );
+                          }}
+                        >
+                          <IconX />
+                        </IconButton>
+                      </Show>
+                    </Stack>
                   </Button>
                 );
               }}
