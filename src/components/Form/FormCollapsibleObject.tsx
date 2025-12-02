@@ -5,7 +5,13 @@ import { IconButton } from "../ui/icon-button";
 import { Show } from "solid-js";
 import { Form, FormProps } from "../Form";
 import { createSignal } from "solid-js";
-import { IconLock, IconLockOff, IconChevronDown } from "@tabler/icons-solidjs";
+import {
+  IconLock,
+  IconLockOff,
+  IconChevronDown,
+  IconLink,
+  IconLinkOff,
+} from "@tabler/icons-solidjs";
 
 export type FormCollapsibleObjectProps = FormProps & {
   key: string;
@@ -45,6 +51,36 @@ export const FormCollapsibleObject = (props: FormCollapsibleObjectProps) => {
                 .toString()
                 .replaceAll(",", "")}`}
             </Text>
+            <Show
+              when={
+                props.linkStates &&
+                props.linkStates.has(props.id.split(".")[1]!) &&
+                props.id.split(".").length === 2
+              }
+            >
+              <IconButton
+                size="sm"
+                variant={"ghost"}
+                width="1rem"
+                height="min-content"
+                paddingTop="0.2rem"
+                paddingBottom="0.2rem"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  const [getLinkState, setLinkState] = props.linkStates!.get(
+                    props.id.split(".")[1]!,
+                  )!;
+                  setLinkState([!getLinkState()[0], getLinkState()[1]]);
+                }}
+              >
+                <Show
+                  when={props.linkStates!.get(props.id.split(".")[1]!)![0]()[0]}
+                  fallback={<IconLinkOff style={{ opacity: "0.5" }} />}
+                >
+                  <IconLink />
+                </Show>
+              </IconButton>
+            </Show>
             <Show
               when={
                 props.gainLockStatuses &&
