@@ -24,7 +24,7 @@ export type ConfigFormProps = JSX.HTMLAttributes<HTMLFormElement> & {
 
 export type LinkStates = Map<
   string,
-  [Accessor<[boolean, number]>, Setter<[boolean, number]>]
+  [Accessor<[boolean, string]>, Setter<[boolean, string]>]
 >;
 
 export type GainLockStates = Map<string, [Accessor<boolean>, Setter<boolean>]>;
@@ -89,6 +89,11 @@ export function ConfigForm(props: ConfigFormProps) {
           () => config.coil.ls,
         ],
         () => {
+          if (
+            props.linkedStatuses.get("axis")![0]()[0] &&
+            props.linkedStatuses.get("axis")![0]()[1] !== dynPos
+          )
+            return;
           if (props.gainLockStatuses.get(`${dynPos}.gain.current.p`)![0]())
             return;
           const p = calcCurrentP(
@@ -114,6 +119,11 @@ export function ConfigForm(props: ConfigFormProps) {
           () => config.coil.rs,
         ],
         () => {
+          if (
+            props.linkedStatuses.get("axis")![0]()[0] &&
+            props.linkedStatuses.get("axis")![0]()[1] !== dynPos
+          )
+            return;
           if (props.gainLockStatuses.get(`${dynPos}.gain.current.i`)![0]())
             return;
 
@@ -146,6 +156,11 @@ export function ConfigForm(props: ConfigFormProps) {
           () => config.magnet.pitch,
         ],
         () => {
+          if (
+            props.linkedStatuses.get("axis")![0]()[0] &&
+            props.linkedStatuses.get("axis")![0]()[1] !== dynPos
+          )
+            return;
           if (props.gainLockStatuses.get(`${dynPos}.gain.velocity.p`)![0]())
             return;
 
@@ -187,6 +202,11 @@ export function ConfigForm(props: ConfigFormProps) {
           () => config.axis[dynPos].gain.velocity.p,
         ],
         () => {
+          if (
+            props.linkedStatuses.get("axis")![0]()[0] &&
+            props.linkedStatuses.get("axis")![0]()[1] !== dynPos
+          )
+            return;
           if (props.gainLockStatuses.get(`${dynPos}.gain.velocity.i`)![0]())
             return;
           const i = calcVelocityI(
@@ -216,6 +236,11 @@ export function ConfigForm(props: ConfigFormProps) {
           () => config.axis[dynPos].gain.velocity.p,
         ],
         () => {
+          if (
+            props.linkedStatuses.get("axis")![0]()[0] &&
+            props.linkedStatuses.get("axis")![0]()[1] !== dynPos
+          )
+            return;
           if (props.gainLockStatuses.get(`${dynPos}.gain.position.p`)![0]())
             return;
           const wsc = calcWsc(

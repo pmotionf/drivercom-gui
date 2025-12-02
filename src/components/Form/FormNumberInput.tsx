@@ -1,6 +1,6 @@
 import { Stack } from "styled-system/jsx";
 import { Text } from "../ui/text";
-import { GainLockStates } from "../ConfigForm";
+import { GainLockStates, LinkStates } from "../ConfigForm";
 import { Show } from "solid-js";
 import {
   IconExclamationCircle,
@@ -14,6 +14,7 @@ export type FormNumberInputProps = {
   label: string;
   lockStatus?: GainLockStates;
   lockStatusKey?: string;
+  linkStatus?: LinkStates;
   inputValue: number;
   onInputChange?: (input: number) => void;
 };
@@ -133,6 +134,15 @@ export const FormNumberInput = (props: FormNumberInputProps) => {
                   lockStatus.get(includingKeys.slice(0, -1))![1](
                     parseValues[0],
                   );
+                }
+
+                if (props.linkStatus && lockStatus.get(lockStatusKey!)![0]()) {
+                  const [getLinkState, setLinkState] = props.linkStatus!.get(
+                    props.id.split(".")[1]!,
+                  )!;
+                  if (getLinkState()[0]) {
+                    setLinkState([false, getLinkState()[1]]);
+                  }
                 }
               }}
             >

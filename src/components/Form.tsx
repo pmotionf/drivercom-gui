@@ -7,6 +7,7 @@ import { ListCollection } from "@ark-ui/solid";
 import { Select } from "./ui/select.tsx";
 import { createStore } from "solid-js/store";
 import { LinkStates, GainLockStates } from "./ConfigForm.tsx";
+import JSON5 from "json5";
 
 export type AccordionStates = Map<
   string,
@@ -65,7 +66,7 @@ export function Form(props: FormProps) {
     if (props.linkStates && !props.linkStates.has(objectKey)) {
       props.linkStates!.set(
         objectKey,
-        createSignal<[boolean, number]>([false, 0]),
+        createSignal<[boolean, string]>([false, ""]),
       );
     }
   }
@@ -144,7 +145,34 @@ export function Form(props: FormProps) {
                         ? props.logStartConditions
                         : undefined
                     }
-                    onItemChange={() => props.onItemChange?.()}
+                    onItemChange={() => {
+                      props.onItemChange?.();
+
+                      const linkKey = props.id.split(".").pop();
+                      if (
+                        props.linkStates &&
+                        linkKey &&
+                        props.linkStates.has(linkKey)
+                      ) {
+                        const linkState = props.linkStates.get(linkKey)!;
+                        if (linkState[0]()[0]) {
+                          Object.entries(object).forEach(
+                            ([updateKey, updateValue]) => {
+                              if (
+                                typeof updateValue === "object" &&
+                                updateKey !== key
+                              ) {
+                                const stringifyObject = JSON5.stringify(value);
+                                setObject(
+                                  updateKey as keyof typeof object,
+                                  JSON5.parse(stringifyObject),
+                                );
+                              }
+                            },
+                          );
+                        }
+                      }
+                    }}
                   />
                 </div>
               );
@@ -249,6 +277,7 @@ export function Form(props: FormProps) {
               <FormNumberInput
                 id={`${props.id}.${key}`}
                 label={label}
+                linkStatus={props.linkStates}
                 lockStatus={lockStatus}
                 lockStatusKey={
                   lockStatusKey.length > 0 ? lockStatusKey : undefined
