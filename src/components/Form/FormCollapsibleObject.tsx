@@ -33,7 +33,7 @@ export const FormCollapsibleObject = (props: FormCollapsibleObjectProps) => {
     >
       <Accordion.Item value={itemId} padding="0 0.5em 0 0.5em">
         <Accordion.ItemTrigger>
-          <Stack direction="row">
+          <Stack direction="row" gap="0">
             <Text fontWeight="bold" color="fg.subtle" size="sm">
               {`${key[0].toUpperCase()}${Array.from(key.slice(1, key.length))
                 .map((char, index) => {
@@ -62,7 +62,8 @@ export const FormCollapsibleObject = (props: FormCollapsibleObjectProps) => {
                 opacity={
                   props.gainLockStatuses!.get(`${key}.gain`)![0]() ? "1" : "0.5"
                 }
-                onClick={() => {
+                onClick={(e) => {
+                  e.stopPropagation();
                   const lockStatus = props.gainLockStatuses!.get(
                     `${key}.gain`,
                   )![0]();
