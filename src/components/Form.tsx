@@ -55,6 +55,21 @@ export function Form(props: FormProps) {
     });
   };
 
+  const onlyObjects = Object.values(object).filter(
+    (val) => typeof val === "object",
+  );
+  const checkObjectKeys = onlyObjects.map((val) => Object.keys(val).toString());
+  const checkDuplicateKeys = [...new Set(checkObjectKeys)];
+  if (checkDuplicateKeys.length === 1 && checkObjectKeys.length > 1) {
+    const objectKey = props.id.split(".").pop()!;
+    if (props.linkStates && !props.linkStates.has(objectKey)) {
+      props.linkStates!.set(
+        objectKey,
+        createSignal<[boolean, number]>([false, 0]),
+      );
+    }
+  }
+
   return (
     <div>
       <For each={Object.entries(object)}>
