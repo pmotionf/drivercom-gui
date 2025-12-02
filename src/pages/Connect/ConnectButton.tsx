@@ -93,7 +93,7 @@ export function ConnectButton(props: ConnectButtonProps) {
       positioning={{ placement: "bottom-start" }}
       onOpenChange={(e: { open: boolean }) => setIsOpen(e.open)}
     >
-      <Popover.Trigger maxWidth="min-content" gap="0" padding="0" {...props}>
+      <Popover.Trigger maxWidth="min-content" gap="" padding="0" {...props}>
         <Button
           variant="outline"
           borderColor="bg.disabled"
@@ -149,7 +149,8 @@ export function ConnectButton(props: ConnectButtonProps) {
           padding="0.5em"
           width="100%"
           maxHeight="11em"
-          minWidth={"16em"}
+          minWidth="16em"
+          maxWidth="20em"
         >
           <Stack height="2em" direction="row" width="100%" gap="0">
             <Text
@@ -161,7 +162,7 @@ export function ConnectButton(props: ConnectButtonProps) {
               textAlign="left"
               textOverflow="ellipsis"
               overflow="hidden"
-              whiteSpace="nowrap"
+              whiteSpace=""
               paddingRight="1em"
             >
               Ports
@@ -201,78 +202,86 @@ export function ConnectButton(props: ConnectButtonProps) {
             >
               <For each={portList()}>
                 {(port) => (
-                  <Tooltip.Root>
-                    <Tooltip.Trigger width="100%">
-                      <Button
-                        direction="row"
-                        width="100%"
-                        variant="ghost"
-                        fontWeight="medium"
-                        gap="0"
-                        padding="0"
-                        alignItems="left"
-                        onClick={() => {
-                          setPortId(port.id);
-                        }}
-                        paddingLeft="0.2em"
-                      >
+                  <Button
+                    style={{
+                      width: "100%",
+                      "flex-direction": "row",
+                      "font-weight": "normal",
+                      gap: "0",
+                      padding: "0",
+                      "align-items": "left",
+                    }}
+                    variant="ghost"
+                    onClick={() => {
+                      setPortId(port.id);
+                    }}
+                  >
+                    <Tooltip.Root>
+                      <Tooltip.Trigger width={`calc(75% - 3em)`}>
                         <Text
-                          width="11em"
-                          textAlign="left"
-                          textOverflow="ellipsis"
-                          overflow="hidden"
-                          whiteSpace="nowrap"
+                          style={{
+                            width: "100%",
+                            "text-align": "left",
+                            "text-overflow": "ellipsis",
+                            overflow: "hidden",
+                            "white-space": "nowrap",
+                            "padding-left": "0.5em",
+                          }}
                           size="sm"
-                          paddingRight="0.5em"
                         >
                           {port.id}
                         </Text>
-
+                      </Tooltip.Trigger>
+                      <Portal>
+                        <Tooltip.Positioner>
+                          <Tooltip.Content>{port.id}</Tooltip.Content>
+                        </Tooltip.Positioner>
+                      </Portal>
+                    </Tooltip.Root>
+                    <Tooltip.Root>
+                      <Tooltip.Trigger width={`25% `}>
                         <Text
-                          width="2.5em"
-                          textAlign="left"
-                          opacity="60%"
-                          textOverflow="ellipsis"
-                          overflow="hidden"
-                          whiteSpace="nowrap"
-                          size="sm"
-                          onClick={() => {
-                            setPortId(port.id);
+                          style={{
+                            width: "100%",
+                            "text-align": "left",
+                            "text-overflow": "ellipsis",
+                            overflow: "hidden",
+                            "white-space": "nowrap",
+                            "padding-left": "0.5em",
+                            opacity: "0.5",
                           }}
+                          size="sm"
                         >
                           {port.version}
                         </Text>
-                        <Show
-                          when={port.id === portId()}
-                          fallback={<div style={{ width: "2.5em" }} />}
-                        >
-                          <IconButton
-                            size="sm"
-                            width="2em"
-                            borderRadius="3em"
-                            onClick={() => {
-                              setTimeout(() => {
-                                setPortId("");
-                              }, 200);
-                            }}
-                            variant="ghost"
-                            margin="0"
-                            padding="0"
-                          >
-                            <IconX />
-                          </IconButton>
-                        </Show>
-                      </Button>
-                    </Tooltip.Trigger>
-                    <Tooltip.Positioner>
-                      <Tooltip.Content
-                        backgroundColor="bg.default"
-                        color="fg.default"
+                      </Tooltip.Trigger>
+                      <Portal>
+                        <Tooltip.Positioner>
+                          <Tooltip.Content>{port.version}</Tooltip.Content>
+                        </Tooltip.Positioner>
+                      </Portal>
+                    </Tooltip.Root>
+                    <Show
+                      when={port.id === portId()}
+                      fallback={<div style={{ width: "3em" }} />}
+                    >
+                      <IconButton
+                        size="sm"
+                        width="3em"
+                        borderRadius="3em"
+                        onClick={() => {
+                          setTimeout(() => {
+                            setPortId("");
+                          }, 200);
+                        }}
+                        variant="ghost"
+                        margin="0"
+                        padding="0"
                       >
-                        {port.id}
-                      </Tooltip.Content>
-                    </Tooltip.Positioner>
-                  </Tooltip.Root>
+                        <IconX />
+                      </IconButton>
+                    </Show>
+                  </Button>
                 )}
               </For>
             </div>
