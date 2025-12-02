@@ -46,7 +46,7 @@ function Configuration() {
     const newTab = {
       tab: {
         id: id,
-        tabName: "New File",
+        tabName: "New Tab",
       },
       tabPage: {
         configTabPage: {
