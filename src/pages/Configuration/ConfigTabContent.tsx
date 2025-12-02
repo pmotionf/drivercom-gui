@@ -94,16 +94,6 @@ export function ConfigTabContent() {
     );
   };
 
-  const setTabName = (tabName: string) => {
-    return tabContexts.get(configTabProps.key)![1](
-      "tabContext",
-      getTabIndex(),
-      "tab",
-      "tabName",
-      tabName,
-    );
-  };
-
   const getFilePath = () => {
     return tabContexts.get(configTabProps.key)![0].tabContext[getTabIndex()]
       .tabPage!.configTabPage!.filePath;
@@ -181,7 +171,7 @@ export function ConfigTabContent() {
   function setFormData(data: object, path: string) {
     setConfigForm(data);
     setFilePath(path);
-    setTabName(path.split("/").pop()!);
+    setFormName(path.split("/").pop()!);
     setRecentConfigFilePaths((prev) => {
       const newRecentFiles = prev.filter(
         (prevFilePath) => prevFilePath !== path,
@@ -203,15 +193,6 @@ export function ConfigTabContent() {
   }
 
   const [formName, setFormName] = createSignal<string>(getTabName());
-  createEffect(
-    on(
-      () => getTabName(),
-      () => {
-        setFormName(getTabName());
-      },
-      { defer: true },
-    ),
-  );
 
   let scrollContainer: HTMLDivElement | undefined;
   const scrollToWrongField = (scrollContainer: HTMLDivElement) => {
@@ -305,7 +286,7 @@ export function ConfigTabContent() {
                 }}
                 activationMode="dblclick"
                 onValueCommit={(e) => {
-                  setTabName(e.value);
+                  setFormName(e.value);
                 }}
                 fontWeight="bold"
                 fontSize="2xl"
@@ -340,7 +321,7 @@ export function ConfigTabContent() {
               const newEmptyFile = JSON5.parse(
                 JSON5.stringify(configFormFileFormat()),
               );
-              setTabName("New File");
+              setFormName("New File");
               setConfigForm(newEmptyFile);
               setFilePath(null);
               refresh();
@@ -454,7 +435,7 @@ export function ConfigTabContent() {
               setFilePath(null);
               try {
                 const config = await getConfigFromPort(portId());
-                setTabName(portId());
+                setFormName(portId());
                 setConfigForm(config);
                 refresh();
               } catch (e) {
