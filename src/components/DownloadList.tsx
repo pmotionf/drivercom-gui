@@ -13,6 +13,7 @@ import {
   pageKeys,
   Pages,
   panelContexts,
+  portCommands,
   setCsvFileDownloads,
   setPage,
   tabContexts,
@@ -35,6 +36,8 @@ export type DownloadStates = {
   filePath: string;
   status: DownloadStatus;
   port: string;
+  pid: number;
+  downloadProgress: number;
 };
 
 export const DownloadList = (props: JSX.HTMLAttributes<HTMLDivElement>) => {
@@ -225,11 +228,11 @@ export const DownloadList = (props: JSX.HTMLAttributes<HTMLDivElement>) => {
                           style={{ display: "flex", "align-items": "center" }}
                         >
                           <Text width="2.5em" textAlign="center" size="xs">
-                            {"1%"}
+                            {`${download.downloadProgress}%`}
                           </Text>
                           <div style={{ width: `calc(100% - 3em)` }}>
                             <Progress.Root
-                              value={null}
+                              value={download.downloadProgress}
                               orientation="horizontal"
                               style={{ width: `calc(100% - 2ems)` }}
                             >
@@ -273,10 +276,12 @@ export const DownloadList = (props: JSX.HTMLAttributes<HTMLDivElement>) => {
                           width="2em"
                           size="xs"
                           variant={"ghost"}
-                          onClick={() => {
-                            setCsvFileDownloads(
-                              csvFileDownloads.filter((_, i) => i !== index()),
-                            );
+                          onClick={async () => {
+                            if (portCommands.has(download.pid)) {
+                              const command = portCommands.get(download.pid);
+                              await command!.child.kill();
+                              portCommands.delete(download.pid);
+                            }
                           }}
                         >
                           <IconX />
