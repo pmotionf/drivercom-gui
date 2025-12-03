@@ -235,7 +235,11 @@ export function Logging() {
   const [logGetBtnLoading, setLogGetBtnLoading] = createSignal(false);
 
   // Save log.csv file && Display `Log Get` button loading while saving log.csv file
-  async function saveLogCsvFile(filePath: string, portId: string) {
+  async function saveLogCsvFile(
+    filePath: string,
+    portId: string,
+    cycle: number,
+  ) {
     const logGet = Command.sidecar("binaries/drivercom", [
       `--port`,
       portId,
@@ -247,6 +251,20 @@ export function Logging() {
     ]);
 
     let pid: number | null = null;
+    let logCycles = 0;
+
+    logGet.stdout.on("data", () => {
+      logCycles = logCycles + 1;
+      const index = csvFileDownloads.findIndex(
+        (download) => download.filePath === filePath,
+      );
+
+      setCsvFileDownloads(
+        index,
+        "downloadProgress",
+        Math.floor((logCycles / cycle) * 100),
+      );
+    });
 
     logGet.on("close", (data) => {
       if (data.code === null) {
@@ -306,6 +324,8 @@ export function Logging() {
       filePath: filePath,
       status: DownloadStatus.Progressing,
       port: portId,
+      pid: pid,
+      downloadProgress: 0,
     };
     setCsvFileDownloads([newDownload, ...csvFileDownloads]);
   }
@@ -789,7 +809,15 @@ export function Logging() {
                                 logForm.title,
                               );
                               setLogGetBtnLoading(true);
-                              await saveLogCsvFile(path, portId());
+                              await saveLogCsvFile(
+                                path,
+                                portId(),
+                                Number(
+                                  logForm.logConfig[
+                                    "cycles" as keyof typeof logForm.logConfig
+                                  ],
+                                ),
+                              );
                             } catch {
                               toaster.create({
                                 title: "Invalid File",
