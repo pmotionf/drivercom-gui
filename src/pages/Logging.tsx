@@ -812,11 +812,7 @@ export function Logging() {
                               await saveLogCsvFile(
                                 path,
                                 portId(),
-                                Number(
-                                  logForm.logConfig[
-                                    "cycles" as keyof typeof logForm.logConfig
-                                  ],
-                                ),
+                                cyclesCompleted()!,
                               );
                             } catch {
                               toaster.create({
