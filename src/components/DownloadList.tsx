@@ -237,11 +237,19 @@ export const DownloadList = (props: JSX.HTMLAttributes<HTMLDivElement>) => {
                               style={{ width: `calc(100% - 2ems)` }}
                             >
                               <Progress.Track
-                                class={css({ background: "bg.disabled" })}
+                                class={css({
+                                  background: "bg.disabled",
+                                  borderRadius: "0.2em",
+                                })}
                               >
                                 <Progress.Range
                                   style={{ "border-width": "3px" }}
-                                  class={css({ borderColor: "fg.default" })}
+                                  class={css({
+                                    borderColor: "fg.default",
+                                    transition: "width 0.5s ",
+                                    transitionTimingFunction: `cubic-bezier(1.00,0.00,0.00,1.00)`,
+                                    borderRadius: "0.2em",
+                                  })}
                                 />
                               </Progress.Track>
                             </Progress.Root>
