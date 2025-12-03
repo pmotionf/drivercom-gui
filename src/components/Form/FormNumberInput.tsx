@@ -8,6 +8,7 @@ import {
   IconLockOff,
 } from "@tabler/icons-solidjs";
 import { IconButton } from "../ui/icon-button";
+import { Tooltip } from "../ui/tooltip";
 
 export type FormNumberInputProps = {
   id: string;
@@ -107,52 +108,61 @@ export const FormNumberInput = (props: FormNumberInputProps) => {
           <Show
             when={lockStatus && lockStatusKey && lockStatus.has(lockStatusKey)}
           >
-            <IconButton
-              type="button"
-              variant="ghost"
-              size="sm"
-              borderRadius="3rem"
-              height="min-content"
-              paddingTop="0.2rem"
-              paddingBottom="0.2rem"
-              opacity={lockStatus!.get(lockStatusKey!)![0]() ? "1" : "0.5"}
-              onClick={() => {
-                if (!lockStatus) return;
-                lockStatus.get(lockStatusKey!)![1](
-                  !lockStatus.get(lockStatusKey!)![0](),
-                );
+            <Tooltip.Root>
+              <Tooltip.Trigger width="min-content">
+                <IconButton
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  borderRadius="3rem"
+                  height="min-content"
+                  paddingTop="0.2rem"
+                  paddingBottom="0.2rem"
+                  opacity={lockStatus!.get(lockStatusKey!)![0]() ? "1" : "0.5"}
+                  onClick={() => {
+                    if (!lockStatus) return;
+                    lockStatus.get(lockStatusKey!)![1](
+                      !lockStatus.get(lockStatusKey!)![0](),
+                    );
 
-                const split = lockStatusKey!.split(".");
-                const includingKeys = `${split[0]}.${split[1]}.`;
-                const mapValues = Array.from(lockStatus.entries())
-                  .filter((entries) => entries[0].includes(includingKeys))
-                  .map((entries) => entries[1][0]());
-                const parseValues = [...new Set(mapValues)];
-                if (parseValues.length !== 1) {
-                  lockStatus.get(includingKeys.slice(0, -1))![1](true);
-                } else {
-                  lockStatus.get(includingKeys.slice(0, -1))![1](
-                    parseValues[0],
-                  );
-                }
+                    const split = lockStatusKey!.split(".");
+                    const includingKeys = `${split[0]}.${split[1]}.`;
+                    const mapValues = Array.from(lockStatus.entries())
+                      .filter((entries) => entries[0].includes(includingKeys))
+                      .map((entries) => entries[1][0]());
+                    const parseValues = [...new Set(mapValues)];
+                    if (parseValues.length !== 1) {
+                      lockStatus.get(includingKeys.slice(0, -1))![1](true);
+                    } else {
+                      lockStatus.get(includingKeys.slice(0, -1))![1](
+                        parseValues[0],
+                      );
+                    }
 
-                if (props.linkStatus && lockStatus.get(lockStatusKey!)![0]()) {
-                  const [getLinkState, setLinkState] = props.linkStatus!.get(
-                    props.id.split(".")[1]!,
-                  )!;
-                  if (getLinkState()[0]) {
-                    setLinkState([false, getLinkState()[1]]);
-                  }
-                }
-              }}
-            >
-              <Show
-                when={lockStatus && lockStatus.get(lockStatusKey!)![0]()}
-                fallback={<IconLockOff />}
-              >
-                <IconLock />
-              </Show>
-            </IconButton>
+                    if (
+                      props.linkStatus &&
+                      lockStatus.get(lockStatusKey!)![0]()
+                    ) {
+                      const [getLinkState, setLinkState] =
+                        props.linkStatus!.get(props.id.split(".")[1]!)!;
+                      if (getLinkState()[0]) {
+                        setLinkState([false, getLinkState()[1]]);
+                      }
+                    }
+                  }}
+                >
+                  <Show
+                    when={lockStatus && lockStatus.get(lockStatusKey!)![0]()}
+                    fallback={<IconLockOff />}
+                  >
+                    <IconLock />
+                  </Show>
+                </IconButton>
+              </Tooltip.Trigger>
+              <Tooltip.Positioner>
+                <Tooltip.Content>{"Lock auto calculation"}</Tooltip.Content>
+              </Tooltip.Positioner>
+            </Tooltip.Root>
           </Show>
         </Stack>
         <Show when={!Number.isFinite(props.inputValue)}>

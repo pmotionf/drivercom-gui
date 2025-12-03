@@ -12,6 +12,7 @@ import {
   IconLink,
   IconLinkOff,
 } from "@tabler/icons-solidjs";
+import { Tooltip } from "../ui/tooltip";
 
 export type FormCollapsibleObjectProps = FormProps & {
   key: string;
@@ -69,41 +70,49 @@ export const FormCollapsibleObject = (props: FormCollapsibleObjectProps) => {
                 props.id.split(".").length === 2
               }
             >
-              <IconButton
-                size="sm"
-                variant={"ghost"}
-                width="1rem"
-                height="min-content"
-                paddingTop="0.2rem"
-                paddingBottom="0.2rem"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  const gainLockValues = Array.from(
-                    props.gainLockStatuses!.values(),
-                  );
-                  if (gainLockValues.some((val) => val)) {
-                    const gainLockKeys = Array.from(
-                      props.gainLockStatuses!.keys(),
-                    );
-                    gainLockKeys.forEach((key) => {
-                      props.gainLockStatuses!.get(key)![1](false);
-                    });
-                  }
+              <Tooltip.Root>
+                <Tooltip.Trigger width={"min-content"}>
+                  <IconButton
+                    size="sm"
+                    variant={"ghost"}
+                    width="1rem"
+                    height="min-content"
+                    paddingTop="0.2rem"
+                    paddingBottom="0.2rem"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      const gainLockValues = Array.from(
+                        props.gainLockStatuses!.values(),
+                      );
+                      if (gainLockValues.some((val) => val)) {
+                        const gainLockKeys = Array.from(
+                          props.gainLockStatuses!.keys(),
+                        );
+                        gainLockKeys.forEach((key) => {
+                          props.gainLockStatuses!.get(key)![1](false);
+                        });
+                      }
 
-                  const [getLinkState, setLinkState] = props.linkStates!.get(
-                    props.id.split(".")[1]!,
-                  )!;
-                  setLinkState([!getLinkState()[0], props.key]);
-                  props.onItemChange?.();
-                }}
-              >
-                <Show
-                  when={props.linkStates!.get(props.id.split(".")[1]!)![0]()[0]}
-                  fallback={<IconLinkOff style={{ opacity: "0.5" }} />}
-                >
-                  <IconLink />
-                </Show>
-              </IconButton>
+                      const [getLinkState, setLinkState] =
+                        props.linkStates!.get(props.id.split(".")[1]!)!;
+                      setLinkState([!getLinkState()[0], props.key]);
+                      props.onItemChange?.();
+                    }}
+                  >
+                    <Show
+                      when={
+                        props.linkStates!.get(props.id.split(".")[1]!)![0]()[0]
+                      }
+                      fallback={<IconLinkOff style={{ opacity: "0.5" }} />}
+                    >
+                      <IconLink />
+                    </Show>
+                  </IconButton>
+                </Tooltip.Trigger>
+                <Tooltip.Positioner>
+                  <Tooltip.Content>{"Link"}</Tooltip.Content>
+                </Tooltip.Positioner>
+              </Tooltip.Root>
             </Show>
             <Show
               when={
@@ -112,45 +121,53 @@ export const FormCollapsibleObject = (props: FormCollapsibleObjectProps) => {
                 Object.keys(value).includes("gain")
               }
             >
-              <IconButton
-                size="sm"
-                width="1rem"
-                height="min-content"
-                paddingTop="0.2rem"
-                paddingBottom="0.2rem"
-                variant="ghost"
-                opacity={
-                  props.gainLockStatuses!.get(`${key}.gain`)![0]() ? "1" : "0.5"
-                }
-                onClick={(e) => {
-                  e.stopPropagation();
-                  const lockStatus = props.gainLockStatuses!.get(
-                    `${key}.gain`,
-                  )![0]();
-                  const mapKeys = Array.from(
-                    props.gainLockStatuses!.keys(),
-                  ).filter((mapKey) => mapKey.includes(`${key}.gain`));
-                  mapKeys.forEach((mapKey) => {
-                    props.gainLockStatuses!.get(mapKey)![1](!lockStatus);
-                  });
-
-                  if (!lockStatus) {
-                    const [getLinkState, setLinkState] = props.linkStates!.get(
-                      props.id.split(".")[1]!,
-                    )!;
-                    if (getLinkState()[0]) {
-                      setLinkState([false, getLinkState()[1]]);
+              <Tooltip.Root>
+                <Tooltip.Trigger width="min-content">
+                  <IconButton
+                    size="sm"
+                    width="1rem"
+                    height="min-content"
+                    paddingTop="0.2rem"
+                    paddingBottom="0.2rem"
+                    variant="ghost"
+                    opacity={
+                      props.gainLockStatuses!.get(`${key}.gain`)![0]()
+                        ? "1"
+                        : "0.5"
                     }
-                  }
-                }}
-              >
-                <Show
-                  when={props.gainLockStatuses!.get(`${key}.gain`)![0]()}
-                  fallback={<IconLockOff />}
-                >
-                  <IconLock />
-                </Show>
-              </IconButton>
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      const lockStatus = props.gainLockStatuses!.get(
+                        `${key}.gain`,
+                      )![0]();
+                      const mapKeys = Array.from(
+                        props.gainLockStatuses!.keys(),
+                      ).filter((mapKey) => mapKey.includes(`${key}.gain`));
+                      mapKeys.forEach((mapKey) => {
+                        props.gainLockStatuses!.get(mapKey)![1](!lockStatus);
+                      });
+
+                      if (!lockStatus) {
+                        const [getLinkState, setLinkState] =
+                          props.linkStates!.get(props.id.split(".")[1]!)!;
+                        if (getLinkState()[0]) {
+                          setLinkState([false, getLinkState()[1]]);
+                        }
+                      }
+                    }}
+                  >
+                    <Show
+                      when={props.gainLockStatuses!.get(`${key}.gain`)![0]()}
+                      fallback={<IconLockOff />}
+                    >
+                      <IconLock />
+                    </Show>
+                  </IconButton>
+                </Tooltip.Trigger>
+                <Tooltip.Positioner>
+                  <Tooltip.Content>{"Lock all"}</Tooltip.Content>
+                </Tooltip.Positioner>
+              </Tooltip.Root>
             </Show>
           </Stack>
           <Accordion.ItemIndicator>
