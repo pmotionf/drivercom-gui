@@ -2,6 +2,8 @@ import {
   IconX,
   IconFileCheck,
   IconExclamationCircle,
+  IconPlayerStop,
+  IconProgressDown,
 } from "@tabler/icons-solidjs";
 import { IconButton } from "./ui/icon-button";
 import { createEffect, createSignal, For, JSX, on, Show } from "solid-js";
@@ -160,10 +162,31 @@ export const DownloadList = (props: JSX.HTMLAttributes<HTMLDivElement>) => {
                     padding="0.5em 0 0.5em 0.5em"
                     height="4em"
                     gap="0"
+                    onClick={() => {
+                      if (download.status === DownloadStatus.Success) {
+                        openNewTab(download.filePath);
+                        setCsvFileDownloads(
+                          csvFileDownloads.filter((_, i) => i !== index()),
+                        );
+                      }
+                    }}
                   >
+                    <Stack width="2em" marginRight={"0.5em"}>
+                      <Show when={download.status === DownloadStatus.Success}>
+                        <IconFileCheck />
+                      </Show>
+                      <Show when={download.status === DownloadStatus.Error}>
+                        <IconExclamationCircle />
+                      </Show>
+                      <Show
+                        when={download.status === DownloadStatus.Progressing}
+                      >
+                        <IconProgressDown />
+                      </Show>
+                    </Stack>
                     <Stack
                       gap="0"
-                      width={`calc(100% - 2.5em)`}
+                      width={`calc(100% - 5em)`}
                       onClick={() => {
                         if (download.status === DownloadStatus.Success) {
                           openNewTab(download.filePath);
@@ -227,7 +250,7 @@ export const DownloadList = (props: JSX.HTMLAttributes<HTMLDivElement>) => {
                         <div
                           style={{ display: "flex", "align-items": "center" }}
                         >
-                          <Text width="2.5em" textAlign="center" size="xs">
+                          <Text width="2.5em" size="xs">
                             {`${download.downloadProgress}%`}
                           </Text>
                           <div style={{ width: `calc(100% - 3em)` }}>
@@ -246,7 +269,7 @@ export const DownloadList = (props: JSX.HTMLAttributes<HTMLDivElement>) => {
                                   style={{ "border-width": "3px" }}
                                   class={css({
                                     borderColor: "fg.default",
-                                    transition: "width 0.5s ",
+                                    transition: "width 0.2s ",
                                     transitionTimingFunction: `cubic-bezier(1.00,0.00,0.00,1.00)`,
                                     borderRadius: "0.2em",
                                   })}
@@ -257,45 +280,41 @@ export const DownloadList = (props: JSX.HTMLAttributes<HTMLDivElement>) => {
                         </div>
                       </Show>
                     </Stack>
-                    <Stack
-                      width="2em"
-                      height="100%"
-                      paddingTop="1em"
-                      alignItems={"center"}
-                      onClick={() => {
-                        if (download.status === DownloadStatus.Success) {
-                          openNewTab(download.filePath);
-                          setCsvFileDownloads(
-                            csvFileDownloads.filter((_, i) => i !== index()),
-                          );
-                        }
-                      }}
-                    >
-                      <Show when={download.status === DownloadStatus.Success}>
-                        <IconFileCheck />
-                      </Show>
-                      <Show when={download.status === DownloadStatus.Error}>
-                        <IconExclamationCircle />
-                      </Show>
-                      <Show
-                        when={download.status === DownloadStatus.Progressing}
-                      >
+
+                    <Show
+                      when={download.status === DownloadStatus.Progressing}
+                      fallback={
                         <IconButton
-                          width="2em"
                           size="xs"
-                          variant={"ghost"}
-                          onClick={async () => {
-                            if (portCommands.has(download.pid)) {
-                              const command = portCommands.get(download.pid);
-                              await command!.child.kill();
-                              portCommands.delete(download.pid);
-                            }
+                          variant="ghost"
+                          width="2em"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setCsvFileDownloads((prev) =>
+                              prev.filter((_, i) => i !== index()),
+                            );
                           }}
                         >
                           <IconX />
                         </IconButton>
-                      </Show>
-                    </Stack>
+                      }
+                    >
+                      <IconButton
+                        width="2em"
+                        size="xs"
+                        variant={"ghost"}
+                        onClick={async (e) => {
+                          e.stopPropagation();
+                          if (portCommands.has(download.pid)) {
+                            const command = portCommands.get(download.pid);
+                            await command!.child.kill();
+                            portCommands.delete(download.pid);
+                          }
+                        }}
+                      >
+                        <IconPlayerStop />
+                      </IconButton>
+                    </Show>
                   </Button>
                 );
               }}
