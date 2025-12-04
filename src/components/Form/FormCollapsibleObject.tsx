@@ -102,6 +102,28 @@ export const FormCollapsibleObject = (props: FormCollapsibleObjectProps) => {
     }
   });
 
+  const isLockPairMatch = (): boolean => {
+    if (props.gainLockStatuses && props.gainLockStatuses.has(`${key}.gain`)) {
+      const gainLockKeys = Array.from(props.gainLockStatuses!.keys());
+      const sameFieldKeys = gainLockKeys
+        .filter((sameFieldKey) => sameFieldKey.includes(key))
+        .sort();
+      const sameFieldValues = sameFieldKeys.map((sameFieldKey) =>
+        props.gainLockStatuses!.get(sameFieldKey)![0](),
+      );
+
+      const otherFieldKeys = gainLockKeys
+        .filter((otherFieldKey) => !otherFieldKey.includes(key))
+        .sort();
+      const otherFieldValues = otherFieldKeys.map((otherFieldKey) =>
+        props.gainLockStatuses!.get(otherFieldKey)![0](),
+      );
+      return sameFieldValues.join() !== otherFieldValues.join();
+    } else {
+      return false;
+    }
+  };
+
   return (
     <Accordion.Root
       borderWidth="0"
@@ -141,6 +163,7 @@ export const FormCollapsibleObject = (props: FormCollapsibleObjectProps) => {
                     height="min-content"
                     paddingTop="0.2rem"
                     paddingBottom="0.2rem"
+                    disabled={isLockPairMatch()}
                     onClick={(e) => {
                       e.stopPropagation();
 
@@ -161,7 +184,11 @@ export const FormCollapsibleObject = (props: FormCollapsibleObjectProps) => {
                   </IconButton>
                 </Tooltip.Trigger>
                 <Tooltip.Positioner>
-                  <Tooltip.Content>{"Link"}</Tooltip.Content>
+                  <Tooltip.Content>
+                    {isLockPairMatch()
+                      ? "The Lock button is not paired"
+                      : "Link"}
+                  </Tooltip.Content>
                 </Tooltip.Positioner>
               </Tooltip.Root>
             </Show>
