@@ -732,6 +732,22 @@ export function Logging() {
                             try {
                               if (!checkAvailablePort(portId())) return;
                               await startLogging(portId());
+
+                              const csvFileDownloadIndex =
+                                csvFileDownloads.findIndex(
+                                  (download) => download.port === portId(),
+                                );
+                              if (
+                                csvFileDownloads[csvFileDownloadIndex]
+                                  .status === DownloadStatus.Stopped
+                              ) {
+                                setCsvFileDownloads(
+                                  csvFileDownloadIndex,
+                                  "status",
+                                  DownloadStatus.Cancel,
+                                );
+                              }
+
                               const logState =
                                 await getCurrentLogStatus(portId());
                               setCurrentLogStatus(logState.logStatus);
