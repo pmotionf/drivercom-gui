@@ -121,34 +121,8 @@ export const FormNumberInput = (props: FormNumberInputProps) => {
                   opacity={lockStatus!.get(lockStatusKey!)![0]() ? "1" : "0.5"}
                   onClick={() => {
                     if (!lockStatus) return;
-                    lockStatus.get(lockStatusKey!)![1](
-                      !lockStatus.get(lockStatusKey!)![0](),
-                    );
-
-                    const split = lockStatusKey!.split(".");
-                    const includingKeys = `${split[0]}.${split[1]}.`;
-                    const mapValues = Array.from(lockStatus.entries())
-                      .filter((entries) => entries[0].includes(includingKeys))
-                      .map((entries) => entries[1][0]());
-                    const parseValues = [...new Set(mapValues)];
-                    if (parseValues.length !== 1) {
-                      lockStatus.get(includingKeys.slice(0, -1))![1](true);
-                    } else {
-                      lockStatus.get(includingKeys.slice(0, -1))![1](
-                        parseValues[0],
-                      );
-                    }
-
-                    if (
-                      props.linkStatus &&
-                      lockStatus.get(lockStatusKey!)![0]()
-                    ) {
-                      const [getLinkState, setLinkState] =
-                        props.linkStatus!.get(props.id.split(".")[1]!)!;
-                      if (getLinkState()[0]) {
-                        setLinkState([false, getLinkState()[1]]);
-                      }
-                    }
+                    const newStatus = !lockStatus.get(lockStatusKey!)![0]();
+                    lockStatus.get(lockStatusKey!)![1](newStatus);
                   }}
                 >
                   <Show
