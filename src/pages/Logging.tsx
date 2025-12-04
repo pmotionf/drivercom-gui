@@ -739,7 +739,7 @@ export function Logging() {
                                 );
                               if (
                                 csvFileDownloads[csvFileDownloadIndex]
-                                  .status === DownloadStatus.Stopped
+                                  .status === DownloadStatus.Paused
                               ) {
                                 setCsvFileDownloads(
                                   csvFileDownloadIndex,

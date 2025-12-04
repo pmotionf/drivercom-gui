@@ -2,12 +2,12 @@ import {
   IconX,
   IconFileCheck,
   IconExclamationCircle,
-  IconPlayerStop,
   IconProgressDown,
   IconRefreshAlert,
   IconPlayerPlay,
   IconFolderPause,
   IconFolderCancel,
+  IconPlayerPause,
 } from "@tabler/icons-solidjs";
 import { IconButton } from "./ui/icon-button";
 import { createEffect, createSignal, For, JSX, on, Show } from "solid-js";
@@ -35,7 +35,7 @@ import { Command } from "@tauri-apps/plugin-shell";
 
 export enum DownloadStatus {
   Progressing,
-  Stopped,
+  Paused,
   Cancel,
   Success,
   Error,
@@ -331,7 +331,7 @@ export const DownloadList = (props: JSX.HTMLAttributes<HTMLDivElement>) => {
                       >
                         <IconProgressDown />
                       </Show>
-                      <Show when={download.status === DownloadStatus.Stopped}>
+                      <Show when={download.status === DownloadStatus.Paused}>
                         <IconFolderPause />
                       </Show>
                       <Show when={download.status === DownloadStatus.Cancel}>
@@ -402,7 +402,7 @@ export const DownloadList = (props: JSX.HTMLAttributes<HTMLDivElement>) => {
                           {`Download failed`}
                         </Text>
                       </Show>
-                      <Show when={download.status === DownloadStatus.Stopped}>
+                      <Show when={download.status === DownloadStatus.Paused}>
                         <Text
                           height="min-content"
                           size="sm"
@@ -491,11 +491,11 @@ export const DownloadList = (props: JSX.HTMLAttributes<HTMLDivElement>) => {
                             setCsvFileDownloads(
                               index(),
                               "status",
-                              DownloadStatus.Stopped,
+                              DownloadStatus.Paused,
                             );
                           }}
                         >
-                          <IconPlayerStop />
+                          <IconPlayerPause />
                         </IconButton>
                       </Show>
 
@@ -504,7 +504,7 @@ export const DownloadList = (props: JSX.HTMLAttributes<HTMLDivElement>) => {
                           csvFileDownloads.findIndex(
                             (child) => child.port === download.port,
                           ) === index() &&
-                          (download.status === DownloadStatus.Stopped ||
+                          (download.status === DownloadStatus.Paused ||
                             download.status === DownloadStatus.Error)
                         }
                       >
@@ -527,7 +527,7 @@ export const DownloadList = (props: JSX.HTMLAttributes<HTMLDivElement>) => {
                           }}
                         >
                           <Show
-                            when={download.status === DownloadStatus.Stopped}
+                            when={download.status === DownloadStatus.Paused}
                             fallback={<IconRefreshAlert />}
                           >
                             <IconPlayerPlay />
