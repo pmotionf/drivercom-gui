@@ -276,18 +276,24 @@ export function Logging() {
         const index = csvFileDownloads.findIndex(
           (download) => download.filePath === filePath,
         );
-        setCsvFileDownloads(index, "status", DownloadStatus.Error);
+        if (csvFileDownloads[index].status === DownloadStatus.Progressing) {
+          setCsvFileDownloads(index, "status", DownloadStatus.Error);
+        }
       } else {
         if (data.code == 0) {
           const index = csvFileDownloads.findIndex(
             (download) => download.filePath === filePath,
           );
-          setCsvFileDownloads(index, "status", DownloadStatus.Success);
+          if (csvFileDownloads[index].status === DownloadStatus.Progressing) {
+            setCsvFileDownloads(index, "status", DownloadStatus.Success);
+          }
         } else {
           const index = csvFileDownloads.findIndex(
             (download) => download.filePath === filePath,
           );
-          setCsvFileDownloads(index, "status", DownloadStatus.Error);
+          if (csvFileDownloads[index].status === DownloadStatus.Progressing) {
+            setCsvFileDownloads(index, "status", DownloadStatus.Error);
+          }
         }
       }
 
@@ -308,7 +314,9 @@ export function Logging() {
       const index = csvFileDownloads.findIndex(
         (download) => download.filePath === filePath,
       );
-      setCsvFileDownloads(index, "status", DownloadStatus.Error);
+      if (csvFileDownloads[index].status === DownloadStatus.Progressing) {
+        setCsvFileDownloads(index, "status", DownloadStatus.Error);
+      }
 
       logGet.removeAllListeners();
       if (pid) {
