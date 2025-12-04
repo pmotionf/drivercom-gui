@@ -4,6 +4,9 @@ import {
   IconExclamationCircle,
   IconPlayerStop,
   IconProgressDown,
+  IconRefreshAlert,
+  IconPlayerPlay,
+  IconFolderPause,
 } from "@tabler/icons-solidjs";
 import { IconButton } from "./ui/icon-button";
 import { createEffect, createSignal, For, JSX, on, Show } from "solid-js";
@@ -30,6 +33,7 @@ import { Progress } from "@ark-ui/solid/progress";
 
 export enum DownloadStatus {
   Progressing,
+  Stopped,
   Success,
   Error,
 }
@@ -183,10 +187,13 @@ export const DownloadList = (props: JSX.HTMLAttributes<HTMLDivElement>) => {
                       >
                         <IconProgressDown />
                       </Show>
+                      <Show when={download.status === DownloadStatus.Stopped}>
+                        <IconFolderPause />
+                      </Show>
                     </Stack>
                     <Stack
                       gap="0"
-                      width={`calc(100% - 5em)`}
+                      width={`calc(100% - 7.5em)`}
                       onClick={() => {
                         if (download.status === DownloadStatus.Success) {
                           openNewTab(download.filePath);
@@ -241,7 +248,17 @@ export const DownloadList = (props: JSX.HTMLAttributes<HTMLDivElement>) => {
                           color="fg.muted"
                           fontWeight="medium"
                         >
-                          {"Download failed."}
+                          {`Download failed`}
+                        </Text>
+                      </Show>
+                      <Show when={download.status === DownloadStatus.Stopped}>
+                        <Text
+                          height="min-content"
+                          size="sm"
+                          color="fg.muted"
+                          fontWeight="medium"
+                        >
+                          {`Downloaded until ${download.downloadProgress}%`}
                         </Text>
                       </Show>
                       <Show
@@ -280,41 +297,66 @@ export const DownloadList = (props: JSX.HTMLAttributes<HTMLDivElement>) => {
                         </div>
                       </Show>
                     </Stack>
-
-                    <Show
-                      when={download.status === DownloadStatus.Progressing}
-                      fallback={
+                    <Stack width="5em" direction={"row-reverse"} gap="0">
+                      <Show
+                        when={download.status === DownloadStatus.Progressing}
+                        fallback={
+                          <IconButton
+                            size="xs"
+                            variant="ghost"
+                            width="2em"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setCsvFileDownloads((prev) =>
+                                prev.filter((_, i) => i !== index()),
+                              );
+                            }}
+                          >
+                            <IconX />
+                          </IconButton>
+                        }
+                      >
                         <IconButton
-                          size="xs"
-                          variant="ghost"
                           width="2em"
-                          onClick={(e) => {
+                          size="xs"
+                          variant={"ghost"}
+                          onClick={async (e) => {
                             e.stopPropagation();
-                            setCsvFileDownloads((prev) =>
-                              prev.filter((_, i) => i !== index()),
+                            if (portCommands.has(download.pid)) {
+                              const command = portCommands.get(download.pid);
+                              await command!.child.kill();
+                              portCommands.delete(download.pid);
+                            }
+                            setCsvFileDownloads(
+                              index(),
+                              "status",
+                              DownloadStatus.Stopped,
                             );
                           }}
                         >
-                          <IconX />
+                          <IconPlayerStop />
                         </IconButton>
-                      }
-                    >
-                      <IconButton
-                        width="2em"
-                        size="xs"
-                        variant={"ghost"}
-                        onClick={async (e) => {
-                          e.stopPropagation();
-                          if (portCommands.has(download.pid)) {
-                            const command = portCommands.get(download.pid);
-                            await command!.child.kill();
-                            portCommands.delete(download.pid);
-                          }
-                        }}
+                      </Show>
+
+                      <Show
+                        when={
+                          csvFileDownloads.findIndex(
+                            (child) => child.port === download.port,
+                          ) === index() &&
+                          download.status !== DownloadStatus.Progressing &&
+                          download.status !== DownloadStatus.Success
+                        }
                       >
-                        <IconPlayerStop />
-                      </IconButton>
-                    </Show>
+                        <IconButton size="sm" variant="ghost" width="2em">
+                          <Show
+                            when={download.status === DownloadStatus.Stopped}
+                            fallback={<IconRefreshAlert />}
+                          >
+                            <IconPlayerPlay />
+                          </Show>
+                        </IconButton>
+                      </Show>
+                    </Stack>
                   </Button>
                 );
               }}
