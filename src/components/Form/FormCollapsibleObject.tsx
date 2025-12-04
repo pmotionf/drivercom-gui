@@ -2,9 +2,9 @@ import { Accordion } from "../ui/accordion";
 import { Text } from "../ui/text";
 import { Stack } from "styled-system/jsx";
 import { IconButton } from "../ui/icon-button";
-import { onMount, Show } from "solid-js";
+import { on, onMount, Show } from "solid-js";
 import { Form, FormProps } from "../Form";
-import { createSignal } from "solid-js";
+import { createSignal, createEffect } from "solid-js";
 import {
   IconLock,
   IconLockOff,
@@ -37,6 +37,68 @@ export const FormCollapsibleObject = (props: FormCollapsibleObjectProps) => {
       if (entries.some((entry) => entry[1][0]())) {
         props.gainLockStatuses!.get(`${key}.gain`)![1](true);
       }
+    }
+
+    if (props.gainLockStatuses && props.gainLockStatuses.get(`${key}.gain`)) {
+      const lockKeys = Array.from(props.gainLockStatuses.keys()).filter(
+        (lockKey) => lockKey.includes(`${key}.gain.`),
+      );
+      lockKeys.forEach((lockKey) => {
+        if (props.gainLockStatuses!.has(lockKey)) {
+          const getLockStatus = props.gainLockStatuses!.get(lockKey)![0];
+          createEffect(
+            on(
+              () => getLockStatus(),
+              () => {
+                if (!props.gainLockStatuses!.has(`${key}.gain`)) {
+                  props.gainLockStatuses!.set(
+                    `${key}.gain`,
+                    createSignal<boolean>(false),
+                  );
+                }
+
+                const checkLockStates = lockKeys.map((lockKey) =>
+                  props.gainLockStatuses!.get(lockKey)![0](),
+                );
+                if (checkLockStates.includes(true)) {
+                  props.gainLockStatuses!.get(`${key}.gain`)![1](true);
+                } else {
+                  props.gainLockStatuses!.get(`${key}.gain`)![1](false);
+                }
+
+                if (
+                  props.linkStates &&
+                  props.linkStates.has(props.id.split(".")[1]!)
+                ) {
+                  const linkState = props.linkStates.get(
+                    props.id.split(".")[1]!,
+                  )![0];
+                  if (linkState()[0]) {
+                    const lockPairKey = Array.from(
+                      props.gainLockStatuses!.keys(),
+                    )
+                      .filter(
+                        (pairKey) =>
+                          pairKey !== lockKey &&
+                          pairKey.slice(
+                            pairKey.indexOf("."),
+                            pairKey.length,
+                          ) ===
+                            lockKey.slice(lockKey.indexOf("."), lockKey.length),
+                      )
+                      .join("");
+
+                    props.gainLockStatuses!.get(lockPairKey)![1](
+                      getLockStatus(),
+                    );
+                  }
+                }
+              },
+              { defer: true },
+            ),
+          );
+        }
+      });
     }
   });
 
@@ -81,17 +143,6 @@ export const FormCollapsibleObject = (props: FormCollapsibleObjectProps) => {
                     paddingBottom="0.2rem"
                     onClick={(e) => {
                       e.stopPropagation();
-                      const gainLockValues = Array.from(
-                        props.gainLockStatuses!.values(),
-                      );
-                      if (gainLockValues.some((val) => val)) {
-                        const gainLockKeys = Array.from(
-                          props.gainLockStatuses!.keys(),
-                        );
-                        gainLockKeys.forEach((key) => {
-                          props.gainLockStatuses!.get(key)![1](false);
-                        });
-                      }
 
                       const [getLinkState, setLinkState] =
                         props.linkStates!.get(props.id.split(".")[1]!)!;
@@ -146,14 +197,6 @@ export const FormCollapsibleObject = (props: FormCollapsibleObjectProps) => {
                       mapKeys.forEach((mapKey) => {
                         props.gainLockStatuses!.get(mapKey)![1](!lockStatus);
                       });
-
-                      if (!lockStatus) {
-                        const [getLinkState, setLinkState] =
-                          props.linkStates!.get(props.id.split(".")[1]!)!;
-                        if (getLinkState()[0]) {
-                          setLinkState([false, getLinkState()[1]]);
-                        }
-                      }
                     }}
                   >
                     <Show
