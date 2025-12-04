@@ -30,6 +30,7 @@ import { TabContext } from "./TabList";
 import { TabListContext } from "./TabList";
 import { css } from "styled-system/css";
 import { Progress } from "@ark-ui/solid/progress";
+import { Command } from "@tauri-apps/plugin-shell";
 
 export enum DownloadStatus {
   Progressing,
@@ -115,6 +116,147 @@ export const DownloadList = (props: JSX.HTMLAttributes<HTMLDivElement>) => {
       }, 200);
     }
   };
+
+  async function getCurrentLogStatus(portId: string): Promise<{
+    logStatus: string;
+    cycle: number;
+  }> {
+    const logStatus = Command.sidecar("binaries/drivercom", [
+      `--port`,
+      portId,
+      `log.status`,
+    ]);
+
+    let stdout = "";
+    logStatus.stdout.on("data", (data) => {
+      stdout = stdout + data;
+    });
+
+    let stderr = "";
+    logStatus.stderr.on("data", (data) => {
+      stderr = stderr + data;
+    });
+
+    const child = await logStatus.spawn();
+    const pid = child.pid;
+    portCommands.set(pid, { port: portId, child: child });
+
+    return new Promise((resolve, reject) => {
+      logStatus.on("close", async () => {
+        portCommands.delete(pid);
+        if (stdout.length < 1) return reject("Invalid log status.");
+        const parseOutput = stdout.replaceAll(" ", "").replaceAll("\n", "");
+        const currentLogStatusList = parseOutput.split(",").map((value) => {
+          return value.split(":");
+        });
+
+        const currentCompletedLogCycle = Number(currentLogStatusList[1][1]);
+        const currentLogState = currentLogStatusList[0][1];
+
+        if (!currentLogState || isNaN(currentCompletedLogCycle))
+          return reject("Invalid log status.");
+        return resolve({
+          logStatus: currentLogState,
+          cycle: currentCompletedLogCycle,
+        });
+      });
+
+      logStatus.on("error", async () => {
+        portCommands.delete(pid);
+        return reject(stderr);
+      });
+    });
+  }
+
+  async function resumeLogCsvFile(
+    filePath: string,
+    portId: string,
+    cycle: number,
+    startPercentage: number,
+  ) {
+    const logGet = Command.sidecar("binaries/drivercom", [
+      `--port`,
+      portId,
+      `--timeout`,
+      `10000`,
+      `log.get`,
+      `-f`,
+      filePath,
+      `--resume`,
+    ]);
+
+    let pid: number | null = null;
+    let logCycles = Math.floor((startPercentage / 100) * cycle);
+
+    logGet.stdout.on("data", () => {
+      logCycles = logCycles + 1;
+      const index = csvFileDownloads.findIndex(
+        (download) => download.filePath === filePath,
+      );
+
+      setCsvFileDownloads(
+        index,
+        "downloadProgress",
+        Math.floor((logCycles / cycle) * 100),
+      );
+    });
+
+    logGet.on("close", (data) => {
+      if (data.code === null) {
+        const index = csvFileDownloads.findIndex(
+          (download) => download.filePath === filePath,
+        );
+        if (csvFileDownloads[index].status === DownloadStatus.Progressing) {
+          setCsvFileDownloads(index, "status", DownloadStatus.Error);
+        }
+      } else {
+        if (data.code == 0) {
+          const index = csvFileDownloads.findIndex(
+            (download) => download.filePath === filePath,
+          );
+          if (csvFileDownloads[index].status === DownloadStatus.Progressing) {
+            setCsvFileDownloads(index, "status", DownloadStatus.Success);
+          }
+        } else {
+          const index = csvFileDownloads.findIndex(
+            (download) => download.filePath === filePath,
+          );
+          if (csvFileDownloads[index].status === DownloadStatus.Progressing) {
+            setCsvFileDownloads(index, "status", DownloadStatus.Error);
+          }
+        }
+      }
+
+      logGet.removeAllListeners();
+      if (pid) {
+        portCommands.delete(pid);
+      }
+    });
+
+    logGet.on("error", async () => {
+      const index = csvFileDownloads.findIndex(
+        (download) => download.filePath === filePath,
+      );
+      if (csvFileDownloads[index].status === DownloadStatus.Progressing) {
+        setCsvFileDownloads(index, "status", DownloadStatus.Error);
+      }
+
+      logGet.removeAllListeners();
+      if (pid) {
+        portCommands.delete(pid);
+      }
+    });
+
+    const child = await logGet.spawn();
+    pid = child.pid;
+    portCommands.set(pid, { port: portId, child: child });
+    const index = csvFileDownloads.findIndex(
+      (download) => download.filePath === filePath,
+    );
+    setCsvFileDownloads(index, "status", DownloadStatus.Progressing);
+    setCsvFileDownloads(index, "pid", pid);
+  }
+
   return (
     <Show when={openPopover()}>
       <div {...props}>
@@ -193,7 +335,11 @@ export const DownloadList = (props: JSX.HTMLAttributes<HTMLDivElement>) => {
                     </Stack>
                     <Stack
                       gap="0"
-                      width={`calc(100% - 7.5em)`}
+                      width={
+                        download.status === DownloadStatus.Success
+                          ? `calc(100% - 5em)`
+                          : `calc(100% - 7.5em)`
+                      }
                       onClick={() => {
                         if (download.status === DownloadStatus.Success) {
                           openNewTab(download.filePath);
@@ -347,7 +493,24 @@ export const DownloadList = (props: JSX.HTMLAttributes<HTMLDivElement>) => {
                           download.status !== DownloadStatus.Success
                         }
                       >
-                        <IconButton size="sm" variant="ghost" width="2em">
+                        <IconButton
+                          size="sm"
+                          variant="ghost"
+                          width="2em"
+                          onClick={async () => {
+                            const logStatus = await getCurrentLogStatus(
+                              download.port,
+                            );
+                            if (logStatus.logStatus === ".stopped") {
+                              await resumeLogCsvFile(
+                                download.filePath,
+                                download.port,
+                                logStatus.cycle,
+                                download.downloadProgress,
+                              );
+                            }
+                          }}
+                        >
                           <Show
                             when={download.status === DownloadStatus.Stopped}
                             fallback={<IconRefreshAlert />}
