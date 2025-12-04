@@ -7,6 +7,7 @@ import {
   IconRefreshAlert,
   IconPlayerPlay,
   IconFolderPause,
+  IconFolderCancel,
 } from "@tabler/icons-solidjs";
 import { IconButton } from "./ui/icon-button";
 import { createEffect, createSignal, For, JSX, on, Show } from "solid-js";
@@ -35,6 +36,7 @@ import { Command } from "@tauri-apps/plugin-shell";
 export enum DownloadStatus {
   Progressing,
   Stopped,
+  Cancel,
   Success,
   Error,
 }
@@ -332,6 +334,9 @@ export const DownloadList = (props: JSX.HTMLAttributes<HTMLDivElement>) => {
                       <Show when={download.status === DownloadStatus.Stopped}>
                         <IconFolderPause />
                       </Show>
+                      <Show when={download.status === DownloadStatus.Cancel}>
+                        <IconFolderCancel />
+                      </Show>
                     </Stack>
                     <Stack
                       gap="0"
@@ -405,6 +410,16 @@ export const DownloadList = (props: JSX.HTMLAttributes<HTMLDivElement>) => {
                           fontWeight="medium"
                         >
                           {`Downloaded until ${download.downloadProgress}%`}
+                        </Text>
+                      </Show>
+                      <Show when={download.status === DownloadStatus.Cancel}>
+                        <Text
+                          height="min-content"
+                          size="sm"
+                          color="fg.muted"
+                          fontWeight="medium"
+                        >
+                          {`Download canceled`}
                         </Text>
                       </Show>
                       <Show
@@ -489,8 +504,8 @@ export const DownloadList = (props: JSX.HTMLAttributes<HTMLDivElement>) => {
                           csvFileDownloads.findIndex(
                             (child) => child.port === download.port,
                           ) === index() &&
-                          download.status !== DownloadStatus.Progressing &&
-                          download.status !== DownloadStatus.Success
+                          (download.status === DownloadStatus.Stopped ||
+                            download.status === DownloadStatus.Error)
                         }
                       >
                         <IconButton
