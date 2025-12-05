@@ -32,6 +32,7 @@ export type ConfigTabPage = {
   configAccordionStatuses?: AccordionStates;
   configLinkedStatuses?: LinkStates;
   configGainLockStatuses?: GainLockStates;
+  formName?: string;
 };
 
 export function ConfigTabContent() {
@@ -68,9 +69,20 @@ export function ConfigTabContent() {
     );
   };
 
-  const getTabName = () => {
+  const getFormName = () => {
     return tabContexts.get(configTabProps.key)![0].tabContext[getTabIndex()]
-      .tab!.tabName;
+      .tabPage!.configTabPage!.formName!;
+  };
+
+  const setFormName = (newFormName: string) => {
+    return tabContexts.get(configTabProps.key)![1](
+      "tabContext",
+      getTabIndex(),
+      "tabPage",
+      "configTabPage",
+      "formName",
+      newFormName,
+    );
   };
 
   const getTabId = () => {
@@ -192,8 +204,6 @@ export function ConfigTabContent() {
     return output.stderr;
   }
 
-  const [formName, setFormName] = createSignal<string>(getTabName());
-
   let scrollContainer: HTMLDivElement | undefined;
   const scrollToWrongField = (scrollContainer: HTMLDivElement) => {
     const top = Array.from(
@@ -280,7 +290,7 @@ export function ConfigTabContent() {
             <Tooltip.Trigger width={`calc(100% - 9rem)`}>
               <Editable.Root
                 placeholder="File name"
-                value={formName()}
+                value={getFormName()}
                 onValueChange={(e) => {
                   setFormName(e.value);
                 }}
@@ -406,10 +416,18 @@ export function ConfigTabContent() {
             }}
             onSaveFile={async () => {
               try {
+                const config = getConfigForm();
                 const path = await fileHandler.saveFileDialog(
                   "json5",
                   getFilePath()!,
-                  getTabName(),
+                  getFormName(),
+                  typeof config["id" as keyof typeof config] === "number" &&
+                    config["id" as keyof typeof config] > 0 &&
+                    typeof config["station" as keyof typeof config] ===
+                      "number" &&
+                    config["station" as keyof typeof config] > 0
+                    ? `Driver ${config["id" as keyof typeof config]} Station ${config["station" as keyof typeof config]}`
+                    : undefined,
                 );
                 await fileHandler.writeFile(
                   path,
