@@ -52,6 +52,7 @@ import { Text } from "~/components/ui/text.tsx";
 
 import { Command } from "@tauri-apps/plugin-shell";
 import { DownloadList } from "./components/DownloadList.tsx";
+import JSON5 from "json5";
 
 type PageMeta = {
   icon: ValidComponent;
@@ -98,15 +99,15 @@ function App(props: RouteSectionProps) {
       "log.config.empty",
     ]);
     const output = await logConfig.execute();
-    const logFormatToJson = JSON.parse(output.stdout);
+    const logFormatToJson = JSON5.parse(output.stdout);
     setLogFormFileFormat(logFormatToJson);
-    setLogForm("logConfig", JSON.parse(JSON.stringify(logFormFileFormat())));
+    setLogForm("logConfig", JSON5.parse(JSON5.stringify(logFormFileFormat())));
   }
 
   async function buildEmptyDriverConfiguration() {
     const configEmpty = Command.sidecar("binaries/drivercom", ["config.empty"]);
     const output = await configEmpty.execute();
-    const configFormatToJson = JSON.parse(output.stdout);
+    const configFormatToJson = JSON5.parse(output.stdout);
     setConfigFormFileFormat(configFormatToJson);
   }
 
