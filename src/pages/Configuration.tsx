@@ -55,6 +55,7 @@ function Configuration() {
           configAccordionStatuses: accordionStatuses,
           configLinkedStatuses: linkedStatuses,
           configGainLockStatuses: gainLockStatuses,
+          formName: "New File",
         },
       },
     } as TabContext;
