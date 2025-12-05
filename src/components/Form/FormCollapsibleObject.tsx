@@ -105,6 +105,11 @@ export const FormCollapsibleObject = (props: FormCollapsibleObjectProps) => {
   const isLockPairMatch = (): boolean => {
     if (props.gainLockStatuses && props.gainLockStatuses.has(`${key}.gain`)) {
       const gainLockKeys = Array.from(props.gainLockStatuses!.keys());
+      const otherFieldKeys = gainLockKeys
+        .filter((otherFieldKey) => !otherFieldKey.includes(key))
+        .sort();
+      if (gainLockKeys.length !== otherFieldKeys.length) return false;
+
       const sameFieldKeys = gainLockKeys
         .filter((sameFieldKey) => sameFieldKey.includes(key))
         .sort();
@@ -112,9 +117,6 @@ export const FormCollapsibleObject = (props: FormCollapsibleObjectProps) => {
         props.gainLockStatuses!.get(sameFieldKey)![0](),
       );
 
-      const otherFieldKeys = gainLockKeys
-        .filter((otherFieldKey) => !otherFieldKey.includes(key))
-        .sort();
       const otherFieldValues = otherFieldKeys.map((otherFieldKey) =>
         props.gainLockStatuses!.get(otherFieldKey)![0](),
       );
