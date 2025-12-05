@@ -738,6 +738,7 @@ export function Logging() {
                                   (download) => download.port === portId(),
                                 );
                               if (
+                                csvFileDownloadIndex > -1 &&
                                 csvFileDownloads[csvFileDownloadIndex]
                                   .status === DownloadStatus.Paused
                               ) {
