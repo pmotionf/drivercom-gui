@@ -51,11 +51,18 @@ export class FileHandler implements IFileHandler {
     defaultExtension: string,
     filePath: string,
     formTitle?: string,
+    suggestName?: string,
   ): Promise<string | never> {
     let dialogPath: string = filePath;
     if (formTitle) {
       dialogPath = this.saveDialogPath(filePath, formTitle);
     }
+    if (suggestName) {
+      if (!formTitle || formTitle.endsWith(defaultExtension)) {
+        dialogPath = this.saveDialogPath(filePath, suggestName);
+      }
+    }
+
     const path = await save({
       defaultPath:
         dialogPath!.split(".").pop()!.toLowerCase() ===
