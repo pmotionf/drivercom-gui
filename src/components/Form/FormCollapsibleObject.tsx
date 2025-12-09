@@ -11,11 +11,13 @@ import {
   IconChevronDown,
   IconLink,
   IconLinkOff,
+  IconHelp,
 } from "@tabler/icons-solidjs";
 import { Tooltip } from "../ui/tooltip";
 
 export type FormCollapsibleObjectProps = FormProps & {
   key: string;
+  triggerDescription?: object;
 };
 
 export const FormCollapsibleObject = (props: FormCollapsibleObjectProps) => {
@@ -139,7 +141,12 @@ export const FormCollapsibleObject = (props: FormCollapsibleObjectProps) => {
       <Accordion.Item value={itemId} padding="0 0.5em 0 0.5em">
         <Accordion.ItemTrigger>
           <Stack direction="row" gap="0" alignItems={"center"}>
-            <Text fontWeight="bold" color="fg.subtle" size="sm">
+            <Text
+              fontWeight="bold"
+              color="fg.default"
+              size="sm"
+              marginRight="0.5em"
+            >
               {`${key[0].toUpperCase()}${Array.from(key.slice(1, key.length))
                 .map((char, index) => {
                   if (key[index] === "_") {
@@ -150,6 +157,22 @@ export const FormCollapsibleObject = (props: FormCollapsibleObjectProps) => {
                 .toString()
                 .replaceAll(",", "")}`}
             </Text>
+            <Show when={props.triggerDescription}>
+              <Tooltip.Root>
+                <Tooltip.Trigger>
+                  <IconHelp size="1em" opacity={0.5} />
+                </Tooltip.Trigger>
+                <Tooltip.Positioner>
+                  <Tooltip.Content>
+                    {
+                      props.triggerDescription![
+                        "description" as keyof typeof props.triggerDescription
+                      ]
+                    }
+                  </Tooltip.Content>
+                </Tooltip.Positioner>
+              </Tooltip.Root>
+            </Show>
             <Show
               when={
                 props.linkStates &&
@@ -258,6 +281,7 @@ export const FormCollapsibleObject = (props: FormCollapsibleObjectProps) => {
             object={value}
             id={`${props.id}.${key}`}
             style={{ "padding-left": "1rem" }}
+            description={props.description}
             onItemChange={() => {
               props.onItemChange?.();
             }}

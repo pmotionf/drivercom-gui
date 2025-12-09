@@ -14,6 +14,7 @@ import { FormCheckBox } from "./Form/FormCheckBox";
 
 export type ConfigFormProps = JSX.HTMLAttributes<HTMLFormElement> & {
   id: string;
+  description?: object;
   focusedTab?: string;
   onFocustTabChange?: (tabId: string) => void;
   config: object;
@@ -331,6 +332,15 @@ export function ConfigForm(props: ConfigFormProps) {
     return p;
   }
 
+  const checkDesc = (key: string) => {
+    const description = props.description;
+    if (!description) return false;
+    const descKeys = Array.from(Object.keys(description));
+    if (descKeys.includes(key)) {
+      return true;
+    } else return false;
+  };
+
   return (
     <Tabs.Root
       value={props.focusedTab ? props.focusedTab : props.id + "driver"}
@@ -416,6 +426,13 @@ export function ConfigForm(props: ConfigFormProps) {
                 <FormNumberInput
                   id={`${props.id}.${key}`}
                   label={key}
+                  desc={
+                    checkDesc(`__${key}`)
+                      ? props.description![
+                          `__${key}` as keyof typeof props.description
+                        ]
+                      : undefined
+                  }
                   inputValue={config[key as keyof typeof config]}
                   onInputChange={(inputValue) => {
                     setConfig(
@@ -432,6 +449,13 @@ export function ConfigForm(props: ConfigFormProps) {
                 <FormCheckBox
                   id={`${props.id}.${key}`}
                   label={key}
+                  desc={
+                    checkDesc(`__${key}`)
+                      ? props.description![
+                          "key" as keyof typeof props.description
+                        ]
+                      : undefined
+                  }
                   checked={config[key as keyof typeof config]}
                   onCheckedChange={(checked) =>
                     setConfig(
@@ -468,8 +492,15 @@ export function ConfigForm(props: ConfigFormProps) {
                 borderBottomRightRadius={"0.5em"}
               >
                 <Form
-                  object={value}
                   id={`${props.id}.${key}`}
+                  object={value}
+                  description={
+                    checkDesc(key)
+                      ? props.description![
+                          key as keyof typeof props.description
+                        ]
+                      : undefined
+                  }
                   accordionStates={props.accordionStatuses}
                   linkStates={props.linkedStatuses}
                   gainLockStatuses={props.gainLockStatuses}

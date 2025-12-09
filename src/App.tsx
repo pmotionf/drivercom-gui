@@ -43,6 +43,7 @@ import {
   Theme,
   setLogForm,
   logFormFileFormat,
+  setConfigDescription,
 } from "./GlobalState.ts";
 
 import { Button } from "~/components/ui/button.tsx";
@@ -80,6 +81,7 @@ function App(props: RouteSectionProps) {
     buildEmptyDriverConfiguration();
     getLogStartCombinator();
     getLogStartCondition();
+    getConfigDescription();
   });
 
   async function detectCliVersion() {
@@ -139,6 +141,13 @@ function App(props: RouteSectionProps) {
       .split(",")
       .filter((value) => value !== "\n");
     setLogStartCombinatorList(startCombinatorList);
+  }
+
+  async function getConfigDescription() {
+    const configDesc = Command.sidecar("binaries/drivercom", [`config.info`]);
+    const output = await configDesc.execute();
+    const desc = JSON5.parse(output.stdout);
+    setConfigDescription(desc);
   }
 
   const [version, setVersion] = createSignal("0.0.0");

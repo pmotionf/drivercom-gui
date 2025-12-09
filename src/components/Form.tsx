@@ -17,6 +17,7 @@ export type AccordionStates = Map<
 export type FormProps = JSX.HTMLAttributes<HTMLDivElement> & {
   id: string;
   object: object;
+  description?: object;
   onItemChange?: () => void;
   accordionStates: AccordionStates;
   linkStates?: LinkStates;
@@ -71,6 +72,14 @@ export function Form(props: FormProps) {
     }
   }
 
+  const checkDesc = (key: string) => {
+    if (!props.description) return false;
+    const descKeys = Array.from(Object.keys(props.description));
+    if (descKeys.includes(key)) {
+      return true;
+    } else return false;
+  };
+
   return (
     <div>
       <For each={Object.entries(object)}>
@@ -124,6 +133,20 @@ export function Form(props: FormProps) {
                       isNaN(Number(key))
                         ? key
                         : `${props.id.split(".").pop()} ${Number(key) + 1}`
+                    }
+                    description={
+                      checkDesc(key)
+                        ? props.description![
+                            key as keyof typeof props.description
+                          ]
+                        : undefined
+                    }
+                    triggerDescription={
+                      checkDesc(`__${key}`)
+                        ? props.description![
+                            `__${key}` as keyof typeof props.description
+                          ]
+                        : undefined
                     }
                     object={value}
                     gainKey={gainkey}
@@ -204,6 +227,13 @@ export function Form(props: FormProps) {
                     <Form
                       object={value}
                       id={`${props.id}.${key}`}
+                      description={
+                        checkDesc(key)
+                          ? props.description![
+                              key as keyof typeof props.description
+                            ]
+                          : undefined
+                      }
                       style={{ "padding-left": "1rem" }}
                       onItemChange={() => {
                         props.onItemChange?.();
@@ -230,6 +260,13 @@ export function Form(props: FormProps) {
                 <FormCheckBox
                   id={`${props.id}.${key}`}
                   label={label}
+                  desc={
+                    checkDesc(`__${key}`)
+                      ? props.description![
+                          `__${key}` as keyof typeof props.description
+                        ]
+                      : undefined
+                  }
                   checked={object[key as keyof typeof object]}
                   onCheckedChange={(checked) =>
                     setObject(
@@ -277,6 +314,13 @@ export function Form(props: FormProps) {
               <FormNumberInput
                 id={`${props.id}.${key}`}
                 label={label}
+                desc={
+                  checkDesc(`__${key}`)
+                    ? props.description![
+                        `__${key}` as keyof typeof props.description
+                      ]
+                    : undefined
+                }
                 linkStatus={props.linkStates}
                 lockStatus={lockStatus}
                 lockStatusKey={
