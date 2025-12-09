@@ -16,6 +16,7 @@ import { Stack } from "styled-system/jsx";
 import { Text } from "./ui/text";
 import {
   csvFileDownloads,
+  page,
   pageKeys,
   Pages,
   panelContexts,
@@ -86,7 +87,7 @@ export const DownloadList = (props: JSX.HTMLAttributes<HTMLDivElement>) => {
           createStore<TabListContext>({ tabContext: [], focusedTab: "" }),
         );
       }
-      const tabCtx = tabContexts.get(tabListId);
+      const [tabCtx, setTabCtx] = tabContexts.get(tabListId)!;
       const newTabID = crypto.randomUUID();
       const newTab: TabContext = {
         tab: {
@@ -105,16 +106,11 @@ export const DownloadList = (props: JSX.HTMLAttributes<HTMLDivElement>) => {
         },
       };
       setTimeout(() => {
-        tabCtx![1]({
-          tabContext: [
-            ...(tabCtx![0].tabContext.length !== 0
-              ? tabCtx![0].tabContext
-              : []),
-            newTab,
-          ],
-          focusedTab: newTabID,
-        });
-        setPage(Pages.LogViewer);
+        setTabCtx("tabContext", tabCtx.tabContext.length, newTab);
+        setTabCtx("focusedTab", newTabID);
+        if (page() !== Pages.LogViewer) {
+          setPage(Pages.LogViewer);
+        }
       }, 200);
     }
   };
@@ -345,14 +341,6 @@ export const DownloadList = (props: JSX.HTMLAttributes<HTMLDivElement>) => {
                           ? `calc(100% - 5em)`
                           : `calc(100% - 7.5em)`
                       }
-                      onClick={() => {
-                        if (download.status === DownloadStatus.Success) {
-                          openNewTab(download.filePath);
-                          setCsvFileDownloads(
-                            csvFileDownloads.filter((_, i) => i !== index()),
-                          );
-                        }
-                      }}
                     >
                       <Text
                         width="100%"
@@ -512,7 +500,8 @@ export const DownloadList = (props: JSX.HTMLAttributes<HTMLDivElement>) => {
                           size="sm"
                           variant="ghost"
                           width="2em"
-                          onClick={async () => {
+                          onClick={async (e) => {
+                            e.stopPropagation();
                             const logStatus = await getCurrentLogStatus(
                               download.port,
                             );
