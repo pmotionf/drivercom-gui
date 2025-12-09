@@ -260,21 +260,6 @@ export const FormCollapsibleObject = (props: FormCollapsibleObjectProps) => {
             style={{ "padding-left": "1rem" }}
             onItemChange={() => {
               props.onItemChange?.();
-
-              const linkKey = props.id.split(".")[1]!;
-              if (
-                linkKey &&
-                props.linkStates &&
-                props.linkStates.has(linkKey) &&
-                props.id.split(".").length === 2
-              ) {
-                const [getLinkState, setLinkState] = props.linkStates!.get(
-                  props.id.split(".")[1]!,
-                )!;
-                if (props.linkStates!.get(props.id.split(".")[1]!)![0]()[0]) {
-                  setLinkState([getLinkState()[0], props.key]);
-                }
-              }
             }}
             accordionStates={props.accordionStates}
             linkStates={props.linkStates}

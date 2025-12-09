@@ -98,6 +98,14 @@ export const FormNumberInput = (props: FormNumberInputProps) => {
             placeholder={props.label}
             value={props.inputValue}
             onChange={(e) => {
+              if (props.linkStatus) {
+                const linkStatusId = props.id.split(".")[1];
+                if (props.linkStatus.has(linkStatusId)) {
+                  const [getLinkStatus, setLinkStatus] =
+                    props.linkStatus.get(linkStatusId)!;
+                  setLinkStatus([getLinkStatus()[0], props.id.split(".")[2]]);
+                }
+              }
               props.onInputChange?.(Number(e.target.value));
             }}
           />
