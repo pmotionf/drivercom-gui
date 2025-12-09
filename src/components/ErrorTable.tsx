@@ -1,4 +1,4 @@
-import { JSX } from "solid-js";
+import { JSX, on, createEffect, createSignal } from "solid-js";
 import { Table } from "~/components/ui/table.tsx";
 import { For } from "solid-js";
 import { Text } from "./ui/text";
@@ -7,6 +7,8 @@ import {
   Response_Track_Driver_Error,
 } from "./proto/mmc/info_pb";
 import { Show } from "solid-js";
+import { trackStore } from "@solid-primitives/deep";
+import JSON5 from "json5";
 
 type ErrorTableProps = JSX.HTMLAttributes<HTMLDivElement> & {
   systemErrors: {
@@ -78,7 +80,7 @@ export const ErrorTable = (props: ErrorTableProps) => {
             </Table.Row>
           </Table.Head>
           <Table.Body userSelect="none">
-            <For each={props.systemErrors}>
+            <For each={systemError()}>
               {(systemError) => (
                 <>
                   <Show when={!props.clearErrorAuto}>
@@ -107,14 +109,22 @@ type ErrorTableRowProps = {
 };
 
 const ErrorTableRows = (props: ErrorTableRowProps) => {
+  const [error, setError] = createSignal(props.errors);
+  createEffect(
+    on(
+      () => trackStore(props.errors),
+      () => {
+        if (JSON5.stringify(error) !== JSON5.stringify(props.errors)) {
+          setError(JSON5.parse(JSON5.stringify(props.errors)));
+        }
+      },
+    ),
+  );
+
   return (
-    <For each={props.errors}>
+    <For each={error()}>
       {(error, i) => {
-        if (
-          Object.values(error).some(
-            (value) => typeof value === "boolean" && value,
-          )
-        ) {
+        if (Object.values(error).includes(true)) {
           const keys = Object.entries(error)
             .filter((entry) => typeof entry[1] === "boolean" && entry[1])
             .map((entry) => entry[0]);
