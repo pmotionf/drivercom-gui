@@ -12,6 +12,7 @@ import { Text } from "~/components/ui/text";
 import { Toast } from "~/components/ui/toast";
 import { Tooltip } from "~/components/ui/tooltip";
 import {
+  configDescription,
   configFormFileFormat,
   portCommands,
   portId,
@@ -515,6 +516,7 @@ export function ConfigTabContent() {
           >
             <ConfigForm
               id={getTabId()}
+              description={configDescription()}
               focusedTab={getFocusedTab()}
               onFocustTabChange={(tabId) => setFocusedTab(tabId)}
               config={getConfigForm()!}

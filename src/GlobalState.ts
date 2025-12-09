@@ -95,3 +95,7 @@ export const [logForm, setLogForm] = createStore<LoggingFormType>({
 export const [csvFileDownloads, setCsvFileDownloads] = createStore<
   DownloadStates[]
 >([]);
+
+export const [configDescription, setConfigDescription] = createSignal<object>(
+  {},
+);
