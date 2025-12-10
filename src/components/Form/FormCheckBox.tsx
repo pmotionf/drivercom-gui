@@ -16,6 +16,8 @@ export type FormCheckBoxProps = {
 
 export const FormCheckBox = (props: FormCheckBoxProps) => {
   const key = props.label;
+  if (props.desc && props.desc["hidden" as keyof typeof props.desc] === true)
+    return;
   return (
     <div style={{ display: "flex", width: "100%", "margin-top": "1em" }}>
       <Checkbox
@@ -37,7 +39,13 @@ export const FormCheckBox = (props: FormCheckBoxProps) => {
           {key}
         </Text>
       </Checkbox>
-      <Show when={props.desc}>
+      <Show
+        when={
+          props.desc &&
+          typeof props.desc["description" as keyof typeof props.desc] ===
+            "string"
+        }
+      >
         <Tooltip.Root>
           <Tooltip.Trigger>
             <IconHelp size="1em" opacity={0.5} />
