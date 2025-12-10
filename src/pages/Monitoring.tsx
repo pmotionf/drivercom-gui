@@ -9,7 +9,7 @@ import {
 import { css } from "styled-system/css/css";
 import { Show } from "solid-js/web";
 import { Toast } from "~/components/ui/toast.tsx";
-import { monitoringInputs } from "~/GlobalState.ts";
+import { monitoringInputs, page, Pages } from "~/GlobalState.ts";
 import { createStore } from "solid-js/store";
 import { IpAddress } from "~/components/System/IpHistory.tsx";
 import { load } from "@tauri-apps/plugin-store";
@@ -62,7 +62,8 @@ function Monitoring() {
     lineId: number,
     lineConfig: Lines,
   ): Promise<void> => {
-    if (lines.length < 1) return;
+    if (page() !== Pages.Monitoring) return;
+    if (lines.length < 1 || !lines) return;
     await getSystemInfo(lineId);
 
     const lineIndex = lineConfig.findIndex((line) => line.id === lineId);
