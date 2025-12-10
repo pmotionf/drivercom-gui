@@ -25,6 +25,7 @@ import { LinkStates, GainLockStates } from "~/components/ConfigForm";
 import { FileHandler } from "../utils/FileHandler";
 import { AccordionStates } from "~/components/Form";
 import JSON5 from "json5";
+import { Spinner } from "~/components/ui/spinner";
 
 export type ConfigTabPage = {
   filePath?: string;
@@ -139,11 +140,6 @@ export function ConfigTabContent() {
   };
 
   const [render, setRender] = createSignal<boolean>(true);
-
-  const refresh = () => {
-    setRender(false);
-    setRender(true);
-  };
 
   const fileHandler = new FileHandler();
 
@@ -317,6 +313,7 @@ export function ConfigTabContent() {
                 </Editable.Area>
               </Editable.Root>
             </Tooltip.Trigger>
+
             <Show when={getFilePath()}>
               <Tooltip.Positioner>
                 <Tooltip.Content backgroundColor="bg.default">
@@ -325,29 +322,32 @@ export function ConfigTabContent() {
               </Tooltip.Positioner>
             </Show>
           </Tooltip.Root>
+
           <FileMenu
             filePath={getFilePath() ? getFilePath()! : ""}
             recentFiles={recentConfigFilePaths()}
             onNewFile={() => {
+              setRender(false);
               const newEmptyFile = JSON5.parse(
                 JSON5.stringify(configFormFileFormat()),
               );
               setFormName("New File");
               setConfigForm(newEmptyFile);
               setFilePath(null);
-              refresh();
+              setRender(true);
             }}
             onOpenFile={async () => {
               const extension = "json5";
               const path = await fileHandler.openFileDialog(extension);
               if (!path) return;
               try {
+                setRender(false);
                 const file = await fileHandler.readFile(
                   path,
                   configFormFileFormat(),
                 );
                 setFormData(file, path);
-                refresh();
+                setRender(true);
               } catch {
                 toaster.create({
                   title: "Invalid File",
@@ -360,17 +360,19 @@ export function ConfigTabContent() {
                   );
                   return newRecentFiles;
                 });
+                setRender(true);
                 return;
               }
             }}
             onOpenRecentFile={async (filePath: string) => {
               try {
+                setRender(false);
                 const file = await fileHandler.readFile(
                   filePath,
                   configFormFileFormat(),
                 );
                 setFormData(file!, filePath);
-                refresh();
+                setRender(true);
               } catch {
                 toaster.create({
                   title: "Invalid File Path",
@@ -383,6 +385,7 @@ export function ConfigTabContent() {
                   );
                   return newRecentFiles;
                 });
+                setRender(true);
                 return;
               }
             }}
@@ -394,12 +397,13 @@ export function ConfigTabContent() {
             onReloadFile={async () => {
               if (!getFilePath()) return;
               try {
+                setRender(false);
                 const file = await fileHandler.readFile(
                   getFilePath()!,
                   configFormFileFormat(),
                 );
                 setFormData(file!, getFilePath()!);
-                refresh();
+                setRender(true);
               } catch {
                 toaster.create({
                   title: "Invalid File Path",
@@ -412,6 +416,7 @@ export function ConfigTabContent() {
                   );
                   return newRecentFiles;
                 });
+                setRender(true);
                 return;
               }
             }}
@@ -453,11 +458,13 @@ export function ConfigTabContent() {
               if (!checkAvailablePort(portId())) return;
               setFilePath(null);
               try {
+                setRender(false);
                 const config = await getConfigFromPort(portId());
                 setFormName(portId());
                 setConfigForm(config);
-                refresh();
+                setRender(true);
               } catch (e) {
+                setRender(true);
                 toaster.create({
                   title: "Communication Error",
                   description: e as string,
@@ -506,7 +513,59 @@ export function ConfigTabContent() {
             </Button>
           </PortMenu>
         </Stack>
-        <Show when={render()}>
+        <Show
+          when={render()}
+          fallback={
+            <div
+              style={{
+                display: "flex",
+                "flex-direction": "column",
+                "align-items": "center",
+                "justify-content": "center",
+                width: "100%",
+                height: "100%",
+                "border-top-width": render() ? "0px" : "1px",
+              }}
+            >
+              <Spinner
+                display="flex"
+                justifySelf={"center"}
+                justifyItems={"center"}
+                size="xl"
+                borderLeftColor={"bg.muted"}
+                borderBottomColor={"bg.muted"}
+                borderRightColor={"fg.muted"}
+                borderTopColor={"fg.muted"}
+                borderWidth={"5px"}
+              />
+              <Text
+                marginTop="1em"
+                size="lg"
+                fontWeight={"bold"}
+                maxWidth="50%"
+                textAlign="center"
+              >
+                {getFilePath()
+                  ? `Get config from "${getFilePath()}".`
+                  : portId().length > 0
+                    ? `Get config from "${portId()}".`
+                    : `Get new config.`}
+              </Text>
+              <Text
+                display="flex"
+                justifySelf={"center"}
+                marginTop="0.5em"
+                size="md"
+              >
+                {getFilePath()
+                  ? `Opening...`
+                  : portId().length > 0
+                    ? `Downloading...`
+                    : `Opening...`}
+              </Text>
+            </div>
+          }
+        >
           <div
             ref={scrollContainer}
             style={{
