@@ -99,7 +99,7 @@ export class ServerHandler implements IServerHandler {
     this.lock();
     const timeout = setTimeout(() => {
       this.unlock();
-    }, 60000);
+    }, 5000);
 
     while (this._socket.readyState !== WebSocket.OPEN) {
       if (!this._lockRequest) {
@@ -132,7 +132,7 @@ export class ServerHandler implements IServerHandler {
 
       const timeout = setTimeout(() => {
         this.unlock();
-      }, 30000);
+      }, 5000);
       while (this._socket.readyState !== WebSocket.CLOSED) {
         if (!this._lockRequest) {
           break;
