@@ -711,7 +711,7 @@ dependencies = [
 
 [[package]]
 name = "drivercom-gui"
-version = "0.10.3"
+version = "0.11.0"
 dependencies = [
  "serde",
  "serde_json",
