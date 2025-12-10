@@ -74,9 +74,11 @@ export function Axis(props: AxisProps) {
               <Badge
                 width="min-content"
                 backgroundColor={
-                  props.axisInfo.motorActive
-                    ? "accent.customGreen"
-                    : "bg.emphasized"
+                  props.axisInfo.waitingPull || props.axisInfo.waitingPush
+                    ? "accent.customOrange"
+                    : props.axisInfo.motorActive
+                      ? "accent.customGreen"
+                      : "bg.emphasized"
                 }
                 paddingLeft="0.5rem"
                 paddingRight="0.5rem"
@@ -89,7 +91,7 @@ export function Axis(props: AxisProps) {
 
             <Tooltip.Positioner>
               <Tooltip.Content>
-                <Text>Info {axisId}</Text>
+                <Text>Info</Text>
                 <For each={Object.entries(props.axisInfo)}>
                   {([key, value]) => {
                     if (typeof value == "boolean" && key.includes("waiting")) {
@@ -136,18 +138,6 @@ export function Axis(props: AxisProps) {
             </Tooltip.Root>
           </Show>
         </div>
-
-        <Show when={props.axisInfo!.waitingPull || props.axisInfo!.waitingPush}>
-          <div
-            style={{
-              width: "0.4rem",
-              height: "0.4rem",
-              "margin-top": "0.6rem",
-              "border-radius": "1rem",
-              "background-color": "accent.customOrange",
-            }}
-          />
-        </Show>
       </Stack>
 
       <Show when={carrierState()}>
