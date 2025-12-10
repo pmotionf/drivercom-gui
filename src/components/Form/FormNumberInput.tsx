@@ -43,6 +43,8 @@ export const FormNumberInput = (props: FormNumberInputProps) => {
     return value.trim();
   }
 
+  if (props.desc && props.desc["hidden" as keyof typeof props.desc] === true)
+    return;
   return (
     <div
       style={{
@@ -56,7 +58,14 @@ export const FormNumberInput = (props: FormNumberInputProps) => {
           <Text marginTop="0.4em" marginRight="0.5em" fontWeight="medium">
             {props.label}
           </Text>
-          <Show when={props.desc}>
+          <Show
+            when={
+              props.desc &&
+              "description" in props.desc &&
+              typeof props.desc["description" as keyof typeof props.desc] ===
+                "string"
+            }
+          >
             <Tooltip.Root>
               <Tooltip.Trigger>
                 <IconHelp size="1em" opacity={0.5} />
@@ -88,7 +97,7 @@ export const FormNumberInput = (props: FormNumberInputProps) => {
               style={{
                 width:
                   lockStatus && lockStatusKey && lockStatus.has(lockStatusKey)
-                    ? "unit" in props.desc!
+                    ? props.desc && "unit_short" in props.desc
                       ? `calc(100% - 4em)`
                       : `calc(100% - 1em)`
                     : "100%",
