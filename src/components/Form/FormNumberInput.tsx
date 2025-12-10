@@ -43,6 +43,30 @@ export const FormNumberInput = (props: FormNumberInputProps) => {
     return value.trim();
   }
 
+  const parseUnit = (unit: string) => {
+    const splitSuper = unit.split("^");
+    if (splitSuper.length > 1) {
+      return (
+        <>
+          {splitSuper[0]}
+          <sup>{splitSuper[1]}</sup>
+        </>
+      );
+    }
+
+    const splitSub = unit.split("_");
+    if (splitSub.length > 1) {
+      return (
+        <>
+          {splitSub[0]}
+          <sub>{splitSub[1]}</sub>
+        </>
+      );
+    }
+
+    return <>{unit}</>;
+  };
+
   if (props.desc && props.desc["hidden" as keyof typeof props.desc] === true)
     return;
   return (
@@ -147,14 +171,22 @@ export const FormNumberInput = (props: FormNumberInputProps) => {
               <Tooltip.Root>
                 <Tooltip.Trigger>
                   <Text opacity="0.5" marginLeft="0.2em">
-                    {props.desc!["unit_short" as keyof typeof props.desc]}
+                    {parseUnit(
+                      props.desc![
+                        "unit_short" as keyof typeof props.desc
+                      ] as string,
+                    )}
                   </Text>
                   <Tooltip.Positioner>
                     <Show
                       when={props.desc!["unit_long" as keyof typeof props.desc]}
                     >
                       <Tooltip.Content>
-                        {props.desc!["unit_long" as keyof typeof props.desc]}
+                        {parseUnit(
+                          props.desc![
+                            "unit_long" as keyof typeof props.desc
+                          ] as string,
+                        )}
                       </Tooltip.Content>
                     </Show>
                   </Tooltip.Positioner>
