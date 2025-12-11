@@ -458,6 +458,11 @@ export function ConfigTabContent() {
                   getConfigForm()!,
                   configFormFileFormat(),
                 );
+                if (getFilePath() && getFilePath() === path) {
+                  setOriginalFile(
+                    JSON5.parse(JSON5.stringify(getConfigForm())),
+                  );
+                }
               } catch {
                 toaster.create({
                   title: "Invalid File",
@@ -514,6 +519,9 @@ export function ConfigTabContent() {
                   type: "error",
                 });
                 return;
+              }
+              if (!getFilePath()) {
+                setOriginalFile(JSON5.parse(JSON5.stringify(getConfigForm())));
               }
               toaster.create({
                 title: "Communication Success",
