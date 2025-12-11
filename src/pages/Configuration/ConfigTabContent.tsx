@@ -35,6 +35,7 @@ export type ConfigTabPage = {
   configLinkedStatuses?: LinkStates;
   configGainLockStatuses?: GainLockStates;
   formName?: string;
+  originalFile?: object;
 };
 
 export function ConfigTabContent() {
@@ -124,6 +125,22 @@ export function ConfigTabContent() {
     );
   };
 
+  const getOriginalFile = () => {
+    return tabContexts.get(configTabProps.key)![0].tabContext[getTabIndex()]
+      .tabPage!.configTabPage!.originalFile;
+  };
+
+  const setOriginalFile = (filePath: object) => {
+    return tabContexts.get(configTabProps.key)![1](
+      "tabContext",
+      getTabIndex(),
+      "tabPage",
+      "configTabPage",
+      "originalFile",
+      filePath,
+    );
+  };
+
   const getAccordionStatuses = () => {
     return tabContexts.get(configTabProps.key)![0].tabContext[getTabIndex()]
       .tabPage!.configTabPage!.configAccordionStatuses;
@@ -187,6 +204,7 @@ export function ConfigTabContent() {
       );
       return [path, ...newRecentFiles];
     });
+    setOriginalFile(JSON5.parse(JSON5.stringify(data)));
   }
 
   async function saveConfigToPort(config: object): Promise<string> {
@@ -462,6 +480,7 @@ export function ConfigTabContent() {
                 const config = await getConfigFromPort(portId());
                 setFormName(portId());
                 setConfigForm(config);
+                setOriginalFile(JSON5.parse(JSON.stringify(config)));
                 setRender(true);
               } catch (e) {
                 setRender(true);
@@ -576,6 +595,7 @@ export function ConfigTabContent() {
             <ConfigForm
               id={getTabId()}
               description={configDescription()}
+              originalFile={getOriginalFile()}
               focusedTab={getFocusedTab()}
               onFocustTabChange={(tabId) => setFocusedTab(tabId)}
               config={getConfigForm()!}

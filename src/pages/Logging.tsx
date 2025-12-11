@@ -44,6 +44,7 @@ export type LoggingFormType = {
   filePath: string;
   logConfig: object;
   accordionStates: AccordionStates;
+  originalFile: object;
 };
 
 export function Logging() {
@@ -54,6 +55,16 @@ export function Logging() {
   onMount(async () => {
     if (!pageKeys.has(Pages.Logging)) {
       pageKeys.set(Pages.Logging, crypto.randomUUID());
+    }
+    if (Object.values(logForm.logConfig).length === 0) {
+      const accordionStates: AccordionStates = new Map();
+      setLogForm({
+        title: "New file",
+        logConfig: JSON5.parse(JSON5.stringify(logFormFileFormat())),
+        originalFile: JSON5.parse(JSON5.stringify(logFormFileFormat())),
+        filePath: "",
+        accordionStates: accordionStates,
+      });
     }
     setRenderLoggingForm(true);
 
@@ -156,6 +167,7 @@ export function Logging() {
       title: path.split("/").pop()!,
       filePath: path,
       logConfig: form,
+      originalFile: JSON5.parse(JSON5.stringify(form)),
     });
     refresh();
   }
@@ -594,6 +606,10 @@ export function Logging() {
                       logFormFileFormat(),
                     );
                     setLogForm("logConfig", file);
+                    setLogForm(
+                      "originalFile",
+                      JSON5.parse(JSON5.stringify(file)),
+                    );
                   } catch {
                     toaster.create({
                       title: "Invalid File Path",
@@ -900,6 +916,7 @@ export function Logging() {
             <LoggingForm
               id={pageKeys.get(Pages.Logging)!}
               formData={logForm.logConfig}
+              originalFile={logForm.originalFile}
               accordionStates={logForm.accordionStates}
               ref={scrollContainer}
             />

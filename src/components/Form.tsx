@@ -18,6 +18,7 @@ export type FormProps = JSX.HTMLAttributes<HTMLDivElement> & {
   id: string;
   object: object;
   description?: object;
+  originalFile?: object;
   onItemChange?: () => void;
   accordionStates: AccordionStates;
   linkStates?: LinkStates;

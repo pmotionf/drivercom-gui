@@ -15,6 +15,7 @@ import { FormCheckBox } from "./Form/FormCheckBox";
 export type ConfigFormProps = JSX.HTMLAttributes<HTMLFormElement> & {
   id: string;
   description?: object;
+  originalFile?: object;
   focusedTab?: string;
   onFocustTabChange?: (tabId: string) => void;
   config: object;
