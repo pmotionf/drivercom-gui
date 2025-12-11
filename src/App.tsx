@@ -41,8 +41,6 @@ import {
   setLogStartCombinatorList,
   setPage,
   Theme,
-  setLogForm,
-  logFormFileFormat,
   setConfigDescription,
 } from "./GlobalState.ts";
 
@@ -103,7 +101,6 @@ function App(props: RouteSectionProps) {
     const output = await logConfig.execute();
     const logFormatToJson = JSON5.parse(output.stdout);
     setLogFormFileFormat(logFormatToJson);
-    setLogForm("logConfig", JSON5.parse(JSON5.stringify(logFormFileFormat())));
   }
 
   async function buildEmptyDriverConfiguration() {

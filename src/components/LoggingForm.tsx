@@ -8,6 +8,7 @@ export type LoggingFormProps = JSX.HTMLAttributes<HTMLDivElement> & {
   id: string;
   formData: object;
   accordionStates: AccordionStates;
+  originalFile?: object;
 };
 
 export function LoggingForm(props: LoggingFormProps) {

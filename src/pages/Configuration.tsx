@@ -56,6 +56,7 @@ function Configuration() {
           configLinkedStatuses: linkedStatuses,
           configGainLockStatuses: gainLockStatuses,
           formName: "New File",
+          originalFile: JSON.parse(JSON.stringify(configFormFileFormat())),
         },
       },
     } as TabContext;

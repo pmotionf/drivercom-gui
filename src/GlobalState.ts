@@ -90,6 +90,7 @@ export const [logForm, setLogForm] = createStore<LoggingFormType>({
   filePath: "",
   logConfig: {},
   accordionStates: new Map(),
+  originalFile: {},
 });
 
 export const [csvFileDownloads, setCsvFileDownloads] = createStore<
