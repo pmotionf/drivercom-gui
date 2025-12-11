@@ -46,6 +46,7 @@ export function LoggingForm(props: LoggingFormProps) {
         logStartCombinators={logStartCombinators}
         logStartConditions={logStartConditions}
         accordionStates={props.accordionStates}
+        originalFile={props.originalFile}
       />
     </div>
   );
