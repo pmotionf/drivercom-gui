@@ -380,7 +380,12 @@ export function ConfigForm(props: ConfigFormProps) {
             }}
             background={
               props.originalFile &&
-              JSON5.stringify(props.originalFile) !== JSON5.stringify(config)
+              Object.values(props.originalFile)
+                .filter((val) => typeof val !== "object")
+                .join() !==
+                Object.values(config)
+                  .filter((val) => typeof val !== "object")
+                  .join()
                 ? "accent.7"
                 : undefined
             }
