@@ -502,6 +502,13 @@ export function ConfigForm(props: ConfigFormProps) {
                         ]
                       : undefined
                   }
+                  originalFile={
+                    props.originalFile && key in props.originalFile
+                      ? props.originalFile![
+                          key as keyof typeof props.originalFile
+                        ]
+                      : undefined
+                  }
                   accordionStates={props.accordionStatuses}
                   linkStates={props.linkedStatuses}
                   gainLockStatuses={props.gainLockStatuses}

@@ -142,6 +142,13 @@ export function Form(props: FormProps) {
                           ]
                         : undefined
                     }
+                    originalFile={
+                      props.originalFile && key in props.originalFile
+                        ? props.originalFile![
+                            key as keyof typeof props.originalFile
+                          ]
+                        : undefined
+                    }
                     triggerDescription={
                       checkDesc(`__${key}`)
                         ? props.description![
@@ -232,6 +239,13 @@ export function Form(props: FormProps) {
                         checkDesc(key)
                           ? props.description![
                               key as keyof typeof props.description
+                            ]
+                          : undefined
+                      }
+                      originalFile={
+                        props.originalFile && key in props.originalFile
+                          ? props.originalFile![
+                              key as keyof typeof props.originalFile
                             ]
                           : undefined
                       }
