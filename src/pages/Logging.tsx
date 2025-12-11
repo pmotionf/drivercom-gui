@@ -646,6 +646,12 @@ export function Logging() {
                       logForm.title,
                     );
                     await fileHandler.writeFile(path, logForm.logConfig);
+                    if (logForm.filePath === path) {
+                      setLogForm(
+                        "originalFile",
+                        JSON5.parse(JSON5.stringify(logForm.logConfig)),
+                      );
+                    }
                   } catch {
                     toaster.create({
                       title: "Invalid File",
@@ -714,6 +720,12 @@ export function Logging() {
                       const logStatus = await getCurrentLogStatus(portId());
                       setCurrentLogStatus(logStatus.logStatus);
                       setCyclesCompleted(logStatus.cycle);
+                      if (logForm.filePath.length === 0) {
+                        setLogForm(
+                          "originalFile",
+                          JSON5.parse(JSON5.stringify(logForm.logConfig)),
+                        );
+                      }
                     } catch (e) {
                       toaster.create({
                         title: "Communication Error",
