@@ -11,6 +11,8 @@ import { AccordionStates, Form } from "./Form";
 import { Tabs } from "./ui/tabs";
 import { FormNumberInput } from "./Form/FormNumberInput";
 import { FormCheckBox } from "./Form/FormCheckBox";
+import { Stack } from "styled-system/jsx";
+import JSON5 from "json5";
 
 export type ConfigFormProps = JSX.HTMLAttributes<HTMLFormElement> & {
   id: string;
@@ -367,7 +369,22 @@ export function ConfigForm(props: ConfigFormProps) {
             borderRadius: "0.5em",
           }}
           opacity={"0.5"}
+          style={{ padding: "0", "padding-right": "0.5em" }}
         >
+          <Stack
+            style={{
+              width: "0.5em",
+              height: "0.5em",
+              "border-radius": "1em",
+              "margin-left": "0.5em",
+            }}
+            background={
+              props.originalFile &&
+              JSON5.stringify(props.originalFile) !== JSON5.stringify(config)
+                ? "accent.7"
+                : undefined
+            }
+          />
           {"Driver"}
         </Tabs.Trigger>
         <For
@@ -397,7 +414,26 @@ export function ConfigForm(props: ConfigFormProps) {
                     borderRadius: "0.5em",
                   }}
                   opacity={"0.5"}
+                  style={{ padding: "0", "padding-right": "0.5em" }}
                 >
+                  <Stack
+                    style={{
+                      width: "0.5em",
+                      height: "0.5em",
+                      "border-radius": "1em",
+                      "margin-left": "0.5em",
+                    }}
+                    background={
+                      props.originalFile &&
+                      JSON5.stringify(
+                        props.originalFile[
+                          key as keyof typeof props.originalFile
+                        ],
+                      ) !== JSON5.stringify(config[key as keyof typeof config])
+                        ? "accent.7"
+                        : undefined
+                    }
+                  />
                   {label}
                 </Tabs.Trigger>
               );

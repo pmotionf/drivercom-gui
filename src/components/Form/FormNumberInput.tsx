@@ -80,7 +80,18 @@ export const FormNumberInput = (props: FormNumberInputProps) => {
     >
       <Stack direction="row">
         <div style={{ width: "50%", display: "flex" }}>
-          <Text marginTop="0.4em" marginRight="0.5em" fontWeight="medium">
+          <Text
+            marginTop="0.4em"
+            marginRight="0.5em"
+            fontWeight="medium"
+            borderColor="accent.7"
+            height="1.5em"
+            paddingLeft="0.1em"
+            paddingRight="0.1em"
+            borderBottomWidth={
+              props.originalValue !== props.inputValue ? "2px" : "0px"
+            }
+          >
             {props.label}
           </Text>
           <Show
