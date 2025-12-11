@@ -37,7 +37,16 @@ export const FormCheckBox = (props: FormCheckBoxProps) => {
         }}
         marginRight="0.5em"
       >
-        <Text fontWeight="medium" userSelect="none">
+        <Text
+          fontWeight="medium"
+          userSelect="none"
+          paddingLeft="0.1em"
+          paddingRight="0.1em"
+          borderColor="accent.7"
+          borderBottomWidth={
+            props.originalValue !== props.checked ? "2px" : "0px"
+          }
+        >
           {key}
         </Text>
       </Checkbox>
