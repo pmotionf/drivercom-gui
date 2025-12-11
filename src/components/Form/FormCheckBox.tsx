@@ -8,6 +8,7 @@ export type FormCheckBoxProps = {
   id: string;
   label: string;
   desc?: object;
+  originalValue?: boolean;
   checked: boolean;
   onCheckedChange?: (checked: boolean) => void;
   onClick?: () => void;
@@ -18,6 +19,7 @@ export const FormCheckBox = (props: FormCheckBoxProps) => {
   const key = props.label;
   if (props.desc && props.desc["hidden" as keyof typeof props.desc] === true)
     return;
+
   return (
     <div style={{ display: "flex", width: "100%", "margin-top": "1em" }}>
       <Checkbox

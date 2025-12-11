@@ -434,6 +434,13 @@ export function ConfigForm(props: ConfigFormProps) {
                         ]
                       : undefined
                   }
+                  originalValue={
+                    props.originalFile
+                      ? props.originalFile[
+                          key as keyof typeof props.originalFile
+                        ]
+                      : undefined
+                  }
                   inputValue={config[key as keyof typeof config]}
                   onInputChange={(inputValue) => {
                     setConfig(
@@ -454,6 +461,13 @@ export function ConfigForm(props: ConfigFormProps) {
                     checkDesc(`__${key}`)
                       ? props.description![
                           "key" as keyof typeof props.description
+                        ]
+                      : undefined
+                  }
+                  originalValue={
+                    props.originalFile
+                      ? props.originalFile[
+                          key as keyof typeof props.originalFile
                         ]
                       : undefined
                   }

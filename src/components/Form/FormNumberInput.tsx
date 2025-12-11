@@ -15,6 +15,7 @@ export type FormNumberInputProps = {
   id: string;
   label: string;
   desc?: object;
+  originalValue?: number;
   lockStatus?: GainLockStates;
   lockStatusKey?: string;
   linkStatus?: LinkStates;

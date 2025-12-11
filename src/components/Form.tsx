@@ -282,6 +282,13 @@ export function Form(props: FormProps) {
                         ]
                       : undefined
                   }
+                  originalValue={
+                    props.originalFile
+                      ? props.originalFile[
+                          key as keyof typeof props.originalFile
+                        ]
+                      : undefined
+                  }
                   checked={object[key as keyof typeof object]}
                   onCheckedChange={(checked) =>
                     setObject(
@@ -333,6 +340,13 @@ export function Form(props: FormProps) {
                   checkDesc(`__${key}`)
                     ? props.description![
                         `__${key}` as keyof typeof props.description
+                      ]
+                    : undefined
+                }
+                originalValue={
+                  props.originalFile
+                    ? props.originalFile![
+                        key as keyof typeof props.originalFile
                       ]
                     : undefined
                 }
