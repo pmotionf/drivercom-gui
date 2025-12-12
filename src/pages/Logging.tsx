@@ -686,6 +686,7 @@ export function Logging() {
                         title: portId(),
                         filePath: "",
                         logConfig: logConfig,
+                        originalFile: JSON5.parse(JSON5.stringify(logConfig)),
                       });
                       refresh();
                     } catch (e) {
