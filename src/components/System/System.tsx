@@ -103,11 +103,17 @@ export function System(props: SystemProps) {
                         >
                           <For
                             each={Array.from(
-                              { length: props.lines[item].axes! / 3 },
+                              {
+                                length:
+                                  props.lines[item].axes! /
+                                  (props.lines[item].axes! % 3 === 0 ? 3 : 2),
+                              },
                               (_, i) => i,
                             )}
                           >
                             {(driverIndex) => {
+                              const axesLength =
+                                props.lines[item].axes! % 3 === 0 ? 3 : 2;
                               return (
                                 <div>
                                   <Driver
@@ -130,8 +136,11 @@ export function System(props: SystemProps) {
                                     >
                                       <For
                                         each={Array.from(
-                                          { length: 3 },
-                                          (_, i) => driverIndex * 3 + i,
+                                          {
+                                            length: axesLength,
+                                          },
+                                          (_, i) =>
+                                            driverIndex * axesLength + i,
                                         )}
                                       >
                                         {(axisIndex) => {
