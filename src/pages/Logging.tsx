@@ -47,6 +47,14 @@ export type LoggingFormType = {
   originalFile: object;
 };
 
+enum LogButton {
+  Start,
+  Stop,
+  Refresh,
+  Download,
+  None,
+}
+
 export function Logging() {
   // This signal is needed in UI when reload the file or port.
   const [renderLoggingForm, setRenderLoggingForm] =
@@ -243,9 +251,6 @@ export function Logging() {
     });
   }
 
-  // Signal for display Log Get button loading while saving log.csv file.
-  const [logGetBtnLoading, setLogGetBtnLoading] = createSignal(false);
-
   // Save log.csv file && Display `Log Get` button loading while saving log.csv file
   async function saveLogCsvFile(
     filePath: string,
@@ -313,7 +318,6 @@ export function Logging() {
       if (pid) {
         portCommands.delete(pid);
       }
-      setLogGetBtnLoading(false);
     });
 
     logGet.on("error", async (error) => {
@@ -334,7 +338,6 @@ export function Logging() {
       if (pid) {
         portCommands.delete(pid);
       }
-      setLogGetBtnLoading(false);
     });
 
     const child = await logGet.spawn();
@@ -465,6 +468,8 @@ export function Logging() {
       });
     }
   };
+
+  const [disableBtn, setDisableBtn] = createSignal<LogButton>(LogButton.None);
 
   return (
     <>
@@ -746,8 +751,8 @@ export function Logging() {
                       <Tooltip.Trigger>
                         <IconButton
                           disabled={
+                            disableBtn() === LogButton.Start ||
                             portId().length === 0 ||
-                            logGetBtnLoading() ||
                             currentLogStatus() === ".invalid" ||
                             currentLogStatus() === ".started" ||
                             currentLogStatus() === ".waiting" ||
@@ -759,6 +764,7 @@ export function Logging() {
                           onClick={async () => {
                             try {
                               if (!checkAvailablePort(portId())) return;
+                              setDisableBtn(LogButton.Start);
                               await startLogging(portId());
 
                               const csvFileDownloadIndex =
@@ -781,7 +787,9 @@ export function Logging() {
                                 await getCurrentLogStatus(portId());
                               setCurrentLogStatus(logState.logStatus);
                               setCyclesCompleted(logState.cycle);
+                              setDisableBtn(LogButton.None);
                             } catch (e) {
+                              setDisableBtn(LogButton.None);
                               toaster.create({
                                 title: "Communication Error",
                                 description: e as string,
@@ -807,15 +815,19 @@ export function Logging() {
                   <Tooltip.Root>
                     <Tooltip.Trigger>
                       <IconButton
+                        disabled={disableBtn() === LogButton.Stop}
                         onClick={async () => {
                           try {
                             if (!checkAvailablePort(portId())) return;
+                            setDisableBtn(LogButton.Stop);
                             await stopLogging(portId());
                             const logState =
                               await getCurrentLogStatus(portId());
                             setCurrentLogStatus(logState.logStatus);
                             setCyclesCompleted(logState.cycle);
+                            setDisableBtn(LogButton.None);
                           } catch (e) {
+                            setDisableBtn(LogButton.None);
                             toaster.create({
                               title: "Communication Error",
                               description: e as string,
@@ -848,6 +860,7 @@ export function Logging() {
                     <Tooltip.Root>
                       <Tooltip.Trigger>
                         <Button
+                          disabled={disableBtn() === LogButton.Download}
                           loading={csvFileDownloads.some(
                             (file) =>
                               file.status === DownloadStatus.Progressing,
@@ -856,24 +869,25 @@ export function Logging() {
                             if (portId().length === 0) return;
                             try {
                               if (!checkAvailablePort(portId())) return;
+                              setDisableBtn(LogButton.Download);
                               const path = await fileHandler.saveFileDialog(
                                 "csv",
                                 logForm.filePath,
                                 logForm.title,
                               );
-                              setLogGetBtnLoading(true);
+                              setDisableBtn(LogButton.None);
                               await saveLogCsvFile(
                                 path,
                                 portId(),
                                 cyclesCompleted()!,
                               );
                             } catch {
+                              setDisableBtn(LogButton.None);
                               toaster.create({
                                 title: "Invalid File",
                                 description: "The file is invalid.",
                                 type: "error",
                               });
-                              setLogGetBtnLoading(false);
                             }
                           }}
                           variant="ghost"
@@ -899,11 +913,14 @@ export function Logging() {
                         onClick={async () => {
                           try {
                             if (!checkAvailablePort(portId())) return;
+                            setDisableBtn(LogButton.Refresh);
                             const logState =
                               await getCurrentLogStatus(portId());
                             setCurrentLogStatus(logState.logStatus);
                             setCyclesCompleted(logState.cycle);
+                            setDisableBtn(LogButton.None);
                           } catch {
+                            setDisableBtn(LogButton.None);
                             setCurrentLogStatus(null);
                             setCyclesCompleted(null);
                           }
