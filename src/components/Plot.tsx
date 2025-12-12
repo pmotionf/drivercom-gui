@@ -174,7 +174,7 @@ export function Plot(props: PlotProps) {
       () => {
         if (getContext().style.every((v) => v != LegendStroke.Dot)) return;
         const df = dotFilter();
-        setTimeout(() => {
+        const timeout = setTimeout(() => {
           if (df.length > 0) {
             getContext().style.forEach((style, index) => {
               if (style === LegendStroke.Dot) {
@@ -193,6 +193,7 @@ export function Plot(props: PlotProps) {
             if (need_redraw) plot.redraw();
           }
         }, 100);
+        clearTimeout(timeout);
       },
       { defer: true },
     ),
@@ -242,16 +243,6 @@ export function Plot(props: PlotProps) {
           ),
       );
 
-      if (zoomReset() && plot.scales.y.min && plot.scales.y.max) {
-        const yScales = getPlotYScale(plot);
-        setZoomReset(
-          !(
-            plot.scales.y.min! > yScales.yMin ||
-            plot.scales.y.max! < yScales.yMax
-          ),
-        );
-      }
-
       setXRange(plot.scales.x.max! - plot.scales.x.min!);
       props.onXScaleChange?.([plot.scales.x.min!, plot.scales.x.max!]);
       props.onYScaleChange?.({
@@ -298,25 +289,6 @@ export function Plot(props: PlotProps) {
     document.removeEventListener("keyup", cursorModeRelease);
     document.removeEventListener("mouseup", checkZoomLevel);
     document.removeEventListener("wheel", checkZoomLevel);
-  });
-
-  onMount(() => {
-    // Wrap in create effect to handle ID changing.
-    createEffect(() => {
-      const resize = new ResizeObserver((entries) => {
-        if (entries.length == 0) return;
-        const entry = entries[0];
-        setTimeout(() => {
-          if (plot) {
-            plot.setSize({
-              width: entry.contentRect.width,
-              height: entry.contentRect.height,
-            });
-          }
-        }, 200);
-      });
-      resize.observe(document.getElementById(`${props.id}`)!);
-    });
   });
 
   const [fgDefault, setFgDefault] = createSignal<string>(
@@ -406,26 +378,22 @@ export function Plot(props: PlotProps) {
     const parseData = u.data.filter(
       (_, i) => u.series[i].show === true && u.series[i].scale === "y",
     );
-    const yMin = parseData
-      .map(
-        (series) =>
-          [...new Set(series.map((i) => Number(i)))].sort((a, b) => a - b)[0],
-      )
-      .sort((a, b) => a - b)[0];
 
-    const yMax = parseData
-      .map(
-        (series) =>
-          [...new Set(series.map((i) => Number(i)))].sort((a, b) => b - a)[0],
-      )
-      .sort((a, b) => b - a)[0];
+    const changeToMax = parseData.map((data) =>
+      Math.max(...data.map((i) => Number(i))),
+    );
+    const yMax = Math.max(...changeToMax);
 
-    const yRange = yMax - yMin;
+    const changeToMin = parseData.map((data) =>
+      Math.min(...data.map((i) => Number(i))),
+    );
+    const yMin = Math.min(...changeToMin);
 
     const one_rem = parseFloat(
       getComputedStyle(document.documentElement).fontSize,
     );
 
+    const yRange = yMax - yMin;
     const plotHeight = u.over.offsetHeight;
     const percent = one_rem / plotHeight;
     const paddingToYVal = yRange * percent;
@@ -576,6 +544,7 @@ export function Plot(props: PlotProps) {
                 sync: {
                   key: group(),
                 },
+
                 bind: {
                   mousedown: (u) => {
                     return (e) => {
@@ -808,7 +777,6 @@ export function Plot(props: PlotProps) {
                           document.addEventListener("mouseup", onup);
                         }
                       }
-
                       return null;
                     };
                   },
