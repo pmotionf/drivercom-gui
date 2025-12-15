@@ -83,7 +83,60 @@ export function Line(props: LineProps) {
         <Accordion.ItemIndicator class="cancel">
           <ChevronDownIcon />
         </Accordion.ItemIndicator>
-        <Text>{props.line.name}</Text>
+        <Tooltip.Root positioning={{ placement: "bottom-start" }}>
+          <Tooltip.Trigger width="min-content">
+            <Text>{props.line.name}</Text>
+          </Tooltip.Trigger>
+          <Tooltip.Positioner>
+            <Tooltip.Content width="100%" minWidth={"15em"}>
+              <For
+                each={Object.entries(props.line).filter(
+                  (entry) => entry[0] !== "name" && entry[0] !== "id",
+                )}
+              >
+                {([key, value]) => {
+                  return (
+                    <div
+                      style={{
+                        width: `100%`,
+                        display: "flex",
+                      }}
+                    >
+                      <Text width="60%">
+                        {Array.from(key)
+                          .map((char, i) => {
+                            if (i === 0) {
+                              return char.toUpperCase();
+                            }
+                            if (/^[A-Z]*$/.test(char)) {
+                              return `_${char}`;
+                            }
+                            return char;
+                          })
+                          .join("")
+                          .replaceAll("_", " ")}
+                      </Text>
+                      <Text
+                        width="40%"
+                        fontWeight={"medium"}
+                        style={{
+                          overflow: "hidden",
+                          "white-space": "nowrap",
+                          display: "block",
+                          "text-overflow": "ellipsis",
+                        }}
+                      >
+                        {typeof value === "number" && !Number.isInteger(value)
+                          ? `${Number(value.toFixed(5))}m`
+                          : value}
+                      </Text>
+                    </div>
+                  );
+                }}
+              </For>
+            </Tooltip.Content>
+          </Tooltip.Positioner>
+        </Tooltip.Root>
 
         <Show
           when={
