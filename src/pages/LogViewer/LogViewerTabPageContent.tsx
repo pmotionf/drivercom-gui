@@ -284,7 +284,9 @@ export function LogViewerTabPageContent() {
       if (csvFile.enumSeriesMap) {
         setEnumMappings(csvFile.enumSeriesMap);
       }
-      setPlotZoomState([0, series()[0].length]);
+      if (plotZoomState()[1] === 0) {
+        setPlotZoomState([0, series()[0].length]);
+      }
     } catch (e) {
       tabPageProps.toaster.create({
         title: "Invalid File",
