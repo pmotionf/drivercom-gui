@@ -445,8 +445,12 @@ export function Plot(props: PlotProps) {
               const xVal = u.posToVal(left!, "x");
               const oxRange = u.scales.x.max! - u.scales.x.min!;
 
-              const nxRange =
-                e.deltaY < 0 ? oxRange * factor : oxRange / factor;
+              let nxRange: number = 0;
+              nxRange = e.deltaY < 0 ? oxRange * factor : oxRange / factor;
+              if (e.shiftKey) {
+                const deltaY = e.deltaX;
+                nxRange = deltaY < 0 ? oxRange * factor : oxRange / factor;
+              }
               let nxMin = xVal - leftPct * nxRange;
               let nxMax = nxMin + nxRange;
               [nxMin, nxMax] = clamp(nxRange, nxMin, nxMax, xRange, xMin, xMax);
