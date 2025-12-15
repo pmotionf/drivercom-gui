@@ -73,8 +73,11 @@ export const ErrorTable = (props: ErrorTableProps) => {
         >
           <Table.Head>
             <Table.Row>
-              <Table.Header fontWeight="bold"> Location</Table.Header>
-              <Table.Header fontWeight="bold" color="red.9">
+              <Table.Header fontWeight="bold" color="fg.disabled">
+                {" "}
+                Location
+              </Table.Header>
+              <Table.Header fontWeight="bold" color="red.7">
                 Error
               </Table.Header>
             </Table.Row>
