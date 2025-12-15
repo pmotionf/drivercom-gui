@@ -174,26 +174,23 @@ export function Plot(props: PlotProps) {
       () => {
         if (getContext().style.every((v) => v != LegendStroke.Dot)) return;
         const df = dotFilter();
-        const timeout = setTimeout(() => {
-          if (df.length > 0) {
-            getContext().style.forEach((style, index) => {
-              if (style === LegendStroke.Dot) {
-                plot.series[index + 1].points!.filter = checkDotFilter;
-              }
-            });
-            plot.redraw();
-          } else {
-            let need_redraw: boolean = false;
-            plot.series.forEach((series) => {
-              if (series.points?.filter === checkDotFilter) {
-                series.points!.filter = () => null;
-                need_redraw = true;
-              }
-            });
-            if (need_redraw) plot.redraw();
-          }
-        }, 100);
-        clearTimeout(timeout);
+        if (df.length > 0) {
+          getContext().style.forEach((style, index) => {
+            if (style === LegendStroke.Dot) {
+              plot.series[index + 1].points!.filter = checkDotFilter;
+            }
+          });
+          plot.redraw();
+        } else {
+          let need_redraw: boolean = false;
+          plot.series.forEach((series) => {
+            if (series.points?.filter === checkDotFilter) {
+              series.points!.filter = () => null;
+              need_redraw = true;
+            }
+          });
+          if (need_redraw) plot.redraw();
+        }
       },
       { defer: true },
     ),
@@ -256,26 +253,33 @@ export function Plot(props: PlotProps) {
   const checkDotFilter = () => dotFilter();
   const [xRange, setXRange] = createSignal<number>(0);
 
-  createEffect(() => {
-    const domainWidth: number = document.getElementById(props.id)!.offsetWidth;
-    const scale: number = xRange() / domainWidth;
-    const array: number[] = [];
+  createEffect(
+    on(
+      () => xRange(),
+      () => {
+        const domainWidth: number = document.getElementById(
+          props.id,
+        )!.offsetWidth;
+        const scale: number = xRange() / domainWidth;
+        const array: number[] = [];
 
-    let i: number = 0;
-    while (scale > 0.1) {
-      array.push(i);
-      i +=
-        (Math.floor(scale) > 0
-          ? Math.floor(scale)
-          : parseFloat(scale.toFixed(1))) * 10;
-      if (i >= plot.data[0].length) {
-        break;
-      }
-    }
-
-    if (scale <= 0.1) array.splice(0, array.length);
-    setDotFilter(array);
-  });
+        let i: number = 0;
+        while (scale > 0.1) {
+          array.push(i);
+          i +=
+            (Math.floor(scale) > 0
+              ? Math.floor(scale)
+              : parseFloat(scale.toFixed(1))) * 10;
+          if (i >= plot.data[0].length) {
+            break;
+          }
+        }
+        if (scale <= 0.1) array.splice(0, array.length);
+        setDotFilter(array);
+      },
+      { defer: true },
+    ),
+  );
 
   onMount(() => {
     document.addEventListener("keydown", cursorModeActivate);
