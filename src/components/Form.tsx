@@ -87,8 +87,9 @@ export function Form(props: FormProps) {
         display: props.id.split(".").length === 2 ? "grid" : undefined,
         "grid-template-columns":
           props.id.split(".").length === 2 ? "1fr 1fr" : undefined,
+        "column-gap": "1em",
         "align-items": "normal",
-        "grid-template-rows": "auto",
+        "grid-template-rows": "min-content",
       }}
     >
       <For each={Object.entries(object)}>
