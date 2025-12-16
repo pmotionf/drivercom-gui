@@ -82,7 +82,15 @@ export function Form(props: FormProps) {
   };
 
   return (
-    <div>
+    <div
+      style={{
+        display: props.id.split(".").length === 2 ? "grid" : undefined,
+        "grid-template-columns":
+          props.id.split(".").length === 2 ? "1fr 1fr" : undefined,
+        "align-items": "normal",
+        "grid-template-rows": "auto",
+      }}
+    >
       <For each={Object.entries(object)}>
         {(entry, index) => {
           const key = entry[0];

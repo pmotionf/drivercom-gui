@@ -283,15 +283,7 @@ export function ConfigTabContent() {
       }}
     >
       <Stack
-        style={{
-          width: "40%",
-          height: `calc(100% - 1rem)`,
-          "margin-top": "0.5rem",
-          "min-width": "35rem",
-          "border-radius": "0.5rem",
-          "box-shadow": "0px 0px 15px 1px rgb(0,0,0,0.05)",
-          "border-width": "1px",
-        }}
+        style={{ width: "100%" }}
         borderColor="bg.muted"
         backgroundColor="bg.default"
       >

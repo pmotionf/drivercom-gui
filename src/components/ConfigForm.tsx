@@ -451,8 +451,13 @@ export function ConfigForm(props: ConfigFormProps) {
       <Tabs.Content
         value={props.id + "driver"}
         width="100%"
-        style={{ "padding-top": "0", "padding-bottom": "0" }}
         height="100%"
+        style={{
+          "padding-top": "0",
+          "padding-bottom": "0",
+          "column-width": "500px",
+          "column-count": "2",
+        }}
         borderBottomRightRadius={"0.5em"}
       >
         <For
@@ -547,28 +552,35 @@ export function ConfigForm(props: ConfigFormProps) {
                 }}
                 borderBottomRightRadius={"0.5em"}
               >
-                <Form
-                  id={`${props.id}.${key}`}
-                  object={value}
-                  description={
-                    checkDesc(key)
-                      ? props.description![
-                          key as keyof typeof props.description
-                        ]
-                      : undefined
-                  }
-                  originalFile={
-                    props.originalFile && key in props.originalFile
-                      ? props.originalFile![
-                          key as keyof typeof props.originalFile
-                        ]
-                      : undefined
-                  }
-                  accordionStates={props.accordionStatuses}
-                  linkStates={props.linkedStatuses}
-                  gainLockStatuses={props.gainLockStatuses}
-                  gainKinds={dynamic}
-                />
+                <div
+                  style={{
+                    width: "100%",
+                    height: "100%",
+                  }}
+                >
+                  <Form
+                    id={`${props.id}.${key}`}
+                    object={value}
+                    description={
+                      checkDesc(key)
+                        ? props.description![
+                            key as keyof typeof props.description
+                          ]
+                        : undefined
+                    }
+                    originalFile={
+                      props.originalFile && key in props.originalFile
+                        ? props.originalFile![
+                            key as keyof typeof props.originalFile
+                          ]
+                        : undefined
+                    }
+                    accordionStates={props.accordionStatuses}
+                    linkStates={props.linkedStatuses}
+                    gainLockStatuses={props.gainLockStatuses}
+                    gainKinds={dynamic}
+                  />
+                </div>
               </Tabs.Content>
             );
           }
