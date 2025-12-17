@@ -18,6 +18,7 @@ export type ConfigFormProps = JSX.HTMLAttributes<HTMLFormElement> & {
   id: string;
   description?: object;
   originalFile?: object;
+  changeUnits?: boolean;
   focusedTab?: string;
   onFocustTabChange?: (tabId: string) => void;
   config: object;
@@ -482,6 +483,7 @@ export function ConfigForm(props: ConfigFormProps) {
                         ]
                       : undefined
                   }
+                  changeUnits={props.changeUnits}
                   inputValue={config[key as keyof typeof config]}
                   onInputChange={(inputValue) => {
                     setConfig(
@@ -564,6 +566,7 @@ export function ConfigForm(props: ConfigFormProps) {
                         ]
                       : undefined
                   }
+                  changeUnits={props.changeUnits}
                   accordionStates={props.accordionStatuses}
                   linkStates={props.linkedStatuses}
                   gainLockStatuses={props.gainLockStatuses}

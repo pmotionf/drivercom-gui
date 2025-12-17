@@ -1,4 +1,4 @@
-import { IconX } from "@tabler/icons-solidjs";
+import { IconRuler2, IconRuler2Off, IconX } from "@tabler/icons-solidjs";
 import { Command } from "@tauri-apps/plugin-shell";
 import { createEffect, createSignal, on, Show, useContext } from "solid-js";
 import { Stack } from "styled-system/jsx";
@@ -26,6 +26,7 @@ import { FileHandler } from "../utils/FileHandler";
 import { AccordionStates } from "~/components/Form";
 import JSON5 from "json5";
 import { Spinner } from "~/components/ui/spinner";
+import { IconButton } from "~/components/ui/icon-button";
 
 export type ConfigTabPage = {
   filePath?: string;
@@ -36,6 +37,7 @@ export type ConfigTabPage = {
   configGainLockStatuses?: GainLockStates;
   formName?: string;
   originalFile?: object;
+  changeUnit?: boolean;
 };
 
 export function ConfigTabContent() {
@@ -154,6 +156,22 @@ export function ConfigTabContent() {
   const getGainLockStatuses = () => {
     return tabContexts.get(configTabProps.key)![0].tabContext[getTabIndex()]
       .tabPage!.configTabPage!.configGainLockStatuses;
+  };
+
+  const getChangeUnit = () => {
+    return tabContexts.get(configTabProps.key)![0].tabContext[getTabIndex()]
+      .tabPage!.configTabPage!.changeUnit;
+  };
+
+  const setChangeUnit = (isChangeUnit: boolean) => {
+    return tabContexts.get(configTabProps.key)![1](
+      "tabContext",
+      getTabIndex(),
+      "tabPage",
+      "configTabPage",
+      "changeUnit",
+      isChangeUnit,
+    );
   };
 
   const [render, setRender] = createSignal<boolean>(true);
@@ -302,7 +320,7 @@ export function ConfigTabContent() {
           padding="1.5em 1em 1em 1em "
         >
           <Tooltip.Root positioning={{ placement: "bottom-start" }}>
-            <Tooltip.Trigger width={`calc(100% - 9rem)`}>
+            <Tooltip.Trigger width={`calc(100% - 11rem)`}>
               <Editable.Root
                 placeholder="File name"
                 value={getFormName()}
@@ -339,6 +357,24 @@ export function ConfigTabContent() {
                 </Tooltip.Content>
               </Tooltip.Positioner>
             </Show>
+          </Tooltip.Root>
+
+          <Tooltip.Root>
+            <Tooltip.Trigger width="min-content">
+              <IconButton
+                variant={"ghost"}
+                onClick={() => setChangeUnit(!getChangeUnit())}
+              >
+                <Show when={getChangeUnit()} fallback={<IconRuler2Off />}>
+                  <IconRuler2 />
+                </Show>
+              </IconButton>
+            </Tooltip.Trigger>
+            <Tooltip.Positioner>
+              <Tooltip.Content>
+                {"Change length and weight units"}
+              </Tooltip.Content>
+            </Tooltip.Positioner>
           </Tooltip.Root>
 
           <FileMenu
@@ -604,6 +640,7 @@ export function ConfigTabContent() {
               id={getTabId()}
               description={configDescription()}
               originalFile={getOriginalFile()}
+              changeUnits={getChangeUnit() ? getChangeUnit() : undefined}
               focusedTab={getFocusedTab()}
               onFocustTabChange={(tabId) => setFocusedTab(tabId)}
               config={getConfigForm()!}
