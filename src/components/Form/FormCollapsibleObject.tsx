@@ -283,6 +283,7 @@ export const FormCollapsibleObject = (props: FormCollapsibleObjectProps) => {
             style={{ "padding-left": "1rem" }}
             description={props.description}
             originalFile={props.originalFile}
+            changeUnits={props.changeUnits}
             onItemChange={() => {
               props.onItemChange?.();
             }}

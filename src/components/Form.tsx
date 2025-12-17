@@ -19,6 +19,7 @@ export type FormProps = JSX.HTMLAttributes<HTMLDivElement> & {
   object: object;
   description?: object;
   originalFile?: object;
+  changeUnits?: boolean;
   onItemChange?: () => void;
   accordionStates: AccordionStates;
   linkStates?: LinkStates;
@@ -149,6 +150,7 @@ export function Form(props: FormProps) {
                           ]
                         : undefined
                     }
+                    changeUnits={props.changeUnits}
                     triggerDescription={
                       checkDesc(`__${key}`)
                         ? props.description![
@@ -249,6 +251,7 @@ export function Form(props: FormProps) {
                             ]
                           : undefined
                       }
+                      changeUnits={props.changeUnits}
                       style={{ "padding-left": "1rem" }}
                       onItemChange={() => {
                         props.onItemChange?.();
@@ -350,6 +353,7 @@ export function Form(props: FormProps) {
                       ]
                     : undefined
                 }
+                changeUnits={props.changeUnits}
                 linkStatus={props.linkStates}
                 lockStatus={lockStatus}
                 lockStatusKey={
