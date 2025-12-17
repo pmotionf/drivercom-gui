@@ -35,8 +35,8 @@ export function Axis(props: AxisProps) {
 
   return (
     <Stack
-      width="9rem"
-      height="7rem"
+      width="10rem"
+      height="8rem"
       borderRadius="0.5rem"
       borderWidth="1px"
       borderRightWidth={props.axisInfo.hallAlarmFront ? "5px" : "1px"}
@@ -183,24 +183,35 @@ export function Axis(props: AxisProps) {
             </Tooltip.Positioner>
           </Tooltip.Root>
         </div>
+
+        <Show when={carrierState()!.position}>
+          <Stack direction="row" gap="0">
+            <Text width="3rem" size="sm" fontWeight="bold">
+              Pos
+            </Text>
+            <Text
+              width={`calc(100% - 3rem)`}
+              size="sm"
+              style={{
+                "text-overflow": "ellipsis",
+                "white-space": "nowrap",
+                display: "block",
+                overflow: "hidden",
+                "text-align": "left",
+                "font-family": "monospace",
+              }}
+            >
+              {`${carrierState()!.position!.toFixed(6)}m`}
+            </Text>
+          </Stack>
+        </Show>
         <Stack direction="row" gap="0">
           <Text width="3rem" size="sm" fontWeight="bold">
             State
           </Text>
           <Tooltip.Root>
             <Tooltip.Trigger width={`calc(100% - 3rem)`}>
-              <Text
-                width="100%"
-                size="sm"
-                style={{
-                  "white-space": "nowrap",
-                  display: "block",
-                  overflow: "hidden",
-                  "text-overflow": `ellipsis`,
-                  "user-select": "none",
-                  "text-align": "left",
-                }}
-              >
+              <Text width="100%" size="sm" textAlign={"left"}>
                 {typeof carrierState()!.state === "number"
                   ? Response_Track_Carrier_State_State[carrierState()!.state]
                       .toString()
@@ -225,28 +236,6 @@ export function Axis(props: AxisProps) {
             </Tooltip.Positioner>
           </Tooltip.Root>
         </Stack>
-
-        <Show when={carrierState()!.position}>
-          <Stack direction="row" gap="0">
-            <Text width="3rem" size="sm" fontWeight="bold">
-              Pos
-            </Text>
-            <Text
-              width={`calc(100% - 3rem)`}
-              size="sm"
-              style={{
-                "text-overflow": "ellipsis",
-                "white-space": "nowrap",
-                display: "block",
-                overflow: "hidden",
-                "text-align": "right",
-                "font-family": "monospace",
-              }}
-            >
-              {`${carrierState()!.position!.toFixed(6)}m`}
-            </Text>
-          </Stack>
-        </Show>
       </Show>
     </Stack>
   );
