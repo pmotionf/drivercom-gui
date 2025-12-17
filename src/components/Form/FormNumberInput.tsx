@@ -16,6 +16,7 @@ export type FormNumberInputProps = {
   label: string;
   desc?: object;
   originalValue?: number;
+  changeUnits?: boolean;
   lockStatus?: GainLockStates;
   lockStatusKey?: string;
   linkStatus?: LinkStates;
@@ -24,6 +25,8 @@ export type FormNumberInputProps = {
 };
 
 export const FormNumberInput = (props: FormNumberInputProps) => {
+  if (props.desc && props.desc["hidden" as keyof typeof props.desc] === true)
+    return;
   let divRef: HTMLDivElement | undefined;
   const lockStatus = props.lockStatus;
   const lockStatusKey = props.lockStatusKey;
@@ -68,8 +71,58 @@ export const FormNumberInput = (props: FormNumberInputProps) => {
     return <>{unit}</>;
   };
 
-  if (props.desc && props.desc["hidden" as keyof typeof props.desc] === true)
-    return;
+  const changeUnitShort = (unitShort: string) => {
+    const parseUnit = unitShort.toLowerCase();
+    if (parseUnit === "m") {
+      return "mm";
+    } else if (parseUnit === "dag") {
+      return "kg";
+    } else if (parseUnit === "m/s") {
+      return "mm/s";
+    } else {
+      return unitShort;
+    }
+  };
+
+  const changeUnitLong = (unitLong: string) => {
+    const parseUnit = unitLong.toLowerCase();
+    if (parseUnit === "meter") {
+      return "Millimeter";
+    } else if (parseUnit === "decagram") {
+      return "Killogram";
+    } else if (parseUnit === "meters per second") {
+      return "Millimeters Per Second";
+    } else {
+      return unitLong;
+    }
+  };
+
+  const changeValue = (unitShort: string, value: number) => {
+    const parseUnit = unitShort.toLowerCase();
+    if (parseUnit === "m") {
+      return value * 1000;
+    } else if (parseUnit === "dag") {
+      return value * 0.01;
+    } else if (parseUnit === "m/s") {
+      return value * 1000;
+    } else {
+      return value;
+    }
+  };
+
+  const setChangedValue = (unitShort: string, value: number) => {
+    const parseUnit = unitShort.toLowerCase();
+    if (parseUnit === "m") {
+      return value * 0.001;
+    } else if (parseUnit === "dag") {
+      return value * 100;
+    } else if (parseUnit === "m/s") {
+      return value * 0.001;
+    } else {
+      return value;
+    }
+  };
+
   return (
     <div
       style={{
@@ -169,9 +222,33 @@ export const FormNumberInput = (props: FormNumberInputProps) => {
                   : getComputedCSSVariableValue("--colors-bg-disabled");
               }}
               placeholder={props.label}
-              value={props.inputValue}
+              value={
+                props.changeUnits &&
+                props.desc &&
+                props.desc["unit_short" as keyof typeof props.desc]
+                  ? changeValue(
+                      props.desc[
+                        "unit_short" as keyof typeof props.desc
+                      ] as string,
+                      props.inputValue,
+                    )
+                  : props.inputValue
+              }
               onChange={(e) => {
-                props.onInputChange?.(Number(e.target.value));
+                let inputValue = Number(e.target.value);
+                if (
+                  props.changeUnits &&
+                  props.desc &&
+                  "unit_short" in props.desc
+                ) {
+                  inputValue = setChangedValue(
+                    props.desc[
+                      "unit_short" as keyof typeof props.desc
+                    ] as string,
+                    inputValue,
+                  );
+                }
+                props.onInputChange?.(inputValue);
               }}
             />
             <Show
@@ -184,9 +261,15 @@ export const FormNumberInput = (props: FormNumberInputProps) => {
                 <Tooltip.Trigger>
                   <Text opacity="0.5" marginLeft="0.2em">
                     {parseUnit(
-                      props.desc![
-                        "unit_short" as keyof typeof props.desc
-                      ] as string,
+                      props.changeUnits
+                        ? changeUnitShort(
+                            props.desc![
+                              "unit_short" as keyof typeof props.desc
+                            ] as string,
+                          )
+                        : (props.desc![
+                            "unit_short" as keyof typeof props.desc
+                          ] as string),
                     )}
                   </Text>
                   <Tooltip.Positioner>
@@ -194,11 +277,15 @@ export const FormNumberInput = (props: FormNumberInputProps) => {
                       when={props.desc!["unit_long" as keyof typeof props.desc]}
                     >
                       <Tooltip.Content>
-                        {parseUnit(
-                          props.desc![
-                            "unit_long" as keyof typeof props.desc
-                          ] as string,
-                        )}
+                        {props.changeUnits
+                          ? changeUnitLong(
+                              props.desc![
+                                "unit_long" as keyof typeof props.desc
+                              ] as string,
+                            )
+                          : (props.desc![
+                              "unit_long" as keyof typeof props.desc
+                            ] as string)}
                       </Tooltip.Content>
                     </Show>
                   </Tooltip.Positioner>
