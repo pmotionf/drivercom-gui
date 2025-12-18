@@ -3,6 +3,30 @@ fn version() -> String {
     env!("CARGO_PKG_VERSION").into()
 }
 
+use ipnet::Ipv4Net;
+use local_ip_address::local_ip;
+
+#[tauri::command]
+async fn get_server_addrs() -> Vec<String> {
+    let mut results = vec![];
+
+    let ip = match local_ip() {
+        Ok(ip) => ip,
+        Err(_) => return results,
+    };
+    let ipv4 = match ip {
+        std::net::IpAddr::V4(v4) => v4,
+        _ => return results,
+    };
+
+    let net = Ipv4Net::new(ipv4, 24).unwrap();
+
+    for host in net.hosts() {
+        results.push(host.to_string());
+    }
+    results
+}
+
 #[allow(clippy::missing_panics_doc)]
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -13,7 +37,7 @@ pub fn run() {
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_tcp::init())
-        .invoke_handler(tauri::generate_handler![version])
+        .invoke_handler(tauri::generate_handler![version, get_server_addrs])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
