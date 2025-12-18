@@ -26,8 +26,8 @@ interface IServerHandler {
   connect(ip: string, port: string): void;
   disconnect(clientId: string): void;
   clearError(lindId: number, driverId?: number): void;
-  getSystemInfo(lineId: number): Promise<TrackType | never>;
-  getLineConfig(): Promise<LineType[] | never>;
+  getSystemInfo(lineId: number): Promise<TrackType>;
+  getLineConfig(): Promise<LineType[]>;
   getServerName(): Promise<string | null>;
 }
 
@@ -128,6 +128,9 @@ export class ServerHandler implements IServerHandler {
         clearTimeout(timeout);
       }
     }
+
+    let error: null | string = null;
+
     if (this._socket) {
       this._socket.close();
       this.lock();
@@ -147,14 +150,21 @@ export class ServerHandler implements IServerHandler {
       if (this._socket.readyState !== WebSocket.CLOSED) {
         this._socket = null;
         clearTimeout(timeout);
-        throw new Error("Failed to disconenct");
+        error = "Failed to disconenct";
       }
       this._socket = null;
       this.unlock();
     } else {
-      throw new Error("Server is already disconnected.");
+      error = "Server is already disconnected.";
     }
-    return;
+
+    return new Promise((resolve, reject) => {
+      if (error) {
+        return reject(error);
+      } else {
+        return resolve();
+      }
+    });
   }
 
   async clearError(lineId: number): Promise<void | never> {
@@ -319,7 +329,7 @@ export class ServerHandler implements IServerHandler {
     throw new Error("No response.");
   }
 
-  async getLineConfig(): Promise<LineType[] | never> {
+  async getLineConfig(): Promise<LineType[]> {
     if (this._lockRequest) throw new Error("Command Locked");
     const payload: Request = {
       body: {
@@ -332,10 +342,18 @@ export class ServerHandler implements IServerHandler {
       $typeName: "mmc.Request",
     };
 
+    let error: string | null = null;
     try {
       await this.sendRequest(payload);
       await this.waitResponse();
+    } catch (e) {
+      error = e as string;
+    }
 
+    return new Promise((resolve, reject) => {
+      if (error) {
+        return reject(error);
+      }
       if (this.serverResponses.length > 0) {
         const serverResponse = this.getResponse();
         if (serverResponse.body.case === "core") {
@@ -356,17 +374,15 @@ export class ServerHandler implements IServerHandler {
                   return newLine;
                 },
               );
-              return lines;
+              return resolve(lines);
             }
           }
         }
-        throw new Error("Invalid Response");
+        return reject("The websocket response has an invalid type.");
       } else {
-        throw new Error("No Response");
+        return reject("The websocket response is empty.");
       }
-    } catch (e) {
-      throw new Error(e as string);
-    }
+    });
   }
 
   async getSystemInfo(lineId: number): Promise<TrackType | never> {
