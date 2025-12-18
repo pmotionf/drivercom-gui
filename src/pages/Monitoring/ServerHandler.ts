@@ -60,10 +60,6 @@ export class ServerHandler implements IServerHandler {
     return res;
   }
 
-  private _clearErrorQueue: number[] = [];
-
-  private _isQueueEmpty: boolean = this._clearErrorQueue.length === 0;
-
   async connect(ip: string, port: string): Promise<void> {
     if (!this._socket) {
       this._socket = new WebSocket(`ws://${ip}:${port}`);
@@ -75,7 +71,6 @@ export class ServerHandler implements IServerHandler {
 
       this._socket.onclose = () => {
         this.serverResponses = [];
-        this._clearErrorQueue = [];
       };
 
       this._socket.onerror = () => {
@@ -83,7 +78,6 @@ export class ServerHandler implements IServerHandler {
           this._socket = null;
         }
         this.serverResponses = [];
-        this._clearErrorQueue = [];
         this.unlock();
       };
 
@@ -169,26 +163,19 @@ export class ServerHandler implements IServerHandler {
 
   async clearError(lineId: number): Promise<void> {
     let error: string | null = null;
-    if (this._isQueueEmpty) {
-      try {
-        this._clearErrorQueue.push(lineId);
-        const commandId = await this.requestClearError(lineId);
-        if (!commandId) {
-          error = "The response is invalid";
-        }
-        await this.getCommandInfo(commandId);
-
-        const clearedId = await this.requestRemoveCommand(commandId);
-        if (clearedId === commandId) {
-          this._clearErrorQueue = [];
-        } else {
-          this._clearErrorQueue = [];
-          error = "Command `Remove command` error";
-        }
-      } catch (e) {
-        this._clearErrorQueue = [];
-        error = e as string;
+    try {
+      const commandId = await this.requestClearError(lineId);
+      if (!commandId) {
+        error = "The response is invalid";
       }
+      await this.getCommandInfo(commandId);
+
+      const clearedId = await this.requestRemoveCommand(commandId);
+      if (clearedId !== commandId) {
+        error = "Command `Remove command` error";
+      }
+    } catch (e) {
+      error = e as string;
     }
 
     return new Promise((resolve, reject) => {
@@ -202,9 +189,6 @@ export class ServerHandler implements IServerHandler {
 
   private async requestClearError(lineId: number): Promise<number | never> {
     let error: string | null = null;
-    if (!this._isQueueEmpty) {
-      error = "Error queue is not empty";
-    }
 
     if (!error) {
       const payload: Request = {
@@ -269,9 +253,6 @@ export class ServerHandler implements IServerHandler {
   }
 
   private async requestCommandInfo(commandId: number) {
-    if (!this._isQueueEmpty) {
-      throw new Error("Error queue is not empty");
-    }
     const payload: Request = {
       body: {
         case: "info",
@@ -313,7 +294,6 @@ export class ServerHandler implements IServerHandler {
   private async requestRemoveCommand(
     commandId: number,
   ): Promise<number | never> {
-    if (!this._isQueueEmpty) throw new Error("Error queue is not empty");
     const payload: Request = {
       body: {
         case: "command",
