@@ -21,17 +21,11 @@ export function IpHistory(props: IpHistoryProps) {
         width: "100%",
         gap: "0",
         padding: "1rem",
+        "padding-top": "0",
+        "padding-bottom": "0",
         height: "100%",
       }}
     >
-      <Text
-        style={{
-          "font-weight": "bold",
-          height: "2.5rem",
-        }}
-      >
-        {"Recent"}
-      </Text>
       <div
         style={{
           width: `calc(100% - 2rem)`,
@@ -49,14 +43,15 @@ export function IpHistory(props: IpHistoryProps) {
           {"Port"}
         </Text>
       </div>
+
       <div
         style={{
           width: "100%",
-          height: `calc(100% - 4rem)`,
+          height: `calc(100% - 3em)`,
           "border-top-width": "1px",
           "border-bottom-width": "1px",
           "overflow-y": "auto",
-          "margin-bottom": "1rem",
+          //"margin-bottom": "1rem",
           "min-height": "2rem",
         }}
       >
