@@ -412,9 +412,18 @@ export class ServerHandler implements IServerHandler {
       $typeName: "mmc.Request",
     };
 
+    let error: string | null = null;
     try {
       await this.sendRequest(payload);
       await this.waitResponse();
+    } catch (e) {
+      error = e as string;
+    }
+
+    return new Promise((resolve, reject) => {
+      if (error) {
+        return reject(error);
+      }
 
       if (this.serverResponses.length > 0) {
         const response = this.getResponse();
@@ -432,16 +441,14 @@ export class ServerHandler implements IServerHandler {
                 axisState: tracked.axisState,
                 carrierState: tracked.carrierState,
               };
-              return systemInfo;
+              return resolve(systemInfo);
             }
           }
         }
-        throw new Error("Invalid Response");
+        return reject("The websocket response has an invalid type.");
       }
-      throw new Error("Invalid Response");
-    } catch (e) {
-      throw new Error(e as string);
-    }
+      return reject("The websocket response is empty.");
+    });
   }
 
   async getServerName(): Promise<string | null> {
@@ -473,20 +480,23 @@ export class ServerHandler implements IServerHandler {
     return null;
   }
 
-  private async sendRequest(payload: Request): Promise<void | never> {
+  private async sendRequest(payload: Request): Promise<void> {
     if (this._lockRequest) {
       throw new Error("locked");
     }
 
-    if (this._socket && this._socket.readyState === WebSocket.OPEN) {
-      const buffer: Uint8Array = toBinary(RequestSchema, payload);
-      if (this._socket.readyState !== WebSocket.OPEN)
-        throw new Error("Websocket is not open");
-      this._socket.send(buffer);
-      this.lock();
-    } else {
-      throw new Error("Invalid websocket");
-    }
+    return new Promise((resolve, reject) => {
+      if (this._socket && this._socket.readyState === WebSocket.OPEN) {
+        const buffer: Uint8Array = toBinary(RequestSchema, payload);
+        if (this._socket.readyState !== WebSocket.OPEN)
+          throw new Error("Websocket is not open");
+        this._socket.send(buffer);
+        this.lock();
+        return resolve();
+      } else {
+        return reject("Invalid websocket");
+      }
+    });
   }
 
   private async waitResponse() {
