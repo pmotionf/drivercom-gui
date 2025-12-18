@@ -64,7 +64,7 @@ export class ServerHandler implements IServerHandler {
 
   private _isQueueEmpty: boolean = this._clearErrorQueue.length === 0;
 
-  async connect(ip: string, port: string) {
+  async connect(ip: string, port: string): Promise<void> {
     if (!this._socket) {
       this._socket = new WebSocket(`ws://${ip}:${port}`);
 
@@ -111,12 +111,14 @@ export class ServerHandler implements IServerHandler {
     clearTimeout(timeout);
     this.unlock();
 
-    if (!this._socket || this._socket.readyState !== WebSocket.OPEN) {
-      this._socket = null;
-      throw new Error("Invalid Ip address");
-    } else {
-      return;
-    }
+    return new Promise((resolve, reject) => {
+      if (!this._socket || this._socket.readyState !== WebSocket.OPEN) {
+        this._socket = null;
+        return reject("Invalid Ip address");
+      } else {
+        return resolve();
+      }
+    });
   }
 
   async disconnect(): Promise<void | never> {
