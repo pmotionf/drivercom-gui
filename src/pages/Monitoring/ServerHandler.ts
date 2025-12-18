@@ -23,9 +23,9 @@ export type LineType = Omit<
 export type TrackType = Omit<Response_Track, "$typeName" | "$unknown">;
 
 interface IServerHandler {
-  connect(ip: string, port: string): void;
-  disconnect(clientId: string): void;
-  clearError(lindId: number, driverId?: number): void;
+  connect(ip: string, port: string): Promise<void>;
+  disconnect(clientId: string): Promise<void>;
+  clearError(lindId: number, driverId?: number): Promise<void>;
   getSystemInfo(lineId: number): Promise<TrackType>;
   getLineConfig(): Promise<LineType[]>;
   getServerName(): Promise<string | null>;
@@ -167,65 +167,88 @@ export class ServerHandler implements IServerHandler {
     });
   }
 
-  async clearError(lineId: number): Promise<void | never> {
+  async clearError(lineId: number): Promise<void> {
+    let error: string | null = null;
     if (this._isQueueEmpty) {
       try {
         this._clearErrorQueue.push(lineId);
         const commandId = await this.requestClearError(lineId);
-        if (!commandId) throw new Error("The response is invalid");
+        if (!commandId) {
+          error = "The response is invalid";
+        }
         await this.getCommandInfo(commandId);
 
         const clearedId = await this.requestRemoveCommand(commandId);
         if (clearedId === commandId) {
           this._clearErrorQueue = [];
-          return;
         } else {
           this._clearErrorQueue = [];
-          throw new Error("Command `Remove command` error");
+          error = "Command `Remove command` error";
         }
       } catch (e) {
         this._clearErrorQueue = [];
-        throw new Error(e as string);
+        error = e as string;
       }
     }
+
+    return new Promise((resolve, reject) => {
+      if (error) {
+        return reject(error);
+      } else {
+        return resolve();
+      }
+    });
   }
 
   private async requestClearError(lineId: number): Promise<number | never> {
-    if (!this._isQueueEmpty) throw new Error("Error queue is not empty");
-    const payload: Request = {
-      body: {
-        case: "command",
-        value: {
-          body: {
-            case: "clearErrors",
-            value: {
-              line: lineId,
-              target: { case: undefined },
-              $typeName: "mmc.command.Request.ClearErrors",
-            },
-          },
-          $typeName: "mmc.command.Request",
-        },
-      },
-      $typeName: "mmc.Request",
-    };
-
-    await this.sendRequest(payload);
-    await this.waitResponse();
-
-    if (this.serverResponses.length > 0) {
-      const response = this.getResponse();
-
-      if (response.body.case === "command") {
-        const command = response.body.value;
-        if (command.body.case === "id") {
-          const commandId = command.body.value;
-          return commandId;
-        }
-      }
-      throw new Error("Command Error");
+    let error: string | null = null;
+    if (!this._isQueueEmpty) {
+      error = "Error queue is not empty";
     }
-    throw new Error("No response.");
+
+    if (!error) {
+      const payload: Request = {
+        body: {
+          case: "command",
+          value: {
+            body: {
+              case: "clearErrors",
+              value: {
+                line: lineId,
+                target: { case: undefined },
+                $typeName: "mmc.command.Request.ClearErrors",
+              },
+            },
+            $typeName: "mmc.command.Request",
+          },
+        },
+        $typeName: "mmc.Request",
+      };
+
+      try {
+        await this.sendRequest(payload);
+        await this.waitResponse();
+      } catch (e) {
+        error = e as string;
+      }
+    }
+
+    return new Promise((resolve, reject) => {
+      if (error) return reject(error);
+      if (this.serverResponses.length > 0) {
+        const response = this.getResponse();
+
+        if (response.body.case === "command") {
+          const command = response.body.value;
+          if (command.body.case === "id") {
+            const commandId = command.body.value;
+            return resolve(commandId);
+          }
+        }
+        return reject("Command Error");
+      }
+      return reject("No response.");
+    });
   }
 
   private async getCommandInfo(commandId: number): Promise<void | never> {
@@ -246,7 +269,9 @@ export class ServerHandler implements IServerHandler {
   }
 
   private async requestCommandInfo(commandId: number) {
-    if (!this._isQueueEmpty) throw new Error("Error queue is not empty");
+    if (!this._isQueueEmpty) {
+      throw new Error("Error queue is not empty");
+    }
     const payload: Request = {
       body: {
         case: "info",
