@@ -1,5 +1,9 @@
 import { Text } from "../ui/text";
-import { MonitoringInputs } from "~/GlobalState";
+import {
+  MonitoringInputs,
+  detectedServer,
+  setDetectedServer,
+} from "~/GlobalState";
 import { IpAddress, IpHistory } from "../System/IpHistory";
 import { Setter } from "solid-js";
 import { Button } from "../ui/button";
@@ -45,7 +49,6 @@ export const ConnectPage = (props: ConnectPageProps) => {
   const toaster = props.toaster;
 
   const [isDetecting, setIsDetecting] = createSignal<boolean>(false);
-  const [detectedServer, setDetectedServer] = createSignal<IpAddress[]>([]);
 
   const scanIpaddrs = async (ipAddrs: string[]) => {
     const findServers = ipAddrs.map((addr) => findServer(addr));

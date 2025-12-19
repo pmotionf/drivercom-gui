@@ -5,6 +5,7 @@ import { TabListContext } from "./components/TabList.tsx";
 import { Child } from "@tauri-apps/plugin-shell";
 import { LoggingFormType } from "./pages/Logging.tsx";
 import { DownloadStates } from "./components/DownloadList.tsx";
+import { IpAddress } from "./components/System/IpHistory.tsx";
 
 const [globalState, setGlobalState] = createStore({
   theme: "light",
@@ -99,4 +100,8 @@ export const [csvFileDownloads, setCsvFileDownloads] = createStore<
 
 export const [configDescription, setConfigDescription] = createSignal<object>(
   {},
+);
+
+export const [detectedServer, setDetectedServer] = createSignal<IpAddress[]>(
+  [],
 );

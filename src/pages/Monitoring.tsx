@@ -9,7 +9,12 @@ import {
 import { css } from "styled-system/css/css";
 import { Show } from "solid-js/web";
 import { Toast } from "~/components/ui/toast.tsx";
-import { monitoringInputs, page, Pages } from "~/GlobalState.ts";
+import {
+  monitoringInputs,
+  page,
+  Pages,
+  setDetectedServer,
+} from "~/GlobalState.ts";
 import { createStore } from "solid-js/store";
 import { IpAddress } from "~/components/System/IpHistory.tsx";
 import { load } from "@tauri-apps/plugin-store";
@@ -193,6 +198,9 @@ function Monitoring() {
     setIpHistory((prev) =>
       prev.filter((prevIp) => prevIp.ip !== ip || prevIp.port !== port),
     );
+    setDetectedServer((prev) =>
+      prev.filter((prevIp) => prevIp.ip !== ip || prevIp.port !== port),
+    );
   };
 
   const toaster = Toast.createToaster({
@@ -322,14 +330,7 @@ function Monitoring() {
                         setConnetBtnLoading(false);
                       } catch {
                         setConnetBtnLoading(false);
-
-                        if (
-                          ipHistory().some(
-                            (addr) => addr.ip === ip && addr.port === port,
-                          )
-                        ) {
-                          deleteIpHistory(ip, port);
-                        }
+                        deleteIpHistory(ip, port);
                         await serverHandler.disconnect();
                       }
                     }}
@@ -347,13 +348,7 @@ function Monitoring() {
                           await addIpHistory(ip, port);
                           setLines(serverResponse);
                         } catch {
-                          if (
-                            ipHistory().some(
-                              (addr) => addr.ip === ip && addr.port === port,
-                            )
-                          ) {
-                            deleteIpHistory(ip, port);
-                          }
+                          deleteIpHistory(ip, port);
                           if (lines.length > 0) {
                             await serverHandler.disconnect();
                           }
