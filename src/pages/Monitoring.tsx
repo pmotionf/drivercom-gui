@@ -191,7 +191,7 @@ function Monitoring() {
 
   const deleteIpHistory = (ip: string, port: string) => {
     setIpHistory((prev) =>
-      prev.filter((prevIp) => prevIp.ip !== ip && prevIp.port !== port),
+      prev.filter((prevIp) => prevIp.ip !== ip || prevIp.port !== port),
     );
   };
 
@@ -317,11 +317,12 @@ function Monitoring() {
                         await serverHandler.connect(ip, port);
                         const serverResponse: LineType[] =
                           await serverHandler.getLineConfig();
-                        setConnetBtnLoading(false);
                         await addIpHistory(ip, port);
                         setLines(serverResponse);
+                        setConnetBtnLoading(false);
                       } catch {
                         setConnetBtnLoading(false);
+
                         if (
                           ipHistory().some(
                             (addr) => addr.ip === ip && addr.port === port,
@@ -332,11 +333,32 @@ function Monitoring() {
                         await serverHandler.disconnect();
                       }
                     }}
-                    onDisconnectServer={async () => {
+                    onDisconnectServer={async (ip, port) => {
                       setConnetBtnLoading(true);
                       setLines([]);
                       setSystems([]);
                       await serverHandler.disconnect();
+
+                      if (ip && port) {
+                        try {
+                          await serverHandler.connect(ip, port);
+                          const serverResponse: LineType[] =
+                            await serverHandler.getLineConfig();
+                          await addIpHistory(ip, port);
+                          setLines(serverResponse);
+                        } catch {
+                          if (
+                            ipHistory().some(
+                              (addr) => addr.ip === ip && addr.port === port,
+                            )
+                          ) {
+                            deleteIpHistory(ip, port);
+                          }
+                          if (lines.length > 0) {
+                            await serverHandler.disconnect();
+                          }
+                        }
+                      }
                       setConnetBtnLoading(false);
                     }}
                   />
