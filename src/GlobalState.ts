@@ -105,3 +105,4 @@ export const [configDescription, setConfigDescription] = createSignal<object>(
 export const [detectedServer, setDetectedServer] = createSignal<IpAddress[]>(
   [],
 );
+export const [configTabForm, setConfigTabForm] = createSignal<object>({});

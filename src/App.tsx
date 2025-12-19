@@ -42,6 +42,7 @@ import {
   setPage,
   Theme,
   setConfigDescription,
+  setConfigTabForm,
 } from "./GlobalState.ts";
 
 import { Button } from "~/components/ui/button.tsx";
@@ -61,7 +62,7 @@ type PageMeta = {
 
 function App(props: RouteSectionProps) {
   // Necessary for light/dark mode detection
-  onMount(() => {
+  onMount(async () => {
     const prefers_dark = globalThis.matchMedia(
       "(prefers-color-scheme: dark)",
     ).matches;
@@ -74,12 +75,13 @@ function App(props: RouteSectionProps) {
     document.documentElement.dataset.theme = theme_str;
     setGlobalState("theme", theme_str);
 
-    detectCliVersion();
-    buildEmptyLogConfiguration();
-    buildEmptyDriverConfiguration();
-    getLogStartCombinator();
-    getLogStartCondition();
-    getConfigDescription();
+    await detectCliVersion();
+    await buildEmptyLogConfiguration();
+    await buildEmptyDriverConfiguration();
+    await getLogStartCombinator();
+    await getLogStartCondition();
+    await getConfigDescription();
+    await prepareConfigTabFormat();
   });
 
   async function detectCliVersion() {
@@ -145,6 +147,46 @@ function App(props: RouteSectionProps) {
     const output = await configDesc.execute();
     const desc = JSON5.parse(output.stdout);
     setConfigDescription(desc);
+  }
+
+  async function getTuneConfig() {
+    const getTuneConfig = Command.sidecar("binaries/drivercom", [
+      `config.empty.tune`,
+    ]);
+    const output = await getTuneConfig.execute();
+    const tuneConfig = JSON5.parse(output.stdout);
+    return tuneConfig;
+  }
+
+  async function getCalibrationConfig() {
+    const getCalibrationConfig = Command.sidecar("binaries/drivercom", [
+      `config.empty.calibration`,
+    ]);
+    const output = await getCalibrationConfig.execute();
+    const calConfig = JSON5.parse(output.stdout);
+    return calConfig;
+  }
+
+  async function getSystemConfig() {
+    const getSystemConfig = Command.sidecar("binaries/drivercom", [
+      `config.empty.system`,
+    ]);
+    const output = await getSystemConfig.execute();
+    const systemConfig = JSON5.parse(output.stdout);
+    return systemConfig;
+  }
+
+  async function prepareConfigTabFormat() {
+    const tuneConfig = await getTuneConfig();
+    const calConfig = await getCalibrationConfig();
+    const systemConfig = await getSystemConfig();
+    const config = {
+      tune: tuneConfig,
+      calibration: calConfig,
+      system: systemConfig,
+    };
+    console.log(config);
+    setConfigTabForm(config);
   }
 
   const [version, setVersion] = createSignal("0.0.0");
