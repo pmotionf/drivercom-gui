@@ -68,13 +68,9 @@ export const FormCollapsibleObject = (props: FormCollapsibleObjectProps) => {
                   props.gainLockStatuses!.get(`${key}.gain`)![1](false);
                 }
 
-                if (
-                  props.linkStates &&
-                  props.linkStates.has(props.id.split(".")[1]!)
-                ) {
-                  const linkState = props.linkStates.get(
-                    props.id.split(".")[1]!,
-                  )![0];
+                const splitId = props.id.split(".")[2]!;
+                if (props.linkStates && props.linkStates.has(splitId)) {
+                  const linkState = props.linkStates.get(splitId)![0];
                   if (linkState()[0]) {
                     const lockPairKey = Array.from(
                       props.gainLockStatuses!.keys(),
@@ -176,8 +172,8 @@ export const FormCollapsibleObject = (props: FormCollapsibleObjectProps) => {
             <Show
               when={
                 props.linkStates &&
-                props.linkStates.has(props.id.split(".")[1]!) &&
-                props.id.split(".").length === 2
+                props.linkStates.has(props.id.split(".")[2]!) &&
+                props.id.split(".").length === 3
               }
             >
               <Tooltip.Root>
@@ -194,14 +190,14 @@ export const FormCollapsibleObject = (props: FormCollapsibleObjectProps) => {
                       e.stopPropagation();
 
                       const [getLinkState, setLinkState] =
-                        props.linkStates!.get(props.id.split(".")[1]!)!;
+                        props.linkStates!.get(props.id.split(".")[2]!)!;
                       setLinkState([!getLinkState()[0], props.key]);
                       props.onItemChange?.();
                     }}
                   >
                     <Show
                       when={
-                        props.linkStates!.get(props.id.split(".")[1]!)![0]()[0]
+                        props.linkStates!.get(props.id.split(".")[2]!)![0]()[0]
                       }
                       fallback={<IconLinkOff style={{ opacity: "0.5" }} />}
                     >
