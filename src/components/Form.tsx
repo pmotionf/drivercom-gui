@@ -16,7 +16,8 @@ export type AccordionStates = Map<
 
 export type FormProps = JSX.HTMLAttributes<HTMLDivElement> & {
   id: string;
-  object: object;
+  value: object;
+  format?: object;
   description?: object;
   originalFile?: object;
   changeUnits?: boolean;
@@ -31,7 +32,7 @@ export type FormProps = JSX.HTMLAttributes<HTMLDivElement> & {
 };
 
 export function Form(props: FormProps) {
-  const [object, setObject] = createStore(props.object);
+  const [object, setObject] = createStore(props.value);
 
   const [prevCheckBoxIndex, setPrevCheckBoxIndex] = createSignal<number | null>(
     null,
@@ -84,12 +85,12 @@ export function Form(props: FormProps) {
 
   return (
     <div>
-      <For each={Object.entries(object)}>
+      <For each={Object.entries(props.format ? props.format : object)}>
         {(entry, index) => {
           const key = entry[0];
-          const value = entry[1];
+          const format = entry[1];
 
-          if (typeof value === "object") {
+          if (typeof format === "object") {
             let gainkey = props.gainKey ? props.gainKey : "";
             if (gainkey.length !== 0) {
               gainkey = `${props.gainKey}.${key}`;
@@ -102,7 +103,7 @@ export function Form(props: FormProps) {
                 gainkey = `${props.gainKinds[index]}`;
                 if (
                   !props.gainLockStatuses!.has(gainkey) &&
-                  Object.keys(value).includes("gain")
+                  Object.keys(format).includes("gain")
                 ) {
                   props.gainLockStatuses!.set(
                     `${gainkey}.gain`,
@@ -112,164 +113,125 @@ export function Form(props: FormProps) {
               }
             }
 
-            if (
-              Object.values(value).length > 1 ||
-              Object.values(value).some((val) => typeof val === "object")
-            ) {
-              return (
-                <div
-                  style={{
-                    "border-top-width": index() === 0 ? "0px" : "1px",
-                    "border-bottom-width": Object.values(object).some(
-                      (val) => typeof val !== "object",
+            if (checkDesc(key)) {
+              const desc =
+                props.description![key as keyof typeof props.description];
+              if (typeof desc === "object") {
+                const entry = Object.entries(desc);
+                const onlyDesc = entry.filter((entry) =>
+                  entry[0].startsWith("__"),
+                );
+                if (onlyDesc.length > 0) {
+                  const descValues = onlyDesc.map((desc) => desc[1]);
+                  if (
+                    descValues.some(
+                      (val) =>
+                        typeof val === "object" &&
+                        val &&
+                        "hidden" in val &&
+                        val.hidden === true,
                     )
-                      ? typeof Object.values(object)[index() + 1] !== "object"
-                        ? "1px"
-                        : "0"
-                      : "0px",
-                  }}
-                >
-                  <FormCollapsibleObject
-                    id={props.id}
-                    key={
-                      isNaN(Number(key))
-                        ? key
-                        : `${props.id.split(".").pop()} ${Number(key) + 1}`
-                    }
-                    description={
-                      checkDesc(key)
-                        ? props.description![
-                            key as keyof typeof props.description
-                          ]
-                        : undefined
-                    }
-                    originalFile={
-                      props.originalFile && key in props.originalFile
-                        ? props.originalFile![
-                            key as keyof typeof props.originalFile
-                          ]
-                        : undefined
-                    }
-                    changeUnits={props.changeUnits}
-                    triggerDescription={
-                      checkDesc(`__${key}`)
-                        ? props.description![
-                            `__${key}` as keyof typeof props.description
-                          ]
-                        : undefined
-                    }
-                    object={value}
-                    gainKey={gainkey}
-                    gainKinds={props.gainKinds ? props.gainKinds : undefined}
-                    accordionStates={props.accordionStates}
-                    linkStates={props.linkStates ? props.linkStates : undefined}
-                    gainLockStatuses={
-                      props.gainLockStatuses
-                        ? props.gainLockStatuses
-                        : undefined
-                    }
-                    logStartCombinators={
-                      props.logStartCombinators
-                        ? props.logStartCombinators
-                        : undefined
-                    }
-                    logStartConditions={
-                      props.logStartConditions
-                        ? props.logStartConditions
-                        : undefined
-                    }
-                    onItemChange={() => {
-                      props.onItemChange?.();
-
-                      const linkKey = props.id.split(".").pop();
-                      if (
-                        props.linkStates &&
-                        linkKey &&
-                        props.linkStates.has(linkKey)
-                      ) {
-                        const linkState = props.linkStates.get(linkKey)!;
-                        if (linkState[0]()[0]) {
-                          Object.entries(object).forEach(
-                            ([updateKey, updateValue]) => {
-                              if (
-                                typeof updateValue === "object" &&
-                                updateKey !== key
-                              ) {
-                                const stringifyObject = JSON5.stringify(value);
-                                setObject(
-                                  updateKey as keyof typeof object,
-                                  JSON5.parse(stringifyObject),
-                                );
-                              }
-                            },
-                          );
-                        }
-                      }
-                    }}
-                  />
-                </div>
-              );
-            } else {
-              return (
-                <>
-                  <div
-                    style={{
-                      "border-width": "1px",
-                      padding: "0.5rem 1rem 0.5rem 1rem",
-                      "margin-top": "0.5rem",
-                      "border-radius": "0.5em",
-                    }}
-                  >
-                    <Text fontWeight="bold" color="fg.subtle" size="sm">
-                      {`${key[0].toUpperCase()}${Array.from(
-                        key.slice(1, key.length),
-                      )
-                        .map((char, index) => {
-                          if (key[index] === "_") {
-                            return char.toUpperCase();
-                          }
-                          return char;
-                        })
-                        .toString()
-                        .replaceAll(",", "")}`}
-                    </Text>
-
-                    <Form
-                      object={value}
-                      id={`${props.id}.${key}`}
-                      description={
-                        checkDesc(key)
-                          ? props.description![
-                              key as keyof typeof props.description
-                            ]
-                          : undefined
-                      }
-                      originalFile={
-                        props.originalFile && key in props.originalFile
-                          ? props.originalFile![
-                              key as keyof typeof props.originalFile
-                            ]
-                          : undefined
-                      }
-                      changeUnits={props.changeUnits}
-                      style={{ "padding-left": "1rem" }}
-                      onItemChange={() => {
-                        props.onItemChange?.();
-                      }}
-                      accordionStates={props.accordionStates}
-                      linkStates={props.linkStates}
-                      gainLockStatuses={props.gainLockStatuses}
-                      gainKinds={props.gainKinds}
-                      gainKey={gainkey}
-                      logStartCombinators={props.logStartCombinators}
-                      logStartConditions={props.logStartConditions}
-                    />
-                  </div>
-                </>
-              );
+                  ) {
+                    return;
+                  }
+                }
+              }
             }
+
+            return (
+              <div
+                style={{
+                  "border-top-width": index() === 0 ? "0px" : "1px",
+                  "border-bottom-width": Object.values(object).some(
+                    (val) => typeof val !== "object",
+                  )
+                    ? typeof Object.values(object)[index() + 1] !== "object"
+                      ? "1px"
+                      : "0"
+                    : "0px",
+                }}
+              >
+                <FormCollapsibleObject
+                  id={props.id}
+                  key={
+                    isNaN(Number(key))
+                      ? key
+                      : `${props.id.split(".").pop()} ${Number(key) + 1}`
+                  }
+                  description={
+                    checkDesc(key)
+                      ? props.description![
+                          key as keyof typeof props.description
+                        ]
+                      : undefined
+                  }
+                  originalFile={
+                    props.originalFile && key in props.originalFile
+                      ? props.originalFile![
+                          key as keyof typeof props.originalFile
+                        ]
+                      : undefined
+                  }
+                  changeUnits={props.changeUnits}
+                  triggerDescription={
+                    checkDesc(`__${key}`)
+                      ? props.description![
+                          `__${key}` as keyof typeof props.description
+                        ]
+                      : undefined
+                  }
+                  format={props.format ? format : undefined}
+                  value={object[key as keyof typeof object]}
+                  gainKey={gainkey}
+                  gainKinds={props.gainKinds ? props.gainKinds : undefined}
+                  accordionStates={props.accordionStates}
+                  linkStates={props.linkStates ? props.linkStates : undefined}
+                  gainLockStatuses={
+                    props.gainLockStatuses ? props.gainLockStatuses : undefined
+                  }
+                  logStartCombinators={
+                    props.logStartCombinators
+                      ? props.logStartCombinators
+                      : undefined
+                  }
+                  logStartConditions={
+                    props.logStartConditions
+                      ? props.logStartConditions
+                      : undefined
+                  }
+                  onItemChange={() => {
+                    props.onItemChange?.();
+
+                    const linkKey = props.id.split(".").pop();
+                    if (
+                      props.linkStates &&
+                      linkKey &&
+                      props.linkStates.has(linkKey)
+                    ) {
+                      const linkState = props.linkStates.get(linkKey)!;
+                      if (linkState[0]()[0]) {
+                        Object.entries(object).forEach(
+                          ([updateKey, updateValue]) => {
+                            if (
+                              typeof updateValue === "object" &&
+                              updateKey !== key
+                            ) {
+                              const stringifyObject = JSON5.stringify(format);
+                              setObject(
+                                updateKey as keyof typeof object,
+                                JSON5.parse(stringifyObject),
+                              );
+                            }
+                          },
+                        );
+                      }
+                    }
+                  }}
+                />
+              </div>
+            );
           }
-          if (typeof value === "boolean") {
+          if (typeof format === "boolean") {
             const label = !isNaN(Number(key))
               ? `${props.id.split(`.`).pop()} ${Number(key) + 1}`
               : key;
@@ -314,7 +276,7 @@ export function Form(props: FormProps) {
               </div>
             );
           }
-          if (typeof value === "number") {
+          if (typeof format === "number") {
             if (key === "_") return;
             const label = !isNaN(Number(key))
               ? `${props.id.split(`.`).pop()} ${Number(key) + 1}`
@@ -374,7 +336,7 @@ export function Form(props: FormProps) {
           }
 
           if (
-            typeof value == "string" &&
+            typeof format == "string" &&
             props.logStartConditions &&
             props.logStartCombinators
           ) {
@@ -396,7 +358,7 @@ export function Form(props: FormProps) {
                       ? props.logStartConditions
                       : props.logStartCombinators
                   }
-                  defaultValue={[value.toString()]}
+                  defaultValue={[format.toString()]}
                   onValueChange={(v) => {
                     setObject(key as keyof typeof object, v.items[0].label);
                   }}
