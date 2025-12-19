@@ -13,7 +13,7 @@ import { ServerHandler } from "~/pages/Monitoring/ServerHandler";
 export type ConnectPageProps = {
   isConnect: boolean;
   loading: boolean;
-  onDisconnectServer?: () => void;
+  onDisconnectServer?: (ip?: string, port?: string) => void;
   onConnectServer?: (ip: string, port: string) => void;
   ipHistory: IpAddress[];
   changeIpHistory: Setter<IpAddress[]>;
@@ -48,9 +48,8 @@ export const ConnectPage = (props: ConnectPageProps) => {
   const [detectedServer, setDetectedServer] = createSignal<IpAddress[]>([]);
 
   const scanIpaddrs = async (ipAddrs: string[]) => {
-    const promises = ipAddrs.map((addr) => findServer(addr));
-    const scan = Promise.all(promises);
-    await scan;
+    const findServers = ipAddrs.map((addr) => findServer(addr));
+    await Promise.all(findServers);
     return;
   };
 
@@ -171,13 +170,81 @@ export const ConnectPage = (props: ConnectPageProps) => {
           </Button>
         </form>
       </div>
+      {/* IP History Area */}
+      <Show when={props.ipHistory.length > 0}>
+        <div
+          style={{
+            width: "100%",
+            height: `14em`,
+            "border-bottom-width": "2px",
+          }}
+        >
+          <Text
+            style={{
+              "font-weight": "bold",
+              height: "2em",
+              "margin-top": "1em",
+              "margin-left": "1em",
+            }}
+          >
+            {"Recent"}
+          </Text>
+          <div style={{ width: "100%", height: `calc(100% - 2em)` }}>
+            <IpHistory
+              ipHistory={props.ipHistory}
+              onDeleteIp={(ipIndex: number) => {
+                props.changeIpHistory([
+                  ...props.ipHistory.filter((_, i) => i !== ipIndex),
+                ]);
+              }}
+              onConnectServer={async (index: number) => {
+                const newIp = props.ipHistory[index].ip;
+                const newPort = props.ipHistory[index].port;
+                if (props.loading) {
+                  toaster.create({
+                    title: "Already Connecting",
+                    description:
+                      newIp === ip() && newPort === port()
+                        ? "Already connecting to server."
+                        : "Already connecting to other server.",
+                    type: "error",
+                  });
+                  return;
+                }
+
+                if (props.isConnect) {
+                  if (newIp === ip() && newPort === port()) {
+                    toaster.create({
+                      title: "Connected Server",
+                      description: "This server is already connected.",
+                      type: "error",
+                    });
+                    return;
+                  }
+                  setIp(newIp);
+                  setPort(newPort);
+                  props.onDisconnectServer?.(ip(), port());
+                  return;
+                }
+
+                setIp(newIp);
+                setPort(newPort);
+                props.onConnectServer?.(ip(), port());
+              }}
+            />
+          </div>
+        </div>
+      </Show>
 
       <div
         style={{
           width: "100%",
-          height: `14em`,
-          "border-bottom-width": "2px",
-          "padding-bottom": "2.5em",
+          height:
+            props.ipHistory.length > 0
+              ? `calc(100% - 15em - ${connectAreaHeight} )`
+              : `calc(100% - ${connectAreaHeight} )`,
+          "padding-bottom": "3em",
+          "padding-top": "0.5em",
         }}
       >
         <div
@@ -250,7 +317,10 @@ export const ConnectPage = (props: ConnectPageProps) => {
                   });
                   return;
                 }
-                props.onDisconnectServer?.();
+                setIp(newIp);
+                setPort(newPort);
+                props.onDisconnectServer?.(ip(), port());
+                return;
               }
 
               setIp(newIp);
@@ -260,70 +330,6 @@ export const ConnectPage = (props: ConnectPageProps) => {
           />
         </Show>
       </div>
-      {/* IP History Area */}
-      <Show when={props.ipHistory.length > 0}>
-        <div
-          style={{
-            width: "100%",
-            height:
-              props.ipHistory.length > 0
-                ? `calc(100% - 15em - ${connectAreaHeight} )`
-                : `calc(100% - ${connectAreaHeight} )`,
-          }}
-        >
-          <Text
-            style={{
-              "font-weight": "bold",
-              height: "2em",
-              "margin-top": "1em",
-              "margin-left": "1em",
-            }}
-          >
-            {"Recent"}
-          </Text>
-          <div style={{ width: "100%", height: `calc(100% - 2em)` }}>
-            <IpHistory
-              ipHistory={props.ipHistory}
-              onDeleteIp={(ipIndex: number) => {
-                props.changeIpHistory([
-                  ...props.ipHistory.filter((_, i) => i !== ipIndex),
-                ]);
-              }}
-              onConnectServer={async (index: number) => {
-                const newIp = props.ipHistory[index].ip;
-                const newPort = props.ipHistory[index].port;
-                if (props.loading) {
-                  toaster.create({
-                    title: "Already Connecting",
-                    description:
-                      newIp === ip() && newPort === port()
-                        ? "Already connecting to server."
-                        : "Already connecting to other server.",
-                    type: "error",
-                  });
-                  return;
-                }
-
-                if (props.isConnect) {
-                  if (newIp === ip() && newPort === port()) {
-                    toaster.create({
-                      title: "Connected Server",
-                      description: "This server is already connected.",
-                      type: "error",
-                    });
-                    return;
-                  }
-                  props.onDisconnectServer?.();
-                }
-
-                setIp(newIp);
-                setPort(newPort);
-                props.onConnectServer?.(ip(), port());
-              }}
-            />
-          </div>
-        </div>
-      </Show>
     </>
   );
 };
