@@ -42,7 +42,7 @@ export function LoggingForm(props: LoggingFormProps) {
     >
       <Form
         id={props.id}
-        object={logForm}
+        value={logForm}
         logStartCombinators={logStartCombinators}
         logStartConditions={logStartConditions}
         accordionStates={props.accordionStates}

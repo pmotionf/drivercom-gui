@@ -9,10 +9,9 @@ import {
 import { createStore } from "solid-js/store";
 import { AccordionStates, Form } from "./Form";
 import { Tabs } from "./ui/tabs";
-import { FormNumberInput } from "./Form/FormNumberInput";
-import { FormCheckBox } from "./Form/FormCheckBox";
 import { Stack } from "styled-system/jsx";
 import JSON5 from "json5";
+import { configTabForm } from "~/GlobalState";
 
 export type ConfigFormProps = JSX.HTMLAttributes<HTMLFormElement> & {
   id: string;
@@ -336,15 +335,6 @@ export function ConfigForm(props: ConfigFormProps) {
     return p;
   }
 
-  const checkDesc = (key: string) => {
-    const description = props.description;
-    if (!description) return false;
-    const descKeys = Array.from(Object.keys(description));
-    if (descKeys.includes(key)) {
-      return true;
-    } else return false;
-  };
-
   return (
     <Tabs.Root
       value={props.focusedTab ? props.focusedTab : props.id + "driver"}
@@ -361,43 +351,7 @@ export function ConfigForm(props: ConfigFormProps) {
         borderWidth={"1px"}
         borderBottomLeftRadius={"0.5em"}
       >
-        <Tabs.Trigger
-          value={props.id + "driver"}
-          _selected={{
-            background: "bg.default",
-            opacity: "1",
-            borderColor: "bg.disabled",
-            borderRadius: "0.5em",
-          }}
-          opacity={"0.5"}
-          style={{ padding: "0", "padding-right": "0.5em" }}
-        >
-          <Stack
-            style={{
-              width: "0.5em",
-              height: "0.5em",
-              "border-radius": "1em",
-              "margin-left": "0.5em",
-            }}
-            background={
-              props.originalFile &&
-              Object.values(props.originalFile)
-                .filter((val) => typeof val !== "object")
-                .join() !==
-                Object.values(config)
-                  .filter((val) => typeof val !== "object")
-                  .join()
-                ? "accent.7"
-                : undefined
-            }
-          />
-          {"Driver"}
-        </Tabs.Trigger>
-        <For
-          each={Object.entries(config).filter(
-            (entry) => typeof entry === "object",
-          )}
-        >
+        <For each={Object.entries(configTabForm())}>
           {(entry) => {
             const key = entry[0];
             const value = entry[1];
@@ -449,132 +403,35 @@ export function ConfigForm(props: ConfigFormProps) {
         <Tabs.Indicator />
       </Tabs.List>
 
-      <Tabs.Content
-        value={props.id + "driver"}
-        width="100%"
-        style={{ "padding-top": "0", "padding-bottom": "0" }}
-        height="100%"
-        borderBottomRightRadius={"0.5em"}
-      >
-        <For
-          each={Object.entries(config).filter(
-            (entry) => typeof entry[1] !== "object",
-          )}
-        >
-          {(entry) => {
-            const key: string = entry[0];
-            const value = entry[1];
-            if (typeof value === "number") {
-              return (
-                <FormNumberInput
-                  id={`${props.id}.${key}`}
-                  label={key}
-                  desc={
-                    checkDesc(`__${key}`)
-                      ? props.description![
-                          `__${key}` as keyof typeof props.description
-                        ]
-                      : undefined
-                  }
-                  originalValue={
-                    props.originalFile
-                      ? props.originalFile[
-                          key as keyof typeof props.originalFile
-                        ]
-                      : undefined
-                  }
-                  changeUnits={props.changeUnits}
-                  inputValue={config[key as keyof typeof config]}
-                  onInputChange={(inputValue) => {
-                    setConfig(
-                      key as keyof typeof config,
-                      // @ts-ignore: TSC unable to handle generic object type
-                      // in store
-                      inputValue,
-                    );
-                  }}
-                />
-              );
-            } else if (typeof value === "boolean") {
-              return (
-                <FormCheckBox
-                  id={`${props.id}.${key}`}
-                  label={key}
-                  desc={
-                    checkDesc(`__${key}`)
-                      ? props.description![
-                          "key" as keyof typeof props.description
-                        ]
-                      : undefined
-                  }
-                  originalValue={
-                    props.originalFile
-                      ? props.originalFile[
-                          key as keyof typeof props.originalFile
-                        ]
-                      : undefined
-                  }
-                  checked={config[key as keyof typeof config]}
-                  onCheckedChange={(checked) =>
-                    setConfig(
-                      key as keyof typeof config,
-                      // @ts-ignore: TSC unable to handle generic object type
-                      // in store
-                      checked,
-                    )
-                  }
-                />
-              );
-            }
-          }}
-        </For>
-      </Tabs.Content>
-      <For
-        each={Object.entries(config).filter(
-          (entry) => typeof entry === "object",
-        )}
-      >
+      <For each={Object.entries(configTabForm())}>
         {(entry) => {
           const key = entry[0];
-          const value = entry[1];
-          if (typeof value === "object") {
-            return (
-              <Tabs.Content
-                value={props.id + key}
-                style={{
-                  "overflow-y": "auto",
-                  width: " 100%",
-                  height: "100%",
-                  "padding-top": "0",
-                }}
-                borderBottomRightRadius={"0.5em"}
-              >
-                <Form
-                  id={`${props.id}.${key}`}
-                  object={value}
-                  description={
-                    checkDesc(key)
-                      ? props.description![
-                          key as keyof typeof props.description
-                        ]
-                      : undefined
-                  }
-                  originalFile={
-                    props.originalFile && key in props.originalFile
-                      ? props.originalFile![
-                          key as keyof typeof props.originalFile
-                        ]
-                      : undefined
-                  }
-                  changeUnits={props.changeUnits}
-                  accordionStates={props.accordionStatuses}
-                  linkStates={props.linkedStatuses}
-                  gainLockStatuses={props.gainLockStatuses}
-                  gainKinds={dynamic}
-                />
-              </Tabs.Content>
-            );
-          }
+          const format = entry[1];
+          return (
+            <Tabs.Content
+              value={props.id + key}
+              style={{
+                "overflow-y": "auto",
+                width: " 100%",
+                height: "100%",
+                "padding-top": "0",
+              }}
+              borderBottomRightRadius={"0.5em"}
+            >
+              <Form
+                id={`${props.id}.${key}`}
+                format={format}
+                value={props.config}
+                description={props.description}
+                originalFile={props.originalFile}
+                changeUnits={props.changeUnits}
+                accordionStates={props.accordionStatuses}
+                linkStates={props.linkedStatuses}
+                gainLockStatuses={props.gainLockStatuses}
+                gainKinds={dynamic}
+              />
+            </Tabs.Content>
+          );
         }}
       </For>
     </Tabs.Root>

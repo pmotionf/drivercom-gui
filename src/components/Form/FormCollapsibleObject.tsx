@@ -29,7 +29,7 @@ export const FormCollapsibleObject = (props: FormCollapsibleObjectProps) => {
     props.accordionStates.get(itemId)!;
 
   const key = props.key;
-  const value = props.object;
+  const value = props.value;
 
   onMount(() => {
     if (props.gainLockStatuses && props.gainLockStatuses.get(`${key}.gain`)) {
@@ -278,9 +278,10 @@ export const FormCollapsibleObject = (props: FormCollapsibleObjectProps) => {
           marginBottom="1em"
         >
           <Form
-            object={value}
+            value={value}
             id={`${props.id}.${key}`}
             style={{ "padding-left": "1rem" }}
+            format={props.format}
             description={props.description}
             originalFile={props.originalFile}
             changeUnits={props.changeUnits}
