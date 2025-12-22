@@ -337,7 +337,11 @@ export function ConfigForm(props: ConfigFormProps) {
 
   return (
     <Tabs.Root
-      value={props.focusedTab ? props.focusedTab : props.id + "driver"}
+      value={
+        props.focusedTab
+          ? props.focusedTab
+          : props.id + Object.keys(configTabForm())[0]
+      }
       onValueChange={(details) => props.onFocustTabChange?.(details.value)}
       orientation="vertical"
       variant="outline"
