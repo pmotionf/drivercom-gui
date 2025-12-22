@@ -181,11 +181,10 @@ function App(props: RouteSectionProps) {
     const calConfig = await getCalibrationConfig();
     const systemConfig = await getSystemConfig();
     const config = {
+      system: systemConfig,
       tune: tuneConfig,
       calibration: calConfig,
-      system: systemConfig,
     };
-    console.log(config);
     setConfigTabForm(config);
   }
 
