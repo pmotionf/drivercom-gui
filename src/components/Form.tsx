@@ -214,21 +214,19 @@ export function Form(props: FormProps) {
                       props.linkStates.has(linkKey)
                     ) {
                       const linkState = props.linkStates.get(linkKey)!;
-                      if (linkState[0]()[0]) {
-                        Object.entries(object).forEach(
-                          ([updateKey, updateValue]) => {
-                            if (
-                              typeof updateValue === "object" &&
-                              updateKey !== key
-                            ) {
-                              const stringifyObject = JSON5.stringify(format);
-                              setObject(
-                                updateKey as keyof typeof object,
-                                JSON5.parse(stringifyObject),
-                              );
-                            }
-                          },
+                      if (linkState[0]()[0] && props.format) {
+                        const otherKey = Object.keys(props.format).filter(
+                          (formatKey) => formatKey !== key,
                         );
+                        console.log(otherKey, key);
+                        const newValue = object[key as keyof typeof object];
+                        if (typeof newValue === "object") {
+                          const deepCopy = JSON5.parse(
+                            JSON5.stringify(newValue),
+                          );
+                          console.log(object);
+                          setObject(otherKey as keyof typeof object, deepCopy);
+                        }
                       }
                     }
                   }}
