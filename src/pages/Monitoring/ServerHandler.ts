@@ -23,6 +23,7 @@ export type LineType = Omit<
 export type TrackType = Omit<Response_Track, "$typeName" | "$unknown">;
 
 interface IServerHandler {
+  getStatus(): number;
   connect(ip: string, port: string): Promise<void>;
   disconnect(clientId: string): Promise<void>;
   clearError(lindId: number, driverId?: number): Promise<void>;
@@ -58,6 +59,13 @@ export class ServerHandler implements IServerHandler {
     const res = this.serverResponses[0];
     this.serverResponses.shift();
     return res;
+  }
+
+  getStatus(): number {
+    if (!this._socket) {
+      return WebSocket.CLOSED;
+    }
+    return this._socket.readyState;
   }
 
   async connect(ip: string, port: string): Promise<void> {
