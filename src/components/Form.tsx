@@ -122,7 +122,12 @@ export function Form(props: FormProps) {
                   entry[0].startsWith("__"),
                 );
                 if (onlyDesc.length > 0) {
-                  const descValues = onlyDesc.map((desc) => desc[1]);
+                  const descValues = onlyDesc
+                    .filter((desc) =>
+                      Object.keys(format).includes(desc[0].replace(`__`, "")),
+                    )
+                    .map((desc) => desc[1]);
+
                   if (
                     descValues.some(
                       (val) =>
