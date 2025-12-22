@@ -19,6 +19,8 @@ async fn get_server_addrs() -> Vec<String> {
         _ => return results,
     };
 
+    // 16 is Magic number for detecting the last 2 ip address.
+    // TODO: Understand what 16 means...
     let net = Ipv4Net::new(ipv4, 24).unwrap();
 
     for host in net.hosts() {
