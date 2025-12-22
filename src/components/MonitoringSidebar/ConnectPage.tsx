@@ -50,27 +50,34 @@ export const ConnectPage = (props: ConnectPageProps) => {
 
   const [isDetecting, setIsDetecting] = createSignal<boolean>(false);
 
-  const scanIpaddrs = async (ipAddrs: string[]) => {
-    const findServers = ipAddrs.map((addr) => findServer(addr));
-    await Promise.all(findServers);
-    return;
+  const scanIpaddrs = async (ipAddrs: string[]): Promise<void> => {
+    const findCommands = ipAddrs.map((addr) => findServer(addr));
+    await Promise.allSettled(findCommands);
+    return Promise.resolve();
   };
 
   const findServer = async (ipAddr: string): Promise<void> => {
     const port = "443";
     const handler = new ServerHandler();
+
     try {
       await handler.connect(ipAddr, port);
-      const serverName = await handler.getServerName();
-      await handler.disconnect();
-      const result = {
-        ip: ipAddr,
-        port: port,
-        name: serverName ? serverName : undefined,
-      };
-      setDetectedServer((prev) => [...prev, result]);
+      if (handler.getStatus() && handler.getStatus() === WebSocket.OPEN) {
+        const serverName = await handler.getServerName();
+        const result = {
+          ip: ipAddr,
+          port: port,
+          name: serverName ?? undefined,
+        };
+        setDetectedServer((prev) => [...prev, result]);
+      }
     } catch {
-      return;
+      return Promise.resolve();
+    } finally {
+      if (handler.getStatus() && handler.getStatus() === WebSocket.OPEN) {
+        await handler.disconnect();
+      }
+      return Promise.resolve();
     }
   };
 
@@ -269,8 +276,8 @@ export const ConnectPage = (props: ConnectPageProps) => {
             onClick={async () => {
               setIsDetecting(true);
               try {
-                const searchedIps = await invoke<string[]>("get_server_addrs");
                 setDetectedServer([]);
+                const searchedIps = await invoke<string[]>("get_server_addrs");
                 if (searchedIps.length > 0) {
                   await scanIpaddrs(searchedIps);
                 }

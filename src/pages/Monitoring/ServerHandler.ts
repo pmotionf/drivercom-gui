@@ -69,58 +69,56 @@ export class ServerHandler implements IServerHandler {
   }
 
   async connect(ip: string, port: string): Promise<void> {
-    if (!this._socket) {
-      this._socket = new WebSocket(`ws://${ip}:${port}`);
+    if (this._socket) throw new Error("Already connected");
+    this._socket = new WebSocket(`ws://${ip}:${port}`);
+    this._socket.onopen = () => {
+      this._ipAddress.ip = ip;
+      this._ipAddress.port = port;
+    };
 
-      this._socket.onopen = () => {
-        this._ipAddress.ip = ip;
-        this._ipAddress.port = port;
-      };
+    this._socket.onclose = () => {
+      this.serverResponses = [];
+    };
 
-      this._socket.onclose = () => {
-        this.serverResponses = [];
-      };
+    this._socket.onerror = () => {
+      this.serverResponses = [];
+    };
 
-      this._socket.onerror = () => {
-        if (this._socket && this._socket.readyState == WebSocket.CLOSED) {
-          this._socket = null;
-        }
-        this.serverResponses = [];
-        this.unlock();
-      };
-
-      this._socket.onmessage = async (message) => {
-        const msg: Blob = message.data;
-        const bytes = await msg.arrayBuffer();
-        const buffer = new Uint8Array(bytes);
-        const decode: Response = fromBinary(ResponseSchema, buffer);
-        this.addResponse(decode);
-      };
-    }
+    this._socket.onmessage = async (message) => {
+      const msg: Blob = message.data;
+      const bytes = await msg.arrayBuffer();
+      const buffer = new Uint8Array(bytes);
+      const decode: Response = fromBinary(ResponseSchema, buffer);
+      this.addResponse(decode);
+    };
 
     this.lock();
     const timeout = setTimeout(() => {
       this.unlock();
     }, 5000);
 
-    while (this._socket.readyState !== WebSocket.OPEN) {
+    while (this._socket && this._socket.readyState === WebSocket.CONNECTING) {
       if (!this._lockRequest) {
         break;
       }
       const wait = await this.delay(1);
       clearTimeout(wait);
     }
-    clearTimeout(timeout);
-    this.unlock();
 
-    return new Promise((resolve, reject) => {
-      if (!this._socket || this._socket.readyState !== WebSocket.OPEN) {
-        this._socket = null;
-        return reject("Invalid Ip address");
-      } else {
-        return resolve();
+    clearTimeout(timeout);
+    if (this._lockRequest) {
+      this.unlock();
+    }
+
+    if (!this._socket || this._socket.readyState !== WebSocket.OPEN) {
+      if (this._socket) {
+        this._socket.close();
       }
-    });
+      this._socket = null;
+      return Promise.reject("Invalid Ip address");
+    } else {
+      return Promise.resolve();
+    }
   }
 
   async disconnect(): Promise<void | never> {
