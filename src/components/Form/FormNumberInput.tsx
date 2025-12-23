@@ -79,6 +79,8 @@ export const FormNumberInput = (props: FormNumberInputProps) => {
       return "kg";
     } else if (parseUnit === "m/s") {
       return "mm/s";
+    } else if (parseUnit === "m/s^2") {
+      return "mm/s^2";
     } else {
       return unitShort;
     }
@@ -92,6 +94,8 @@ export const FormNumberInput = (props: FormNumberInputProps) => {
       return "Killogram";
     } else if (parseUnit === "meters per second") {
       return "Millimeters Per Second";
+    } else if (parseUnit === "meters per second squared") {
+      return "Millimeters per Second squared";
     } else {
       return unitLong;
     }
@@ -105,6 +109,8 @@ export const FormNumberInput = (props: FormNumberInputProps) => {
       return value * 0.01;
     } else if (parseUnit === "m/s") {
       return value * 1000;
+    } else if (parseUnit === "m/s^2") {
+      return value * 1000;
     } else {
       return value;
     }
@@ -117,6 +123,8 @@ export const FormNumberInput = (props: FormNumberInputProps) => {
     } else if (parseUnit === "dag") {
       return value * 100;
     } else if (parseUnit === "m/s") {
+      return value * 0.001;
+    } else if (parseUnit === "m/s^2") {
       return value * 0.001;
     } else {
       return value;
