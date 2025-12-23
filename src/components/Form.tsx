@@ -1,4 +1,11 @@
-import { For, createSignal, JSX, type Setter, type Accessor } from "solid-js";
+import {
+  For,
+  createSignal,
+  JSX,
+  type Setter,
+  type Accessor,
+  Show,
+} from "solid-js";
 import { Text } from "./ui/text.tsx";
 import { FormCheckBox } from "./Form/FormCheckBox.tsx";
 import { FormNumberInput } from "./Form/FormNumberInput.tsx";
@@ -83,6 +90,8 @@ export function Form(props: FormProps) {
     } else return false;
   };
 
+  const [renderCollapsible, setRenderCollapsible] = createSignal<boolean>(true);
+
   return (
     <div>
       <For each={Object.entries(props.format ? props.format : object)}>
@@ -156,81 +165,96 @@ export function Form(props: FormProps) {
                     : "0px",
                 }}
               >
-                <FormCollapsibleObject
-                  id={props.id}
-                  key={
-                    isNaN(Number(key))
-                      ? key
-                      : `${props.id.split(".").pop()} ${Number(key) + 1}`
-                  }
-                  description={
-                    checkDesc(key)
-                      ? props.description![
-                          key as keyof typeof props.description
-                        ]
-                      : undefined
-                  }
-                  originalFile={
-                    props.originalFile && key in props.originalFile
-                      ? props.originalFile![
-                          key as keyof typeof props.originalFile
-                        ]
-                      : undefined
-                  }
-                  changeUnits={props.changeUnits}
-                  triggerDescription={
-                    checkDesc(`__${key}`)
-                      ? props.description![
-                          `__${key}` as keyof typeof props.description
-                        ]
-                      : undefined
-                  }
-                  format={props.format ? format : undefined}
-                  value={object[key as keyof typeof object]}
-                  gainKey={gainkey}
-                  gainKinds={props.gainKinds ? props.gainKinds : undefined}
-                  accordionStates={props.accordionStates}
-                  linkStates={props.linkStates ? props.linkStates : undefined}
-                  gainLockStatuses={
-                    props.gainLockStatuses ? props.gainLockStatuses : undefined
-                  }
-                  logStartCombinators={
-                    props.logStartCombinators
-                      ? props.logStartCombinators
-                      : undefined
-                  }
-                  logStartConditions={
-                    props.logStartConditions
-                      ? props.logStartConditions
-                      : undefined
-                  }
-                  onItemChange={() => {
-                    props.onItemChange?.();
+                <Show when={renderCollapsible()}>
+                  <FormCollapsibleObject
+                    id={props.id}
+                    key={
+                      isNaN(Number(key))
+                        ? key
+                        : `${props.id.split(".").pop()} ${Number(key) + 1}`
+                    }
+                    description={
+                      checkDesc(key)
+                        ? props.description![
+                            key as keyof typeof props.description
+                          ]
+                        : undefined
+                    }
+                    originalFile={
+                      props.originalFile && key in props.originalFile
+                        ? props.originalFile![
+                            key as keyof typeof props.originalFile
+                          ]
+                        : undefined
+                    }
+                    changeUnits={props.changeUnits}
+                    triggerDescription={
+                      checkDesc(`__${key}`)
+                        ? props.description![
+                            `__${key}` as keyof typeof props.description
+                          ]
+                        : undefined
+                    }
+                    format={props.format ? format : undefined}
+                    value={object[key as keyof typeof object]}
+                    gainKey={gainkey}
+                    gainKinds={props.gainKinds ? props.gainKinds : undefined}
+                    accordionStates={props.accordionStates}
+                    linkStates={props.linkStates ? props.linkStates : undefined}
+                    gainLockStatuses={
+                      props.gainLockStatuses
+                        ? props.gainLockStatuses
+                        : undefined
+                    }
+                    logStartCombinators={
+                      props.logStartCombinators
+                        ? props.logStartCombinators
+                        : undefined
+                    }
+                    logStartConditions={
+                      props.logStartConditions
+                        ? props.logStartConditions
+                        : undefined
+                    }
+                    onItemChange={() => {
+                      props.onItemChange?.();
 
-                    const linkKey = props.id.split(".").pop();
-                    if (
-                      props.linkStates &&
-                      linkKey &&
-                      props.linkStates.has(linkKey)
-                    ) {
-                      const linkState = props.linkStates.get(linkKey)!;
-                      if (linkState[0]()[0] && props.format) {
-                        const otherKey = Object.keys(props.format).filter(
-                          (formatKey) => formatKey !== key,
-                        );
-                        console.log(otherKey, key);
-                        const newValue = object[key as keyof typeof object];
-                        if (typeof newValue === "object") {
-                          const deepCopy = JSON5.parse(
-                            JSON5.stringify(newValue),
-                          );
-                          console.log(object);
-                          setObject(otherKey as keyof typeof object, deepCopy);
+                      const linkKey = props.id.split(".").pop();
+                      console.log(linkKey, props.linkStates);
+
+                      if (
+                        props.linkStates &&
+                        linkKey &&
+                        props.linkStates.has(linkKey)
+                      ) {
+                        const linkState = props.linkStates.get(linkKey)!;
+                        if (linkState[0]()[0] && props.format) {
+                          const otherKey = Object.entries(props.format).filter(
+                            (entry) =>
+                              Object.keys(entry[1]).join() ===
+                                Object.keys(format).join() && entry[0] !== key,
+                          )[0][0];
+                          const newValue = object[key as keyof typeof object];
+                          if (typeof newValue === "object") {
+                            linkState[1]([linkState[0]()[0], key]);
+
+                            const deepCopy = JSON5.parse(
+                              JSON5.stringify(newValue),
+                            );
+                            setObject(
+                              otherKey as keyof typeof object,
+                              deepCopy,
+                            );
+                            setRenderCollapsible(false);
+                            setTimeout(() => {
+                              setRenderCollapsible(true);
+                            }, 0);
+                          }
                         }
                       }
-                    }
-                  }}
-                />
+                    }}
+                  />
+                </Show>
               </div>
             );
           }
