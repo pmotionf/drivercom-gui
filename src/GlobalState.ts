@@ -31,7 +31,6 @@ export const GlobalStateContext = createContext<{
 export const [cliVersion, setCliVersion] = createSignal<string>("");
 export const [driverComVersion, setDriverComVersion] = createSignal<string>("");
 
-export const [portId, setPortId] = createSignal<string>("");
 export const [portList, setPortList] = createSignal<Port[]>([]);
 
 export const [logFormFileFormat, setLogFormFileFormat] = createSignal({});
@@ -89,6 +88,7 @@ export const portCommands: Map<number, PortCommand> = new Map();
 export const [logForm, setLogForm] = createStore<LoggingFormType>({
   title: "New file",
   filePath: "",
+  portId: "",
   logConfig: {},
   accordionStates: new Map(),
   originalFile: {},
