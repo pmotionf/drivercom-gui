@@ -10,7 +10,6 @@ import { createStore } from "solid-js/store";
 import { AccordionStates, Form } from "./Form";
 import { Tabs } from "./ui/tabs";
 import { Stack } from "styled-system/jsx";
-import JSON5 from "json5";
 import { configTabForm } from "~/GlobalState";
 
 export type ConfigFormProps = JSX.HTMLAttributes<HTMLFormElement> & {
@@ -335,6 +334,38 @@ export function ConfigForm(props: ConfigFormProps) {
     return p;
   }
 
+  const isChange = (
+    originalFile: object,
+    currentValue: object,
+    format: object,
+  ) => {
+    const originalEntries = getFormatValues(originalFile, format);
+    const currentEntries = getFormatValues(currentValue, format);
+    return originalEntries !== currentEntries;
+  };
+
+  const getFormatValues = (file: object, format: object) => {
+    const entries = Object.entries(file).filter((entry) =>
+      Object.keys(format).includes(entry[0]),
+    );
+    const parseEntries: string = entries
+      .map((entry) => {
+        const key = entry[0];
+        const value = entry[1];
+        if (typeof value !== "object") {
+          return entry.join("");
+        } else {
+          const newValue = getFormatValues(
+            value,
+            format[key as keyof typeof format],
+          );
+          return [key, newValue].join("");
+        }
+      })
+      .join("");
+    return parseEntries;
+  };
+
   return (
     <Tabs.Root
       value={
@@ -389,11 +420,7 @@ export function ConfigForm(props: ConfigFormProps) {
                     }}
                     background={
                       props.originalFile &&
-                      JSON5.stringify(
-                        props.originalFile[
-                          key as keyof typeof props.originalFile
-                        ],
-                      ) !== JSON5.stringify(config[key as keyof typeof config])
+                      isChange(props.originalFile, props.config, value)
                         ? "accent.7"
                         : undefined
                     }
