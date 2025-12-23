@@ -413,6 +413,7 @@ export function ConfigForm(props: ConfigFormProps) {
           const format = entry[1];
           return (
             <Tabs.Content
+              id={`tab-${props.id}.${key}`}
               value={props.id + key}
               style={{
                 "overflow-y": "auto",

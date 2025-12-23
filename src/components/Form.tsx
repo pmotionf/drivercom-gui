@@ -218,9 +218,7 @@ export function Form(props: FormProps) {
                     }
                     onItemChange={() => {
                       props.onItemChange?.();
-
                       const linkKey = props.id.split(".").pop();
-                      console.log(linkKey, props.linkStates);
 
                       if (
                         props.linkStates &&
@@ -245,9 +243,22 @@ export function Form(props: FormProps) {
                               otherKey as keyof typeof object,
                               deepCopy,
                             );
+
+                            const tabContentId = `tab-${props.id
+                              .split(".")
+                              .slice(0, 2)
+                              .join(".")}`;
+                            const element =
+                              document.getElementById(tabContentId);
+                            const scrolltop = element
+                              ? element.scrollTop
+                              : null;
                             setRenderCollapsible(false);
                             setTimeout(() => {
                               setRenderCollapsible(true);
+                              if (scrolltop && element) {
+                                element.scrollTop = scrolltop;
+                              }
                             }, 0);
                           }
                         }
