@@ -4,10 +4,9 @@ import { Button } from "./ui/styled/button.tsx";
 import { csvFileDownloads } from "~/GlobalState.ts";
 import { DownloadStatus } from "./DownloadList.tsx";
 import { ButtonProps } from "./ui/button.tsx";
-import { Accessor } from "solid-js";
 
 export type PortMenuProps = ButtonProps & {
-  portId: Accessor<string>;
+  portId: string;
   onGetFromPort?: () => void;
   onSaveToPort?: () => void;
 };
@@ -21,28 +20,28 @@ export function PortMenu(props: PortMenuProps) {
       positioning={{ placement: "bottom-start" }}
       open={openMenu()}
       onOpenChange={(details) => {
-        if (portId().length < 1) return;
+        if (portId.length < 1) return;
         setOpenMenu(details.open);
       }}
     >
       <Menu.Trigger
         disabled={
-          portId().length < 1 ||
+          portId.length < 1 ||
           csvFileDownloads.some(
             (file) =>
               file.status === DownloadStatus.Progressing &&
-              file.port === portId(),
+              file.port === portId,
           )
         }
       >
         <Button
           {...buttonProps}
           disabled={
-            portId().length < 1 ||
+            portId.length < 1 ||
             csvFileDownloads.some(
               (file) =>
                 file.status === DownloadStatus.Progressing &&
-                file.port === portId(),
+                file.port === portId,
             )
           }
         >
@@ -54,21 +53,21 @@ export function PortMenu(props: PortMenuProps) {
           <Menu.Item
             value="Get from port"
             disabled={
-              portId().length < 1 ||
+              portId.length < 1 ||
               csvFileDownloads.some(
                 (file) =>
                   file.status === DownloadStatus.Progressing &&
-                  file.port === portId(),
+                  file.port === portId,
               )
             }
             userSelect="none"
             onClick={async () => {
               if (
-                portId().length < 1 ||
+                portId.length < 1 ||
                 csvFileDownloads.some(
                   (file) =>
                     file.status === DownloadStatus.Progressing &&
-                    file.port === portId(),
+                    file.port === portId,
                 )
               )
                 return;
@@ -82,21 +81,21 @@ export function PortMenu(props: PortMenuProps) {
           <Menu.Item
             value="Save to port"
             disabled={
-              portId().length < 1 ||
+              portId.length < 1 ||
               csvFileDownloads.some(
                 (file) =>
                   file.status === DownloadStatus.Progressing &&
-                  file.port === portId(),
+                  file.port === portId,
               )
             }
             userSelect="none"
             onClick={async () => {
               if (
-                portId().length < 1 ||
+                portId.length < 1 ||
                 csvFileDownloads.some(
                   (file) =>
                     file.status === DownloadStatus.Progressing &&
-                    file.port === portId(),
+                    file.port === portId,
                 )
               )
                 return;

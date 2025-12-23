@@ -1,14 +1,12 @@
 import { IconButton } from "~/components/ui/icon-button.tsx";
 import {
-  IconChevronDown,
-  IconChevronUp,
   IconPlugConnected,
   IconPlugConnectedX,
   IconX,
 } from "@tabler/icons-solidjs";
 import { Popover } from "~/components/ui/popover.tsx";
 import { createSignal, JSX, Show } from "solid-js";
-import { portId, portList, setPortId, setPortList } from "../../GlobalState.ts";
+import { portList, setPortList } from "../../GlobalState.ts";
 //@ts-ignore Implicitly has an 'any' type.
 import { Stack } from "styled-system/jsx/stack.mjs";
 import { Text } from "../../components/ui/text.tsx";
@@ -21,7 +19,10 @@ import { Portal } from "solid-js/web";
 import { csvFileDownloads } from "../../GlobalState.ts";
 import { DownloadStatus } from "~/components/DownloadList.tsx";
 
-export type ConnectButtonProps = JSX.HTMLAttributes<HTMLButtonElement>;
+export type ConnectButtonProps = JSX.HTMLAttributes<HTMLButtonElement> & {
+  portId: string;
+  onPortIdChange?: (portId: string) => void;
+};
 
 export function ConnectButton(props: ConnectButtonProps) {
   const [isDectecting, setIsDetecting] = createSignal<boolean>(false);
@@ -64,7 +65,7 @@ export function ConnectButton(props: ConnectButtonProps) {
       });
       return;
     }
-    setPortId("");
+    props.onPortIdChange?.("");
   }
 
   async function detectFirmwareVersion(portId: string): Promise<string | null> {
@@ -86,48 +87,25 @@ export function ConnectButton(props: ConnectButtonProps) {
     gap: 24,
   });
 
-  const [isOpen, setIsOpen] = createSignal<boolean>(false);
-
   return (
-    <Popover.Root
-      positioning={{ placement: "bottom-start" }}
-      onOpenChange={(e: { open: boolean }) => setIsOpen(e.open)}
-    >
+    <Popover.Root positioning={{ placement: "bottom-end" }}>
       <Popover.Trigger maxWidth="min-content" gap="" padding="0" {...props}>
-        <Button
+        <IconButton
           variant="outline"
           borderColor="bg.disabled"
           backgroundColor="bg.default"
-          style={{
-            "padding-right": "0.5em",
-            "padding-left": "0em",
-            "padding-top": "0",
-            "padding-bottom": "0",
-            "border-width": "1px",
-            width: "4em",
-            height: "2em",
-          }}
         >
           <Tooltip.Root>
             <Tooltip.Trigger
-              width="2em"
-              paddingLeft="0.5em"
-              borderRightWidth="1px"
-              color={portId().length === 0 ? "fg.subtle" : "fg.default"}
+              color={props.portId.length === 0 ? "fg.subtle" : "fg.default"}
             >
-              <div
-                style={{
-                  width: "2em",
-                }}
-              >
-                {portId().length === 0 ? (
-                  <IconPlugConnectedX />
-                ) : (
-                  <IconPlugConnected />
-                )}
-              </div>
+              {props.portId.length === 0 ? (
+                <IconPlugConnectedX />
+              ) : (
+                <IconPlugConnected />
+              )}
             </Tooltip.Trigger>
-            <Show when={portId().length !== 0}>
+            <Show when={props.portId.length !== 0}>
               <Portal>
                 <Tooltip.Positioner>
                   <Tooltip.Content
@@ -135,14 +113,13 @@ export function ConnectButton(props: ConnectButtonProps) {
                     color="fg.default"
                     textAlign="left"
                   >
-                    {portId()}
+                    {props.portId}
                   </Tooltip.Content>
                 </Tooltip.Positioner>
               </Portal>
             </Show>
           </Tooltip.Root>
-          {isOpen() ? <IconChevronUp /> : <IconChevronDown />}
-        </Button>
+        </IconButton>
       </Popover.Trigger>
       <Popover.Positioner>
         <Popover.Content
@@ -178,7 +155,7 @@ export function ConnectButton(props: ConnectButtonProps) {
               onClick={async () => {
                 setIsDetecting(true);
                 await detectPort();
-                setPortId("");
+                props.onPortIdChange?.("");
                 setIsDetecting(false);
               }}
               disabled={
@@ -213,7 +190,7 @@ export function ConnectButton(props: ConnectButtonProps) {
                     }}
                     variant="ghost"
                     onClick={() => {
-                      setPortId(port.id);
+                      props.onPortIdChange?.(port.id);
                     }}
                   >
                     <Tooltip.Root>
@@ -262,7 +239,7 @@ export function ConnectButton(props: ConnectButtonProps) {
                       </Portal>
                     </Tooltip.Root>
                     <Show
-                      when={port.id === portId()}
+                      when={port.id === props.portId}
                       fallback={<div style={{ width: "3em" }} />}
                     >
                       <IconButton
@@ -271,7 +248,7 @@ export function ConnectButton(props: ConnectButtonProps) {
                         borderRadius="3em"
                         onClick={() => {
                           setTimeout(() => {
-                            setPortId("");
+                            props.onPortIdChange?.(props.portId);
                           }, 200);
                         }}
                         variant="ghost"

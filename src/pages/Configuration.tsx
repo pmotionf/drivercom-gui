@@ -11,7 +11,6 @@ import { TabContext, TabList, TabListContext } from "~/components/TabList.tsx";
 import { ConfigTabContent } from "./Configuration/ConfigTabContent.tsx";
 import { GainLockStates, LinkStates } from "~/components/ConfigForm.tsx";
 import { AccordionStates } from "~/components/Form.tsx";
-import { ConnectButton } from "./Connect/ConnectButton.tsx";
 import { createSignal, onMount, Show } from "solid-js";
 import { createStore } from "solid-js/store";
 
@@ -51,6 +50,7 @@ function Configuration() {
       tabPage: {
         configTabPage: {
           filePath: "",
+          portId: "",
           configForm: newForm,
           configAccordionStatuses: accordionStatuses,
           configLinkedStatuses: linkedStatuses,
@@ -79,9 +79,6 @@ function Configuration() {
           </TabList>
         </Panel>
       </PanelLayout>
-      <ConnectButton
-        style={{ position: "absolute", top: "4rem", right: "1rem" }}
-      />
     </Show>
   );
 }

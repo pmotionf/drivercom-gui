@@ -15,7 +15,6 @@ import {
   configDescription,
   configFormFileFormat,
   portCommands,
-  portId,
   recentConfigFilePaths,
   setRecentConfigFilePaths,
   tabContexts,
@@ -27,9 +26,11 @@ import { AccordionStates } from "~/components/Form";
 import JSON5 from "json5";
 import { Spinner } from "~/components/ui/spinner";
 import { IconButton } from "~/components/ui/icon-button";
+import { ConnectButton } from "../Connect/ConnectButton";
 
 export type ConfigTabPage = {
   filePath?: string;
+  portId?: string;
   configForm?: object;
   focusedTab?: string;
   configAccordionStatuses?: AccordionStates;
@@ -71,6 +72,22 @@ export function ConfigTabContent() {
       "configTabPage",
       "configForm",
       config,
+    );
+  };
+
+  const getPortId = (): string => {
+    return tabContexts.get(configTabProps.key)![0].tabContext[getTabIndex()]
+      .tabPage!.configTabPage!.portId!;
+  };
+
+  const setPortId = (id: string) => {
+    return tabContexts.get(configTabProps.key)![1](
+      "tabContext",
+      getTabIndex(),
+      "tabPage",
+      "configTabPage",
+      "portId",
+      id,
     );
   };
 
@@ -229,7 +246,7 @@ export function ConfigTabContent() {
     const json_str = JSON.stringify(config, null, "  ");
     const saveConfig = Command.sidecar("binaries/drivercom", [
       `--port`,
-      portId(),
+      getPortId(),
       `config.set`,
       json_str,
     ]);
@@ -274,11 +291,11 @@ export function ConfigTabContent() {
 
   createEffect(
     on(
-      () => portId(),
+      () => getPortId(),
       () => {
         if (Array.from(portCommands.values()).length > 0) {
           Array.from(portCommands.values()).forEach((command) => {
-            if (command.port !== portId()) {
+            if (command.port !== getPortId()) {
               command.child.kill();
               portCommands.delete(command.child.pid);
             }
@@ -510,16 +527,16 @@ export function ConfigTabContent() {
             }}
           />
           <PortMenu
-            portId={portId}
+            portId={getPortId()}
             variant="outline"
             borderColor="bg.disabled"
             onGetFromPort={async () => {
-              if (!checkAvailablePort(portId())) return;
+              if (!checkAvailablePort(getPortId())) return;
               setFilePath(null);
               try {
                 setRender(false);
-                const config = await getConfigFromPort(portId());
-                setFormName(portId());
+                const config = await getConfigFromPort(getPortId());
+                setFormName(getPortId());
                 setConfigForm(config);
                 setOriginalFile(JSON5.parse(JSON.stringify(config)));
                 setRender(true);
@@ -533,7 +550,7 @@ export function ConfigTabContent() {
               }
             }}
             onSaveToPort={async () => {
-              if (portId().length === 0) return;
+              if (getPortId().length === 0) return;
               if (
                 scrollContainer &&
                 document.querySelectorAll(`[data-name*="config_field_error"]`)
@@ -567,7 +584,7 @@ export function ConfigTabContent() {
             }}
           >
             <Button
-              disabled={portId().length === 0}
+              disabled={getPortId().length === 0}
               variant="outline"
               borderColor="bg.disabled"
               borderRadius="0.4rem"
@@ -575,6 +592,10 @@ export function ConfigTabContent() {
               Port
             </Button>
           </PortMenu>
+          <ConnectButton
+            portId={getPortId()}
+            onPortIdChange={(portId) => setPortId(portId)}
+          />
         </Stack>
         <Show
           when={render()}
@@ -610,8 +631,8 @@ export function ConfigTabContent() {
               >
                 {getFilePath()
                   ? `Get config from "${getFilePath()}".`
-                  : portId().length > 0
-                    ? `Get config from "${portId()}".`
+                  : getPortId().length > 0
+                    ? `Get config from "${getPortId()}".`
                     : `Get new config.`}
               </Text>
               <Text
@@ -622,7 +643,7 @@ export function ConfigTabContent() {
               >
                 {getFilePath()
                   ? `Opening...`
-                  : portId().length > 0
+                  : getPortId().length > 0
                     ? `Downloading...`
                     : `Opening...`}
               </Text>

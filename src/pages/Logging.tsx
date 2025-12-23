@@ -5,12 +5,10 @@ import {
   logFormFileFormat,
   Pages,
   pageKeys,
-  portId,
   recentLogFilePaths,
   setRecentLogFilePaths,
   csvFileDownloads,
   setCsvFileDownloads,
-  setPortId,
 } from "~/GlobalState.ts";
 import { Command } from "@tauri-apps/plugin-shell";
 import { createSignal, Show } from "solid-js";
@@ -42,6 +40,7 @@ import JSON5 from "json5";
 export type LoggingFormType = {
   title: string;
   filePath: string;
+  portId: string;
   logConfig: object;
   accordionStates: AccordionStates;
   originalFile: object;
@@ -65,9 +64,11 @@ export function Logging() {
       pageKeys.set(Pages.Logging, crypto.randomUUID());
     }
     if (Object.values(logForm.logConfig).length === 0) {
+      console.log("Test");
       const accordionStates: AccordionStates = new Map();
       setLogForm({
         title: "New file",
+        portId: "",
         logConfig: JSON5.parse(JSON5.stringify(logFormFileFormat())),
         originalFile: JSON5.parse(JSON5.stringify(logFormFileFormat())),
         filePath: "",
@@ -76,10 +77,10 @@ export function Logging() {
     }
     setRenderLoggingForm(true);
 
-    if (portId().length > 0) {
+    if (logForm.portId.length > 0) {
       try {
-        if (checkAvailablePort(portId())) return;
-        const logStatus = await getCurrentLogStatus(portId());
+        if (checkAvailablePort(logForm.portId)) return;
+        const logStatus = await getCurrentLogStatus(logForm.portId);
         setCurrentLogStatus(logStatus.logStatus);
         setCyclesCompleted(logStatus.cycle);
       } catch {
@@ -91,12 +92,12 @@ export function Logging() {
 
   createEffect(
     on(
-      () => portId(),
+      () => logForm.portId,
       async () => {
-        if (portId().length > 0) {
+        if (logForm.portId.length > 0) {
           try {
-            if (checkAvailablePort(portId())) return;
-            const logStatus = await getCurrentLogStatus(portId());
+            if (checkAvailablePort(logForm.portId)) return;
+            const logStatus = await getCurrentLogStatus(logForm.portId);
             setCurrentLogStatus(logStatus.logStatus);
             setCyclesCompleted(logStatus.cycle);
           } catch {
@@ -107,7 +108,7 @@ export function Logging() {
 
         if (Array.from(portCommands.values()).length > 0) {
           Array.from(portCommands.values()).forEach((command) => {
-            if (command.port !== portId()) {
+            if (command.port !== logForm.portId) {
               command.child.kill();
               portCommands.delete(command.child.pid);
             }
@@ -172,6 +173,7 @@ export function Logging() {
 
   function setLogFormData(form: object, path: string) {
     setLogForm({
+      ...logForm,
       title: path.split("/").pop()!,
       filePath: path,
       logConfig: form,
@@ -676,21 +678,25 @@ export function Logging() {
                 gap="0"
               >
                 <PortMenu
-                  portId={portId}
+                  portId={logForm.portId}
                   variant={"ghost"}
                   onGetFromPort={async () => {
                     try {
-                      if (!checkAvailablePort(portId())) return;
-                      const logConfig = await GetLogConfigFromPort(portId());
+                      if (!checkAvailablePort(logForm.portId)) return;
+                      const logConfig = await GetLogConfigFromPort(
+                        logForm.portId,
+                      );
                       setLogForm({
-                        title: portId(),
+                        title: logForm.portId,
+                        portId: logForm.portId,
                         filePath: "",
                         logConfig: logConfig,
                         originalFile: JSON5.parse(JSON5.stringify(logConfig)),
+                        accordionStates: logForm.accordionStates,
                       });
                       refresh();
                     } catch (e) {
-                      setPortId("");
+                      setLogForm("portId", "");
                       toaster.create({
                         title: "Communication Error",
                         description: e as string,
@@ -716,14 +722,16 @@ export function Logging() {
                     }
 
                     try {
-                      if (!checkAvailablePort(portId())) return;
-                      await saveLogToPort(logForm.logConfig, portId());
+                      if (!checkAvailablePort(logForm.portId)) return;
+                      await saveLogToPort(logForm.logConfig, logForm.portId);
                       toaster.create({
                         title: "Communication Success",
                         description: "Log saved to port successfully.",
                         type: "error",
                       });
-                      const logStatus = await getCurrentLogStatus(portId());
+                      const logStatus = await getCurrentLogStatus(
+                        logForm.portId,
+                      );
                       setCurrentLogStatus(logStatus.logStatus);
                       setCyclesCompleted(logStatus.cycle);
                       if (logForm.filePath.length === 0) {
@@ -753,7 +761,7 @@ export function Logging() {
                         <IconButton
                           disabled={
                             disableBtn() === LogButton.Start ||
-                            portId().length === 0 ||
+                            logForm.portId.length === 0 ||
                             currentLogStatus() === ".invalid" ||
                             currentLogStatus() === ".started" ||
                             currentLogStatus() === ".waiting" ||
@@ -764,13 +772,14 @@ export function Logging() {
                           }
                           onClick={async () => {
                             try {
-                              if (!checkAvailablePort(portId())) return;
+                              if (!checkAvailablePort(logForm.portId)) return;
                               setDisableBtn(LogButton.Start);
-                              await startLogging(portId());
+                              await startLogging(logForm.portId);
 
                               const csvFileDownloadIndex =
                                 csvFileDownloads.findIndex(
-                                  (download) => download.port === portId(),
+                                  (download) =>
+                                    download.port === logForm.portId,
                                 );
                               if (
                                 csvFileDownloadIndex > -1 &&
@@ -784,8 +793,9 @@ export function Logging() {
                                 );
                               }
 
-                              const logState =
-                                await getCurrentLogStatus(portId());
+                              const logState = await getCurrentLogStatus(
+                                logForm.portId,
+                              );
                               setCurrentLogStatus(logState.logStatus);
                               setCyclesCompleted(logState.cycle);
                               setDisableBtn(LogButton.None);
@@ -819,11 +829,12 @@ export function Logging() {
                         disabled={disableBtn() === LogButton.Stop}
                         onClick={async () => {
                           try {
-                            if (!checkAvailablePort(portId())) return;
+                            if (!checkAvailablePort(logForm.portId)) return;
                             setDisableBtn(LogButton.Stop);
-                            await stopLogging(portId());
-                            const logState =
-                              await getCurrentLogStatus(portId());
+                            await stopLogging(logForm.portId);
+                            const logState = await getCurrentLogStatus(
+                              logForm.portId,
+                            );
                             setCurrentLogStatus(logState.logStatus);
                             setCyclesCompleted(logState.cycle);
                             setDisableBtn(LogButton.None);
@@ -867,9 +878,9 @@ export function Logging() {
                               file.status === DownloadStatus.Progressing,
                           )}
                           onClick={async () => {
-                            if (portId().length === 0) return;
+                            if (logForm.portId.length === 0) return;
                             try {
-                              if (!checkAvailablePort(portId())) return;
+                              if (!checkAvailablePort(logForm.portId)) return;
                               setDisableBtn(LogButton.Download);
                               const path = await fileHandler.saveFileDialog(
                                 "csv",
@@ -879,7 +890,7 @@ export function Logging() {
                               setDisableBtn(LogButton.None);
                               await saveLogCsvFile(
                                 path,
-                                portId(),
+                                logForm.portId,
                                 cyclesCompleted()!,
                               );
                             } catch {
@@ -910,13 +921,14 @@ export function Logging() {
                   <Tooltip.Root>
                     <Tooltip.Trigger>
                       <IconButton
-                        disabled={portId().length === 0}
+                        disabled={logForm.portId.length === 0}
                         onClick={async () => {
                           try {
-                            if (!checkAvailablePort(portId())) return;
+                            if (!checkAvailablePort(logForm.portId)) return;
                             setDisableBtn(LogButton.Refresh);
-                            const logState =
-                              await getCurrentLogStatus(portId());
+                            const logState = await getCurrentLogStatus(
+                              logForm.portId,
+                            );
                             setCurrentLogStatus(logState.logStatus);
                             setCyclesCompleted(logState.cycle);
                             setDisableBtn(LogButton.None);
@@ -941,6 +953,10 @@ export function Logging() {
                 </Show>
                 {/* Get Log button need to add tooltip */}
               </Stack>
+              <ConnectButton
+                portId={logForm.portId}
+                onPortIdChange={(portId) => setLogForm("portId", portId)}
+              />
             </Stack>
 
             <LoggingForm
@@ -953,10 +969,6 @@ export function Logging() {
           </Show>
         </Stack>
       </div>
-
-      <ConnectButton
-        style={{ position: "absolute", top: "1rem", right: "1rem" }}
-      />
       <Toast.Toaster toaster={toaster}>
         {(toast) => (
           <Toast.Root>
