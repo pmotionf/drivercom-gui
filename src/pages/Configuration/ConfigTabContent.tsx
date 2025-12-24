@@ -27,6 +27,7 @@ import { AccordionStates } from "~/components/Form";
 import JSON5 from "json5";
 import { Spinner } from "~/components/ui/spinner";
 import { IconButton } from "~/components/ui/icon-button";
+import { invoke } from "@tauri-apps/api/core";
 
 export type ConfigTabPage = {
   filePath?: string;
@@ -279,7 +280,9 @@ export function ConfigTabContent() {
         if (Array.from(portCommands.values()).length > 0) {
           Array.from(portCommands.values()).forEach((command) => {
             if (command.port !== portId()) {
-              command.child.kill();
+              invoke("kill_process", {
+                pid: command.child.pid,
+              });
               portCommands.delete(command.child.pid);
             }
           });

@@ -473,7 +473,8 @@ export const DownloadList = (props: JSX.HTMLAttributes<HTMLDivElement>) => {
                           onClick={async (e) => {
                             e.stopPropagation();
                             if (portCommands.has(download.pid)) {
-                              await invoke("kill_process", {
+                              console.log("killing process");
+                              invoke("kill_process", {
                                 pid: download.pid,
                               });
                               portCommands.delete(download.pid);

@@ -9,17 +9,17 @@ use std::process::Command;
 
 #[tauri::command]
 fn kill_process(pid: u32) {
-    if cfg!(target_os = "windows") {
+    if cfg!(target_os = "windows"){
         let _ = Command::new("taskkill")
-            .args(["/PID", &pid.to_string()])
-            .spawn()
-            .expect("Failed to kill process");
+        .args(["/PID",&pid.to_string(),"/F"])
+        .spawn();
     } else if cfg!(target_os = "linux") {
         let _ = Command::new("kill")
             .args(["-SIGINT", &pid.to_string()])
-            .spawn()
-            .expect("Failed to kill process");
-    }
+            .spawn();
+    } else {
+        panic!("OS not supported");
+    };
 }
 
 #[tauri::command]

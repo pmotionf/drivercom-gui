@@ -37,6 +37,7 @@ import { FileHandler } from "./utils/FileHandler.ts";
 import { logForm, setLogForm } from "~/GlobalState.ts";
 import { AccordionStates } from "~/components/Form.tsx";
 import { DownloadStates, DownloadStatus } from "~/components/DownloadList.tsx";
+import { invoke } from "@tauri-apps/api/core";
 import JSON5 from "json5";
 
 export type LoggingFormType = {
@@ -108,7 +109,9 @@ export function Logging() {
         if (Array.from(portCommands.values()).length > 0) {
           Array.from(portCommands.values()).forEach((command) => {
             if (command.port !== portId()) {
-              command.child.kill();
+              invoke("kill_process", {
+                pid: command.child.pid,
+              });
               portCommands.delete(command.child.pid);
             }
           });
