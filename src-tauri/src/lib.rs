@@ -5,6 +5,22 @@ fn version() -> String {
 
 use ipnet::Ipv4Net;
 use local_ip_address::local_ip;
+use std::process::Command;
+
+#[tauri::command]
+fn kill_process(pid: u32) {
+    if cfg!(target_os = "windows") {
+        let _ = Command::new("taskkill")
+            .args(["/PID", &pid.to_string()])
+            .spawn()
+            .expect("Failed to kill process");
+    } else if cfg!(target_os = "linux") {
+        let _ = Command::new("kill")
+            .args(["-SIGINT", &pid.to_string()])
+            .spawn()
+            .expect("Failed to kill process");
+    }
+}
 
 #[tauri::command]
 async fn get_server_addrs() -> Vec<String> {
@@ -39,7 +55,11 @@ pub fn run() {
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_tcp::init())
-        .invoke_handler(tauri::generate_handler![version, get_server_addrs])
+        .invoke_handler(tauri::generate_handler![
+            version,
+            get_server_addrs,
+            kill_process
+        ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

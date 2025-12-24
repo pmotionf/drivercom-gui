@@ -33,6 +33,7 @@ import { TabListContext } from "./TabList";
 import { css } from "styled-system/css";
 import { Progress } from "@ark-ui/solid/progress";
 import { Command } from "@tauri-apps/plugin-shell";
+import { invoke } from "@tauri-apps/api/core";
 
 export enum DownloadStatus {
   Progressing,
@@ -472,8 +473,9 @@ export const DownloadList = (props: JSX.HTMLAttributes<HTMLDivElement>) => {
                           onClick={async (e) => {
                             e.stopPropagation();
                             if (portCommands.has(download.pid)) {
-                              const command = portCommands.get(download.pid);
-                              await command!.child.kill();
+                              await invoke("kill_process", {
+                                pid: download.pid,
+                              });
                               portCommands.delete(download.pid);
                             }
                             setCsvFileDownloads(
