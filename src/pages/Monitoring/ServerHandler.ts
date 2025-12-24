@@ -25,7 +25,7 @@ export type TrackType = Omit<Response_Track, "$typeName" | "$unknown">;
 interface IServerHandler {
   getStatus(): number;
   connect(ip: string, port: string): Promise<void>;
-  disconnect(clientId: string): Promise<void>;
+  disconnect(): Promise<void>;
   clearError(lindId: number, driverId?: number): Promise<void>;
   getSystemInfo(lineId: number): Promise<TrackType>;
   getLineConfig(): Promise<LineType[]>;
@@ -495,7 +495,6 @@ export class ServerHandler implements IServerHandler {
     if (this._lockRequest) {
       throw new Error("locked");
     }
-
     return new Promise((resolve, reject) => {
       if (this._socket && this._socket.readyState === WebSocket.OPEN) {
         const buffer: Uint8Array = toBinary(RequestSchema, payload);
@@ -511,10 +510,6 @@ export class ServerHandler implements IServerHandler {
   }
 
   private async waitResponse() {
-    const timeout = setTimeout(() => {
-      this.unlock();
-    }, 500);
-
     while (this.serverResponses.length <= 0) {
       if (
         !this._socket ||
@@ -525,10 +520,12 @@ export class ServerHandler implements IServerHandler {
       if (!this._lockRequest) {
         throw new Error("Command lock");
       }
+      if (!this._socket || this._socket.readyState !== WebSocket.OPEN) {
+        throw new Error("Websocket is already disconnected");
+      }
       const wait = await this.delay(1);
       clearTimeout(wait);
     }
-    clearTimeout(timeout);
     this.unlock();
 
     return;

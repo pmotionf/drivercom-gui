@@ -108,6 +108,7 @@ function Monitoring() {
           type: "error",
         });
       }
+      setIsConnect(false);
       return;
     }
   };
@@ -228,6 +229,8 @@ function Monitoring() {
     });
   };
 
+  const [isConnect, setIsConnect] = createSignal<boolean>(false);
+
   return (
     <>
       <Splitter.Root
@@ -317,7 +320,7 @@ function Monitoring() {
                     inputs={monitoringInputs}
                     ipHistory={ipHistory()}
                     changeIpHistory={setIpHistory}
-                    isConnect={lines.length > 0}
+                    isConnect={isConnect()}
                     loading={connectBtnLoading()}
                     onConnectServer={async (ip: string, port: string) => {
                       setConnetBtnLoading(true);
@@ -328,6 +331,9 @@ function Monitoring() {
                         await addIpHistory(ip, port);
                         setLines(serverResponse);
                         setConnetBtnLoading(false);
+                        if (serverHandler.getStatus() === WebSocket.OPEN) {
+                          setIsConnect(true);
+                        }
                       } catch {
                         setConnetBtnLoading(false);
                         deleteIpHistory(ip, port);
@@ -347,6 +353,9 @@ function Monitoring() {
                             await serverHandler.getLineConfig();
                           await addIpHistory(ip, port);
                           setLines(serverResponse);
+                          if (serverHandler.getStatus() === WebSocket.OPEN) {
+                            setIsConnect(true);
+                          }
                         } catch {
                           deleteIpHistory(ip, port);
                           if (lines.length > 0) {
@@ -355,6 +364,7 @@ function Monitoring() {
                         }
                       }
                       setConnetBtnLoading(false);
+                      setIsConnect(false);
                     }}
                   />
                 </Show>
