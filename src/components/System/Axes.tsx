@@ -9,8 +9,9 @@ import {
   Response_Track_Carrier_State,
   Response_Track_Carrier_State_State,
 } from "../proto/mmc/info_pb.ts";
+import { AxisSettingProps, AxisSetting } from "./AxisSetting.tsx";
 
-export type AxisProps = {
+export type AxisProps = AxisSettingProps & {
   id: string;
   axisInfo: Response_Track_Axis_State;
   axisError: Response_Track_Axis_Error;
@@ -49,6 +50,7 @@ export function Axis(props: AxisProps) {
       }
       backgroundColor="bg.default"
       padding="0.5rem"
+      paddingTop="0.2rem"
       gap="0"
     >
       <Stack
@@ -57,7 +59,6 @@ export function Axis(props: AxisProps) {
         borderBottomWidth="0.02px"
         gap="1"
         direction="row"
-        paddingBottom="0.3rem"
         borderColor="bg.muted"
         marginBottom="0.2rem"
       >
@@ -66,7 +67,7 @@ export function Axis(props: AxisProps) {
             display: "flex",
             "align-items": "center",
             height: "100%",
-            width: "100%",
+            width: `calc(100% - 1em)`,
           }}
         >
           <Tooltip.Root>
@@ -138,6 +139,19 @@ export function Axis(props: AxisProps) {
             </Tooltip.Root>
           </Show>
         </div>
+        <AxisSetting
+          variant={"ghost"}
+          size="sm"
+          borderRadius={"1em"}
+          height="2rem"
+          style={{ padding: "0" }}
+          onPull={(carrierId, cas, destination) =>
+            props.onPull?.(carrierId, cas, destination)
+          }
+          onPush={(carrierId) => {
+            props.onPush?.(carrierId);
+          }}
+        />
       </Stack>
 
       <Show when={carrierState()}>
