@@ -30,6 +30,7 @@ tauri-plugin-store = "2"
 local-ip-address = "0.6.5"
 ipnet = "2.11.0"
 tauri-plugin-pty = "0.2.0"
+tauri-plugin-os = "2"
 
 [target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
 tauri-plugin-window-state = "2"
