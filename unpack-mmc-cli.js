@@ -15,7 +15,7 @@ if (!targetTriple) {
   process.exit();
 }
 
-const base_path = "src-tauri/binaries";
+const base_path = "src-tauri/resources";
 
 let platform = process.platform;
 const binaryName = "mmc-cli";
