@@ -50,6 +50,7 @@
         }
       ]
     },
+    "pty:allow-spawn", "pty:default",
     "shell:allow-stdin-write",
     "shell:allow-open",
     "dialog:default",
