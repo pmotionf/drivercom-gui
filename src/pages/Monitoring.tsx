@@ -33,6 +33,7 @@ import {
 } from "~/components/proto/mmc/info_pb.ts";
 import { StatusPage } from "~/components/MonitoringSidebar/StatusPage.tsx";
 import { reconcile } from "solid-js/store";
+import { loadConfig, prepareMmccli } from "./utils/MmcCliHandler.ts";
 
 export type Lines = LineType[];
 export type Systems = TrackType[];
@@ -164,6 +165,9 @@ function Monitoring() {
     if (!monitoringInputs.has("port")) {
       monitoringInputs.set("port", createSignal<string>(""));
     }
+
+    await prepareMmccli();
+    loadConfig();
     setRender(true);
   });
 
