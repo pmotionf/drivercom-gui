@@ -12,6 +12,11 @@
           "args": true,
           "name": "binaries/drivercom",
           "sidecar": true
+        },
+        {
+          "args": true,
+          "name": "binaries/mmccli",
+          "sidecar": true
         }
       ]
     },
@@ -21,6 +26,11 @@
         {
           "args": true,
           "name": "binaries/drivercom",
+          "sidecar": true
+        },
+        {
+          "args": true,
+          "name": "binaries/mmccli",
           "sidecar": true
         }
       ]
@@ -32,9 +42,15 @@
           "args": true,
           "name": "binaries/drivercom",
           "sidecar": true
+        },
+        {
+          "args": true,
+          "name": "binaries/mmccli",
+          "sidecar": true
         }
       ]
     },
+    "shell:allow-stdin-write",
     "shell:allow-open",
     "dialog:default",
     "fs:default",
