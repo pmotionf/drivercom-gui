@@ -264,7 +264,30 @@ function Monitoring() {
           backgroundColor="transparent"
         >
           <Show when={lines.length > 0}>
-            <System lines={lines} systems={systems} />
+            <System
+              lines={lines}
+              systems={systems}
+              onPull={(
+                line,
+                commandDirection,
+                axis,
+                carrierID,
+                destination,
+                disableCas,
+              ) => {
+                console.log(
+                  line,
+                  commandDirection,
+                  axis,
+                  carrierID,
+                  destination,
+                  disableCas,
+                );
+              }}
+              onPush={(line, commandDirection, axis, carrierId) => {
+                console.log(line, commandDirection, axis, carrierId);
+              }}
+            />
           </Show>
         </Splitter.Panel>
 

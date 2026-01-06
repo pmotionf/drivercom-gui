@@ -16,10 +16,25 @@ import {
 } from "@thisbeyond/solid-dnd";
 import { Lines, Systems } from "~/pages/Monitoring.tsx";
 import { Stack } from "styled-system/jsx/stack";
+import { AxisDirection } from "./AxisSetting.tsx";
 
 export type SystemProps = JSX.HTMLAttributes<HTMLDivElement> & {
   lines: Store<Lines>;
   systems: Store<Systems>;
+  onPush?: (
+    line: string,
+    commandDirection: AxisDirection,
+    axis: string,
+    carrier?: string,
+  ) => void;
+  onPull?: (
+    line: string,
+    commandDirection: AxisDirection,
+    axis: string,
+    carrier: string,
+    destination?: string,
+    disableCas?: boolean,
+  ) => void;
 };
 
 export function System(props: SystemProps) {
@@ -164,6 +179,32 @@ export function System(props: SystemProps) {
                                                       .carrierState
                                                   : null
                                               }
+                                              onPull={(
+                                                axisDirection,
+                                                carrierId,
+                                                cas,
+                                                des,
+                                              ) => {
+                                                props.onPull?.(
+                                                  props.lines[item].name,
+                                                  axisDirection,
+                                                  `${axisId}`,
+                                                  carrierId,
+                                                  des,
+                                                  cas,
+                                                );
+                                              }}
+                                              onPush={(
+                                                axisDireciton,
+                                                carrierId,
+                                              ) => {
+                                                props.onPush?.(
+                                                  props.lines[item].name,
+                                                  axisDireciton,
+                                                  `${axisId}`,
+                                                  carrierId,
+                                                );
+                                              }}
                                             />
                                           );
                                         }}
