@@ -145,11 +145,11 @@ export function Axis(props: AxisProps) {
           borderRadius={"1em"}
           height="2rem"
           style={{ padding: "0" }}
-          onPull={(carrierId, cas, destination) =>
-            props.onPull?.(carrierId, cas, destination)
+          onPull={(axisDirection, carrierId, cas, destination) =>
+            props.onPull?.(axisDirection, carrierId, cas, destination)
           }
-          onPush={(carrierId) => {
-            props.onPush?.(carrierId);
+          onPush={(axisDirection, carrierId) => {
+            props.onPush?.(axisDirection, carrierId);
           }}
         />
       </Stack>
