@@ -3,6 +3,8 @@ import { Terminal } from "xterm";
 import { spawn } from "tauri-pty";
 import { platform } from "@tauri-apps/plugin-os";
 import { resolveResource } from "@tauri-apps/api/path";
+import { readdir } from "node:fs/promises";
+import { BaseDirectory, readDir } from "@tauri-apps/plugin-fs";
 
 const term = new Terminal({
   convertEol: true,
@@ -15,14 +17,16 @@ const pty = spawn(platform() === "windows" ? "powershell.exe" : "bash", [], {
 });
 
 let responses: string[] = [];
-let responseLength = 0;
+let responseKey: string = "";
+let isResponseReturn: boolean = false;
 
 pty.onData((data) => {
-  responseLength = responseLength + 1;
   term.write(new Uint8Array(data));
   const buffer = Buffer.from(data);
   const str = buffer.toString();
-  responses.push(str);
+
+  if (str.includes(responseKey)) isResponseReturn = true;
+  responses.push(JSON.stringify(str));
 });
 
 term.onData((data) => {
@@ -37,40 +41,64 @@ async function writeCommand(cmd: string) {
   const currentPlatform = platform();
   const enterBar = currentPlatform === "windows" ? "\r\n" : "\n";
   responses = [];
+  responseKey = "Please enter a command";
   pty.write(cmd + enterBar);
 
-  while (responses.length === 0) {
+  while (!isResponseReturn) {
     await delay(1);
   }
-  // Add more wait time for full response
-  //await delay(1000);
-  console.log(responses, cmd);
 
   return Promise.resolve<string[]>(responses);
 }
 
+async function writeCommandWithEcho(cmd: string) {
+  const currentPlatform = platform();
+  const enterBar = currentPlatform === "windows" ? "\r\n" : "\n";
+
+  const echo = crypto.randomUUID();
+  responseKey = echo;
+
+  pty.write(`${cmd} ${enterBar}echo ${echo} ${enterBar}`);
+  while (!isResponseReturn) {
+    await delay(10);
+  }
+  isResponseReturn = false;
+  responses = [];
+
+  return Promise.resolve();
+}
+
 export async function prepareMmccli() {
   const currentPlatform = platform();
-  const targetTriple =
-    currentPlatform === "windows"
-      ? "-x86_64-pc-windows-msvc.exe"
-      : "-x86_64-unknown-linux-gnu";
-  const mmccli = "mmccli" + targetTriple;
+  const extension = currentPlatform === "windows" ? ".exe" : "";
+  let mmccli = "";
   const resourcePath = await resolveResource(mmccli);
   const fixPath = resourcePath.replace(mmccli, "");
 
-  await writeCommand(`cd "${fixPath}resources"`);
-  await writeCommand(`./${mmccli}`);
-  const loadConfigResponse = await loadConfig();
+  try {
+    const files = await readDir("resources", {
+      baseDir: BaseDirectory.Resource,
+    });
 
-  await writeCommand("exit");
-  if (
-    loadConfigResponse.some((res) => res.includes("Please enter a command"))
-  ) {
-    return Promise.resolve();
-  } else {
-    return Promise.reject("mmc-cli is not available.");
+    const index = files.findIndex(
+      (file) => file.name.includes("mmccli") && file.name.endsWith(extension),
+    );
+    if (index > -1) {
+      mmccli = files[index].name;
+    } else {
+      return Promise.reject("mmc-cli not found in files.");
+    }
+  } catch {
+    return Promise.reject("mmc-cli not found in files.");
   }
+
+  await writeCommandWithEcho(`cd "${fixPath}resources"`);
+  await writeCommand(`./${mmccli}`);
+  const response = await loadConfig();
+  console.log(response);
+  pty.write("exit\n\r");
+
+  return Promise.resolve();
 }
 
 async function loadConfig() {

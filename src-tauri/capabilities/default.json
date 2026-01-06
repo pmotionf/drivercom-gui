@@ -57,6 +57,11 @@
     "fs:default",
     "fs:write-all",
     "tcp:default",
-    "store:default"
+    "store:default",
+    "fs:allow-read-dir",
+    {
+      "identifier": "fs:scope",
+      "allow": [{ "path": "**/*" }]
+    }
   ]
 }
