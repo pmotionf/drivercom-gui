@@ -3,8 +3,18 @@ import { Terminal } from "xterm";
 import { spawn } from "tauri-pty";
 import { platform } from "@tauri-apps/plugin-os";
 import { resolveResource } from "@tauri-apps/api/path";
-import { readdir } from "node:fs/promises";
-import { BaseDirectory, readDir } from "@tauri-apps/plugin-fs";
+import { BaseDirectory, readDir, writeTextFile } from "@tauri-apps/plugin-fs";
+import { path } from "@tauri-apps/api";
+import JSON5 from "json5";
+
+type cliFormat = {
+  modules: {
+    mmc_client: {
+      host: string;
+      port: number;
+    };
+  }[];
+};
 
 const term = new Terminal({
   convertEol: true,
@@ -94,16 +104,59 @@ export async function prepareMmccli() {
 
   await writeCommandWithEcho(`cd "${fixPath}resources"`);
   await writeCommand(`./${mmccli}`);
-  const response = await loadConfig();
-  console.log(response);
-  pty.write("exit\n\r");
+  await loadConfig("192.168.0.98");
 
   return Promise.resolve();
 }
 
-async function loadConfig() {
-  const responses = await writeCommand("load_config");
+async function loadConfig(ip: string) {
+  const config = buildCliConfig(ip);
+  const resourcePath = await resolveResource("resources");
+  const configFilePath = await path.join(resourcePath, "config.json5");
+  await writeTextFile(configFilePath, config);
+
+  await writeCommand("load_config");
+  const responses = await writeCommand("connect");
   return responses;
+}
+
+const buildCliConfig = (ip: string) => {
+  const newCliConfig: cliFormat = {
+    modules: [
+      {
+        mmc_client: {
+          host: ip,
+          port: 9001,
+        },
+      },
+    ],
+  };
+
+  const str = JSON5.stringify(newCliConfig, null, "  ");
+  const parseStr = parseJsonStr(newCliConfig, str).replaceAll(`'`, `"`);
+  return parseStr;
+};
+
+const parseJsonStr = (config: object, str: string): string => {
+  let parseString = str;
+  const entries = Object.entries(config);
+  entries.forEach((entry) => {
+    const key = entry[0];
+    const value = entry[1];
+    if (isNaN(Number(key))) {
+      parseString = parseString.replace(key, `"${key}"`);
+    }
+    if (typeof value === "object") {
+      parseString = parseJsonStr(value, parseString);
+    }
+  });
+  return parseString;
+};
+
+export async function exit() {
+  const currentPlatform = platform();
+  const enterBar = currentPlatform === "windows" ? "\r\n" : "\n";
+  pty.write(`exit ${enterBar}`);
 }
 
 const delay = async (ms: number) =>

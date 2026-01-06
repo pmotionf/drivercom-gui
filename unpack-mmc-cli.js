@@ -1,5 +1,5 @@
 import process from "node:process";
-import { readdir } from "node:fs/promises";
+import { readdir, writeFile } from "node:fs/promises";
 import { unlink } from "node:fs/promises";
 import { rename } from "node:fs/promises";
 import path from "node:path";
@@ -68,6 +68,8 @@ try {
     // Requires marking file as executable
     execSync("chmod +x " + renamed);
   }
+
+  await writeFile(path.join(base_path, "config.json5"), "");
 } catch (err) {
   console.error(err);
   process.exitCode = 1;

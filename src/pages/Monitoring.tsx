@@ -33,7 +33,7 @@ import {
 } from "~/components/proto/mmc/info_pb.ts";
 import { StatusPage } from "~/components/MonitoringSidebar/StatusPage.tsx";
 import { reconcile } from "solid-js/store";
-import { prepareMmccli } from "./utils/MmcCliHandler.ts";
+import { prepareMmccli, exit } from "./utils/MmcCliHandler.ts";
 
 export type Lines = LineType[];
 export type Systems = TrackType[];
@@ -49,6 +49,7 @@ function Monitoring() {
     if (lines.length > 0) {
       await serverHandler.disconnect();
     }
+    await exit();
   });
 
   createEffect(
