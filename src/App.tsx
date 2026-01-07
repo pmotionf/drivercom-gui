@@ -6,6 +6,7 @@ import {
   createSignal,
   Index,
   on,
+  onCleanup,
   onMount,
   Show,
   ValidComponent,
@@ -58,6 +59,7 @@ import { DownloadList } from "./components/DownloadList.tsx";
 //@ts-ignore This file is generate after run compiler.
 import api from "src-tauri/generated/api.json";
 import JSON5 from "json5";
+import { killTerminal } from "./pages/utils/MmcCliHandler.ts";
 
 type PageMeta = {
   icon: ValidComponent;
@@ -272,6 +274,10 @@ function App(props: RouteSectionProps) {
       { defer: true },
     ),
   );
+
+  onCleanup(async () => {
+    await killTerminal();
+  });
 
   return (
     <GlobalStateContext.Provider value={{ globalState, setGlobalState }}>
