@@ -145,12 +145,16 @@ export function Axis(props: AxisProps) {
           borderRadius={"1em"}
           height="2rem"
           style={{ padding: "0" }}
+          stopPullDisabled={!props.axisInfo.waitingPull === true}
+          stopPushDisabled={!props.axisInfo.waitingPush === true}
           onPull={(axisDirection, carrierId, cas, destination) =>
             props.onPull?.(axisDirection, carrierId, cas, destination)
           }
           onPush={(axisDirection, carrierId) => {
             props.onPush?.(axisDirection, carrierId);
           }}
+          onStopPush={() => props.onStopPush?.()}
+          onStopPull={() => props.onStopPull?.()}
         />
       </Stack>
 
