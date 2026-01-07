@@ -57,6 +57,8 @@ async function writeCommand(cmd: string) {
   while (!isResponseReturn) {
     await delay(1);
   }
+  isResponseReturn = false;
+  responses = [];
 
   return Promise.resolve<string[]>(responses);
 }
@@ -77,6 +79,11 @@ async function writeCommandWithEcho(cmd: string) {
 
   return Promise.resolve();
 }
+
+const delay = async (ms: number) =>
+  new Promise<NodeJS.Timeout>((resolve) => {
+    setTimeout(resolve, ms);
+  });
 
 export async function prepareMmccli() {
   const currentPlatform = platform();
@@ -104,12 +111,11 @@ export async function prepareMmccli() {
 
   await writeCommandWithEcho(`cd "${fixPath}resources"`);
   await writeCommand(`./${mmccli}`);
-  await loadConfig("192.168.0.98");
 
   return Promise.resolve();
 }
 
-async function loadConfig(ip: string) {
+export async function loadConfig(ip: string) {
   const config = buildCliConfig(ip);
   const resourcePath = await resolveResource("resources");
   const configFilePath = await path.join(resourcePath, "config.json5");
@@ -156,10 +162,55 @@ const parseJsonStr = (config: object, str: string): string => {
 export async function exit() {
   const currentPlatform = platform();
   const enterBar = currentPlatform === "windows" ? "\r\n" : "\n";
+  const resourcePath = await resolveResource("resources");
+  responseKey = resourcePath;
   pty.write(`exit ${enterBar}`);
+
+  while (!isResponseReturn) {
+    await delay(1);
+  }
+  isResponseReturn = false;
+  responses = [];
+
+  return Promise.resolve();
 }
 
-const delay = async (ms: number) =>
-  new Promise<NodeJS.Timeout>((resolve) => {
-    setTimeout(resolve, ms);
-  });
+export async function stopPull(line: string, axisId: number) {
+  const result = await writeCommand(`stop_pull_carrier ${line} ${axisId}a`);
+  return Promise.resolve<string[]>(result);
+}
+
+export async function stopPush(line: string, axisId: number) {
+  const result = await writeCommand(`stop_push_carrier ${line} ${axisId}a`);
+  return Promise.resolve<string[]>(result);
+}
+
+export async function pullCarrier(
+  direction: string,
+  line: string,
+  axisId: string,
+  carrierId: string,
+  destination?: string,
+  casDisabled?: boolean,
+) {
+  const result = await writeCommand(
+    `pull_carrier_${direction} ${line} ${axisId} ${carrierId} ${destination && destination !== "NaN" ? destination : casDisabled ? "NaN" : ""} ${casDisabled ? "true" : ""}`,
+  );
+  return Promise.resolve<string[]>(result);
+}
+
+export async function pushCarrier(
+  direction: string,
+  line: string,
+  axisId: string,
+  carrierId?: string,
+) {
+  const result = await writeCommand(
+    `push_carrier_${direction} ${line} ${axisId} ${carrierId ? carrierId : ""}`,
+  );
+  return Promise.resolve<string[]>(result);
+}
+
+export async function killTerminal() {
+  pty.kill();
+}

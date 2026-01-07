@@ -13,16 +13,20 @@ export enum AxisDirection {
 
 export type AxisSettingProps = {
   onPull?: (
-    axisDirection: AxisDirection,
+    axisDirection: string,
     carrierId: string,
     cas: boolean,
     destination?: string,
   ) => void;
-  onPush?: (axisDirection: AxisDirection, carrierId?: string) => void;
+  onPush?: (axisDirection: string, carrierId?: string) => void;
+  onStopPull?: () => void;
+  onStopPush?: () => void;
+  stopPullDisabled?: boolean;
+  stopPushDisabled?: boolean;
 };
 
 export function AxisSetting(props: AxisSettingProps & IconButtonProps) {
-  const { onPull, onPush, ...IconButtonProps } = props;
+  const { onPull, onPush, onStopPull, onStopPush, ...IconButtonProps } = props;
 
   const [pushCarrierId, setPushCarrierId] = createSignal<string>("");
   const [pushDirection, setPushDirection] = createSignal<AxisDirection>(
@@ -64,22 +68,7 @@ export function AxisSetting(props: AxisSettingProps & IconButtonProps) {
               <div
                 style={{
                   "flex-direction": "column",
-                  width: `5rem`,
-                }}
-              >
-                <Text size="sm">{"Carrier"}</Text>
-                <Input
-                  value={pushCarrierId()}
-                  onInput={(e) => setPushCarrierId(e.target.value)}
-                  height="2rem"
-                  padding="0.2rem"
-                />
-              </div>
-              <div
-                style={{
-                  "flex-direction": "column",
                   width: `max-content`,
-                  "margin-left": "1rem",
                 }}
               >
                 <Text size="sm">{"Direction"}</Text>
@@ -98,11 +87,52 @@ export function AxisSetting(props: AxisSettingProps & IconButtonProps) {
                   {pushDirection()}
                 </Button>
               </div>
+              <div
+                style={{
+                  "flex-direction": "column",
+                  width: `5rem`,
+                  opacity: pushCarrierId().length > 0 ? "1" : "0.5",
+                  "margin-left": "1rem",
+                }}
+              >
+                <Text size="sm">{"Carrier"}</Text>
+                <Input
+                  value={pushCarrierId()}
+                  onInput={(e) => setPushCarrierId(e.target.value)}
+                  height="2rem"
+                  padding="0.2rem"
+                />
+              </div>
+            </div>
+            <div
+              style={{
+                display: "flex",
+                width: "100%",
+                "margin-top": "0.5rem",
+                "flex-direction": "row-reverse",
+              }}
+            >
+              <Button
+                width="3rem"
+                height={"2rem"}
+                marginLeft={`0.5rem`}
+                variant="outline"
+                disabled={
+                  props.stopPushDisabled !== undefined
+                    ? props.stopPushDisabled
+                    : true
+                }
+                onClick={() => {
+                  if (onStopPush) {
+                    onStopPush();
+                  }
+                }}
+              >
+                {"Stop"}
+              </Button>
               <Button
                 width="3rem"
                 height="2rem"
-                marginLeft={`calc(100% - 4rem - 3rem - 5.5rem)`}
-                marginTop="1.5rem"
                 onClick={() => {
                   if (onPush) {
                     onPush(
@@ -112,7 +142,6 @@ export function AxisSetting(props: AxisSettingProps & IconButtonProps) {
                         : pushCarrierId(),
                     );
                   }
-                  setPushCarrierId("");
                 }}
               >
                 {"Push"}
@@ -120,7 +149,14 @@ export function AxisSetting(props: AxisSettingProps & IconButtonProps) {
             </div>
           </div>
 
-          <div style={{ width: "100%", "margin-top": "0.5rem" }}>
+          <div
+            style={{
+              width: "100%",
+              "margin-top": "1rem",
+              "border-top-width": "1px",
+              "padding-top": "0.5rem",
+            }}
+          >
             <Text fontWeight={"bold"} size="sm">
               {"Pull"}
             </Text>
@@ -138,6 +174,7 @@ export function AxisSetting(props: AxisSettingProps & IconButtonProps) {
                   "flex-direction": "column",
                   width: `2rem`,
                   "margin-right": "1rem",
+                  opacity: !casEnable() ? "0.5" : "1",
                 }}
               >
                 <Text size="sm">{"CAS"}</Text>
@@ -154,23 +191,7 @@ export function AxisSetting(props: AxisSettingProps & IconButtonProps) {
               <div
                 style={{
                   "flex-direction": "column",
-                  width: `6rem`,
-                  "margin-right": "1rem",
-                }}
-              >
-                <Text size="sm">{"Destination"}</Text>
-                <Input
-                  value={pullDestination()}
-                  onInput={(e) => setPullDestination(e.target.value)}
-                  height={"2rem"}
-                  padding="0.2rem"
-                />
-              </div>
-
-              <div
-                style={{
-                  "flex-direction": "column",
-                  width: `4rem`,
+                  width: `5rem`,
                   "margin-right": "1rem",
                 }}
               >
@@ -182,12 +203,12 @@ export function AxisSetting(props: AxisSettingProps & IconButtonProps) {
                   padding="0.2rem"
                 />
               </div>
-            </div>
-            <div style={{ display: "flex", width: "100%" }}>
+
               <div
                 style={{
                   "flex-direction": "column",
-                  width: `max-content`,
+                  width: `4.5rem`,
+                  "margin-right": "1rem",
                 }}
               >
                 <Text size="sm">{"Direction"}</Text>
@@ -206,15 +227,41 @@ export function AxisSetting(props: AxisSettingProps & IconButtonProps) {
                   {pullDirection()}
                 </Button>
               </div>
+            </div>
+            <div style={{ display: "flex", width: "100%" }}>
+              <div
+                style={{
+                  "flex-direction": "column",
+                  width: `max-content`,
+                  opacity:
+                    pullDestination().length > 0 && pullDestination() !== "NaN"
+                      ? "1"
+                      : "0.5",
+                }}
+              >
+                <Text size="sm">{"Destination"}</Text>
+                <Input
+                  value={pullDestination()}
+                  onChange={(e) => {
+                    if (isNaN(Number(e.target.value))) {
+                      setPullDestination("NaN");
+                    } else {
+                      setPullDestination(e.target.value);
+                    }
+                  }}
+                  height={"2rem"}
+                  padding="0.2rem"
+                />
+              </div>
               <Button
                 width="3rem"
                 height={"2rem"}
                 marginTop={"1.3rem"}
-                marginLeft={`calc(100% - 3rem - 4.5rem)`}
+                marginLeft={`calc(100% - 3rem - 6rem - 3rem - 0.5rem)`}
                 onClick={() => {
                   if (onPull) {
                     onPull(
-                      pushDirection(),
+                      pullDirection(),
                       pullCarrierId(),
                       casEnable(),
                       pullDestination().length === 0
@@ -222,12 +269,28 @@ export function AxisSetting(props: AxisSettingProps & IconButtonProps) {
                         : pullDestination(),
                     );
                   }
-                  setPullCarrierId("");
-                  setPullDestination("");
-                  setCasEnable(false);
                 }}
               >
                 {"Pull"}
+              </Button>
+              <Button
+                width="3rem"
+                height={"2rem"}
+                marginTop={"1.3rem"}
+                marginLeft={`0.5rem`}
+                variant="outline"
+                disabled={
+                  props.stopPullDisabled !== undefined
+                    ? props.stopPullDisabled
+                    : true
+                }
+                onClick={() => {
+                  if (onStopPull) {
+                    onStopPull();
+                  }
+                }}
+              >
+                {"Stop"}
               </Button>
             </div>
           </div>

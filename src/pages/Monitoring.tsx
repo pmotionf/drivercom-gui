@@ -33,7 +33,15 @@ import {
 } from "~/components/proto/mmc/info_pb.ts";
 import { StatusPage } from "~/components/MonitoringSidebar/StatusPage.tsx";
 import { reconcile } from "solid-js/store";
-import { prepareMmccli, exit } from "./utils/MmcCliHandler.ts";
+import {
+  exit,
+  pullCarrier,
+  stopPull,
+  pushCarrier,
+  stopPush,
+  prepareMmccli,
+  loadConfig,
+} from "./utils/MmcCliHandler.ts";
 
 export type Lines = LineType[];
 export type Systems = TrackType[];
@@ -110,6 +118,7 @@ function Monitoring() {
           type: "error",
         });
       }
+      await exit();
       setIsConnect(false);
       return;
     }
@@ -167,12 +176,7 @@ function Monitoring() {
       monitoringInputs.set("port", createSignal<string>(""));
     }
 
-    try {
-      await prepareMmccli();
-      setRender(true);
-    } catch {
-      setRender(false);
-    }
+    setRender(true);
   });
 
   createEffect(
@@ -267,25 +271,109 @@ function Monitoring() {
             <System
               lines={lines}
               systems={systems}
-              onPull={(
-                line,
+              onPull={async (
+                lineName,
                 commandDirection,
                 axis,
-                carrierID,
+                carrierId,
                 destination,
                 disableCas,
               ) => {
-                console.log(
-                  line,
-                  commandDirection,
-                  axis,
-                  carrierID,
-                  destination,
-                  disableCas,
-                );
+                if (carrierId.length === 0) {
+                  toaster.create({
+                    title: "Invalid Carrier",
+                    description: "Carrier ID is required.",
+                    type: "error",
+                  });
+                  return;
+                } else {
+                  const lineIndex = lines.findIndex(
+                    (line) => line.name === lineName,
+                  );
+                  if (lineIndex === -1) return;
+                  const systemCarriers = systems[lineIndex].carrierState;
+                  if (
+                    systemCarriers.some(
+                      (carrier) => carrier.id === Number(carrierId),
+                    )
+                  ) {
+                    toaster.create({
+                      title: "Existing Carrier",
+                      description: "Same Carrier ID is already existed.",
+                      type: "error",
+                    });
+                    return;
+                  }
+                  if (
+                    systemCarriers.some(
+                      (carrier) => carrier.axisMain === Number(axis),
+                    )
+                  ) {
+                    toaster.create({
+                      title: "Invalid Axis",
+                      description: "There is a carrier on the axis.",
+                      type: "error",
+                    });
+                    return;
+                  }
+                  await pullCarrier(
+                    commandDirection,
+                    lineName,
+                    axis,
+                    carrierId,
+                    destination,
+                    disableCas,
+                  );
+                }
               }}
-              onPush={(line, commandDirection, axis, carrierId) => {
-                console.log(line, commandDirection, axis, carrierId);
+              onStopPull={async (line, axisId) => {
+                await stopPull(line, axisId);
+              }}
+              onPush={async (lineName, commandDirection, axis, carrierId) => {
+                const lineIndex = lines.findIndex(
+                  (line) => line.name === lineName,
+                );
+
+                if (lineIndex === -1) return;
+                const systemCarriers = systems[lineIndex].carrierState;
+                if (systemCarriers.length === 0) {
+                  toaster.create({
+                    title: "Invalid Carrier",
+                    description: "There is no carries in this line.",
+                    type: "error",
+                  });
+                  return;
+                }
+                if (
+                  !carrierId &&
+                  !systemCarriers.some(
+                    (carrier) => carrier.axisMain === Number(axis),
+                  )
+                ) {
+                  toaster.create({
+                    title: "Invalid Carrier",
+                    description: "There is no carries on this axis.",
+                    type: "error",
+                  });
+                  return;
+                }
+                if (
+                  carrierId &&
+                  !systemCarriers.some(
+                    (carrier) => carrier.id === Number(carrierId),
+                  )
+                ) {
+                  toaster.create({
+                    title: "Invalid Carrier",
+                    description: "The Carrier is not existing in line.",
+                    type: "error",
+                  });
+                  return;
+                }
+                await pushCarrier(commandDirection, lineName, axis, carrierId);
+              }}
+              onStopPush={async (line, axisId) => {
+                await stopPush(line, axisId);
               }}
             />
           </Show>
@@ -356,6 +444,8 @@ function Monitoring() {
                     onConnectServer={async (ip: string, port: string) => {
                       setConnetBtnLoading(true);
                       try {
+                        await prepareMmccli();
+                        await loadConfig(ip);
                         await serverHandler.connect(ip, port);
                         const serverResponse: LineType[] =
                           await serverHandler.getLineConfig();
@@ -368,6 +458,7 @@ function Monitoring() {
                       } catch {
                         setConnetBtnLoading(false);
                         deleteIpHistory(ip, port);
+                        await exit();
                         await serverHandler.disconnect();
                       }
                     }}
@@ -375,10 +466,13 @@ function Monitoring() {
                       setConnetBtnLoading(true);
                       setLines([]);
                       setSystems([]);
+                      await exit();
                       await serverHandler.disconnect();
 
                       if (ip && port) {
                         try {
+                          await prepareMmccli();
+                          await loadConfig(ip);
                           await serverHandler.connect(ip, port);
                           const serverResponse: LineType[] =
                             await serverHandler.getLineConfig();
