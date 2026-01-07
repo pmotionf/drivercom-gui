@@ -42,6 +42,7 @@ import {
   prepareMmccli,
   loadConfig,
 } from "./utils/MmcCliHandler.ts";
+import { invoke } from "@tauri-apps/api/core";
 
 export type Lines = LineType[];
 export type Systems = TrackType[];
@@ -243,6 +244,46 @@ function Monitoring() {
 
   const [isConnect, setIsConnect] = createSignal<boolean>(false);
 
+  async function connectMmcCli(ip: string) {
+    const ports = await invoke<string[]>("get_ports", { ip: ip });
+    let findPort = false;
+    for await (const port of ports.reverse()) {
+      if (findPort) break;
+      await prepareMmccli();
+
+      const echo = await loadConfig(ip, Number(port));
+      if (!echo) {
+        await exit();
+      } else {
+        findPort = true;
+        break;
+      }
+    }
+
+    if (!findPort) {
+      return Promise.reject("Invalid Tcp connection");
+    } else {
+      return Promise.resolve();
+    }
+  }
+
+  const showErrorToaster = (commandResponses: string[]) => {
+    if (commandResponses.some((res) => res.toLowerCase().includes("error"))) {
+      const errorMsgIndex = commandResponses.findIndex((res) =>
+        res.toLowerCase().includes("error"),
+      );
+
+      const errorMsg = commandResponses[errorMsgIndex];
+      const errorReg = /error: (.+)/;
+      const desc = errorMsg.match(errorReg)![1].replaceAll(`"`, "");
+      toaster.create({
+        title: "Command Error",
+        description: desc,
+        type: "error",
+      });
+    }
+  };
+
   return (
     <>
       <Splitter.Root
@@ -279,101 +320,32 @@ function Monitoring() {
                 destination,
                 disableCas,
               ) => {
-                if (carrierId.length === 0) {
-                  toaster.create({
-                    title: "Invalid Carrier",
-                    description: "Carrier ID is required.",
-                    type: "error",
-                  });
-                  return;
-                } else {
-                  const lineIndex = lines.findIndex(
-                    (line) => line.name === lineName,
-                  );
-                  if (lineIndex === -1) return;
-                  const systemCarriers = systems[lineIndex].carrierState;
-                  if (
-                    systemCarriers.some(
-                      (carrier) => carrier.id === Number(carrierId),
-                    )
-                  ) {
-                    toaster.create({
-                      title: "Existing Carrier",
-                      description: "Same Carrier ID is already existed.",
-                      type: "error",
-                    });
-                    return;
-                  }
-                  if (
-                    systemCarriers.some(
-                      (carrier) => carrier.axisMain === Number(axis),
-                    )
-                  ) {
-                    toaster.create({
-                      title: "Invalid Axis",
-                      description: "There is a carrier on the axis.",
-                      type: "error",
-                    });
-                    return;
-                  }
-                  await pullCarrier(
-                    commandDirection,
-                    lineName,
-                    axis,
-                    carrierId,
-                    destination,
-                    disableCas,
-                  );
-                }
+                const pullResponse = await pullCarrier(
+                  commandDirection,
+                  lineName,
+                  axis,
+                  carrierId,
+                  destination,
+                  disableCas,
+                );
+                showErrorToaster(pullResponse);
               }}
               onStopPull={async (line, axisId) => {
-                await stopPull(line, axisId);
+                const response = await stopPull(line, axisId);
+                showErrorToaster(response);
               }}
               onPush={async (lineName, commandDirection, axis, carrierId) => {
-                const lineIndex = lines.findIndex(
-                  (line) => line.name === lineName,
+                const pushResponse = await pushCarrier(
+                  commandDirection,
+                  lineName,
+                  axis,
+                  carrierId,
                 );
-
-                if (lineIndex === -1) return;
-                const systemCarriers = systems[lineIndex].carrierState;
-                if (systemCarriers.length === 0) {
-                  toaster.create({
-                    title: "Invalid Carrier",
-                    description: "There is no carries in this line.",
-                    type: "error",
-                  });
-                  return;
-                }
-                if (
-                  !carrierId &&
-                  !systemCarriers.some(
-                    (carrier) => carrier.axisMain === Number(axis),
-                  )
-                ) {
-                  toaster.create({
-                    title: "Invalid Carrier",
-                    description: "There is no carries on this axis.",
-                    type: "error",
-                  });
-                  return;
-                }
-                if (
-                  carrierId &&
-                  !systemCarriers.some(
-                    (carrier) => carrier.id === Number(carrierId),
-                  )
-                ) {
-                  toaster.create({
-                    title: "Invalid Carrier",
-                    description: "The Carrier is not existing in line.",
-                    type: "error",
-                  });
-                  return;
-                }
-                await pushCarrier(commandDirection, lineName, axis, carrierId);
+                showErrorToaster(pushResponse);
               }}
               onStopPush={async (line, axisId) => {
-                await stopPush(line, axisId);
+                const response = await stopPush(line, axisId);
+                showErrorToaster(response);
               }}
             />
           </Show>
@@ -444,8 +416,9 @@ function Monitoring() {
                     onConnectServer={async (ip: string, port: string) => {
                       setConnetBtnLoading(true);
                       try {
-                        await prepareMmccli();
-                        await loadConfig(ip);
+                        ////
+                        await connectMmcCli(ip);
+
                         await serverHandler.connect(ip, port);
                         const serverResponse: LineType[] =
                           await serverHandler.getLineConfig();

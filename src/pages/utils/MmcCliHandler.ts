@@ -35,8 +35,8 @@ pty.onData((data) => {
   const buffer = Buffer.from(data);
   const str = buffer.toString();
 
-  if (str.includes(responseKey)) isResponseReturn = true;
   responses.push(JSON.stringify(str));
+  if (str.includes(responseKey)) isResponseReturn = true;
 });
 
 term.onData((data) => {
@@ -50,17 +50,20 @@ pty.onExit(({ exitCode }) => {
 async function writeCommand(cmd: string) {
   const currentPlatform = platform();
   const enterBar = currentPlatform === "windows" ? "\r\n" : "\n";
-  responses = [];
   responseKey = "Please enter a command";
+  responses = [];
+
   pty.write(cmd + enterBar);
 
   while (!isResponseReturn) {
+    if (isResponseReturn) break;
     await delay(1);
   }
   isResponseReturn = false;
+  const commandResponses = responses;
   responses = [];
 
-  return Promise.resolve<string[]>(responses);
+  return Promise.resolve<string[]>(commandResponses);
 }
 
 async function writeCommandWithEcho(cmd: string) {
@@ -111,28 +114,58 @@ export async function prepareMmccli() {
 
   await writeCommandWithEcho(`cd "${fixPath}resources"`);
   await writeCommand(`./${mmccli}`);
+  responses = [];
 
   return Promise.resolve();
 }
 
-export async function loadConfig(ip: string) {
-  const config = buildCliConfig(ip);
+export async function loadConfig(ip: string, port: number) {
+  const config = buildCliConfig(ip, port);
   const resourcePath = await resolveResource("resources");
   const configFilePath = await path.join(resourcePath, "config.json5");
   await writeTextFile(configFilePath, config);
-
   await writeCommand("load_config");
-  const responses = await writeCommand("connect");
-  return responses;
+
+  const res = await connectMmccli();
+  if (res.some((response) => response.toLowerCase().includes("error"))) {
+    return Promise.resolve(null);
+  } else {
+    return Promise.resolve({ ip: ip, port: port });
+  }
 }
 
-const buildCliConfig = (ip: string) => {
+async function connectMmccli() {
+  let hasError = false;
+  const timeout = setTimeout(() => {
+    if (!isResponseReturn) {
+      isResponseReturn = true;
+      pty.resume();
+      hasError = true;
+    }
+  }, 500);
+  const res = await writeCommand("connect");
+  clearTimeout(timeout);
+  isResponseReturn = false;
+
+  if (hasError) {
+    res.push("error: timeout connection");
+  }
+
+  return res;
+}
+
+export async function disconnectMmccli() {
+  await writeCommand("disconnect");
+  Promise.resolve();
+}
+
+const buildCliConfig = (ip: string, port: number) => {
   const newCliConfig: cliFormat = {
     modules: [
       {
         mmc_client: {
           host: ip,
-          port: 9001,
+          port: port,
         },
       },
     ],
