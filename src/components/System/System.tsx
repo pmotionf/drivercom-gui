@@ -16,25 +16,26 @@ import {
 } from "@thisbeyond/solid-dnd";
 import { Lines, Systems } from "~/pages/Monitoring.tsx";
 import { Stack } from "styled-system/jsx/stack";
-import { AxisDirection } from "./AxisSetting.tsx";
 
 export type SystemProps = JSX.HTMLAttributes<HTMLDivElement> & {
   lines: Store<Lines>;
   systems: Store<Systems>;
   onPush?: (
     line: string,
-    commandDirection: AxisDirection,
+    commandDirection: string,
     axis: string,
     carrier?: string,
   ) => void;
   onPull?: (
     line: string,
-    commandDirection: AxisDirection,
+    commandDirection: string,
     axis: string,
     carrier: string,
     destination?: string,
     disableCas?: boolean,
   ) => void;
+  onStopPull?: (line: string, axisId: number) => void;
+  onStopPush?: (line: string, axisId: number) => void;
 };
 
 export function System(props: SystemProps) {
@@ -203,6 +204,18 @@ export function System(props: SystemProps) {
                                                   axisDireciton,
                                                   `${axisId}`,
                                                   carrierId,
+                                                );
+                                              }}
+                                              onStopPull={() => {
+                                                props.onStopPull?.(
+                                                  props.lines[item].name,
+                                                  axisId,
+                                                );
+                                              }}
+                                              onStopPush={() => {
+                                                props.onStopPush?.(
+                                                  props.lines[item].name,
+                                                  axisId,
                                                 );
                                               }}
                                             />
