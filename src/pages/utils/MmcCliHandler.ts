@@ -35,8 +35,10 @@ pty.onData((data) => {
   const buffer = Buffer.from(data);
   const str = buffer.toString();
 
-  responses.push(JSON.stringify(str));
-  if (str.includes(responseKey)) isResponseReturn = true;
+  responses.push(str);
+  if (str.includes(responseKey)) {
+    isResponseReturn = true;
+  }
 });
 
 term.onData((data) => {
@@ -194,8 +196,7 @@ const parseJsonStr = (config: object, str: string): string => {
 export async function exit() {
   const currentPlatform = platform();
   const enterBar = currentPlatform === "windows" ? "\r\n" : "\n";
-  const resourcePath = await resolveResource("resources");
-  responseKey = resourcePath;
+  responseKey = "resources";
   pty.write(`exit ${enterBar}`);
 
   while (!isResponseReturn) {

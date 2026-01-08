@@ -247,7 +247,7 @@ function Monitoring() {
   async function connectMmcCli(ip: string) {
     const ports = await invoke<string[]>("get_ports", { ip: ip });
     let findPort = false;
-    for await (const port of ports.reverse()) {
+    for await (const port of ports) {
       if (findPort) break;
       await prepareMmccli();
 
@@ -416,7 +416,6 @@ function Monitoring() {
                     onConnectServer={async (ip: string, port: string) => {
                       setConnetBtnLoading(true);
                       try {
-                        ////
                         await connectMmcCli(ip);
 
                         await serverHandler.connect(ip, port);
@@ -445,7 +444,6 @@ function Monitoring() {
                       if (ip && port) {
                         try {
                           await prepareMmccli();
-                          await loadConfig(ip);
                           await serverHandler.connect(ip, port);
                           const serverResponse: LineType[] =
                             await serverHandler.getLineConfig();
