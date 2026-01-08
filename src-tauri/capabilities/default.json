@@ -15,7 +15,7 @@
         },
         {
           "args": true,
-          "name": "binaries/mmccli",
+          "name": "binaries/rustscan",
           "sidecar": true
         }
       ]
@@ -30,7 +30,7 @@
         },
         {
           "args": true,
-          "name": "binaries/mmccli",
+          "name": "binaries/rustscan",
           "sidecar": true
         }
       ]
@@ -45,7 +45,7 @@
         },
         {
           "args": true,
-          "name": "binaries/mmccli",
+          "name": "binaries/rustscan",
           "sidecar": true
         }
       ]

@@ -33,7 +33,7 @@
       "icons/icon.icns",
       "icons/icon.ico"
     ],
-    "externalBin": ["binaries/drivercom"],
+    "externalBin": ["binaries/drivercom", "binaries/rustscan"],
     "resources" : ["resources/*"]
   }
 
