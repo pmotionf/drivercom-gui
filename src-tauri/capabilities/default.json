@@ -59,9 +59,16 @@
     "tcp:default",
     "store:default",
     "fs:allow-read-dir",
+    "fs:allow-write",
+    "fs:allow-write-text-file",
+    "fs:allow-appconfig-write",
     {
       "identifier": "fs:scope",
-      "allow": [{ "path": "**/*" }]
-    }
-  ]
+      "allow": [{ "path": "**/*" }, {"path" : "$RESOURCES/**/*"},"$APPDATA/*"]
+    },
+    {
+      "identifier": "fs:allow-write-text-file",
+      "allow": [{ "path": "$APPDATA/**/*" }]
+    },
+    "fs:allow-appdata-write"  ]
 }
