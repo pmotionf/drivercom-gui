@@ -2,7 +2,7 @@ import { Buffer } from "buffer";
 import { Terminal } from "xterm";
 import { spawn } from "tauri-pty";
 import { platform } from "@tauri-apps/plugin-os";
-import { resolveResource } from "@tauri-apps/api/path";
+import { appDataDir, resolveResource } from "@tauri-apps/api/path";
 import { BaseDirectory, readDir, writeTextFile } from "@tauri-apps/plugin-fs";
 import { path } from "@tauri-apps/api";
 import JSON5 from "json5";
@@ -99,7 +99,6 @@ export async function prepareMmccli() {
     const files = await readDir("resources", {
       baseDir: BaseDirectory.Resource,
     });
-
     const index = files.findIndex(
       (file) => file.name.includes("mmccli") && file.name.endsWith(extension),
     );
@@ -121,10 +120,10 @@ export async function prepareMmccli() {
 
 export async function loadConfig(ip: string, port: number) {
   const config = buildCliConfig(ip, port);
-  const resourcePath = await resolveResource("resources");
+  const resourcePath = await appDataDir();
   const configFilePath = await path.join(resourcePath, "config.json5");
   await writeTextFile(configFilePath, config);
-  await writeCommand("load_config");
+  await writeCommand(`load_config ${configFilePath}`);
 
   const res = await connectMmccli();
   if (res.some((response) => response.toLowerCase().includes("error"))) {
