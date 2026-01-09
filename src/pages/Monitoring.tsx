@@ -41,8 +41,9 @@ import {
   stopPush,
   prepareMmccli,
   loadConfig,
+  scanPorts,
+  checkMmcServer,
 } from "./utils/MmcCliHandler.ts";
-import { invoke } from "@tauri-apps/api/core";
 
 export type Lines = LineType[];
 export type Systems = TrackType[];
@@ -176,7 +177,6 @@ function Monitoring() {
     if (!monitoringInputs.has("port")) {
       monitoringInputs.set("port", createSignal<string>(""));
     }
-
     setRender(true);
   });
 
@@ -245,25 +245,19 @@ function Monitoring() {
   const [isConnect, setIsConnect] = createSignal<boolean>(false);
 
   async function connectMmcCli(ip: string) {
-    const ports = await invoke<string[]>("get_ports", { ip: ip });
-    let findPort = false;
-    for await (const port of ports) {
-      if (findPort) break;
-      await prepareMmccli();
-
-      const echo = await loadConfig(ip, Number(port));
-      if (!echo) {
-        await exit();
-      } else {
-        findPort = true;
-        break;
+    try {
+      const ports = await scanPorts(ip);
+      const findPort = await checkMmcServer(ip, ports);
+      if (findPort) {
+        await prepareMmccli();
+        const ipAddrs = await loadConfig(ip, findPort);
+        if (ipAddrs) {
+          return Promise.resolve();
+        }
       }
-    }
-
-    if (!findPort) {
-      return Promise.reject("Invalid Tcp connection");
-    } else {
-      return Promise.resolve();
+      return Promise.reject("Invalid Tcp Connection");
+    } catch {
+      return Promise.reject("Invalid Tcp Connection");
     }
   }
 
@@ -417,7 +411,6 @@ function Monitoring() {
                       setConnetBtnLoading(true);
                       try {
                         await connectMmcCli(ip);
-
                         await serverHandler.connect(ip, port);
                         const serverResponse: LineType[] =
                           await serverHandler.getLineConfig();
