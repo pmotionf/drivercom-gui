@@ -6,6 +6,15 @@ import { appDataDir, resolveResource } from "@tauri-apps/api/path";
 import { BaseDirectory, readDir, writeTextFile } from "@tauri-apps/plugin-fs";
 import { path } from "@tauri-apps/api";
 import JSON5 from "json5";
+import { Command } from "@tauri-apps/plugin-shell";
+import {
+  Request,
+  RequestSchema,
+  ResponseSchema,
+} from "~/components/proto/mmc_pb";
+import { Request_Kind } from "~/components/proto/mmc/core_pb";
+import { fromBinary, toBinary } from "@bufbuild/protobuf";
+import { connect, disconnect, listen, send } from "@kuyoonjo/tauri-plugin-tcp";
 
 type cliFormat = {
   modules: {
@@ -35,6 +44,7 @@ pty.onData((data) => {
   const buffer = Buffer.from(data);
   const str = buffer.toString();
 
+  console.log(buffer.toString());
   responses.push(str);
   if (str.includes(responseKey)) {
     isResponseReturn = true;
@@ -136,22 +146,7 @@ export async function loadConfig(ip: string, port: number) {
 }
 
 async function connectMmccli() {
-  let hasError = false;
-  const timeout = setTimeout(() => {
-    if (!isResponseReturn) {
-      isResponseReturn = true;
-      pty.resume();
-      hasError = true;
-    }
-  }, 500);
   const res = await writeCommand("connect");
-  clearTimeout(timeout);
-  isResponseReturn = false;
-
-  if (hasError) {
-    res.push("error: timeout connection");
-  }
-
   return res;
 }
 
@@ -196,7 +191,7 @@ const parseJsonStr = (config: object, str: string): string => {
 export async function exit() {
   const currentPlatform = platform();
   const enterBar = currentPlatform === "windows" ? "\r\n" : "\n";
-  responseKey = "resources";
+  responseKey = ">";
   pty.write(`exit ${enterBar}`);
 
   while (!isResponseReturn) {
@@ -246,4 +241,120 @@ export async function pushCarrier(
 
 export async function killTerminal() {
   pty.kill();
+}
+
+export async function scanPorts(ip: string): Promise<number[]> {
+  const results: number[] = [];
+  try {
+    const scanPorts = Command.sidecar("binaries/rustscan", ["-a", ip]);
+    let startScanPort: boolean = false;
+    let completeScanPort: boolean = false;
+
+    scanPorts.stdout.on("data", async (data) => {
+      if (data.slice(0, 4).toLowerCase() === "open" && data.includes(":")) {
+        if (!startScanPort) {
+          startScanPort = true;
+        }
+        const openPort = data.split(":").pop();
+        results.push(Number(openPort));
+      } else {
+        if (startScanPort) {
+          completeScanPort = true;
+        }
+      }
+    });
+
+    scanPorts.on("close", () => {
+      if (!completeScanPort) {
+        completeScanPort = true;
+      }
+    });
+
+    const child = await scanPorts.spawn();
+    while (!completeScanPort) {
+      await delay(1);
+    }
+    await child.kill();
+    return Promise.resolve(results);
+  } catch (e) {
+    return Promise.reject(e as string);
+  }
+}
+
+export async function checkMmcServer(
+  ip: string,
+  ports: number[],
+): Promise<number> {
+  const payload: Request = {
+    $typeName: "mmc.Request",
+    body: {
+      case: "core",
+      value: {
+        $typeName: "mmc.core.Request",
+        kind: Request_Kind.CORE_REQUEST_KIND_API_VERSION,
+      },
+    },
+  };
+
+  const buffer: Uint8Array = toBinary(RequestSchema, payload);
+  const clientIds: string[] = ports.map(() => crypto.randomUUID());
+  const found: string[] = [];
+
+  console.log("Start");
+
+  const count: string[] = [];
+  const unlisten = await listen((x) => {
+    if (x.payload.id) {
+      if (!count.includes(x.payload.id)) {
+        count.push(x.payload.id);
+      }
+    }
+    if (x.payload.id && x.payload.event.message) {
+      const buffer = Buffer.from(x.payload.event.message.data);
+      const decode = fromBinary(ResponseSchema, buffer);
+      if (decode && decode.body.case === "core") {
+        const core = decode.body.value;
+        if (core && core.body.case === "apiVersion") {
+          found.push(x.payload.id);
+        }
+      }
+    }
+  });
+
+  const promises = ports.map((port, i) =>
+    getApiVersion(clientIds[i], ip, port, buffer),
+  );
+
+  await Promise.all(promises);
+
+  while (count.length !== ports.length) {
+    await delay(1);
+  }
+
+  unlisten();
+
+  console.log(clientIds.sort(), count.sort());
+  console.log("end");
+
+  if (found.length === 0) {
+    return Promise.reject("No tcp server connection found");
+  } else {
+    return Promise.resolve<number>(ports[clientIds.indexOf(found[0])]);
+  }
+}
+
+async function getApiVersion(
+  clientId: string,
+  addr: string,
+  port: number,
+  buffer: Uint8Array,
+): Promise<number | null> {
+  try {
+    await connect(clientId, `${addr}:${port}`);
+    await send(clientId, Array.from<number>(buffer));
+    return Promise.resolve(port);
+  } catch (e) {
+    console.error(e);
+    return Promise.resolve(null);
+  }
 }
