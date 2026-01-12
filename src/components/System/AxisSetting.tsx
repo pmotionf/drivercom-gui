@@ -1,5 +1,5 @@
 import { IconButton, IconButtonProps } from "../ui/icon-button.tsx";
-import { IconSettings } from "@tabler/icons-solidjs";
+import { IconDots } from "@tabler/icons-solidjs";
 import { Popover } from "../ui/popover.tsx";
 import { Input } from "../ui/input.tsx";
 import { Button } from "../ui/button.tsx";
@@ -43,7 +43,7 @@ export function AxisSetting(props: AxisSettingProps & IconButtonProps) {
     <Popover.Root>
       <Popover.Trigger width="min-content" height={"min-content"}>
         <IconButton {...IconButtonProps}>
-          <IconSettings />
+          <IconDots />
         </IconButton>
       </Popover.Trigger>
       <Popover.Positioner>
@@ -64,10 +64,13 @@ export function AxisSetting(props: AxisSettingProps & IconButtonProps) {
                 {"Push"}
               </Text>
               <Button
-                width="3rem"
-                height="2rem"
+                width="2.5rem"
+                height={"1.5rem"}
+                size="xs"
+                fontWeight={"medium"}
+                variant={props.stopPushDisabled === true ? "solid" : "outline"}
                 onClick={() => {
-                  if (onPush) {
+                  if (props.stopPushDisabled === true && onPush) {
                     onPush(
                       pushDirection(),
                       pushCarrierId().length === 0
@@ -75,27 +78,12 @@ export function AxisSetting(props: AxisSettingProps & IconButtonProps) {
                         : pushCarrierId(),
                     );
                   }
-                }}
-              >
-                {"Push"}
-              </Button>
-              <Button
-                width="3rem"
-                height={"2rem"}
-                marginLeft={`0.5rem`}
-                variant="outline"
-                disabled={
-                  props.stopPushDisabled !== undefined
-                    ? props.stopPushDisabled
-                    : true
-                }
-                onClick={() => {
-                  if (onStopPush) {
+                  if (props.stopPushDisabled === false && onStopPush) {
                     onStopPush();
                   }
                 }}
               >
-                {"Stop"}
+                {props.stopPushDisabled === true ? "Push" : "Stop"}
               </Button>
             </div>
             <div
@@ -167,10 +155,13 @@ export function AxisSetting(props: AxisSettingProps & IconButtonProps) {
                 {"Pull"}
               </Text>
               <Button
-                width="3rem"
-                height={"2rem"}
+                width="2.5rem"
+                height={"1.5rem"}
+                variant={props.stopPullDisabled === true ? "solid" : "outline"}
+                fontWeight={"medium"}
+                size="xs"
                 onClick={() => {
-                  if (onPull) {
+                  if (props.stopPullDisabled === true && onPull) {
                     onPull(
                       pullDirection(),
                       pullCarrierId(),
@@ -180,28 +171,13 @@ export function AxisSetting(props: AxisSettingProps & IconButtonProps) {
                         : pullDestination(),
                     );
                   }
-                }}
-              >
-                {"Pull"}
-              </Button>
-              <Button
-                width="2.5rem"
-                height={"2rem"}
-                marginLeft={`0.5rem`}
-                variant="outline"
-                size="xs"
-                disabled={
-                  props.stopPullDisabled !== undefined
-                    ? props.stopPullDisabled
-                    : true
-                }
-                onClick={() => {
-                  if (onStopPull) {
+
+                  if (props.stopPullDisabled === false && onStopPull) {
                     onStopPull();
                   }
                 }}
               >
-                {"Stop"}
+                {props.stopPullDisabled === true ? "Pull" : "Stop"}
               </Button>
             </div>
             <div
