@@ -47,15 +47,57 @@ export function AxisSetting(props: AxisSettingProps & IconButtonProps) {
         </IconButton>
       </Popover.Trigger>
       <Popover.Positioner>
-        <Popover.Content>
+        <Popover.Content width="12rem">
           <Popover.Arrow>
             <Popover.ArrowTip />
           </Popover.Arrow>
 
           <div style={{ width: "100%" }}>
-            <Text fontWeight={"bold"} size="sm">
-              {"Push"}
-            </Text>
+            <div
+              style={{
+                display: "flex",
+                width: "100%",
+                "align-items": "center",
+              }}
+            >
+              <Text fontWeight={"bold"} size="sm" width={`100%`}>
+                {"Push"}
+              </Text>
+              <Button
+                width="3rem"
+                height="2rem"
+                onClick={() => {
+                  if (onPush) {
+                    onPush(
+                      pushDirection(),
+                      pushCarrierId().length === 0
+                        ? undefined
+                        : pushCarrierId(),
+                    );
+                  }
+                }}
+              >
+                {"Push"}
+              </Button>
+              <Button
+                width="3rem"
+                height={"2rem"}
+                marginLeft={`0.5rem`}
+                variant="outline"
+                disabled={
+                  props.stopPushDisabled !== undefined
+                    ? props.stopPushDisabled
+                    : true
+                }
+                onClick={() => {
+                  if (onStopPush) {
+                    onStopPush();
+                  }
+                }}
+              >
+                {"Stop"}
+              </Button>
+            </div>
             <div
               style={{
                 width: "100%",
@@ -104,49 +146,6 @@ export function AxisSetting(props: AxisSettingProps & IconButtonProps) {
                 />
               </div>
             </div>
-            <div
-              style={{
-                display: "flex",
-                width: "100%",
-                "margin-top": "0.5rem",
-                "flex-direction": "row-reverse",
-              }}
-            >
-              <Button
-                width="3rem"
-                height={"2rem"}
-                marginLeft={`0.5rem`}
-                variant="outline"
-                disabled={
-                  props.stopPushDisabled !== undefined
-                    ? props.stopPushDisabled
-                    : true
-                }
-                onClick={() => {
-                  if (onStopPush) {
-                    onStopPush();
-                  }
-                }}
-              >
-                {"Stop"}
-              </Button>
-              <Button
-                width="3rem"
-                height="2rem"
-                onClick={() => {
-                  if (onPush) {
-                    onPush(
-                      pushDirection(),
-                      pushCarrierId().length === 0
-                        ? undefined
-                        : pushCarrierId(),
-                    );
-                  }
-                }}
-              >
-                {"Push"}
-              </Button>
-            </div>
           </div>
 
           <div
@@ -157,9 +156,54 @@ export function AxisSetting(props: AxisSettingProps & IconButtonProps) {
               "padding-top": "0.5rem",
             }}
           >
-            <Text fontWeight={"bold"} size="sm">
-              {"Pull"}
-            </Text>
+            <div
+              style={{
+                width: "100%",
+                display: "flex",
+                "align-items": "center",
+              }}
+            >
+              <Text fontWeight={"bold"} size="sm" width={"100%"}>
+                {"Pull"}
+              </Text>
+              <Button
+                width="3rem"
+                height={"2rem"}
+                onClick={() => {
+                  if (onPull) {
+                    onPull(
+                      pullDirection(),
+                      pullCarrierId(),
+                      casEnable(),
+                      pullDestination().length === 0
+                        ? undefined
+                        : pullDestination(),
+                    );
+                  }
+                }}
+              >
+                {"Pull"}
+              </Button>
+              <Button
+                width="2.5rem"
+                height={"2rem"}
+                marginLeft={`0.5rem`}
+                variant="outline"
+                size="xs"
+                disabled={
+                  props.stopPullDisabled !== undefined
+                    ? props.stopPullDisabled
+                    : true
+                }
+                onClick={() => {
+                  if (onStopPull) {
+                    onStopPull();
+                  }
+                }}
+              >
+                {"Stop"}
+              </Button>
+            </div>
             <div
               style={{
                 width: "100%",
@@ -172,27 +216,7 @@ export function AxisSetting(props: AxisSettingProps & IconButtonProps) {
               <div
                 style={{
                   "flex-direction": "column",
-                  width: `2rem`,
-                  "margin-right": "1rem",
-                  opacity: !casEnable() ? "0.5" : "1",
-                }}
-              >
-                <Text size="sm">{"CAS"}</Text>
-                <Button
-                  variant={"outline"}
-                  onClick={() => setCasEnable(!casEnable())}
-                  height={"2rem"}
-                  padding="0.4rem"
-                >
-                  {casEnable() ? "False" : "True"}
-                </Button>
-              </div>
-
-              <div
-                style={{
-                  "flex-direction": "column",
                   width: `5rem`,
-                  "margin-right": "1rem",
                 }}
               >
                 <Text size="sm">{"Carrier"}</Text>
@@ -232,11 +256,29 @@ export function AxisSetting(props: AxisSettingProps & IconButtonProps) {
               <div
                 style={{
                   "flex-direction": "column",
-                  width: `max-content`,
+                  width: `3rem`,
+                  opacity: !casEnable() ? "0.5" : "1",
+                }}
+              >
+                <Text size="sm">{"CAS"}</Text>
+                <Button
+                  variant={"outline"}
+                  onClick={() => setCasEnable(!casEnable())}
+                  height={"2rem"}
+                  padding="0.4rem"
+                >
+                  {casEnable() ? "False" : "True"}
+                </Button>
+              </div>
+              <div
+                style={{
+                  "flex-direction": "column",
+                  width: `calc(100% - 3.5rem)`,
                   opacity:
                     pullDestination().length > 0 && pullDestination() !== "NaN"
                       ? "1"
                       : "0.5",
+                  "margin-left": "0.5rem",
                 }}
               >
                 <Text size="sm">{"Destination"}</Text>
@@ -253,45 +295,6 @@ export function AxisSetting(props: AxisSettingProps & IconButtonProps) {
                   padding="0.2rem"
                 />
               </div>
-              <Button
-                width="3rem"
-                height={"2rem"}
-                marginTop={"1.3rem"}
-                marginLeft={`calc(100% - 3rem - 6rem - 3rem - 0.5rem)`}
-                onClick={() => {
-                  if (onPull) {
-                    onPull(
-                      pullDirection(),
-                      pullCarrierId(),
-                      casEnable(),
-                      pullDestination().length === 0
-                        ? undefined
-                        : pullDestination(),
-                    );
-                  }
-                }}
-              >
-                {"Pull"}
-              </Button>
-              <Button
-                width="3rem"
-                height={"2rem"}
-                marginTop={"1.3rem"}
-                marginLeft={`0.5rem`}
-                variant="outline"
-                disabled={
-                  props.stopPullDisabled !== undefined
-                    ? props.stopPullDisabled
-                    : true
-                }
-                onClick={() => {
-                  if (onStopPull) {
-                    onStopPull();
-                  }
-                }}
-              >
-                {"Stop"}
-              </Button>
             </div>
           </div>
         </Popover.Content>
