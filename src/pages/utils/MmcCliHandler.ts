@@ -300,41 +300,40 @@ export async function checkMmcServer(
   const clientIds: string[] = ports.map(() => crypto.randomUUID());
   const found: string[] = [];
 
-  console.log("Start");
-
   const count: string[] = [];
   const unlisten = await listen((x) => {
     if (x.payload.id) {
       if (!count.includes(x.payload.id)) {
         count.push(x.payload.id);
       }
-    }
-    if (x.payload.id && x.payload.event.message) {
-      const buffer = Buffer.from(x.payload.event.message.data);
-      const decode = fromBinary(ResponseSchema, buffer);
-      if (decode && decode.body.case === "core") {
-        const core = decode.body.value;
-        if (core && core.body.case === "apiVersion") {
-          found.push(x.payload.id);
+
+      if (x.payload.event.message) {
+        const buffer = Buffer.from(x.payload.event.message.data);
+        const decode = fromBinary(ResponseSchema, buffer);
+        if (decode && decode.body.case === "core") {
+          const core = decode.body.value;
+          if (core && core.body.case === "apiVersion") {
+            found.push(x.payload.id);
+          }
         }
       }
     }
   });
 
-  const promises = ports.map((port, i) =>
+  const pingPorts = ports.map((port, i) =>
     getApiVersion(clientIds[i], ip, port, buffer),
   );
-
-  await Promise.all(promises);
+  await Promise.all(pingPorts);
 
   while (count.length !== ports.length) {
     await delay(1);
   }
-
   unlisten();
 
-  console.log(clientIds.sort(), count.sort());
-  console.log("end");
+  const disconnectServers = clientIds
+    .filter((_, i) => pingPorts[i])
+    .map((id) => disconnect(id));
+  await Promise.allSettled(disconnectServers);
 
   if (found.length === 0) {
     return Promise.reject("No tcp server connection found");
