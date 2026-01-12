@@ -9,6 +9,7 @@ import {
   setRecentLogFilePaths,
   csvFileDownloads,
   setCsvFileDownloads,
+  logConfigDescription,
 } from "~/GlobalState.ts";
 import { Command } from "@tauri-apps/plugin-shell";
 import { createSignal, Show } from "solid-js";
@@ -965,6 +966,7 @@ export function Logging() {
               originalFile={logForm.originalFile}
               accordionStates={logForm.accordionStates}
               ref={scrollContainer}
+              description={logConfigDescription()}
             />
           </Show>
         </Stack>

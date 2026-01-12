@@ -101,6 +101,8 @@ export const [csvFileDownloads, setCsvFileDownloads] = createStore<
 export const [configDescription, setConfigDescription] = createSignal<object>(
   {},
 );
+export const [logConfigDescription, setLogConfigDescription] =
+  createSignal<object>({});
 
 export const [detectedServer, setDetectedServer] = createSignal<IpAddress[]>(
   [],
