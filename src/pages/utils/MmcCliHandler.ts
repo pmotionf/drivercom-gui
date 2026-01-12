@@ -15,6 +15,16 @@ import {
 import { Request_Kind } from "~/components/proto/mmc/core_pb";
 import { fromBinary, toBinary } from "@bufbuild/protobuf";
 import { connect, disconnect, listen, send } from "@kuyoonjo/tauri-plugin-tcp";
+import { tcpClientIds } from "~/GlobalState";
+
+enum MmccliConnectionState {
+  Connecting,
+  Connect,
+  Disconnecting,
+  Disconnect,
+}
+
+let connectedToMmmcli: MmccliConnectionState = MmccliConnectionState.Disconnect;
 
 type cliFormat = {
   modules: {
@@ -100,6 +110,12 @@ const delay = async (ms: number) =>
   });
 
 export async function prepareMmccli() {
+  if (connectedToMmmcli !== MmccliConnectionState.Disconnect)
+    return Promise.reject(
+      `mmc-cli is ${MmccliConnectionState[connectedToMmmcli]}`,
+    );
+
+  connectedToMmmcli = MmccliConnectionState.Connecting;
   const currentPlatform = platform();
   const extension = currentPlatform === "windows" ? ".exe" : "";
   let mmccli = "";
@@ -119,11 +135,13 @@ export async function prepareMmccli() {
       return Promise.reject("mmc-cli not found in files.");
     }
   } catch {
+    connectedToMmmcli = MmccliConnectionState.Disconnect;
     return Promise.reject("mmc-cli not found in files.");
   }
 
   await writeCommandWithEcho(`cd "${fixPath}resources"`);
   await writeCommand(`./${mmccli}`);
+  connectedToMmmcli = MmccliConnectionState.Connect;
   responses = [];
 
   return Promise.resolve();
@@ -147,11 +165,6 @@ export async function loadConfig(ip: string, port: number) {
 async function connectMmccli() {
   const res = await writeCommand("connect");
   return res;
-}
-
-export async function disconnectMmccli() {
-  await writeCommand("disconnect");
-  Promise.resolve();
 }
 
 const buildCliConfig = (ip: string, port: number) => {
@@ -188,18 +201,25 @@ const parseJsonStr = (config: object, str: string): string => {
 };
 
 export async function exit() {
-  const currentPlatform = platform();
-  const enterBar = currentPlatform === "windows" ? "\r\n" : "\n";
-  responseKey = "disconnected from";
-  pty.write(`exit ${enterBar}`);
+  if (connectedToMmmcli === MmccliConnectionState.Connect) {
+    connectedToMmmcli = MmccliConnectionState.Disconnecting;
+    const currentPlatform = platform();
+    const enterBar = currentPlatform === "windows" ? "\r\n" : "\n";
+    responseKey = "disconnected from";
+    pty.write(`exit ${enterBar}`);
 
-  while (!isResponseReturn) {
-    await delay(1);
+    while (!isResponseReturn) {
+      await delay(1);
+    }
+    isResponseReturn = false;
+    responses = [];
+
+    connectedToMmmcli = MmccliConnectionState.Disconnect;
+    return Promise.resolve();
   }
-  isResponseReturn = false;
-  responses = [];
-
-  return Promise.resolve();
+  return Promise.reject(
+    `mmc-cli is ${MmccliConnectionState[connectedToMmmcli]}`,
+  );
 }
 
 export async function stopPull(line: string, axisId: number) {
@@ -242,12 +262,48 @@ export async function killTerminal() {
   pty.kill();
 }
 
-export async function scanPorts(ip: string): Promise<number[]> {
-  const results: number[] = [];
+export async function findMmcServer(ip: string): Promise<number> {
+  try {
+    const { port, clientIds } = await scanPorts(ip);
+    const disconnectServer = clientIds.map((id) => disconnect(id));
+    await Promise.allSettled(disconnectServer);
+    tcpClientIds.splice(0, tcpClientIds.length);
+
+    if (port) {
+      return Promise.resolve(port);
+    } else {
+      return Promise.reject("Invalid Tcp Connection");
+    }
+  } catch (e) {
+    return Promise.reject(e);
+  }
+}
+
+export async function scanPorts(
+  ip: string,
+): Promise<{ port: number | null; clientIds: string[] }> {
+  const found: string[] = [];
+  const unlisten = await listen((x) => {
+    if (x.payload.id) {
+      if (x.payload.event.message) {
+        const buffer = Buffer.from(x.payload.event.message.data);
+        const decode = fromBinary(ResponseSchema, buffer);
+        if (decode && decode.body.case === "core") {
+          const core = decode.body.value;
+          if (core && core.body.case === "apiVersion") {
+            found.push(x.payload.id);
+          }
+        }
+      }
+    }
+  });
+
   try {
     const scanPorts = Command.sidecar("binaries/rustscan", ["-a", ip]);
     let startScanPort: boolean = false;
     let completeScanPort: boolean = false;
+
+    const ports: Promise<number | null>[] = [];
 
     scanPorts.stdout.on("data", async (data) => {
       if (data.slice(0, 4).toLowerCase() === "open" && data.includes(":")) {
@@ -255,7 +311,9 @@ export async function scanPorts(ip: string): Promise<number[]> {
           startScanPort = true;
         }
         const openPort = data.split(":").pop();
-        results.push(Number(openPort));
+        const clientId = crypto.randomUUID();
+        ports.push(getApiVersion(clientId, ip, Number(openPort)));
+        tcpClientIds.push(clientId);
       } else {
         if (startScanPort) {
           completeScanPort = true;
@@ -271,73 +329,35 @@ export async function scanPorts(ip: string): Promise<number[]> {
 
     const child = await scanPorts.spawn();
     while (!completeScanPort) {
+      if (found.length !== 0) {
+        break;
+      }
       await delay(1);
     }
     await child.kill();
-    return Promise.resolve(results);
+
+    unlisten();
+    while (ports.length !== tcpClientIds.length) {
+      if (found.length !== 0) {
+        break;
+      }
+      await delay(1);
+    }
+
+    const portList = await Promise.all(ports);
+    if (found.length !== 0) {
+      return Promise.resolve({
+        port: Number(portList[tcpClientIds.indexOf(found[0])]),
+        clientIds: tcpClientIds,
+      });
+    } else {
+      return Promise.resolve({
+        port: null,
+        clientIds: tcpClientIds,
+      });
+    }
   } catch (e) {
     return Promise.reject(e as string);
-  }
-}
-
-export async function checkMmcServer(
-  ip: string,
-  ports: number[],
-): Promise<number> {
-  const payload: Request = {
-    $typeName: "mmc.Request",
-    body: {
-      case: "core",
-      value: {
-        $typeName: "mmc.core.Request",
-        kind: Request_Kind.CORE_REQUEST_KIND_API_VERSION,
-      },
-    },
-  };
-
-  const buffer: Uint8Array = toBinary(RequestSchema, payload);
-  const clientIds: string[] = ports.map(() => crypto.randomUUID());
-  const found: string[] = [];
-
-  const count: string[] = [];
-  const unlisten = await listen((x) => {
-    if (x.payload.id) {
-      if (!count.includes(x.payload.id)) {
-        count.push(x.payload.id);
-      }
-
-      if (x.payload.event.message) {
-        const buffer = Buffer.from(x.payload.event.message.data);
-        const decode = fromBinary(ResponseSchema, buffer);
-        if (decode && decode.body.case === "core") {
-          const core = decode.body.value;
-          if (core && core.body.case === "apiVersion") {
-            found.push(x.payload.id);
-          }
-        }
-      }
-    }
-  });
-
-  const pingPorts = ports.map((port, i) =>
-    getApiVersion(clientIds[i], ip, port, buffer),
-  );
-  await Promise.all(pingPorts);
-
-  while (count.length !== ports.length) {
-    await delay(1);
-  }
-  unlisten();
-
-  const disconnectServers = clientIds
-    .filter((_, i) => pingPorts[i])
-    .map((id) => disconnect(id));
-  await Promise.allSettled(disconnectServers);
-
-  if (found.length === 0) {
-    return Promise.reject("No tcp server connection found");
-  } else {
-    return Promise.resolve<number>(ports[clientIds.indexOf(found[0])]);
   }
 }
 
@@ -345,10 +365,21 @@ async function getApiVersion(
   clientId: string,
   addr: string,
   port: number,
-  buffer: Uint8Array,
 ): Promise<number | null> {
   try {
     await connect(clientId, `${addr}:${port}`);
+    const payload: Request = {
+      $typeName: "mmc.Request",
+      body: {
+        case: "core",
+        value: {
+          $typeName: "mmc.core.Request",
+          kind: Request_Kind.CORE_REQUEST_KIND_API_VERSION,
+        },
+      },
+    };
+
+    const buffer: Uint8Array = toBinary(RequestSchema, payload);
     await send(clientId, Array.from<number>(buffer));
     return Promise.resolve(port);
   } catch (e) {

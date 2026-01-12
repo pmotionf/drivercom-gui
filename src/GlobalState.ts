@@ -109,3 +109,5 @@ export const [detectedServer, setDetectedServer] = createSignal<IpAddress[]>(
   [],
 );
 export const [configTabForm, setConfigTabForm] = createSignal<object>({});
+
+export const tcpClientIds: string[] = [];

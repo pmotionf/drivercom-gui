@@ -14,6 +14,7 @@ import {
   page,
   Pages,
   setDetectedServer,
+  tcpClientIds,
 } from "~/GlobalState.ts";
 import { createStore } from "solid-js/store";
 import { IpAddress } from "~/components/System/IpHistory.tsx";
@@ -41,9 +42,9 @@ import {
   stopPush,
   prepareMmccli,
   loadConfig,
-  scanPorts,
-  checkMmcServer,
+  findMmcServer,
 } from "./utils/MmcCliHandler.ts";
+import { disconnect } from "@kuyoonjo/tauri-plugin-tcp";
 
 export type Lines = LineType[];
 export type Systems = TrackType[];
@@ -58,8 +59,11 @@ function Monitoring() {
   onCleanup(async () => {
     if (lines.length > 0) {
       await serverHandler.disconnect();
+      await exit();
     }
-    await exit();
+    const disconnectServer = tcpClientIds.map((id) => disconnect(id));
+    await Promise.allSettled(disconnectServer);
+    tcpClientIds.splice(0, tcpClientIds.length);
   });
 
   createEffect(
@@ -246,9 +250,9 @@ function Monitoring() {
 
   async function connectMmcCli(ip: string) {
     try {
-      const ports = await scanPorts(ip);
-      const findPort = await checkMmcServer(ip, ports);
-      if (findPort) {
+      const findPort = await findMmcServer(ip);
+      console.log(findPort);
+      if (findPort && page() === Pages.Monitoring) {
         await prepareMmccli();
         const ipAddrs = await loadConfig(ip, findPort);
         if (ipAddrs) {
