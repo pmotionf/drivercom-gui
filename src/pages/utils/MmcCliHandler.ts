@@ -44,9 +44,8 @@ pty.onData((data) => {
   const buffer = Buffer.from(data);
   const str = buffer.toString();
 
-  console.log(buffer.toString());
   responses.push(str);
-  if (str.includes(responseKey)) {
+  if (str.toLowerCase().trim().includes(responseKey.toLowerCase().trim())) {
     isResponseReturn = true;
   }
 });
@@ -191,7 +190,7 @@ const parseJsonStr = (config: object, str: string): string => {
 export async function exit() {
   const currentPlatform = platform();
   const enterBar = currentPlatform === "windows" ? "\r\n" : "\n";
-  responseKey = ">";
+  responseKey = "disconnected from";
   pty.write(`exit ${enterBar}`);
 
   while (!isResponseReturn) {
