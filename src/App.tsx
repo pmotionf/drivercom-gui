@@ -43,6 +43,7 @@ import {
   Theme,
   setConfigDescription,
   setConfigTabForm,
+  setLogConfigDescription,
 } from "./GlobalState.ts";
 
 import { Button } from "~/components/ui/button.tsx";
@@ -81,6 +82,7 @@ function App(props: RouteSectionProps) {
     await getLogStartCombinator();
     await getLogStartCondition();
     await getConfigDescription();
+    await getLogConfigDescription();
     await prepareConfigTabFormat();
   });
 
@@ -147,6 +149,13 @@ function App(props: RouteSectionProps) {
     const output = await configDesc.execute();
     const desc = JSON5.parse(output.stdout);
     setConfigDescription(desc);
+  }
+
+  async function getLogConfigDescription() {
+    const configDesc = Command.sidecar("binaries/drivercom", [`log.info`]);
+    const output = await configDesc.execute();
+    const desc = JSON5.parse(output.stdout);
+    setLogConfigDescription(desc);
   }
 
   async function getTuneConfig() {
