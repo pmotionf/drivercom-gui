@@ -15,6 +15,8 @@ import { Select } from "./ui/select.tsx";
 import { createStore } from "solid-js/store";
 import { LinkStates, GainLockStates } from "./ConfigForm.tsx";
 import JSON5 from "json5";
+import { Tooltip } from "./ui/tooltip.tsx";
+import { IconHelp } from "@tabler/icons-solidjs";
 
 export type AccordionStates = Map<
   string,
@@ -122,6 +124,19 @@ export function Form(props: FormProps) {
               }
             }
 
+            if (
+              props.description &&
+              props.description![`__${key}` as keyof typeof props.description]
+            ) {
+              const fieldDesc =
+                props.description![
+                  `__${key}` as keyof typeof props.description
+                ];
+              if (fieldDesc["hidden" as keyof typeof fieldDesc] === true) {
+                return;
+              }
+            }
+
             if (checkDesc(key)) {
               const desc =
                 props.description![key as keyof typeof props.description];
@@ -136,15 +151,24 @@ export function Form(props: FormProps) {
                       Object.keys(format).includes(desc[0].replace(`__`, "")),
                     )
                     .map((desc) => desc[1]);
+                  const findHidden = descValues
+                    .map((desc) => {
+                      if (
+                        typeof desc == "object" &&
+                        desc &&
+                        "hidden" in desc &&
+                        typeof desc.hidden === "boolean"
+                      ) {
+                        return desc.hidden;
+                      } else {
+                        return false;
+                      }
+                    })
+                    .filter((hidden) => hidden);
 
                   if (
-                    descValues.some(
-                      (val) =>
-                        typeof val === "object" &&
-                        val &&
-                        "hidden" in val &&
-                        val.hidden === true,
-                    )
+                    findHidden.length === descValues.length &&
+                    findHidden.length > 0
                   ) {
                     return;
                   }
@@ -378,16 +402,45 @@ export function Form(props: FormProps) {
             props.logStartConditions &&
             props.logStartCombinators
           ) {
+            const description = props.description
+              ? props.description[`__${key}` as keyof typeof props.description]
+              : undefined;
             return (
               <>
-                <Text
-                  marginTop="0.5rem"
-                  marginLeft="0.2rem"
-                  userSelect="none"
-                  marginBottom="0.5rem"
+                <div
+                  style={{
+                    width: "100%",
+                    display: "flex",
+                    "align-items": "center",
+                  }}
                 >
-                  {`${key[0].toUpperCase()}${key.slice(1, key.length)}`}
-                </Text>
+                  <Text
+                    marginTop="0.5rem"
+                    marginLeft="0.2rem"
+                    userSelect="none"
+                    marginBottom="0.5rem"
+                    marginRight="0.5rem"
+                  >
+                    {`${key[0].toUpperCase()}${key.slice(1, key.length)}`}
+                  </Text>
+                  <Show when={description}>
+                    <Tooltip.Root>
+                      <Tooltip.Trigger>
+                        <IconHelp size="1em" opacity={0.5} />
+                      </Tooltip.Trigger>
+                      <Tooltip.Positioner>
+                        <Tooltip.Content>
+                          {
+                            description![
+                              "description" as keyof typeof description
+                            ]
+                          }
+                        </Tooltip.Content>
+                      </Tooltip.Positioner>
+                    </Tooltip.Root>
+                  </Show>
+                </div>
+
                 <Select.Root
                   positioning={{ sameWidth: true }}
                   width="2xs"
