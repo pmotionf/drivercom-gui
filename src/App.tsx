@@ -44,6 +44,8 @@ import {
   setConfigDescription,
   setConfigTabForm,
   setLogConfigDescription,
+  setApiVersion,
+  apiVersion,
 } from "./GlobalState.ts";
 
 import { Button } from "~/components/ui/button.tsx";
@@ -53,6 +55,8 @@ import { Text } from "~/components/ui/text.tsx";
 
 import { Command } from "@tauri-apps/plugin-shell";
 import { DownloadList } from "./components/DownloadList.tsx";
+//@ts-ignore This file is generate after run compiler.
+import api from "src-tauri/generated/api.json";
 import JSON5 from "json5";
 
 type PageMeta = {
@@ -76,6 +80,7 @@ function App(props: RouteSectionProps) {
     document.documentElement.dataset.theme = theme_str;
     setGlobalState("theme", theme_str);
 
+    detectApiVersion();
     await detectCliVersion();
     await buildEmptyLogConfiguration();
     await buildEmptyDriverConfiguration();
@@ -96,6 +101,22 @@ function App(props: RouteSectionProps) {
 
     setCliVersion(cliVersion);
     setDriverComVersion(drivercomVersion);
+  }
+
+  function detectApiVersion() {
+    const findApi = /protobuf-api-/;
+    const findApiIndex = api.findIndex(
+      (version: object) =>
+        "name" in version &&
+        typeof version.name === "string" &&
+        findApi.test(version.name),
+    );
+
+    const apiRegex = /[0-9]+\.[0-9]+\.[0-9]+$/;
+    const apiVersionNum = api[findApiIndex].name.match(apiRegex);
+    if (apiVersionNum) {
+      setApiVersion(apiVersionNum[0]);
+    }
   }
 
   async function buildEmptyLogConfiguration() {
@@ -457,6 +478,29 @@ function App(props: RouteSectionProps) {
                     >
                       {driverComVersion()}
                     </Text>
+                    <Text
+                      size="sm"
+                      fontWeight="light"
+                      color="{colors.gray.a10}"
+                      style={{
+                        "padding-left": "0.5rem",
+                        "grid-row": 4,
+                        "grid-column": 1,
+                      }}
+                    >
+                      <i>API Version:</i>
+                    </Text>
+                    <Text
+                      size="sm"
+                      fontWeight="light"
+                      color="{colors.gray.a10}"
+                      style={{
+                        "grid-row": 4,
+                        "grid-column": 2,
+                      }}
+                    >
+                      {apiVersion()}
+                    </Text>
                   </div>
                   <Text
                     as="div"
@@ -466,7 +510,7 @@ function App(props: RouteSectionProps) {
                     textAlign="center"
                     marginTop="0.5rem"
                   >
-                    <i>Copyright © 2024-2025 PMF, Inc.</i>
+                    <i>{`Copyright © 2024-${new Date().getFullYear()} PMF, Inc.`}</i>
                   </Text>
                 </Drawer.Footer>
               </Drawer.Content>
