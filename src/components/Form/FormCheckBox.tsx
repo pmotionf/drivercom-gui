@@ -21,7 +21,15 @@ export const FormCheckBox = (props: FormCheckBoxProps) => {
     return;
 
   return (
-    <div style={{ display: "flex", width: "100%", "margin-top": "1em" }}>
+    <div
+      style={{
+        display: "flex",
+        width: "100%",
+        "margin-top": "1em",
+        "align-items": "center",
+        height: "max-content",
+      }}
+    >
       <Checkbox
         id={props.id}
         checked={props.checked}
@@ -36,6 +44,7 @@ export const FormCheckBox = (props: FormCheckBoxProps) => {
           }
         }}
         marginRight="0.5em"
+        alignItems={"center"}
       >
         <Text
           fontWeight="medium"
@@ -58,7 +67,7 @@ export const FormCheckBox = (props: FormCheckBoxProps) => {
         }
       >
         <Tooltip.Root>
-          <Tooltip.Trigger>
+          <Tooltip.Trigger marginTop="0.3rem">
             <IconHelp size="1em" opacity={0.5} />
           </Tooltip.Trigger>
           <Tooltip.Positioner>
