@@ -506,7 +506,7 @@ export function Logging() {
           <Show when={renderLoggingForm()}>
             <Stack direction="row" width="100%">
               <Tooltip.Root positioning={{ placement: "bottom-start" }}>
-                <Tooltip.Trigger width={`calc(100% - 13.5rem)`}>
+                <Tooltip.Trigger width={`calc(100% - 16rem)`}>
                   <Editable.Root
                     placeholder="File name"
                     defaultValue={logForm.title}
