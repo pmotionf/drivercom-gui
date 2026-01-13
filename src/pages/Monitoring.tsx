@@ -265,23 +265,6 @@ function Monitoring() {
     }
   }
 
-  const showErrorToaster = (commandResponses: string[]) => {
-    if (commandResponses.some((res) => res.toLowerCase().includes("error"))) {
-      const errorMsgIndex = commandResponses.findIndex((res) =>
-        res.toLowerCase().includes("error"),
-      );
-
-      const errorMsg = commandResponses[errorMsgIndex];
-      const errorReg = /error: (.+)/;
-      const desc = errorMsg.match(errorReg)![1].replaceAll(`"`, "");
-      toaster.create({
-        title: "Command Error",
-        description: desc,
-        type: "error",
-      });
-    }
-  };
-
   return (
     <>
       <Splitter.Root
@@ -318,32 +301,60 @@ function Monitoring() {
                 destination,
                 disableCas,
               ) => {
-                const pullResponse = await pullCarrier(
-                  commandDirection,
-                  lineName,
-                  axis,
-                  carrierId,
-                  destination,
-                  disableCas,
-                );
-                showErrorToaster(pullResponse);
+                try {
+                  await pullCarrier(
+                    commandDirection,
+                    lineName,
+                    axis,
+                    carrierId,
+                    destination,
+                    disableCas,
+                  );
+                } catch (e) {
+                  toaster.create({
+                    title: "Error",
+                    description: e as string,
+                    type: "error",
+                  });
+                }
               }}
               onStopPull={async (line, axisId) => {
-                const response = await stopPull(line, axisId);
-                showErrorToaster(response);
+                try {
+                  await stopPull(line, axisId);
+                } catch (e) {
+                  toaster.create({
+                    title: "Error",
+                    description: e as string,
+                    type: "error",
+                  });
+                }
               }}
               onPush={async (lineName, commandDirection, axis, carrierId) => {
-                const pushResponse = await pushCarrier(
-                  commandDirection,
-                  lineName,
-                  axis,
-                  carrierId,
-                );
-                showErrorToaster(pushResponse);
+                try {
+                  await pushCarrier(
+                    commandDirection,
+                    lineName,
+                    axis,
+                    carrierId,
+                  );
+                } catch (e) {
+                  toaster.create({
+                    title: "Error",
+                    description: e as string,
+                    type: "error",
+                  });
+                }
               }}
               onStopPush={async (line, axisId) => {
-                const response = await stopPush(line, axisId);
-                showErrorToaster(response);
+                try {
+                  await stopPush(line, axisId);
+                } catch (e) {
+                  toaster.create({
+                    title: "Error",
+                    description: e as string,
+                    type: "error",
+                  });
+                }
               }}
             />
           </Show>
@@ -440,7 +451,7 @@ function Monitoring() {
 
                       if (ip && port) {
                         try {
-                          await prepareMmccli();
+                          await connectMmcCli(ip);
                           await serverHandler.connect(ip, port);
                           const serverResponse: LineType[] =
                             await serverHandler.getLineConfig();
