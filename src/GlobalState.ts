@@ -30,6 +30,7 @@ export const GlobalStateContext = createContext<{
 
 export const [cliVersion, setCliVersion] = createSignal<string>("");
 export const [driverComVersion, setDriverComVersion] = createSignal<string>("");
+export const [apiVersion, setApiVersion] = createSignal<string>("");
 
 export const [portList, setPortList] = createSignal<Port[]>([]);
 
