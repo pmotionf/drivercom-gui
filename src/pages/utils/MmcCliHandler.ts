@@ -50,14 +50,13 @@ const pty = spawn(platform() === "windows" ? "powershell.exe" : "bash", [], {
 let responses: string[] = [];
 let responseKey: string = "";
 let isResponseReturn: boolean = false;
+let isCommandStop: boolean = false;
 
 pty.onData((data) => {
   term.write(new Uint8Array(data));
   const buffer = Buffer.from(data);
   const str = buffer.toString();
-
   console.log(str);
-
   responses.push(str);
   if (str.toLowerCase().trim().includes(responseKey.toLowerCase().trim())) {
     isResponseReturn = true;
@@ -65,6 +64,7 @@ pty.onData((data) => {
 });
 
 term.onData((data) => {
+  console.log(data, "terminal");
   pty.write(data);
 });
 
@@ -81,7 +81,8 @@ async function writeCommand(cmd: string) {
   pty.write(cmd + enterBar);
 
   while (!isResponseReturn) {
-    if (isResponseReturn) break;
+    if (isCommandStop) break;
+    console.log(`waiting ${cmd}...`);
     await delay(1);
   }
   isResponseReturn = false;
@@ -206,16 +207,32 @@ const parseJsonStr = (config: object, str: string): string => {
   return parseString;
 };
 
+async function stopCommand() {
+  if (mmccliStatus === MmccliConnectionState.Sending) {
+    isCommandStop = true;
+    responseKey = "error";
+    responses = [];
+
+    const stopKey = `\x03`;
+    pty.write(stopKey);
+    while (!isResponseReturn) {
+      await delay(1);
+    }
+    isResponseReturn = false;
+    responses = [];
+    isCommandStop = false;
+
+    mmccliStatus = MmccliConnectionState.Open;
+    return Promise.resolve();
+  }
+  return Promise.reject("There is no command to stop.");
+}
+
 export async function exit() {
   if (mmccliStatus === MmccliConnectionState.Sending) {
-    //ty.pause();
-    //pty.resume();
-    mmccliStatus = MmccliConnectionState.Open;
+    await stopCommand();
   }
-  if (
-    mmccliStatus === MmccliConnectionState.Connect ||
-    mmccliStatus === MmccliConnectionState.Open
-  ) {
+  if (mmccliStatus === MmccliConnectionState.Open) {
     mmccliStatus = MmccliConnectionState.Disconnecting;
     const currentPlatform = platform();
     const enterBar = currentPlatform === "windows" ? "\r\n" : "\n";
