@@ -207,7 +207,7 @@ const parseJsonStr = (config: object, str: string): string => {
   return parseString;
 };
 
-async function stopCommand() {
+export async function stopCommand() {
   if (mmccliStatus === MmccliConnectionState.Sending) {
     isCommandStop = true;
     responseKey = "error";

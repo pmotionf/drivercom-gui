@@ -145,6 +145,8 @@ export function Axis(props: AxisProps) {
           borderRadius={"1em"}
           height="2rem"
           style={{ padding: "0" }}
+          sendingCommand={props.sendingCommand}
+          disableCommandButton={props.disableCommandButton}
           stopPullDisabled={!props.axisInfo.waitingPull === true}
           stopPushDisabled={!props.axisInfo.waitingPush === true}
           onPull={(axisDirection, carrierId, cas, destination) =>
@@ -155,6 +157,7 @@ export function Axis(props: AxisProps) {
           }}
           onStopPush={() => props.onStopPush?.()}
           onStopPull={() => props.onStopPull?.()}
+          onStopCommand={() => props.onStopCommand?.()}
         />
       </Stack>
 
@@ -215,7 +218,7 @@ export function Axis(props: AxisProps) {
                 "white-space": "nowrap",
                 display: "block",
                 overflow: "hidden",
-                "text-align": "left",
+                "text-align": "right",
                 "font-family": "monospace",
               }}
             >
