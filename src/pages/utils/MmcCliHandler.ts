@@ -56,7 +56,6 @@ pty.onData((data) => {
   term.write(new Uint8Array(data));
   const buffer = Buffer.from(data);
   const str = buffer.toString();
-  console.log(str);
   responses.push(str);
   if (str.toLowerCase().trim().includes(responseKey.toLowerCase().trim())) {
     isResponseReturn = true;
@@ -64,25 +63,18 @@ pty.onData((data) => {
 });
 
 term.onData((data) => {
-  console.log(data, "terminal");
   pty.write(data);
 });
 
-pty.onExit(({ exitCode }) => {
-  console.log(`\n\nProgram exit: ${exitCode}`);
-});
-
 async function writeCommand(cmd: string) {
-  const currentPlatform = platform();
-  const enterBar = currentPlatform === "windows" ? "\r\n" : "\n";
-  responseKey = "Please enter a command";
+  const enterBar = platform() === "windows" ? "\r\n" : "\n";
+  responseKey = "HELP";
   responses = [];
 
   pty.write(cmd + enterBar);
 
   while (!isResponseReturn) {
     if (isCommandStop) break;
-    console.log(`waiting ${cmd}...`);
     await delay(1);
   }
   isResponseReturn = false;
@@ -93,8 +85,7 @@ async function writeCommand(cmd: string) {
 }
 
 async function writeCommandWithEcho(cmd: string) {
-  const currentPlatform = platform();
-  const enterBar = currentPlatform === "windows" ? "\r\n" : "\n";
+  const enterBar = platform() === "windows" ? "\r\n" : "\n";
 
   const echo = crypto.randomUUID();
   responseKey = echo;
@@ -119,11 +110,9 @@ export async function prepareMmccli() {
     return Promise.reject(`mmc-cli is ${MmccliConnectionState[mmccliStatus]}`);
 
   mmccliStatus = MmccliConnectionState.Connecting;
-  const currentPlatform = platform();
-  const extension = currentPlatform === "windows" ? ".exe" : "";
+  const extension = platform() === "windows" ? ".exe" : "";
   let mmccli = "";
-  const resourcePath = await resolveResource(mmccli);
-  const fixPath = resourcePath.replace(mmccli, "");
+  const resourcePath = await resolveResource("resources");
 
   try {
     const files = await readDir("resources", {
@@ -135,14 +124,14 @@ export async function prepareMmccli() {
     if (index > -1) {
       mmccli = files[index].name;
     } else {
-      return Promise.reject("mmc-cli not found in files.");
+      return Promise.reject("Invalid file");
     }
   } catch {
     mmccliStatus = MmccliConnectionState.Disconnect;
     return Promise.reject("mmc-cli not found in files.");
   }
 
-  await writeCommandWithEcho(`cd "${fixPath}resources"`);
+  await writeCommandWithEcho(`cd "${resourcePath}"`);
   await writeCommand(`./${mmccli}`);
   mmccliStatus = MmccliConnectionState.Connect;
   responses = [];
@@ -294,7 +283,7 @@ export async function pullCarrier(
   }
   mmccliStatus = MmccliConnectionState.Sending;
   const result = await writeCommand(
-    `pull_carrier_${direction} ${line} ${axisId} ${carrierId} ${destination && destination !== "NaN" ? destination : casDisabled ? "NaN" : ""} ${casDisabled ? "true" : ""}`,
+    `pull_carrier ${line} ${axisId} ${carrierId} ${direction} ${destination && destination !== "NaN" ? destination : casDisabled ? "NaN" : ""} ${casDisabled ? "true" : ""}`,
   );
   mmccliStatus = MmccliConnectionState.Open;
   if (result.some((res) => res.toLowerCase().includes("error"))) {
@@ -316,7 +305,7 @@ export async function pushCarrier(
   }
   mmccliStatus = MmccliConnectionState.Sending;
   const result = await writeCommand(
-    `push_carrier_${direction} ${line} ${axisId} ${carrierId ? carrierId : ""}`,
+    `push_carrier ${line} ${axisId} ${direction} ${carrierId ? carrierId : ""}`,
   );
   mmccliStatus = MmccliConnectionState.Open;
   if (result.some((res) => res.toLowerCase().includes("error"))) {
