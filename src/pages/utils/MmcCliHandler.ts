@@ -17,16 +17,15 @@ import { fromBinary, toBinary } from "@bufbuild/protobuf";
 import { connect, disconnect, listen, send } from "@kuyoonjo/tauri-plugin-tcp";
 import { tcpClientIds } from "~/GlobalState";
 
-enum MmccliConnectionState {
-  Connecting,
-  Connect,
-  Open,
-  Sending,
-  Disconnecting,
-  Disconnect,
+enum MmcCliState {
+  Unloaded, // MMC-CLI is closed.
+  Loading, // MMC-CLI is opened, but not connected to server.
+  Ready, // Ready to send command in MMC-CLI.
+  SendingCommand, // MMC-CLI is sending to command.
+  WaitCompletion, // Waiting until MMC-CLI wait command completed.
+  ExecutingScenario, // Scenario file is running in MMC-CLI.
+  Exiting, // Exiting MMC-CLI.
 }
-
-let mmccliStatus: MmccliConnectionState = MmccliConnectionState.Disconnect;
 
 type cliFormat = {
   modules: {
@@ -36,6 +35,8 @@ type cliFormat = {
     };
   }[];
 };
+
+let mmccliStatus: MmcCliState = MmcCliState.Unloaded;
 
 const term = new Terminal({
   convertEol: true,
@@ -106,10 +107,9 @@ const delay = async (ms: number) =>
   });
 
 export async function prepareMmccli() {
-  if (mmccliStatus !== MmccliConnectionState.Disconnect)
-    return Promise.reject(`mmc-cli is ${MmccliConnectionState[mmccliStatus]}`);
+  if (mmccliStatus !== MmcCliState.Unloaded)
+    return Promise.reject(`mmc-cli is ${MmcCliState[mmccliStatus]}`);
 
-  mmccliStatus = MmccliConnectionState.Connecting;
   const extension = platform() === "windows" ? ".exe" : "";
   let mmccli = "";
   const resourcePath = await resolveResource("resources");
@@ -127,21 +127,20 @@ export async function prepareMmccli() {
       return Promise.reject("Invalid file");
     }
   } catch {
-    mmccliStatus = MmccliConnectionState.Disconnect;
     return Promise.reject("mmc-cli not found in files.");
   }
 
   await writeCommandWithEcho(`cd "${resourcePath}"`);
   await writeCommand(`./${mmccli}`);
-  mmccliStatus = MmccliConnectionState.Connect;
+  mmccliStatus = MmcCliState.Loading;
   responses = [];
 
   return Promise.resolve();
 }
 
 export async function loadConfig(ip: string, port: number) {
-  if (mmccliStatus !== MmccliConnectionState.Connect) {
-    return Promise.reject("MMC-CLI is not connected");
+  if (mmccliStatus !== MmcCliState.Loading) {
+    return Promise.reject("MMC-CLI is not open.");
   }
   const config = buildCliConfig(ip, port);
   const resourcePath = await appDataDir();
@@ -153,17 +152,20 @@ export async function loadConfig(ip: string, port: number) {
     const errorMsg = findError(res);
     return Promise.reject(errorMsg);
   } else {
-    mmccliStatus = MmccliConnectionState.Open;
     return Promise.resolve();
   }
 }
 
 export async function connectMmcServer() {
+  if (mmccliStatus !== MmcCliState.Loading) {
+    return Promise.reject("MMC-CLI is not open.");
+  }
   const res = await writeCommand("connect");
   if (res.some((response) => response.toLowerCase().includes("error"))) {
     const errMsg = findError(res);
     return Promise.reject(errMsg);
   } else {
+    mmccliStatus = MmcCliState.Ready;
     return Promise.resolve();
   }
 }
@@ -202,7 +204,7 @@ const parseJsonStr = (config: object, str: string): string => {
 };
 
 export async function stopCommand() {
-  if (mmccliStatus === MmccliConnectionState.Sending) {
+  if (mmccliStatus === MmcCliState.SendingCommand) {
     isCommandStop = true;
     responseKey = "error";
     responses = [];
@@ -216,18 +218,18 @@ export async function stopCommand() {
     responses = [];
     isCommandStop = false;
 
-    mmccliStatus = MmccliConnectionState.Open;
+    mmccliStatus = MmcCliState.Ready;
     return Promise.resolve();
   }
   return Promise.reject("There is no command to stop.");
 }
 
 export async function exit() {
-  if (mmccliStatus === MmccliConnectionState.Sending) {
+  if (mmccliStatus === MmcCliState.SendingCommand) {
     await stopCommand();
   }
-  if (mmccliStatus === MmccliConnectionState.Open) {
-    mmccliStatus = MmccliConnectionState.Disconnecting;
+  if (mmccliStatus === MmcCliState.Ready) {
+    mmccliStatus = MmcCliState.Exiting;
     const currentPlatform = platform();
     const enterBar = currentPlatform === "windows" ? "\r\n" : "\n";
     responseKey = "disconnected from";
@@ -239,19 +241,19 @@ export async function exit() {
     isResponseReturn = false;
     responses = [];
 
-    mmccliStatus = MmccliConnectionState.Disconnect;
+    mmccliStatus = MmcCliState.Unloaded;
     return Promise.resolve();
   }
-  return Promise.reject(`mmc-cli is ${MmccliConnectionState[mmccliStatus]}`);
+  return Promise.reject(`mmc-cli is ${MmcCliState[mmccliStatus]}`);
 }
 
 export async function stopPull(line: string, axisId: number) {
-  if (mmccliStatus !== MmccliConnectionState.Open) {
+  if (mmccliStatus !== MmcCliState.Ready) {
     return Promise.reject("MMC-CLI is not prepared to send stop pull.");
   }
-  mmccliStatus = MmccliConnectionState.Sending;
+  mmccliStatus = MmcCliState.SendingCommand;
   const result = await writeCommand(`stop_pull_carrier ${line} ${axisId}a`);
-  mmccliStatus = MmccliConnectionState.Open;
+  mmccliStatus = MmcCliState.Ready;
   if (result.some((res) => res.toLowerCase().includes("error"))) {
     const errMsg = findError(result);
     return Promise.reject(errMsg);
@@ -261,12 +263,12 @@ export async function stopPull(line: string, axisId: number) {
 }
 
 export async function stopPush(line: string, axisId: number) {
-  if (mmccliStatus !== MmccliConnectionState.Open) {
+  if (mmccliStatus !== MmcCliState.Ready) {
     return Promise.reject("MMC-CLI is not prepared to send stop push.");
   }
-  mmccliStatus = MmccliConnectionState.Sending;
+  mmccliStatus = MmcCliState.SendingCommand;
   const result = await writeCommand(`stop_push_carrier ${line} ${axisId}a`);
-  mmccliStatus = MmccliConnectionState.Open;
+  mmccliStatus = MmcCliState.Ready;
   if (result.some((res) => res.toLowerCase().includes("error"))) {
     const errMsg = findError(result);
     return Promise.reject(errMsg);
@@ -283,14 +285,14 @@ export async function pullCarrier(
   destination?: string,
   cas?: string,
 ) {
-  if (mmccliStatus !== MmccliConnectionState.Open) {
+  if (mmccliStatus !== MmcCliState.Ready) {
     return Promise.reject("MMC-CLI is not prepared to send pull.");
   }
-  mmccliStatus = MmccliConnectionState.Sending;
+  mmccliStatus = MmcCliState.SendingCommand;
   const result = await writeCommand(
     `pull_carrier ${line} ${axisId} ${carrierId} ${direction} ${destination && destination !== "NaN" ? destination : cas ? "NaN" : ""} ${cas ? cas : ""}`,
   );
-  mmccliStatus = MmccliConnectionState.Open;
+  mmccliStatus = MmcCliState.Ready;
   if (result.some((res) => res.toLowerCase().includes("error"))) {
     const errMsg = findError(result);
     return Promise.reject(errMsg);
@@ -305,14 +307,14 @@ export async function pushCarrier(
   axisId: string,
   carrierId?: string,
 ) {
-  if (mmccliStatus !== MmccliConnectionState.Open) {
+  if (mmccliStatus !== MmcCliState.Ready) {
     return Promise.reject("MMC-CLI is not prepared to send push.");
   }
-  mmccliStatus = MmccliConnectionState.Sending;
+  mmccliStatus = MmcCliState.SendingCommand;
   const result = await writeCommand(
     `push_carrier ${line} ${axisId} ${direction} ${carrierId ? carrierId : ""}`,
   );
-  mmccliStatus = MmccliConnectionState.Open;
+  mmccliStatus = MmcCliState.Ready;
   if (result.some((res) => res.toLowerCase().includes("error"))) {
     const errMsg = findError(result);
     return Promise.reject(errMsg);
