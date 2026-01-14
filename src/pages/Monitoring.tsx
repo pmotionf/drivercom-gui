@@ -41,6 +41,7 @@ import {
   pushCarrier,
   stopPush,
   prepareMmccli,
+  connectMmcServer,
   loadConfig,
   findMmcServer,
   stopCommand,
@@ -255,10 +256,9 @@ function Monitoring() {
       const findPort = await findMmcServer(ip);
       if (findPort && page() === Pages.Monitoring) {
         await prepareMmccli();
-        const ipAddrs = await loadConfig(ip, findPort);
-        if (ipAddrs) {
-          return Promise.resolve();
-        }
+        await loadConfig(ip, findPort);
+        await connectMmcServer();
+        return Promise.resolve();
       }
       return Promise.reject("Invalid Tcp Connection");
     } catch {
