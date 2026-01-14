@@ -17,7 +17,7 @@ export type AxisSettingProps = {
   onPull?: (
     axisDirection: string,
     carrierId: string,
-    cas: boolean,
+    cas: string,
     destination?: string,
   ) => void;
   onPush?: (axisDirection: string, carrierId?: string) => void;
@@ -38,6 +38,11 @@ enum AxisCommandType {
   None,
 }
 
+enum CasState {
+  On = "on",
+  Off = "off",
+}
+
 export function AxisSetting(props: AxisSettingProps & IconButtonProps) {
   const { onPull, onPush, onStopPull, onStopPush, ...IconButtonProps } = props;
 
@@ -50,7 +55,7 @@ export function AxisSetting(props: AxisSettingProps & IconButtonProps) {
   const [pullDirection, setPullDirection] = createSignal<AxisDirection>(
     AxisDirection.BACKWARD,
   );
-  const [casEnable, setCasEnable] = createSignal<boolean>(false);
+  const [casEnable, setCasEnable] = createSignal<CasState>(CasState.On);
 
   const [lastCommand, setLastCommand] = createSignal<AxisCommandType>(
     AxisCommandType.None,
@@ -309,33 +314,43 @@ export function AxisSetting(props: AxisSettingProps & IconButtonProps) {
                 </Button>
               </div>
             </div>
-            <div style={{ display: "flex", width: "100%" }}>
+            <div
+              style={{
+                display: "flex",
+                width: "100%",
+                "flex-direction": "row-reverse",
+              }}
+            >
               <div
                 style={{
                   "flex-direction": "column",
                   width: `3rem`,
-                  opacity: !casEnable() ? "0.5" : "1",
+                  opacity: casEnable() === CasState.On ? "0.5" : "1",
                 }}
               >
                 <Text size="sm">{"CAS"}</Text>
                 <Button
                   variant={"outline"}
-                  onClick={() => setCasEnable(!casEnable())}
+                  onClick={() =>
+                    setCasEnable((prev) =>
+                      prev === CasState.On ? CasState.Off : CasState.On,
+                    )
+                  }
                   height={"2rem"}
                   padding="0.4rem"
                 >
-                  {casEnable() ? "False" : "True"}
+                  {casEnable()}
                 </Button>
               </div>
               <div
                 style={{
                   "flex-direction": "column",
-                  width: `calc(100% - 3.5rem)`,
+                  width: `calc(100% - 3rem)`,
                   opacity:
                     pullDestination().length > 0 && pullDestination() !== "NaN"
                       ? "1"
                       : "0.5",
-                  "margin-left": "0.5rem",
+                  "margin-right": "1rem",
                 }}
               >
                 <Text size="sm">{"Destination"}</Text>
