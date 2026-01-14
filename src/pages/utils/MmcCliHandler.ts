@@ -147,20 +147,25 @@ export async function loadConfig(ip: string, port: number) {
   const resourcePath = await appDataDir();
   const configFilePath = await path.join(resourcePath, "config.json5");
   await writeTextFile(configFilePath, config);
-  await writeCommand(`load_config ${configFilePath}`);
+  const res = await writeCommand(`load_config ${configFilePath}`);
 
-  const res = await connectMmccli();
   if (res.some((response) => response.toLowerCase().includes("error"))) {
-    return Promise.resolve(null);
+    const errorMsg = findError(res);
+    return Promise.reject(errorMsg);
   } else {
     mmccliStatus = MmccliConnectionState.Open;
-    return Promise.resolve({ ip: ip, port: port });
+    return Promise.resolve();
   }
 }
 
-async function connectMmccli() {
+export async function connectMmcServer() {
   const res = await writeCommand("connect");
-  return res;
+  if (res.some((response) => response.toLowerCase().includes("error"))) {
+    const errMsg = findError(res);
+    return Promise.reject(errMsg);
+  } else {
+    return Promise.resolve();
+  }
 }
 
 const buildCliConfig = (ip: string, port: number) => {
