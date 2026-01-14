@@ -246,10 +246,9 @@ export function ConnectButton(props: ConnectButtonProps) {
                         size="sm"
                         width="3em"
                         borderRadius="3em"
-                        onClick={() => {
-                          setTimeout(() => {
-                            props.onPortIdChange?.(props.portId);
-                          }, 200);
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          props.onPortIdChange?.("");
                         }}
                         variant="ghost"
                         margin="0"
