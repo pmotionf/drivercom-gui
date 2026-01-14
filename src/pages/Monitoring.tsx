@@ -43,6 +43,7 @@ import {
   prepareMmccli,
   loadConfig,
   findMmcServer,
+  stopCommand,
 } from "./utils/MmcCliHandler.ts";
 import { disconnect } from "@kuyoonjo/tauri-plugin-tcp";
 
@@ -59,6 +60,7 @@ function Monitoring() {
   onCleanup(async () => {
     if (lines.length > 0) {
       await serverHandler.disconnect();
+      setSendingCmd(null);
       await exit();
     }
     const disconnectServer = tcpClientIds.map((id) => disconnect(id));
@@ -251,7 +253,6 @@ function Monitoring() {
   async function connectMmcCli(ip: string) {
     try {
       const findPort = await findMmcServer(ip);
-      console.log(findPort);
       if (findPort && page() === Pages.Monitoring) {
         await prepareMmccli();
         const ipAddrs = await loadConfig(ip, findPort);
@@ -264,6 +265,11 @@ function Monitoring() {
       return Promise.reject("Invalid Tcp Connection");
     }
   }
+
+  const [sendingCmd, setSendingCmd] = createSignal<{
+    line: string;
+    axisId: number;
+  } | null>(null);
 
   return (
     <>
@@ -293,6 +299,7 @@ function Monitoring() {
             <System
               lines={lines}
               systems={systems}
+              sendingCommand={sendingCmd()}
               onPull={async (
                 lineName,
                 commandDirection,
@@ -302,6 +309,7 @@ function Monitoring() {
                 disableCas,
               ) => {
                 try {
+                  setSendingCmd({ line: lineName, axisId: Number(axis) });
                   await pullCarrier(
                     commandDirection,
                     lineName,
@@ -310,51 +318,67 @@ function Monitoring() {
                     destination,
                     disableCas,
                   );
+                  setSendingCmd(null);
                 } catch (e) {
                   toaster.create({
                     title: "Error",
                     description: e as string,
                     type: "error",
                   });
+                  setSendingCmd(null);
                 }
               }}
               onStopPull={async (line, axisId) => {
                 try {
+                  setSendingCmd({ line: line, axisId: axisId });
                   await stopPull(line, axisId);
+                  setSendingCmd(null);
                 } catch (e) {
                   toaster.create({
                     title: "Error",
                     description: e as string,
                     type: "error",
                   });
+                  setSendingCmd(null);
                 }
               }}
               onPush={async (lineName, commandDirection, axis, carrierId) => {
                 try {
+                  setSendingCmd({ line: lineName, axisId: Number(axis) });
                   await pushCarrier(
                     commandDirection,
                     lineName,
                     axis,
                     carrierId,
                   );
+                  setSendingCmd(null);
                 } catch (e) {
                   toaster.create({
                     title: "Error",
                     description: e as string,
                     type: "error",
                   });
+                  setSendingCmd(null);
                 }
               }}
               onStopPush={async (line, axisId) => {
                 try {
+                  setSendingCmd({ line: line, axisId: axisId });
                   await stopPush(line, axisId);
+                  setSendingCmd(null);
                 } catch (e) {
                   toaster.create({
                     title: "Error",
                     description: e as string,
                     type: "error",
                   });
+                  setSendingCmd(null);
                 }
+              }}
+              onStopCommand={async (line, axisId) => {
+                setSendingCmd({ line: line, axisId: axisId });
+                await stopCommand();
+                setSendingCmd(null);
               }}
             />
           </Show>
@@ -440,6 +464,7 @@ function Monitoring() {
                         deleteIpHistory(ip, port);
                         await exit();
                         await serverHandler.disconnect();
+                        setSendingCmd(null);
                       }
                     }}
                     onDisconnectServer={async (ip, port) => {
@@ -448,6 +473,7 @@ function Monitoring() {
                       setSystems([]);
                       await exit();
                       await serverHandler.disconnect();
+                      setSendingCmd(null);
 
                       if (ip && port) {
                         try {
@@ -464,6 +490,7 @@ function Monitoring() {
                           deleteIpHistory(ip, port);
                           if (lines.length > 0) {
                             await serverHandler.disconnect();
+                            setSendingCmd(null);
                           }
                         }
                       }

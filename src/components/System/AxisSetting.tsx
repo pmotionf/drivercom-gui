@@ -12,6 +12,8 @@ export enum AxisDirection {
 }
 
 export type AxisSettingProps = {
+  sendingCommand: boolean;
+  disableCommandButton: boolean;
   onPull?: (
     axisDirection: string,
     carrierId: string,
@@ -21,9 +23,20 @@ export type AxisSettingProps = {
   onPush?: (axisDirection: string, carrierId?: string) => void;
   onStopPull?: () => void;
   onStopPush?: () => void;
+  onStopCommand?: () => void;
   stopPullDisabled?: boolean;
   stopPushDisabled?: boolean;
 };
+
+enum AxisCommandType {
+  Pull,
+  StopPull,
+  Push,
+  StopPush,
+  PullCancel,
+  PushCancel,
+  None,
+}
 
 export function AxisSetting(props: AxisSettingProps & IconButtonProps) {
   const { onPull, onPush, onStopPull, onStopPush, ...IconButtonProps } = props;
@@ -38,6 +51,10 @@ export function AxisSetting(props: AxisSettingProps & IconButtonProps) {
     AxisDirection.BACKWARD,
   );
   const [casEnable, setCasEnable] = createSignal<boolean>(false);
+
+  const [lastCommand, setLastCommand] = createSignal<AxisCommandType>(
+    AxisCommandType.None,
+  );
 
   return (
     <Popover.Root>
@@ -69,7 +86,29 @@ export function AxisSetting(props: AxisSettingProps & IconButtonProps) {
                 size="xs"
                 fontWeight={"medium"}
                 variant={props.stopPushDisabled === true ? "solid" : "outline"}
+                disabled={
+                  props.disableCommandButton
+                    ? props.sendingCommand
+                      ? lastCommand() !== AxisCommandType.Push &&
+                        lastCommand() !== AxisCommandType.StopPush &&
+                        lastCommand() !== AxisCommandType.None
+                      : true
+                    : false
+                }
+                loading={
+                  props.sendingCommand &&
+                  lastCommand() === AxisCommandType.PushCancel
+                }
                 onClick={() => {
+                  if (
+                    props.sendingCommand &&
+                    (lastCommand() === AxisCommandType.Push ||
+                      lastCommand() === AxisCommandType.StopPush)
+                  ) {
+                    props.onStopCommand?.();
+                    setLastCommand(AxisCommandType.PushCancel);
+                    return;
+                  }
                   if (props.stopPushDisabled === true && onPush) {
                     onPush(
                       pushDirection(),
@@ -77,13 +116,23 @@ export function AxisSetting(props: AxisSettingProps & IconButtonProps) {
                         ? undefined
                         : pushCarrierId(),
                     );
+                    setLastCommand(AxisCommandType.Push);
+                    return;
                   }
                   if (props.stopPushDisabled === false && onStopPush) {
                     onStopPush();
+                    setLastCommand(AxisCommandType.StopPush);
+                    return;
                   }
                 }}
               >
-                {props.stopPushDisabled === true ? "Push" : "Stop"}
+                {props.sendingCommand &&
+                (lastCommand() === AxisCommandType.Push ||
+                  lastCommand() === AxisCommandType.StopPush)
+                  ? "Cancel"
+                  : props.stopPushDisabled === true
+                    ? "Push"
+                    : "Stop"}
               </Button>
             </div>
             <div
@@ -160,7 +209,29 @@ export function AxisSetting(props: AxisSettingProps & IconButtonProps) {
                 variant={props.stopPullDisabled === true ? "solid" : "outline"}
                 fontWeight={"medium"}
                 size="xs"
+                loading={
+                  props.sendingCommand &&
+                  lastCommand() === AxisCommandType.PullCancel
+                }
+                disabled={
+                  props.disableCommandButton
+                    ? props.sendingCommand
+                      ? lastCommand() !== AxisCommandType.Pull &&
+                        lastCommand() !== AxisCommandType.StopPull &&
+                        lastCommand() !== AxisCommandType.None
+                      : true
+                    : false
+                }
                 onClick={() => {
+                  if (
+                    props.sendingCommand &&
+                    (lastCommand() === AxisCommandType.Pull ||
+                      lastCommand() === AxisCommandType.StopPull)
+                  ) {
+                    props.onStopCommand?.();
+                    setLastCommand(AxisCommandType.PullCancel);
+                    return;
+                  }
                   if (props.stopPullDisabled === true && onPull) {
                     onPull(
                       pullDirection(),
@@ -170,14 +241,24 @@ export function AxisSetting(props: AxisSettingProps & IconButtonProps) {
                         ? undefined
                         : pullDestination(),
                     );
+                    setLastCommand(AxisCommandType.Pull);
+                    return;
                   }
 
                   if (props.stopPullDisabled === false && onStopPull) {
                     onStopPull();
+                    setLastCommand(AxisCommandType.StopPull);
+                    return;
                   }
                 }}
               >
-                {props.stopPullDisabled === true ? "Pull" : "Stop"}
+                {props.sendingCommand &&
+                (lastCommand() === AxisCommandType.Pull ||
+                  lastCommand() === AxisCommandType.StopPull)
+                  ? "Cancel"
+                  : props.stopPullDisabled === true
+                    ? "Pull"
+                    : "Stop"}
               </Button>
             </div>
             <div

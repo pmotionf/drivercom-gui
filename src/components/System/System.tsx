@@ -1,4 +1,4 @@
-import { JSX, Show, createSignal } from "solid-js";
+import { JSX, Show, createEffect, createSignal } from "solid-js";
 import { Line } from "./Line.tsx";
 import { Accordion } from "../ui/accordion.tsx";
 import { For } from "solid-js/web";
@@ -20,6 +20,7 @@ import { Stack } from "styled-system/jsx/stack";
 export type SystemProps = JSX.HTMLAttributes<HTMLDivElement> & {
   lines: Store<Lines>;
   systems: Store<Systems>;
+  sendingCommand: { line: string; axisId: number } | null;
   onPush?: (
     line: string,
     commandDirection: string,
@@ -36,6 +37,7 @@ export type SystemProps = JSX.HTMLAttributes<HTMLDivElement> & {
   ) => void;
   onStopPull?: (line: string, axisId: number) => void;
   onStopPush?: (line: string, axisId: number) => void;
+  onStopCommand?: (line: string, axisId: number) => void;
 };
 
 export function System(props: SystemProps) {
@@ -64,6 +66,10 @@ export function System(props: SystemProps) {
       }
     }
   };
+
+  createEffect(() => {
+    console.log(props.sendingCommand);
+  });
 
   return (
     <div
@@ -164,6 +170,20 @@ export function System(props: SystemProps) {
                                           return (
                                             <Axis
                                               id={`${driverIndex + 1}:${axisId}`}
+                                              sendingCommand={
+                                                props.sendingCommand &&
+                                                props.sendingCommand.line ===
+                                                  props.lines[item].name &&
+                                                props.sendingCommand.axisId ===
+                                                  axisId
+                                                  ? true
+                                                  : false
+                                              }
+                                              disableCommandButton={
+                                                props.sendingCommand
+                                                  ? true
+                                                  : false
+                                              }
                                               axisError={
                                                 props.systems[item].axisErrors[
                                                   axisIndex
@@ -214,6 +234,12 @@ export function System(props: SystemProps) {
                                               }}
                                               onStopPush={() => {
                                                 props.onStopPush?.(
+                                                  props.lines[item].name,
+                                                  axisId,
+                                                );
+                                              }}
+                                              onStopCommand={() => {
+                                                props.onStopCommand?.(
                                                   props.lines[item].name,
                                                   axisId,
                                                 );
