@@ -320,7 +320,7 @@ export function ConfigTabContent() {
       <Stack
         style={{
           width: "40%",
-          height: `calc(100% - 1rem)`,
+          height: `calc(100% - 2rem)`,
           "margin-top": "0.5rem",
           "min-width": "35rem",
           "border-radius": "0.5rem",
@@ -334,7 +334,8 @@ export function ConfigTabContent() {
           direction="row"
           width="100%"
           height="4em"
-          padding="1.5em 1em 1em 1em "
+          padding="0em 1em 1em 1em "
+          marginTop={"1.5rem"}
         >
           <Tooltip.Root positioning={{ placement: "bottom-start" }}>
             <Tooltip.Trigger width={`calc(100% - 15rem)`}>

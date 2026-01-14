@@ -90,36 +90,39 @@ export function ConnectButton(props: ConnectButtonProps) {
   return (
     <Popover.Root positioning={{ placement: "bottom-end" }}>
       <Popover.Trigger maxWidth="min-content" gap="" padding="0" {...props}>
-        <IconButton
-          variant="outline"
-          borderColor="bg.disabled"
-          backgroundColor="bg.default"
-        >
-          <Tooltip.Root>
-            <Tooltip.Trigger
-              color={props.portId.length === 0 ? "fg.subtle" : "fg.default"}
+        <Tooltip.Root>
+          <Tooltip.Trigger
+            color={props.portId.length === 0 ? "fg.subtle" : "fg.default"}
+            cursor={"-moz-grab"}
+          >
+            <IconButton
+              variant="outline"
+              borderColor="bg.disabled"
+              backgroundColor="bg.default"
+              cursor={"-moz-grab"}
+              opacity={props.portId.length === 0 ? "0.7" : "1"}
             >
               {props.portId.length === 0 ? (
                 <IconPlugConnectedX />
               ) : (
                 <IconPlugConnected />
               )}
-            </Tooltip.Trigger>
-            <Show when={props.portId.length !== 0}>
-              <Portal>
-                <Tooltip.Positioner>
-                  <Tooltip.Content
-                    backgroundColor="bg.default"
-                    color="fg.default"
-                    textAlign="left"
-                  >
-                    {props.portId}
-                  </Tooltip.Content>
-                </Tooltip.Positioner>
-              </Portal>
-            </Show>
-          </Tooltip.Root>
-        </IconButton>
+            </IconButton>
+          </Tooltip.Trigger>
+          <Show when={props.portId.length !== 0}>
+            <Portal>
+              <Tooltip.Positioner>
+                <Tooltip.Content
+                  backgroundColor="bg.default"
+                  color="fg.default"
+                  textAlign="left"
+                >
+                  {props.portId}
+                </Tooltip.Content>
+              </Tooltip.Positioner>
+            </Portal>
+          </Show>
+        </Tooltip.Root>
       </Popover.Trigger>
       <Popover.Positioner>
         <Popover.Content
