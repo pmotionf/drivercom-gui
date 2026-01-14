@@ -1,4 +1,4 @@
-import { JSX, Show, createEffect, createSignal } from "solid-js";
+import { JSX, Show, createSignal } from "solid-js";
 import { Line } from "./Line.tsx";
 import { Accordion } from "../ui/accordion.tsx";
 import { For } from "solid-js/web";
@@ -33,7 +33,7 @@ export type SystemProps = JSX.HTMLAttributes<HTMLDivElement> & {
     axis: string,
     carrier: string,
     destination?: string,
-    disableCas?: boolean,
+    cas?: string,
   ) => void;
   onStopPull?: (line: string, axisId: number) => void;
   onStopPush?: (line: string, axisId: number) => void;
@@ -66,10 +66,6 @@ export function System(props: SystemProps) {
       }
     }
   };
-
-  createEffect(() => {
-    console.log(props.sendingCommand);
-  });
 
   return (
     <div

@@ -276,14 +276,14 @@ export async function pullCarrier(
   axisId: string,
   carrierId: string,
   destination?: string,
-  casDisabled?: boolean,
+  cas?: string,
 ) {
   if (mmccliStatus !== MmccliConnectionState.Open) {
     return Promise.reject("MMC-CLI is not prepared to send pull.");
   }
   mmccliStatus = MmccliConnectionState.Sending;
   const result = await writeCommand(
-    `pull_carrier ${line} ${axisId} ${carrierId} ${direction} ${destination && destination !== "NaN" ? destination : casDisabled ? "NaN" : ""} ${casDisabled ? "true" : ""}`,
+    `pull_carrier ${line} ${axisId} ${carrierId} ${direction} ${destination && destination !== "NaN" ? destination : cas ? "NaN" : ""} ${cas ? cas : ""}`,
   );
   mmccliStatus = MmccliConnectionState.Open;
   if (result.some((res) => res.toLowerCase().includes("error"))) {
