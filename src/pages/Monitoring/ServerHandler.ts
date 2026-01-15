@@ -1,5 +1,4 @@
 import { toBinary } from "@bufbuild/protobuf";
-import { Blob } from "buffer";
 import {
   Request_Kind,
   Response_TrackConfig_Line,
@@ -68,29 +67,48 @@ export class ServerHandler implements IServerHandler {
     return this._socket.readyState;
   }
 
+  private _closeHandler = () => {
+    this.serverResponses = [];
+  };
+
+  private _errorHandler = () => {
+    this.serverResponses = [];
+  };
+
+  private _messageHandler = (message: MessageEvent) => {
+    const reader = new FileReader();
+    const load = () => {
+      let uint8array: Uint8Array | null = new Uint8Array(
+        reader.result as ArrayBufferLike,
+      );
+      const decode: Response = fromBinary(ResponseSchema, uint8array);
+      this.addResponse(decode);
+      console.log(this.serverResponses);
+      uint8array = null;
+    };
+    reader.onload = load;
+
+    reader.readAsArrayBuffer(message.data);
+    reader.removeEventListener("load", load);
+  };
+
+  private _removeAllListeners = (websocket: WebSocket) => {
+    websocket.removeEventListener("close", this._closeHandler);
+    websocket.removeEventListener("error", this._errorHandler);
+    websocket.removeEventListener("message", this._messageHandler);
+
+    websocket.onclose = null;
+    websocket.onerror = null;
+    websocket.onmessage = null;
+    return websocket;
+  };
+
   async connect(ip: string, port: string): Promise<void> {
     if (this._socket) throw new Error("Already connected");
     this._socket = new WebSocket(`ws://${ip}:${port}`);
-    this._socket.onopen = () => {
-      this._ipAddress.ip = ip;
-      this._ipAddress.port = port;
-    };
-
-    this._socket.onclose = () => {
-      this.serverResponses = [];
-    };
-
-    this._socket.onerror = () => {
-      this.serverResponses = [];
-    };
-
-    this._socket.onmessage = async (message) => {
-      const msg: Blob = message.data;
-      const bytes = await msg.arrayBuffer();
-      const buffer = new Uint8Array(bytes);
-      const decode: Response = fromBinary(ResponseSchema, buffer);
-      this.addResponse(decode);
-    };
+    this._socket.onclose = this._closeHandler;
+    this._socket.onerror = this._errorHandler;
+    this._socket.onmessage = this._messageHandler;
 
     this.lock();
     const timeout = setTimeout(() => {
@@ -117,6 +135,8 @@ export class ServerHandler implements IServerHandler {
       this._socket = null;
       return Promise.reject("Invalid Ip address");
     } else {
+      this._ipAddress.ip = ip;
+      this._ipAddress.port = port;
       return Promise.resolve();
     }
   }
@@ -146,6 +166,8 @@ export class ServerHandler implements IServerHandler {
         clearTimeout(wait);
       }
       clearTimeout(timeout);
+
+      this._socket = this._removeAllListeners(this._socket);
 
       if (this._socket.readyState !== WebSocket.CLOSED) {
         this._socket = null;
