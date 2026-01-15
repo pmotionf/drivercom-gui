@@ -76,6 +76,8 @@ export class ServerHandler implements IServerHandler {
   };
 
   private _messageHandler = (message: MessageEvent) => {
+    message.stopPropagation();
+
     const reader = new FileReader();
     const load = () => {
       let uint8array: Uint8Array | null = new Uint8Array(
@@ -83,7 +85,6 @@ export class ServerHandler implements IServerHandler {
       );
       const decode: Response = fromBinary(ResponseSchema, uint8array);
       this.addResponse(decode);
-      console.log(this.serverResponses);
       uint8array = null;
     };
     reader.onload = load;
@@ -180,13 +181,11 @@ export class ServerHandler implements IServerHandler {
       error = "Server is already disconnected.";
     }
 
-    return new Promise((resolve, reject) => {
-      if (error) {
-        return reject(error);
-      } else {
-        return resolve();
-      }
-    });
+    if (error) {
+      return Promise.reject(error);
+    } else {
+      return Promise.resolve();
+    }
   }
 
   async clearError(lineId: number): Promise<void> {
@@ -206,13 +205,11 @@ export class ServerHandler implements IServerHandler {
       error = e as string;
     }
 
-    return new Promise((resolve, reject) => {
-      if (error) {
-        return reject(error);
-      } else {
-        return resolve();
-      }
-    });
+    if (error) {
+      return Promise.reject(error);
+    } else {
+      return Promise.resolve();
+    }
   }
 
   private async requestClearError(lineId: number): Promise<number | never> {
@@ -245,22 +242,20 @@ export class ServerHandler implements IServerHandler {
       }
     }
 
-    return new Promise((resolve, reject) => {
-      if (error) return reject(error);
-      if (this.serverResponses.length > 0) {
-        const response = this.getResponse();
+    if (error) return Promise.reject(error);
+    if (this.serverResponses.length > 0) {
+      const response = this.getResponse();
 
-        if (response.body.case === "command") {
-          const command = response.body.value;
-          if (command.body.case === "id") {
-            const commandId = command.body.value;
-            return resolve(commandId);
-          }
+      if (response.body.case === "command") {
+        const command = response.body.value;
+        if (command.body.case === "id") {
+          const commandId = command.body.value;
+          return Promise.resolve(commandId);
         }
-        return reject("Command Error");
       }
-      return reject("No response.");
-    });
+      return Promise.reject("Command Error");
+    }
+    return Promise.reject("No response.");
   }
 
   private async getCommandInfo(commandId: number): Promise<void | never> {
@@ -383,39 +378,37 @@ export class ServerHandler implements IServerHandler {
       error = e as string;
     }
 
-    return new Promise((resolve, reject) => {
-      if (error) {
-        return reject(error);
-      }
-      if (this.serverResponses.length > 0) {
-        const serverResponse = this.getResponse();
-        if (serverResponse.body.case === "core") {
-          const core = serverResponse.body.value;
-          if (core.body.case === "trackConfig") {
-            const trackConfig = core.body.value;
-            if (trackConfig.lines) {
-              const lines = trackConfig.lines.map(
-                (line: Response_TrackConfig_Line) => {
-                  const newLine: LineType = {
-                    id: line.id,
-                    name: line.name,
-                    axes: line.axes,
-                    carrierLength: line.carrierLength,
-                    axisLength: line.axisLength,
-                    drivers: line.drivers,
-                  };
-                  return newLine;
-                },
-              );
-              return resolve(lines);
-            }
+    if (error) {
+      return Promise.reject(error);
+    }
+    if (this.serverResponses.length > 0) {
+      const serverResponse = this.getResponse();
+      if (serverResponse.body.case === "core") {
+        const core = serverResponse.body.value;
+        if (core.body.case === "trackConfig") {
+          const trackConfig = core.body.value;
+          if (trackConfig.lines) {
+            const lines = trackConfig.lines.map(
+              (line: Response_TrackConfig_Line) => {
+                const newLine: LineType = {
+                  id: line.id,
+                  name: line.name,
+                  axes: line.axes,
+                  carrierLength: line.carrierLength,
+                  axisLength: line.axisLength,
+                  drivers: line.drivers,
+                };
+                return newLine;
+              },
+            );
+            return Promise.resolve(lines);
           }
         }
-        return reject("The websocket response has an invalid type.");
-      } else {
-        return reject("The websocket response is empty.");
       }
-    });
+      return Promise.reject("The websocket response has an invalid type.");
+    } else {
+      return Promise.reject("The websocket response is empty.");
+    }
   }
 
   async getSystemInfo(lineId: number): Promise<TrackType | never> {
@@ -453,35 +446,33 @@ export class ServerHandler implements IServerHandler {
       error = e as string;
     }
 
-    return new Promise((resolve, reject) => {
-      if (error) {
-        return reject(error);
-      }
+    if (error) {
+      return Promise.reject(error);
+    }
 
-      if (this.serverResponses.length > 0) {
-        const response = this.getResponse();
-        if (response.body.case === "info") {
-          const info = response.body.value;
-          if (info.body.case === "track") {
-            const track = response.body.value;
-            if (track.body.case === "track") {
-              const tracked = track.body.value;
-              const systemInfo: TrackType = {
-                line: tracked.line,
-                driverErrors: tracked.driverErrors,
-                driverState: tracked.driverState,
-                axisErrors: tracked.axisErrors,
-                axisState: tracked.axisState,
-                carrierState: tracked.carrierState,
-              };
-              return resolve(systemInfo);
-            }
+    if (this.serverResponses.length > 0) {
+      const response = this.getResponse();
+      if (response.body.case === "info") {
+        const info = response.body.value;
+        if (info.body.case === "track") {
+          const track = response.body.value;
+          if (track.body.case === "track") {
+            const tracked = track.body.value;
+            const systemInfo: TrackType = {
+              line: tracked.line,
+              driverErrors: tracked.driverErrors,
+              driverState: tracked.driverState,
+              axisErrors: tracked.axisErrors,
+              axisState: tracked.axisState,
+              carrierState: tracked.carrierState,
+            };
+            return Promise.resolve(systemInfo);
           }
         }
-        return reject("The websocket response has an invalid type.");
       }
-      return reject("The websocket response is empty.");
-    });
+      return Promise.reject("The websocket response has an invalid type.");
+    }
+    return Promise.reject("The websocket response is empty.");
   }
 
   async getServerName(): Promise<string | null> {
@@ -517,18 +508,16 @@ export class ServerHandler implements IServerHandler {
     if (this._lockRequest) {
       throw new Error("locked");
     }
-    return new Promise((resolve, reject) => {
-      if (this._socket && this._socket.readyState === WebSocket.OPEN) {
-        const buffer: Uint8Array = toBinary(RequestSchema, payload);
-        if (this._socket.readyState !== WebSocket.OPEN)
-          throw new Error("Websocket is not open");
-        this._socket.send(buffer);
-        this.lock();
-        return resolve();
-      } else {
-        return reject("Invalid websocket");
-      }
-    });
+    if (this._socket && this._socket.readyState === WebSocket.OPEN) {
+      const buffer: Uint8Array = toBinary(RequestSchema, payload);
+      if (this._socket.readyState !== WebSocket.OPEN)
+        throw new Error("Websocket is not open");
+      this._socket.send(buffer);
+      this.lock();
+      return Promise.resolve();
+    } else {
+      return Promise.reject("Invalid websocket");
+    }
   }
 
   private async waitResponse() {
