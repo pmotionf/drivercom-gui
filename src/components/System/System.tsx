@@ -129,12 +129,11 @@ export function System(props: SystemProps) {
                           >
                             {(driverIndex) => {
                               const maximumAxisLength = 3;
-                              const axesLength =
+                              const lineAxesLength = props.lines[item].axes;
+                              const driverAxesLength =
                                 driverIndex + 1 === props.lines[item].drivers!
-                                  ? props.lines[item].axes %
-                                      maximumAxisLength !==
-                                    0
-                                    ? props.lines[item].axes % maximumAxisLength
+                                  ? lineAxesLength % maximumAxisLength !== 0
+                                    ? lineAxesLength % maximumAxisLength
                                     : maximumAxisLength
                                   : maximumAxisLength;
                               return (
@@ -160,10 +159,10 @@ export function System(props: SystemProps) {
                                       <For
                                         each={Array.from(
                                           {
-                                            length: axesLength,
+                                            length: driverAxesLength,
                                           },
                                           (_, i) =>
-                                            driverIndex * axesLength + i,
+                                            driverIndex * maximumAxisLength + i,
                                         )}
                                       >
                                         {(axisIndex) => {
