@@ -10,7 +10,6 @@ import {
 import {
   Request,
   RequestSchema,
-  Response,
   ResponseSchema,
 } from "~/components/proto/mmc_pb";
 import { fromBinary } from "@bufbuild/protobuf";
@@ -50,14 +49,25 @@ export class ServerHandler implements IServerHandler {
     this._lockRequest = false;
   }
 
-  private serverResponses: Response[] = [];
-  private addResponse(res: Response) {
-    this.serverResponses.push(res);
+  private _serverResponse: Blob | null = null;
+
+  private async _decodeResponse(data: Blob) {
+    const uint8array = await this._readBuffer(data);
+    const response = fromBinary(ResponseSchema, uint8array);
+    return response;
   }
-  private getResponse() {
-    const res = this.serverResponses[0];
-    this.serverResponses.shift();
-    return res;
+
+  private _reader = new FileReader();
+  private _readBuffer(data: Blob) {
+    return new Promise<Uint8Array>((resolve) => {
+      const load = () => {
+        const response = new Uint8Array(this._reader.result as ArrayBufferLike);
+        return resolve(response);
+      };
+      this._reader.onload = load;
+      this._reader.readAsArrayBuffer(data);
+      this._reader.removeEventListener("load", load);
+    });
   }
 
   getStatus(): number {
@@ -68,29 +78,16 @@ export class ServerHandler implements IServerHandler {
   }
 
   private _closeHandler = () => {
-    this.serverResponses = [];
+    this._serverResponse = null;
   };
 
   private _errorHandler = () => {
-    this.serverResponses = [];
+    this._serverResponse = null;
   };
 
   private _messageHandler = (message: MessageEvent) => {
     message.stopPropagation();
-
-    const reader = new FileReader();
-    const load = () => {
-      let uint8array: Uint8Array | null = new Uint8Array(
-        reader.result as ArrayBufferLike,
-      );
-      const decode: Response = fromBinary(ResponseSchema, uint8array);
-      this.addResponse(decode);
-      uint8array = null;
-    };
-    reader.onload = load;
-
-    reader.readAsArrayBuffer(message.data);
-    reader.removeEventListener("load", load);
+    this._serverResponse = message.data;
   };
 
   private _removeAllListeners = (websocket: WebSocket) => {
@@ -243,8 +240,9 @@ export class ServerHandler implements IServerHandler {
     }
 
     if (error) return Promise.reject(error);
-    if (this.serverResponses.length > 0) {
-      const response = this.getResponse();
+    if (this._serverResponse) {
+      const response = await this._decodeResponse(this._serverResponse);
+      this._serverResponse = null;
 
       if (response.body.case === "command") {
         const command = response.body.value;
@@ -295,8 +293,10 @@ export class ServerHandler implements IServerHandler {
     await this.sendRequest(payload);
     await this.waitResponse();
 
-    if (this.serverResponses.length > 0) {
-      const response = this.getResponse();
+    if (this._serverResponse) {
+      const response = await this._decodeResponse(this._serverResponse);
+      this._serverResponse = null;
+
       if (response.body.case === "info") {
         const info = response.body.value;
         if (info.body.case === "command") {
@@ -336,8 +336,9 @@ export class ServerHandler implements IServerHandler {
     await this.sendRequest(payload);
     await this.waitResponse();
 
-    if (this.serverResponses.length > 0) {
-      const response = this.getResponse();
+    if (this._serverResponse) {
+      const response = await this._decodeResponse(this._serverResponse);
+      this._serverResponse = null;
       if (response) {
         if (response.body.case === "command") {
           const command = response.body.value;
@@ -381,10 +382,12 @@ export class ServerHandler implements IServerHandler {
     if (error) {
       return Promise.reject(error);
     }
-    if (this.serverResponses.length > 0) {
-      const serverResponse = this.getResponse();
-      if (serverResponse.body.case === "core") {
-        const core = serverResponse.body.value;
+    if (this._serverResponse) {
+      const response = await this._decodeResponse(this._serverResponse);
+      this._serverResponse = null;
+
+      if (response.body.case === "core") {
+        const core = response.body.value;
         if (core.body.case === "trackConfig") {
           const trackConfig = core.body.value;
           if (trackConfig.lines) {
@@ -450,8 +453,9 @@ export class ServerHandler implements IServerHandler {
       return Promise.reject(error);
     }
 
-    if (this.serverResponses.length > 0) {
-      const response = this.getResponse();
+    if (this._serverResponse) {
+      const response = await this._decodeResponse(this._serverResponse);
+      this._serverResponse = null;
       if (response.body.case === "info") {
         const info = response.body.value;
         if (info.body.case === "track") {
@@ -490,8 +494,9 @@ export class ServerHandler implements IServerHandler {
     await this.sendRequest(payload);
     await this.waitResponse();
 
-    if (this.serverResponses.length > 0) {
-      const response = this.getResponse();
+    if (this._serverResponse) {
+      const response = await this._decodeResponse(this._serverResponse);
+      this._serverResponse = null;
       if (response.body.case === "core") {
         const core = response.body.value;
         if (core.body.case === "server") {
@@ -521,7 +526,7 @@ export class ServerHandler implements IServerHandler {
   }
 
   private async waitResponse() {
-    while (this.serverResponses.length <= 0) {
+    while (!this._serverResponse) {
       if (
         !this._socket ||
         (this._socket && this._socket.readyState !== WebSocket.OPEN)
