@@ -100,7 +100,6 @@ function Monitoring() {
             }
           }
         }
-        return;
       }
     } catch (e) {
       if (lines.length > 0) {
@@ -114,7 +113,6 @@ function Monitoring() {
       }
       await exit();
       setIsConnect(false);
-      return;
     }
   };
 
