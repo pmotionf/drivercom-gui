@@ -74,31 +74,16 @@ function Monitoring() {
       () => lines.length,
       async () => {
         if (lines.length >= 1) {
-          const lineId = lines[0].id;
-          await requestSystemInfo(lineId, lines);
+          let lineId = lines[0].id;
+          while (lines.length >= 1) {
+            await getSystemInfo(lineId);
+            lineId = lineId + 1 > lines.length ? 1 : lineId + 1;
+          }
         }
       },
       { defer: true },
     ),
   );
-
-  const requestSystemInfo = async (
-    lineId: number,
-    lineConfig: Lines,
-  ): Promise<void> => {
-    if (page() !== Pages.Monitoring) return;
-    if (lines.length < 1 || !lines) return;
-    await getSystemInfo(lineId);
-
-    const lineIndex = lineConfig.findIndex((line) => line.id === lineId);
-    if (lineIndex !== -1) {
-      const nextLineIndex =
-        lineIndex + 1 >= lineConfig.length ? 0 : lineIndex + 1;
-      const nextId = lineConfig[nextLineIndex].id;
-      await requestSystemInfo(nextId, lines);
-    }
-    return;
-  };
 
   const getSystemInfo = async (lineId: number): Promise<void> => {
     try {
