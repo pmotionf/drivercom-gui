@@ -64,16 +64,17 @@ export class ServerHandler implements IServerHandler {
     return response;
   }
 
-  private _reader = new FileReader();
   private _readBuffer(data: Blob) {
+    const reader = new FileReader();
+
     return new Promise<Uint8Array>((resolve) => {
       const load = () => {
-        const response = new Uint8Array(this._reader.result as ArrayBufferLike);
+        const response = new Uint8Array(reader.result as ArrayBufferLike);
         return resolve(response);
       };
-      this._reader.onload = load;
-      this._reader.readAsArrayBuffer(data);
-      this._reader.removeEventListener("load", load);
+      reader.onload = load;
+      reader.readAsArrayBuffer(data);
+      reader.removeEventListener("load", load);
     });
   }
 
@@ -94,7 +95,9 @@ export class ServerHandler implements IServerHandler {
 
   private _messageHandler = (message: MessageEvent) => {
     this._setResponse(message.data);
-    return;
+
+    //@ts-ignore test decreasing memory leak
+    message = null;
   };
 
   private _removeAllListeners = (websocket: WebSocket) => {
@@ -456,16 +459,11 @@ export class ServerHandler implements IServerHandler {
       $typeName: "mmc.Request",
     };
 
-    let error: string | null = null;
     try {
       await this.sendRequest(payload);
       await this.waitResponse();
     } catch (e) {
-      error = e as string;
-    }
-
-    if (error) {
-      return Promise.reject(error);
+      return Promise.reject(e);
     }
 
     const res = this._getResponse();
@@ -478,16 +476,8 @@ export class ServerHandler implements IServerHandler {
         if (info.body.case === "track") {
           const track = response.body.value;
           if (track.body.case === "track") {
-            const tracked = track.body.value;
-            const systemInfo: TrackType = {
-              line: tracked.line,
-              driverErrors: tracked.driverErrors,
-              driverState: tracked.driverState,
-              axisErrors: tracked.axisErrors,
-              axisState: tracked.axisState,
-              carrierState: tracked.carrierState,
-            };
-            return Promise.resolve(systemInfo);
+            const tracked: TrackType = track.body.value;
+            return Promise.resolve(tracked);
           }
         }
       }
@@ -562,8 +552,7 @@ export class ServerHandler implements IServerHandler {
       clearTimeout(wait);
     }
     this.unlock();
-
-    return;
+    return Promise.resolve();
   }
 
   private delay = (ms: number) =>
