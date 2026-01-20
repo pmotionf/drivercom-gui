@@ -68,6 +68,7 @@ export class ServerHandler implements IServerHandler {
 
   private _closeHandler = () => {
     this._response = null;
+    this._socket = null;
   };
 
   private _errorHandler = () => {
@@ -91,35 +92,33 @@ export class ServerHandler implements IServerHandler {
 
   async connect(ip: string, port: string): Promise<void> {
     if (this._socket) throw new Error("Already connected");
-    this._socket = new WebSocket(`ws://${ip}:${port}`);
-
-    this._socket.binaryType = "arraybuffer";
-    this._socket.onclose = this._closeHandler;
-    this._socket.onerror = this._errorHandler;
-    this._socket.onmessage = this._messageHandler;
-    this.lock();
+    try {
+      this._socket = new WebSocket(`ws://${ip}:${port}`);
+      this._socket.binaryType = "arraybuffer";
+      this._socket.onclose = this._closeHandler;
+      this._socket.onerror = this._errorHandler;
+      this._socket.onmessage = this._messageHandler;
+      this.lock();
+    } catch (e) {
+      return Promise.reject(e);
+    }
 
     const timeout = setTimeout(() => {
       this.unlock();
     }, 5000);
-
     while (this._socket && this._socket.readyState === WebSocket.CONNECTING) {
       if (!this._lockRequest) {
         break;
       }
       await this._delay(1);
     }
-
     clearTimeout(timeout);
     if (this._lockRequest) {
       this.unlock();
     }
 
-    if (!this._socket || this._socket.readyState !== WebSocket.OPEN) {
-      if (this._socket) {
-        this._socket.close();
-      }
-      this._socket = null;
+    if (this._socket.readyState !== WebSocket.OPEN) {
+      this._socket.close();
       return Promise.reject("Invalid Ip address");
     } else {
       this._ipAddress.ip = ip;
@@ -129,13 +128,9 @@ export class ServerHandler implements IServerHandler {
   }
 
   async disconnect(): Promise<void | never> {
-    if (this._lockRequest) {
-      while (this._lockRequest) {
-        await this._delay(1);
-      }
+    while (this._lockRequest) {
+      await this._delay(1);
     }
-
-    let error: null | string = null;
 
     if (this._socket) {
       this._socket.close();
@@ -157,89 +152,74 @@ export class ServerHandler implements IServerHandler {
       if (this._socket.readyState !== WebSocket.CLOSED) {
         this._socket = null;
         clearTimeout(timeout);
-        error = "Failed to disconenct";
+        return Promise.reject("Failed to disconenct");
       }
       this._socket = null;
       this.unlock();
     } else {
-      error = "Server is already disconnected.";
+      return Promise.reject("Server is already disconnected.");
     }
 
-    if (error) {
-      return Promise.reject(error);
-    } else {
-      return Promise.resolve();
-    }
+    return Promise.resolve();
   }
 
   async clearError(lineId: number): Promise<void> {
-    let error: string | null = null;
     try {
       const commandId = await this.requestClearError(lineId);
       if (!commandId) {
-        error = "The response is invalid";
+        return Promise.reject("The response is invalid");
       }
       await this.getCommandInfo(commandId);
 
       const clearedId = await this.requestRemoveCommand(commandId);
       if (clearedId !== commandId) {
-        error = "Command `Remove command` error";
+        return Promise.reject("Command `Remove command` error");
       }
     } catch (e) {
-      error = e as string;
+      return Promise.reject(e);
     }
 
-    if (error) {
-      return Promise.reject(error);
-    } else {
-      return Promise.resolve();
-    }
+    return Promise.resolve();
   }
 
   private async requestClearError(lineId: number): Promise<number | never> {
-    let error: string | null = null;
-
-    if (!error) {
-      const payload: Request = {
-        body: {
-          case: "command",
-          value: {
-            body: {
-              case: "clearErrors",
-              value: {
-                line: lineId,
-                target: { case: undefined },
-                $typeName: "mmc.command.Request.ClearErrors",
-              },
+    const payload: Request = {
+      body: {
+        case: "command",
+        value: {
+          body: {
+            case: "clearErrors",
+            value: {
+              line: lineId,
+              target: { case: undefined },
+              $typeName: "mmc.command.Request.ClearErrors",
             },
-            $typeName: "mmc.command.Request",
           },
+          $typeName: "mmc.command.Request",
         },
-        $typeName: "mmc.Request",
-      };
+      },
+      $typeName: "mmc.Request",
+    };
 
-      try {
-        await this.sendRequest(payload);
-        await this.waitResponse();
-      } catch (e) {
-        error = e as string;
-      }
-    }
+    try {
+      await this.sendRequest(payload);
+      await this.waitResponse();
 
-    if (error) return Promise.reject(error);
-
-    if (this._response) {
-      const response = this._decodeResponse(this._response);
-      if (response.body.case === "command") {
-        const command = response.body.value;
-        if (command.body.case === "id") {
-          const commandId = command.body.value;
-          return Promise.resolve(commandId);
+      if (this._response) {
+        const response = this._decodeResponse(this._response);
+        if (response.body.case === "command") {
+          const command = response.body.value;
+          if (command.body.case === "id") {
+            const commandId = command.body.value;
+            return Promise.resolve(commandId);
+          }
         }
+        return Promise.reject("Command Error");
       }
-      return Promise.reject("Command Error");
+      return Promise.reject("Invalid response.");
+    } catch (e) {
+      return Promise.reject(e);
     }
-    return Promise.reject("No response.");
   }
 
   private async getCommandInfo(commandId: number): Promise<void | never> {
@@ -287,7 +267,6 @@ export class ServerHandler implements IServerHandler {
           return commandInfo.items;
         }
       }
-      this._response = null;
       throw new Error("Invalid Response.");
     }
     if (
@@ -334,7 +313,6 @@ export class ServerHandler implements IServerHandler {
         )
           throw new Error("The server is disconnected.");
       }
-      this._response = null;
       throw new Error("Command operation not available");
     }
     throw new Error("No response.");
@@ -389,7 +367,6 @@ export class ServerHandler implements IServerHandler {
           }
         }
       }
-      this._response = null;
       return Promise.reject("The websocket response has an invalid type.");
     } else {
       return Promise.reject("The websocket response is empty.");
@@ -442,8 +419,6 @@ export class ServerHandler implements IServerHandler {
           }
         }
       }
-      console.log(response, "websocket invalid type response error");
-      this._response = null;
       return Promise.reject("The websocket response has an invalid type.");
     }
     return Promise.reject("The websocket response is empty.");
@@ -463,7 +438,6 @@ export class ServerHandler implements IServerHandler {
 
     await this.sendRequest(payload);
     await this.waitResponse();
-    console.log(this._response);
 
     if (this._response) {
       const response = this._decodeResponse(this._response);
@@ -471,7 +445,6 @@ export class ServerHandler implements IServerHandler {
         const core = response.body.value;
         if (core.body.case === "server") {
           const server = core.body.value;
-          console.log(server.name);
           return Promise.resolve(server.name);
         }
       }
@@ -481,12 +454,12 @@ export class ServerHandler implements IServerHandler {
 
   private async sendRequest(payload: Request): Promise<void> {
     if (this._lockRequest) {
-      throw new Error("locked");
+      return Promise.reject("locked");
     }
     if (this._socket && this._socket.readyState === WebSocket.OPEN) {
       const buffer: Uint8Array = toBinary(RequestSchema, payload);
       if (this._socket.readyState !== WebSocket.OPEN)
-        throw new Error("Websocket is not open");
+        return Promise.reject("Websocket is not open");
       this._socket.send(buffer);
       this.lock();
       return Promise.resolve();
@@ -501,7 +474,7 @@ export class ServerHandler implements IServerHandler {
         !this._socket ||
         (this._socket && this._socket.readyState !== WebSocket.OPEN)
       ) {
-        throw new Error("Invalid websocket");
+        return Promise.reject("Invalid websocket");
       }
       await this._delay(1);
     }
