@@ -101,10 +101,17 @@ async function writeCommandWithEcho(cmd: string) {
   return Promise.resolve();
 }
 
-const delay = async (ms: number) =>
-  new Promise<NodeJS.Timeout>((resolve) => {
+function timer(ms: number) {
+  return new Promise<NodeJS.Timeout>((resolve) => {
     setTimeout(resolve, ms);
   });
+}
+
+async function delay(ms: number) {
+  const timeout = await timer(ms);
+  clearTimeout(timeout);
+  return Promise.resolve();
+}
 
 export async function prepareMmccli() {
   if (mmccliStatus !== MmcCliState.Unloaded)
