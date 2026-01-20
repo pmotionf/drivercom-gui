@@ -10,10 +10,10 @@ import {
 import {
   Request,
   RequestSchema,
+  Response,
   ResponseSchema,
 } from "~/components/proto/mmc_pb";
 import { fromBinary } from "@bufbuild/protobuf";
-import { createSignal } from "solid-js";
 
 export type LineType = Omit<
   Response_TrackConfig_Line,
@@ -50,32 +50,13 @@ export class ServerHandler implements IServerHandler {
     this._lockRequest = false;
   }
 
-  private _response = createSignal<Blob | null>(null);
-  private _getResponse() {
-    return this._response[0]();
-  }
-  private _setResponse(newRes: Blob | null) {
-    return this._response[1](newRes);
-  }
+  private _response: ArrayBuffer | null = null;
 
-  private async _decodeResponse(data: Blob) {
-    const uint8array = await this._readBuffer(data);
-    const response = fromBinary(ResponseSchema, uint8array);
+  private _decodeResponse(data: ArrayBuffer) {
+    const uint8array = new Uint8Array(data);
+    const response: Response = fromBinary(ResponseSchema, uint8array);
+    this._response = null;
     return response;
-  }
-
-  private _readBuffer(data: Blob) {
-    const reader = new FileReader();
-
-    return new Promise<Uint8Array>((resolve) => {
-      const load = () => {
-        const response = new Uint8Array(reader.result as ArrayBufferLike);
-        return resolve(response);
-      };
-      reader.onload = load;
-      reader.readAsArrayBuffer(data);
-      reader.removeEventListener("load", load);
-    });
   }
 
   getStatus(): number {
@@ -86,18 +67,15 @@ export class ServerHandler implements IServerHandler {
   }
 
   private _closeHandler = () => {
-    this._setResponse(null);
+    this._response = null;
   };
 
   private _errorHandler = () => {
-    this._setResponse(null);
+    this._response = null;
   };
 
-  private _messageHandler = (message: MessageEvent) => {
-    this._setResponse(message.data);
-
-    //@ts-ignore test decreasing memory leak
-    message = null;
+  private _messageHandler = async ({ data }: MessageEvent) => {
+    this._response = data;
   };
 
   private _removeAllListeners = (websocket: WebSocket) => {
@@ -114,11 +92,13 @@ export class ServerHandler implements IServerHandler {
   async connect(ip: string, port: string): Promise<void> {
     if (this._socket) throw new Error("Already connected");
     this._socket = new WebSocket(`ws://${ip}:${port}`);
+
+    this._socket.binaryType = "arraybuffer";
     this._socket.onclose = this._closeHandler;
     this._socket.onerror = this._errorHandler;
     this._socket.onmessage = this._messageHandler;
-
     this.lock();
+
     const timeout = setTimeout(() => {
       this.unlock();
     }, 5000);
@@ -247,12 +227,9 @@ export class ServerHandler implements IServerHandler {
     }
 
     if (error) return Promise.reject(error);
-    const res = this._getResponse();
-    if (res) {
-      const response = await this._decodeResponse(res);
-      this._setResponse(null);
-      //this._serverResponse = null;
 
+    if (this._response) {
+      const response = this._decodeResponse(this._response);
       if (response.body.case === "command") {
         const command = response.body.value;
         if (command.body.case === "id") {
@@ -301,12 +278,8 @@ export class ServerHandler implements IServerHandler {
     await this.sendRequest(payload);
     await this.waitResponse();
 
-    const res = this._getResponse();
-    if (res) {
-      const response = await this._decodeResponse(res);
-      this._setResponse(null);
-      //this._serverResponse = null;
-
+    if (this._response) {
+      const response = this._decodeResponse(this._response);
       if (response.body.case === "info") {
         const info = response.body.value;
         if (info.body.case === "command") {
@@ -314,6 +287,7 @@ export class ServerHandler implements IServerHandler {
           return commandInfo.items;
         }
       }
+      this._response = null;
       throw new Error("Invalid Response.");
     }
     if (
@@ -346,17 +320,12 @@ export class ServerHandler implements IServerHandler {
     await this.sendRequest(payload);
     await this.waitResponse();
 
-    const res = this._getResponse();
-    if (res) {
-      const response = await this._decodeResponse(res);
-      this._setResponse(null);
-      //this._serverResponse = null;
-      if (response) {
-        if (response.body.case === "command") {
-          const command = response.body.value;
-          if (command.body.case === "removedId") {
-            return command.body.value;
-          }
+    if (this._response) {
+      const response = this._decodeResponse(this._response);
+      if (response.body.case === "command") {
+        const command = response.body.value;
+        if (command.body.case === "removedId") {
+          return command.body.value;
         }
       } else {
         if (
@@ -365,6 +334,7 @@ export class ServerHandler implements IServerHandler {
         )
           throw new Error("The server is disconnected.");
       }
+      this._response = null;
       throw new Error("Command operation not available");
     }
     throw new Error("No response.");
@@ -394,12 +364,9 @@ export class ServerHandler implements IServerHandler {
     if (error) {
       return Promise.reject(error);
     }
-    const res = this._getResponse();
-    if (res) {
-      const response = await this._decodeResponse(res);
-      this._setResponse(null);
-      //this._serverResponse = null;
 
+    if (this._response) {
+      const response = this._decodeResponse(this._response);
       if (response.body.case === "core") {
         const core = response.body.value;
         if (core.body.case === "trackConfig") {
@@ -422,6 +389,7 @@ export class ServerHandler implements IServerHandler {
           }
         }
       }
+      this._response = null;
       return Promise.reject("The websocket response has an invalid type.");
     } else {
       return Promise.reject("The websocket response is empty.");
@@ -462,11 +430,8 @@ export class ServerHandler implements IServerHandler {
       return Promise.reject(e);
     }
 
-    const res = this._getResponse();
-    if (res) {
-      const response = await this._decodeResponse(res);
-      this._setResponse(null);
-      //this._serverResponse = null;
+    if (this._response) {
+      const response = this._decodeResponse(this._response);
       if (response.body.case === "info") {
         const info = response.body.value;
         if (info.body.case === "track") {
@@ -477,6 +442,8 @@ export class ServerHandler implements IServerHandler {
           }
         }
       }
+      console.log(response, "websocket invalid type response error");
+      this._response = null;
       return Promise.reject("The websocket response has an invalid type.");
     }
     return Promise.reject("The websocket response is empty.");
@@ -496,22 +463,20 @@ export class ServerHandler implements IServerHandler {
 
     await this.sendRequest(payload);
     await this.waitResponse();
+    console.log(this._response);
 
-    const res = this._getResponse();
-    if (res) {
-      const response = await this._decodeResponse(res);
-      this._setResponse(null);
-      //this._serverResponse = null;
+    if (this._response) {
+      const response = this._decodeResponse(this._response);
       if (response.body.case === "core") {
         const core = response.body.value;
         if (core.body.case === "server") {
           const server = core.body.value;
-          return server.name;
+          console.log(server.name);
+          return Promise.resolve(server.name);
         }
       }
     }
-
-    return null;
+    return Promise.resolve(null);
   }
 
   private async sendRequest(payload: Request): Promise<void> {
@@ -531,18 +496,12 @@ export class ServerHandler implements IServerHandler {
   }
 
   private async waitResponse() {
-    while (!this._getResponse()) {
+    while (!this._response) {
       if (
         !this._socket ||
         (this._socket && this._socket.readyState !== WebSocket.OPEN)
       ) {
         throw new Error("Invalid websocket");
-      }
-      if (!this._lockRequest) {
-        throw new Error("Command lock");
-      }
-      if (!this._socket || this._socket.readyState !== WebSocket.OPEN) {
-        throw new Error("Websocket is already disconnected");
       }
       await this._delay(1);
     }
