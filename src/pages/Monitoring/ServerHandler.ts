@@ -127,8 +127,7 @@ export class ServerHandler implements IServerHandler {
       if (!this._lockRequest) {
         break;
       }
-      const wait = await this.delay(1);
-      clearTimeout(wait);
+      await this._delay(1);
     }
 
     clearTimeout(timeout);
@@ -152,8 +151,7 @@ export class ServerHandler implements IServerHandler {
   async disconnect(): Promise<void | never> {
     if (this._lockRequest) {
       while (this._lockRequest) {
-        const timeout = await this.delay(1);
-        clearTimeout(timeout);
+        await this._delay(1);
       }
     }
 
@@ -170,8 +168,7 @@ export class ServerHandler implements IServerHandler {
         if (!this._lockRequest) {
           break;
         }
-        const wait = await this.delay(1);
-        clearTimeout(wait);
+        await this._delay(1);
       }
       clearTimeout(timeout);
 
@@ -277,8 +274,7 @@ export class ServerHandler implements IServerHandler {
     } else if (
       commandStatus === Response_Command_Status.COMMAND_STATUS_PROGRESSING
     ) {
-      const timeout = await this.delay(1);
-      clearTimeout(timeout);
+      await this._delay(1);
       return await this.getCommandInfo(commandId);
     } else {
       throw new Error("Fail to request command info");
@@ -548,15 +544,21 @@ export class ServerHandler implements IServerHandler {
       if (!this._socket || this._socket.readyState !== WebSocket.OPEN) {
         throw new Error("Websocket is already disconnected");
       }
-      const wait = await this.delay(1);
-      clearTimeout(wait);
+      await this._delay(1);
     }
     this.unlock();
     return Promise.resolve();
   }
 
-  private delay = (ms: number) =>
-    new Promise<NodeJS.Timeout>((resolve) => {
+  private _timer(ms: number) {
+    return new Promise<NodeJS.Timeout>((resolve) => {
       setTimeout(resolve, ms);
     });
+  }
+
+  private async _delay(ms: number) {
+    const timeout = await this._timer(ms);
+    clearTimeout(timeout);
+    return Promise.resolve();
+  }
 }
