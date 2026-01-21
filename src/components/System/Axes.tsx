@@ -147,6 +147,7 @@ export function Axis(props: AxisProps) {
           style={{ padding: "0" }}
           sendingCommand={props.sendingCommand}
           disableCommandButton={props.disableCommandButton}
+          disableMmcCliButton={props.disableMmcCliButton}
           stopPullDisabled={!props.axisInfo.waitingPull === true}
           stopPushDisabled={!props.axisInfo.waitingPush === true}
           onPull={(axisDirection, carrierId, cas, destination) =>
