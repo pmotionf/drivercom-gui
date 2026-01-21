@@ -68,7 +68,6 @@ export class ServerHandler implements IServerHandler {
 
   private _closeHandler = () => {
     this._response = null;
-    this._socket = null;
   };
 
   private _errorHandler = () => {
@@ -99,31 +98,32 @@ export class ServerHandler implements IServerHandler {
       this._socket.onerror = this._errorHandler;
       this._socket.onmessage = this._messageHandler;
       this.lock();
-    } catch (e) {
-      return Promise.reject(e);
-    }
 
-    const timeout = setTimeout(() => {
-      this.unlock();
-    }, 5000);
-    while (this._socket && this._socket.readyState === WebSocket.CONNECTING) {
-      if (!this._lockRequest) {
-        break;
+      const timeout = setTimeout(() => {
+        this.unlock();
+      }, 5000);
+      while (this._socket && this._socket.readyState === WebSocket.CONNECTING) {
+        if (!this._lockRequest) {
+          break;
+        }
+        await this._delay(1);
       }
-      await this._delay(1);
-    }
-    clearTimeout(timeout);
-    if (this._lockRequest) {
-      this.unlock();
-    }
+      clearTimeout(timeout);
+      if (this._lockRequest) {
+        this.unlock();
+      }
 
-    if (this._socket.readyState !== WebSocket.OPEN) {
-      this._socket.close();
-      return Promise.reject("Invalid Ip address");
-    } else {
-      this._ipAddress.ip = ip;
-      this._ipAddress.port = port;
-      return Promise.resolve();
+      if (this._socket.readyState !== WebSocket.OPEN) {
+        this._socket.close();
+        return Promise.reject("Invalid Ip address");
+      } else {
+        this._ipAddress.ip = ip;
+        this._ipAddress.port = port;
+        return Promise.resolve();
+      }
+    } catch (e) {
+      // Catching error when connecting websocket.
+      return Promise.reject(e);
     }
   }
 
@@ -156,11 +156,10 @@ export class ServerHandler implements IServerHandler {
       }
       this._socket = null;
       this.unlock();
+      return Promise.resolve();
     } else {
       return Promise.reject("Server is already disconnected.");
     }
-
-    return Promise.resolve();
   }
 
   async clearError(lineId: number): Promise<void> {
@@ -206,9 +205,9 @@ export class ServerHandler implements IServerHandler {
       await this.waitResponse();
 
       if (this._response) {
-        const response = this._decodeResponse(this._response);
-        if (response.body.case === "command") {
-          const command = response.body.value;
+        const decoded = this._decodeResponse(this._response);
+        if (decoded.body.case === "command") {
+          const command = decoded.body.value;
           if (command.body.case === "id") {
             const commandId = command.body.value;
             return Promise.resolve(commandId);
@@ -255,26 +254,26 @@ export class ServerHandler implements IServerHandler {
       },
       $typeName: "mmc.Request",
     };
-    await this.sendRequest(payload);
-    await this.waitResponse();
 
-    if (this._response) {
-      const response = this._decodeResponse(this._response);
-      if (response.body.case === "info") {
-        const info = response.body.value;
-        if (info.body.case === "command") {
-          const commandInfo = info.body.value;
-          return commandInfo.items;
+    try {
+      await this.sendRequest(payload);
+      await this.waitResponse();
+
+      if (this._response) {
+        const decoded = this._decodeResponse(this._response);
+        if (decoded.body.case === "info") {
+          const info = decoded.body.value;
+          if (info.body.case === "command") {
+            const commandInfo = info.body.value;
+            return commandInfo.items;
+          }
         }
+        return Promise.reject("Invalid Response.");
       }
-      throw new Error("Invalid Response.");
+      return Promise.reject("No response");
+    } catch (e) {
+      return Promise.reject(e);
     }
-    if (
-      !this._socket ||
-      (this._socket && this._socket.readyState === WebSocket.CLOSED)
-    )
-      throw new Error("The server is disconnected.");
-    throw new Error("No response");
   }
 
   private async requestRemoveCommand(
@@ -296,30 +295,35 @@ export class ServerHandler implements IServerHandler {
       },
       $typeName: "mmc.Request",
     };
-    await this.sendRequest(payload);
-    await this.waitResponse();
 
-    if (this._response) {
-      const response = this._decodeResponse(this._response);
-      if (response.body.case === "command") {
-        const command = response.body.value;
-        if (command.body.case === "removedId") {
-          return command.body.value;
+    try {
+      await this.sendRequest(payload);
+      await this.waitResponse();
+
+      if (this._response) {
+        const decoded = this._decodeResponse(this._response);
+        if (decoded.body.case === "command") {
+          const command = decoded.body.value;
+          if (command.body.case === "removedId") {
+            return command.body.value;
+          }
+        } else {
+          if (
+            !this._socket ||
+            (this._socket && this._socket.readyState === WebSocket.CLOSED)
+          )
+            return Promise.reject("The server is disconnected.");
         }
-      } else {
-        if (
-          !this._socket ||
-          (this._socket && this._socket.readyState === WebSocket.CLOSED)
-        )
-          throw new Error("The server is disconnected.");
+        return Promise.reject("Command operation not available");
       }
-      throw new Error("Command operation not available");
+      return Promise.reject("No response.");
+    } catch (e) {
+      return Promise.reject(e);
     }
-    throw new Error("No response.");
   }
 
   async getLineConfig(): Promise<LineType[]> {
-    if (this._lockRequest) throw new Error("Command Locked");
+    if (this._lockRequest) return Promise.reject("Command Locked");
     const payload: Request = {
       body: {
         case: "core",
@@ -331,45 +335,38 @@ export class ServerHandler implements IServerHandler {
       $typeName: "mmc.Request",
     };
 
-    let error: string | null = null;
     try {
       await this.sendRequest(payload);
       await this.waitResponse();
-    } catch (e) {
-      error = e as string;
-    }
-
-    if (error) {
-      return Promise.reject(error);
-    }
-
-    if (this._response) {
-      const response = this._decodeResponse(this._response);
-      if (response.body.case === "core") {
-        const core = response.body.value;
-        if (core.body.case === "trackConfig") {
-          const trackConfig = core.body.value;
-          if (trackConfig.lines) {
-            const lines = trackConfig.lines.map(
-              (line: Response_TrackConfig_Line) => {
-                const newLine: LineType = {
-                  id: line.id,
-                  name: line.name,
-                  axes: line.axes,
-                  carrierLength: line.carrierLength,
-                  axisLength: line.axisLength,
-                  drivers: line.drivers,
-                };
-                return newLine;
-              },
-            );
-            return Promise.resolve(lines);
+      if (this._response) {
+        const decoded = this._decodeResponse(this._response);
+        if (decoded.body.case === "core") {
+          const core = decoded.body.value;
+          if (core.body.case === "trackConfig") {
+            const trackConfig = core.body.value;
+            if (trackConfig.lines) {
+              const lines = trackConfig.lines.map(
+                (line: Response_TrackConfig_Line) => {
+                  const newLine: LineType = {
+                    id: line.id,
+                    name: line.name,
+                    axes: line.axes,
+                    carrierLength: line.carrierLength,
+                    axisLength: line.axisLength,
+                    drivers: line.drivers,
+                  };
+                  return newLine;
+                },
+              );
+              return Promise.resolve(lines);
+            }
           }
         }
+        return Promise.reject("The websocket response has an invalid type.");
       }
-      return Promise.reject("The websocket response has an invalid type.");
-    } else {
       return Promise.reject("The websocket response is empty.");
+    } catch (e) {
+      return Promise.reject(e);
     }
   }
 
@@ -403,25 +400,25 @@ export class ServerHandler implements IServerHandler {
     try {
       await this.sendRequest(payload);
       await this.waitResponse();
+
+      if (this._response) {
+        const decoded = this._decodeResponse(this._response);
+        if (decoded.body.case === "info") {
+          const info = decoded.body.value;
+          if (info.body.case === "track") {
+            const track = decoded.body.value;
+            if (track.body.case === "track") {
+              const tracked: TrackType = track.body.value;
+              return Promise.resolve(tracked);
+            }
+          }
+        }
+        return Promise.reject("The websocket response has an invalid type.");
+      }
+      return Promise.reject("The websocket response is empty.");
     } catch (e) {
       return Promise.reject(e);
     }
-
-    if (this._response) {
-      const response = this._decodeResponse(this._response);
-      if (response.body.case === "info") {
-        const info = response.body.value;
-        if (info.body.case === "track") {
-          const track = response.body.value;
-          if (track.body.case === "track") {
-            const tracked: TrackType = track.body.value;
-            return Promise.resolve(tracked);
-          }
-        }
-      }
-      return Promise.reject("The websocket response has an invalid type.");
-    }
-    return Promise.reject("The websocket response is empty.");
   }
 
   async getServerName(): Promise<string | null> {
@@ -436,20 +433,24 @@ export class ServerHandler implements IServerHandler {
       $typeName: "mmc.Request",
     };
 
-    await this.sendRequest(payload);
-    await this.waitResponse();
+    try {
+      await this.sendRequest(payload);
+      await this.waitResponse();
 
-    if (this._response) {
-      const response = this._decodeResponse(this._response);
-      if (response.body.case === "core") {
-        const core = response.body.value;
-        if (core.body.case === "server") {
-          const server = core.body.value;
-          return Promise.resolve(server.name);
+      if (this._response) {
+        const decoded = this._decodeResponse(this._response);
+        if (decoded.body.case === "core") {
+          const core = decoded.body.value;
+          if (core.body.case === "server") {
+            const server = core.body.value;
+            return Promise.resolve(server.name);
+          }
         }
       }
+      return Promise.resolve(null);
+    } catch (e) {
+      return Promise.reject(e);
     }
-    return Promise.resolve(null);
   }
 
   private async sendRequest(payload: Request): Promise<void> {
