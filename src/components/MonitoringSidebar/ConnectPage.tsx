@@ -13,12 +13,17 @@ import { css } from "styled-system/css";
 import { createSignal } from "solid-js";
 import { invoke } from "@tauri-apps/api/core";
 import { ServerHandler } from "~/pages/Monitoring/ServerHandler";
+import { IconArrowAutofitWidth } from "@tabler/icons-solidjs";
+import { Tooltip } from "../ui/tooltip";
 
 export type ConnectPageProps = {
   isConnect: boolean;
   loading: boolean;
+  mmcCliBtnLoading: boolean;
   onDisconnectServer?: (ip?: string, port?: string) => void;
   onConnectServer?: (ip: string, port: string) => void;
+  onConnectMmccli?: (ip: string) => void;
+  onDisconnectMmccli?: () => void;
   ipHistory: IpAddress[];
   changeIpHistory: Setter<IpAddress[]>;
   toaster: CreateToasterReturn;
@@ -81,6 +86,20 @@ export const ConnectPage = (props: ConnectPageProps) => {
     }
   };
 
+  const [connectMmccli, setConnectMmccli] = createSignal<boolean>(false);
+
+  async function timer(ms: number): Promise<NodeJS.Timeout> {
+    return new Promise((resolve) => {
+      setTimeout(resolve, ms);
+    });
+  }
+
+  async function delay(ms: number) {
+    const timeout = await timer(ms);
+    clearTimeout(timeout);
+    return Promise.resolve();
+  }
+
   return (
     <>
       {/* Connect Area */}
@@ -98,9 +117,40 @@ export const ConnectPage = (props: ConnectPageProps) => {
             e.preventDefault();
           }}
         >
-          <Text size="lg" fontWeight="bold">
-            Connect
-          </Text>
+          <div style={{ display: "flex", width: "100%" }}>
+            <Text size="lg" fontWeight="bold" width={`calc(100% - 1rem)`}>
+              Connect
+            </Text>
+            <Tooltip.Root>
+              <Tooltip.Trigger width={"min-content"}>
+                <Button
+                  size="xs"
+                  variant={connectMmccli() ? "solid" : "subtle"}
+                  opacity={connectMmccli() ? "1" : "0.5"}
+                  loading={props.mmcCliBtnLoading}
+                  onClick={() => {
+                    setConnectMmccli(!connectMmccli());
+                    if (connectMmccli()) {
+                      if (props.isConnect) {
+                        props.onConnectMmccli?.(ip());
+                      }
+                    } else {
+                      if (props.isConnect) {
+                        props.onDisconnectMmccli?.();
+                      }
+                    }
+                  }}
+                >
+                  <IconArrowAutofitWidth />
+                </Button>
+              </Tooltip.Trigger>
+              <Tooltip.Positioner>
+                <Tooltip.Content>
+                  {connectMmccli() ? "Connect MMC-CLI" : "Disconnect MMC-CLI"}
+                </Tooltip.Content>
+              </Tooltip.Positioner>
+            </Tooltip.Root>
+          </div>
           <div style={{ display: "flex", "margin-top": "1rem" }}>
             <Text size="sm" style={{ width: "50%" }}>
               IP
@@ -162,6 +212,9 @@ export const ConnectPage = (props: ConnectPageProps) => {
             onClick={async () => {
               if (props.isConnect) {
                 props.onDisconnectServer?.();
+                if (connectMmccli()) {
+                  props.onDisconnectMmccli?.();
+                }
               } else {
                 if (isInvalidIp()) {
                   props.toaster.create({
@@ -172,6 +225,9 @@ export const ConnectPage = (props: ConnectPageProps) => {
                   return;
                 }
                 props.onConnectServer?.(ip(), port());
+                if (connectMmccli()) {
+                  props.onConnectMmccli?.(ip());
+                }
               }
             }}
             style={{ width: "100% " }}
@@ -231,15 +287,21 @@ export const ConnectPage = (props: ConnectPageProps) => {
                     });
                     return;
                   }
-                  setIp(newIp);
-                  setPort(newPort);
-                  props.onDisconnectServer?.(ip(), port());
-                  return;
+                  if (connectMmccli()) {
+                    props.onDisconnectMmccli?.();
+                  }
+                  props.onDisconnectServer?.();
+                  while (props.isConnect) {
+                    await delay(1);
+                  }
                 }
 
                 setIp(newIp);
                 setPort(newPort);
                 props.onConnectServer?.(ip(), port());
+                if (connectMmccli()) {
+                  props.onConnectMmccli?.(ip());
+                }
               }}
             />
           </div>
@@ -327,15 +389,21 @@ export const ConnectPage = (props: ConnectPageProps) => {
                   });
                   return;
                 }
-                setIp(newIp);
-                setPort(newPort);
-                props.onDisconnectServer?.(ip(), port());
-                return;
+                if (connectMmccli()) {
+                  props.onDisconnectMmccli?.();
+                }
+                props.onDisconnectServer?.();
+                while (props.isConnect) {
+                  await delay(1);
+                }
               }
 
               setIp(newIp);
               setPort(newPort);
               props.onConnectServer?.(ip(), port());
+              if (connectMmccli()) {
+                props.onConnectMmccli?.(ip());
+              }
             }}
           />
         </Show>

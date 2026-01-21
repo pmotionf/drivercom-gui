@@ -254,6 +254,10 @@ function Monitoring() {
     axisId: number;
   } | null>(null);
 
+  const [mmcCliConnectLoading, setMmcCliConnectLoading] =
+    createSignal<boolean>(false);
+  const [disableMmcCliBtn, setDisableMmcCliBtn] = createSignal<boolean>(true);
+
   return (
     <>
       <Splitter.Root
@@ -283,6 +287,7 @@ function Monitoring() {
               lines={lines}
               systems={systems}
               sendingCommand={sendingCmd()}
+              disableMmcCliBtn={disableMmcCliBtn()}
               onPull={async (
                 lineName,
                 commandDirection,
@@ -432,7 +437,6 @@ function Monitoring() {
                     onConnectServer={async (ip: string, port: string) => {
                       setConnetBtnLoading(true);
                       try {
-                        await connectMmcCli(ip);
                         await serverHandler.connect(ip, port);
                         const serverResponse: LineType[] =
                           await serverHandler.getLineConfig();
@@ -445,40 +449,41 @@ function Monitoring() {
                       } catch {
                         setConnetBtnLoading(false);
                         deleteIpHistory(ip, port);
-                        await exit();
                         await serverHandler.disconnect();
-                        setSendingCmd(null);
+                        setIsConnect(false);
                       }
                     }}
-                    onDisconnectServer={async (ip, port) => {
+                    onDisconnectServer={async () => {
                       setConnetBtnLoading(true);
                       setLines([]);
                       setSystems([]);
-                      await exit();
-                      await serverHandler.disconnect();
-                      setSendingCmd(null);
 
-                      if (ip && port) {
-                        try {
-                          await connectMmcCli(ip);
-                          await serverHandler.connect(ip, port);
-                          const serverResponse: LineType[] =
-                            await serverHandler.getLineConfig();
-                          await addIpHistory(ip, port);
-                          setLines(serverResponse);
-                          if (serverHandler.getStatus() === WebSocket.OPEN) {
-                            setIsConnect(true);
-                          }
-                        } catch {
-                          deleteIpHistory(ip, port);
-                          if (lines.length > 0) {
-                            await serverHandler.disconnect();
-                            setSendingCmd(null);
-                          }
-                        }
-                      }
+                      await serverHandler.disconnect();
+
                       setConnetBtnLoading(false);
                       setIsConnect(false);
+                    }}
+                    mmcCliBtnLoading={mmcCliConnectLoading()}
+                    onConnectMmccli={async (ip: string) => {
+                      setMmcCliConnectLoading(true);
+                      try {
+                        await connectMmcCli(ip);
+                        setDisableMmcCliBtn(false);
+                      } catch {
+                        setSendingCmd(null);
+                        setDisableMmcCliBtn(true);
+                        await exit();
+                      }
+                      setMmcCliConnectLoading(false);
+                      console.log("connect mmc-cli");
+                    }}
+                    onDisconnectMmccli={async () => {
+                      setMmcCliConnectLoading(true);
+                      setSendingCmd(null);
+                      await exit();
+                      setDisableMmcCliBtn(true);
+                      setMmcCliConnectLoading(false);
+                      console.log("disconnect mmc-cli");
                     }}
                   />
                 </Show>
