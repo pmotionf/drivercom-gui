@@ -14,6 +14,7 @@ export enum AxisDirection {
 export type AxisSettingProps = {
   sendingCommand: boolean;
   disableCommandButton: boolean;
+  disableMmcCliButton: boolean;
   onPull?: (
     axisDirection: string,
     carrierId: string,
@@ -63,8 +64,12 @@ export function AxisSetting(props: AxisSettingProps & IconButtonProps) {
 
   return (
     <Popover.Root>
-      <Popover.Trigger width="min-content" height={"min-content"}>
-        <IconButton {...IconButtonProps}>
+      <Popover.Trigger
+        width="min-content"
+        height={"min-content"}
+        disabled={props.disableMmcCliButton}
+      >
+        <IconButton {...IconButtonProps} disabled={props.disableMmcCliButton}>
           <IconDots />
         </IconButton>
       </Popover.Trigger>

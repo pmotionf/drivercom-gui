@@ -21,6 +21,7 @@ export type SystemProps = JSX.HTMLAttributes<HTMLDivElement> & {
   lines: Store<Lines>;
   systems: Store<Systems>;
   sendingCommand: { line: string; axisId: number } | null;
+  disableMmcCliBtn: boolean;
   onPush?: (
     line: string,
     commandDirection: string,
@@ -183,6 +184,9 @@ export function System(props: SystemProps) {
                                                 props.sendingCommand
                                                   ? true
                                                   : false
+                                              }
+                                              disableMmcCliButton={
+                                                props.disableMmcCliBtn
                                               }
                                               axisError={
                                                 props.systems[item].axisErrors[
