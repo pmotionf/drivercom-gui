@@ -45,6 +45,8 @@ import {
   loadConfig,
   findMmcServer,
   stopCommand,
+  getMmccliStatus,
+  MmcCliState,
 } from "./utils/MmcCliHandler.ts";
 import { disconnect } from "@kuyoonjo/tauri-plugin-tcp";
 
@@ -166,6 +168,10 @@ function Monitoring() {
     }
     if (!monitoringInputs.has("port")) {
       monitoringInputs.set("port", createSignal<string>(""));
+    }
+
+    if (getMmccliStatus() !== MmcCliState.Unloaded) {
+      await exit();
     }
     setRender(true);
   });
@@ -474,15 +480,20 @@ function Monitoring() {
                         setDisableMmcCliBtn(true);
                         await exit();
                       }
+
                       setMmcCliConnectLoading(false);
                       console.log("connect mmc-cli");
                     }}
-                    onDisconnectMmccli={async () => {
+                    onDisconnectMmccli={async (
+                      isIpChange: boolean | undefined,
+                    ) => {
                       setMmcCliConnectLoading(true);
                       setSendingCmd(null);
                       await exit();
                       setDisableMmcCliBtn(true);
-                      setMmcCliConnectLoading(false);
+                      if (!isIpChange) {
+                        setMmcCliConnectLoading(false);
+                      }
                       console.log("disconnect mmc-cli");
                     }}
                   />

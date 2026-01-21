@@ -17,7 +17,7 @@ import { fromBinary, toBinary } from "@bufbuild/protobuf";
 import { connect, disconnect, listen, send } from "@kuyoonjo/tauri-plugin-tcp";
 import { tcpClientIds } from "~/GlobalState";
 
-enum MmcCliState {
+export enum MmcCliState {
   Unloaded, // MMC-CLI is closed.
   Loading, // MMC-CLI is opened, but not connected to server.
   Ready, // Ready to send command in MMC-CLI.
@@ -37,6 +37,9 @@ type cliFormat = {
 };
 
 let mmccliStatus: MmcCliState = MmcCliState.Unloaded;
+export function getMmccliStatus() {
+  return mmccliStatus;
+}
 
 const term = new Terminal({
   convertEol: true,
