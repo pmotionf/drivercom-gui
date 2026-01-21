@@ -90,7 +90,6 @@ export class ServerHandler implements IServerHandler {
   };
 
   async connect(ip: string, port: string): Promise<void> {
-    if (this._socket) throw new Error("Already connected");
     try {
       this._socket = new WebSocket(`ws://${ip}:${port}`);
       this._socket.binaryType = "arraybuffer";
@@ -465,6 +464,7 @@ export class ServerHandler implements IServerHandler {
       this.lock();
       return Promise.resolve();
     } else {
+      await this.disconnect();
       return Promise.reject("Invalid websocket");
     }
   }

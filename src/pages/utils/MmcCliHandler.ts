@@ -351,15 +351,12 @@ export async function killTerminal() {
 export async function findMmcServer(ip: string): Promise<number> {
   try {
     const { port, clientIds } = await scanPorts(ip);
+    if (!port) Promise.reject("Invalid Tcp Connection");
     const disconnectServer = clientIds.map((id) => disconnect(id));
     await Promise.allSettled(disconnectServer);
     tcpClientIds.splice(0, tcpClientIds.length);
 
-    if (port) {
-      return Promise.resolve(port);
-    } else {
-      return Promise.reject("Invalid Tcp Connection");
-    }
+    return Promise.resolve(port!);
   } catch (e) {
     return Promise.reject(e);
   }
@@ -468,8 +465,7 @@ async function getApiVersion(
     const buffer: Uint8Array = toBinary(RequestSchema, payload);
     await send(clientId, Array.from<number>(buffer));
     return Promise.resolve(port);
-  } catch (e) {
-    console.error(e);
+  } catch {
     return Promise.resolve(null);
   }
 }

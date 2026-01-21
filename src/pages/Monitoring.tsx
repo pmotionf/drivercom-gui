@@ -64,7 +64,10 @@ function Monitoring() {
     if (lines.length > 0) {
       await serverHandler.disconnect();
       setSendingCmd(null);
-      await exit();
+      if (getMmccliStatus() !== MmcCliState.Unloaded) {
+        await exit();
+      }
+      setIsConnect(false);
     }
     const disconnectServer = tcpClientIds.map((id) => disconnect(id));
     await Promise.allSettled(disconnectServer);
@@ -73,7 +76,7 @@ function Monitoring() {
 
   createEffect(
     on(
-      () => lines.length,
+      async () => lines.length,
       async () => {
         if (lines.length >= 1) {
           let lineId = lines[0].id;
@@ -103,18 +106,31 @@ function Monitoring() {
           }
         }
       }
+      return Promise.resolve();
     } catch (e) {
+      if (
+        serverHandler.getStatus() &&
+        serverHandler.getStatus() === WebSocket.OPEN
+      ) {
+        await serverHandler.disconnect();
+      }
+
       if (lines.length > 0) {
         setLines([]);
         setSystems([]);
+        setIsConnect(false);
+        setSendingCmd(null);
+
         toaster.create({
           title: "Server Connection Error",
           description: e ? e.toString() : "The server is disconnected.",
           type: "error",
         });
+        if (getMmccliStatus() !== MmcCliState.Unloaded) {
+          await exit();
+        }
+        return Promise.reject();
       }
-      await exit();
-      setIsConnect(false);
     }
   };
 
@@ -473,16 +489,24 @@ function Monitoring() {
                     onConnectMmccli={async (ip: string) => {
                       setMmcCliConnectLoading(true);
                       try {
+                        let checkWebsocket: ServerHandler | null =
+                          new ServerHandler();
+                        await checkWebsocket.connect(ip, "443");
+                        await checkWebsocket.disconnect();
+                        checkWebsocket = null;
                         await connectMmcCli(ip);
                         setDisableMmcCliBtn(false);
+                        setMmcCliConnectLoading(false);
                       } catch {
+                        setMmcCliConnectLoading(false);
                         setSendingCmd(null);
-                        setDisableMmcCliBtn(true);
-                        await exit();
+                        if (!disableMmcCliBtn) {
+                          setDisableMmcCliBtn(true);
+                        }
+                        if (getMmccliStatus() !== MmcCliState.Unloaded) {
+                          await exit();
+                        }
                       }
-
-                      setMmcCliConnectLoading(false);
-                      console.log("connect mmc-cli");
                     }}
                     onDisconnectMmccli={async (
                       isIpChange: boolean | undefined,
@@ -494,7 +518,6 @@ function Monitoring() {
                       if (!isIpChange) {
                         setMmcCliConnectLoading(false);
                       }
-                      console.log("disconnect mmc-cli");
                     }}
                   />
                 </Show>
