@@ -146,7 +146,7 @@ export const ConnectPage = (props: ConnectPageProps) => {
               </Tooltip.Trigger>
               <Tooltip.Positioner>
                 <Tooltip.Content>
-                  {connectMmccli() ? "Connect MMC-CLI" : "Disconnect MMC-CLI"}
+                  {connectMmccli() ? "Control enabled" : "Control disabled"}
                 </Tooltip.Content>
               </Tooltip.Positioner>
             </Tooltip.Root>

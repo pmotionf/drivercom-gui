@@ -54,7 +54,7 @@ export function Axis(props: AxisProps) {
       gap="0"
     >
       <Stack
-        height="min-content"
+        height="2rem"
         width="100%"
         borderBottomWidth="0.02px"
         gap="1"
