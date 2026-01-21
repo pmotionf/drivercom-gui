@@ -23,7 +23,7 @@ export type ConnectPageProps = {
   onDisconnectServer?: (ip?: string, port?: string) => void;
   onConnectServer?: (ip: string, port: string) => void;
   onConnectMmccli?: (ip: string) => void;
-  onDisconnectMmccli?: () => void;
+  onDisconnectMmccli?: (isChangeIp?: boolean) => void;
   ipHistory: IpAddress[];
   changeIpHistory: Setter<IpAddress[]>;
   toaster: CreateToasterReturn;
@@ -211,6 +211,14 @@ export const ConnectPage = (props: ConnectPageProps) => {
             loading={props.loading}
             onClick={async () => {
               if (props.isConnect) {
+                if (props.mmcCliBtnLoading) {
+                  toaster.create({
+                    title: "Invalid request",
+                    description: "MMC-CLI is still loading",
+                    type: "error",
+                  });
+                  return;
+                }
                 props.onDisconnectServer?.();
                 if (connectMmccli()) {
                   props.onDisconnectMmccli?.();
@@ -266,6 +274,14 @@ export const ConnectPage = (props: ConnectPageProps) => {
               onConnectServer={async (index: number) => {
                 const newIp = props.ipHistory[index].ip;
                 const newPort = props.ipHistory[index].port;
+                if (props.mmcCliBtnLoading) {
+                  toaster.create({
+                    title: "Invalid request",
+                    description: "MMC-CLI is loading.",
+                    type: "error",
+                  });
+                  return;
+                }
                 if (props.loading) {
                   toaster.create({
                     title: "Already Connecting",
@@ -287,10 +303,11 @@ export const ConnectPage = (props: ConnectPageProps) => {
                     });
                     return;
                   }
-                  if (connectMmccli()) {
-                    props.onDisconnectMmccli?.();
-                  }
+
                   props.onDisconnectServer?.();
+                  if (connectMmccli()) {
+                    props.onDisconnectMmccli?.(true);
+                  }
                   while (props.isConnect) {
                     await delay(1);
                   }
@@ -380,6 +397,15 @@ export const ConnectPage = (props: ConnectPageProps) => {
                 return;
               }
 
+              if (props.mmcCliBtnLoading) {
+                toaster.create({
+                  title: "Invalid request",
+                  description: "MMC-CLI is loading.",
+                  type: "error",
+                });
+                return;
+              }
+
               if (props.isConnect) {
                 if (newIp === ip() && newPort === port()) {
                   toaster.create({
@@ -389,10 +415,11 @@ export const ConnectPage = (props: ConnectPageProps) => {
                   });
                   return;
                 }
-                if (connectMmccli()) {
-                  props.onDisconnectMmccli?.();
-                }
+
                 props.onDisconnectServer?.();
+                if (connectMmccli()) {
+                  props.onDisconnectMmccli?.(true);
+                }
                 while (props.isConnect) {
                   await delay(1);
                 }
