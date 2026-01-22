@@ -518,7 +518,9 @@ function Monitoring() {
                     ) => {
                       setMmcCliConnectLoading(true);
                       setSendingCmd(null);
-                      await exit();
+                      if (getMmccliStatus() !== MmcCliState.Unloaded) {
+                        await exit();
+                      }
                       setDisableMmcCliBtn(true);
                       if (!isIpChange) {
                         setMmcCliConnectLoading(false);
