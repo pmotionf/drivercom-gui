@@ -333,6 +333,89 @@ export async function pushCarrier(
   }
 }
 
+export async function getSpeed(line: string): Promise<string | null> {
+  if (mmccliStatus !== MmcCliState.Ready) {
+    return Promise.resolve(null);
+  }
+  mmccliStatus = MmcCliState.SendingCommand;
+  const response = await writeCommand(`get_speed ${line}`);
+  mmccliStatus = MmcCliState.Ready;
+
+  if (response.some((res) => res.toLowerCase().includes("error"))) {
+    return Promise.resolve(null);
+  } else {
+    const speedRegex = /speed:\s*([\d.]+\s*[a-zA-Z/]+)/;
+    const speed = response.join("").match(speedRegex);
+    if (!speed) return Promise.reject("Invalid response");
+    return Promise.resolve(speed[1]);
+  }
+}
+
+export async function getAccelaration(line: string): Promise<string | null> {
+  if (mmccliStatus !== MmcCliState.Ready) {
+    return Promise.resolve(null);
+  }
+  mmccliStatus = MmcCliState.SendingCommand;
+  const response = await writeCommand(`get_acceleration ${line}`);
+  mmccliStatus = MmcCliState.Ready;
+
+  if (response.some((res) => res.toLowerCase().includes("error"))) {
+    return Promise.resolve(null);
+  } else {
+    const accelerationRegex = /acceleration:\s*([\d.]+\s*(?:mm|cm|m)\/s²)/;
+    const acceleration = response.join("").match(accelerationRegex);
+    if (!acceleration) return Promise.reject("Invalid response");
+    return Promise.resolve(acceleration[1]);
+  }
+}
+
+export async function setSpeed(line: string, speed: number) {
+  if (mmccliStatus !== MmcCliState.Ready) {
+    return Promise.reject("MMC-CLI is not prepared to send pull.");
+  }
+  mmccliStatus = MmcCliState.SendingCommand;
+  const result = await writeCommand(`set_speed ${line} ${speed} `);
+  mmccliStatus = MmcCliState.Ready;
+  if (result.some((res) => res.toLowerCase().includes("error"))) {
+    const errMsg = findError(result);
+    return Promise.reject(errMsg);
+  } else {
+    return Promise.resolve();
+  }
+}
+
+export async function setAccelaration(line: string, accelaration: number) {
+  if (mmccliStatus !== MmcCliState.Ready) {
+    return Promise.reject("MMC-CLI is not prepared to send pull.");
+  }
+  mmccliStatus = MmcCliState.SendingCommand;
+  const result = await writeCommand(
+    `set_accelaration ${line} ${accelaration} `,
+  );
+  mmccliStatus = MmcCliState.Ready;
+  if (result.some((res) => res.toLowerCase().includes("error"))) {
+    const errMsg = findError(result);
+    return Promise.reject(errMsg);
+  } else {
+    return Promise.resolve();
+  }
+}
+
+export async function setZero(line: string, zero: number) {
+  if (mmccliStatus !== MmcCliState.Ready) {
+    return Promise.reject("MMC-CLI is not prepared to send pull.");
+  }
+  mmccliStatus = MmcCliState.SendingCommand;
+  const result = await writeCommand(`set_zero ${line} ${zero} `);
+  mmccliStatus = MmcCliState.Ready;
+  if (result.some((res) => res.toLowerCase().includes("error"))) {
+    const errMsg = findError(result);
+    return Promise.reject(errMsg);
+  } else {
+    return Promise.resolve();
+  }
+}
+
 const findError = (commandResponses: string[]): string => {
   const errorMsgIndex = commandResponses.findIndex((res) =>
     res.toLowerCase().includes("error"),
