@@ -10,10 +10,18 @@ import {
   Response_Track_Axis_Error,
   Response_Track_Driver_Error,
 } from "../proto/mmc/info_pb.ts";
+import {
+  LineControlButton,
+  LineCommandParameters,
+} from "./LineControlButton.tsx";
+import { SendingCommand } from "./System.tsx";
 
 export type LineProps = JSX.HTMLAttributes<HTMLDivElement> & {
   line: LineType;
   system?: TrackType;
+  disableCommandButton: boolean;
+  sendingCommand: SendingCommand;
+  onLineCommands?: (save: LineCommandParameters) => void;
 };
 
 export const LineContext = createContext<{
@@ -67,6 +75,9 @@ export function Line(props: LineProps) {
     });
     return errorStates;
   };
+
+  const disableBtn = () => props.disableCommandButton;
+  const isSendingCommand = () => props.sendingCommand;
 
   return (
     <Accordion.Item
@@ -191,6 +202,14 @@ export function Line(props: LineProps) {
             </Tooltip.Positioner>
           </Tooltip.Root>
         </Show>
+        <LineControlButton
+          lineName={props.line.name}
+          disableMmmCliButton={disableBtn()}
+          sendingCommand={isSendingCommand()}
+          onSave={(saveProps) => props.onLineCommands?.(saveProps)}
+          variant={"ghost"}
+          size="xs"
+        />
       </Accordion.ItemTrigger>
       <Accordion.ItemContent
         padding="0.5rem"
