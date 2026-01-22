@@ -81,7 +81,34 @@ function Monitoring() {
         if (lines.length >= 1) {
           let lineId = lines[0].id;
           while (lines.length >= 1) {
-            await getSystemInfo(lineId);
+            try {
+              await getSystemInfo(lineId);
+            } catch (e) {
+              if (
+                serverHandler.getStatus() &&
+                serverHandler.getStatus() === WebSocket.OPEN
+              ) {
+                await serverHandler.disconnect();
+              }
+
+              if (getMmccliStatus() !== MmcCliState.Unloaded) {
+                setDisableMmcCliBtn(true);
+                await exit();
+              }
+
+              if (lines.length > 0) {
+                setLines([]);
+                setSystems([]);
+                setIsConnect(false);
+                setSendingCmd(null);
+
+                toaster.create({
+                  title: "Server Connection Error",
+                  description: e ? e.toString() : "The server is disconnected.",
+                  type: "error",
+                });
+              }
+            }
             lineId = lineId + 1 > lines.length ? 1 : lineId + 1;
           }
         }
@@ -108,29 +135,7 @@ function Monitoring() {
       }
       return Promise.resolve();
     } catch (e) {
-      if (
-        serverHandler.getStatus() &&
-        serverHandler.getStatus() === WebSocket.OPEN
-      ) {
-        await serverHandler.disconnect();
-      }
-
-      if (lines.length > 0) {
-        setLines([]);
-        setSystems([]);
-        setIsConnect(false);
-        setSendingCmd(null);
-
-        toaster.create({
-          title: "Server Connection Error",
-          description: e ? e.toString() : "The server is disconnected.",
-          type: "error",
-        });
-        if (getMmccliStatus() !== MmcCliState.Unloaded) {
-          await exit();
-        }
-        return Promise.reject();
-      }
+      return Promise.reject(e);
     }
   };
 
