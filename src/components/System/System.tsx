@@ -16,12 +16,19 @@ import {
 } from "@thisbeyond/solid-dnd";
 import { Lines, Systems } from "~/pages/Monitoring.tsx";
 import { Stack } from "styled-system/jsx/stack";
+import { LineCommandParameters } from "./LineControlButton.tsx";
+
+export type SendingCommand = {
+  line: string;
+  axisId: number;
+} | null;
 
 export type SystemProps = JSX.HTMLAttributes<HTMLDivElement> & {
   lines: Store<Lines>;
   systems: Store<Systems>;
-  sendingCommand: { line: string; axisId: number } | null;
+  sendingCommand: SendingCommand;
   disableMmcCliBtn: boolean;
+  onLineCommands?: (params: LineCommandParameters) => void;
   onPush?: (
     line: string,
     commandDirection: string,
@@ -68,6 +75,8 @@ export function System(props: SystemProps) {
     }
   };
 
+  const disableBtn = () => props.disableMmcCliBtn;
+
   return (
     <div
       style={{
@@ -111,7 +120,13 @@ export function System(props: SystemProps) {
                       "transition-transform": !!state.active.draggable,
                     }}
                   >
-                    <Line line={props.lines[item]} system={props.systems[item]}>
+                    <Line
+                      line={props.lines[item]}
+                      system={props.systems[item]}
+                      disableCommandButton={disableBtn()}
+                      sendingCommand={props.sendingCommand}
+                      onLineCommands={(param) => props.onLineCommands?.(param)}
+                    >
                       <Show when={props.systems[item]}>
                         <Stack
                           width="100%"
