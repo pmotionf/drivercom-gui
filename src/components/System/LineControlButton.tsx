@@ -33,11 +33,11 @@ export function LineControlButton(props: LineControlProps & IconButtonProps) {
   const { ...IconButtonProps } = props;
 
   const [speed, setSpeed] = createSignal<number>(NaN);
-  const [speedInput, setSpeedInput] = createSignal<number>(NaN);
+  const [speedInput, setSpeedInput] = createSignal<string>("");
   const [speedUnit, setSpeedUnit] = createSignal<string>("");
 
   const [acceleration, setacceleration] = createSignal<number>(NaN);
-  const [accelerationInput, setaccelerationInput] = createSignal<number>(NaN);
+  const [accelerationInput, setaccelerationInput] = createSignal<string>("");
   const [accelerationUnit, setaccelerationUnit] = createSignal<string>("");
 
   const [lastCommand, setLastCommand] = createSignal<LineCommand>(
@@ -56,8 +56,8 @@ export function LineControlButton(props: LineControlProps & IconButtonProps) {
               const speed = await getSpeed(props.lineName);
               if (speed) {
                 const match = speed.match(/^\d+/);
-                const value = match ? Number(match[0]) : NaN;
-                setSpeed(value);
+                const value = match ? match[0] : `NaN`;
+                setSpeed(Number(value));
                 setSpeedInput(value);
                 setSpeedUnit(
                   speed.match(/\s([^\s]+)$/)
@@ -71,8 +71,8 @@ export function LineControlButton(props: LineControlProps & IconButtonProps) {
               const accelaraion = await getAcceleration(props.lineName);
               if (accelaraion) {
                 const match = accelaraion.match(/^\d+/);
-                const value = match ? Number(match[0]) : NaN;
-                setacceleration(value);
+                const value = match ? match[0] : `NaN`;
+                setacceleration(Number(value));
                 setaccelerationInput(value);
 
                 setaccelerationUnit(
@@ -140,43 +140,47 @@ export function LineControlButton(props: LineControlProps & IconButtonProps) {
                     : false
                 }
                 disabled={
-                  sendingCommand()
-                    ? sendingCommand()!.line === props.lineName
-                      ? isNaN(sendingCommand()!.axisId)
-                        ? lastCommand() === LineCommand.SaveVelocity
-                          ? false
+                  acceleration() !== Number(accelerationInput()) ||
+                  speed() !== Number(speedInput())
+                    ? sendingCommand()
+                      ? sendingCommand()!.line === props.lineName
+                        ? isNaN(sendingCommand()!.axisId)
+                          ? lastCommand() === LineCommand.SaveVelocity
+                            ? false
+                            : true
                           : true
                         : true
-                      : true
-                    : false
+                      : false
+                    : true
                 }
                 onClick={(e) => {
                   e.stopPropagation();
 
                   if (
-                    speed() !== speedInput() ||
-                    acceleration() !== accelerationInput()
+                    speed() !== Number(speedInput()) ||
+                    acceleration() !== Number(accelerationInput())
                   ) {
                     const saveProps: LineCommandParameters = {
                       line: props.lineName,
                       speed:
-                        speed() === speedInput() || isNaN(speedInput())
+                        speed() === Number(speedInput()) ||
+                        isNaN(Number(speedInput()))
                           ? undefined
-                          : speedInput(),
+                          : Number(speedInput()),
                       acceleration:
-                        acceleration() === accelerationInput() ||
-                        isNaN(accelerationInput())
+                        acceleration() === Number(accelerationInput()) ||
+                        isNaN(Number(accelerationInput()))
                           ? undefined
-                          : accelerationInput(),
+                          : Number(accelerationInput()),
                     };
                     setLastCommand(LineCommand.SaveVelocity);
                     props.onLineCommand?.(saveProps);
                   }
 
-                  if (speed() !== speedInput()) {
+                  if (speed() !== Number(speedInput())) {
                     setSpeed(NaN);
                   }
-                  if (acceleration() !== accelerationInput()) {
+                  if (acceleration() !== Number(accelerationInput())) {
                     setacceleration(NaN);
                   }
                 }}
@@ -193,10 +197,6 @@ export function LineControlButton(props: LineControlProps & IconButtonProps) {
                   "grid-column": 1,
                 }}
                 width="min-content"
-                borderBottomWidth={
-                  !isNaN(speed()) && speed() !== speedInput() ? "1px" : "0px"
-                }
-                borderColor={"accent.default"}
               >
                 {"Speed"}
               </Text>
@@ -214,8 +214,8 @@ export function LineControlButton(props: LineControlProps & IconButtonProps) {
               >
                 <input
                   value={speedInput()}
-                  onChange={(e) => setSpeedInput(Number(e.target.value))}
-                  type="text"
+                  onInput={(e) => setSpeedInput(e.target.value)}
+                  onChange={(e) => setSpeedInput(`${Number(e.target.value)}`)}
                   onKeyDown={(e) => {
                     e.stopPropagation();
                   }}
@@ -247,13 +247,6 @@ export function LineControlButton(props: LineControlProps & IconButtonProps) {
                 }}
                 fontWeight={"medium"}
                 width="min-content"
-                borderBottomWidth={
-                  !isNaN(acceleration()) &&
-                  acceleration() !== accelerationInput()
-                    ? "1px"
-                    : "0px"
-                }
-                borderColor={"accent.default"}
               >
                 {"Acceleration"}
               </Text>
@@ -271,7 +264,10 @@ export function LineControlButton(props: LineControlProps & IconButtonProps) {
               >
                 <input
                   value={accelerationInput()}
-                  onChange={(e) => setaccelerationInput(Number(e.target.value))}
+                  onInput={(e) => setaccelerationInput(e.target.value)}
+                  onChange={(e) =>
+                    setaccelerationInput(`${Number(e.target.value)}`)
+                  }
                   style={{
                     width: "4rem",
                     padding: "0.2rem",
