@@ -19,6 +19,7 @@ export type LineControlProps = {
   lineName: string;
   disableCommandButton: boolean;
   disableCalibrateButton: boolean;
+  disableSetZeroButton: boolean;
   sendingCommand: SendingCommand;
   onLineCommand?: (save: LineCommandParameters) => void;
 };
@@ -48,6 +49,7 @@ export function LineControlButton(props: LineControlProps & IconButtonProps) {
   const disableBtn = () => props.disableCommandButton;
   const sendingCommand = () => props.sendingCommand;
   const disableCalibrate = () => props.disableCalibrateButton;
+  const disableSetZero = () => props.disableSetZeroButton;
 
   return (
     <Show when={!disableBtn()}>
@@ -326,15 +328,17 @@ export function LineControlButton(props: LineControlProps & IconButtonProps) {
                     : false
                 }
                 disabled={
-                  sendingCommand()
-                    ? sendingCommand()!.line === props.lineName
-                      ? isNaN(sendingCommand()!.axisId)
-                        ? lastCommand() === LineCommand.SetZero
-                          ? false
+                  !disableSetZero()
+                    ? sendingCommand()
+                      ? sendingCommand()!.line === props.lineName
+                        ? isNaN(sendingCommand()!.axisId)
+                          ? lastCommand() === LineCommand.SetZero
+                            ? false
+                            : true
                           : true
                         : true
-                      : true
-                    : false
+                      : false
+                    : true
                 }
               >
                 {"Set Zero"}
