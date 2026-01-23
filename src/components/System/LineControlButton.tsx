@@ -81,8 +81,6 @@ export function LineControlButton(props: LineControlProps & IconButtonProps) {
                     : "mm/s²",
                 );
               }
-            } else {
-              setLastCommand(LineCommand.None);
             }
           }
         }}
