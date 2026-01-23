@@ -8,6 +8,11 @@ import {
   Response_Track_Driver_State,
 } from "../proto/mmc/info_pb.ts";
 import { Stack } from "styled-system/jsx/stack";
+import {
+  IconAlertTriangle,
+  IconPlayerPauseFilled,
+} from "@tabler/icons-solidjs";
+import { css } from "styled-system/css/css";
 
 export const AxesContext = createContext<{
   id: string;
@@ -55,14 +60,27 @@ export function Driver(props: DriverProps) {
         padding: "0.5rem",
       }}
     >
-      <div style={{ display: "flex", "align-items": "center" }}>
+      <div
+        style={{
+          display: "flex",
+        }}
+      >
         <Tooltip.Root positioning={{ placement: "bottom-start" }}>
           <Tooltip.Trigger>
             <Badge
               background={
                 props.driverInfo.connected ? "accent.customGreen" : "bg.canvas"
               }
+              paddingLeft={"0.4rem"}
+              paddingRight={"0.4rem"}
+              gap={"0.2rem"}
             >
+              <Show when={props.driverInfo.paused}>
+                <IconPlayerPauseFilled class={css({ color: "fg.default" })} />
+              </Show>
+              <Show when={props.driverInfo.stopped}>
+                <IconAlertTriangle class={css({ color: "fg.default" })} />
+              </Show>
               <Text fontWeight="bold">Driver {props.id}</Text>
             </Badge>
           </Tooltip.Trigger>
