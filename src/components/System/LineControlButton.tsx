@@ -123,7 +123,7 @@ export function LineControlButton(props: LineControlProps & IconButtonProps) {
                   "grid-column": 1,
                 }}
               >
-                {"Velocity"}
+                {"Configuration"}
               </Text>
               <Button
                 size="xs"
@@ -303,9 +303,6 @@ export function LineControlButton(props: LineControlProps & IconButtonProps) {
                 "align-items": "center",
               }}
             >
-              <Text size="sm" style={{ "grid-row": 1, "grid-column": 1 }}>
-                {"Position"}
-              </Text>
               <Button
                 size="xs"
                 fontWeight={"medium"}
