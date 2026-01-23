@@ -77,6 +77,24 @@ export function System(props: SystemProps) {
 
   const disableBtn = () => props.disableMmcCliBtn;
 
+  const disableCalibrateButton = (index: number): boolean => {
+    if (!props.systems[index] || !props.lines[index]) return true;
+    const currentSystem = props.systems[index];
+    const carrierState = currentSystem.carrierState;
+    if (carrierState.length > 0) return true;
+
+    const axisInfos = currentSystem.axisState;
+    const checkFirstAxis =
+      axisInfos[0].hallAlarmBack || axisInfos[0].hallAlarmFront;
+    const checkOtherAxes = axisInfos
+      .slice(1, axisInfos.length)
+      .map((status) => !status.hallAlarmBack && !status.hallAlarmFront);
+    const ableToCalibrate =
+      checkFirstAxis && !checkOtherAxes.some((check) => !check);
+    const disableCalibrate = !ableToCalibrate;
+    return disableCalibrate;
+  };
+
   return (
     <div
       style={{
@@ -124,6 +142,7 @@ export function System(props: SystemProps) {
                       line={props.lines[item]}
                       system={props.systems[item]}
                       disableCommandButton={disableBtn()}
+                      disableCalibrateButton={disableCalibrateButton(item)}
                       sendingCommand={props.sendingCommand}
                       onLineCommands={(param) => props.onLineCommands?.(param)}
                     >
