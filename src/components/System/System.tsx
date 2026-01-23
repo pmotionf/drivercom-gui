@@ -95,6 +95,19 @@ export function System(props: SystemProps) {
     return disableCalibrate;
   };
 
+  const disableSetZero = (index: number): boolean => {
+    if (!props.systems[index] || !props.lines[index]) return true;
+    const currentSystem = props.systems[index];
+    const carrierState = currentSystem.carrierState;
+    if (carrierState.length === 0) return true;
+
+    const filterFirstAxisCarrier = carrierState.filter(
+      (state) => state.axisMain === 1 || state.axisAuxiliary === 1,
+    );
+    const disableSetZero = filterFirstAxisCarrier.length === 0;
+    return disableSetZero;
+  };
+
   return (
     <div
       style={{
@@ -143,6 +156,7 @@ export function System(props: SystemProps) {
                       system={props.systems[item]}
                       disableCommandButton={disableBtn()}
                       disableCalibrateButton={disableCalibrateButton(item)}
+                      disableSetZeroButton={disableSetZero(item)}
                       sendingCommand={props.sendingCommand}
                       onLineCommands={(param) => props.onLineCommands?.(param)}
                     >
