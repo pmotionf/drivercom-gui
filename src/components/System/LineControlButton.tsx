@@ -17,7 +17,8 @@ export type LineCommandParameters = {
 
 export type LineControlProps = {
   lineName: string;
-  disableMmmCliButton: boolean;
+  disableCommandButton: boolean;
+  disableCalibrateButton: boolean;
   sendingCommand: SendingCommand;
   onLineCommand?: (save: LineCommandParameters) => void;
 };
@@ -44,8 +45,9 @@ export function LineControlButton(props: LineControlProps & IconButtonProps) {
     LineCommand.None,
   );
 
-  const disableBtn = () => props.disableMmmCliButton;
+  const disableBtn = () => props.disableCommandButton;
   const sendingCommand = () => props.sendingCommand;
+  const disableCalibrate = () => props.disableCalibrateButton;
 
   return (
     <Show when={!disableBtn()}>
@@ -359,15 +361,17 @@ export function LineControlButton(props: LineControlProps & IconButtonProps) {
                     : false
                 }
                 disabled={
-                  sendingCommand()
-                    ? sendingCommand()!.line === props.lineName
-                      ? isNaN(sendingCommand()!.axisId)
-                        ? lastCommand() === LineCommand.Calibrate
-                          ? false
+                  !disableCalibrate()
+                    ? sendingCommand()
+                      ? sendingCommand()!.line === props.lineName
+                        ? isNaN(sendingCommand()!.axisId)
+                          ? lastCommand() === LineCommand.Calibrate
+                            ? false
+                            : true
                           : true
                         : true
-                      : true
-                    : false
+                      : false
+                    : true
                 }
               >
                 {"Calibrate"}

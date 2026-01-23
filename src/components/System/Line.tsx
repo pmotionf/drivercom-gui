@@ -20,6 +20,7 @@ export type LineProps = JSX.HTMLAttributes<HTMLDivElement> & {
   line: LineType;
   system?: TrackType;
   disableCommandButton: boolean;
+  disableCalibrateButton: boolean;
   sendingCommand: SendingCommand;
   onLineCommands?: (save: LineCommandParameters) => void;
 };
@@ -78,6 +79,7 @@ export function Line(props: LineProps) {
 
   const disableBtn = () => props.disableCommandButton;
   const isSendingCommand = () => props.sendingCommand;
+  const disableCalibrateButton = () => props.disableCalibrateButton;
 
   return (
     <Accordion.Item
@@ -204,7 +206,8 @@ export function Line(props: LineProps) {
         </Show>
         <LineControlButton
           lineName={props.line.name}
-          disableMmmCliButton={disableBtn()}
+          disableCommandButton={disableBtn()}
+          disableCalibrateButton={disableCalibrateButton()}
           sendingCommand={isSendingCommand()}
           onLineCommand={(saveProps) => props.onLineCommands?.(saveProps)}
           variant={"ghost"}
