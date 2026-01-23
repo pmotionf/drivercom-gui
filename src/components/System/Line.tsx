@@ -206,7 +206,7 @@ export function Line(props: LineProps) {
           lineName={props.line.name}
           disableMmmCliButton={disableBtn()}
           sendingCommand={isSendingCommand()}
-          onSave={(saveProps) => props.onLineCommands?.(saveProps)}
+          onLineCommand={(saveProps) => props.onLineCommands?.(saveProps)}
           variant={"ghost"}
           size="xs"
         />

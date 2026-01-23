@@ -11,15 +11,23 @@ export type LineCommandParameters = {
   line: string;
   speed?: number;
   accelaration?: number;
-  zero?: number;
+  calibrate?: boolean;
+  setZero?: boolean;
 };
 
 export type LineControlProps = {
   lineName: string;
   disableMmmCliButton: boolean;
   sendingCommand: SendingCommand;
-  onSave?: (save: LineCommandParameters) => void;
+  onLineCommand?: (save: LineCommandParameters) => void;
 };
+
+enum LineCommand {
+  SaveVelocity,
+  SetZero,
+  Calibrate,
+  None,
+}
 
 export function LineControlButton(props: LineControlProps & IconButtonProps) {
   const { ...IconButtonProps } = props;
@@ -32,8 +40,9 @@ export function LineControlButton(props: LineControlProps & IconButtonProps) {
   const [accelarationInput, setAccelarationInput] = createSignal<number>(NaN);
   const [accelarationUnit, setAccelarationUnit] = createSignal<string>("");
 
-  const [zero, setZero] = createSignal<number>(0);
-  const [zeroInput, setZeroInput] = createSignal<number>(0);
+  const [lastCommand, setLastCommand] = createSignal<LineCommand>(
+    LineCommand.None,
+  );
 
   const disableBtn = () => props.disableMmmCliButton;
   const sendingCommand = () => props.sendingCommand;
@@ -72,6 +81,8 @@ export function LineControlButton(props: LineControlProps & IconButtonProps) {
                     : "mm/s²",
                 );
               }
+            } else {
+              setLastCommand(LineCommand.None);
             }
           }
         }}
@@ -91,7 +102,6 @@ export function LineControlButton(props: LineControlProps & IconButtonProps) {
             width="max-content"
             onClick={(e) => e.stopPropagation()}
             direction={"column"}
-            padding="0.5rem 1rem 0.5rem 1rem"
           >
             <Popover.Arrow>
               <Popover.ArrowTip />
@@ -99,12 +109,11 @@ export function LineControlButton(props: LineControlProps & IconButtonProps) {
             <div
               style={{
                 display: "grid",
-                "grid-template-columns": "6rem 7rem",
-                "grid-template-rows": `repeat(3, 2.5rem)`,
+                "grid-template-columns": "7rem 6rem",
+                "grid-template-rows": `1.5rem 1.8rem 2rem`,
                 "align-items": "center",
               }}
             >
-              {/* Speed */}
               <Text
                 size="sm"
                 style={{
@@ -112,24 +121,107 @@ export function LineControlButton(props: LineControlProps & IconButtonProps) {
                   "grid-column": 1,
                 }}
               >
+                {"Velocity"}
+              </Text>
+              <Button
+                size="xs"
+                height="1.5rem"
+                width="2.5rem"
+                style={{
+                  "grid-row": 1,
+                  "grid-column": 2,
+                  "margin-left": `calc(100% - 2.5rem)`,
+                }}
+                fontWeight={"medium"}
+                loading={
+                  sendingCommand() &&
+                  sendingCommand()!.line === props.lineName &&
+                  isNaN(sendingCommand()!.axisId) &&
+                  lastCommand() === LineCommand.SaveVelocity
+                    ? true
+                    : false
+                }
+                disabled={
+                  sendingCommand()
+                    ? sendingCommand()!.line === props.lineName
+                      ? isNaN(sendingCommand()!.axisId)
+                        ? lastCommand() === LineCommand.SaveVelocity
+                          ? false
+                          : true
+                        : true
+                      : true
+                    : false
+                }
+                onClick={(e) => {
+                  e.stopPropagation();
+
+                  if (
+                    speed() !== speedInput() ||
+                    accelaration() !== accelarationInput()
+                  ) {
+                    const saveProps: LineCommandParameters = {
+                      line: props.lineName,
+                      speed:
+                        speed() === speedInput() || isNaN(speedInput())
+                          ? undefined
+                          : speedInput(),
+                      accelaration:
+                        accelaration() === accelarationInput() ||
+                        isNaN(accelarationInput())
+                          ? undefined
+                          : accelarationInput(),
+                    };
+                    setLastCommand(LineCommand.SaveVelocity);
+                    props.onLineCommand?.(saveProps);
+                  }
+
+                  if (speed() !== speedInput()) {
+                    setSpeed(NaN);
+                  }
+                  if (accelaration() !== accelarationInput()) {
+                    setAccelaration(NaN);
+                  }
+                }}
+              >
+                {"Save"}
+              </Button>
+
+              {/* Speed */}
+              <Text
+                size="sm"
+                fontWeight={"medium"}
+                style={{
+                  "grid-row": 2,
+                  "grid-column": 1,
+                }}
+                width="min-content"
+                borderBottomWidth={
+                  !isNaN(speed()) && speed() !== speedInput() ? "1px" : "0px"
+                }
+                borderColor={"accent.default"}
+              >
                 {"Speed"}
               </Text>
               <div
                 style={{
-                  width: "7rem",
+                  width: "6rem",
                   height: "2rem",
                   display: "flex",
                   "align-items": "center",
                   "border-radius": "0.5rem",
                   "border-width": "1px",
-                  "grid-row": 1,
-                  "grid-column": 2,
+                  "grid-row": 3,
+                  "grid-column": 1,
                 }}
               >
                 <input
                   value={speedInput()}
+                  onChange={(e) => setSpeedInput(Number(e.target.value))}
+                  type="text"
+                  onKeyDown={(e) => {
+                    e.stopPropagation();
+                  }}
                   size="md"
-                  onFocusOut={(e) => setSpeedInput(Number(e.target.value))}
                   style={{
                     width: "4rem",
                     padding: "0.2rem",
@@ -148,31 +240,40 @@ export function LineControlButton(props: LineControlProps & IconButtonProps) {
                 </Text>
               </div>
 
-              {/* Accelaration */}
+              {/* Acceleration */}
               <Text
                 size="sm"
                 style={{
                   "grid-row": 2,
-                  "grid-column": 1,
+                  "grid-column": 2,
                 }}
+                fontWeight={"medium"}
+                width="min-content"
+                borderBottomWidth={
+                  !isNaN(accelaration()) &&
+                  accelaration() !== accelarationInput()
+                    ? "1px"
+                    : "0px"
+                }
+                borderColor={"accent.default"}
               >
-                {"Accelaration"}
+                {"Acceleration"}
               </Text>
               <div
                 style={{
-                  width: "7rem",
+                  width: "6rem",
                   height: "2rem",
                   display: "flex",
                   "align-items": "center",
                   "border-radius": "0.5rem",
                   "border-width": "1px",
-                  "grid-row": 2,
+                  "grid-row": 3,
                   "grid-column": 2,
                 }}
               >
                 <input
                   value={accelarationInput()}
-                  onInput={(e) => setAccelarationInput(Number(e.target.value))}
+                  onChange={(e) => setAccelarationInput(Number(e.target.value))}
                   style={{
                     width: "4rem",
                     padding: "0.2rem",
@@ -185,68 +286,46 @@ export function LineControlButton(props: LineControlProps & IconButtonProps) {
                     display: "block",
                   }}
                   onClick={(e) => e.stopPropagation()}
+                  onKeyDown={(e) => e.stopPropagation()}
                 />
                 <Text size="sm" opacity="0.7" fontWeight="medium">
                   {accelarationUnit()}
                 </Text>
               </div>
-
-              {/* Zero */}
-              <Text
-                size="sm"
-                style={{
-                  "grid-row": 3,
-                  "grid-column": 1,
-                }}
-              >
-                {"Zero"}
-              </Text>
-              <div
-                style={{
-                  width: "7rem",
-                  height: "2rem",
-                  display: "flex",
-                  "align-items": "center",
-                  "border-radius": "0.5rem",
-                  "border-width": "1px",
-                  "grid-row": 3,
-                  "grid-column": 2,
-                }}
-              >
-                <input
-                  value={zeroInput()}
-                  onInput={(e) => setZeroInput(Number(e.target.value))}
-                  style={{
-                    width: "7rem",
-                    padding: "0.2rem",
-                    outline: "none",
-                    "font-size": "1rem",
-                    "font-weight": "lighter",
-                    overflow: "hidden",
-                    "white-space": "nowrap",
-                    "text-overflow": "ellipsis",
-                    display: "block",
-                  }}
-                  onClick={(e) => e.stopPropagation()}
-                />
-              </div>
             </div>
             <div
               style={{
-                display: "flex",
-                "flex-direction": "row-reverse",
+                display: "grid",
+                "grid-template-columns": "4rem 4rem 4rem",
+                "column-gap": "0.5rem",
+                "grid-template-rows": "2rem",
+                "padding-top": "0.5rem",
+                "border-top-width": "1px",
                 "margin-top": "0.5rem",
+                "align-items": "center",
               }}
             >
+              <Text size="sm" style={{ "grid-row": 1, "grid-column": 1 }}>
+                {"Position"}
+              </Text>
               <Button
                 size="xs"
-                height="1.5rem"
-                width="2.5rem"
                 fontWeight={"medium"}
+                style={{ "grid-row": 1, "grid-column": 2 }}
+                height="1.5rem"
+                onClick={() => {
+                  const commandProps: LineCommandParameters = {
+                    line: props.lineName,
+                    setZero: true,
+                  };
+                  setLastCommand(LineCommand.SetZero);
+                  props.onLineCommand?.(commandProps);
+                }}
                 loading={
                   sendingCommand() &&
                   sendingCommand()!.line === props.lineName &&
-                  isNaN(sendingCommand()!.axisId)
+                  isNaN(sendingCommand()!.axisId) &&
+                  lastCommand() === LineCommand.SetZero
                     ? true
                     : false
                 }
@@ -254,50 +333,50 @@ export function LineControlButton(props: LineControlProps & IconButtonProps) {
                   sendingCommand()
                     ? sendingCommand()!.line === props.lineName
                       ? isNaN(sendingCommand()!.axisId)
-                        ? false
+                        ? lastCommand() === LineCommand.SetZero
+                          ? false
+                          : true
                         : true
                       : true
                     : false
                 }
-                onClick={(e) => {
-                  e.stopPropagation();
-
-                  if (
-                    speed() !== speedInput() ||
-                    accelaration() !== accelarationInput() ||
-                    zero() !== zeroInput()
-                  ) {
-                    const saveProps: LineCommandParameters = {
-                      line: props.lineName,
-                      speed:
-                        speed() === speedInput() || isNaN(speedInput())
-                          ? undefined
-                          : speedInput(),
-                      accelaration:
-                        accelaration() === accelaration() ||
-                        isNaN(accelarationInput())
-                          ? undefined
-                          : accelarationInput(),
-                      zero:
-                        zero() === zeroInput() || isNaN(zeroInput())
-                          ? undefined
-                          : zero(),
-                    };
-                    props.onSave?.(saveProps);
-                  }
-
-                  if (speed() !== speedInput()) {
-                    setSpeed(NaN);
-                  }
-                  if (accelaration() !== accelarationInput()) {
-                    setAccelaration(NaN);
-                  }
-                  if (zero() !== zeroInput()) {
-                    setZero(zeroInput());
-                  }
-                }}
               >
-                {"Save"}
+                {"Set Zero"}
+              </Button>
+              <Button
+                size="xs"
+                fontWeight={"medium"}
+                style={{ "grid-row": 1, "grid-column": 3 }}
+                height="1.5rem"
+                onClick={() => {
+                  const commandProps: LineCommandParameters = {
+                    line: props.lineName,
+                    calibrate: true,
+                  };
+                  setLastCommand(LineCommand.Calibrate);
+                  props.onLineCommand?.(commandProps);
+                }}
+                loading={
+                  sendingCommand() &&
+                  sendingCommand()!.line === props.lineName &&
+                  isNaN(sendingCommand()!.axisId) &&
+                  lastCommand() === LineCommand.Calibrate
+                    ? true
+                    : false
+                }
+                disabled={
+                  sendingCommand()
+                    ? sendingCommand()!.line === props.lineName
+                      ? isNaN(sendingCommand()!.axisId)
+                        ? lastCommand() === LineCommand.Calibrate
+                          ? false
+                          : true
+                        : true
+                      : true
+                    : false
+                }
+              >
+                {"Calibrate"}
               </Button>
             </div>
           </Popover.Content>
