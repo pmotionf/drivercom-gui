@@ -401,19 +401,28 @@ function Monitoring() {
               }}
               onLineCommands={async (params) => {
                 setSendingCmd({ line: params.line, axisId: NaN });
-                if (params.speed) {
-                  await setSpeed(params.line, params.speed);
+                try {
+                  if (params.speed) {
+                    await setSpeed(params.line, params.speed);
+                  }
+                  if (params.acceleration) {
+                    await setAcceleration(params.line, params.acceleration);
+                  }
+                  if (params.setZero) {
+                    await setZero(params.line);
+                  }
+                  if (params.calibrate) {
+                    await calibrate(params.line);
+                  }
+                  setSendingCmd(null);
+                } catch (e) {
+                  toaster.create({
+                    title: "Error",
+                    description: e as string,
+                    type: "error",
+                  });
+                  setSendingCmd(null);
                 }
-                if (params.acceleration) {
-                  await setAcceleration(params.line, params.acceleration);
-                }
-                if (params.setZero) {
-                  await setZero(params.line);
-                }
-                if (params.calibrate) {
-                  await calibrate(params.line);
-                }
-                setSendingCmd(null);
               }}
             />
           </Show>
