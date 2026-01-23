@@ -371,7 +371,7 @@ export async function getAccelaration(line: string): Promise<string | null> {
 
 export async function setSpeed(line: string, speed: number) {
   if (mmccliStatus !== MmcCliState.Ready) {
-    return Promise.reject("MMC-CLI is not prepared to send pull.");
+    return Promise.reject("MMC-CLI is not prepared to send set speed.");
   }
   mmccliStatus = MmcCliState.SendingCommand;
   const result = await writeCommand(`set_speed ${line} ${speed} `);
@@ -386,12 +386,10 @@ export async function setSpeed(line: string, speed: number) {
 
 export async function setAccelaration(line: string, accelaration: number) {
   if (mmccliStatus !== MmcCliState.Ready) {
-    return Promise.reject("MMC-CLI is not prepared to send pull.");
+    return Promise.reject("MMC-CLI is not prepared to send set accelaration.");
   }
   mmccliStatus = MmcCliState.SendingCommand;
-  const result = await writeCommand(
-    `set_accelaration ${line} ${accelaration} `,
-  );
+  const result = await writeCommand(`SET_ACCELERATION ${line} ${accelaration}`);
   mmccliStatus = MmcCliState.Ready;
   if (result.some((res) => res.toLowerCase().includes("error"))) {
     const errMsg = findError(result);
@@ -401,12 +399,27 @@ export async function setAccelaration(line: string, accelaration: number) {
   }
 }
 
-export async function setZero(line: string, zero: number) {
+export async function setZero(line: string) {
   if (mmccliStatus !== MmcCliState.Ready) {
-    return Promise.reject("MMC-CLI is not prepared to send pull.");
+    return Promise.reject("MMC-CLI is not prepared to send set zero.");
   }
   mmccliStatus = MmcCliState.SendingCommand;
-  const result = await writeCommand(`set_zero ${line} ${zero} `);
+  const result = await writeCommand(`set_zero ${line}`);
+  mmccliStatus = MmcCliState.Ready;
+  if (result.some((res) => res.toLowerCase().includes("error"))) {
+    const errMsg = findError(result);
+    return Promise.reject(errMsg);
+  } else {
+    return Promise.resolve();
+  }
+}
+
+export async function calibrate(line: string) {
+  if (mmccliStatus !== MmcCliState.Ready) {
+    return Promise.reject("MMC-CLI is not prepared to send calibrate.");
+  }
+  mmccliStatus = MmcCliState.SendingCommand;
+  const result = await writeCommand(`calibrate ${line}`);
   mmccliStatus = MmcCliState.Ready;
   if (result.some((res) => res.toLowerCase().includes("error"))) {
     const errMsg = findError(result);

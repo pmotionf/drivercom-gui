@@ -50,6 +50,7 @@ import {
   setSpeed,
   setAccelaration,
   setZero,
+  calibrate,
 } from "./utils/MmcCliHandler.ts";
 import { disconnect } from "@kuyoonjo/tauri-plugin-tcp";
 
@@ -399,7 +400,6 @@ function Monitoring() {
                 setSendingCmd(null);
               }}
               onLineCommands={async (params) => {
-                console.log(params);
                 setSendingCmd({ line: params.line, axisId: NaN });
                 if (params.speed) {
                   await setSpeed(params.line, params.speed);
@@ -407,8 +407,11 @@ function Monitoring() {
                 if (params.accelaration) {
                   await setAccelaration(params.line, params.accelaration);
                 }
-                if (params.zero) {
-                  await setZero(params.line, params.zero);
+                if (params.setZero) {
+                  await setZero(params.line);
+                }
+                if (params.calibrate) {
+                  await calibrate(params.line);
                 }
                 setSendingCmd(null);
               }}
