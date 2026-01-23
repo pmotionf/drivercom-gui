@@ -48,7 +48,7 @@ import {
   getMmccliStatus,
   MmcCliState,
   setSpeed,
-  setAccelaration,
+  setAcceleration,
   setZero,
   calibrate,
 } from "./utils/MmcCliHandler.ts";
@@ -404,8 +404,8 @@ function Monitoring() {
                 if (params.speed) {
                   await setSpeed(params.line, params.speed);
                 }
-                if (params.accelaration) {
-                  await setAccelaration(params.line, params.accelaration);
+                if (params.acceleration) {
+                  await setAcceleration(params.line, params.acceleration);
                 }
                 if (params.setZero) {
                   await setZero(params.line);

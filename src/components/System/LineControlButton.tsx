@@ -2,7 +2,7 @@ import { IconButton, IconButtonProps } from "../ui/icon-button.tsx";
 import { IconDots } from "@tabler/icons-solidjs";
 import { Popover } from "../ui/popover.tsx";
 import { createSignal, Show } from "solid-js";
-import { getAccelaration, getSpeed } from "~/pages/utils/MmcCliHandler.ts";
+import { getAcceleration, getSpeed } from "~/pages/utils/MmcCliHandler.ts";
 import { Text } from "../ui/text.tsx";
 import { Button } from "../ui/button.tsx";
 import { SendingCommand } from "./System.tsx";
@@ -10,7 +10,7 @@ import { SendingCommand } from "./System.tsx";
 export type LineCommandParameters = {
   line: string;
   speed?: number;
-  accelaration?: number;
+  acceleration?: number;
   calibrate?: boolean;
   setZero?: boolean;
 };
@@ -36,9 +36,9 @@ export function LineControlButton(props: LineControlProps & IconButtonProps) {
   const [speedInput, setSpeedInput] = createSignal<number>(NaN);
   const [speedUnit, setSpeedUnit] = createSignal<string>("");
 
-  const [accelaration, setAccelaration] = createSignal<number>(NaN);
-  const [accelarationInput, setAccelarationInput] = createSignal<number>(NaN);
-  const [accelarationUnit, setAccelarationUnit] = createSignal<string>("");
+  const [acceleration, setacceleration] = createSignal<number>(NaN);
+  const [accelerationInput, setaccelerationInput] = createSignal<number>(NaN);
+  const [accelerationUnit, setaccelerationUnit] = createSignal<string>("");
 
   const [lastCommand, setLastCommand] = createSignal<LineCommand>(
     LineCommand.None,
@@ -67,15 +67,15 @@ export function LineControlButton(props: LineControlProps & IconButtonProps) {
               }
             }
 
-            if (isNaN(accelaration())) {
-              const accelaraion = await getAccelaration(props.lineName);
+            if (isNaN(acceleration())) {
+              const accelaraion = await getAcceleration(props.lineName);
               if (accelaraion) {
                 const match = accelaraion.match(/^\d+/);
                 const value = match ? Number(match[0]) : NaN;
-                setAccelaration(value);
-                setAccelarationInput(value);
+                setacceleration(value);
+                setaccelerationInput(value);
 
-                setAccelarationUnit(
+                setaccelerationUnit(
                   accelaraion.match(/\s([^\s]+)$/)
                     ? accelaraion.match(/\s([^\s]+)$/)![1]
                     : "mm/s²",
@@ -157,7 +157,7 @@ export function LineControlButton(props: LineControlProps & IconButtonProps) {
 
                   if (
                     speed() !== speedInput() ||
-                    accelaration() !== accelarationInput()
+                    acceleration() !== accelerationInput()
                   ) {
                     const saveProps: LineCommandParameters = {
                       line: props.lineName,
@@ -165,11 +165,11 @@ export function LineControlButton(props: LineControlProps & IconButtonProps) {
                         speed() === speedInput() || isNaN(speedInput())
                           ? undefined
                           : speedInput(),
-                      accelaration:
-                        accelaration() === accelarationInput() ||
-                        isNaN(accelarationInput())
+                      acceleration:
+                        acceleration() === accelerationInput() ||
+                        isNaN(accelerationInput())
                           ? undefined
-                          : accelarationInput(),
+                          : accelerationInput(),
                     };
                     setLastCommand(LineCommand.SaveVelocity);
                     props.onLineCommand?.(saveProps);
@@ -178,8 +178,8 @@ export function LineControlButton(props: LineControlProps & IconButtonProps) {
                   if (speed() !== speedInput()) {
                     setSpeed(NaN);
                   }
-                  if (accelaration() !== accelarationInput()) {
-                    setAccelaration(NaN);
+                  if (acceleration() !== accelerationInput()) {
+                    setacceleration(NaN);
                   }
                 }}
               >
@@ -250,8 +250,8 @@ export function LineControlButton(props: LineControlProps & IconButtonProps) {
                 fontWeight={"medium"}
                 width="min-content"
                 borderBottomWidth={
-                  !isNaN(accelaration()) &&
-                  accelaration() !== accelarationInput()
+                  !isNaN(acceleration()) &&
+                  acceleration() !== accelerationInput()
                     ? "1px"
                     : "0px"
                 }
@@ -272,8 +272,8 @@ export function LineControlButton(props: LineControlProps & IconButtonProps) {
                 }}
               >
                 <input
-                  value={accelarationInput()}
-                  onChange={(e) => setAccelarationInput(Number(e.target.value))}
+                  value={accelerationInput()}
+                  onChange={(e) => setaccelerationInput(Number(e.target.value))}
                   style={{
                     width: "4rem",
                     padding: "0.2rem",
@@ -289,7 +289,7 @@ export function LineControlButton(props: LineControlProps & IconButtonProps) {
                   onKeyDown={(e) => e.stopPropagation()}
                 />
                 <Text size="sm" opacity="0.7" fontWeight="medium">
-                  {accelarationUnit()}
+                  {accelerationUnit()}
                 </Text>
               </div>
             </div>

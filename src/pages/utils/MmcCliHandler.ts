@@ -351,7 +351,7 @@ export async function getSpeed(line: string): Promise<string | null> {
   }
 }
 
-export async function getAccelaration(line: string): Promise<string | null> {
+export async function getAcceleration(line: string): Promise<string | null> {
   if (mmccliStatus !== MmcCliState.Ready) {
     return Promise.resolve(null);
   }
@@ -384,12 +384,12 @@ export async function setSpeed(line: string, speed: number) {
   }
 }
 
-export async function setAccelaration(line: string, accelaration: number) {
+export async function setAcceleration(line: string, acceleration: number) {
   if (mmccliStatus !== MmcCliState.Ready) {
-    return Promise.reject("MMC-CLI is not prepared to send set accelaration.");
+    return Promise.reject("MMC-CLI is not prepared to send set acceleration.");
   }
   mmccliStatus = MmcCliState.SendingCommand;
-  const result = await writeCommand(`SET_ACCELERATION ${line} ${accelaration}`);
+  const result = await writeCommand(`SET_ACCELERATION ${line} ${acceleration}`);
   mmccliStatus = MmcCliState.Ready;
   if (result.some((res) => res.toLowerCase().includes("error"))) {
     const errMsg = findError(result);
