@@ -45,6 +45,8 @@ export type LegendProps = Omit<StackProps, "stroke"> & {
   showSelectCheckBox?: boolean;
   selected?: boolean;
   onSelectChange?: (checkBoxValue: boolean, isShiftClick?: boolean) => void;
+  filter?: number;
+  onFilterChange?: (filter: number) => void;
 };
 
 export enum LegendStroke {
@@ -87,6 +89,7 @@ export function Legend(props: LegendProps) {
   );
   const [color, setColor] = createSignal(props.color ?? "");
   const [stroke, setStroke] = createSignal(props.stroke ?? LegendStroke.Line);
+  const [filter, setFilter] = createSignal(props.filter ?? 0);
   const [value, setValue] = createSignal(null as number | string | null);
 
   // Autodetect initial color from plot if color is not provided in props.
@@ -200,12 +203,15 @@ export function Legend(props: LegendProps) {
                   series={props.series}
                   color={color()}
                   stroke={stroke()}
+                  dataFilter={filter()}
                   palette={props.palette}
-                  onSave={(new_color, new_style) => {
+                  onSave={(new_color, new_style, new_filter) => {
                     props.onColorChange?.(new_color);
                     props.onStrokeChange?.(new_style);
                     setColor(new_color);
                     setStroke(new_style);
+                    props.onFilterChange?.(new_filter ?? 0);
+                    setFilter(new_filter ?? 0);
                     setConfigOpen(false);
                   }}
                   onCancel={() => setConfigOpen(false)}

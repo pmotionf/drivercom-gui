@@ -20,7 +20,12 @@ export type SeriesConfigurationProps = Omit<ColorPicker.RootProps, "stroke"> & {
   palette?: string[];
   color?: string;
   stroke?: LegendStroke;
-  onSave?: (new_color: string, new_style: LegendStroke) => void;
+  dataFilter?: number;
+  onSave?: (
+    new_color: string,
+    new_style: LegendStroke,
+    new_filter?: number,
+  ) => void;
   onCancel?: () => void;
 };
 
@@ -39,6 +44,10 @@ export function SeriesConfiguration(props: SeriesConfigurationProps) {
   );
 
   const [stroke, setStroke] = createSignal(props.stroke ?? LegendStroke.Line);
+
+  const [dataFilter, setDataFiter] = createSignal<number>(
+    props.dataFilter ?? 0,
+  );
 
   return (
     <Card.Root>
@@ -99,42 +108,73 @@ export function SeriesConfiguration(props: SeriesConfigurationProps) {
             </For>
           </ColorPicker.SwatchGroup>
         </ColorPicker.Root>
-        <Heading as="h6" size="xs" style={{ "margin-top": "0.6rem" }}>
-          Style
-        </Heading>
-        <ToggleGroup.Root
-          value={[LegendStroke[stroke()]]}
-          onValueChange={(details) => {
-            if (details.value.length > 0) {
-              setStroke(
-                LegendStroke[details.value[0] as keyof typeof LegendStroke],
-              );
-            } else {
-              const current_stroke = stroke();
-              const other_stroke = ((current_stroke.valueOf() + 1) %
-                Object.keys(LegendStroke).length) as LegendStroke;
-              setStroke(other_stroke);
-              setStroke(current_stroke);
-            }
+        <div
+          style={{
+            display: "grid",
+            "grid-template-columns": "50% 50%",
+            "grid-template-rows": "1.5rem 3rem",
           }}
-          width="7.6rem"
-          style={{ "margin-top": "0.4rem" }}
         >
-          <ToggleGroup.Item value={LegendStroke[LegendStroke.Line]}>
-            <IconLine />
-          </ToggleGroup.Item>
-          <ToggleGroup.Item value={LegendStroke[LegendStroke.Dash]}>
-            <IconLineDashed />
-          </ToggleGroup.Item>
-          <ToggleGroup.Item value={LegendStroke[LegendStroke.Dot]}>
-            <IconPoint />
-          </ToggleGroup.Item>
-        </ToggleGroup.Root>
+          <Heading
+            as="h6"
+            size="xs"
+            style={{ "margin-top": "0.6rem", "grid-row": 1, "grid-column": 1 }}
+          >
+            Style
+          </Heading>
+          <ToggleGroup.Root
+            value={[LegendStroke[stroke()]]}
+            onValueChange={(details) => {
+              if (details.value.length > 0) {
+                setStroke(
+                  LegendStroke[details.value[0] as keyof typeof LegendStroke],
+                );
+              } else {
+                const current_stroke = stroke();
+                const other_stroke = ((current_stroke.valueOf() + 1) %
+                  Object.keys(LegendStroke).length) as LegendStroke;
+                setStroke(other_stroke);
+                setStroke(current_stroke);
+              }
+            }}
+            width="7.6rem"
+            style={{ "margin-top": "0.4rem", "grid-row": 2, "grid-column": 1 }}
+          >
+            <ToggleGroup.Item value={LegendStroke[LegendStroke.Line]}>
+              <IconLine />
+            </ToggleGroup.Item>
+            <ToggleGroup.Item value={LegendStroke[LegendStroke.Dash]}>
+              <IconLineDashed />
+            </ToggleGroup.Item>
+            <ToggleGroup.Item value={LegendStroke[LegendStroke.Dot]}>
+              <IconPoint />
+            </ToggleGroup.Item>
+          </ToggleGroup.Root>
+
+          <Heading
+            as="h6"
+            size="xs"
+            style={{ "margin-top": "0.6rem", "grid-row": 1, "grid-column": 2 }}
+          >
+            Data Smooth
+          </Heading>
+          <Input
+            value={dataFilter().toString()}
+            onChange={(e) => {
+              setDataFiter(Number(e.target.value));
+            }}
+            style={{ "grid-row": 2, "grid-column": 2, "margin-top": "0.4rem" }}
+          />
+        </div>
       </Card.Body>
       <Card.Footer>
         <Button
           onClick={() => {
-            props.onSave?.(selectedColor().toString("rgba"), stroke());
+            props.onSave?.(
+              selectedColor().toString("rgba"),
+              stroke(),
+              !isNaN(dataFilter()) ? dataFilter() : undefined,
+            );
           }}
         >
           Save
