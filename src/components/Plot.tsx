@@ -72,6 +72,7 @@ export type PlotContext = {
   palette: string[];
   style: LegendStroke[];
   selected: boolean[];
+  filter: number[];
 };
 
 enum CursorMode {
@@ -159,6 +160,17 @@ export function Plot(props: PlotProps) {
       setContext()(
         "visible",
         props.header.map(() => true),
+      );
+    }
+
+    if (
+      !getContext().filter ||
+      getContext().filter.length == 0 ||
+      getContext().filter.length !== props.header.length
+    ) {
+      setContext()(
+        "filter",
+        props.header.map(() => 0),
       );
     }
 
@@ -885,7 +897,11 @@ export function Plot(props: PlotProps) {
               ]}
               data={[
                 Array.from({ length: props.series[0].length }, (_, i) => i), // x values
-                ...props.series,
+                ...props.series.map((data, i) =>
+                  getContext().filter[i] && getContext().filter[i] > 0
+                    ? movingAvg(data, getContext().filter[i])
+                    : data,
+                ),
               ]}
               scales={{
                 x: {
@@ -903,6 +919,7 @@ export function Plot(props: PlotProps) {
                         label: props.header[index],
                         stroke: () => unwrap(getContext()).color[index],
                         show: unwrap(getContext()).visible[index],
+                        width: 1 / devicePixelRatio,
                         ...{
                           ...(unwrap(getContext()).style[index] ===
                             LegendStroke.Dash && {
@@ -1384,6 +1401,10 @@ export function Plot(props: PlotProps) {
                               plot.redraw();
                             }, 200);
                           }}
+                          filter={getContext().filter[item]}
+                          onFilterChange={(newFilter) => {
+                            setContext()("filter", item, newFilter);
+                          }}
                         />
                       </div>
                     );
@@ -1491,4 +1512,29 @@ function fuzzySearch(searchInputValue: string, headers: string[]): string[] {
   } else {
     return [];
   }
+}
+
+function movingAvg(data: number[], wind: number) {
+  const rolled: number[] = Array(data.length).fill(null);
+
+  let sum = 0;
+  let count = 0;
+
+  for (let i = 0; i < data.length; i++) {
+    const y = data[i];
+
+    if (y == null) continue;
+
+    sum += y;
+    count++;
+
+    if (i > wind - 1) {
+      sum -= data[i - wind];
+      count--;
+    }
+
+    rolled[i] = sum / count;
+  }
+
+  return rolled;
 }
