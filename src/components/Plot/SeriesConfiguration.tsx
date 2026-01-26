@@ -150,13 +150,17 @@ export function SeriesConfiguration(props: SeriesConfigurationProps) {
               <IconPoint />
             </ToggleGroup.Item>
           </ToggleGroup.Root>
-
           <Heading
             as="h6"
             size="xs"
-            style={{ "margin-top": "0.6rem", "grid-row": 1, "grid-column": 2 }}
+            style={{
+              "margin-top": "0.6rem",
+              "white-space": "nowrap",
+              "grid-row": 1,
+              "grid-column": 2,
+            }}
           >
-            Data Smooth
+            Smoothing Filter
           </Heading>
           <Input
             value={dataFilter().toString()}
