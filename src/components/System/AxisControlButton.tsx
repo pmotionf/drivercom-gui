@@ -3,8 +3,9 @@ import { IconDots } from "@tabler/icons-solidjs";
 import { Popover } from "../ui/popover.tsx";
 import { Input } from "../ui/input.tsx";
 import { Button } from "../ui/button.tsx";
-import { createSignal, Show } from "solid-js";
+import { createSignal, For, Show } from "solid-js";
 import { Text } from "../ui/text.tsx";
+import { createListCollection, Select } from "../ui/select.tsx";
 
 export enum AxisDirection {
   FORWARD = "forward",
@@ -26,7 +27,11 @@ export type AxisControlProps = {
   onStopPull?: () => void;
   onStopPush?: () => void;
   onStopCommand?: () => void;
-  onIntialize?: (carrierId: string) => void;
+  onIntialize?: (
+    direction: string,
+    carrierId: string,
+    linkAxis?: string,
+  ) => void;
   onDeintialize?: () => void;
   stopPullDisabled?: boolean;
   stopPushDisabled?: boolean;
@@ -49,6 +54,12 @@ enum CasState {
   Off = "off",
 }
 
+enum AxisLink {
+  None = "none",
+  Left = "left",
+  Right = "right",
+}
+
 export function AxisControlButton(props: AxisControlProps & IconButtonProps) {
   const { onPull, onPush, onStopPull, onStopPush, ...IconButtonProps } = props;
 
@@ -65,6 +76,18 @@ export function AxisControlButton(props: AxisControlProps & IconButtonProps) {
 
   const [initializeCarrierId, setInitializeCarrierId] =
     createSignal<string>("");
+  const [initializeDirection, setInitializeDirection] =
+    createSignal<AxisDirection>(AxisDirection.FORWARD);
+  const [initializeLink, setInitializeLink] = createSignal<AxisLink>(
+    AxisLink.None,
+  );
+  const axisLinkCollection = createListCollection({
+    items: [
+      { label: AxisLink.None, value: AxisLink.None },
+      { label: AxisLink.Left, value: AxisLink.Left },
+      { label: AxisLink.Right, value: AxisLink.Right },
+    ],
+  });
 
   const [lastCommand, setLastCommand] = createSignal<AxisCommandType>(
     AxisCommandType.None,
@@ -393,7 +416,7 @@ export function AxisControlButton(props: AxisControlProps & IconButtonProps) {
             <div
               style={{
                 display: "grid",
-                "grid-template-rows": `repeat(4, 1.5rem, 2rem)`,
+                "grid-template-rows": `repeat(5, 1.5rem, 2rem)`,
                 "grid-template-columns": `repeat(2, 4.5rem)`,
                 "column-gap": "1rem",
                 "margin-top": "0.5rem",
@@ -425,7 +448,13 @@ export function AxisControlButton(props: AxisControlProps & IconButtonProps) {
                     props.onDeintialize?.();
                   } else {
                     setLastCommand(AxisCommandType.Initialize);
-                    props.onIntialize?.(initializeCarrierId());
+                    props.onIntialize?.(
+                      initializeDirection(),
+                      initializeCarrierId(),
+                      initializeLink() === AxisLink.None
+                        ? undefined
+                        : initializeLink(),
+                    );
                   }
                 }}
               >
@@ -433,8 +462,34 @@ export function AxisControlButton(props: AxisControlProps & IconButtonProps) {
               </Button>
               <Text
                 size="sm"
+                style={{
+                  "grid-row": 2,
+                  "grid-column": 1,
+                }}
+              >
+                {"Direction"}
+              </Text>
+              <Button
+                height="2rem"
+                variant="outline"
+                onClick={() => {
+                  setInitializeDirection(
+                    initializeDirection() === AxisDirection.FORWARD
+                      ? AxisDirection.BACKWARD
+                      : AxisDirection.FORWARD,
+                  );
+                }}
+                style={{
+                  "grid-row": 3,
+                  "grid-column": 1,
+                }}
+              >
+                {initializeDirection()}
+              </Button>
+              <Text
+                size="sm"
                 fontWeight="medium"
-                style={{ "grid-row": 2, "grid-column": 1 }}
+                style={{ "grid-row": 2, "grid-column": 2 }}
               >
                 {"Carrier"}
               </Text>
@@ -443,10 +498,54 @@ export function AxisControlButton(props: AxisControlProps & IconButtonProps) {
                 onChange={(e) =>
                   setInitializeCarrierId(Number(e.target.value).toString())
                 }
-                style={{ "grid-row": 3, "grid-column": 1 }}
+                style={{ "grid-row": 3, "grid-column": 2 }}
                 height={"2rem"}
                 padding="0.2rem"
               />
+              <Text
+                size="sm"
+                fontWeight="medium"
+                style={{
+                  "grid-row": 4,
+                  "grid-column": 1,
+                  opacity: initializeLink() === AxisLink.None ? "0.5" : "1",
+                }}
+              >
+                {"Link Axis"}
+              </Text>
+              <Select.Root
+                style={{
+                  "grid-row": 5,
+                  "grid-column": 1,
+                }}
+                positioning={{ sameWidth: true }}
+                width="2xs"
+                collection={axisLinkCollection}
+                defaultValue={[initializeLink()]}
+                onValueChange={(v) => {
+                  setInitializeLink(v.items[0].label);
+                }}
+              >
+                <Select.Control>
+                  <Select.Trigger
+                    opacity={initializeLink() === AxisLink.None ? "0.5" : "1"}
+                  >
+                    <Select.ValueText placeholder={`Link Axis`} />
+                  </Select.Trigger>
+                </Select.Control>
+                <Select.Positioner>
+                  <Select.Content>
+                    <For each={axisLinkCollection.items}>
+                      {(item) => (
+                        <Select.Item item={item}>
+                          <Select.ItemText>{item.label}</Select.ItemText>
+                          <Select.ItemIndicator></Select.ItemIndicator>
+                        </Select.Item>
+                      )}
+                    </For>
+                  </Select.Content>
+                </Select.Positioner>
+              </Select.Root>
             </div>
           </Popover.Content>
         </Popover.Positioner>

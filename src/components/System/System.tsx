@@ -51,6 +51,7 @@ export type SystemProps = JSX.HTMLAttributes<HTMLDivElement> & {
     axisId: number,
     direction: string,
     carrierId: string,
+    linkAxis?: string,
   ) => void;
   onDeinitialize?: (line: string, axisId: number) => void;
 };
@@ -303,15 +304,17 @@ export function System(props: SystemProps) {
                                                   axisId,
                                                 );
                                               }}
-                                              onIntialize={(carrierId) => {
+                                              onIntialize={(
+                                                direction,
+                                                carrierId,
+                                                axisLink,
+                                              ) => {
                                                 props.onInitialize?.(
                                                   props.lines[item].name,
                                                   axisId,
-                                                  props.systems[item].axisState
-                                                    .length === axisId
-                                                    ? "backward"
-                                                    : "forward",
+                                                  direction,
                                                   carrierId,
+                                                  axisLink,
                                                 );
                                               }}
                                               onDeintialize={() => {

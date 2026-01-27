@@ -434,7 +434,7 @@ export async function initialize(
   axisId: number,
   direction: string,
   carrierId: string,
-  linkAxis?: "prev" | "next",
+  linkAxis?: string,
 ) {
   if (mmccliStatus !== MmcCliState.Ready) {
     return Promise.reject("MMC-CLI is not prepared to send set speed.");
