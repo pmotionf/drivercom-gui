@@ -51,6 +51,8 @@ import {
   setAcceleration,
   setZero,
   calibrate,
+  initialize,
+  deinitialize,
 } from "./utils/MmcCliHandler.ts";
 import { disconnect } from "@kuyoonjo/tauri-plugin-tcp";
 
@@ -399,8 +401,16 @@ function Monitoring() {
                 await stopCommand();
                 setSendingCmd(null);
               }}
-              onInitialize={(lineName, axisId, carrierId) => {}}
-              onDeinitialize={(lineName, axisId) => {}}
+              onInitialize={async (lineName, axisId, direction, carrierId) => {
+                setSendingCmd({ line: lineName, axisId: axisId });
+                await initialize(lineName, axisId, direction, carrierId);
+                setSendingCmd(null);
+              }}
+              onDeinitialize={async (lineName, axisId) => {
+                setSendingCmd({ line: lineName, axisId: axisId });
+                deinitialize(lineName, axisId);
+                setSendingCmd(null);
+              }}
               onLineCommands={async (params) => {
                 setSendingCmd({ line: params.line, axisId: NaN });
                 try {
