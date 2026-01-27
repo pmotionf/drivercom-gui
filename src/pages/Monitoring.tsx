@@ -399,6 +399,8 @@ function Monitoring() {
                 await stopCommand();
                 setSendingCmd(null);
               }}
+              onInitialize={(lineName, axisId, carrierId) => {}}
+              onDeinitialize={(lineName, axisId) => {}}
               onLineCommands={async (params) => {
                 setSendingCmd({ line: params.line, axisId: NaN });
                 try {

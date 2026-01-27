@@ -9,9 +9,9 @@ import {
   Response_Track_Carrier_State,
   Response_Track_Carrier_State_State,
 } from "../proto/mmc/info_pb.ts";
-import { AxisSettingProps, AxisControlButton } from "./AxisControlButton.tsx";
+import { AxisControlProps, AxisControlButton } from "./AxisControlButton.tsx";
 
-export type AxisProps = AxisSettingProps & {
+export type AxisProps = AxisControlProps & {
   id: string;
   axisInfo: Response_Track_Axis_State;
   axisError: Response_Track_Axis_Error;
@@ -145,6 +145,16 @@ export function Axis(props: AxisProps) {
           borderRadius={"1em"}
           height="2rem"
           style={{ padding: "0" }}
+          hasCarrier={
+            props.carrier &&
+            props.carrier.some(
+              (carrier) =>
+                carrier.axisMain === axisId ||
+                (carrier.axisAuxiliary && carrier.axisAuxiliary === axisId),
+            )
+              ? true
+              : false
+          }
           sendingCommand={props.sendingCommand}
           disableCommandButton={props.disableCommandButton}
           disableMmcCliButton={props.disableMmcCliButton}
@@ -159,6 +169,8 @@ export function Axis(props: AxisProps) {
           onStopPush={() => props.onStopPush?.()}
           onStopPull={() => props.onStopPull?.()}
           onStopCommand={() => props.onStopCommand?.()}
+          onIntialize={(carrierId) => props.onIntialize?.(carrierId)}
+          onDeintialize={() => props.onDeintialize?.()}
         />
       </Stack>
 
