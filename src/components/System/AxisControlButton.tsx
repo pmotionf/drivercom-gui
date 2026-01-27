@@ -36,6 +36,8 @@ enum AxisCommandType {
   StopPush,
   PullCancel,
   PushCancel,
+  Initialize,
+  Deinitialize,
   None,
 }
 
@@ -374,6 +376,52 @@ export function AxisControlButton(props: AxisSettingProps & IconButtonProps) {
                 }}
                 height={"2rem"}
                 padding="0.2rem"
+              />
+            </div>
+
+            <div
+              style={{
+                display: "grid",
+                "grid-template-rows": `repeat(4, 1.5rem, 2rem)`,
+                "grid-template-columns": `repeat(2, 4.5rem)`,
+                "column-gap": "1rem",
+                "margin-top": "0.5rem",
+                "padding-top": "0.5rem",
+                "border-top-width": "1px",
+              }}
+            >
+              <Text
+                size="sm"
+                fontWeight="bold"
+                style={{ "grid-row": 1, "grid-column": 1 }}
+              >
+                {"Initialize"}
+              </Text>
+              <Button
+                style={{
+                  "grid-row": 1,
+                  "grid-column": 2,
+                  width: "4rem",
+                }}
+                size="xs"
+                fontWeight={"medium"}
+                height="1.5rem"
+                marginLeft="0.5rem"
+                //variant={props.hasCarrier ? "outline" :"solid"}
+              >
+                {/* props.hasCarrier ? "Deinitialize" : "Initialize" */}
+                {"Deinitialize"}
+              </Button>
+              <Text
+                size="sm"
+                fontWeight="medium"
+                style={{ "grid-row": 2, "grid-column": 1 }}
+              >
+                {"Carrier"}
+              </Text>
+              <Input
+                style={{ "grid-row": 3, "grid-column": 1 }}
+                height={"2rem"}
               />
             </div>
           </Popover.Content>
