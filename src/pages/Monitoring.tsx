@@ -401,9 +401,21 @@ function Monitoring() {
                 await stopCommand();
                 setSendingCmd(null);
               }}
-              onInitialize={async (lineName, axisId, direction, carrierId) => {
+              onInitialize={async (
+                lineName,
+                axisId,
+                direction,
+                carrierId,
+                axisLink,
+              ) => {
                 setSendingCmd({ line: lineName, axisId: axisId });
-                await initialize(lineName, axisId, direction, carrierId);
+                await initialize(
+                  lineName,
+                  axisId,
+                  direction,
+                  carrierId,
+                  axisLink,
+                );
                 setSendingCmd(null);
               }}
               onDeinitialize={async (lineName, axisId) => {
