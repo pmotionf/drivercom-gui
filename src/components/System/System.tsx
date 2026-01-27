@@ -46,7 +46,12 @@ export type SystemProps = JSX.HTMLAttributes<HTMLDivElement> & {
   onStopPull?: (line: string, axisId: number) => void;
   onStopPush?: (line: string, axisId: number) => void;
   onStopCommand?: (line: string, axisId: number) => void;
-  onInitialize?: (line: string, axisId: number, carrierId: string) => void;
+  onInitialize?: (
+    line: string,
+    axisId: number,
+    direction: string,
+    carrierId: string,
+  ) => void;
   onDeinitialize?: (line: string, axisId: number) => void;
 };
 
@@ -302,6 +307,10 @@ export function System(props: SystemProps) {
                                                 props.onInitialize?.(
                                                   props.lines[item].name,
                                                   axisId,
+                                                  props.systems[item].axisState
+                                                    .length === axisId
+                                                    ? "backward"
+                                                    : "forward",
                                                   carrierId,
                                                 );
                                               }}

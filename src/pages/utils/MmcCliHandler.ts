@@ -429,6 +429,46 @@ export async function calibrate(line: string) {
   }
 }
 
+export async function initialize(
+  line: string,
+  axisId: number,
+  direction: string,
+  carrierId: string,
+  linkAxis?: "prev" | "next",
+) {
+  if (mmccliStatus !== MmcCliState.Ready) {
+    return Promise.reject("MMC-CLI is not prepared to send set speed.");
+  }
+  mmccliStatus = MmcCliState.SendingCommand;
+  const result = await writeCommand(
+    `initialize ${line} ${axisId} ${direction} ${carrierId} ${linkAxis ? linkAxis : ""}`,
+  );
+  mmccliStatus = MmcCliState.Ready;
+  if (result.some((res) => res.toLowerCase().includes("error"))) {
+    const errMsg = findError(result);
+    return Promise.reject(errMsg);
+  } else {
+    return Promise.resolve();
+  }
+}
+
+export async function deinitialize(line: string, axisId: number) {
+  if (mmccliStatus !== MmcCliState.Ready) {
+    return Promise.reject("MMC-CLI is not prepared to send set speed.");
+  }
+  mmccliStatus = MmcCliState.SendingCommand;
+  const result = await writeCommand(
+    `deinitialize ${line} ${axisId ? `${axisId}a` : ""}`,
+  );
+  mmccliStatus = MmcCliState.Ready;
+  if (result.some((res) => res.toLowerCase().includes("error"))) {
+    const errMsg = findError(result);
+    return Promise.reject(errMsg);
+  } else {
+    return Promise.resolve();
+  }
+}
+
 const findError = (commandResponses: string[]): string => {
   const errorMsgIndex = commandResponses.findIndex((res) =>
     res.toLowerCase().includes("error"),
