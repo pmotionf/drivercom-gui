@@ -46,6 +46,8 @@ export type SystemProps = JSX.HTMLAttributes<HTMLDivElement> & {
   onStopPull?: (line: string, axisId: number) => void;
   onStopPush?: (line: string, axisId: number) => void;
   onStopCommand?: (line: string, axisId: number) => void;
+  onInitialize?: (line: string, axisId: number, carrierId: string) => void;
+  onDeinitialize?: (line: string, axisId: number) => void;
 };
 
 export function System(props: SystemProps) {
@@ -292,6 +294,19 @@ export function System(props: SystemProps) {
                                               }}
                                               onStopCommand={() => {
                                                 props.onStopCommand?.(
+                                                  props.lines[item].name,
+                                                  axisId,
+                                                );
+                                              }}
+                                              onIntialize={(carrierId) => {
+                                                props.onInitialize?.(
+                                                  props.lines[item].name,
+                                                  axisId,
+                                                  carrierId,
+                                                );
+                                              }}
+                                              onDeintialize={() => {
+                                                props.onDeinitialize?.(
                                                   props.lines[item].name,
                                                   axisId,
                                                 );

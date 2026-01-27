@@ -11,7 +11,8 @@ export enum AxisDirection {
   BACKWARD = "backward",
 }
 
-export type AxisSettingProps = {
+export type AxisControlProps = {
+  hasCarrier?: boolean;
   sendingCommand: boolean;
   disableCommandButton: boolean;
   disableMmcCliButton: boolean;
@@ -25,6 +26,8 @@ export type AxisSettingProps = {
   onStopPull?: () => void;
   onStopPush?: () => void;
   onStopCommand?: () => void;
+  onIntialize?: (carrierId: string) => void;
+  onDeintialize?: () => void;
   stopPullDisabled?: boolean;
   stopPushDisabled?: boolean;
 };
@@ -46,7 +49,7 @@ enum CasState {
   Off = "off",
 }
 
-export function AxisControlButton(props: AxisSettingProps & IconButtonProps) {
+export function AxisControlButton(props: AxisControlProps & IconButtonProps) {
   const { onPull, onPush, onStopPull, onStopPush, ...IconButtonProps } = props;
 
   const [pushCarrierId, setPushCarrierId] = createSignal<string>("");
@@ -59,6 +62,9 @@ export function AxisControlButton(props: AxisSettingProps & IconButtonProps) {
     AxisDirection.BACKWARD,
   );
   const [casEnable, setCasEnable] = createSignal<CasState>(CasState.On);
+
+  const [initializeCarrierId, setInitializeCarrierId] =
+    createSignal<string>("");
 
   const [lastCommand, setLastCommand] = createSignal<AxisCommandType>(
     AxisCommandType.None,
@@ -194,7 +200,9 @@ export function AxisControlButton(props: AxisSettingProps & IconButtonProps) {
               </Text>
               <Input
                 value={pushCarrierId()}
-                onInput={(e) => setPushCarrierId(e.target.value)}
+                onChange={(e) =>
+                  setPushCarrierId(Number(e.target.value).toString())
+                }
                 height="2rem"
                 padding="0.2rem"
                 style={{
@@ -293,6 +301,9 @@ export function AxisControlButton(props: AxisSettingProps & IconButtonProps) {
                 style={{ "grid-row": 3, "grid-column": 1 }}
                 value={pullCarrierId()}
                 onInput={(e) => setPullCarrierId(e.target.value)}
+                onChange={(e) =>
+                  setPullCarrierId(Number(e.target.value).toString())
+                }
                 height={"2rem"}
                 padding="0.2rem"
               />
@@ -407,10 +418,18 @@ export function AxisControlButton(props: AxisSettingProps & IconButtonProps) {
                 fontWeight={"medium"}
                 height="1.5rem"
                 marginLeft="0.5rem"
-                //variant={props.hasCarrier ? "outline" :"solid"}
+                variant={props.hasCarrier ? "outline" : "solid"}
+                onClick={() => {
+                  if (props.hasCarrier) {
+                    setLastCommand(AxisCommandType.Deinitialize);
+                    props.onDeintialize?.();
+                  } else {
+                    setLastCommand(AxisCommandType.Initialize);
+                    props.onIntialize?.(initializeCarrierId());
+                  }
+                }}
               >
-                {/* props.hasCarrier ? "Deinitialize" : "Initialize" */}
-                {"Deinitialize"}
+                {props.hasCarrier ? "Deinitialize" : "Initialize"}
               </Button>
               <Text
                 size="sm"
@@ -420,8 +439,13 @@ export function AxisControlButton(props: AxisSettingProps & IconButtonProps) {
                 {"Carrier"}
               </Text>
               <Input
+                value={initializeCarrierId()}
+                onChange={(e) =>
+                  setInitializeCarrierId(Number(e.target.value).toString())
+                }
                 style={{ "grid-row": 3, "grid-column": 1 }}
                 height={"2rem"}
+                padding="0.2rem"
               />
             </div>
           </Popover.Content>
