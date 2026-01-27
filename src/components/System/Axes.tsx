@@ -9,7 +9,7 @@ import {
   Response_Track_Carrier_State,
   Response_Track_Carrier_State_State,
 } from "../proto/mmc/info_pb.ts";
-import { AxisSettingProps, AxisSetting } from "./AxisSetting.tsx";
+import { AxisSettingProps, AxisControlButton } from "./AxisControlButton.tsx";
 
 export type AxisProps = AxisSettingProps & {
   id: string;
@@ -139,7 +139,7 @@ export function Axis(props: AxisProps) {
             </Tooltip.Root>
           </Show>
         </div>
-        <AxisSetting
+        <AxisControlButton
           variant={"ghost"}
           size="sm"
           borderRadius={"1em"}

@@ -44,7 +44,7 @@ enum CasState {
   Off = "off",
 }
 
-export function AxisSetting(props: AxisSettingProps & IconButtonProps) {
+export function AxisControlButton(props: AxisSettingProps & IconButtonProps) {
   const { onPull, onPush, onStopPull, onStopPush, ...IconButtonProps } = props;
 
   const [pushCarrierId, setPushCarrierId] = createSignal<string>("");
