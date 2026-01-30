@@ -24,7 +24,7 @@ import { Tooltip } from "~/components/ui/tooltip";
 import { tabStore } from "~/GlobalState.ts";
 import { on } from "solid-js";
 import { LegendStroke } from "~/components/Plot/Legend";
-import { TabContext, TabPageContext } from "~/components/TabList";
+import { TabContext, TabPageContext } from "~/components/Tab/TabList";
 import { CreateToasterReturn } from "@ark-ui/solid";
 import { FileHandler } from "../utils/FileHandler";
 import { createDraggable } from "@neodrag/solid";

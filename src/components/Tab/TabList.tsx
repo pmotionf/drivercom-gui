@@ -7,7 +7,7 @@ import {
   useContext,
 } from "solid-js";
 import { Tabs } from "~/components/ui/tabs.tsx";
-import { Tab, TabType } from "~/components/Tab.tsx";
+import { Tab, TabType } from "~/components/Tab/Tab.tsx";
 import { For } from "solid-js/web";
 import {
   LogViewerTabPage,
@@ -15,12 +15,12 @@ import {
 } from "~/pages/LogViewer/LogViewerTabPageContent.tsx";
 import { tabStore } from "~/GlobalState.ts";
 import { createStore } from "solid-js/store";
-import { Toast } from "./ui/toast.tsx";
+import { Toast } from "../ui/toast.tsx";
 import { IconX } from "@tabler/icons-solidjs";
-import { PanelContext } from "./Panel/Panel.tsx";
+import { PanelContext } from "../Panel/Panel.tsx";
 import { ConfigTabPage } from "~/pages/Configuration/ConfigTabContent.tsx";
 import { createSignal } from "solid-js";
-import { Text } from "./ui/text.tsx";
+import { Text } from "../ui/text.tsx";
 
 type ValueOf<Obj> = Obj[keyof Obj];
 type OneOnly<Obj, Key extends keyof Obj> = {

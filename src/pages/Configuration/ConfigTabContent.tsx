@@ -5,7 +5,7 @@ import { Stack } from "styled-system/jsx";
 import { ConfigForm } from "~/components/ConfigForm";
 import { FileMenu } from "~/components/FileMenu";
 import { PortMenu } from "~/components/PortMenu";
-import { TabPageContext } from "~/components/TabList";
+import { TabPageContext } from "~/components/Tab/TabList";
 import { Button } from "~/components/ui/button";
 import { Editable } from "~/components/ui/editable";
 import { Text } from "~/components/ui/text";

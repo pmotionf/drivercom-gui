@@ -4,13 +4,13 @@ import { Tabs } from "~/components/ui/tabs.tsx";
 import { IconButton } from "~/components/ui/icon-button.tsx";
 import { IconPlus, IconX } from "@tabler/icons-solidjs";
 import { createSignal } from "solid-js";
-import { Editable } from "./ui/editable.tsx";
+import { Editable } from "../ui/editable.tsx";
 import { Show } from "solid-js/web";
 import { createDraggable } from "@neodrag/solid";
 //@ts-ignore Has an Any type error
 import { Stack } from "styled-system/jsx/stack.mjs";
 import { createEffect } from "solid-js";
-import { Text } from "./ui/text.tsx";
+import { Text } from "../ui/text.tsx";
 import { tabStore } from "~/GlobalState.ts";
 import { TabContext } from "./TabList.tsx";
 import JSON5 from "json5";

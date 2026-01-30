@@ -1,6 +1,6 @@
 import { Panel } from "~/components/Panel/Panel";
 import { PanelLayout } from "~/components/Panel/PanelLayout";
-import { TabContext, TabList } from "~/components/TabList";
+import { TabContext, TabList } from "~/components/Tab/TabList";
 import { Pages, tabStore } from "~/GlobalState";
 import { LogViewerTabPageContent } from "./LogViewer/LogViewerTabPageContent";
 import { open } from "@tauri-apps/plugin-dialog";
