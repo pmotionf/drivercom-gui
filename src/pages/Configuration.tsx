@@ -6,8 +6,11 @@ import {
   panelStore,
   recentConfigFilePaths,
 } from "~/GlobalState.ts";
-import { Panel } from "~/components/Panel.tsx";
-import { PanelLayout, PanelSizeContext } from "~/components/PanelLayout.tsx";
+import { Panel } from "~/components/Panel/Panel.tsx";
+import {
+  PanelLayout,
+  PanelSizeContext,
+} from "~/components/Panel/PanelLayout.tsx";
 import { TabContext, TabList, TabListContext } from "~/components/TabList.tsx";
 import { ConfigTabContent } from "./Configuration/ConfigTabContent.tsx";
 import { GainLockStates, LinkStates } from "~/components/ConfigForm.tsx";

@@ -27,7 +27,7 @@ import {
 } from "~/GlobalState.ts";
 import { trackStore } from "@solid-primitives/deep";
 import { createStore } from "solid-js/store";
-import { PanelSizeContext } from "./PanelLayout";
+import { PanelSizeContext } from "./Panel/PanelLayout";
 import { TabContext } from "./TabList";
 import { TabListContext } from "./TabList";
 import { css } from "styled-system/css";
