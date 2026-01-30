@@ -72,9 +72,9 @@ function Configuration() {
 
     if (tabStore.has(key)) {
       const tabCtx = tabStore.get(key)!;
-      tabCtx[1]({
-        tabContext: [...tabCtx[0].tabContext, newTab],
-        focusedTab: newTab.tab.id,
+      tabCtx[1]("tabContext", tabCtx[0].tabContext.length, newTab);
+      setTimeout(() => {
+        tabCtx[1]("focusedTab", newTab.tab.id);
       });
     }
   };
