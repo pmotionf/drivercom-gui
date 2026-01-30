@@ -17,7 +17,7 @@ import { tabStore } from "~/GlobalState.ts";
 import { createStore } from "solid-js/store";
 import { Toast } from "./ui/toast.tsx";
 import { IconX } from "@tabler/icons-solidjs";
-import { PanelContext } from "./Panel.tsx";
+import { PanelContext } from "./Panel/Panel.tsx";
 import { ConfigTabPage } from "~/pages/Configuration/ConfigTabContent.tsx";
 import { createSignal } from "solid-js";
 import { Text } from "./ui/text.tsx";

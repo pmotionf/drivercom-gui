@@ -1,5 +1,5 @@
-import { Panel } from "~/components/Panel";
-import { PanelLayout } from "~/components/PanelLayout.tsx";
+import { Panel } from "~/components/Panel/Panel";
+import { PanelLayout } from "~/components/Panel/PanelLayout";
 import { TabContext, TabList } from "~/components/TabList";
 import { Pages, tabStore } from "~/GlobalState";
 import { LogViewerTabPageContent } from "./LogViewer/LogViewerTabPageContent";
