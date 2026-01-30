@@ -276,7 +276,7 @@ export function LogViewerTabPageContent() {
   };
 
   const setSeries = (tabIndex: number, newSeries: number[][]) => {
-    return tabContexts.get(tabPageProps.key)?.[1](
+    return tabStore.get(tabPageProps.key)?.[1](
       "tabContext",
       tabIndex,
       "tabPage",
@@ -291,7 +291,7 @@ export function LogViewerTabPageContent() {
   };
 
   const setHeader = (tabIndex: number, newHeader: string[]) => {
-    return tabContexts.get(tabPageProps.key)?.[1](
+    return tabStore.get(tabPageProps.key)?.[1](
       "tabContext",
       tabIndex,
       "tabPage",
