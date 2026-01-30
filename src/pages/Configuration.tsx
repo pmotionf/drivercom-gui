@@ -11,7 +11,11 @@ import {
   PanelLayout,
   PanelSizeContext,
 } from "~/components/Panel/PanelLayout.tsx";
-import { TabContext, TabList, TabListContext } from "~/components/TabList.tsx";
+import {
+  TabContext,
+  TabList,
+  TabListContext,
+} from "~/components/Tab/TabList.tsx";
 import { ConfigTabContent } from "./Configuration/ConfigTabContent.tsx";
 import { GainLockStates, LinkStates } from "~/components/ConfigForm.tsx";
 import { AccordionStates } from "~/components/Form.tsx";

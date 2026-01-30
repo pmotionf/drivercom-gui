@@ -1,7 +1,7 @@
 import { Accessor, createContext, createSignal, Setter } from "solid-js";
 import { createStore, SetStoreFunction, Store } from "solid-js/store";
 import { PanelSizeContext } from "./components/Panel/PanelLayout.tsx";
-import { TabListContext } from "./components/TabList.tsx";
+import { TabListContext } from "./components/Tab/TabList.tsx";
 import { Child } from "@tauri-apps/plugin-shell";
 import { LoggingFormType } from "./pages/Logging.tsx";
 import { DownloadStates } from "./components/DownloadList.tsx";
