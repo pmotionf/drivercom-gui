@@ -24,16 +24,16 @@ function Configuration() {
       const panelKey = crypto.randomUUID();
       pageKeys.set(Pages.Configuration, panelKey);
 
-      const panelTabId = crypto.randomUUID();
+      const panelStoreKey = crypto.randomUUID();
       panelStore.set(
         panelKey,
-        createSignal<PanelSizeContext[]>([{ id: panelTabId, size: 100 }]),
+        createSignal<PanelSizeContext[]>([{ id: panelStoreKey, size: 100 }]),
       );
       tabStore.set(
-        panelTabId,
+        panelStoreKey,
         createStore<TabListContext>({ tabContext: [], focusedTab: "" }),
       );
-      createTab(panelTabId);
+      createTab(panelStoreKey);
     }
     setRender(true);
   });
