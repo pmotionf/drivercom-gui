@@ -6,18 +6,11 @@ import { Show } from "solid-js";
 import { Stack } from "styled-system/jsx/stack.mjs";
 import { panelStore } from "~/GlobalState.ts";
 import { Splitter } from "../ui/splitter.tsx";
-import { PanelLayoutContext } from "./PanelLayout.tsx";
+import { PanelLayoutContext } from "./PanelContext.tsx";
 
 export type PanelContext = {
   id: string;
   tabContext: TabListContext[];
-};
-
-export type PanelProps = {
-  id: string;
-  key: string;
-  onDeletePanel?: () => void;
-  onCreatePanel?: (tabLocation: TabLocation, newPanelKey: string) => void;
 };
 
 export const PanelContext = createContext<TabListProps>();
