@@ -1,7 +1,7 @@
 import { Panel } from "~/components/Panel";
 import { PanelLayout } from "~/components/PanelLayout.tsx";
 import { TabContext, TabList } from "~/components/TabList";
-import { Pages, tabContexts } from "~/GlobalState";
+import { Pages, tabStore } from "~/GlobalState";
 import { LogViewerTabPageContent } from "./LogViewer/LogViewerTabPageContent";
 import { open } from "@tauri-apps/plugin-dialog";
 import { Toast } from "~/components/ui/toast";
@@ -71,8 +71,8 @@ function LogViewer() {
                 },
               };
 
-              if (tabContexts.has(key)) {
-                const tabCtx = tabContexts.get(key)!;
+              if (tabStore.has(key)) {
+                const tabCtx = tabStore.get(key)!;
                 tabCtx[1]({
                   tabContext: [...tabCtx[0].tabContext, newTab],
                   focusedTab: newTab.tab.id,

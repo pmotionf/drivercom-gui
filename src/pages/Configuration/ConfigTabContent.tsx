@@ -17,7 +17,7 @@ import {
   portCommands,
   recentConfigFilePaths,
   setRecentConfigFilePaths,
-  tabContexts,
+  tabStore,
 } from "~/GlobalState";
 
 import { LinkStates, GainLockStates } from "~/components/ConfigForm";
@@ -44,7 +44,7 @@ export type ConfigTabPage = {
 export function ConfigTabContent() {
   const configTabProps = useContext(TabPageContext);
   if (!configTabProps) return;
-  if (!tabContexts.get(configTabProps.key)) return;
+  if (!tabStore.get(configTabProps.key)) return;
 
   const toaster = Toast.createToaster({
     placement: "top-end",
@@ -52,7 +52,7 @@ export function ConfigTabContent() {
   });
 
   const getTabIndex = () => {
-    const index = tabContexts
+    const index = tabStore
       .get(configTabProps.key)![0]
       .tabContext.map((ctx) => ctx.tab.id)
       .indexOf(configTabProps.tabId);
@@ -60,12 +60,12 @@ export function ConfigTabContent() {
   };
 
   const getConfigForm = () => {
-    return tabContexts.get(configTabProps.key)![0].tabContext[getTabIndex()]
+    return tabStore.get(configTabProps.key)![0].tabContext[getTabIndex()]
       .tabPage!.configTabPage!.configForm!;
   };
 
   const setConfigForm = (config: object) => {
-    return tabContexts.get(configTabProps.key)![1](
+    return tabStore.get(configTabProps.key)![1](
       "tabContext",
       getTabIndex(),
       "tabPage",
@@ -76,12 +76,12 @@ export function ConfigTabContent() {
   };
 
   const getPortId = () => {
-    return tabContexts.get(configTabProps.key)![0].tabContext[getTabIndex()]
+    return tabStore.get(configTabProps.key)![0].tabContext[getTabIndex()]
       .tabPage!.configTabPage!.portId;
   };
 
   const setPortId = (id: string) => {
-    return tabContexts.get(configTabProps.key)![1](
+    return tabStore.get(configTabProps.key)![1](
       "tabContext",
       getTabIndex(),
       "tabPage",
@@ -92,12 +92,12 @@ export function ConfigTabContent() {
   };
 
   const getFormName = () => {
-    return tabContexts.get(configTabProps.key)![0].tabContext[getTabIndex()]
+    return tabStore.get(configTabProps.key)![0].tabContext[getTabIndex()]
       .tabPage!.configTabPage!.formName!;
   };
 
   const setFormName = (newFormName: string) => {
-    return tabContexts.get(configTabProps.key)![1](
+    return tabStore.get(configTabProps.key)![1](
       "tabContext",
       getTabIndex(),
       "tabPage",
@@ -108,17 +108,17 @@ export function ConfigTabContent() {
   };
 
   const getTabId = () => {
-    return tabContexts.get(configTabProps.key)![0].tabContext[getTabIndex()].tab
+    return tabStore.get(configTabProps.key)![0].tabContext[getTabIndex()].tab
       .id;
   };
 
   const getFocusedTab = () => {
-    return tabContexts.get(configTabProps.key)![0].tabContext[getTabIndex()]
+    return tabStore.get(configTabProps.key)![0].tabContext[getTabIndex()]
       .tabPage?.configTabPage?.focusedTab;
   };
 
   const setFocusedTab = (focusedTab: string) => {
-    return tabContexts.get(configTabProps.key)![1](
+    return tabStore.get(configTabProps.key)![1](
       "tabContext",
       getTabIndex(),
       "tabPage",
@@ -129,12 +129,12 @@ export function ConfigTabContent() {
   };
 
   const getFilePath = () => {
-    return tabContexts.get(configTabProps.key)![0].tabContext[getTabIndex()]
+    return tabStore.get(configTabProps.key)![0].tabContext[getTabIndex()]
       .tabPage!.configTabPage!.filePath;
   };
 
   const setFilePath = (filePath: string | null) => {
-    return tabContexts.get(configTabProps.key)![1](
+    return tabStore.get(configTabProps.key)![1](
       "tabContext",
       getTabIndex(),
       "tabPage",
@@ -145,12 +145,12 @@ export function ConfigTabContent() {
   };
 
   const getOriginalFile = () => {
-    return tabContexts.get(configTabProps.key)![0].tabContext[getTabIndex()]
+    return tabStore.get(configTabProps.key)![0].tabContext[getTabIndex()]
       .tabPage!.configTabPage!.originalFile;
   };
 
   const setOriginalFile = (filePath: object) => {
-    return tabContexts.get(configTabProps.key)![1](
+    return tabStore.get(configTabProps.key)![1](
       "tabContext",
       getTabIndex(),
       "tabPage",
@@ -161,27 +161,27 @@ export function ConfigTabContent() {
   };
 
   const getAccordionStatuses = () => {
-    return tabContexts.get(configTabProps.key)![0].tabContext[getTabIndex()]
+    return tabStore.get(configTabProps.key)![0].tabContext[getTabIndex()]
       .tabPage!.configTabPage!.configAccordionStatuses;
   };
 
   const getLinkedStatuses = () => {
-    return tabContexts.get(configTabProps.key)![0].tabContext[getTabIndex()]
+    return tabStore.get(configTabProps.key)![0].tabContext[getTabIndex()]
       .tabPage!.configTabPage!.configLinkedStatuses;
   };
 
   const getGainLockStatuses = () => {
-    return tabContexts.get(configTabProps.key)![0].tabContext[getTabIndex()]
+    return tabStore.get(configTabProps.key)![0].tabContext[getTabIndex()]
       .tabPage!.configTabPage!.configGainLockStatuses;
   };
 
   const getChangeUnit = () => {
-    return tabContexts.get(configTabProps.key)![0].tabContext[getTabIndex()]
+    return tabStore.get(configTabProps.key)![0].tabContext[getTabIndex()]
       .tabPage!.configTabPage!.changeUnit;
   };
 
   const setChangeUnit = (isChangeUnit: boolean) => {
-    return tabContexts.get(configTabProps.key)![1](
+    return tabStore.get(configTabProps.key)![1](
       "tabContext",
       getTabIndex(),
       "tabPage",

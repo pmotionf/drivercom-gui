@@ -4,7 +4,7 @@ import { createSignal } from "solid-js";
 import { Show } from "solid-js";
 //@ts-ignore Has an Any type error
 import { Stack } from "styled-system/jsx/stack.mjs";
-import { panelContexts } from "~/GlobalState.ts";
+import { panelStore } from "~/GlobalState.ts";
 import { Splitter } from "./ui/splitter.tsx";
 import { PanelLayoutContext } from "./PanelLayout.tsx";
 
@@ -25,7 +25,7 @@ export const PanelContext = createContext<TabListProps>();
 export function Panel(props: JSX.HTMLAttributes<HTMLDivElement>) {
   const panelLayoutCtx = useContext(PanelLayoutContext);
   if (!panelLayoutCtx) return;
-  if (!panelContexts.get(panelLayoutCtx.key)) return;
+  if (!panelStore.get(panelLayoutCtx.key)) return;
 
   const [currentDraggingTabLocation, setCurrentDraggingTabLocation] =
     createSignal<TabLocation>("none");
@@ -33,7 +33,7 @@ export function Panel(props: JSX.HTMLAttributes<HTMLDivElement>) {
   const [nextPanel, setNextPanel] = createSignal<number | null>(null);
 
   const getPanelIds = (): string[] => {
-    const panelIds: string[] = panelContexts
+    const panelIds: string[] = panelStore
       .get(panelLayoutCtx.key)![0]()
       .map((panel) => {
         return panel.id;

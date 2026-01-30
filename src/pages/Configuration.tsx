@@ -2,8 +2,8 @@ import {
   configFormFileFormat,
   Pages,
   pageKeys,
-  tabContexts,
-  panelContexts,
+  tabStore,
+  panelStore,
   recentConfigFilePaths,
 } from "~/GlobalState.ts";
 import { Panel } from "~/components/Panel.tsx";
@@ -25,11 +25,11 @@ function Configuration() {
       pageKeys.set(Pages.Configuration, panelKey);
 
       const panelTabId = crypto.randomUUID();
-      panelContexts.set(
+      panelStore.set(
         panelKey,
         createSignal<PanelSizeContext[]>([{ id: panelTabId, size: 100 }]),
       );
-      tabContexts.set(
+      tabStore.set(
         panelTabId,
         createStore<TabListContext>({ tabContext: [], focusedTab: "" }),
       );
@@ -63,8 +63,8 @@ function Configuration() {
       },
     } as TabContext;
 
-    if (tabContexts.has(key)) {
-      const tabCtx = tabContexts.get(key)!;
+    if (tabStore.has(key)) {
+      const tabCtx = tabStore.get(key)!;
       tabCtx[1]({
         tabContext: [...tabCtx[0].tabContext, newTab],
         focusedTab: newTab.tab.id,
