@@ -11,7 +11,7 @@ import { createDraggable } from "@neodrag/solid";
 import { Stack } from "styled-system/jsx/stack.mjs";
 import { createEffect } from "solid-js";
 import { Text } from "./ui/text.tsx";
-import { tabContexts } from "~/GlobalState.ts";
+import { tabStore } from "~/GlobalState.ts";
 import { TabContext } from "./TabList.tsx";
 import JSON5 from "json5";
 
@@ -34,18 +34,18 @@ export type TabProps = JSX.HTMLAttributes<HTMLDivElement> & {
 };
 
 export function Tab(props: TabProps) {
-  if (!tabContexts.get(props.key)) return;
+  if (!tabStore.get(props.key)) return;
 
   const getTabContexts = (): TabContext[] => {
-    return tabContexts.get(props.key)![0].tabContext!;
+    return tabStore.get(props.key)![0].tabContext!;
   };
 
   const getFocusTabId = () => {
-    return tabContexts.get(props.key)![0].focusedTab;
+    return tabStore.get(props.key)![0].focusedTab;
   };
 
   const setTabName = (tabIndex: number, newName: string) => {
-    return tabContexts.get(props.key)?.[1](
+    return tabStore.get(props.key)?.[1](
       "tabContext",
       tabIndex,
       "tab",
@@ -55,7 +55,7 @@ export function Tab(props: TabProps) {
   };
 
   const setTabContext = (newContext: TabContext[]) => {
-    return tabContexts.get(props.key)?.[1]("tabContext", newContext);
+    return tabStore.get(props.key)?.[1]("tabContext", newContext);
   };
 
   const isConfigChange = (index: number): boolean => {

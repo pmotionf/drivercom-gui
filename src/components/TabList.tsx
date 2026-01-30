@@ -13,7 +13,7 @@ import {
   LogViewerTabPage,
   LogViewerTabPageContentProps,
 } from "~/pages/LogViewer/LogViewerTabPageContent.tsx";
-import { tabContexts } from "~/GlobalState.ts";
+import { tabStore } from "~/GlobalState.ts";
 import { createStore } from "solid-js/store";
 import { Toast } from "./ui/toast.tsx";
 import { IconX } from "@tabler/icons-solidjs";
@@ -66,16 +66,16 @@ export function TabList(
 ) {
   const tabListProps = useContext(PanelContext);
   if (!tabListProps) return;
-  if (!tabContexts.has(tabListProps.id)) {
-    tabContexts.set(
+  if (!tabStore.has(tabListProps.id)) {
+    tabStore.set(
       tabListProps.id,
       createStore<TabListContext>({ tabContext: [], focusedTab: "" }),
     );
   }
-  if (!tabContexts.get(tabListProps.id)) return;
+  if (!tabStore.get(tabListProps.id)) return;
 
   const getTabContexts = () => {
-    return tabContexts.get(tabListProps.id)![0];
+    return tabStore.get(tabListProps.id)![0];
   };
 
   createEffect(
@@ -91,11 +91,11 @@ export function TabList(
   );
 
   const setTabContexts = (tabContext: TabContext[]) => {
-    return tabContexts.get(tabListProps.id)?.[1]("tabContext", tabContext);
+    return tabStore.get(tabListProps.id)?.[1]("tabContext", tabContext);
   };
 
   const setFocusTab = (focusTab: string) => {
-    return tabContexts.get(tabListProps.id)?.[1]("focusedTab", focusTab);
+    return tabStore.get(tabListProps.id)?.[1]("focusedTab", focusTab);
   };
 
   const getNextFocusTabId = (
@@ -171,7 +171,7 @@ export function TabList(
 
   const moveTabToOtherTabList = (mouseX: number, draggedTab: TabContext) => {
     let nextPanelIndex: number = 0;
-    const tabContextKeys = Array.from(tabContexts.keys());
+    const tabContextKeys = Array.from(tabStore.keys());
     tabContextKeys.forEach((tab, i) => {
       const panelElement = document.getElementById(`tabs:${tab}`);
       if (
@@ -183,16 +183,16 @@ export function TabList(
       }
     });
     const nextTabList = tabContextKeys[nextPanelIndex];
-    const nextTabContext = tabContexts.get(nextTabList)?.[0];
+    const nextTabContext = tabStore.get(nextTabList)?.[0];
 
-    tabContexts.get(nextTabList)?.[1]({
+    tabStore.get(nextTabList)?.[1]({
       tabContext: [...nextTabContext!.tabContext, draggedTab],
       focusedTab: draggedTab.tab.id,
     });
   };
 
   const createNewTabList = (newKey: string, draggedTab: TabContext) => {
-    tabContexts.set(
+    tabStore.set(
       newKey,
       createStore<TabListContext>({
         tabContext: [draggedTab] as TabContext[],

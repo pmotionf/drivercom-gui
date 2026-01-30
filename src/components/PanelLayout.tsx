@@ -4,7 +4,7 @@ import { For } from "solid-js/web";
 import { Splitter } from "~/components/ui/splitter.tsx";
 import { TabLocation } from "./TabList.tsx";
 import { createContext, createSignal, onMount } from "solid-js";
-import { panelContexts, pageKeys } from "~/GlobalState.ts";
+import { panelStore, pageKeys } from "~/GlobalState.ts";
 import { PanelProps } from "./Panel.tsx";
 
 export type PanelSizeContext = {
@@ -22,16 +22,16 @@ export function PanelLayout(props: PanelLayoutProps) {
   if (!pageKeys.has(props.id)) {
     const uuid = crypto.randomUUID();
     pageKeys.set(props.id, uuid);
-    panelContexts.set(uuid, createSignal<PanelSizeContext[]>([]));
+    panelStore.set(uuid, createSignal<PanelSizeContext[]>([]));
   }
 
   const getPanelKey = (): string => pageKeys.get(props.id)!;
 
   const setPanelContext = (key: string, updateContext: PanelSizeContext[]) => {
-    panelContexts.get(key)?.[1](updateContext);
+    panelStore.get(key)?.[1](updateContext);
   };
   const getPanelContext = (key: string): PanelSizeContext[] => {
-    const panelContext = panelContexts.get(key)![0]();
+    const panelContext = panelStore.get(key)![0]();
     return panelContext;
   };
 

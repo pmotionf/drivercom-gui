@@ -54,17 +54,17 @@ export const [logStartCombinatorList, setLogStartCombinatorList] = createSignal<
 type PageKeys = Map<string, string>;
 export const pageKeys: PageKeys = new Map();
 
-type PanelContexts = Map<
+type PanelStore = Map<
   string,
   [Accessor<PanelSizeContext[]>, Setter<PanelSizeContext[]>]
 >;
-export const panelContexts: PanelContexts = new Map();
+export const panelStore: PanelStore = new Map();
 
-type TabContexts = Map<
+type TabStore = Map<
   string,
   [Store<TabListContext>, SetStoreFunction<TabListContext>]
 >;
-export const tabContexts: TabContexts = new Map();
+export const tabStore: TabStore = new Map();
 
 export enum Pages {
   Configuration = "configuration",

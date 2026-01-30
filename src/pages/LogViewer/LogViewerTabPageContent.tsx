@@ -21,7 +21,7 @@ import { Stack } from "styled-system/jsx";
 import { Text } from "~/components/ui/text";
 import { Checkbox } from "~/components/ui/checkbox";
 import { Tooltip } from "~/components/ui/tooltip";
-import { tabContexts } from "~/GlobalState.ts";
+import { tabStore } from "~/GlobalState.ts";
 import { on } from "solid-js";
 import { LegendStroke } from "~/components/Plot/Legend";
 import { TabContext, TabPageContext } from "~/components/TabList";
@@ -61,30 +61,29 @@ export type LogViewerTabPage = {
 export function LogViewerTabPageContent() {
   const tabPageProps = useContext(TabPageContext);
   if (!tabPageProps) return;
-  if (!tabContexts.get(tabPageProps.key)) return;
+  if (!tabStore.get(tabPageProps.key)) return;
 
   const [render, setRender] = createSignal<boolean>(false);
 
   const getTabContext = (
     tabId: string,
   ): { tabCtx: LogViewerTabPage; currentIndex: number } => {
-    const tabs = tabContexts.get(tabPageProps.key)![0]!;
+    const tabs = tabStore.get(tabPageProps.key)![0]!;
     const index = tabs.tabContext
       .map((tabCtx) => {
         return tabCtx.tab.id;
       })
       .indexOf(tabId);
     return {
-      tabCtx: tabContexts.get(tabPageProps.key)![0].tabContext[index].tabPage!
+      tabCtx: tabStore.get(tabPageProps.key)![0].tabContext[index].tabPage!
         .logViewerTabPage!,
       currentIndex: index,
     };
   };
 
   const addNewTab = (newFilePath: string) => {
-    const tabCtxLength = tabContexts.get(tabPageProps.key)![0].tabContext
-      .length;
-    const setTabCtx = tabContexts.get(tabPageProps.key)![1];
+    const tabCtxLength = tabStore.get(tabPageProps.key)![0].tabContext.length;
+    const setTabCtx = tabStore.get(tabPageProps.key)![1];
     const newTabID = crypto.randomUUID();
     const newTab: TabContext = {
       tab: {
@@ -109,12 +108,12 @@ export function LogViewerTabPageContent() {
   };
 
   const deleteTab = () => {
-    const tabCtx = tabContexts.get(tabPageProps.key)![0];
+    const tabCtx = tabStore.get(tabPageProps.key)![0];
     const tabIndex = getTabContext(tabPageProps.tabId).currentIndex;
     const filteredTabCtx = tabCtx.tabContext.filter(
       (tabCtx) => tabCtx.tab.id !== tabPageProps.tabId,
     );
-    const setTabCtx = tabContexts.get(tabPageProps.key)![1];
+    const setTabCtx = tabStore.get(tabPageProps.key)![1];
     const nextFocusTabIndex = tabIndex === 0 ? 1 : tabIndex - 1;
 
     setTimeout(() => {
@@ -133,13 +132,13 @@ export function LogViewerTabPageContent() {
   };
 
   const tabName = () => {
-    return tabContexts.get(tabPageProps.key)![0].tabContext[
+    return tabStore.get(tabPageProps.key)![0].tabContext[
       getTabContext(tabPageProps.tabId).currentIndex
     ].tab.tabName;
   };
 
   const setSplitPlot = (tabIndex: number, newSplit: number[][]) => {
-    return tabContexts.get(tabPageProps.key)?.[1](
+    return tabStore.get(tabPageProps.key)?.[1](
       "tabContext",
       tabIndex,
       "tabPage",
@@ -150,7 +149,7 @@ export function LogViewerTabPageContent() {
   };
 
   const setXRange = (tabIndex: number, newXRange: [number, number]) => {
-    return tabContexts.get(tabPageProps.key)?.[1](
+    return tabStore.get(tabPageProps.key)?.[1](
       "tabContext",
       tabIndex,
       "tabPage",
@@ -161,7 +160,7 @@ export function LogViewerTabPageContent() {
   };
 
   const setLegendSplitter = (tabIndex: number, newSize: number) => {
-    return tabContexts.get(tabPageProps.key)?.[1](
+    return tabStore.get(tabPageProps.key)?.[1](
       "tabContext",
       tabIndex,
       "tabPage",
@@ -172,7 +171,7 @@ export function LogViewerTabPageContent() {
   };
 
   const setLegendShrink = (tabIndex: number, newStatus: boolean) => {
-    return tabContexts.get(tabPageProps.key)?.[1](
+    return tabStore.get(tabPageProps.key)?.[1](
       "tabContext",
       tabIndex,
       "tabPage",
@@ -235,7 +234,7 @@ export function LogViewerTabPageContent() {
       () => plotYScales(),
       () => {
         const yScales = plotYScales();
-        tabContexts.get(tabPageProps.key)?.[1](
+        tabStore.get(tabPageProps.key)?.[1](
           "tabContext",
           getTabContext(tabPageProps.tabId).currentIndex,
           "tabPage",
@@ -254,7 +253,7 @@ export function LogViewerTabPageContent() {
       () => trackStore(plotNames),
       () => {
         const names = plotNames;
-        tabContexts.get(tabPageProps.key)?.[1](
+        tabStore.get(tabPageProps.key)?.[1](
           "tabContext",
           getTabContext(tabPageProps.tabId).currentIndex,
           "tabPage",

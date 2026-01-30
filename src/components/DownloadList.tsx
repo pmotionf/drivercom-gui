@@ -19,11 +19,11 @@ import {
   page,
   pageKeys,
   Pages,
-  panelContexts,
+  panelStore,
   portCommands,
   setCsvFileDownloads,
   setPage,
-  tabContexts,
+  tabStore,
 } from "~/GlobalState.ts";
 import { trackStore } from "@solid-primitives/deep";
 import { createStore } from "solid-js/store";
@@ -71,23 +71,23 @@ export const DownloadList = (props: JSX.HTMLAttributes<HTMLDivElement>) => {
     if (!pageKeys.has(Pages.LogViewer)) {
       const uuid = crypto.randomUUID();
       pageKeys.set(Pages.LogViewer, uuid);
-      panelContexts.set(uuid, createSignal<PanelSizeContext[]>([]));
+      panelStore.set(uuid, createSignal<PanelSizeContext[]>([]));
     }
     const panelKey = pageKeys.get(Pages.LogViewer);
-    if (panelKey && panelContexts.get(panelKey)) {
-      const panelContext = panelContexts.get(panelKey)!;
+    if (panelKey && panelStore.get(panelKey)) {
+      const panelContext = panelStore.get(panelKey)!;
       if (panelContext[0]().length === 0) {
         panelContext[1]([{ id: crypto.randomUUID(), size: 100 }]);
       }
       const ctx = panelContext[0]();
       const tabListId = ctx[0].id;
-      if (!tabContexts.has(tabListId)) {
-        tabContexts.set(
+      if (!tabStore.has(tabListId)) {
+        tabStore.set(
           tabListId,
           createStore<TabListContext>({ tabContext: [], focusedTab: "" }),
         );
       }
-      const [tabCtx, setTabCtx] = tabContexts.get(tabListId)!;
+      const [tabCtx, setTabCtx] = tabStore.get(tabListId)!;
       const newTabID = crypto.randomUUID();
       const newTab: TabContext = {
         tab: {
