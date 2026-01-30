@@ -3,9 +3,9 @@ import { Show } from "solid-js/web";
 import { For } from "solid-js/web";
 import { Splitter } from "~/components/ui/splitter.tsx";
 import { TabLocation } from "../Tab/TabList.tsx";
-import { createContext, createSignal, onMount } from "solid-js";
+import { createSignal, onMount } from "solid-js";
 import { panelStore, pageKeys } from "~/GlobalState.ts";
-import { PanelProps } from "./Panel.tsx";
+import { PanelLayoutProvider } from "./PanelLayoutProvier.tsx";
 
 export type PanelSizeContext = {
   id: string;
@@ -15,8 +15,6 @@ export type PanelSizeContext = {
 export type PanelLayoutProps = JSX.HTMLAttributes<HTMLDivElement> & {
   id: string;
 };
-
-export const PanelLayoutContext = createContext<PanelProps>();
 
 export function PanelLayout(props: PanelLayoutProps) {
   if (!pageKeys.has(props.id)) {
@@ -126,37 +124,35 @@ export function PanelLayout(props: PanelLayoutProps) {
                     }}
                   />
                 </Show>
-                <PanelLayoutContext.Provider
-                  value={{
-                    id: id,
-                    key: getPanelKey(),
-                    onDeletePanel: () => {
-                      const currentPanel = getPanelContext(getPanelKey());
-                      if (currentPanel.length > 1) {
-                        setPanelContext(
-                          getPanelKey(),
-                          currentPanel.filter((_, i) => i !== index()),
-                        );
-                      }
-                    },
-                    onCreatePanel: (tabLocation, newPanelKey) => {
-                      if (
-                        tabLocation === "leftSplitter" ||
-                        tabLocation === "rightSplitter"
-                      ) {
-                        const newSplit = splitTab(
-                          tabLocation,
-                          index(),
-                          getPanelContext(getPanelKey()),
-                          newPanelKey,
-                        );
-                        setPanelContext(getPanelKey(), newSplit);
-                      }
-                    },
+                <PanelLayoutProvider
+                  id={id}
+                  key={getPanelKey()}
+                  onCreatePanel={(tabLocation, newPanelKey) => {
+                    if (
+                      tabLocation === "leftSplitter" ||
+                      tabLocation === "rightSplitter"
+                    ) {
+                      const newSplit = splitTab(
+                        tabLocation,
+                        index(),
+                        getPanelContext(getPanelKey()),
+                        newPanelKey,
+                      );
+                      setPanelContext(getPanelKey(), newSplit);
+                    }
+                  }}
+                  onDeletePanel={() => {
+                    const currentPanel = getPanelContext(getPanelKey());
+                    if (currentPanel.length > 1) {
+                      setPanelContext(
+                        getPanelKey(),
+                        currentPanel.filter((_, i) => i !== index()),
+                      );
+                    }
                   }}
                 >
                   {props.children}
-                </PanelLayoutContext.Provider>
+                </PanelLayoutProvider>
               </>
             );
           }}
