@@ -70,5 +70,7 @@
       "identifier": "fs:allow-write-text-file",
       "allow": [{ "path": "$APPDATA/**/*" }]
     },
-    "fs:allow-appdata-write"  ]
+    "fs:allow-appdata-write",
+    "core:window:allow-destroy"
+  ]
 }
