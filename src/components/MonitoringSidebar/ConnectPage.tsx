@@ -50,7 +50,6 @@ export const ConnectPage = (props: ConnectPageProps) => {
     return !ipRegex.test(ip()) || port().length < 1 || isNaN(Number(port()));
   };
 
-  const connectAreaHeight = "11em";
   const toaster = props.toaster;
 
   const [isDetecting, setIsDetecting] = createSignal<boolean>(false);
@@ -101,14 +100,19 @@ export const ConnectPage = (props: ConnectPageProps) => {
   }
 
   return (
-    <>
+    <div
+      style={{
+        display: "flex",
+        height: "100%",
+      }}
+    >
       {/* Connect Area */}
       <div
         style={{
-          height: connectAreaHeight,
-          width: "100%",
-          "border-bottom-width": "2px",
-          padding: "0em 1em 0em 1em",
+          height: "100%",
+          width: "33.3%",
+          "border-right-width": "2px",
+          padding: "0em 1em 0em 0em",
         }}
       >
         <form
@@ -206,7 +210,7 @@ export const ConnectPage = (props: ConnectPageProps) => {
             />
           </div>
           <Button
-            marginTop="0.8em"
+            marginTop="1.5em"
             variant={!props.isConnect ? "solid" : "outline"}
             loading={props.loading}
             onClick={async () => {
@@ -248,9 +252,9 @@ export const ConnectPage = (props: ConnectPageProps) => {
       <Show when={props.ipHistory.length > 0}>
         <div
           style={{
-            width: "100%",
-            height: `14em`,
-            "border-bottom-width": "2px",
+            width: "33.3%",
+            height: `100%`,
+            "border-right-width": "2px",
           }}
         >
           <Text
@@ -327,13 +331,8 @@ export const ConnectPage = (props: ConnectPageProps) => {
 
       <div
         style={{
-          width: "100%",
-          height:
-            props.ipHistory.length > 0
-              ? `calc(100% - 15em - ${connectAreaHeight} )`
-              : `calc(100% - ${connectAreaHeight} )`,
-          "padding-bottom": "3em",
-          "padding-top": "0.5em",
+          width: "33.3%",
+          height: "100%",
         }}
       >
         <div
@@ -377,64 +376,68 @@ export const ConnectPage = (props: ConnectPageProps) => {
             </div>
           }
         >
-          <IpHistory
-            ipHistory={detectedServer()}
-            onDeleteIp={(ipIndex: number) => {
-              setDetectedServer((prev) => prev.filter((_, i) => i !== ipIndex));
-            }}
-            onConnectServer={async (index: number) => {
-              const newIp = detectedServer()[index].ip;
-              const newPort = detectedServer()[index].port;
-              if (props.loading) {
-                toaster.create({
-                  title: "Already Connecting",
-                  description:
-                    newIp === ip() && newPort === port()
-                      ? "Already connecting to server."
-                      : "Already connecting to other server.",
-                  type: "error",
-                });
-                return;
-              }
-
-              if (props.mmcCliBtnLoading) {
-                toaster.create({
-                  title: "Invalid request",
-                  description: "MMC-CLI is loading.",
-                  type: "error",
-                });
-                return;
-              }
-
-              if (props.isConnect) {
-                if (newIp === ip() && newPort === port()) {
+          <div style={{ width: "100%", height: `calc(100% - 2em)` }}>
+            <IpHistory
+              ipHistory={detectedServer()}
+              onDeleteIp={(ipIndex: number) => {
+                setDetectedServer((prev) =>
+                  prev.filter((_, i) => i !== ipIndex),
+                );
+              }}
+              onConnectServer={async (index: number) => {
+                const newIp = detectedServer()[index].ip;
+                const newPort = detectedServer()[index].port;
+                if (props.loading) {
                   toaster.create({
-                    title: "Connected Server",
-                    description: "This server is already connected.",
+                    title: "Already Connecting",
+                    description:
+                      newIp === ip() && newPort === port()
+                        ? "Already connecting to server."
+                        : "Already connecting to other server.",
                     type: "error",
                   });
                   return;
                 }
 
-                props.onDisconnectServer?.();
-                if (connectMmccli()) {
-                  props.onDisconnectMmccli?.(true);
+                if (props.mmcCliBtnLoading) {
+                  toaster.create({
+                    title: "Invalid request",
+                    description: "MMC-CLI is loading.",
+                    type: "error",
+                  });
+                  return;
                 }
-                while (props.isConnect) {
-                  await delay(1);
-                }
-              }
 
-              setIp(newIp);
-              setPort(newPort);
-              props.onConnectServer?.(ip(), port());
-              if (connectMmccli()) {
-                props.onConnectMmccli?.(ip());
-              }
-            }}
-          />
+                if (props.isConnect) {
+                  if (newIp === ip() && newPort === port()) {
+                    toaster.create({
+                      title: "Connected Server",
+                      description: "This server is already connected.",
+                      type: "error",
+                    });
+                    return;
+                  }
+
+                  props.onDisconnectServer?.();
+                  if (connectMmccli()) {
+                    props.onDisconnectMmccli?.(true);
+                  }
+                  while (props.isConnect) {
+                    await delay(1);
+                  }
+                }
+
+                setIp(newIp);
+                setPort(newPort);
+                props.onConnectServer?.(ip(), port());
+                if (connectMmccli()) {
+                  props.onConnectMmccli?.(ip());
+                }
+              }}
+            />
+          </div>
         </Show>
       </div>
-    </>
+    </div>
   );
 };

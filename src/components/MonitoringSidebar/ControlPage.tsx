@@ -11,7 +11,7 @@ export const ControlPage = (props: ControlPageProps) => {
   return (
     <div
       style={{
-        padding: "0rem 1rem 1rem 1rem",
+        padding: "0rem 0rem 1rem 0rem",
         "row-gap": "0.5rem",
         display: "flex",
         "flex-direction": "column",

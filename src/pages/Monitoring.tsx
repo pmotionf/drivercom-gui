@@ -1,11 +1,7 @@
 import { createSignal, onMount, onCleanup, createEffect, on } from "solid-js";
 import { Splitter } from "../components/ui/splitter.tsx";
 import { IconButton } from "~/components/ui/icon-button.tsx";
-import {
-  IconChevronLeftPipe,
-  IconChevronRightPipe,
-  IconX,
-} from "@tabler/icons-solidjs";
+import { IconChevronDown, IconChevronUp, IconX } from "@tabler/icons-solidjs";
 import { css } from "styled-system/css/css";
 import { Show } from "solid-js/web";
 import { Toast } from "~/components/ui/toast.tsx";
@@ -294,14 +290,15 @@ function Monitoring() {
   return (
     <>
       <Splitter.Root
+        orientation="vertical"
         panels={[
           { id: `panel` },
           {
             id: `sidebar`,
-            minSize: 20,
+            minSize: 35,
           },
         ]}
-        size={[panelSize(), 100 - panelSize()]}
+        size={!showSideBar() ? [95, 5] : [panelSize(), 100 - panelSize()]}
         onResize={(details) => {
           const size = details.size;
           setPanelSize(size[0]);
@@ -452,55 +449,78 @@ function Monitoring() {
           </Show>
         </Splitter.Panel>
 
-        {/* Resize trigger */}
-        <IconButton
-          size="sm"
-          variant="ghost"
-          onClick={() => setShowSideBar(!showSideBar())}
-          position="absolute"
-          top="0"
-          right="0"
-          zIndex="10"
-        >
-          <Show when={!showSideBar()} fallback={<IconChevronRightPipe />}>
-            <IconChevronLeftPipe />
-          </Show>
-        </IconButton>
-
         <Show when={showSideBar()}>
           <Splitter.ResizeTrigger
             id={`panel:sidebar`}
-            class={css({ borderInlineColor: "bg.default" })}
+            class={css({ borderColor: "bg.default", background: "bg.canvas" })}
             style={{
-              width: "1px",
+              width: "100%",
+              height: "1px",
               "border-radius": "0",
               padding: "0",
               margin: "0",
-              "border-inline-width": "2px",
             }}
           />
-          <Splitter.Panel
-            id={`sidebar`}
-            borderWidth="0"
-            backgroundColor="transparent"
-            minWidth="18rem"
+        </Show>
+
+        <Splitter.Panel
+          id={`sidebar`}
+          borderWidth="0"
+          borderTopWidth={"1px"}
+          borderColor={"bg.disabled"}
+          backgroundColor="transparent"
+        >
+          <Tabs.Root
+            defaultValue="Connect"
+            style={{ width: "100%", height: "100%" }}
+            variant="outline"
           >
-            <Tabs.Root
-              defaultValue="Connect"
-              style={{ width: "100%", height: "100%" }}
+            <Tabs.List
+              gap="0"
+              background={"bg.muted"}
+              borderColor={"bg.disabled"}
             >
-              <Tabs.List gap="0">
-                <Tabs.Trigger padding="0.5em" value="Connect">
-                  {"Connect"}
-                </Tabs.Trigger>
-                <Tabs.Trigger value="Status" padding="0.5em">
-                  {"Status"}
-                </Tabs.Trigger>
-                <Tabs.Trigger value="Control" padding="0.5em">
-                  {"Control"}
-                </Tabs.Trigger>
-                <Tabs.Indicator />
-              </Tabs.List>
+              <Tabs.Trigger
+                padding="0.5em"
+                value="Connect"
+                borderRadius={"0"}
+                borderTopWidth={"0"}
+                borderBottomWidth={"1px"}
+              >
+                {"Connect"}
+              </Tabs.Trigger>
+              <Tabs.Trigger
+                value="Status"
+                padding="0.5em"
+                borderRadius={"0"}
+                borderTopWidth={"0"}
+              >
+                {"Status"}
+              </Tabs.Trigger>
+              <Tabs.Trigger
+                value="Control"
+                padding="0.5em"
+                borderRadius={"0"}
+                borderTopWidth={"0"}
+              >
+                {"Control"}
+              </Tabs.Trigger>
+              {/* Resize trigger */}
+              <IconButton
+                size="sm"
+                variant="ghost"
+                onClick={() => setShowSideBar(!showSideBar())}
+                position="absolute"
+                top="0.1rem"
+                right="0"
+              >
+                <Show when={!showSideBar()} fallback={<IconChevronDown />}>
+                  <IconChevronUp />
+                </Show>
+              </IconButton>
+              <Tabs.Indicator />
+            </Tabs.List>
+            <Show when={showSideBar()}>
               <Tabs.Content
                 value="Connect"
                 style={{ width: "100%", height: "100%" }}
@@ -582,21 +602,28 @@ function Monitoring() {
                   />
                 </Show>
               </Tabs.Content>
-              <Tabs.Content value="Control">
+              <Tabs.Content
+                value="Control"
+                style={{ width: "100%", height: "100%" }}
+              >
                 <ControlPage
                   isAutoMode={isAutoClearMode()}
                   changeAutoMode={setIsAutoClearMode}
                 />
               </Tabs.Content>
-              <Tabs.Content value="Status" overflowY="auto">
+              <Tabs.Content
+                value="Status"
+                overflowY="auto"
+                style={{ width: "100%", height: "100%" }}
+              >
                 <StatusPage
                   systemErrors={systemErrors()}
                   clearErrorAuto={isAutoClearMode()}
                 />
               </Tabs.Content>
-            </Tabs.Root>
-          </Splitter.Panel>
-        </Show>
+            </Show>
+          </Tabs.Root>
+        </Splitter.Panel>
       </Splitter.Root>
       <Toast.Toaster toaster={toaster}>
         {(toast) => (
