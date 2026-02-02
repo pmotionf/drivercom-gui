@@ -51,6 +51,9 @@ import {
   deinitialize,
 } from "./utils/MmcCliHandler.ts";
 import { disconnect } from "@kuyoonjo/tauri-plugin-tcp";
+import CarrierPage, {
+  CarrierState,
+} from "~/components/MonitoringSidebar/CarrierPage.tsx";
 
 export type Lines = LineType[];
 export type Systems = TrackType[];
@@ -261,6 +264,15 @@ function Monitoring() {
     });
   };
 
+  const carrierStates = (): CarrierState[] => {
+    return systems.map((system, i) => {
+      return {
+        lineName: lines.length > 0 ? lines[i].name : "",
+        carrierStates: system.carrierState ? system.carrierState : [],
+      };
+    });
+  };
+
   const [isConnect, setIsConnect] = createSignal<boolean>(false);
 
   async function connectMmcCli(ip: string) {
@@ -286,6 +298,12 @@ function Monitoring() {
   const [mmcCliConnectLoading, setMmcCliConnectLoading] =
     createSignal<boolean>(false);
   const [disableMmcCliBtn, setDisableMmcCliBtn] = createSignal<boolean>(true);
+
+  const [carrierTabRender, setCarrierTabRender] = createSignal<boolean>(true);
+  const carrierTabRefresh = () => {
+    setCarrierTabRender(false);
+    setCarrierTabRender(true);
+  };
 
   return (
     <>
@@ -505,6 +523,22 @@ function Monitoring() {
               >
                 {"Control"}
               </Tabs.Trigger>
+              <Show when={carrierTabRender()}>
+                <Tabs.Trigger
+                  value="Carriers"
+                  padding="0.5em"
+                  borderRadius={"0"}
+                  borderTopWidth={"0"}
+                  disabled={
+                    carrierStates()
+                      .map((state) => state.carrierStates)
+                      .concat().length < 1 ||
+                    getMmccliStatus() === MmcCliState.Unloaded
+                  }
+                >
+                  {"Carriers"}
+                </Tabs.Trigger>
+              </Show>
               {/* Resize trigger */}
               <IconButton
                 size="sm"
@@ -520,108 +554,121 @@ function Monitoring() {
               </IconButton>
               <Tabs.Indicator />
             </Tabs.List>
-            <Show when={showSideBar()}>
-              <Tabs.Content
-                value="Connect"
-                style={{ width: "100%", height: "100%" }}
-                overflowY="auto"
-              >
-                <Show when={showConnectPage()}>
-                  <ConnectPage
-                    toaster={toaster}
-                    inputs={monitoringInputs}
-                    ipHistory={ipHistory()}
-                    changeIpHistory={setIpHistory}
-                    isConnect={isConnect()}
-                    loading={connectBtnLoading()}
-                    onConnectServer={async (ip: string, port: string) => {
-                      setConnetBtnLoading(true);
-                      try {
-                        await serverHandler.connect(ip, port);
-                        const serverResponse: LineType[] =
-                          await serverHandler.getLineConfig();
-                        await addIpHistory(ip, port);
-                        setLines(serverResponse);
-                        setConnetBtnLoading(false);
-                        if (serverHandler.getStatus() === WebSocket.OPEN) {
-                          setIsConnect(true);
-                        }
-                      } catch {
-                        setConnetBtnLoading(false);
-                        deleteIpHistory(ip, port);
-                        await serverHandler.disconnect();
-                        setIsConnect(false);
-                      }
-                    }}
-                    onDisconnectServer={async () => {
-                      setConnetBtnLoading(true);
-                      setLines([]);
-                      setSystems([]);
-
-                      await serverHandler.disconnect();
-
+            <Tabs.Content
+              value="Connect"
+              style={{ width: "100%", height: "100%" }}
+              overflowY="auto"
+            >
+              <Show when={showConnectPage()}>
+                <ConnectPage
+                  toaster={toaster}
+                  inputs={monitoringInputs}
+                  ipHistory={ipHistory()}
+                  changeIpHistory={setIpHistory}
+                  isConnect={isConnect()}
+                  loading={connectBtnLoading()}
+                  onConnectServer={async (ip: string, port: string) => {
+                    setConnetBtnLoading(true);
+                    try {
+                      await serverHandler.connect(ip, port);
+                      const serverResponse: LineType[] =
+                        await serverHandler.getLineConfig();
+                      await addIpHistory(ip, port);
+                      setLines(serverResponse);
                       setConnetBtnLoading(false);
-                      setIsConnect(false);
-                    }}
-                    mmcCliBtnLoading={mmcCliConnectLoading()}
-                    onConnectMmccli={async (ip: string) => {
-                      setMmcCliConnectLoading(true);
-                      try {
-                        let checkWebsocket: ServerHandler | null =
-                          new ServerHandler();
-                        await checkWebsocket.connect(ip, "443");
-                        await checkWebsocket.disconnect();
-                        checkWebsocket = null;
-                        await connectMmcCli(ip);
-                        setDisableMmcCliBtn(false);
-                        setMmcCliConnectLoading(false);
-                      } catch {
-                        setMmcCliConnectLoading(false);
-                        setSendingCmd(null);
-                        if (!disableMmcCliBtn) {
-                          setDisableMmcCliBtn(true);
-                        }
-                        if (getMmccliStatus() !== MmcCliState.Unloaded) {
-                          await exit();
-                        }
+                      if (serverHandler.getStatus() === WebSocket.OPEN) {
+                        setIsConnect(true);
                       }
-                    }}
-                    onDisconnectMmccli={async (
-                      isIpChange: boolean | undefined,
-                    ) => {
-                      setMmcCliConnectLoading(true);
+                    } catch {
+                      setConnetBtnLoading(false);
+                      deleteIpHistory(ip, port);
+                      await serverHandler.disconnect();
+                      setIsConnect(false);
+                    }
+                  }}
+                  onDisconnectServer={async () => {
+                    setConnetBtnLoading(true);
+                    setLines([]);
+                    setSystems([]);
+
+                    await serverHandler.disconnect();
+
+                    setConnetBtnLoading(false);
+                    setIsConnect(false);
+                  }}
+                  mmcCliBtnLoading={mmcCliConnectLoading()}
+                  onConnectMmccli={async (ip: string) => {
+                    setMmcCliConnectLoading(true);
+                    try {
+                      let checkWebsocket: ServerHandler | null =
+                        new ServerHandler();
+                      await checkWebsocket.connect(ip, "443");
+                      await checkWebsocket.disconnect();
+                      checkWebsocket = null;
+                      await connectMmcCli(ip);
+                      setDisableMmcCliBtn(false);
+                      setMmcCliConnectLoading(false);
+                      carrierTabRefresh();
+                    } catch {
+                      setMmcCliConnectLoading(false);
                       setSendingCmd(null);
+                      if (!disableMmcCliBtn) {
+                        setDisableMmcCliBtn(true);
+                      }
                       if (getMmccliStatus() !== MmcCliState.Unloaded) {
                         await exit();
                       }
-                      setDisableMmcCliBtn(true);
-                      if (!isIpChange) {
-                        setMmcCliConnectLoading(false);
-                      }
-                    }}
-                  />
-                </Show>
-              </Tabs.Content>
-              <Tabs.Content
-                value="Control"
-                style={{ width: "100%", height: "100%" }}
-              >
-                <ControlPage
-                  isAutoMode={isAutoClearMode()}
-                  changeAutoMode={setIsAutoClearMode}
+                    }
+                  }}
+                  onDisconnectMmccli={async (
+                    isIpChange: boolean | undefined,
+                  ) => {
+                    setMmcCliConnectLoading(true);
+                    setSendingCmd(null);
+                    if (getMmccliStatus() !== MmcCliState.Unloaded) {
+                      await exit();
+                    }
+                    setDisableMmcCliBtn(true);
+                    if (!isIpChange) {
+                      setMmcCliConnectLoading(false);
+                    }
+                  }}
                 />
-              </Tabs.Content>
-              <Tabs.Content
-                value="Status"
-                overflowY="auto"
-                style={{ width: "100%", height: "100%" }}
-              >
-                <StatusPage
-                  systemErrors={systemErrors()}
-                  clearErrorAuto={isAutoClearMode()}
-                />
-              </Tabs.Content>
-            </Show>
+              </Show>
+            </Tabs.Content>
+            <Tabs.Content
+              value="Control"
+              style={{ width: "100%", height: "100%" }}
+            >
+              <ControlPage
+                isAutoMode={isAutoClearMode()}
+                changeAutoMode={setIsAutoClearMode}
+              />
+            </Tabs.Content>
+            <Tabs.Content
+              value="Status"
+              overflowY="auto"
+              style={{ width: "100%", height: "100%" }}
+            >
+              <StatusPage
+                systemErrors={systemErrors()}
+                clearErrorAuto={isAutoClearMode()}
+              />
+            </Tabs.Content>
+            <Tabs.Content
+              value="Carriers"
+              overflowY="auto"
+              style={{ width: "100%", height: "100%" }}
+              paddingTop={"0rem"}
+              paddingBottom={"0rem"}
+            >
+              <CarrierPage
+                carrierStates={carrierStates()}
+                onCarrierMove={(line, carrier, target, controlMode, cas) => {
+                  console.log(line, carrier, target, controlMode, cas);
+                }}
+              />
+            </Tabs.Content>
           </Tabs.Root>
         </Splitter.Panel>
       </Splitter.Root>
