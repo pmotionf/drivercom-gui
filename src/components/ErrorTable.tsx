@@ -48,19 +48,13 @@ export const ErrorTable = (props: ErrorTableProps) => {
 
   return (
     <>
-      <Text
-        fontWeight="bold"
-        color="fg.subtle"
-        size="sm"
-        marginLeft="1.2em"
-        marginBottom="0.5em"
-      >
+      <Text fontWeight="bold" color="fg.subtle" size="sm" marginBottom="0.5em">
         Error
       </Text>
       <Show
         when={showTable()}
         fallback={
-          <Text color="fg.subtle" size="sm" marginLeft="1.2em">
+          <Text color="fg.subtle" size="sm">
             No errors.
           </Text>
         }
