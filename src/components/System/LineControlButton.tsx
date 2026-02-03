@@ -139,6 +139,7 @@ export function LineControlButton(props: LineControlProps & IconButtonProps) {
                   sendingCommand() &&
                   sendingCommand()!.line === props.lineName &&
                   isNaN(sendingCommand()!.axisId) &&
+                  !sendingCommand()!.movingCarrier &&
                   lastCommand() === LineCommand.SaveVelocity
                     ? true
                     : false
@@ -148,7 +149,8 @@ export function LineControlButton(props: LineControlProps & IconButtonProps) {
                   speed() !== Number(speedInput())
                     ? sendingCommand()
                       ? sendingCommand()!.line === props.lineName
-                        ? isNaN(sendingCommand()!.axisId)
+                        ? isNaN(sendingCommand()!.axisId) &&
+                          sendingCommand()!.movingCarrier !== true
                           ? lastCommand() === LineCommand.SaveVelocity
                             ? false
                             : true
@@ -320,6 +322,7 @@ export function LineControlButton(props: LineControlProps & IconButtonProps) {
                   sendingCommand() &&
                   sendingCommand()!.line === props.lineName &&
                   isNaN(sendingCommand()!.axisId) &&
+                  !sendingCommand()!.movingCarrier &&
                   lastCommand() === LineCommand.SetZero
                     ? true
                     : false
@@ -328,7 +331,8 @@ export function LineControlButton(props: LineControlProps & IconButtonProps) {
                   !disableSetZero()
                     ? sendingCommand()
                       ? sendingCommand()!.line === props.lineName
-                        ? isNaN(sendingCommand()!.axisId)
+                        ? isNaN(sendingCommand()!.axisId) &&
+                          !sendingCommand()!.movingCarrier
                           ? lastCommand() === LineCommand.SetZero
                             ? false
                             : true
@@ -357,6 +361,7 @@ export function LineControlButton(props: LineControlProps & IconButtonProps) {
                   sendingCommand() &&
                   sendingCommand()!.line === props.lineName &&
                   isNaN(sendingCommand()!.axisId) &&
+                  !sendingCommand()!.movingCarrier &&
                   lastCommand() === LineCommand.Calibrate
                     ? true
                     : false
@@ -365,7 +370,8 @@ export function LineControlButton(props: LineControlProps & IconButtonProps) {
                   !disableCalibrate()
                     ? sendingCommand()
                       ? sendingCommand()!.line === props.lineName
-                        ? isNaN(sendingCommand()!.axisId)
+                        ? isNaN(sendingCommand()!.axisId) &&
+                          !sendingCommand()!.movingCarrier
                           ? lastCommand() === LineCommand.Calibrate
                             ? false
                             : true

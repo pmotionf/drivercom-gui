@@ -21,6 +21,7 @@ import { LineCommandParameters } from "./LineControlButton.tsx";
 export type SendingCommand = {
   line: string;
   axisId: number;
+  movingCarrier?: boolean;
 } | null;
 
 export type SystemProps = JSX.HTMLAttributes<HTMLDivElement> & {
