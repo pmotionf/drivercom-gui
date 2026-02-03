@@ -70,6 +70,25 @@ export function CarrierPage(props: CarrierPageProps) {
     return props.carrierStates;
   };
 
+  const moveCarrierHandler = (
+    mapKey: string,
+    line: string,
+    carrierId: number,
+    targetKind: TargetKind,
+    targetValue: string,
+    controlMode: ControlMode,
+    cas?: boolean,
+  ) => {
+    setLastCommandKey(mapKey);
+    props.onCarrierMove?.(
+      line,
+      carrierId,
+      `${targetValue}${targetKind}`,
+      controlMode,
+      cas ? undefined : "off",
+    );
+  };
+
   return (
     <div style={{ width: "100%", height: "100%" }}>
       <Accordion.Root width="100%" height={"100%"} multiple borderWidth={"0"}>
@@ -155,7 +174,20 @@ export function CarrierPage(props: CarrierPageProps) {
                             >
                               <Input
                                 value={targetValue()}
-                                onChange={(e) => setTargetValue(e.target.value)}
+                                onInput={(e) => setTargetValue(e.target.value)}
+                                onKeyDown={(e) => {
+                                  if (e.key.toLowerCase() === "enter") {
+                                    moveCarrierHandler(
+                                      mapKey,
+                                      carrier.lineName,
+                                      carrierState.id,
+                                      targetKind(),
+                                      targetValue(),
+                                      controlMode(),
+                                      cas(),
+                                    );
+                                  }
+                                }}
                                 style={{
                                   width: "50%",
                                   "border-top-right-radius": "0rem",
@@ -265,13 +297,14 @@ export function CarrierPage(props: CarrierPageProps) {
                                   : false
                               }
                               onClick={() => {
-                                setLastCommandKey(mapKey);
-                                props.onCarrierMove?.(
+                                moveCarrierHandler(
+                                  mapKey,
                                   carrier.lineName,
                                   carrierState.id,
-                                  `${targetValue()}${targetKind()}`,
+                                  targetKind(),
+                                  targetValue(),
                                   controlMode(),
-                                  cas() ? undefined : "off",
+                                  cas(),
                                 );
                               }}
                             >
