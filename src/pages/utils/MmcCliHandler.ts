@@ -300,7 +300,7 @@ export async function pullCarrier(
   }
   mmccliStatus = MmcCliState.SendingCommand;
   const result = await writeCommand(
-    `pull_carrier ${line} ${axisId} ${carrierId} ${direction} ${destination && destination !== "NaN" ? destination : cas ? "NaN" : ""} ${cas ? cas : ""}`,
+    `pull_carrier ${line} ${axisId} ${carrierId} ${direction} ${destination ? destination : ""} ${destination ? cas : ""}`,
   );
   mmccliStatus = MmcCliState.Ready;
   if (result.some((res) => res.toLowerCase().includes("error"))) {
