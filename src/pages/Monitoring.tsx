@@ -23,7 +23,7 @@ import {
   ServerHandler,
   TrackType,
 } from "./Monitoring/ServerHandler.ts";
-import { System } from "~/components/System/System.tsx";
+import { SendingCommand, System } from "~/components/System/System.tsx";
 import {
   Response_Track_Axis_Error,
   Response_Track_Driver_Error,
@@ -49,6 +49,7 @@ import {
   calibrate,
   initialize,
   deinitialize,
+  moveCarrier,
 } from "./utils/MmcCliHandler.ts";
 import { disconnect } from "@kuyoonjo/tauri-plugin-tcp";
 import CarrierPage, {
@@ -290,10 +291,7 @@ function Monitoring() {
     }
   }
 
-  const [sendingCmd, setSendingCmd] = createSignal<{
-    line: string;
-    axisId: number;
-  } | null>(null);
+  const [sendingCmd, setSendingCmd] = createSignal<SendingCommand | null>(null);
 
   const [mmcCliConnectLoading, setMmcCliConnectLoading] =
     createSignal<boolean>(false);
@@ -664,8 +662,29 @@ function Monitoring() {
             >
               <CarrierPage
                 carrierStates={carrierStates()}
-                onCarrierMove={(line, carrier, target, controlMode, cas) => {
-                  console.log(line, carrier, target, controlMode, cas);
+                sendingCommand={sendingCmd()}
+                onCarrierMove={async (
+                  line,
+                  carrier,
+                  target,
+                  controlMode,
+                  cas,
+                ) => {
+                  setSendingCmd({
+                    line: line,
+                    axisId: NaN,
+                    movingCarrier: true,
+                  });
+                  try {
+                    await moveCarrier(line, carrier, target, controlMode, cas);
+                  } catch (e) {
+                    toaster.create({
+                      title: `Control Error`,
+                      description: e as string,
+                      type: "error",
+                    });
+                  }
+                  setSendingCmd(null);
                 }}
               />
             </Tabs.Content>

@@ -469,6 +469,29 @@ export async function deinitialize(line: string, axisId: number) {
   }
 }
 
+export async function moveCarrier(
+  line: string,
+  carrier: number,
+  target: string,
+  controlMode?: string,
+  cas?: string,
+) {
+  if (mmccliStatus !== MmcCliState.Ready) {
+    return Promise.reject("MMC_CLI is not prepared to send move carrier.");
+  }
+  mmccliStatus = MmcCliState.SendingCommand;
+  const result = await writeCommand(
+    `move_carrier ${line.toLowerCase()} ${carrier} ${target.toLowerCase()} ${controlMode ? controlMode.toLowerCase() : "position"} ${cas ? cas.toLowerCase() : "on"}`,
+  );
+  mmccliStatus = MmcCliState.Ready;
+  if (result.some((res) => res.toLowerCase().includes("error"))) {
+    const errMsg = findError(result);
+    return Promise.reject(errMsg);
+  } else {
+    return Promise.resolve();
+  }
+}
+
 const findError = (commandResponses: string[]): string => {
   const errorMsgIndex = commandResponses.findIndex((res) =>
     res.toLowerCase().includes("error"),
