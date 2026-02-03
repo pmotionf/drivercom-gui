@@ -237,7 +237,7 @@ export function Axis(props: AxisProps) {
                 "font-family": "monospace",
               }}
             >
-              {`${carrierState()!.position!.toFixed(6)}m`}
+              {`${(carrierState()!.position! * 1000).toFixed(3)}mm`}
             </Text>
           </Stack>
         </Show>
