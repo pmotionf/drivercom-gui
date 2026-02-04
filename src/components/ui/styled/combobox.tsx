@@ -9,7 +9,7 @@ const { withRootProvider, withContext } = createStyleContext(combobox)
 export type RootProviderProps = ComponentProps<typeof RootProvider>
 export const RootProvider = withRootProvider<
   Assign<
-    Assign<HTMLStyledProps<'div'>, Combobox.RootProviderBaseProps<Combobox.CollectionItem>>,
+    Assign<HTMLStyledProps<'div'>, Combobox.RootProviderBaseProps<typeof Combobox.CollectionItem>>,
     ComboboxVariantProps
   >
 >(Combobox.RootProvider)
@@ -17,7 +17,7 @@ export const RootProvider = withRootProvider<
 export type RootProps = ComponentProps<typeof Root>
 export const Root = withRootProvider<
   Assign<
-    Assign<HTMLStyledProps<'div'>, Combobox.RootBaseProps<Combobox.CollectionItem>>,
+    Assign<HTMLStyledProps<'div'>, Combobox.RootBaseProps<typeof Combobox.CollectionItem>>,
     ComboboxVariantProps
   >
 >(Combobox.Root)

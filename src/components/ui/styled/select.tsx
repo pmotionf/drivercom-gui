@@ -9,7 +9,7 @@ const { withRootProvider, withContext } = createStyleContext(select)
 export type RootProviderProps = ComponentProps<typeof RootProvider>
 export const RootProvider = withRootProvider<
   Assign<
-    Assign<HTMLStyledProps<'div'>, Select.RootProviderBaseProps<Select.CollectionItem>>,
+    Assign<HTMLStyledProps<'div'>, Select.RootProviderBaseProps<typeof Select.CollectionItem>>,
     SelectVariantProps
   >
 >(Select.RootProvider)
@@ -17,7 +17,7 @@ export const RootProvider = withRootProvider<
 export type RootProps = ComponentProps<typeof Root>
 export const Root = withRootProvider<
   Assign<
-    Assign<HTMLStyledProps<'div'>, Select.RootBaseProps<Select.CollectionItem>>,
+    Assign<HTMLStyledProps<'div'>, Select.RootBaseProps<typeof Select.CollectionItem>>,
     SelectVariantProps
   >
 >(Select.Root)
