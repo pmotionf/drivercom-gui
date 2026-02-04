@@ -51,6 +51,8 @@ import {
   recentLogFilePaths,
   setRecentConfigFilePaths,
   setRecentLogFilePaths,
+  setIpHistory,
+  ipHistory,
 } from "./GlobalState.ts";
 
 import { Button } from "~/components/ui/button.tsx";
@@ -66,6 +68,7 @@ import JSON5 from "json5";
 import { killTerminal } from "./pages/utils/MmcCliHandler.ts";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { load } from "@tauri-apps/plugin-store";
+import { IpAddress } from "./components/System/IpHistory.tsx";
 
 type PageMeta = {
   icon: ValidComponent;
@@ -229,7 +232,14 @@ function App(props: RouteSectionProps) {
   }
 
   async function getRecentFilePaths() {
-    const store = await load("store.json", { autoSave: false });
+    const store = await load("store.json", {
+      defaults: {
+        configFilePath: undefined,
+        logFilePath: undefined,
+        ipHistory: undefined,
+      },
+      autoSave: false,
+    });
     const hasConfigRecentFiles = await store.has("configFilePath");
     if (hasConfigRecentFiles) {
       const getRecentConfigs: string[] = (await store.get(
@@ -244,14 +254,28 @@ function App(props: RouteSectionProps) {
       )) as string[];
       setRecentLogFilePaths(getRecentLogs);
     }
+    const hasIpHistory = await store.has("ipHistory");
+    if (hasIpHistory) {
+      const getIpHistory = (await store.get("ipHistory")) as IpAddress[];
+      setIpHistory(getIpHistory);
+    }
   }
 
   async function storeFilePath() {
     const window = getCurrentWindow();
     const unlisten = await window.onCloseRequested(async () => {
-      const store = await load("store.json", { autoSave: false });
+      const store = await load("store.json", {
+        defaults: {
+          configFilePath: undefined,
+          logFilePath: undefined,
+          ipHistory: undefined,
+        },
+        autoSave: false,
+      });
       store.set("configFilePath", recentConfigFilePaths());
       store.set("logFilePath", recentLogFilePaths());
+      store.set("ipHistory", ipHistory());
+      await store.save();
     });
     onCleanup(() => unlisten());
   }
