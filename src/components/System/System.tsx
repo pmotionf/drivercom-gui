@@ -277,12 +277,12 @@ export function System(props: SystemProps) {
                                                 );
                                               }}
                                               onPush={(
-                                                axisDireciton,
+                                                axisDirection,
                                                 carrierId,
                                               ) => {
                                                 props.onPush?.(
                                                   props.lines[item].name,
-                                                  axisDireciton,
+                                                  axisDirection,
                                                   `${axisId}`,
                                                   carrierId,
                                                 );
@@ -305,7 +305,7 @@ export function System(props: SystemProps) {
                                                   axisId,
                                                 );
                                               }}
-                                              onIntialize={(
+                                              onInitialize={(
                                                 direction,
                                                 carrierId,
                                                 axisLink,
@@ -318,7 +318,7 @@ export function System(props: SystemProps) {
                                                   axisLink,
                                                 );
                                               }}
-                                              onDeintialize={() => {
+                                              onDeinitialize={() => {
                                                 props.onDeinitialize?.(
                                                   props.lines[item].name,
                                                   axisId,

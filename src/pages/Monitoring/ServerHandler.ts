@@ -151,7 +151,7 @@ export class ServerHandler implements IServerHandler {
       if (this._socket.readyState !== WebSocket.CLOSED) {
         this._socket = null;
         clearTimeout(timeout);
-        return Promise.reject("Failed to disconenct");
+        return Promise.reject("Failed to disconnect");
       }
       this._socket = null;
       this.unlock();
