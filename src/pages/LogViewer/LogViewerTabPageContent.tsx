@@ -700,7 +700,8 @@ export function LogViewerTabPageContent() {
     const newHeader: string[] = [...getHeader()!, accelerationHeader];
     setHeader(getTabContext(tabPageProps.tabId).currentIndex, newHeader);
 
-    setTimeout(() => {
+    // Time out for rerendering uPlot.
+    const timeout = setTimeout(() => {
       setPrevSplitIndex(splitIndex());
       setSplitIndex(
         splitIndex().map((split, i) =>
@@ -726,6 +727,7 @@ export function LogViewerTabPageContent() {
       );
 
       setRender(true);
+      clearTimeout(timeout);
     }, 0);
   };
 
