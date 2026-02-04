@@ -47,6 +47,8 @@ export type LogViewerTabPageContentProps = {
 
 export type LogViewerTabPage = {
   filePath?: string;
+  header?: string[];
+  series?: number[][];
   plotNames?: string[];
   plotSplitIndex?: number[][];
   plotContext?: PlotContext[];
@@ -265,35 +267,47 @@ export function LogViewerTabPageContent() {
     ),
   );
 
-  const [header, setHeader] = createSignal<string[]>([]);
-  const [series, setSeries] = createSignal<number[][]>([]);
   const [enumMappings, setEnumMappings] = createSignal<Map<
     string,
     Map<number, string>
   > | null>(null);
 
-  onMount(async () => {
-    await prepareCsvFile();
-  });
+  const getSeries = () => {
+    return getTabContext(tabPageProps.tabId).tabCtx.series;
+  };
 
-  const prepareCsvFile = async () => {
-    try {
-      const csvFile = await fileHandler.readCsvFile(filePath());
-      setSeries(csvFile.series);
-      setHeader(csvFile.header);
-      if (csvFile.enumSeriesMap) {
-        setEnumMappings(csvFile.enumSeriesMap);
-      }
-      if (plotZoomState()[1] === 0) {
-        setPlotZoomState([0, series()[0].length]);
-      }
-    } catch (e) {
-      tabPageProps.toaster.create({
-        title: "Invalid File",
-        description: e ? e.toString() : "The file is invalid.",
-        type: "error",
-      });
-      deleteTab();
+  const setSeries = (tabIndex: number, newSeries: number[][]) => {
+    return tabContexts.get(tabPageProps.key)?.[1](
+      "tabContext",
+      tabIndex,
+      "tabPage",
+      "logViewerTabPage",
+      "series",
+      newSeries,
+    );
+  };
+
+  const getHeader = () => {
+    return getTabContext(tabPageProps.tabId).tabCtx.header;
+  };
+
+  const setHeader = (tabIndex: number, newHeader: string[]) => {
+    return tabContexts.get(tabPageProps.key)?.[1](
+      "tabContext",
+      tabIndex,
+      "tabPage",
+      "logViewerTabPage",
+      "header",
+      newHeader,
+    );
+  };
+
+  onMount(async () => {
+    if (
+      !getTabContext(tabPageProps.tabId).tabCtx.series ||
+      !getTabContext(tabPageProps.tabId).tabCtx.header
+    ) {
+      await prepareCsvFile();
     }
 
     if (getTabContext(tabPageProps.tabId)) {
@@ -327,9 +341,12 @@ export function LogViewerTabPageContent() {
       }
     }
 
-    if (splitIndex().length === 0 || splitIndex().length > header().length) {
+    if (
+      splitIndex().length === 0 ||
+      splitIndex().length > getHeader()!.length
+    ) {
       const indexArray = Array.from(
-        { length: header().length },
+        { length: getHeader()!.length },
         (_, index) => index,
       );
       setSplitIndex([indexArray]);
@@ -352,13 +369,33 @@ export function LogViewerTabPageContent() {
       );
       setPlotNames(newNames);
     }
-
     setRender(true);
+  });
+
+  const prepareCsvFile = async () => {
+    try {
+      const csvFile = await fileHandler.readCsvFile(filePath());
+      setSeries(getTabContext(tabPageProps.tabId).currentIndex, csvFile.series);
+      setHeader(getTabContext(tabPageProps.tabId).currentIndex, csvFile.header);
+      if (csvFile.enumSeriesMap) {
+        setEnumMappings(csvFile.enumSeriesMap);
+      }
+      if (plotZoomState()[1] === 0) {
+        setPlotZoomState([0, csvFile.series[0].length]);
+      }
+    } catch (e) {
+      tabPageProps.toaster.create({
+        title: "Invalid File",
+        description: e ? e.toString() : "The file is invalid.",
+        type: "error",
+      });
+      deleteTab();
+    }
   };
 
   function resetChart() {
     const indexArray = Array.from(
-      { length: header().length },
+      { length: getHeader()!.length },
       (_, index) => index,
     );
     setSplitIndex([indexArray]);
@@ -633,6 +670,65 @@ export function LogViewerTabPageContent() {
 
   const plotToolBoxWidth = "12em";
 
+  const calculateAcceleration = (velocityData: number[]) => {
+    const dt = 15000 / 1;
+
+    const accleration = velocityData.slice(0, -1).map((v1, i) => {
+      const v2 = velocityData[i + 1];
+
+      const effectiveV1 = v1 !== 0 ? v1 : v2 === 0 ? v1 : velocityData[i - 1];
+
+      return (v2 - effectiveV1) / dt;
+    });
+    return [0, ...accleration];
+  };
+
+  const createAccelerationSeries = (
+    index: number,
+    velocityData: number[],
+    accelerationHeader: string,
+  ) => {
+    const prevPlot = JSON.parse(JSON.stringify(plots[index]));
+    setRender(false);
+
+    const newSeries: number[][] = [
+      ...getSeries()!,
+      calculateAcceleration(velocityData),
+    ];
+    setSeries(getTabContext(tabPageProps.tabId).currentIndex, newSeries);
+
+    const newHeader: string[] = [...getHeader()!, accelerationHeader];
+    setHeader(getTabContext(tabPageProps.tabId).currentIndex, newHeader);
+
+    setTimeout(() => {
+      setPrevSplitIndex(splitIndex());
+      setSplitIndex(
+        splitIndex().map((split, i) =>
+          i === index ? [...split, newHeader.length - 1] : split,
+        ),
+      );
+
+      const newPlotContext: PlotContext = {
+        visible: [...prevPlot.visible, true],
+        palette: prevPlot.palette,
+        color: [
+          ...prevPlot.color,
+          prevPlot.palette[prevPlot.palette.length % 7],
+        ],
+        style: [...prevPlot.style, 0],
+        selected: [...prevPlot.selected, false],
+        filter: [...prevPlot.filter, 0],
+      };
+      setPlots(index, newPlotContext);
+
+      setPlotYScales((prev) =>
+        prev.map((yScale, i) => (i === index ? { min: 0, max: 0 } : yScale)),
+      );
+
+      setRender(true);
+    }, 0);
+  };
+
   return (
     <>
       <div
@@ -690,8 +786,8 @@ export function LogViewerTabPageContent() {
             {(item, index) => {
               // Header and items need not be derived state, as they will not
               // change within a plot.
-              const currentHeader = item.map((i) => header()[i]);
-              const currentItems = item.map((i) => series()[i]);
+              const currentHeader = item.map((i) => getHeader()![i]);
+              const currentItems = item.map((i) => getSeries()![i]);
 
               // Current ID must be derived state as index can change based on
               // added/merged plots.
@@ -966,8 +1062,15 @@ export function LogViewerTabPageContent() {
                             if (path) {
                               await saveCsvFile(
                                 path,
-                                visibleHeader,
-                                visibleSeries,
+                                visibleHeader.filter(
+                                  (header) => !header.includes("acceleration"),
+                                ),
+                                visibleSeries.filter(
+                                  (_, seriesIndex) =>
+                                    !visibleHeader[seriesIndex].includes(
+                                      "acceleration",
+                                    ),
+                                ),
                                 xMin,
                                 xMax,
                                 enumMappings() ? enumMappings()! : undefined,
@@ -1061,6 +1164,16 @@ export function LogViewerTabPageContent() {
                     legendShrink={isLegendShrink()}
                     onLegendShrinkChange={(newState) => {
                       setIsLegendShrink(newState);
+                    }}
+                    onCreateAcceleration={(
+                      velocityData,
+                      accelerationHeader,
+                    ) => {
+                      createAccelerationSeries(
+                        index(),
+                        velocityData,
+                        accelerationHeader,
+                      );
                     }}
                     style={{
                       width: "100%",
