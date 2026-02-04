@@ -64,6 +64,7 @@ export type PlotProps = JSX.HTMLAttributes<HTMLDivElement> & {
   onLegendPanelSize?: (size: number) => void;
   legendShrink?: boolean;
   onLegendShrinkChange?: (isShrink: boolean) => void;
+  onCreateAcceleration?: (positionSeries: number[], newHeader: string) => void;
 };
 
 export type PlotContext = {
@@ -1404,6 +1405,19 @@ export function Plot(props: PlotProps) {
                           filter={getContext().filter[item]}
                           onFilterChange={(newFilter) => {
                             setContext()("filter", item, newFilter);
+                          }}
+                          onCreateAcceleration={() => {
+                            const velocityData =
+                              props.series[props.header.indexOf(header)];
+
+                            const velocityAxis = header.split("_");
+                            const newName =
+                              velocityAxis
+                                .slice(0, -1)
+                                .concat()
+                                .toString()
+                                .replaceAll(",", "_") + "_acceleration";
+                            props.onCreateAcceleration?.(velocityData, newName);
                           }}
                         />
                       </div>
