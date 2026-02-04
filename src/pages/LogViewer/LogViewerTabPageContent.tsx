@@ -952,7 +952,7 @@ export function LogViewerTabPageContent() {
                               tabPageProps!.toaster.create({
                                 title: "Invalid Range",
                                 description:
-                                  "The x-axis dosen't have enough range.",
+                                  "The x-axis doesn't have enough range.",
                                 type: "error",
                               });
                               return;

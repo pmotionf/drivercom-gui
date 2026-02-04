@@ -223,7 +223,8 @@ function Monitoring() {
   // Signals only for UI
   const [showSideBar, setShowSideBar] = createSignal<boolean>(true);
   const [panelSize, setPanelSize] = createSignal<number>(100);
-  const [connectBtnLoading, setConnetBtnLoading] = createSignal<boolean>(false);
+  const [connectBtnLoading, setConnectBtnLoading] =
+    createSignal<boolean>(false);
 
   // Data for Status Page
   const systemErrors = (): {
@@ -541,32 +542,32 @@ function Monitoring() {
                   isConnect={isConnect()}
                   loading={connectBtnLoading()}
                   onConnectServer={async (ip: string, port: string) => {
-                    setConnetBtnLoading(true);
+                    setConnectBtnLoading(true);
                     try {
                       await serverHandler.connect(ip, port);
                       const serverResponse: LineType[] =
                         await serverHandler.getLineConfig();
                       await addIpHistory(ip, port);
                       setLines(serverResponse);
-                      setConnetBtnLoading(false);
+                      setConnectBtnLoading(false);
                       if (serverHandler.getStatus() === WebSocket.OPEN) {
                         setIsConnect(true);
                       }
                     } catch {
-                      setConnetBtnLoading(false);
+                      setConnectBtnLoading(false);
                       deleteIpHistory(ip, port);
                       await serverHandler.disconnect();
                       setIsConnect(false);
                     }
                   }}
                   onDisconnectServer={async () => {
-                    setConnetBtnLoading(true);
+                    setConnectBtnLoading(true);
                     setLines([]);
                     setSystems([]);
 
                     await serverHandler.disconnect();
 
-                    setConnetBtnLoading(false);
+                    setConnectBtnLoading(false);
                     setIsConnect(false);
                   }}
                   mmcCliBtnLoading={mmcCliConnectLoading()}

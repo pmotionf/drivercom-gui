@@ -45,7 +45,7 @@ export function SeriesConfiguration(props: SeriesConfigurationProps) {
 
   const [stroke, setStroke] = createSignal(props.stroke ?? LegendStroke.Line);
 
-  const [dataFilter, setDataFiter] = createSignal<number>(
+  const [dataFilter, setDataFilter] = createSignal<number>(
     props.dataFilter ?? 0,
   );
 
@@ -165,7 +165,7 @@ export function SeriesConfiguration(props: SeriesConfigurationProps) {
           <Input
             value={dataFilter().toString()}
             onChange={(e) => {
-              setDataFiter(Number(e.target.value));
+              setDataFilter(Number(e.target.value));
             }}
             style={{ "grid-row": 2, "grid-column": 2, "margin-top": "0.4rem" }}
           />

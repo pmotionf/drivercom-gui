@@ -25,7 +25,7 @@ export type ConnectButtonProps = JSX.HTMLAttributes<HTMLButtonElement> & {
 };
 
 export function ConnectButton(props: ConnectButtonProps) {
-  const [isDectecting, setIsDetecting] = createSignal<boolean>(false);
+  const [isDetecting, setIsDetecting] = createSignal<boolean>(false);
 
   async function detectPort() {
     const drivercom = Command.sidecar("binaries/drivercom", ["port.detect"]);
@@ -154,7 +154,7 @@ export function ConnectButton(props: ConnectButtonProps) {
               height="2em"
               variant="outline"
               fontWeight="medium"
-              loading={isDectecting()}
+              loading={isDetecting()}
               onClick={async () => {
                 setIsDetecting(true);
                 await detectPort();

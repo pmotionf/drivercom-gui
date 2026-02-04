@@ -27,12 +27,12 @@ export type AxisControlProps = {
   onStopPull?: () => void;
   onStopPush?: () => void;
   onStopCommand?: () => void;
-  onIntialize?: (
+  onInitialize?: (
     direction: string,
     carrierId: string,
     linkAxis?: string,
   ) => void;
-  onDeintialize?: () => void;
+  onDeinitialize?: () => void;
   stopPullDisabled?: boolean;
   stopPushDisabled?: boolean;
 };
@@ -445,10 +445,10 @@ export function AxisControlButton(props: AxisControlProps & IconButtonProps) {
                 onClick={() => {
                   if (props.hasCarrier) {
                     setLastCommand(AxisCommandType.Deinitialize);
-                    props.onDeintialize?.();
+                    props.onDeinitialize?.();
                   } else {
                     setLastCommand(AxisCommandType.Initialize);
-                    props.onIntialize?.(
+                    props.onInitialize?.(
                       initializeDirection(),
                       initializeCarrierId(),
                       initializeLink() === AxisLink.None

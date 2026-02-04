@@ -169,10 +169,10 @@ export function Axis(props: AxisProps) {
           onStopPush={() => props.onStopPush?.()}
           onStopPull={() => props.onStopPull?.()}
           onStopCommand={() => props.onStopCommand?.()}
-          onIntialize={(direction, carrierId, axisLink) =>
-            props.onIntialize?.(direction, carrierId, axisLink)
+          onInitialize={(direction, carrierId, axisLink) =>
+            props.onInitialize?.(direction, carrierId, axisLink)
           }
-          onDeintialize={() => props.onDeintialize?.()}
+          onDeinitialize={() => props.onDeinitialize?.()}
         />
       </Stack>
 
