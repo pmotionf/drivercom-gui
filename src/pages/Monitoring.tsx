@@ -6,15 +6,16 @@ import { css } from "styled-system/css/css";
 import { Show } from "solid-js/web";
 import { Toast } from "~/components/ui/toast.tsx";
 import {
+  ipHistory,
   monitoringInputs,
   page,
   Pages,
   setDetectedServer,
+  setIpHistory,
   tcpClientIds,
 } from "~/GlobalState.ts";
 import { createStore } from "solid-js/store";
 import { IpAddress } from "~/components/System/IpHistory.tsx";
-import { load } from "@tauri-apps/plugin-store";
 import { Tabs } from "~/components/ui/tabs.tsx";
 import { ControlPage } from "~/components/MonitoringSidebar/ControlPage.tsx";
 import { ConnectPage } from "~/components/MonitoringSidebar/ConnectPage.tsx";
@@ -173,23 +174,9 @@ function Monitoring() {
     return findError;
   };
 
-  // Get & Set recent ip history
-  const [ipHistory, setIpHistory] = createSignal<IpAddress[]>([]);
   const [showConnectPage, setRender] = createSignal<boolean>(false);
 
   onMount(async () => {
-    try {
-      const store = await load("store.json", { autoSave: false });
-      if (await store.has("ipHistory")) {
-        const value = await store.get<IpAddress[]>("ipHistory");
-        if (value) {
-          setIpHistory(value);
-        }
-      }
-    } catch (error) {
-      throw error;
-    }
-
     if (!monitoringInputs.has("IP")) {
       monitoringInputs.set("IP", createSignal<string>(""));
     }
@@ -202,18 +189,6 @@ function Monitoring() {
     }
     setRender(true);
   });
-
-  createEffect(
-    on(
-      () => ipHistory(),
-      async () => {
-        const store = await load("store.json", { autoSave: false });
-        await store.set("ipHistory", ipHistory());
-        await store.save();
-      },
-      { defer: true },
-    ),
-  );
 
   const addIpHistory = async (ip: string, port: string) => {
     const serverName = await serverHandler.getServerName();
