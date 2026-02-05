@@ -673,14 +673,15 @@ export function LogViewerTabPageContent() {
   const calculateAcceleration = (velocityData: number[]) => {
     const dt = 15000 / 1;
 
-    const accleration = velocityData.slice(0, -1).map((v1, i) => {
+    const acceleration = velocityData.slice(0, -1).map((v1, i) => {
       const v2 = velocityData[i + 1];
 
       const effectiveV1 = v1 !== 0 ? v1 : v2 === 0 ? v1 : velocityData[i - 1];
-
-      return (v2 - effectiveV1) / dt;
+      const acceleration = (v2 - effectiveV1) / dt;
+      return acceleration;
     });
-    return [0, ...accleration];
+
+    return [0, ...acceleration];
   };
 
   const createAccelerationSeries = (
@@ -722,11 +723,10 @@ export function LogViewerTabPageContent() {
       };
       setPlots(index, newPlotContext);
 
+      setRender(true);
       setPlotYScales((prev) =>
         prev.map((yScale, i) => (i === index ? { min: 0, max: 0 } : yScale)),
       );
-
-      setRender(true);
       clearTimeout(timeout);
     }, 0);
   };
