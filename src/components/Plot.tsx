@@ -1411,13 +1411,11 @@ export function Plot(props: PlotProps) {
                             const velocityData =
                               props.series[props.header.indexOf(header)];
 
-                            const velocityAxis = header.split("_");
-                            const newName =
-                              velocityAxis
-                                .slice(0, -1)
-                                .concat()
-                                .toString()
-                                .replaceAll(",", "_") + "_acceleration";
+                            const removeVelocity = header.replace(
+                              "velocity",
+                              "",
+                            );
+                            const newName = removeVelocity + "acceleration";
                             props.onCreateAcceleration?.(velocityData, newName);
                           }}
                         />
