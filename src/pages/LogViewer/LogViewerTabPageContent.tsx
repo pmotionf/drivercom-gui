@@ -671,11 +671,14 @@ export function LogViewerTabPageContent() {
   const plotToolBoxWidth = "12em";
 
   const calculateAcceleration = (velocityData: number[]) => {
-    const dt = 15000 / 1;
+    const dt = 1 / 15000;
 
     let lastV1 = 0;
     const acceleration = velocityData.slice(0, -1).map((v1, i) => {
       const effectiveV1 = v1 !== 0 ? v1 : lastV1;
+      if (effectiveV1 === 0) {
+        return 0;
+      }
       lastV1 = effectiveV1;
       const v2 = velocityData[i + 1];
       const effectiveV2 = v2 !== 0 ? v2 : effectiveV1;
