@@ -673,12 +673,14 @@ export function LogViewerTabPageContent() {
   const calculateAcceleration = (velocityData: number[]) => {
     const dt = 15000 / 1;
 
+    let lastV1 = 0;
     const acceleration = velocityData.slice(0, -1).map((v1, i) => {
+      const effectiveV1 = v1 !== 0 ? v1 : lastV1;
+      lastV1 = effectiveV1;
       const v2 = velocityData[i + 1];
+      const effectiveV2 = v2 !== 0 ? v2 : effectiveV1;
 
-      const effectiveV1 = v1 !== 0 ? v1 : v2 === 0 ? v1 : velocityData[i - 1];
-      const acceleration = (v2 - effectiveV1) / dt;
-      return acceleration;
+      return (effectiveV2 - effectiveV1) / dt;
     });
 
     return [0, ...acceleration];
