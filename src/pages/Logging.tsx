@@ -37,6 +37,7 @@ import { logForm, setLogForm } from "~/GlobalState.ts";
 import { AccordionStates } from "~/components/Form.tsx";
 import { DownloadStates, DownloadStatus } from "~/components/DownloadList.tsx";
 import JSON5 from "json5";
+import { load } from "@tauri-apps/plugin-store";
 
 export type LoggingFormType = {
   title: string;
@@ -473,6 +474,24 @@ export function Logging() {
   };
 
   const [disableBtn, setDisableBtn] = createSignal<LogButton>(LogButton.None);
+
+  createEffect(
+    on(
+      () => recentLogFilePaths(),
+      async () => {
+        const store = await load("store.json", {
+          defaults: {
+            configFilePath: undefined,
+            logFilePath: undefined,
+            ipHistory: undefined,
+          },
+          autoSave: false,
+        });
+        store.set("logFilePath", recentLogFilePaths());
+      },
+      { defer: true },
+    ),
+  );
 
   return (
     <>

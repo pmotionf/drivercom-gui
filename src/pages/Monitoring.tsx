@@ -56,6 +56,7 @@ import { disconnect } from "@kuyoonjo/tauri-plugin-tcp";
 import CarrierPage, {
   CarrierState,
 } from "~/components/MonitoringSidebar/CarrierPage.tsx";
+import { load } from "@tauri-apps/plugin-store";
 
 export type Lines = LineType[];
 export type Systems = TrackType[];
@@ -278,6 +279,24 @@ function Monitoring() {
     setCarrierTabRender(false);
     setCarrierTabRender(true);
   };
+
+  createEffect(
+    on(
+      () => ipHistory(),
+      async () => {
+        const store = await load("store.json", {
+          defaults: {
+            configFilePath: undefined,
+            logFilePath: undefined,
+            ipHistory: undefined,
+          },
+          autoSave: false,
+        });
+        store.set("ipHistory", ipHistory());
+      },
+      { defer: true },
+    ),
+  );
 
   return (
     <>
