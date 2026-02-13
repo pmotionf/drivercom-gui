@@ -4,6 +4,7 @@ import {
   pageKeys,
   tabContexts,
   panelContexts,
+  recentConfigFilePaths,
 } from "~/GlobalState.ts";
 import { Panel } from "~/components/Panel.tsx";
 import { PanelLayout, PanelSizeContext } from "~/components/PanelLayout.tsx";
@@ -11,8 +12,9 @@ import { TabContext, TabList, TabListContext } from "~/components/TabList.tsx";
 import { ConfigTabContent } from "./Configuration/ConfigTabContent.tsx";
 import { GainLockStates, LinkStates } from "~/components/ConfigForm.tsx";
 import { AccordionStates } from "~/components/Form.tsx";
-import { createSignal, onMount, Show } from "solid-js";
+import { createEffect, createSignal, on, onMount, Show } from "solid-js";
 import { createStore } from "solid-js/store";
+import { load } from "@tauri-apps/plugin-store";
 
 function Configuration() {
   const [render, setRender] = createSignal<boolean>(false);
@@ -69,6 +71,24 @@ function Configuration() {
       });
     }
   };
+
+  createEffect(
+    on(
+      () => recentConfigFilePaths(),
+      async () => {
+        const store = await load("store.json", {
+          defaults: {
+            configFilePath: undefined,
+            logFilePath: undefined,
+            ipHistory: undefined,
+          },
+          autoSave: false,
+        });
+        store.set("configFilePath", recentConfigFilePaths());
+      },
+      { defer: true },
+    ),
+  );
 
   return (
     <Show when={render()}>

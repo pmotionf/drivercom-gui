@@ -47,12 +47,9 @@ import {
   setLogConfigDescription,
   setApiVersion,
   apiVersion,
-  recentConfigFilePaths,
-  recentLogFilePaths,
   setRecentConfigFilePaths,
   setRecentLogFilePaths,
   setIpHistory,
-  ipHistory,
 } from "./GlobalState.ts";
 
 import { Button } from "~/components/ui/button.tsx";
@@ -66,7 +63,6 @@ import { DownloadList } from "./components/DownloadList.tsx";
 import api from "src-tauri/generated/api.json";
 import JSON5 from "json5";
 import { killTerminal } from "./pages/utils/MmcCliHandler.ts";
-import { getCurrentWindow } from "@tauri-apps/api/window";
 import { load } from "@tauri-apps/plugin-store";
 import { IpAddress } from "./components/System/IpHistory.tsx";
 
@@ -100,8 +96,7 @@ function App(props: RouteSectionProps) {
     await getConfigDescription();
     await getLogConfigDescription();
     await prepareConfigTabFormat();
-    await getRecentFilePaths();
-    await storeFilePath();
+    await getStoreValues();
   });
 
   async function detectCliVersion() {
@@ -231,7 +226,7 @@ function App(props: RouteSectionProps) {
     setConfigTabForm(config);
   }
 
-  async function getRecentFilePaths() {
+  async function getStoreValues() {
     const store = await load("store.json", {
       defaults: {
         configFilePath: undefined,
@@ -259,25 +254,6 @@ function App(props: RouteSectionProps) {
       const getIpHistory = (await store.get("ipHistory")) as IpAddress[];
       setIpHistory(getIpHistory);
     }
-  }
-
-  async function storeFilePath() {
-    const window = getCurrentWindow();
-    const unlisten = await window.onCloseRequested(async () => {
-      const store = await load("store.json", {
-        defaults: {
-          configFilePath: undefined,
-          logFilePath: undefined,
-          ipHistory: undefined,
-        },
-        autoSave: false,
-      });
-      store.set("configFilePath", recentConfigFilePaths());
-      store.set("logFilePath", recentLogFilePaths());
-      store.set("ipHistory", ipHistory());
-      await store.save();
-    });
-    onCleanup(() => unlisten());
   }
 
   const [version, setVersion] = createSignal("0.0.0");
