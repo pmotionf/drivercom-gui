@@ -397,20 +397,38 @@ function Monitoring() {
                 carrierId,
                 axisLink,
               ) => {
-                setSendingCmd({ line: lineName, axisId: axisId });
-                await initialize(
-                  lineName,
-                  axisId,
-                  direction,
-                  carrierId,
-                  axisLink,
-                );
-                setSendingCmd(null);
+                try {
+                  setSendingCmd({ line: lineName, axisId: axisId });
+                  await initialize(
+                    lineName,
+                    axisId,
+                    direction,
+                    carrierId,
+                    axisLink,
+                  );
+                  setSendingCmd(null);
+                } catch (e) {
+                  toaster.create({
+                    title: "Error",
+                    description: e as string,
+                    type: "error",
+                  });
+                  setSendingCmd(null);
+                }
               }}
               onDeinitialize={async (lineName, axisId) => {
-                setSendingCmd({ line: lineName, axisId: axisId });
-                deinitialize(lineName, axisId);
-                setSendingCmd(null);
+                try {
+                  setSendingCmd({ line: lineName, axisId: axisId });
+                  await deinitialize(lineName, axisId);
+                  setSendingCmd(null);
+                } catch (e) {
+                  toaster.create({
+                    title: "Error",
+                    description: e as string,
+                    type: "error",
+                  });
+                  setSendingCmd(null);
+                }
               }}
               onLineCommands={async (params) => {
                 setSendingCmd({ line: params.line, axisId: NaN });
