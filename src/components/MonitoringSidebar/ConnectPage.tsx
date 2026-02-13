@@ -248,91 +248,12 @@ export const ConnectPage = (props: ConnectPageProps) => {
           </Button>
         </form>
       </div>
-      {/* IP History Area */}
-      <Show when={props.ipHistory.length > 0}>
-        <div
-          style={{
-            width: "33.3%",
-            height: `100%`,
-            "border-right-width": "2px",
-          }}
-        >
-          <Text
-            style={{
-              "font-weight": "bold",
-              height: "2em",
-              "margin-top": "1em",
-              "margin-left": "1em",
-            }}
-          >
-            {"Recent"}
-          </Text>
-          <div style={{ width: "100%", height: `calc(100% - 2em)` }}>
-            <IpHistory
-              ipHistory={props.ipHistory}
-              onDeleteIp={(ipIndex: number) => {
-                props.changeIpHistory([
-                  ...props.ipHistory.filter((_, i) => i !== ipIndex),
-                ]);
-              }}
-              onConnectServer={async (index: number) => {
-                const newIp = props.ipHistory[index].ip;
-                const newPort = props.ipHistory[index].port;
-                if (props.mmcCliBtnLoading) {
-                  toaster.create({
-                    title: "Invalid request",
-                    description: "MMC-CLI is loading.",
-                    type: "error",
-                  });
-                  return;
-                }
-                if (props.loading) {
-                  toaster.create({
-                    title: "Already Connecting",
-                    description:
-                      newIp === ip() && newPort === port()
-                        ? "Already connecting to server."
-                        : "Already connecting to other server.",
-                    type: "error",
-                  });
-                  return;
-                }
-
-                if (props.isConnect) {
-                  if (newIp === ip() && newPort === port()) {
-                    toaster.create({
-                      title: "Connected Server",
-                      description: "This server is already connected.",
-                      type: "error",
-                    });
-                    return;
-                  }
-
-                  props.onDisconnectServer?.();
-                  if (connectMmccli()) {
-                    props.onDisconnectMmccli?.(true);
-                  }
-                  while (props.isConnect) {
-                    await delay(1);
-                  }
-                }
-
-                setIp(newIp);
-                setPort(newPort);
-                props.onConnectServer?.(ip(), port());
-                if (connectMmccli()) {
-                  props.onConnectMmccli?.(ip());
-                }
-              }}
-            />
-          </div>
-        </div>
-      </Show>
 
       <div
         style={{
           width: "33.3%",
           height: "100%",
+          "border-right-width": "2px",
         }}
       >
         <div
@@ -438,6 +359,85 @@ export const ConnectPage = (props: ConnectPageProps) => {
           </div>
         </Show>
       </div>
+      {/* IP History Area */}
+      <Show when={props.ipHistory.length > 0}>
+        <div
+          style={{
+            width: "33.3%",
+            height: `100%`,
+          }}
+        >
+          <Text
+            style={{
+              "font-weight": "bold",
+              height: "2em",
+              "margin-top": "1em",
+              "margin-left": "1em",
+            }}
+          >
+            {"Recent"}
+          </Text>
+          <div style={{ width: "100%", height: `calc(100% - 2em)` }}>
+            <IpHistory
+              ipHistory={props.ipHistory}
+              onDeleteIp={(ipIndex: number) => {
+                props.changeIpHistory([
+                  ...props.ipHistory.filter((_, i) => i !== ipIndex),
+                ]);
+              }}
+              onConnectServer={async (index: number) => {
+                const newIp = props.ipHistory[index].ip;
+                const newPort = props.ipHistory[index].port;
+                if (props.mmcCliBtnLoading) {
+                  toaster.create({
+                    title: "Invalid request",
+                    description: "MMC-CLI is loading.",
+                    type: "error",
+                  });
+                  return;
+                }
+                if (props.loading) {
+                  toaster.create({
+                    title: "Already Connecting",
+                    description:
+                      newIp === ip() && newPort === port()
+                        ? "Already connecting to server."
+                        : "Already connecting to other server.",
+                    type: "error",
+                  });
+                  return;
+                }
+
+                if (props.isConnect) {
+                  if (newIp === ip() && newPort === port()) {
+                    toaster.create({
+                      title: "Connected Server",
+                      description: "This server is already connected.",
+                      type: "error",
+                    });
+                    return;
+                  }
+
+                  props.onDisconnectServer?.();
+                  if (connectMmccli()) {
+                    props.onDisconnectMmccli?.(true);
+                  }
+                  while (props.isConnect) {
+                    await delay(1);
+                  }
+                }
+
+                setIp(newIp);
+                setPort(newPort);
+                props.onConnectServer?.(ip(), port());
+                if (connectMmccli()) {
+                  props.onConnectMmccli?.(ip());
+                }
+              }}
+            />
+          </div>
+        </div>
+      </Show>
     </div>
   );
 };
