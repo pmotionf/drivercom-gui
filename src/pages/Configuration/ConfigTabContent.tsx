@@ -28,7 +28,7 @@ import { AccordionStates } from "./ConfigForm/ConfigForm";
 import JSON5 from "json5";
 import { Spinner } from "~/components/ui/spinner";
 import { IconButton } from "~/components/ui/icon-button";
-import { ConnectButton } from "../Connect/ConnectButton";
+import { ConnectButton } from "../../components/Connect/ConnectButton";
 import { ConfigType } from "src-tauri/generated/config/ConfigType";
 
 export type ConfigTabPage = {
