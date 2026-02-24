@@ -38,7 +38,6 @@ import { Legend, LegendStroke } from "./Plot/Legend";
 import { Tooltip } from "./ui/tooltip";
 import { Text } from "./ui/text";
 import { Portal } from "solid-js/web";
-import uFuzzy from "@leeoniya/ufuzzy";
 import { Splitter } from "./ui/splitter";
 import type { CursorPluginMessageBus } from "@dschz/solid-uplot/plugins";
 import { SolidUplot, createPluginBus } from "@dschz/solid-uplot";
@@ -48,6 +47,7 @@ import { cursor, tooltip } from "@dschz/solid-uplot/plugins";
 import { PlotToolTip } from "./Plot/PlotTooltip";
 import { clamp, movingAvg } from "~/utils/PlotCalculation";
 import { getComputedCSSVariableValue } from "~/utils/GetComputedCssVariableValue";
+import { fuzzySearch } from "~/utils/FuzzySearch";
 
 export type PlotProps = JSX.HTMLAttributes<HTMLDivElement> & {
   id: string;
@@ -1474,21 +1474,3 @@ const kelly_colors_hex = [
   "#F13A13", // Vivid Reddish Orange
   "#232C16", // Dark Olive Green
 ];
-
-function fuzzySearch(searchInputValue: string, headers: string[]): string[] {
-  const uf = new uFuzzy({});
-  // Pre-filter
-  const idxs = uf.filter(headers, searchInputValue);
-
-  if (idxs != null && idxs.length > 0) {
-    const info = uf.info(idxs, headers, searchInputValue);
-    const order = uf.sort(info, headers, searchInputValue);
-    const result = [];
-    for (let i = 0; i < order.length; i++) {
-      result.push(headers[idxs[i]]);
-    }
-    return result;
-  } else {
-    return [];
-  }
-}
