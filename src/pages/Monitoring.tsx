@@ -51,7 +51,7 @@ import {
   initialize,
   deinitialize,
   moveCarrier,
-} from "./utils/MmcCliHandler.ts";
+} from "../utils/MmcCliHandler.ts";
 import { disconnect } from "@kuyoonjo/tauri-plugin-tcp";
 import CarrierPage, {
   CarrierState,

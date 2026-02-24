@@ -2,7 +2,7 @@ import { IconButton, IconButtonProps } from "../ui/icon-button.tsx";
 import { IconDots } from "@tabler/icons-solidjs";
 import { Popover } from "../ui/popover.tsx";
 import { createSignal, Show } from "solid-js";
-import { getAcceleration, getSpeed } from "~/pages/utils/MmcCliHandler.ts";
+import { getAcceleration, getSpeed } from "~/utils/MmcCliHandler.ts";
 import { Text } from "../ui/text.tsx";
 import { Button } from "../ui/button.tsx";
 import { SendingCommand } from "./System.tsx";
