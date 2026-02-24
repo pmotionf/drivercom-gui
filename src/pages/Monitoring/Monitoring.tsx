@@ -28,7 +28,7 @@ import { SendingCommand, System } from "./System/System.tsx";
 import {
   Response_Track_Axis_Error,
   Response_Track_Driver_Error,
-} from "~/components/proto/mmc/info_pb.ts";
+} from "~/proto/mmc/info_pb.ts";
 import { StatusPage } from "./MonitoringSidebar/StatusPage.tsx";
 import { reconcile } from "solid-js/store";
 import {

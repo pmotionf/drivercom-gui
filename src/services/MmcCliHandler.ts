@@ -7,12 +7,8 @@ import { BaseDirectory, readDir, writeTextFile } from "@tauri-apps/plugin-fs";
 import { path } from "@tauri-apps/api";
 import JSON5 from "json5";
 import { Command } from "@tauri-apps/plugin-shell";
-import {
-  Request,
-  RequestSchema,
-  ResponseSchema,
-} from "~/components/proto/mmc_pb";
-import { Request_Kind } from "~/components/proto/mmc/core_pb";
+import { Request, RequestSchema, ResponseSchema } from "~/proto/mmc_pb";
+import { Request_Kind } from "~/proto/mmc/core_pb";
 import { fromBinary, toBinary } from "@bufbuild/protobuf";
 import { connect, disconnect, listen, send } from "@kuyoonjo/tauri-plugin-tcp";
 import { tcpClientIds } from "~/store/GlobalState";

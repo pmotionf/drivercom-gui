@@ -1,18 +1,12 @@
 import { toBinary } from "@bufbuild/protobuf";
-import {
-  Request_Kind,
-  Response_TrackConfig_Line,
-} from "~/components/proto/mmc/core_pb";
-import {
-  Response_Command_Status,
-  Response_Track,
-} from "~/components/proto/mmc/info_pb";
+import { Request_Kind, Response_TrackConfig_Line } from "~/proto/mmc/core_pb";
+import { Response_Command_Status, Response_Track } from "~/proto/mmc/info_pb";
 import {
   Request,
   RequestSchema,
   Response,
   ResponseSchema,
-} from "~/components/proto/mmc_pb";
+} from "~/proto/mmc_pb";
 import { fromBinary } from "@bufbuild/protobuf";
 
 export type LineType = Omit<

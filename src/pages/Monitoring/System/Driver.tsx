@@ -6,7 +6,7 @@ import { Tooltip } from "~/components/ui/tooltip.tsx";
 import {
   Response_Track_Driver_Error,
   Response_Track_Driver_State,
-} from "~/components/proto/mmc/info_pb.ts";
+} from "~/proto/mmc/info_pb";
 import { Stack } from "styled-system/jsx/stack";
 import {
   IconAlertTriangle,
