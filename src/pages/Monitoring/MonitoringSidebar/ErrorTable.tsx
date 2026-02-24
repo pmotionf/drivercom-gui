@@ -5,7 +5,7 @@ import { Text } from "~/components/ui/text";
 import {
   Response_Track_Axis_Error,
   Response_Track_Driver_Error,
-} from "~/components/proto/mmc/info_pb";
+} from "~/proto/mmc/info_pb";
 import { Show } from "solid-js";
 import { trackStore } from "@solid-primitives/deep";
 import JSON5 from "json5";

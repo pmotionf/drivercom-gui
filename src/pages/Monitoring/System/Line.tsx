@@ -9,7 +9,7 @@ import { TrackType, LineType } from "~/services/ServerHandler.ts";
 import {
   Response_Track_Axis_Error,
   Response_Track_Driver_Error,
-} from "~/components/proto/mmc/info_pb.ts";
+} from "~/proto/mmc/info_pb.ts";
 import {
   LineControlButton,
   LineCommandParameters,

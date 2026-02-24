@@ -8,7 +8,7 @@ import {
   Response_Track_Axis_State,
   Response_Track_Carrier_State,
   Response_Track_Carrier_State_State,
-} from "~/components/proto/mmc/info_pb.ts";
+} from "~/proto/mmc/info_pb.ts";
 import { AxisControlProps, AxisControlButton } from "./AxisControlButton.tsx";
 
 export type AxisProps = AxisControlProps & {
