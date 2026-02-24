@@ -47,6 +47,7 @@ import type { UplotPluginFactory } from "@dschz/solid-uplot";
 import { cursor, tooltip } from "@dschz/solid-uplot/plugins";
 import { PlotToolTip } from "./Plot/PlotTooltip";
 import { clamp, movingAvg } from "~/utils/PlotCalculation";
+import { getComputedCSSVariableValue } from "~/utils/GetComputedCssVariableValue";
 
 export type PlotProps = JSX.HTMLAttributes<HTMLDivElement> & {
   id: string;
@@ -1447,21 +1448,6 @@ export function Plot(props: PlotProps) {
       </Show>
     </>
   );
-}
-function getComputedCSSVariableValue(variable: string) {
-  let value = getComputedStyle(document.documentElement).getPropertyValue(
-    variable,
-  );
-
-  while (value.startsWith("var(")) {
-    // Extract the name of the referenced variable
-    const referencedVarName = value.slice(4, value.length - 1);
-    value = getComputedStyle(document.documentElement).getPropertyValue(
-      referencedVarName,
-    );
-  }
-
-  return value.trim();
 }
 
 const kelly_colors_hex = [

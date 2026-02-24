@@ -13,6 +13,7 @@ import {
 } from "@tabler/icons-solidjs";
 import { IconButton } from "../ui/icon-button";
 import { Tooltip } from "../ui/tooltip";
+import { getComputedCSSVariableValue } from "~/utils/GetComputedCssVariableValue";
 
 export type FormNumberInputProps = {
   id: string;
@@ -33,22 +34,6 @@ export const FormNumberInput = (props: FormNumberInputProps) => {
   let divRef: HTMLDivElement | undefined;
   const lockStatus = props.lockStatus;
   const lockStatusKey = props.lockStatusKey;
-
-  function getComputedCSSVariableValue(variable: string) {
-    let value = getComputedStyle(document.documentElement).getPropertyValue(
-      variable,
-    );
-
-    while (value.startsWith("var(")) {
-      // Extract the name of the referenced variable
-      const referencedVarName = value.slice(4, value.length - 1);
-      value = getComputedStyle(document.documentElement).getPropertyValue(
-        referencedVarName,
-      );
-    }
-
-    return value.trim();
-  }
 
   const parseUnit = (unit: string) => {
     const splitSuper = unit.split("^");
