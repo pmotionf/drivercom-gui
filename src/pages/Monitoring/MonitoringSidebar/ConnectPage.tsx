@@ -1,4 +1,4 @@
-import { Text } from "../ui/text";
+import { Text } from "~/components/ui/text";
 import {
   MonitoringInputs,
   detectedServer,
@@ -6,7 +6,7 @@ import {
 } from "~/store/GlobalState";
 import { IpAddress, IpHistory } from "../System/IpHistory";
 import { Setter } from "solid-js";
-import { Button } from "../ui/button";
+import { Button } from "~/components/ui/button";
 import { Show } from "solid-js";
 import { CreateToasterReturn } from "@ark-ui/solid";
 import { css } from "styled-system/css";
@@ -14,7 +14,7 @@ import { createSignal } from "solid-js";
 import { invoke } from "@tauri-apps/api/core";
 import { ServerHandler } from "~/services/ServerHandler";
 import { IconArrowAutofitWidth } from "@tabler/icons-solidjs";
-import { Tooltip } from "../ui/tooltip";
+import { Tooltip } from "~/components/ui/tooltip";
 
 export type ConnectPageProps = {
   isConnect: boolean;

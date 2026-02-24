@@ -1,12 +1,12 @@
 import { useContext, createContext, JSX, Show } from "solid-js";
 import { For } from "solid-js/web";
-import { Badge } from "../ui/badge.tsx";
-import { Text } from "../ui/text.tsx";
-import { Tooltip } from "../ui/tooltip.tsx";
+import { Badge } from "~/components/ui/badge.tsx";
+import { Text } from "~/components/ui/text.tsx";
+import { Tooltip } from "~/components/ui/tooltip.tsx";
 import {
   Response_Track_Driver_Error,
   Response_Track_Driver_State,
-} from "../proto/mmc/info_pb.ts";
+} from "~/components/proto/mmc/info_pb.ts";
 import { Stack } from "styled-system/jsx/stack";
 import {
   IconAlertTriangle,

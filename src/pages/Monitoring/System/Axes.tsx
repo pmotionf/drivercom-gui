@@ -1,14 +1,14 @@
 import { Stack } from "styled-system/jsx";
-import { Text } from "../ui/text.tsx";
+import { Text } from "~/components/ui/text.tsx";
 import { For, Show } from "solid-js/web";
-import { Badge } from "../ui/badge.tsx";
-import { Tooltip } from "../ui/tooltip.tsx";
+import { Badge } from "~/components/ui/badge.tsx";
+import { Tooltip } from "~/components/ui/tooltip.tsx";
 import {
   Response_Track_Axis_Error,
   Response_Track_Axis_State,
   Response_Track_Carrier_State,
   Response_Track_Carrier_State_State,
-} from "../proto/mmc/info_pb.ts";
+} from "~/components/proto/mmc/info_pb.ts";
 import { AxisControlProps, AxisControlButton } from "./AxisControlButton.tsx";
 
 export type AxisProps = AxisControlProps & {

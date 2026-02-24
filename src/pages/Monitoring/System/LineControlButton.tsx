@@ -1,10 +1,10 @@
-import { IconButton, IconButtonProps } from "../ui/icon-button.tsx";
+import { IconButton, IconButtonProps } from "~/components/ui/icon-button.tsx";
 import { IconDots } from "@tabler/icons-solidjs";
-import { Popover } from "../ui/popover.tsx";
+import { Popover } from "~/components/ui/popover.tsx";
 import { createSignal, Show } from "solid-js";
 import { getAcceleration, getSpeed } from "~/services/MmcCliHandler.ts";
-import { Text } from "../ui/text.tsx";
-import { Button } from "../ui/button.tsx";
+import { Text } from "~/components/ui/text.tsx";
+import { Button } from "~/components/ui/button.tsx";
 import { SendingCommand } from "./System.tsx";
 
 export type LineCommandParameters = {

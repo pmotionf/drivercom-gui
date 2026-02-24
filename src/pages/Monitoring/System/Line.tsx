@@ -1,15 +1,15 @@
 import { JSX, useContext, createContext } from "solid-js";
 import { For, Show } from "solid-js/web";
-import { Accordion } from "../ui/accordion.tsx";
+import { Accordion } from "~/components/ui/accordion.tsx";
 import { ChevronDownIcon } from "lucide-solid";
 import { Stack } from "styled-system/jsx/stack";
-import { Text } from "../ui/text.tsx";
-import { Tooltip } from "../ui/tooltip.tsx";
+import { Text } from "~/components/ui/text.tsx";
+import { Tooltip } from "~/components/ui/tooltip.tsx";
 import { TrackType, LineType } from "~/services/ServerHandler.ts";
 import {
   Response_Track_Axis_Error,
   Response_Track_Driver_Error,
-} from "../proto/mmc/info_pb.ts";
+} from "~/components/proto/mmc/info_pb.ts";
 import {
   LineControlButton,
   LineCommandParameters,

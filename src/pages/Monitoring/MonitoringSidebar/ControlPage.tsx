@@ -1,6 +1,6 @@
 import { Setter } from "solid-js";
-import { Switch } from "../ui/switch";
-import { Text } from "../ui/text";
+import { Switch } from "~/components/ui/switch";
+import { Text } from "~/components/ui/text";
 
 export type ControlPageProps = {
   isAutoMode: boolean;

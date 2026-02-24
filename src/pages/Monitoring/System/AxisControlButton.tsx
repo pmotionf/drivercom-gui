@@ -1,11 +1,11 @@
-import { IconButton, IconButtonProps } from "../ui/icon-button.tsx";
+import { IconButton, IconButtonProps } from "~/components/ui/icon-button.tsx";
 import { IconDots } from "@tabler/icons-solidjs";
-import { Popover } from "../ui/popover.tsx";
-import { Input } from "../ui/input.tsx";
-import { Button } from "../ui/button.tsx";
+import { Popover } from "~/components/ui/popover.tsx";
+import { Input } from "~/components/ui/input.tsx";
+import { Button } from "~/components/ui/button.tsx";
 import { createSignal, For, Show } from "solid-js";
-import { Text } from "../ui/text.tsx";
-import { createListCollection, Select } from "../ui/select.tsx";
+import { Text } from "~/components/ui/text.tsx";
+import { createListCollection, Select } from "~/components/ui/select.tsx";
 
 export enum AxisDirection {
   FORWARD = "forward",

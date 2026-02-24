@@ -5,7 +5,7 @@ import { TabListContext } from "~/components/Tab/TabList.tsx";
 import { Child } from "@tauri-apps/plugin-shell";
 import { LoggingFormType } from "../pages/Logging.tsx";
 import { DownloadStates } from "~/components/DownloadList.tsx";
-import { IpAddress } from "~/components/System/IpHistory.tsx";
+import { IpAddress } from "~/pages/Monitoring/System/IpHistory.tsx";
 import {
   ConfigType,
   configDefaultValues,
