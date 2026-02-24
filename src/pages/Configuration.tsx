@@ -17,8 +17,11 @@ import {
   TabListContext,
 } from "~/components/Tab/TabList.tsx";
 import { ConfigTabContent } from "./Configuration/ConfigTabContent.tsx";
-import { GainLockStates, LinkStates } from "~/components/ConfigForm.tsx";
-import { AccordionStates } from "~/components/Form.tsx";
+import {
+  AccordionStates,
+  GainLockStates,
+  LinkStates,
+} from "~/components/ConfigForm/ConfigForm.tsx";
 import { createEffect, createSignal, on, onMount, Show } from "solid-js";
 import { createStore } from "solid-js/store";
 import { load } from "@tauri-apps/plugin-store";
@@ -46,10 +49,12 @@ function Configuration() {
   });
 
   const createTab = (key: string) => {
+    setRender(false);
     const id = crypto.randomUUID();
     const accordionStatuses: AccordionStates = new Map();
     const linkedStatuses: LinkStates = new Map();
     const gainLockStatuses: GainLockStates = new Map();
+    const formOverflowY: Map<string, number> = new Map();
     const newForm = JSON.parse(JSON.stringify(configFormFileFormat()));
     const newTab = {
       tab: {
@@ -66,6 +71,7 @@ function Configuration() {
           configGainLockStatuses: gainLockStatuses,
           formName: "New File",
           originalFile: JSON.parse(JSON.stringify(configFormFileFormat())),
+          formOverflowY: formOverflowY,
         },
       },
     } as TabContext;
@@ -77,6 +83,7 @@ function Configuration() {
         tabCtx[1]("focusedTab", newTab.tab.id);
       });
     }
+    setRender(true);
   };
 
   createEffect(

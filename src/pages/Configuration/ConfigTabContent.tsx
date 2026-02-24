@@ -2,7 +2,6 @@ import { IconRuler2, IconRuler2Off, IconX } from "@tabler/icons-solidjs";
 import { Command } from "@tauri-apps/plugin-shell";
 import { createEffect, createSignal, on, Show, useContext } from "solid-js";
 import { Stack } from "styled-system/jsx";
-import { ConfigForm } from "~/components/ConfigForm";
 import { FileMenu } from "~/components/FileMenu";
 import { PortMenu } from "~/components/PortMenu";
 import { TabPageContext } from "~/components/Tab/TabList";
@@ -19,25 +18,30 @@ import {
   setRecentConfigFilePaths,
   tabStore,
 } from "~/GlobalState";
-
-import { LinkStates, GainLockStates } from "~/components/ConfigForm";
+import {
+  ConfigForm,
+  LinkStates,
+  GainLockStates,
+} from "../../components/ConfigForm/ConfigForm";
 import { FileHandler } from "../utils/FileHandler";
-import { AccordionStates } from "~/components/Form";
+import { AccordionStates } from "../../components/ConfigForm/ConfigForm";
 import JSON5 from "json5";
 import { Spinner } from "~/components/ui/spinner";
 import { IconButton } from "~/components/ui/icon-button";
 import { ConnectButton } from "../Connect/ConnectButton";
+import { ConfigType } from "src-tauri/generated/config/ConfigType";
 
 export type ConfigTabPage = {
   filePath?: string;
   portId?: string;
-  configForm?: object;
+  configForm?: ConfigType;
   focusedTab?: string;
   configAccordionStatuses?: AccordionStates;
   configLinkedStatuses?: LinkStates;
   configGainLockStatuses?: GainLockStates;
   formName?: string;
-  originalFile?: object;
+  formOverflowY?: Map<string, number>;
+  originalFile?: ConfigType;
   changeUnit?: boolean;
 };
 
@@ -173,6 +177,11 @@ export function ConfigTabContent() {
   const getGainLockStatuses = () => {
     return tabStore.get(configTabProps.key)![0].tabContext[getTabIndex()]
       .tabPage!.configTabPage!.configGainLockStatuses;
+  };
+
+  const getFormScrollTop = () => {
+    return tabStore.get(configTabProps.key)![0].tabContext[getTabIndex()]
+      .tabPage!.configTabPage!.formOverflowY;
   };
 
   const getChangeUnit = () => {
@@ -499,11 +508,7 @@ export function ConfigTabContent() {
                   "json5",
                   getFilePath()!,
                   getFormName(),
-                  typeof config["id" as keyof typeof config] === "number" &&
-                    config["id" as keyof typeof config] > 0 &&
-                    typeof config["station" as keyof typeof config] ===
-                      "number" &&
-                    config["station" as keyof typeof config] > 0
+                  config.id !== 0 && config.station !== 0
                     ? `Driver ${config["id" as keyof typeof config]} Station ${config["station" as keyof typeof config]}`
                     : undefined,
                 );
@@ -669,6 +674,7 @@ export function ConfigTabContent() {
               linkedStatuses={getLinkedStatuses()!}
               accordionStatuses={getAccordionStatuses()!}
               gainLockStatuses={getGainLockStatuses()!}
+              formOverflowY={getFormScrollTop()!}
             />
           </div>
         </Show>
