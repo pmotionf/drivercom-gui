@@ -12,7 +12,7 @@ import { CreateToasterReturn } from "@ark-ui/solid";
 import { css } from "styled-system/css";
 import { createSignal } from "solid-js";
 import { invoke } from "@tauri-apps/api/core";
-import { ServerHandler } from "~/pages/Monitoring/ServerHandler";
+import { ServerHandler } from "~/services/ServerHandler";
 import { IconArrowAutofitWidth } from "@tabler/icons-solidjs";
 import { Tooltip } from "../ui/tooltip";
 
