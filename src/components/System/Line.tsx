@@ -5,7 +5,7 @@ import { ChevronDownIcon } from "lucide-solid";
 import { Stack } from "styled-system/jsx/stack";
 import { Text } from "../ui/text.tsx";
 import { Tooltip } from "../ui/tooltip.tsx";
-import { TrackType, LineType } from "~/pages/Monitoring/ServerHandler.ts";
+import { TrackType, LineType } from "~/services/ServerHandler.ts";
 import {
   Response_Track_Axis_Error,
   Response_Track_Driver_Error,

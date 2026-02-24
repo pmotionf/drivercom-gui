@@ -23,7 +23,7 @@ import {
   LineType,
   ServerHandler,
   TrackType,
-} from "./Monitoring/ServerHandler.ts";
+} from "../services/ServerHandler.ts";
 import { SendingCommand, System } from "~/components/System/System.tsx";
 import {
   Response_Track_Axis_Error,
