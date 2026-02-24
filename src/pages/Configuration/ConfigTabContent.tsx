@@ -22,9 +22,9 @@ import {
   ConfigForm,
   LinkStates,
   GainLockStates,
-} from "../../components/ConfigForm/ConfigForm";
+} from "./ConfigForm/ConfigForm";
 import { FileHandler } from "../../services/FileHandler";
-import { AccordionStates } from "../../components/ConfigForm/ConfigForm";
+import { AccordionStates } from "./ConfigForm/ConfigForm";
 import JSON5 from "json5";
 import { Spinner } from "~/components/ui/spinner";
 import { IconButton } from "~/components/ui/icon-button";

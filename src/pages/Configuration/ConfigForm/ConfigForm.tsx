@@ -26,7 +26,7 @@ import {
   calcVelocityP,
   calcWcc,
   calcWsc,
-} from "../../utils/GainCalculation";
+} from "../../../utils/GainCalculation";
 import JSON5 from "json5";
 import { trackStore } from "@solid-primitives/deep";
 import { ConfigFormTabPage } from "./ConfigFormTabPage";

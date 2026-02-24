@@ -3,12 +3,12 @@ import { LinkStates } from "./ConfigForm";
 import { GainLockStates } from "./ConfigForm";
 import { createStore } from "solid-js/store";
 import { Show, For, createSignal, onMount } from "solid-js";
-import { Accordion } from "../ui/accordion";
-import { IconButton } from "../ui/icon-button";
-import { Text } from "../ui/text";
-import { Tooltip } from "../ui/tooltip";
-import { FormNumberInput } from "../Form/FormNumberInput";
-import { FormCheckBox } from "../Form/FormCheckBox";
+import { Accordion } from "../../../components/ui/accordion";
+import { IconButton } from "../../../components/ui/icon-button";
+import { Text } from "../../../components/ui/text";
+import { Tooltip } from "../../../components/ui/tooltip";
+import { FormNumberInput } from "../../../components/Form/FormNumberInput";
+import { FormCheckBox } from "../../../components/Form/FormCheckBox";
 
 import {
   IconLock,
