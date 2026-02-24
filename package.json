@@ -27,7 +27,8 @@
     "fmt": "bun prettier --write src",
     "fmt-check": "bun prettier --version && bun prettier --config .prettierrc.json --check src",
     "precheck": "bun run prep",
-    "check": "bun eslint src && bun tsc"
+    "check": "bun eslint src && bun tsc",
+    "test": "vitest"
   },
   "dependencies": {
     "@ark-ui/solid": "^5.30.0",
