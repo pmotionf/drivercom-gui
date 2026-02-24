@@ -32,7 +32,7 @@ import { FileMenu } from "~/components/FileMenu.tsx";
 import { PortMenu } from "~/components/PortMenu.tsx";
 import { ConnectButton } from "./Connect/ConnectButton.tsx";
 import { Button } from "~/components/ui/button.tsx";
-import { FileHandler } from "./utils/FileHandler.ts";
+import { FileHandler } from "../utils/FileHandler.ts";
 import { logForm, setLogForm } from "~/store/GlobalState.ts";
 import { AccordionStates } from "~/components/Form.tsx";
 import { DownloadStates, DownloadStatus } from "~/components/DownloadList.tsx";
