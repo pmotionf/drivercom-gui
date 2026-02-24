@@ -4,7 +4,7 @@ import { createSignal } from "solid-js";
 import { Show } from "solid-js";
 //@ts-ignore Has an Any type error
 import { Stack } from "styled-system/jsx/stack.mjs";
-import { panelStore } from "~/GlobalState.ts";
+import { panelStore } from "~/store/GlobalState.ts";
 import { Splitter } from "../ui/splitter.tsx";
 import { PanelLayoutContext } from "./PanelContext.tsx";
 

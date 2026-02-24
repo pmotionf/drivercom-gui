@@ -13,7 +13,7 @@ import {
   setDetectedServer,
   setIpHistory,
   tcpClientIds,
-} from "~/GlobalState.ts";
+} from "~/store/GlobalState.ts";
 import { createStore } from "solid-js/store";
 import { IpAddress } from "~/components/System/IpHistory.tsx";
 import { Tabs } from "~/components/ui/tabs.tsx";

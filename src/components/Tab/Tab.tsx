@@ -11,7 +11,7 @@ import { createDraggable } from "@neodrag/solid";
 import { Stack } from "styled-system/jsx/stack.mjs";
 import { createEffect } from "solid-js";
 import { Text } from "../ui/text.tsx";
-import { tabStore } from "~/GlobalState.ts";
+import { tabStore } from "~/store/GlobalState.ts";
 import { TabContext } from "./TabList.tsx";
 import JSON5 from "json5";
 

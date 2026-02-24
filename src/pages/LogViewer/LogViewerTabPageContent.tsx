@@ -21,7 +21,7 @@ import { Stack } from "styled-system/jsx";
 import { Text } from "~/components/ui/text";
 import { Checkbox } from "~/components/ui/checkbox";
 import { Tooltip } from "~/components/ui/tooltip";
-import { tabStore } from "~/GlobalState.ts";
+import { tabStore } from "~/store/GlobalState.ts";
 import { on } from "solid-js";
 import { LegendStroke } from "~/components/Plot/Legend";
 import { TabContext, TabPageContext } from "~/components/Tab/TabList";

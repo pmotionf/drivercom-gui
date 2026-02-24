@@ -10,7 +10,7 @@ import {
   csvFileDownloads,
   setCsvFileDownloads,
   logConfigDescription,
-} from "~/GlobalState.ts";
+} from "~/store/GlobalState.ts";
 import { Command } from "@tauri-apps/plugin-shell";
 import { createSignal, Show } from "solid-js";
 import { LoggingForm } from "~/components/LoggingForm.tsx";
@@ -33,7 +33,7 @@ import { PortMenu } from "~/components/PortMenu.tsx";
 import { ConnectButton } from "./Connect/ConnectButton.tsx";
 import { Button } from "~/components/ui/button.tsx";
 import { FileHandler } from "./utils/FileHandler.ts";
-import { logForm, setLogForm } from "~/GlobalState.ts";
+import { logForm, setLogForm } from "~/store/GlobalState.ts";
 import { AccordionStates } from "~/components/Form.tsx";
 import { DownloadStates, DownloadStatus } from "~/components/DownloadList.tsx";
 import JSON5 from "json5";

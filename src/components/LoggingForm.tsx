@@ -1,5 +1,8 @@
 import { JSX } from "solid-js";
-import { logStartCombinatorList, logStartConditionList } from "~/GlobalState";
+import {
+  logStartCombinatorList,
+  logStartConditionList,
+} from "~/store/GlobalState";
 import { createListCollection } from "~/components/ui/select";
 import { ListCollection } from "@ark-ui/solid/collection";
 import { AccordionStates, Form } from "./Form";
