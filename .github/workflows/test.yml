@@ -45,6 +45,11 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.DRIVERCOM_CLI_RELEASE_ACCESS_TOKEN }}
 
+      - name: Generate config types
+        run: bun run drivercom
+        env:
+          GH_TOKEN: ${{ secrets.DRIVERCOM_CLI_RELEASE_ACCESS_TOKEN }}
+
       - name: Check lints and types
         run: bun run check
 
