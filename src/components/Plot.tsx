@@ -46,6 +46,7 @@ import type { UplotPluginFactory } from "@dschz/solid-uplot";
 
 import { cursor, tooltip } from "@dschz/solid-uplot/plugins";
 import { PlotToolTip } from "./Plot/PlotTooltip";
+import { clamp, movingAvg } from "~/utils/PlotCalculation";
 
 export type PlotProps = JSX.HTMLAttributes<HTMLDivElement> & {
   id: string;
@@ -1463,27 +1464,6 @@ function getComputedCSSVariableValue(variable: string) {
   return value.trim();
 }
 
-function clamp(
-  nRange: number,
-  nMin: number,
-  nMax: number,
-  fRange: number,
-  fMin: number,
-  fMax: number,
-) {
-  if (nRange > fRange) {
-    nMin = fMin;
-    nMax = fMax;
-  } else if (nMin < fMin) {
-    nMin = fMin;
-    nMax = fMin + nRange;
-  } else if (nMax > fMax) {
-    nMax = fMax;
-    nMin = fMax - nRange;
-  }
-
-  return [nMin, nMax];
-}
 const kelly_colors_hex = [
   "#FFB300", // Vivid Yellow
   "#803E75", // Strong Purple
@@ -1525,29 +1505,4 @@ function fuzzySearch(searchInputValue: string, headers: string[]): string[] {
   } else {
     return [];
   }
-}
-
-function movingAvg(data: number[], wind: number) {
-  const rolled: number[] = Array(data.length).fill(null);
-
-  let sum = 0;
-  let count = 0;
-
-  for (let i = 0; i < data.length; i++) {
-    const y = data[i];
-
-    if (y == null) continue;
-
-    sum += y;
-    count++;
-
-    if (i > wind - 1) {
-      sum -= data[i - wind];
-      count--;
-    }
-
-    rolled[i] = sum / count;
-  }
-
-  return rolled;
 }
