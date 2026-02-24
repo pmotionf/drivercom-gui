@@ -64,7 +64,7 @@ import api from "src-tauri/generated/api.json";
 import JSON5 from "json5";
 import { killTerminal } from "./services/MmcCliHandler.ts";
 import { load } from "@tauri-apps/plugin-store";
-import { IpAddress } from "./components/System/IpHistory.tsx";
+import { IpAddress } from "./pages/Monitoring/System/IpHistory.tsx";
 import { ConfigTuneType } from "src-tauri/generated/config/ConfigTune.tsx";
 import { ConfigCalibrationType } from "src-tauri/generated/config/ConfigCalibration.tsx";
 import { ConfigSystemType } from "src-tauri/generated/config/ConfigSystem.tsx";

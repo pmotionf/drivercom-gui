@@ -1,11 +1,11 @@
 import { JSX, on, createEffect, createSignal } from "solid-js";
 import { Table } from "~/components/ui/table.tsx";
 import { For } from "solid-js";
-import { Text } from "./ui/text";
+import { Text } from "~/components/ui/text";
 import {
   Response_Track_Axis_Error,
   Response_Track_Driver_Error,
-} from "./proto/mmc/info_pb";
+} from "~/components/proto/mmc/info_pb";
 import { Show } from "solid-js";
 import { trackStore } from "@solid-primitives/deep";
 import JSON5 from "json5";

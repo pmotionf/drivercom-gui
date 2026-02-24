@@ -1,7 +1,7 @@
 import { Stack } from "styled-system/jsx";
-import { Text } from "../ui/text";
+import { Text } from "~/components/ui/text";
 import { For, Show } from "solid-js";
-import { IconButton } from "../ui/icon-button";
+import { IconButton } from "~/components/ui/icon-button";
 import { IconX } from "@tabler/icons-solidjs";
 import { createSignal } from "solid-js";
 

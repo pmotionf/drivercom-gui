@@ -1,5 +1,5 @@
-import { ErrorTable } from "../ErrorTable";
-import { Text } from "../ui/text";
+import { ErrorTable } from "./ErrorTable";
+import { Text } from "~/components/ui/text";
 import {
   Response_Track_Axis_Error,
   Response_Track_Driver_Error,

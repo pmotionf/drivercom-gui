@@ -1,5 +1,5 @@
 import { createSignal, onMount, onCleanup, createEffect, on } from "solid-js";
-import { Splitter } from "../components/ui/splitter.tsx";
+import { Splitter } from "../../components/ui/splitter.tsx";
 import { IconButton } from "~/components/ui/icon-button.tsx";
 import { IconChevronDown, IconChevronUp, IconX } from "@tabler/icons-solidjs";
 import { css } from "styled-system/css/css";
@@ -15,21 +15,21 @@ import {
   tcpClientIds,
 } from "~/store/GlobalState.ts";
 import { createStore } from "solid-js/store";
-import { IpAddress } from "~/components/System/IpHistory.tsx";
+import { IpAddress } from "~/pages/Monitoring/System/IpHistory.tsx";
 import { Tabs } from "~/components/ui/tabs.tsx";
-import { ControlPage } from "~/components/MonitoringSidebar/ControlPage.tsx";
-import { ConnectPage } from "~/components/MonitoringSidebar/ConnectPage.tsx";
+import { ControlPage } from "./MonitoringSidebar/ControlPage.tsx";
+import { ConnectPage } from "./MonitoringSidebar/ConnectPage.tsx";
 import {
   LineType,
   ServerHandler,
   TrackType,
-} from "../services/ServerHandler.ts";
-import { SendingCommand, System } from "~/components/System/System.tsx";
+} from "../../services/ServerHandler.ts";
+import { SendingCommand, System } from "./System/System.tsx";
 import {
   Response_Track_Axis_Error,
   Response_Track_Driver_Error,
 } from "~/components/proto/mmc/info_pb.ts";
-import { StatusPage } from "~/components/MonitoringSidebar/StatusPage.tsx";
+import { StatusPage } from "./MonitoringSidebar/StatusPage.tsx";
 import { reconcile } from "solid-js/store";
 import {
   exit,
@@ -51,11 +51,9 @@ import {
   initialize,
   deinitialize,
   moveCarrier,
-} from "../services/MmcCliHandler.ts";
+} from "../../services/MmcCliHandler.ts";
 import { disconnect } from "@kuyoonjo/tauri-plugin-tcp";
-import CarrierPage, {
-  CarrierState,
-} from "~/components/MonitoringSidebar/CarrierPage.tsx";
+import CarrierPage, { CarrierState } from "./MonitoringSidebar/CarrierPage.tsx";
 import { load } from "@tauri-apps/plugin-store";
 
 export type Lines = LineType[];

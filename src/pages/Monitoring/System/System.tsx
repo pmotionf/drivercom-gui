@@ -1,6 +1,6 @@
 import { JSX, Show, createSignal } from "solid-js";
 import { Line } from "./Line.tsx";
-import { Accordion } from "../ui/accordion.tsx";
+import { Accordion } from "~/components/ui/accordion.tsx";
 import { For } from "solid-js/web";
 import { Driver } from "./Driver.tsx";
 import { Axis } from "./Axes.tsx";
@@ -14,7 +14,7 @@ import {
   createSortable,
   closestCenter,
 } from "@thisbeyond/solid-dnd";
-import { Lines, Systems } from "~/pages/Monitoring.tsx";
+import { Lines, Systems } from "~/pages/Monitoring/Monitoring.tsx";
 import { Stack } from "styled-system/jsx/stack";
 import { LineCommandParameters } from "./LineControlButton.tsx";
 
