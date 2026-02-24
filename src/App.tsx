@@ -65,6 +65,11 @@ import JSON5 from "json5";
 import { killTerminal } from "./pages/utils/MmcCliHandler.ts";
 import { load } from "@tauri-apps/plugin-store";
 import { IpAddress } from "./components/System/IpHistory.tsx";
+import { ConfigTuneType } from "src-tauri/generated/config/ConfigTune.tsx";
+import { ConfigCalibrationType } from "src-tauri/generated/config/ConfigCalibration.tsx";
+import { ConfigSystemType } from "src-tauri/generated/config/ConfigSystem.tsx";
+import { LogConfigType } from "src-tauri/generated/config/LogConfigType.tsx";
+import { ConfigType } from "src-tauri/generated/config/ConfigType.tsx";
 
 type PageMeta = {
   icon: ValidComponent;
@@ -132,14 +137,14 @@ function App(props: RouteSectionProps) {
       "log.config.empty",
     ]);
     const output = await logConfig.execute();
-    const logFormatToJson = JSON5.parse(output.stdout);
+    const logFormatToJson: LogConfigType = JSON5.parse(output.stdout);
     setLogFormFileFormat(logFormatToJson);
   }
 
   async function buildEmptyDriverConfiguration() {
     const configEmpty = Command.sidecar("binaries/drivercom", ["config.empty"]);
     const output = await configEmpty.execute();
-    const configFormatToJson = JSON5.parse(output.stdout);
+    const configFormatToJson: ConfigType = JSON5.parse(output.stdout);
     setConfigFormFileFormat(configFormatToJson);
   }
 
@@ -187,30 +192,30 @@ function App(props: RouteSectionProps) {
     setLogConfigDescription(desc);
   }
 
-  async function getTuneConfig() {
+  async function getTuneConfig(): Promise<ConfigTuneType> {
     const getTuneConfig = Command.sidecar("binaries/drivercom", [
       `config.empty.tune`,
     ]);
     const output = await getTuneConfig.execute();
-    const tuneConfig = JSON5.parse(output.stdout);
+    const tuneConfig: ConfigTuneType = JSON5.parse(output.stdout);
     return tuneConfig;
   }
 
-  async function getCalibrationConfig() {
+  async function getCalibrationConfig(): Promise<ConfigCalibrationType> {
     const getCalibrationConfig = Command.sidecar("binaries/drivercom", [
       `config.empty.calibration`,
     ]);
     const output = await getCalibrationConfig.execute();
-    const calConfig = JSON5.parse(output.stdout);
+    const calConfig: ConfigCalibrationType = JSON5.parse(output.stdout);
     return calConfig;
   }
 
-  async function getSystemConfig() {
+  async function getSystemConfig(): Promise<ConfigSystemType> {
     const getSystemConfig = Command.sidecar("binaries/drivercom", [
       `config.empty.system`,
     ]);
     const output = await getSystemConfig.execute();
-    const systemConfig = JSON5.parse(output.stdout);
+    const systemConfig: ConfigSystemType = JSON5.parse(output.stdout);
     return systemConfig;
   }
 
