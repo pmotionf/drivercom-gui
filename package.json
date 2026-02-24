@@ -9,7 +9,8 @@
     "drivercom-prepare": "mkdir -p src-tauri/binaries",
     "drivercom-fetch": "cd src-tauri/binaries && gh release download -R pmotionf/drivercom-cli -p '*-drivercom-cli-*.zip' --clobber",
     "drivercom-unpack": "bun unpack-drivercom.js",
-    "drivercom": "bun run drivercom-prepare && bun run drivercom-fetch && bun run drivercom-unpack",
+    "generate-config-types": "mkdir -p src-tauri/generated/config && bun run generate-drivercom-config.js",
+    "drivercom": "bun run drivercom-prepare && bun run drivercom-fetch && bun run drivercom-unpack && bun run generate-config-types",
     "mmc-cli-prepare": "mkdir -p src-tauri/resources",
     "fetch-mmc-cli": "cd src-tauri/resources && gh release download -R pmotionf/mmc-cli -p '*-mmc-cli-*.zip' --clobber",
     "unpack-mmc-cli": "bun unpack-mmc-cli.js",
@@ -54,7 +55,8 @@
     "tauri-pty": "^0.2.1",
     "udsv": "^0.7.3",
     "uplot": "^1.6.32",
-    "xterm": "^5.3.0"
+    "xterm": "^5.3.0",
+    "zod": "^4.3.6"
   },
   "devDependencies": {
     "@eslint/css": "^0.9.0",
