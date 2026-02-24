@@ -13,7 +13,7 @@ import {
 } from "~/store/GlobalState.ts";
 import { Command } from "@tauri-apps/plugin-shell";
 import { createSignal, Show } from "solid-js";
-import { LoggingForm } from "~/components/LoggingForm.tsx";
+import { LoggingForm } from "./LoggingForm.tsx";
 import { Toast } from "~/components/ui/toast.tsx";
 import {
   IconFileDownload,
@@ -30,9 +30,9 @@ import { createEffect } from "solid-js";
 import { on } from "solid-js";
 import { FileMenu } from "~/components/FileMenu.tsx";
 import { PortMenu } from "~/components/PortMenu.tsx";
-import { ConnectButton } from "./Connect/ConnectButton.tsx";
+import { ConnectButton } from "../Connect/ConnectButton.tsx";
 import { Button } from "~/components/ui/button.tsx";
-import { FileHandler } from "../services/FileHandler.ts";
+import { FileHandler } from "../../services/FileHandler.ts";
 import { logForm, setLogForm } from "~/store/GlobalState.ts";
 import { AccordionStates } from "~/components/Form.tsx";
 import { DownloadStates, DownloadStatus } from "~/components/DownloadList.tsx";

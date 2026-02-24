@@ -9,7 +9,7 @@ const Configuration = lazy(
   () => import("./pages/Configuration/Configuration.tsx"),
 );
 const LogViewer = lazy(() => import("./pages/LogViewer/LogViewer.tsx"));
-const Logging = lazy(() => import("./pages/Logging"));
+const Logging = lazy(() => import("./pages/Logging/Logging.tsx"));
 const Monitoring = lazy(() => import("./pages/Monitoring/Monitoring.tsx"));
 
 render(
