@@ -62,7 +62,7 @@ import { DownloadList } from "./components/DownloadList.tsx";
 //@ts-ignore This file is generate after run compiler.
 import api from "src-tauri/generated/api.json";
 import JSON5 from "json5";
-import { killTerminal } from "./utils/MmcCliHandler.ts";
+import { killTerminal } from "./services/MmcCliHandler.ts";
 import { load } from "@tauri-apps/plugin-store";
 import { IpAddress } from "./components/System/IpHistory.tsx";
 import { ConfigTuneType } from "src-tauri/generated/config/ConfigTune.tsx";
