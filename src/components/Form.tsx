@@ -13,7 +13,7 @@ import { FormCollapsibleObject } from "./Form/FormCollapsibleObject.tsx";
 import { ListCollection } from "@ark-ui/solid";
 import { Select } from "./ui/select.tsx";
 import { createStore } from "solid-js/store";
-import { LinkStates, GainLockStates } from "./ConfigForm.tsx";
+import { LinkStates, GainLockStates } from "./ConfigForm/ConfigForm.tsx";
 import JSON5 from "json5";
 import { Tooltip } from "./ui/tooltip.tsx";
 import { IconHelp } from "@tabler/icons-solidjs";
@@ -101,6 +101,19 @@ export function Form(props: FormProps) {
           const key = entry[0];
           const format = entry[1];
 
+          const hasDesc = checkDesc(`__${key}`);
+          const description = hasDesc
+            ? (props.description![
+                `__${key}` as keyof typeof props.description
+              ] as object)
+            : undefined;
+          if (
+            description &&
+            description["hidden" as keyof typeof description] === true
+          ) {
+            return;
+          }
+
           if (typeof format === "object") {
             let gainkey = props.gainKey ? props.gainKey : "";
             if (gainkey.length !== 0) {
@@ -121,19 +134,6 @@ export function Form(props: FormProps) {
                     createSignal<boolean>(false),
                   );
                 }
-              }
-            }
-
-            if (
-              props.description &&
-              props.description![`__${key}` as keyof typeof props.description]
-            ) {
-              const fieldDesc =
-                props.description![
-                  `__${key}` as keyof typeof props.description
-                ];
-              if (fieldDesc["hidden" as keyof typeof fieldDesc] === true) {
-                return;
               }
             }
 
@@ -212,34 +212,16 @@ export function Form(props: FormProps) {
                         : undefined
                     }
                     changeUnits={props.changeUnits}
-                    triggerDescription={
-                      checkDesc(`__${key}`)
-                        ? props.description![
-                            `__${key}` as keyof typeof props.description
-                          ]
-                        : undefined
-                    }
+                    triggerDescription={description}
                     format={props.format ? format : undefined}
                     value={object[key as keyof typeof object]}
                     gainKey={gainkey}
                     gainKinds={props.gainKinds ? props.gainKinds : undefined}
                     accordionStates={props.accordionStates}
                     linkStates={props.linkStates ? props.linkStates : undefined}
-                    gainLockStatuses={
-                      props.gainLockStatuses
-                        ? props.gainLockStatuses
-                        : undefined
-                    }
-                    logStartCombinators={
-                      props.logStartCombinators
-                        ? props.logStartCombinators
-                        : undefined
-                    }
-                    logStartConditions={
-                      props.logStartConditions
-                        ? props.logStartConditions
-                        : undefined
-                    }
+                    gainLockStatuses={props.gainLockStatuses}
+                    logStartCombinators={props.logStartCombinators}
+                    logStartConditions={props.logStartConditions}
                     onItemChange={() => {
                       props.onItemChange?.();
                       const linkKey = props.id.split(".").pop();
@@ -302,13 +284,7 @@ export function Form(props: FormProps) {
                 <FormCheckBox
                   id={`${props.id}.${key}`}
                   label={label}
-                  desc={
-                    checkDesc(`__${key}`)
-                      ? props.description![
-                          `__${key}` as keyof typeof props.description
-                        ]
-                      : undefined
-                  }
+                  desc={description}
                   originalValue={
                     props.originalFile
                       ? props.originalFile[
@@ -363,13 +339,7 @@ export function Form(props: FormProps) {
               <FormNumberInput
                 id={`${props.id}.${key}`}
                 label={label}
-                desc={
-                  checkDesc(`__${key}`)
-                    ? props.description![
-                        `__${key}` as keyof typeof props.description
-                      ]
-                    : undefined
-                }
+                desc={description}
                 originalValue={
                   props.originalFile
                     ? props.originalFile![
