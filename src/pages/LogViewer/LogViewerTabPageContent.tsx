@@ -26,7 +26,7 @@ import { on } from "solid-js";
 import { LegendStroke } from "~/components/Plot/Legend";
 import { TabContext, TabPageContext } from "~/components/Tab/TabList";
 import { CreateToasterReturn } from "@ark-ui/solid";
-import { FileHandler } from "../../utils/FileHandler";
+import { FileHandler } from "../../services/FileHandler";
 import { createDraggable } from "@neodrag/solid";
 import { css } from "styled-system/css";
 import { Portal } from "solid-js/web";

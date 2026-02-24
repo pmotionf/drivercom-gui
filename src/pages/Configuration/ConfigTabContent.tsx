@@ -23,7 +23,7 @@ import {
   LinkStates,
   GainLockStates,
 } from "../../components/ConfigForm/ConfigForm";
-import { FileHandler } from "../../utils/FileHandler";
+import { FileHandler } from "../../services/FileHandler";
 import { AccordionStates } from "../../components/ConfigForm/ConfigForm";
 import JSON5 from "json5";
 import { Spinner } from "~/components/ui/spinner";
