@@ -1,6 +1,6 @@
 import { Stack } from "styled-system/jsx";
 import { Text } from "../ui/text";
-import { GainLockStates, LinkStates } from "../ConfigForm";
+import { GainLockStates, LinkStates } from "../ConfigForm/ConfigForm";
 import { Show } from "solid-js";
 import {
   IconExclamationCircle,
@@ -131,6 +131,8 @@ export const FormNumberInput = (props: FormNumberInputProps) => {
     }
   };
 
+  const inputValue = () => props.inputValue;
+
   return (
     <div
       style={{
@@ -150,7 +152,7 @@ export const FormNumberInput = (props: FormNumberInputProps) => {
             paddingLeft="0.1em"
             paddingRight="0.1em"
             borderBottomWidth={
-              props.originalValue !== props.inputValue ? "2px" : "0px"
+              props.originalValue !== inputValue() ? "2px" : "0px"
             }
           >
             {props.label}
@@ -186,7 +188,7 @@ export const FormNumberInput = (props: FormNumberInputProps) => {
               gap: "0",
             }}
             borderColor={
-              Number.isFinite(Number(props.inputValue)) ? "bg.disabled" : "red"
+              Number.isFinite(Number(inputValue())) ? "bg.disabled" : "red"
             }
             direction="row"
           >
@@ -238,9 +240,9 @@ export const FormNumberInput = (props: FormNumberInputProps) => {
                       props.desc[
                         "unit_short" as keyof typeof props.desc
                       ] as string,
-                      props.inputValue,
+                      inputValue(),
                     )
-                  : props.inputValue
+                  : inputValue()
               }
               onChange={(e) => {
                 let inputValue = Number(e.target.value);
@@ -326,8 +328,59 @@ export const FormNumberInput = (props: FormNumberInputProps) => {
                     }
                     onClick={() => {
                       if (!lockStatus) return;
-                      const newStatus = !lockStatus.get(lockStatusKey!)![0]();
-                      lockStatus.get(lockStatusKey!)![1](newStatus);
+                      lockStatus.get(lockStatusKey!)![1]((prev) => !prev);
+
+                      const gainKey = lockStatusKey!
+                        .split(".")
+                        .slice(0, -2)
+                        .join(".");
+                      const isCenter = props.id.includes("center");
+                      const oppositeDynPos = isCenter ? "between" : "center";
+                      const currentDynPos = isCenter ? "center" : "between";
+
+                      if (props.lockStatus!.has(gainKey)) {
+                        const updateValue = Array.from(
+                          props.lockStatus!.entries(),
+                        )
+                          .filter(
+                            (entry) =>
+                              entry[0] !== gainKey &&
+                              entry[0].includes(currentDynPos),
+                          )
+                          .some((entry) => entry[1][0]() === true);
+                        props.lockStatus!.get(gainKey)![1](updateValue);
+                      }
+
+                      if (!props.linkStatus) return;
+                      const link = props.linkStatus.get("gain")![0]();
+                      if (link[0]) {
+                        const endkey = lockStatusKey!.replace(
+                          currentDynPos,
+                          oppositeDynPos,
+                        );
+                        if (props.lockStatus!.has(endkey)) {
+                          props.lockStatus!.get(endkey)![1]((prev) => !prev);
+                        }
+
+                        const oppositeGainKey = endkey
+                          .split(".")
+                          .slice(0, -2)
+                          .join(".");
+                        if (props.lockStatus!.has(oppositeGainKey)) {
+                          const updateValue = Array.from(
+                            props.lockStatus!.entries(),
+                          )
+                            .filter(
+                              (entry) =>
+                                entry[0] !== oppositeGainKey &&
+                                entry[0].includes(oppositeDynPos),
+                            )
+                            .some((entry) => entry[1][0]() === true);
+                          props.lockStatus!.get(oppositeGainKey)![1](
+                            updateValue,
+                          );
+                        }
+                      }
                     }}
                   >
                     <Show
