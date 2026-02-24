@@ -5,7 +5,9 @@ import { render } from "solid-js/web";
 import { Route, Router } from "@solidjs/router";
 
 import App from "./App";
-const Configuration = lazy(() => import("./pages/Configuration"));
+const Configuration = lazy(
+  () => import("./pages/Configuration/Configuration.tsx"),
+);
 const LogViewer = lazy(() => import("./pages/LogViewer"));
 const Logging = lazy(() => import("./pages/Logging"));
 const Monitoring = lazy(() => import("./pages/Monitoring.tsx"));

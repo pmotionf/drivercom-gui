@@ -1,6 +1,9 @@
 import { Stack } from "styled-system/jsx";
 import { Text } from "../ui/text";
-import { GainLockStates, LinkStates } from "../ConfigForm/ConfigForm";
+import {
+  GainLockStates,
+  LinkStates,
+} from "../../pages/Configuration/ConfigForm/ConfigForm";
 import { Show } from "solid-js";
 import {
   IconExclamationCircle,

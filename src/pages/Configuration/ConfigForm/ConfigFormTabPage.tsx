@@ -7,9 +7,9 @@ import { LinkStates } from "./ConfigForm";
 import { GainLockStates } from "./ConfigForm";
 import { JSX, onMount, For } from "solid-js";
 import { createStore } from "solid-js/store";
-import { Accordion } from "../ui/accordion";
-import { FormNumberInput } from "../Form/FormNumberInput";
-import { Text } from "../ui/text";
+import { Accordion } from "../../../components/ui/accordion";
+import { FormNumberInput } from "../../../components/Form/FormNumberInput";
+import { Text } from "../../../components/ui/text";
 import { IconChevronDown } from "@tabler/icons-solidjs";
 import { ConfigFormatObject } from "./ConfigFormatObject";
 

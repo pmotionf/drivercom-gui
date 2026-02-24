@@ -13,7 +13,10 @@ import { FormCollapsibleObject } from "./Form/FormCollapsibleObject.tsx";
 import { ListCollection } from "@ark-ui/solid";
 import { Select } from "./ui/select.tsx";
 import { createStore } from "solid-js/store";
-import { LinkStates, GainLockStates } from "./ConfigForm/ConfigForm.tsx";
+import {
+  LinkStates,
+  GainLockStates,
+} from "../pages/Configuration/ConfigForm/ConfigForm.tsx";
 import JSON5 from "json5";
 import { Tooltip } from "./ui/tooltip.tsx";
 import { IconHelp } from "@tabler/icons-solidjs";

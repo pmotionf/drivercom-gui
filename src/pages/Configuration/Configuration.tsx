@@ -16,12 +16,12 @@ import {
   TabList,
   TabListContext,
 } from "~/components/Tab/TabList.tsx";
-import { ConfigTabContent } from "./Configuration/ConfigTabContent.tsx";
+import { ConfigTabContent } from "./ConfigTabContent.tsx";
 import {
   AccordionStates,
   GainLockStates,
   LinkStates,
-} from "~/components/ConfigForm/ConfigForm.tsx";
+} from "~/pages/Configuration/ConfigForm/ConfigForm.tsx";
 import { createEffect, createSignal, on, onMount, Show } from "solid-js";
 import { createStore } from "solid-js/store";
 import { load } from "@tauri-apps/plugin-store";

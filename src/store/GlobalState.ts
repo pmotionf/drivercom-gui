@@ -14,7 +14,7 @@ import {
   logConfigDefaultValues,
   LogConfigType,
 } from "src-tauri/generated/config/LogConfigType.tsx";
-import { ConfigFormatType } from "~/components/ConfigForm/ConfigForm.tsx";
+import { ConfigFormatType } from "~/pages/Configuration/ConfigForm/ConfigForm.tsx";
 import { configTuneDefaultValues } from "src-tauri/generated/config/ConfigTune.tsx";
 import { configSystemDefaultValues } from "src-tauri/generated/config/ConfigSystem.tsx";
 import { configCalibrationDefaultValues } from "src-tauri/generated/config/ConfigCalibration.tsx";
