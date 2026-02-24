@@ -30,7 +30,7 @@ import { createEffect } from "solid-js";
 import { on } from "solid-js";
 import { FileMenu } from "~/components/FileMenu.tsx";
 import { PortMenu } from "~/components/PortMenu.tsx";
-import { ConnectButton } from "../Connect/ConnectButton.tsx";
+import { ConnectButton } from "../../components/Connect/ConnectButton.tsx";
 import { Button } from "~/components/ui/button.tsx";
 import { FileHandler } from "../../services/FileHandler.ts";
 import { logForm, setLogForm } from "~/store/GlobalState.ts";
