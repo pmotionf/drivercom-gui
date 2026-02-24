@@ -8,7 +8,7 @@ import App from "./App";
 const Configuration = lazy(
   () => import("./pages/Configuration/Configuration.tsx"),
 );
-const LogViewer = lazy(() => import("./pages/LogViewer"));
+const LogViewer = lazy(() => import("./pages/LogViewer/LogViewer.tsx"));
 const Logging = lazy(() => import("./pages/Logging"));
 const Monitoring = lazy(() => import("./pages/Monitoring/Monitoring.tsx"));
 
