@@ -8,4 +8,4 @@ styled-system-studio
 src-tauri/binaries
 src-tauri/generated
 src-tauri/resources
-src/components/proto
+src/proto

@@ -15,7 +15,7 @@
     "fetch-mmc-cli": "cd src-tauri/resources && gh release download -R pmotionf/mmc-cli -p '*-mmc-cli-*.zip' --clobber",
     "unpack-mmc-cli": "bun unpack-mmc-cli.js",
     "mmc-cli": "bun run mmc-cli-prepare &&  bun run fetch-mmc-cli && bun run unpack-mmc-cli",
-    "fetch-mmc-api": "mkdir -p src/components/proto && cd src/components/proto && gh release download -R pmotionf/mmc-api -A 'zip' --clobber",
+    "fetch-mmc-api": "mkdir -p src/proto && cd src/proto && gh release download -R pmotionf/mmc-api -A 'zip' --clobber",
     "fetch-rustscan": "cd src-tauri/binaries && gh release download -R  bee-san/RustScan -p 'x86-*.zip' --clobber",
     "unpack-rustscan": "bun unpack-rustscan.js",
     "rustscan": "bun run fetch-rustscan && bun run unpack-rustscan",

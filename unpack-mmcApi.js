@@ -1,10 +1,10 @@
 import process from "node:process";
-import { readdir, rename, rm, unlink, } from "node:fs/promises";
+import { readdir, rename, rm, unlink } from "node:fs/promises";
 import path from "node:path";
 import { Open } from "unzipper";
 
 try {
-  const base_path = "src/components/proto";
+  const base_path = "src/proto";
   const files = await readdir(base_path);
 
   let mmcApi = "";
@@ -21,21 +21,20 @@ try {
     }
   }
 
-  const mmcApiFolder = path.join(base_path, mmcApi)
-  const mmcFiles = await readdir(mmcApiFolder)
-  for(const name of mmcFiles){
-    if(name !== "protobuf") {
+  const mmcApiFolder = path.join(base_path, mmcApi);
+  const mmcFiles = await readdir(mmcApiFolder);
+  for (const name of mmcFiles) {
+    if (name !== "protobuf") {
       await rm(path.join(mmcApiFolder, name), { recursive: true, force: true });
     }
   }
 
-  const src = path.join(mmcApiFolder, "protobuf")
-  const protos = await readdir(src)
-  for(const name of protos){
-    await rename(path.join(src, name), path.join(base_path, name))
+  const src = path.join(mmcApiFolder, "protobuf");
+  const protos = await readdir(src);
+  for (const name of protos) {
+    await rename(path.join(src, name), path.join(base_path, name));
   }
-  await rm(mmcApiFolder, { recursive: true, force: true })
-  
+  await rm(mmcApiFolder, { recursive: true, force: true });
 } catch (err) {
   console.error(err);
   process.exitCode = 1;
