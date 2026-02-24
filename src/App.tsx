@@ -50,7 +50,7 @@ import {
   setRecentConfigFilePaths,
   setRecentLogFilePaths,
   setIpHistory,
-} from "./GlobalState.ts";
+} from "./store/GlobalState.ts";
 
 import { Button } from "~/components/ui/button.tsx";
 import { Drawer } from "~/components/ui/drawer.tsx";

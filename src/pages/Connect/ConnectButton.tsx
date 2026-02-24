@@ -6,7 +6,7 @@ import {
 } from "@tabler/icons-solidjs";
 import { Popover } from "~/components/ui/popover.tsx";
 import { createSignal, JSX, Show } from "solid-js";
-import { portList, setPortList } from "../../GlobalState.ts";
+import { portList, setPortList } from "../../store/GlobalState.ts";
 //@ts-ignore Implicitly has an 'any' type.
 import { Stack } from "styled-system/jsx/stack.mjs";
 import { Text } from "../../components/ui/text.tsx";
@@ -16,7 +16,7 @@ import { For } from "solid-js";
 import { Tooltip } from "~/components/ui/tooltip.tsx";
 import { Button } from "~/components/ui/button.tsx";
 import { Portal } from "solid-js/web";
-import { csvFileDownloads } from "../../GlobalState.ts";
+import { csvFileDownloads } from "../../store/GlobalState.ts";
 import { DownloadStatus } from "~/components/DownloadList.tsx";
 
 export type ConnectButtonProps = JSX.HTMLAttributes<HTMLButtonElement> & {

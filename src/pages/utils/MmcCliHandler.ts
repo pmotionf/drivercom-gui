@@ -15,7 +15,7 @@ import {
 import { Request_Kind } from "~/components/proto/mmc/core_pb";
 import { fromBinary, toBinary } from "@bufbuild/protobuf";
 import { connect, disconnect, listen, send } from "@kuyoonjo/tauri-plugin-tcp";
-import { tcpClientIds } from "~/GlobalState";
+import { tcpClientIds } from "~/store/GlobalState";
 
 export enum MmcCliState {
   Unloaded, // MMC-CLI is closed.

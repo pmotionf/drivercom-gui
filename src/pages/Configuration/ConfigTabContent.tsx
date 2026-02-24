@@ -17,7 +17,7 @@ import {
   recentConfigFilePaths,
   setRecentConfigFilePaths,
   tabStore,
-} from "~/GlobalState";
+} from "~/store/GlobalState";
 import {
   ConfigForm,
   LinkStates,

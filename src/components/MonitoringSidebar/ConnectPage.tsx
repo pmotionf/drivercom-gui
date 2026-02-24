@@ -3,7 +3,7 @@ import {
   MonitoringInputs,
   detectedServer,
   setDetectedServer,
-} from "~/GlobalState";
+} from "~/store/GlobalState";
 import { IpAddress, IpHistory } from "../System/IpHistory";
 import { Setter } from "solid-js";
 import { Button } from "../ui/button";

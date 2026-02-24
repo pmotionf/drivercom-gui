@@ -15,7 +15,7 @@ import { createStore, unwrap } from "solid-js/store";
 import uPlot from "uplot";
 import "uplot/dist/uPlot.min.css";
 
-import { GlobalStateContext } from "~/GlobalState";
+import { GlobalStateContext } from "~/store/GlobalState";
 import { ToggleGroup } from "~/components/ui/toggle-group";
 import { IconButton } from "~/components/ui/icon-button";
 import {

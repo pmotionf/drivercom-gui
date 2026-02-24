@@ -13,7 +13,7 @@ import {
   LogViewerTabPage,
   LogViewerTabPageContentProps,
 } from "~/pages/LogViewer/LogViewerTabPageContent.tsx";
-import { tabStore } from "~/GlobalState.ts";
+import { tabStore } from "~/store/GlobalState.ts";
 import { createStore } from "solid-js/store";
 import { Toast } from "../ui/toast.tsx";
 import { IconX } from "@tabler/icons-solidjs";
