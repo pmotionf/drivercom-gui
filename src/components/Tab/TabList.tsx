@@ -324,24 +324,25 @@ export function TabList(
         <For each={getTabContexts().tabContext}>
           {(tabCtx) => {
             return (
-              <Tabs.Content
-                value={tabCtx.tab.id}
-                style={{
-                  width: "100%",
-                  height: `calc(100% - 3rem)`,
-                  padding: "0",
-                }}
-              >
-                <TabPageContext.Provider
-                  value={{
-                    key: tabListProps.id,
-                    tabId: tabCtx.tab.id,
-                    toaster: toaster,
+              <Show when={tabCtx.tab.id === getTabContexts().focusedTab}>
+                <div
+                  style={{
+                    width: "100%",
+                    height: `calc(100% - 3rem)`,
+                    padding: "0",
                   }}
                 >
-                  {props.children}
-                </TabPageContext.Provider>
-              </Tabs.Content>
+                  <TabPageContext.Provider
+                    value={{
+                      key: tabListProps.id,
+                      tabId: tabCtx.tab.id,
+                      toaster: toaster,
+                    }}
+                  >
+                    {props.children}
+                  </TabPageContext.Provider>
+                </div>
+              </Show>
             );
           }}
         </For>
