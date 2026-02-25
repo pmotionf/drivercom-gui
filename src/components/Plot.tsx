@@ -255,6 +255,18 @@ export function Plot(props: PlotProps) {
           ),
       );
 
+      if (zoomReset()) {
+        if (plot) {
+          const yScales = getPlotYScale(plot);
+          if (
+            (plot.scales.y.max && yScales.yMax > plot.scales.y.max) ||
+            (plot.scales.y.min && yScales.yMin < plot.scales.y.min)
+          ) {
+            setZoomReset(false);
+          }
+        }
+      }
+
       setXRange(plot.scales.x.max! - plot.scales.x.min!);
       props.onXScaleChange?.([plot.scales.x.min!, plot.scales.x.max!]);
       props.onYScaleChange?.({
