@@ -1,5 +1,5 @@
 import { expect, describe, it } from "vitest";
-import { getComputedCSSVariableValue } from "../../src/utils/GetComputedCssVariableValue";
+import { getComputedCSSVariableValue } from "./GetComputedCssVariableValue";
 
 // @vitest-environment jsdom
 describe("getComputedCSSVariableValue", () => {
