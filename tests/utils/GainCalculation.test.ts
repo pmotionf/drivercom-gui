@@ -9,30 +9,30 @@ import {
   calcWsc,
 } from "../../src/utils/GainCalculation";
 
-test("Calculate Current P", () => {
+test("Test current p calculation", () => {
   expect(calcCurrentP(40, 0.011500000022351742)).toBe(27.096236689877017);
 });
 
-test("Calculate Current I", () => {
+test("Test current i calculation", () => {
   expect(calcCurrentI(40, 0.011500000022351742)).toBe(27.096236689877017);
 });
 
-test("Calculate WCC", () => {
+test("Test wcc calculation", () => {
   expect(calcWcc(27, 3)).toBe(9);
 });
 
-test("Calculate Velocity P", () => {
+test("Test velocity p calculation", () => {
   expect(calcVelocityP(40, 9, 0.029, 1290, 62)).toBe(0.00021607208786133161);
 });
 
-test("Calculate Velocity I", () => {
+test("Test velocity i calculation", () => {
   expect(calcVelocityI(40, 40, 40, 0.00021607)).toBe(0.00031818933968491244);
 });
 
-test("Calculate WSC", () => {
+test("Test wsc calculation", () => {
   expect(calcWsc(0.000216, 0.029, 1290, 62)).toBe(0.22492493353047052);
 });
 
-test("Calculate Position P", () => {
+test("Test position p calculation", () => {
   expect(calcPositionP(0.22492493353047052, 40)).toBe(0.005623123338261763);
 });
