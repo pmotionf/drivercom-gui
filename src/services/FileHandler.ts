@@ -144,9 +144,6 @@ export class FileHandler implements IFileHandler {
 
   async readCsvFile(path: string): Promise<CsvFile | never> {
     const csv_str = await readTextFile(path);
-    const parseCsvStr = csv_str.endsWith(",\n")
-      ? csv_str
-      : csv_str.slice(0, -2) + ",\n";
 
     if (!csv_str) {
       throw new Error("File is empty");
@@ -155,6 +152,9 @@ export class FileHandler implements IFileHandler {
       const rows = csv_str.endsWith("\n")
         ? csv_str.slice(0, -2).split("\n")
         : csv_str.split("\n");
+      const parseCsvStr = rows
+        .map((str) => (str.endsWith(",") ? str + "\n" : str + ","))
+        .join("\n");
       if (rows.length < 2) {
         return reject("Not enough rows.");
       }
