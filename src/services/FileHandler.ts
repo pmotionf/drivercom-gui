@@ -144,6 +144,10 @@ export class FileHandler implements IFileHandler {
 
   async readCsvFile(path: string): Promise<CsvFile | never> {
     const csv_str = await readTextFile(path);
+    const parseCsvStr = csv_str.endsWith(",\n")
+      ? csv_str
+      : csv_str.slice(0, -2) + ",\n";
+
     if (!csv_str) {
       throw new Error("File is empty");
     }
@@ -157,7 +161,7 @@ export class FileHandler implements IFileHandler {
 
       const enumMappings: Map<string, Map<number, string>> = new Map();
 
-      const schema = inferSchema(csv_str);
+      const schema = inferSchema(parseCsvStr);
       const parser = initParser(schema);
       const local_header: string[] = rows[0].replace(/,\s*$/, "").split(",");
       const checkRowLength = rows.some(
@@ -168,48 +172,50 @@ export class FileHandler implements IFileHandler {
         return reject("Header and data length mismatch.");
       }
 
-      const data: number[][] = parser.typedCols(csv_str).map((row, rowIndex) =>
-        row.map((val) => {
-          if (typeof val === "boolean") {
-            return val ? 1 : 0;
-          } else if (typeof val === "string" && isNaN(Number(val))) {
-            const stringVal: string = val;
-            const removeParentheses = stringVal
-              .replace(/^[^(]*\(/, "")
-              .replace(/\)[^(]*$/, "");
+      const data: number[][] = parser
+        .typedCols(parseCsvStr)
+        .map((row, rowIndex) =>
+          row.map((val) => {
+            if (typeof val === "boolean") {
+              return val ? 1 : 0;
+            } else if (typeof val === "string" && isNaN(Number(val))) {
+              const stringVal: string = val;
+              const removeParentheses = stringVal
+                .replace(/^[^(]*\(/, "")
+                .replace(/\)[^(]*$/, "");
 
-            const enumSeriesName = local_header[rowIndex];
-            if (enumMappings.has(enumSeriesName)) {
-              if (
-                !enumMappings
-                  .get(enumSeriesName)!
-                  .has(Number(removeParentheses))
-              ) {
+              const enumSeriesName = local_header[rowIndex];
+              if (enumMappings.has(enumSeriesName)) {
+                if (
+                  !enumMappings
+                    .get(enumSeriesName)!
+                    .has(Number(removeParentheses))
+                ) {
+                  const enumTypeName = stringVal
+                    .match(/^[^(]*\(/)!
+                    .toString()
+                    .slice(0, -1);
+                  if (enumTypeName) {
+                    enumMappings
+                      .get(enumSeriesName)!
+                      .set(Number(removeParentheses), enumTypeName.toString());
+                  }
+                }
+              } else {
+                const enumValues: Map<number, string> = new Map();
                 const enumTypeName = stringVal
                   .match(/^[^(]*\(/)!
                   .toString()
                   .slice(0, -1);
-                if (enumTypeName) {
-                  enumMappings
-                    .get(enumSeriesName)!
-                    .set(Number(removeParentheses), enumTypeName.toString());
-                }
+                enumValues.set(Number(removeParentheses), enumTypeName);
+                enumMappings.set(enumSeriesName, enumValues);
               }
+              return Number(removeParentheses);
             } else {
-              const enumValues: Map<number, string> = new Map();
-              const enumTypeName = stringVal
-                .match(/^[^(]*\(/)!
-                .toString()
-                .slice(0, -1);
-              enumValues.set(Number(removeParentheses), enumTypeName);
-              enumMappings.set(enumSeriesName, enumValues);
+              return val;
             }
-            return Number(removeParentheses);
-          } else {
-            return val;
-          }
-        }),
-      );
+          }),
+        );
 
       const checkFinate = data
         .slice(0, -1)
