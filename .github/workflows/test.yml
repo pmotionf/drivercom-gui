@@ -53,6 +53,9 @@ jobs:
       - name: Check lints and types
         run: bun run check
 
+      - name: Run test
+        run: bun run test
+
       - uses: dtolnay/rust-toolchain@stable
         with:
           components: clippy, rustfmt
