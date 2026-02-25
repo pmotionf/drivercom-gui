@@ -7,7 +7,7 @@ import {
   calcVelocityP,
   calcWcc,
   calcWsc,
-} from "../../src/utils/GainCalculation";
+} from "./GainCalculation";
 
 test("Test current p calculation", () => {
   expect(calcCurrentP(40, 0.011500000022351742)).toBe(27.096236689877017);
