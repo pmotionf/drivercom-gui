@@ -319,6 +319,13 @@ export function TabList(
 
               tabListProps.onDraggingTab?.(updateTabLocation, mouseX);
             }}
+            onTabDragCancel={(tabId) => {
+              setFocusTab(tabId);
+              setTabRender(false);
+              setTabRender(true);
+              tabListProps.onDraggingTab?.("none", 0);
+              tabListProps.onTabDragEnd?.();
+            }}
           />
         </Show>
         <For each={getTabContexts().tabContext}>

@@ -29,6 +29,7 @@ export type TabProps = JSX.HTMLAttributes<HTMLDivElement> & {
     tabId: string,
     tabIndex: number,
   ) => void;
+  onTabDragCancel?: (tabId: string) => void;
   onCreateTab?: () => void;
   onDeleteTab?: (index: number) => void;
 };
@@ -151,6 +152,13 @@ export function Tab(props: TabProps) {
       ref={scrollContainer}
       background={"bg.muted"}
       style={{ "overflow-y": "hidden", "overflow-x": "auto", padding: "0" }}
+      onKeyUp={(e) => {
+        if (e.key === "Escape") {
+          if (currentDraggingTabId()) {
+            props.onTabDragCancel?.(currentDraggingTabId());
+          }
+        }
+      }}
     >
       <For each={getTabContexts()}>
         {(tabCtx, tabIndex) => {
