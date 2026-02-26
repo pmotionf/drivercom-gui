@@ -4,8 +4,7 @@ import { TabContext, TabList } from "~/components/Tab/TabList";
 import { Pages, tabStore } from "~/store/GlobalState";
 import { LogViewerTabPageContent } from "./LogViewerTabPageContent";
 import { open } from "@tauri-apps/plugin-dialog";
-import { Toast } from "~/components/ui/toast";
-import { IconX } from "@tabler/icons-solidjs";
+import { toaster } from "~/services/Toaster";
 
 function LogViewer() {
   async function openFileDialog(): Promise<{
@@ -29,11 +28,6 @@ function LogViewer() {
     const tabId = crypto.randomUUID();
     return { id: tabId, filePath: path.replaceAll("\\", "/") };
   }
-
-  const toaster = Toast.createToaster({
-    placement: "top-end",
-    gap: 24,
-  });
 
   return (
     <div style={{ "overflow-y": "hidden", width: `100%`, height: "100%" }}>
@@ -84,17 +78,6 @@ function LogViewer() {
           </TabList>
         </Panel>
       </PanelLayout>
-      <Toast.Toaster toaster={toaster}>
-        {(toast) => (
-          <Toast.Root>
-            <Toast.Title>{toast().title}</Toast.Title>
-            <Toast.Description>{toast().description}</Toast.Description>
-            <Toast.CloseTrigger>
-              <IconX />
-            </Toast.CloseTrigger>
-          </Toast.Root>
-        )}
-      </Toast.Toaster>
     </div>
   );
 }

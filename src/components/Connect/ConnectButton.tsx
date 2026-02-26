@@ -11,13 +11,13 @@ import { portList, setPortList } from "../../store/GlobalState.ts";
 import { Stack } from "styled-system/jsx/stack.mjs";
 import { Text } from "../../components/ui/text.tsx";
 import { Command } from "@tauri-apps/plugin-shell";
-import { Toast } from "~/components/ui/toast.tsx";
 import { For } from "solid-js";
 import { Tooltip } from "~/components/ui/tooltip.tsx";
 import { Button } from "~/components/ui/button.tsx";
 import { Portal } from "solid-js/web";
 import { csvFileDownloads } from "../../store/GlobalState.ts";
 import { DownloadStatus } from "~/components/DownloadList.tsx";
+import { toaster } from "~/services/Toaster.ts";
 
 export type ConnectButtonProps = JSX.HTMLAttributes<HTMLButtonElement> & {
   portId: string;
@@ -81,11 +81,6 @@ export function ConnectButton(props: ConnectButtonProps) {
     const version_string = splits[1].trimStart().trimEnd();
     return version_string;
   }
-
-  const toaster = Toast.createToaster({
-    placement: "top-end",
-    gap: 24,
-  });
 
   return (
     <Popover.Root positioning={{ placement: "bottom-end" }}>

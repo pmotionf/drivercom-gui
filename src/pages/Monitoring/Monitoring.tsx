@@ -1,10 +1,9 @@
 import { createSignal, onMount, onCleanup, createEffect, on } from "solid-js";
 import { Splitter } from "../../components/ui/splitter.tsx";
 import { IconButton } from "~/components/ui/icon-button.tsx";
-import { IconChevronDown, IconChevronUp, IconX } from "@tabler/icons-solidjs";
+import { IconChevronDown, IconChevronUp } from "@tabler/icons-solidjs";
 import { css } from "styled-system/css/css";
 import { Show } from "solid-js/web";
-import { Toast } from "~/components/ui/toast.tsx";
 import {
   ipHistory,
   monitoringInputs,
@@ -55,6 +54,7 @@ import {
 import { disconnect } from "@kuyoonjo/tauri-plugin-tcp";
 import CarrierPage, { CarrierState } from "./MonitoringSidebar/CarrierPage.tsx";
 import { load } from "@tauri-apps/plugin-store";
+import { toaster } from "~/services/Toaster.ts";
 
 export type Lines = LineType[];
 export type Systems = TrackType[];
@@ -213,11 +213,6 @@ function Monitoring() {
       prev.filter((prevIp) => prevIp.ip !== ip || prevIp.port !== port),
     );
   };
-
-  const toaster = Toast.createToaster({
-    placement: "top-end",
-    gap: 16,
-  });
 
   // Signals only for UI
   const [showSideBar, setShowSideBar] = createSignal<boolean>(true);
@@ -702,17 +697,6 @@ function Monitoring() {
           </Tabs.Root>
         </Splitter.Panel>
       </Splitter.Root>
-      <Toast.Toaster toaster={toaster}>
-        {(toast) => (
-          <Toast.Root>
-            <Toast.Title>{toast().title}</Toast.Title>
-            <Toast.Description>{toast().description}</Toast.Description>
-            <Toast.CloseTrigger>
-              <IconX />
-            </Toast.CloseTrigger>
-          </Toast.Root>
-        )}
-      </Toast.Toaster>
     </>
   );
 }
