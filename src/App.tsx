@@ -24,6 +24,7 @@ import {
   IconMenu,
   IconMoonFilled,
   IconSunFilled,
+  IconX,
 } from "@tabler/icons-solidjs";
 
 import {
@@ -81,6 +82,8 @@ import {
 } from "~/pages/Configuration/ConfigForm/ConfigForm.tsx";
 import { TabContext } from "~/components/Tab/TabList.tsx";
 import { FileHandler } from "./services/FileHandler.ts";
+import { Toast } from "./components/ui/toast.tsx";
+import { toaster } from "./services/Toaster.ts";
 
 type PageMeta = {
   icon: ValidComponent;
@@ -747,6 +750,36 @@ function App(props: RouteSectionProps) {
           style={{ position: "absolute", right: "1rem", bottom: "1rem" }}
         />
       </Show>
+      <Toast.Toaster toaster={toaster}>
+        {(toast) => (
+          <Toast.Root>
+            <Toast.Title>{toast().title}</Toast.Title>
+            <Toast.Description>{toast().description}</Toast.Description>
+            {toast().action && (
+              <Toast.ActionTrigger>
+                <Text
+                  size="sm"
+                  style={{
+                    width: "100%",
+                    height: "1rem",
+                    display: "block",
+                    "white-space": "none",
+                    overflow: "hidden",
+                    "text-overflow": "ellipsis",
+                    "text-decoration": "underline",
+                  }}
+                  fontWeight="bold"
+                >
+                  {toast().action?.label}
+                </Text>
+              </Toast.ActionTrigger>
+            )}
+            <Toast.CloseTrigger>
+              <IconX />
+            </Toast.CloseTrigger>
+          </Toast.Root>
+        )}
+      </Toast.Toaster>
     </GlobalStateContext.Provider>
   );
 }

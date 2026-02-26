@@ -15,12 +15,10 @@ import {
 } from "~/pages/LogViewer/LogViewerTabPageContent.tsx";
 import { tabStore } from "~/store/GlobalState.ts";
 import { createStore } from "solid-js/store";
-import { Toast } from "../ui/toast.tsx";
-import { IconX } from "@tabler/icons-solidjs";
 import { PanelContext } from "../Panel/Panel.tsx";
 import { ConfigTabPage } from "~/pages/Configuration/ConfigTabContent.tsx";
 import { createSignal } from "solid-js";
-import { Text } from "../ui/text.tsx";
+import { toaster } from "~/services/Toaster.ts";
 
 type ValueOf<Obj> = Obj[keyof Obj];
 type OneOnly<Obj, Key extends keyof Obj> = {
@@ -201,11 +199,6 @@ export function TabList(
     );
   };
 
-  const toaster = Toast.createToaster({
-    placement: "top-end",
-    gap: 24,
-  });
-
   const [isTabClicked, setIsTabClicked] = createSignal<boolean>(true);
   const [tabRender, setTabRender] = createSignal<boolean>(true);
 
@@ -354,36 +347,6 @@ export function TabList(
           }}
         </For>
       </Tabs.Root>
-      <Toast.Toaster toaster={toaster}>
-        {(toast) => (
-          <Toast.Root>
-            <Toast.Title>{toast().title}</Toast.Title>
-            <Toast.Description>{toast().description}</Toast.Description>
-            {toast().action && (
-              <Toast.ActionTrigger>
-                <Text
-                  size="sm"
-                  style={{
-                    width: "100%",
-                    height: "1rem",
-                    display: "block",
-                    "white-space": "none",
-                    overflow: "hidden",
-                    "text-overflow": "ellipsis",
-                    "text-decoration": "underline",
-                  }}
-                  fontWeight="bold"
-                >
-                  {toast().action?.label}
-                </Text>
-              </Toast.ActionTrigger>
-            )}
-            <Toast.CloseTrigger>
-              <IconX />
-            </Toast.CloseTrigger>
-          </Toast.Root>
-        )}
-      </Toast.Toaster>
     </>
   );
 }

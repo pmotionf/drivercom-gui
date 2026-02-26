@@ -14,13 +14,11 @@ import {
 import { Command } from "@tauri-apps/plugin-shell";
 import { createSignal, Show } from "solid-js";
 import { LoggingForm } from "./LoggingForm.tsx";
-import { Toast } from "~/components/ui/toast.tsx";
 import {
   IconFileDownload,
   IconPlayerPlay,
   IconPlayerStop,
   IconReload,
-  IconX,
 } from "@tabler/icons-solidjs";
 import { IconButton } from "~/components/ui/icon-button.tsx";
 import { onMount } from "solid-js";
@@ -38,6 +36,7 @@ import { AccordionStates } from "~/components/Form.tsx";
 import { DownloadStates, DownloadStatus } from "~/components/DownloadList.tsx";
 import JSON5 from "json5";
 import { load } from "@tauri-apps/plugin-store";
+import { toaster } from "~/services/Toaster.ts";
 
 export type LoggingFormType = {
   title: string;
@@ -66,7 +65,6 @@ export function Logging() {
       pageKeys.set(Pages.Logging, crypto.randomUUID());
     }
     if (Object.values(logForm.logConfig).length === 0) {
-      console.log("Test");
       const accordionStates: AccordionStates = new Map();
       setLogForm({
         title: "New file",
@@ -450,11 +448,6 @@ export function Logging() {
     setRenderLoggingForm(true);
   };
 
-  const toaster = Toast.createToaster({
-    placement: "top-end",
-    gap: 24,
-  });
-
   const fileHandler = new FileHandler();
 
   let scrollContainer: HTMLDivElement | undefined;
@@ -494,364 +487,321 @@ export function Logging() {
   );
 
   return (
-    <>
-      <div
+    <div
+      style={{
+        "padding-top": "0.5rem",
+        "padding-bottom": "0.5rem",
+        height: "100%",
+        width: `100% `,
+        "justify-content": "center",
+        display: "flex",
+      }}
+    >
+      <Stack
         style={{
-          "padding-top": "0.5rem",
-          "padding-bottom": "0.5rem",
-          height: "100%",
-          width: `100% `,
-          "justify-content": "center",
-          display: "flex",
+          width: "40%",
+          height: `calc(100% - 1rem)`,
+          "margin-top": "0.5rem",
+          "padding-top": "1rem",
+          "padding-bottom": "1rem",
+          "padding-left": "1rem",
+          "padding-right": "1rem",
+          "min-width": "30rem",
+          "border-radius": "0.5rem",
+          "box-shadow": "0px 0px 15px 1px rgb(0,0,0,0.05)",
+          "border-width": "1px",
         }}
+        borderColor="bg.muted"
+        backgroundColor="bg.default"
       >
-        <Stack
-          style={{
-            width: "40%",
-            height: `calc(100% - 1rem)`,
-            "margin-top": "0.5rem",
-            "padding-top": "1rem",
-            "padding-bottom": "1rem",
-            "padding-left": "1rem",
-            "padding-right": "1rem",
-            "min-width": "30rem",
-            "border-radius": "0.5rem",
-            "box-shadow": "0px 0px 15px 1px rgb(0,0,0,0.05)",
-            "border-width": "1px",
-          }}
-          borderColor="bg.muted"
-          backgroundColor="bg.default"
-        >
-          <Show when={renderLoggingForm()}>
-            <Stack direction="row" width="100%">
-              <Tooltip.Root positioning={{ placement: "bottom-start" }}>
-                <Tooltip.Trigger width={`calc(100% - 17rem)`}>
-                  <Editable.Root
-                    placeholder="File name"
-                    defaultValue={logForm.title}
-                    activationMode="dblclick"
-                    onValueCommit={(e) => {
-                      setLogForm("title", e.value);
-                    }}
-                    fontWeight="bold"
-                    fontSize="2xl"
-                    textAlign="left"
-                  >
-                    <Editable.Area>
-                      <Editable.Input width="100%" />
-                      <Editable.Preview
-                        style={{
-                          "white-space": "nowrap",
-                          "text-overflow": "ellipsis",
-                          display: "block",
-                          overflow: "hidden",
-                        }}
-                      />
-                    </Editable.Area>
-                  </Editable.Root>
-                </Tooltip.Trigger>
-                <Show when={logForm.filePath.length !== 0}>
-                  <Tooltip.Positioner>
-                    <Tooltip.Content backgroundColor="bg.default">
-                      <Text color="fg.default">{logForm.filePath}</Text>
-                    </Tooltip.Content>
-                  </Tooltip.Positioner>
-                </Show>
-              </Tooltip.Root>
+        <Show when={renderLoggingForm()}>
+          <Stack direction="row" width="100%">
+            <Tooltip.Root positioning={{ placement: "bottom-start" }}>
+              <Tooltip.Trigger width={`calc(100% - 17rem)`}>
+                <Editable.Root
+                  placeholder="File name"
+                  defaultValue={logForm.title}
+                  activationMode="dblclick"
+                  onValueCommit={(e) => {
+                    setLogForm("title", e.value);
+                  }}
+                  fontWeight="bold"
+                  fontSize="2xl"
+                  textAlign="left"
+                >
+                  <Editable.Area>
+                    <Editable.Input width="100%" />
+                    <Editable.Preview
+                      style={{
+                        "white-space": "nowrap",
+                        "text-overflow": "ellipsis",
+                        display: "block",
+                        overflow: "hidden",
+                      }}
+                    />
+                  </Editable.Area>
+                </Editable.Root>
+              </Tooltip.Trigger>
+              <Show when={logForm.filePath.length !== 0}>
+                <Tooltip.Positioner>
+                  <Tooltip.Content backgroundColor="bg.default">
+                    <Text color="fg.default">{logForm.filePath}</Text>
+                  </Tooltip.Content>
+                </Tooltip.Positioner>
+              </Show>
+            </Tooltip.Root>
 
-              <FileMenu
-                filePath={logForm.filePath}
-                recentFiles={recentLogFilePaths()}
-                onNewFile={() => {
-                  const newEmptyFile = JSON5.parse(
-                    JSON5.stringify(logFormFileFormat()),
+            <FileMenu
+              filePath={logForm.filePath}
+              recentFiles={recentLogFilePaths()}
+              onNewFile={() => {
+                const newEmptyFile = JSON5.parse(
+                  JSON5.stringify(logFormFileFormat()),
+                );
+                setLogForm({
+                  title: "New File",
+                  logConfig: newEmptyFile,
+                  filePath: "",
+                });
+                refresh();
+              }}
+              onOpenFile={async () => {
+                try {
+                  const extension = "json5";
+                  const path = await fileHandler.openFileDialog(extension);
+                  const file = await fileHandler.readFile(
+                    path,
+                    logFormFileFormat(),
                   );
-                  setLogForm({
-                    title: "New File",
-                    logConfig: newEmptyFile,
-                    filePath: "",
+                  setLogFormData(file, path);
+                  setRecentLogFilePaths((prev) => {
+                    const newRecentFiles = prev.filter(
+                      (prevFilePath) => prevFilePath !== path,
+                    );
+                    return [path, ...newRecentFiles];
                   });
                   refresh();
-                }}
-                onOpenFile={async () => {
-                  try {
-                    const extension = "json5";
-                    const path = await fileHandler.openFileDialog(extension);
-                    const file = await fileHandler.readFile(
-                      path,
-                      logFormFileFormat(),
-                    );
-                    setLogFormData(file, path);
-                    setRecentLogFilePaths((prev) => {
-                      const newRecentFiles = prev.filter(
-                        (prevFilePath) => prevFilePath !== path,
-                      );
-                      return [path, ...newRecentFiles];
-                    });
-                    refresh();
-                  } catch {
-                    toaster.create({
-                      title: "Invalid File ",
-                      description: "The file is invalid.",
-                      type: "error",
-                    });
-                  }
-                }}
-                onOpenRecentFile={async (filePath: string) => {
-                  try {
-                    const file = await fileHandler.readFile(
-                      filePath,
-                      logFormFileFormat(),
-                    );
-                    setLogFormData(file, filePath);
-                  } catch {
-                    toaster.create({
-                      title: "Invalid File Path",
-                      description: "The file path is invalid.",
-                      type: "error",
-                    });
-                    setRecentLogFilePaths((prev) => {
-                      return prev.filter(
-                        (prevFilePath) => prevFilePath !== filePath,
-                      );
-                    });
-                  }
-                }}
-                onDeleteRecentPath={(index: number) => {
-                  setRecentLogFilePaths((prev: string[]) => {
-                    return prev.filter((_, i) => {
-                      return i !== index;
-                    });
+                } catch {
+                  toaster.create({
+                    title: "Invalid File ",
+                    description: "The file is invalid.",
+                    type: "error",
                   });
-                }}
-                onReloadFile={async () => {
-                  if (logForm.filePath.length === 0) return;
-                  setRenderLoggingForm(false);
-                  try {
-                    const file = await fileHandler.readFile(
-                      logForm.filePath,
-                      logFormFileFormat(),
+                }
+              }}
+              onOpenRecentFile={async (filePath: string) => {
+                try {
+                  const file = await fileHandler.readFile(
+                    filePath,
+                    logFormFileFormat(),
+                  );
+                  setLogFormData(file, filePath);
+                } catch {
+                  toaster.create({
+                    title: "Invalid File Path",
+                    description: "The file path is invalid.",
+                    type: "error",
+                  });
+                  setRecentLogFilePaths((prev) => {
+                    return prev.filter(
+                      (prevFilePath) => prevFilePath !== filePath,
                     );
-                    setLogForm("logConfig", file);
-                    setLogForm(
-                      "originalFile",
-                      JSON5.parse(JSON5.stringify(file)),
+                  });
+                }
+              }}
+              onDeleteRecentPath={(index: number) => {
+                setRecentLogFilePaths((prev: string[]) => {
+                  return prev.filter((_, i) => {
+                    return i !== index;
+                  });
+                });
+              }}
+              onReloadFile={async () => {
+                if (logForm.filePath.length === 0) return;
+                setRenderLoggingForm(false);
+                try {
+                  const file = await fileHandler.readFile(
+                    logForm.filePath,
+                    logFormFileFormat(),
+                  );
+                  setLogForm("logConfig", file);
+                  setLogForm(
+                    "originalFile",
+                    JSON5.parse(JSON5.stringify(file)),
+                  );
+                } catch {
+                  toaster.create({
+                    title: "Invalid File Path",
+                    description: "The file path is invalid.",
+                    type: "error",
+                  });
+                  setRecentLogFilePaths((prev) => {
+                    return prev.filter(
+                      (prevFilePath) => prevFilePath !== logForm.filePath,
                     );
-                  } catch {
-                    toaster.create({
-                      title: "Invalid File Path",
-                      description: "The file path is invalid.",
-                      type: "error",
-                    });
-                    setRecentLogFilePaths((prev) => {
-                      return prev.filter(
-                        (prevFilePath) => prevFilePath !== logForm.filePath,
-                      );
-                    });
-                  }
-                  refresh();
-                }}
-                onSaveFile={async () => {
-                  try {
-                    if (
-                      scrollContainer &&
-                      document.querySelectorAll(
-                        `[data-name*="config_field_error"]`,
-                      ).length > 0
-                    ) {
-                      scrollToWrongField(scrollContainer);
-                      toaster.create({
-                        title: "Invalid File",
-                        description: "The file is invalid.",
-                        type: "error",
-                      });
-                      return;
-                    }
-                    const path = await fileHandler.saveFileDialog(
-                      "json5",
-                      logForm.filePath,
-                      logForm.title,
-                    );
-                    await fileHandler.writeFile(path, logForm.logConfig);
-                    if (logForm.filePath === path) {
-                      setLogForm(
-                        "originalFile",
-                        JSON5.parse(JSON5.stringify(logForm.logConfig)),
-                      );
-                    }
-                  } catch {
+                  });
+                }
+                refresh();
+              }}
+              onSaveFile={async () => {
+                try {
+                  if (
+                    scrollContainer &&
+                    document.querySelectorAll(
+                      `[data-name*="config_field_error"]`,
+                    ).length > 0
+                  ) {
+                    scrollToWrongField(scrollContainer);
                     toaster.create({
                       title: "Invalid File",
                       description: "The file is invalid.",
                       type: "error",
                     });
+                    return;
+                  }
+                  const path = await fileHandler.saveFileDialog(
+                    "json5",
+                    logForm.filePath,
+                    logForm.title,
+                  );
+                  await fileHandler.writeFile(path, logForm.logConfig);
+                  if (logForm.filePath === path) {
+                    setLogForm(
+                      "originalFile",
+                      JSON5.parse(JSON5.stringify(logForm.logConfig)),
+                    );
+                  }
+                } catch {
+                  toaster.create({
+                    title: "Invalid File",
+                    description: "The file is invalid.",
+                    type: "error",
+                  });
+                }
+              }}
+            />
+
+            <Stack
+              padding="0"
+              direction="row"
+              borderRadius="0.4rem"
+              borderWidth="1px"
+              borderColor="bg.disabled"
+              gap="0"
+            >
+              <PortMenu
+                portId={logForm.portId}
+                variant={"ghost"}
+                onGetFromPort={async () => {
+                  try {
+                    if (!checkAvailablePort(logForm.portId)) return;
+                    const logConfig = await GetLogConfigFromPort(
+                      logForm.portId,
+                    );
+                    setLogForm({
+                      title: logForm.portId,
+                      portId: logForm.portId,
+                      filePath: "",
+                      logConfig: logConfig,
+                      originalFile: JSON5.parse(JSON5.stringify(logConfig)),
+                      accordionStates: logForm.accordionStates,
+                    });
+                    refresh();
+                  } catch (e) {
+                    setLogForm("portId", "");
+                    toaster.create({
+                      title: "Communication Error",
+                      description: e as string,
+                      type: "error",
+                    });
+                    return;
+                  }
+                }}
+                onSaveToPort={async () => {
+                  if (
+                    scrollContainer &&
+                    document.querySelectorAll(
+                      `[data-name*="config_field_error"]`,
+                    ).length > 0
+                  ) {
+                    scrollToWrongField(scrollContainer);
+                    toaster.create({
+                      title: "Invalid File",
+                      description: "The file is invalid.",
+                      type: "error",
+                    });
+                    return;
+                  }
+
+                  try {
+                    if (!checkAvailablePort(logForm.portId)) return;
+                    await saveLogToPort(logForm.logConfig, logForm.portId);
+                    toaster.create({
+                      title: "Communication Success",
+                      description: "Log saved to port successfully.",
+                      type: "error",
+                    });
+                    const logStatus = await getCurrentLogStatus(logForm.portId);
+                    setCurrentLogStatus(logStatus.logStatus);
+                    setCyclesCompleted(logStatus.cycle);
+                    if (logForm.filePath.length === 0) {
+                      setLogForm(
+                        "originalFile",
+                        JSON5.parse(JSON5.stringify(logForm.logConfig)),
+                      );
+                    }
+                  } catch (e) {
+                    toaster.create({
+                      title: "Communication Error",
+                      description: e as string,
+                      type: "error",
+                    });
+                    setCurrentLogStatus(null);
+                    setCyclesCompleted(null);
+                    return;
                   }
                 }}
               />
 
-              <Stack
-                padding="0"
-                direction="row"
-                borderRadius="0.4rem"
-                borderWidth="1px"
-                borderColor="bg.disabled"
-                gap="0"
-              >
-                <PortMenu
-                  portId={logForm.portId}
-                  variant={"ghost"}
-                  onGetFromPort={async () => {
-                    try {
-                      if (!checkAvailablePort(logForm.portId)) return;
-                      const logConfig = await GetLogConfigFromPort(
-                        logForm.portId,
-                      );
-                      setLogForm({
-                        title: logForm.portId,
-                        portId: logForm.portId,
-                        filePath: "",
-                        logConfig: logConfig,
-                        originalFile: JSON5.parse(JSON5.stringify(logConfig)),
-                        accordionStates: logForm.accordionStates,
-                      });
-                      refresh();
-                    } catch (e) {
-                      setLogForm("portId", "");
-                      toaster.create({
-                        title: "Communication Error",
-                        description: e as string,
-                        type: "error",
-                      });
-                      return;
-                    }
-                  }}
-                  onSaveToPort={async () => {
-                    if (
-                      scrollContainer &&
-                      document.querySelectorAll(
-                        `[data-name*="config_field_error"]`,
-                      ).length > 0
-                    ) {
-                      scrollToWrongField(scrollContainer);
-                      toaster.create({
-                        title: "Invalid File",
-                        description: "The file is invalid.",
-                        type: "error",
-                      });
-                      return;
-                    }
-
-                    try {
-                      if (!checkAvailablePort(logForm.portId)) return;
-                      await saveLogToPort(logForm.logConfig, logForm.portId);
-                      toaster.create({
-                        title: "Communication Success",
-                        description: "Log saved to port successfully.",
-                        type: "error",
-                      });
-                      const logStatus = await getCurrentLogStatus(
-                        logForm.portId,
-                      );
-                      setCurrentLogStatus(logStatus.logStatus);
-                      setCyclesCompleted(logStatus.cycle);
-                      if (logForm.filePath.length === 0) {
-                        setLogForm(
-                          "originalFile",
-                          JSON5.parse(JSON5.stringify(logForm.logConfig)),
-                        );
-                      }
-                    } catch (e) {
-                      toaster.create({
-                        title: "Communication Error",
-                        description: e as string,
-                        type: "error",
-                      });
-                      setCurrentLogStatus(null);
-                      setCyclesCompleted(null);
-                      return;
-                    }
-                  }}
-                />
-
-                <Show
-                  when={currentLogStatus() === ".started"}
-                  fallback={
-                    <Tooltip.Root>
-                      <Tooltip.Trigger>
-                        <IconButton
-                          disabled={
-                            disableBtn() === LogButton.Start ||
-                            logForm.portId.length === 0 ||
-                            currentLogStatus() === ".invalid" ||
-                            currentLogStatus() === ".started" ||
-                            currentLogStatus() === ".waiting" ||
-                            csvFileDownloads.some(
-                              (file) =>
-                                file.status === DownloadStatus.Progressing,
-                            )
-                          }
-                          onClick={async () => {
-                            try {
-                              if (!checkAvailablePort(logForm.portId)) return;
-                              setDisableBtn(LogButton.Start);
-                              await startLogging(logForm.portId);
-
-                              const csvFileDownloadIndex =
-                                csvFileDownloads.findIndex(
-                                  (download) =>
-                                    download.port === logForm.portId,
-                                );
-                              if (
-                                csvFileDownloadIndex > -1 &&
-                                csvFileDownloads[csvFileDownloadIndex]
-                                  .status === DownloadStatus.Paused
-                              ) {
-                                setCsvFileDownloads(
-                                  csvFileDownloadIndex,
-                                  "status",
-                                  DownloadStatus.Cancel,
-                                );
-                              }
-
-                              const logState = await getCurrentLogStatus(
-                                logForm.portId,
-                              );
-                              setCurrentLogStatus(logState.logStatus);
-                              setCyclesCompleted(logState.cycle);
-                              setDisableBtn(LogButton.None);
-                            } catch (e) {
-                              setDisableBtn(LogButton.None);
-                              toaster.create({
-                                title: "Communication Error",
-                                description: e as string,
-                                type: "error",
-                              });
-                              return;
-                            }
-                          }}
-                          size="sm"
-                          variant="ghost"
-                        >
-                          <IconPlayerPlay />
-                        </IconButton>
-                      </Tooltip.Trigger>
-                      <Tooltip.Positioner>
-                        <Tooltip.Content backgroundColor="bg.default">
-                          <Text color="fg.default">Start Logging</Text>
-                        </Tooltip.Content>
-                      </Tooltip.Positioner>
-                    </Tooltip.Root>
-                  }
-                >
+              <Show
+                when={currentLogStatus() === ".started"}
+                fallback={
                   <Tooltip.Root>
                     <Tooltip.Trigger>
                       <IconButton
-                        disabled={disableBtn() === LogButton.Stop}
+                        disabled={
+                          disableBtn() === LogButton.Start ||
+                          logForm.portId.length === 0 ||
+                          currentLogStatus() === ".invalid" ||
+                          currentLogStatus() === ".started" ||
+                          currentLogStatus() === ".waiting" ||
+                          csvFileDownloads.some(
+                            (file) =>
+                              file.status === DownloadStatus.Progressing,
+                          )
+                        }
                         onClick={async () => {
                           try {
                             if (!checkAvailablePort(logForm.portId)) return;
-                            setDisableBtn(LogButton.Stop);
-                            await stopLogging(logForm.portId);
+                            setDisableBtn(LogButton.Start);
+                            await startLogging(logForm.portId);
+
+                            const csvFileDownloadIndex =
+                              csvFileDownloads.findIndex(
+                                (download) => download.port === logForm.portId,
+                              );
+                            if (
+                              csvFileDownloadIndex > -1 &&
+                              csvFileDownloads[csvFileDownloadIndex].status ===
+                                DownloadStatus.Paused
+                            ) {
+                              setCsvFileDownloads(
+                                csvFileDownloadIndex,
+                                "status",
+                                DownloadStatus.Cancel,
+                              );
+                            }
+
                             const logState = await getCurrentLogStatus(
                               logForm.portId,
                             );
@@ -871,137 +821,163 @@ export function Logging() {
                         size="sm"
                         variant="ghost"
                       >
-                        <IconPlayerStop />
+                        <IconPlayerPlay />
                       </IconButton>
                     </Tooltip.Trigger>
                     <Tooltip.Positioner>
                       <Tooltip.Content backgroundColor="bg.default">
-                        <Text color="fg.default">Stop Logging</Text>
+                        <Text color="fg.default">Start Logging</Text>
                       </Tooltip.Content>
                     </Tooltip.Positioner>
                   </Tooltip.Root>
-                </Show>
+                }
+              >
+                <Tooltip.Root>
+                  <Tooltip.Trigger>
+                    <IconButton
+                      disabled={disableBtn() === LogButton.Stop}
+                      onClick={async () => {
+                        try {
+                          if (!checkAvailablePort(logForm.portId)) return;
+                          setDisableBtn(LogButton.Stop);
+                          await stopLogging(logForm.portId);
+                          const logState = await getCurrentLogStatus(
+                            logForm.portId,
+                          );
+                          setCurrentLogStatus(logState.logStatus);
+                          setCyclesCompleted(logState.cycle);
+                          setDisableBtn(LogButton.None);
+                        } catch (e) {
+                          setDisableBtn(LogButton.None);
+                          toaster.create({
+                            title: "Communication Error",
+                            description: e as string,
+                            type: "error",
+                          });
+                          return;
+                        }
+                      }}
+                      size="sm"
+                      variant="ghost"
+                    >
+                      <IconPlayerStop />
+                    </IconButton>
+                  </Tooltip.Trigger>
+                  <Tooltip.Positioner>
+                    <Tooltip.Content backgroundColor="bg.default">
+                      <Text color="fg.default">Stop Logging</Text>
+                    </Tooltip.Content>
+                  </Tooltip.Positioner>
+                </Tooltip.Root>
+              </Show>
 
-                <Show
-                  when={
-                    currentLogStatus() !== ".stopped" ||
-                    currentLogStatus() === ".invalid" ||
-                    cyclesCompleted() === 0
-                  }
-                  fallback={
-                    <Tooltip.Root>
-                      <Tooltip.Trigger>
-                        <Button
-                          disabled={disableBtn() === LogButton.Download}
-                          loading={csvFileDownloads.some(
-                            (file) =>
-                              file.status === DownloadStatus.Progressing,
-                          )}
-                          onClick={async () => {
-                            if (logForm.portId.length === 0) return;
-                            try {
-                              if (!checkAvailablePort(logForm.portId)) return;
-                              setDisableBtn(LogButton.Download);
-                              const path = await fileHandler.saveFileDialog(
-                                "csv",
-                                logForm.filePath,
-                                logForm.title,
-                              );
-                              setDisableBtn(LogButton.None);
-                              await saveLogCsvFile(
-                                path,
-                                logForm.portId,
-                                cyclesCompleted()!,
-                              );
-                            } catch {
-                              setDisableBtn(LogButton.None);
-                              toaster.create({
-                                title: "Invalid File",
-                                description: "The file is invalid.",
-                                type: "error",
-                              });
-                            }
-                          }}
-                          variant="ghost"
-                          userSelect="none"
-                          size="sm"
-                        >
-                          <IconFileDownload />
-                        </Button>
-                      </Tooltip.Trigger>
-                      <Tooltip.Positioner>
-                        <Tooltip.Content backgroundColor="bg.default">
-                          <Text color="fg.default">Get Log</Text>
-                        </Tooltip.Content>
-                      </Tooltip.Positioner>
-                    </Tooltip.Root>
-                  }
-                >
-                  {/* Refresh Log Status btn */}
+              <Show
+                when={
+                  currentLogStatus() !== ".stopped" ||
+                  currentLogStatus() === ".invalid" ||
+                  cyclesCompleted() === 0
+                }
+                fallback={
                   <Tooltip.Root>
                     <Tooltip.Trigger>
-                      <IconButton
-                        disabled={logForm.portId.length === 0}
+                      <Button
+                        disabled={disableBtn() === LogButton.Download}
+                        loading={csvFileDownloads.some(
+                          (file) => file.status === DownloadStatus.Progressing,
+                        )}
                         onClick={async () => {
+                          if (logForm.portId.length === 0) return;
                           try {
                             if (!checkAvailablePort(logForm.portId)) return;
-                            setDisableBtn(LogButton.Refresh);
-                            const logState = await getCurrentLogStatus(
-                              logForm.portId,
+                            setDisableBtn(LogButton.Download);
+                            const path = await fileHandler.saveFileDialog(
+                              "csv",
+                              logForm.filePath,
+                              logForm.title,
                             );
-                            setCurrentLogStatus(logState.logStatus);
-                            setCyclesCompleted(logState.cycle);
                             setDisableBtn(LogButton.None);
+                            await saveLogCsvFile(
+                              path,
+                              logForm.portId,
+                              cyclesCompleted()!,
+                            );
                           } catch {
                             setDisableBtn(LogButton.None);
-                            setCurrentLogStatus(null);
-                            setCyclesCompleted(null);
+                            toaster.create({
+                              title: "Invalid File",
+                              description: "The file is invalid.",
+                              type: "error",
+                            });
                           }
                         }}
                         variant="ghost"
+                        userSelect="none"
                         size="sm"
                       >
-                        <IconReload />
-                      </IconButton>
+                        <IconFileDownload />
+                      </Button>
                     </Tooltip.Trigger>
                     <Tooltip.Positioner>
                       <Tooltip.Content backgroundColor="bg.default">
-                        <Text color="fg.default">Refresh Log Status</Text>
+                        <Text color="fg.default">Get Log</Text>
                       </Tooltip.Content>
                     </Tooltip.Positioner>
                   </Tooltip.Root>
-                </Show>
-                {/* Get Log button need to add tooltip */}
-              </Stack>
-              <ConnectButton
-                portId={logForm.portId}
-                onPortIdChange={(portId) => setLogForm("portId", portId)}
-              />
+                }
+              >
+                {/* Refresh Log Status btn */}
+                <Tooltip.Root>
+                  <Tooltip.Trigger>
+                    <IconButton
+                      disabled={logForm.portId.length === 0}
+                      onClick={async () => {
+                        try {
+                          if (!checkAvailablePort(logForm.portId)) return;
+                          setDisableBtn(LogButton.Refresh);
+                          const logState = await getCurrentLogStatus(
+                            logForm.portId,
+                          );
+                          setCurrentLogStatus(logState.logStatus);
+                          setCyclesCompleted(logState.cycle);
+                          setDisableBtn(LogButton.None);
+                        } catch {
+                          setDisableBtn(LogButton.None);
+                          setCurrentLogStatus(null);
+                          setCyclesCompleted(null);
+                        }
+                      }}
+                      variant="ghost"
+                      size="sm"
+                    >
+                      <IconReload />
+                    </IconButton>
+                  </Tooltip.Trigger>
+                  <Tooltip.Positioner>
+                    <Tooltip.Content backgroundColor="bg.default">
+                      <Text color="fg.default">Refresh Log Status</Text>
+                    </Tooltip.Content>
+                  </Tooltip.Positioner>
+                </Tooltip.Root>
+              </Show>
+              {/* Get Log button need to add tooltip */}
             </Stack>
-
-            <LoggingForm
-              id={pageKeys.get(Pages.Logging)!}
-              formData={logForm.logConfig}
-              originalFile={logForm.originalFile}
-              accordionStates={logForm.accordionStates}
-              ref={scrollContainer}
-              description={logConfigDescription()}
+            <ConnectButton
+              portId={logForm.portId}
+              onPortIdChange={(portId) => setLogForm("portId", portId)}
             />
-          </Show>
-        </Stack>
-      </div>
-      <Toast.Toaster toaster={toaster}>
-        {(toast) => (
-          <Toast.Root>
-            <Toast.Title>{toast().title}</Toast.Title>
-            <Toast.Description>{toast().description}</Toast.Description>
-            <Toast.CloseTrigger>
-              <IconX />
-            </Toast.CloseTrigger>
-          </Toast.Root>
-        )}
-      </Toast.Toaster>
-    </>
+          </Stack>
+
+          <LoggingForm
+            id={pageKeys.get(Pages.Logging)!}
+            formData={logForm.logConfig}
+            originalFile={logForm.originalFile}
+            accordionStates={logForm.accordionStates}
+            ref={scrollContainer}
+            description={logConfigDescription()}
+          />
+        </Show>
+      </Stack>
+    </div>
   );
 }
 

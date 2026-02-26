@@ -1,4 +1,4 @@
-import { IconRuler2, IconRuler2Off, IconX } from "@tabler/icons-solidjs";
+import { IconRuler2, IconRuler2Off } from "@tabler/icons-solidjs";
 import { Command } from "@tauri-apps/plugin-shell";
 import { createEffect, createSignal, on, Show, useContext } from "solid-js";
 import { Stack } from "styled-system/jsx";
@@ -8,7 +8,6 @@ import { TabPageContext } from "~/components/Tab/TabList";
 import { Button } from "~/components/ui/button";
 import { Editable } from "~/components/ui/editable";
 import { Text } from "~/components/ui/text";
-import { Toast } from "~/components/ui/toast";
 import { Tooltip } from "~/components/ui/tooltip";
 import {
   configDescription,
@@ -30,6 +29,7 @@ import { Spinner } from "~/components/ui/spinner";
 import { IconButton } from "~/components/ui/icon-button";
 import { ConnectButton } from "../../components/Connect/ConnectButton";
 import { ConfigType } from "src-tauri/generated/config/ConfigType";
+import { toaster } from "~/services/Toaster";
 
 export type ConfigTabPage = {
   filePath?: string;
@@ -49,11 +49,6 @@ export function ConfigTabContent() {
   const configTabProps = useContext(TabPageContext);
   if (!configTabProps) return;
   if (!tabStore.get(configTabProps.key)) return;
-
-  const toaster = Toast.createToaster({
-    placement: "top-end",
-    gap: 24,
-  });
 
   const getTabIndex = () => {
     const index = tabStore
@@ -678,17 +673,6 @@ export function ConfigTabContent() {
             />
           </div>
         </Show>
-        <Toast.Toaster toaster={toaster}>
-          {(toast) => (
-            <Toast.Root>
-              <Toast.Title>{toast().title}</Toast.Title>
-              <Toast.Description>{toast().description}</Toast.Description>
-              <Toast.CloseTrigger>
-                <IconX />
-              </Toast.CloseTrigger>
-            </Toast.Root>
-          )}
-        </Toast.Toaster>
       </Stack>
     </div>
   );
