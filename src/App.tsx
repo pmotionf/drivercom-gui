@@ -54,6 +54,7 @@ import {
   panelStore,
   pageKeys,
   tabStore,
+  configFormFileFormat,
 } from "./store/GlobalState.ts";
 
 import { Button } from "~/components/ui/button.tsx";
@@ -279,7 +280,14 @@ function App(props: RouteSectionProps) {
   async function enableDropEvent() {
     await getCurrentWebview().onDragDropEvent(async (event) => {
       if (event.payload.type === "drop") {
-        if (event.payload.paths.length > 1) return;
+        if (event.payload.paths.length > 1) {
+          toaster.create({
+            title: "Invalid files",
+            description: "Invalid multiple files",
+            type: "error",
+          });
+          return;
+        }
         if (page() === Pages.LogViewer || page() === Pages.Configuration) {
           if (pageKeys.has(page())) {
             const panelKey = pageKeys.get(page());
@@ -323,38 +331,63 @@ function App(props: RouteSectionProps) {
 
                 if (tabStore.has(tabStoreKey)) {
                   if (page() === Pages.Configuration) {
-                    if (!event.payload.paths[0].endsWith("json5")) return;
+                    if (!event.payload.paths[0].endsWith("json5")) {
+                      toaster.create({
+                        title: "Invalid File",
+                        description: "Invalid file extension.",
+                        type: "error",
+                      });
+                      return;
+                    }
                     const accordionStatuses: AccordionStates = new Map();
                     const linkedStatuses: LinkStates = new Map();
                     const gainLockStatuses: GainLockStates = new Map();
                     const formOverflowY: Map<string, number> = new Map();
-                    const file = new FileHandler();
-                    const newForm = (await file.readFile(
-                      event.payload.paths[0],
-                    )) as ConfigType;
 
-                    newTab = {
-                      tab: {
-                        id: id,
-                        tabName: tabName!,
-                      },
-                      tabPage: {
-                        configTabPage: {
-                          filePath: filePath,
-                          portId: "",
-                          configForm: newForm,
-                          configAccordionStatuses: accordionStatuses,
-                          configLinkedStatuses: linkedStatuses,
-                          configGainLockStatuses: gainLockStatuses,
-                          formName: tabName,
-                          originalFile: JSON5.parse(JSON5.stringify(newForm)),
-                          formOverflowY: formOverflowY,
+                    try {
+                      const file = new FileHandler();
+                      const newForm = await file.readFile(
+                        event.payload.paths[0],
+                        JSON5.parse(JSON5.stringify(configFormFileFormat())),
+                      );
+
+                      newTab = {
+                        tab: {
+                          id: id,
+                          tabName: tabName!,
                         },
-                        logViewerTabPage: null,
-                      },
-                    };
+                        tabPage: {
+                          configTabPage: {
+                            filePath: filePath,
+                            portId: "",
+                            configForm: newForm as ConfigType,
+                            configAccordionStatuses: accordionStatuses,
+                            configLinkedStatuses: linkedStatuses,
+                            configGainLockStatuses: gainLockStatuses,
+                            formName: tabName,
+                            originalFile: JSON5.parse(JSON5.stringify(newForm)),
+                            formOverflowY: formOverflowY,
+                          },
+                          logViewerTabPage: null,
+                        },
+                      };
+                    } catch {
+                      toaster.create({
+                        title: "Invalid File",
+                        description: "Invalid file format.",
+                        type: "error",
+                      });
+                      return;
+                    }
                   } else if (page() === Pages.LogViewer) {
-                    if (!event.payload.paths[0].endsWith("csv")) return;
+                    if (!event.payload.paths[0].endsWith("csv")) {
+                      toaster.create({
+                        title: "Invalid File",
+                        description: "Invalid file extension.",
+                        type: "error",
+                      });
+                      return;
+                    }
                     newTab = {
                       tab: {
                         id: id,
