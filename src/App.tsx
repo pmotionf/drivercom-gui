@@ -50,6 +50,9 @@ import {
   setRecentConfigFilePaths,
   setRecentLogFilePaths,
   setIpHistory,
+  panelStore,
+  pageKeys,
+  tabStore,
 } from "./store/GlobalState.ts";
 
 import { Button } from "~/components/ui/button.tsx";
@@ -70,6 +73,14 @@ import { ConfigCalibrationType } from "src-tauri/generated/config/ConfigCalibrat
 import { ConfigSystemType } from "src-tauri/generated/config/ConfigSystem.tsx";
 import { LogConfigType } from "src-tauri/generated/config/LogConfigType.tsx";
 import { ConfigType } from "src-tauri/generated/config/ConfigType.tsx";
+import { getCurrentWebview } from "@tauri-apps/api/webview";
+import {
+  AccordionStates,
+  GainLockStates,
+  LinkStates,
+} from "~/pages/Configuration/ConfigForm/ConfigForm.tsx";
+import { TabContext } from "~/components/Tab/TabList.tsx";
+import { FileHandler } from "./services/FileHandler.ts";
 
 type PageMeta = {
   icon: ValidComponent;
@@ -102,6 +113,7 @@ function App(props: RouteSectionProps) {
     await getLogConfigDescription();
     await prepareConfigTabFormat();
     await getStoreValues();
+    await enableDropEvent();
   });
 
   async function detectCliVersion() {
@@ -259,6 +271,117 @@ function App(props: RouteSectionProps) {
       const getIpHistory = (await store.get("ipHistory")) as IpAddress[];
       setIpHistory(getIpHistory);
     }
+  }
+
+  async function enableDropEvent() {
+    await getCurrentWebview().onDragDropEvent(async (event) => {
+      if (event.payload.type === "drop") {
+        if (event.payload.paths.length > 1) return;
+        if (page() === Pages.LogViewer || page() === Pages.Configuration) {
+          if (pageKeys.has(page())) {
+            const panelKey = pageKeys.get(page());
+            if (panelKey && panelStore.has(panelKey)) {
+              const panels = panelStore.get(panelKey)![0]();
+              let tabStoreKey = "";
+              for (let i = 0; i < panels.length; i++) {
+                const currentPanelId = panels[i].id;
+                const element = document.getElementById(
+                  `tabs:${currentPanelId}`,
+                );
+
+                if (element) {
+                  const clientRect = element.getBoundingClientRect();
+                  const top = clientRect.top;
+                  const bottom = clientRect.bottom;
+                  const left = clientRect.left;
+                  const right = clientRect.right;
+                  const clientPosition = event.payload.position;
+
+                  if (top < clientPosition.y && clientPosition.y < bottom) {
+                    if (left < clientPosition.x && clientPosition.x < right) {
+                      tabStoreKey = currentPanelId;
+                      break;
+                    }
+                  }
+                }
+              }
+
+              if (tabStoreKey.length > 0) {
+                const id = crypto.randomUUID();
+                const tabName = event.payload.paths[0]
+                  .replaceAll("\\", "/")
+                  .match(/[^?!//]+$/!)!
+                  .toString()
+                  .split(".")
+                  .shift();
+                const filePath = event.payload.paths[0].replaceAll("\\", "/");
+
+                let newTab: TabContext | null = null;
+
+                if (tabStore.has(tabStoreKey)) {
+                  if (page() === Pages.Configuration) {
+                    if (!event.payload.paths[0].endsWith("json5")) return;
+                    const accordionStatuses: AccordionStates = new Map();
+                    const linkedStatuses: LinkStates = new Map();
+                    const gainLockStatuses: GainLockStates = new Map();
+                    const formOverflowY: Map<string, number> = new Map();
+                    const file = new FileHandler();
+                    const newForm = (await file.readFile(
+                      event.payload.paths[0],
+                    )) as ConfigType;
+
+                    newTab = {
+                      tab: {
+                        id: id,
+                        tabName: tabName!,
+                      },
+                      tabPage: {
+                        configTabPage: {
+                          filePath: filePath,
+                          portId: "",
+                          configForm: newForm,
+                          configAccordionStatuses: accordionStatuses,
+                          configLinkedStatuses: linkedStatuses,
+                          configGainLockStatuses: gainLockStatuses,
+                          formName: tabName,
+                          originalFile: JSON5.parse(JSON5.stringify(newForm)),
+                          formOverflowY: formOverflowY,
+                        },
+                        logViewerTabPage: null,
+                      },
+                    };
+                  } else if (page() === Pages.LogViewer) {
+                    if (!event.payload.paths[0].endsWith("csv")) return;
+                    newTab = {
+                      tab: {
+                        id: id,
+                        tabName: tabName!,
+                      },
+                      tabPage: {
+                        logViewerTabPage: {
+                          filePath: filePath,
+                          plotSplitIndex: [],
+                          plotContext: [],
+                          plotXScale: [0, 0],
+                        },
+                        configTabPage: null,
+                      },
+                    };
+                  }
+                  if (newTab) {
+                    const tabCtx = tabStore.get(tabStoreKey)!;
+                    tabCtx[1]({
+                      tabContext: [...tabCtx[0].tabContext, newTab],
+                      focusedTab: newTab.tab.id,
+                    });
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    });
   }
 
   const [version, setVersion] = createSignal("0.0.0");
