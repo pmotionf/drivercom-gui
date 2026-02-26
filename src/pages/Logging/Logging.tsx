@@ -179,8 +179,18 @@ export function Logging() {
       logConfig: form,
       originalFile: JSON5.parse(JSON5.stringify(form)),
     });
-    refresh();
   }
+
+  createEffect(
+    on(
+      () => logForm.filePath,
+      () => {
+        setTimeout(() => {
+          refresh();
+        });
+      },
+    ),
+  );
 
   const [cyclesCompleted, setCyclesCompleted] = createSignal<number | null>(0);
   const [currentLogStatus, setCurrentLogStatus] = createSignal<string | null>(
@@ -563,7 +573,6 @@ export function Logging() {
                   logConfig: newEmptyFile,
                   filePath: "",
                 });
-                refresh();
               }}
               onOpenFile={async () => {
                 try {
@@ -580,7 +589,6 @@ export function Logging() {
                     );
                     return [path, ...newRecentFiles];
                   });
-                  refresh();
                 } catch {
                   toaster.create({
                     title: "Invalid File ",
@@ -706,7 +714,6 @@ export function Logging() {
                       originalFile: JSON5.parse(JSON5.stringify(logConfig)),
                       accordionStates: logForm.accordionStates,
                     });
-                    refresh();
                   } catch (e) {
                     setLogForm("portId", "");
                     toaster.create({

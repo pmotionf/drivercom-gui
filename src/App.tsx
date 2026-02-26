@@ -55,6 +55,9 @@ import {
   pageKeys,
   tabStore,
   configFormFileFormat,
+  setLogForm,
+  logForm,
+  logFormFileFormat,
 } from "./store/GlobalState.ts";
 
 import { Button } from "~/components/ui/button.tsx";
@@ -288,6 +291,44 @@ function App(props: RouteSectionProps) {
           });
           return;
         }
+        const file = new FileHandler();
+
+        if (page() === Pages.Logging) {
+          if (!event.payload.paths[0].endsWith("json5")) {
+            toaster.create({
+              title: "Invalid File",
+              description: "Invalid file extension.",
+              type: "error",
+            });
+            return;
+          }
+          try {
+            const logConfig = await file.readFile(
+              event.payload.paths[0],
+              logFormFileFormat(),
+            );
+
+            setLogForm({
+              title: event.payload.paths[0]
+                .replaceAll("\\", "/")
+                .match(/[^?!//]+$/!)!
+                .toString()
+                .split(".")
+                .shift(),
+              filePath: event.payload.paths[0].replaceAll("\\", "/"),
+              portId: logForm.portId,
+              accordionStates: new Map(),
+              logConfig: logConfig,
+              originalFile: JSON5.parse(JSON5.stringify(logConfig)),
+            });
+          } catch {
+            toaster.create({
+              title: "Invalid File",
+              description: "Invalid file format.",
+              type: "error",
+            });
+          }
+        }
         if (page() === Pages.LogViewer || page() === Pages.Configuration) {
           if (pageKeys.has(page())) {
             const panelKey = pageKeys.get(page());
@@ -345,7 +386,6 @@ function App(props: RouteSectionProps) {
                     const formOverflowY: Map<string, number> = new Map();
 
                     try {
-                      const file = new FileHandler();
                       const newForm = await file.readFile(
                         event.payload.paths[0],
                         JSON5.parse(JSON5.stringify(configFormFileFormat())),
