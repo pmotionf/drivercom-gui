@@ -149,29 +149,30 @@ export class FileHandler implements IFileHandler {
       throw new Error("File is empty");
     }
     return new Promise<CsvFile>((resolve, reject) => {
-      const rows = csv_str.endsWith("\n")
-        ? csv_str.slice(0, -2).split("\n")
-        : csv_str.split("\n");
-      const parseCsvStr = rows
-        .map((str) => (str.endsWith(",") ? str + "\n" : str + ","))
-        .join("\n");
+      const rows = csv_str.split("\n").filter((str) => str.trim().length > 0);
       if (rows.length < 2) {
-        return reject("Not enough rows.");
+        return reject("Missing data.");
       }
 
-      const enumMappings: Map<string, Map<number, string>> = new Map();
+      const parseCsvStr = rows
+        .map((str) => (str.endsWith(",") ? str + "\n" : str + ",\n"))
+        .join("");
 
       const schema = inferSchema(parseCsvStr);
       const parser = initParser(schema);
-      const local_header: string[] = rows[0].replace(/,\s*$/, "").split(",");
+      const local_header: string[] = rows[0]
+        .split(",")
+        .filter((row) => row.trim().length > 0);
       const checkRowLength = rows.some(
         (row) =>
-          row.replace(/,\s*$/, "").split(",").length !== local_header.length,
+          row.split(",").filter((row) => row.trim().length > 0).length !==
+          local_header.length,
       );
       if (checkRowLength) {
         return reject("Header and data length mismatch.");
       }
 
+      const enumMappings: Map<string, Map<number, string>> = new Map();
       const data: number[][] = parser
         .typedCols(parseCsvStr)
         .map((row, rowIndex) =>
