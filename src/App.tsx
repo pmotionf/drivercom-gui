@@ -358,6 +358,16 @@ function App(props: RouteSectionProps) {
                 }
               }
 
+              panelStore.get(panelKey)![1]((prev) =>
+                prev.map((panel) => {
+                  if (panel.id === tabStoreKey) {
+                    return { ...panel, isFileDrop: true };
+                  } else {
+                    return panel;
+                  }
+                }),
+              );
+
               if (tabStoreKey.length > 0) {
                 const id = crypto.randomUUID();
                 const tabName = event.payload.paths[0]

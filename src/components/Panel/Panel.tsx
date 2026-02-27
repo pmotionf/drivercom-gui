@@ -1,10 +1,10 @@
-import { createContext, JSX, useContext } from "solid-js";
+import { createContext, createEffect, JSX, on, useContext } from "solid-js";
 import { TabListContext, TabListProps, TabLocation } from "../Tab/TabList.tsx";
 import { createSignal } from "solid-js";
 import { Show } from "solid-js";
 //@ts-ignore Has an Any type error
 import { Stack } from "styled-system/jsx/stack.mjs";
-import { panelStore } from "~/store/GlobalState.ts";
+import { panelStore, tabStore } from "~/store/GlobalState.ts";
 import { Splitter } from "../ui/splitter.tsx";
 import { PanelLayoutContext } from "./PanelContext.tsx";
 
@@ -48,6 +48,67 @@ export function Panel(props: JSX.HTMLAttributes<HTMLDivElement>) {
     return nextPanel;
   };
 
+  const parseDragOverLocation = (clientX: number, tabListId: string) => {
+    const tabListContainerStart =
+      document.getElementById(tabListId)!.offsetLeft;
+    const tabListContainerWidth =
+      document.getElementById(tabListId)!.offsetWidth;
+    const tabListContainerWidthQuarter = tabListContainerWidth * 0.25;
+    const tabListContainerEnd = tabListContainerStart + tabListContainerWidth;
+
+    const tabListLeftArea =
+      tabListContainerStart + tabListContainerWidthQuarter;
+    const tabListRightArea = tabListContainerEnd - tabListContainerWidthQuarter;
+
+    if (tabListContainerStart < clientX && clientX < tabListLeftArea) {
+      return "leftSplitter";
+    } else if (tabListRightArea < clientX && clientX < tabListContainerEnd) {
+      return "rightSplitter";
+    } else {
+      return "centerSplitter";
+    }
+  };
+
+  const getCurrentPanelContext = (currentId: string) => {
+    return panelStore.get(panelLayoutCtx.key)![0]()[
+      panelStore
+        .get(panelLayoutCtx.key)![0]()
+        .findIndex((panel) => panel.id === currentId)
+    ];
+  };
+
+  const setCurrentPanelContextFileDrop = (
+    currentId: string,
+    isFileDrop?: boolean,
+  ) => {
+    return panelStore.get(panelLayoutCtx.key)![1]((prev) => {
+      return prev.map((panel) => {
+        if (panel.id === currentId) {
+          return { ...panel, isFileDrop: isFileDrop };
+        } else {
+          return panel;
+        }
+      });
+    });
+  };
+
+  createEffect(
+    on(
+      () => getCurrentPanelContext(panelLayoutCtx.id).isFileDrop,
+      () => {
+        if (getCurrentPanelContext(panelLayoutCtx.id).isFileDrop) {
+          if (isDragging()) {
+            setIsDragging(false);
+          }
+          if (currentDraggingTabLocation() !== "none") {
+            setCurrentDraggingTabLocation("none");
+          }
+          setCurrentPanelContextFileDrop(panelLayoutCtx.id);
+        }
+      },
+    ),
+  );
+
   return (
     <>
       <Splitter.Panel
@@ -55,6 +116,21 @@ export function Panel(props: JSX.HTMLAttributes<HTMLDivElement>) {
         style={{
           width: "100%",
           height: "100%",
+        }}
+        // Event for file drag over
+        onDragOver={(e) => {
+          const tabListId = `tabs:${panelLayoutCtx.id}`;
+          const location = parseDragOverLocation(e.clientX, tabListId);
+          if (location !== currentDraggingTabLocation()) {
+            const tabContextLength = tabStore.get(panelLayoutCtx.id)![0]
+              .tabContext.length;
+            setCurrentDraggingTabLocation(
+              getPanelIds().length === 1 && tabContextLength === 0
+                ? "centerSplitter"
+                : location,
+            );
+            setIsDragging(true);
+          }
         }}
       >
         <PanelContext.Provider
@@ -94,6 +170,7 @@ export function Panel(props: JSX.HTMLAttributes<HTMLDivElement>) {
       <Show when={isDragging()}>
         <Stack
           style={{
+            "pointer-events": "none",
             "z-index": "1",
             width:
               currentDraggingTabLocation() === "centerSplitter" ||
