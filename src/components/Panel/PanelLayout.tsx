@@ -5,7 +5,7 @@ import { Splitter } from "~/components/ui/splitter.tsx";
 import { TabLocation } from "../Tab/TabList.tsx";
 import { createSignal, onMount } from "solid-js";
 import { panelStore, pageKeys } from "~/store/GlobalState.ts";
-import { PanelLayoutProvider } from "./PanelLayoutProvier.tsx";
+import { PanelLayoutProvider } from "./PanelLayoutProvider.tsx";
 
 export type PanelSizeContext = {
   id: string;
