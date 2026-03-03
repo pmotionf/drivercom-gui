@@ -124,6 +124,71 @@ function App(props: RouteSectionProps) {
     await enableDropEvent();
   });
 
+  /*window.addEventListener(
+    "dragover",
+    (e) => {
+      if (e.dataTransfer?.types.includes("Files")) {
+        e.preventDefault();
+      }
+
+      if (page() === Pages.Configuration || page() === Pages.LogViewer) {
+        let dragOverPanel: string = "";
+        if (pageKeys.has(page())) {
+          const panelKey = pageKeys.get(page());
+          const [panels, setPanels] = panelStore.get(panelKey!)!;
+          panels().forEach((panel) => {
+            const currentPanelId = panel.id;
+            const element = document.getElementById(`tabs:${currentPanelId}`);
+
+            if (element) {
+              const clientRect = element.getBoundingClientRect();
+              const top = clientRect.top;
+              const bottom = clientRect.bottom;
+              const left = clientRect.left;
+              const right = clientRect.right;
+
+              if (
+                top < e.clientY &&
+                e.clientY < bottom &&
+                left < e.clientX &&
+                e.clientX < right
+              ) {
+                dragOverPanel = panel.id;
+              }
+            }
+          });
+
+          setPanels((prev) =>
+            prev.map((panel) =>
+              dragOverPanel.length > 0 && panel.id === dragOverPanel
+                ? panel
+                : { ...panel, isDragLeave: true },
+            ),
+          );
+        }
+      } else if (page() === Pages.Logging) {
+        setLogForm((prev) => {
+          return { ...prev, isDragEnter: true };
+        });
+      }
+    },
+    true,
+  );
+
+  window.addEventListener(
+    "drop",
+    (e) => {
+      if (!e.dataTransfer) return;
+
+      if (e.dataTransfer.types.includes("Files")) {
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+      }
+    },
+    true,
+    );*/
+
   async function detectCliVersion() {
     const drivercom = Command.sidecar("binaries/drivercom", ["version"]);
     const output = await drivercom.execute();
@@ -406,6 +471,7 @@ function App(props: RouteSectionProps) {
         if (page() === Pages.LogViewer || page() === Pages.Configuration) {
           if (pageKeys.has(page())) {
             const panelKey = pageKeys.get(page());
+            console.log("drop");
             if (panelKey && panelStore.has(panelKey)) {
               const panels = panelStore.get(panelKey)![0]();
               let tabStoreKey = "";
@@ -673,6 +739,7 @@ function App(props: RouteSectionProps) {
           height: "100vh",
           position: "fixed",
         }}
+        onDrop={(e) => e.stopPropagation()}
       >
         <Drawer.Root variant="left">
           <Drawer.Trigger
