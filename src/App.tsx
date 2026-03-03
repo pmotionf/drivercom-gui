@@ -320,12 +320,36 @@ function App(props: RouteSectionProps) {
 
             setPanels((prev) =>
               prev.map((panel) =>
-                panel.id === dragOverPanel
+                dragOverPanel.length > 0 && panel.id === dragOverPanel
                   ? panel
                   : { ...panel, isDragLeave: true },
               ),
             );
           }
+        } else if (page() === Pages.Logging) {
+          setLogForm((prev) => {
+            return { ...prev, isDragEnter: true };
+          });
+        }
+      }
+
+      if (event.payload.type === "leave") {
+        if (page() === Pages.Configuration || page() === Pages.LogViewer) {
+          if (pageKeys.has(page())) {
+            const panelKey = pageKeys.get(page());
+            const [, setPanels] = panelStore.get(panelKey!)!;
+            setPanels((prev) =>
+              prev.map((panel) =>
+                !panel.isDragLeave
+                  ? { id: panel.id, size: panel.size, isDragLeave: true }
+                  : panel,
+              ),
+            );
+          }
+        } else if (page() === Pages.Logging) {
+          setLogForm((prev) => {
+            return { ...prev, isDragEnter: false };
+          });
         }
       }
 
@@ -359,6 +383,7 @@ function App(props: RouteSectionProps) {
             );
 
             setLogForm({
+              ...logForm,
               title: event.payload.paths[0]
                 .replaceAll("\\", "/")
                 .match(/[^?!//]+$/!)!
@@ -366,10 +391,9 @@ function App(props: RouteSectionProps) {
                 .split(".")
                 .shift(),
               filePath: event.payload.paths[0].replaceAll("\\", "/"),
-              portId: logForm.portId,
-              accordionStates: new Map(),
               logConfig: logConfig,
               originalFile: JSON5.parse(JSON5.stringify(logConfig)),
+              isDragEnter: false,
             });
           } catch {
             toaster.create({
