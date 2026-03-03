@@ -88,6 +88,7 @@ import { TabContext } from "~/components/Tab/TabList.tsx";
 import { FileHandler } from "./services/FileHandler.ts";
 import { Toast } from "./components/ui/toast.tsx";
 import { toaster } from "./services/Toaster.ts";
+import { createStore } from "solid-js/store";
 
 type PageMeta = {
   icon: ValidComponent;
@@ -335,6 +336,8 @@ function App(props: RouteSectionProps) {
             if (panelKey && panelStore.has(panelKey)) {
               const panels = panelStore.get(panelKey)![0]();
               let tabStoreKey = "";
+              let fileDropPanel = "";
+              let panelIndex: number | null = null;
               for (let i = 0; i < panels.length; i++) {
                 const currentPanelId = panels[i].id;
                 const element = document.getElementById(
@@ -347,26 +350,72 @@ function App(props: RouteSectionProps) {
                   const bottom = clientRect.bottom;
                   const left = clientRect.left;
                   const right = clientRect.right;
+                  const widthQuater = clientRect.width * 0.25;
+                  const leftArea = left + widthQuater;
+                  const rightArea = right - widthQuater;
                   const clientPosition = event.payload.position;
 
                   if (top < clientPosition.y && clientPosition.y < bottom) {
-                    if (left < clientPosition.x && clientPosition.x < right) {
+                    if (
+                      page() === Pages.Logging &&
+                      left < clientPosition.x &&
+                      clientPosition.x < right
+                    ) {
                       tabStoreKey = currentPanelId;
+                      break;
+                    }
+
+                    const currentTabLength =
+                      tabStore.get(currentPanelId)![0].tabContext.length;
+
+                    if (
+                      left < clientPosition.x &&
+                      clientPosition.x < leftArea
+                    ) {
+                      if (currentTabLength < 1 && panels.length === 1) {
+                        tabStoreKey = currentPanelId;
+                      } else {
+                        panelIndex = i;
+                        tabStoreKey = crypto.randomUUID();
+                      }
+                      fileDropPanel = currentPanelId;
+                      break;
+                    } else if (
+                      leftArea <= clientPosition.x &&
+                      clientPosition.x <= rightArea
+                    ) {
+                      console.log("center");
+                      tabStoreKey = currentPanelId;
+                      fileDropPanel = currentPanelId;
+                      break;
+                    } else if (
+                      rightArea < clientPosition.x &&
+                      clientPosition.x < right
+                    ) {
+                      if (currentTabLength < 1 && panels.length === 1) {
+                        tabStoreKey = currentPanelId;
+                      } else {
+                        panelIndex = i + 1;
+                        tabStoreKey = crypto.randomUUID();
+                      }
+                      fileDropPanel = currentPanelId;
                       break;
                     }
                   }
                 }
               }
 
+              console.log("before file drop");
               panelStore.get(panelKey)![1]((prev) =>
                 prev.map((panel) => {
-                  if (panel.id === tabStoreKey) {
+                  if (panel.id === fileDropPanel) {
                     return { ...panel, isFileDrop: true };
                   } else {
                     return panel;
                   }
                 }),
               );
+              console.log("after file drop");
 
               if (tabStoreKey.length > 0) {
                 const id = crypto.randomUUID();
@@ -379,86 +428,112 @@ function App(props: RouteSectionProps) {
                 const filePath = event.payload.paths[0].replaceAll("\\", "/");
 
                 let newTab: TabContext | null = null;
+                if (page() === Pages.Configuration) {
+                  if (!event.payload.paths[0].endsWith("json5")) {
+                    toaster.create({
+                      title: "Invalid File",
+                      description: "Invalid file extension.",
+                      type: "error",
+                    });
+                    return;
+                  }
+                  const accordionStatuses: AccordionStates = new Map();
+                  const linkedStatuses: LinkStates = new Map();
+                  const gainLockStatuses: GainLockStates = new Map();
+                  const formOverflowY: Map<string, number> = new Map();
 
-                if (tabStore.has(tabStoreKey)) {
-                  if (page() === Pages.Configuration) {
-                    if (!event.payload.paths[0].endsWith("json5")) {
-                      toaster.create({
-                        title: "Invalid File",
-                        description: "Invalid file extension.",
-                        type: "error",
-                      });
-                      return;
-                    }
-                    const accordionStatuses: AccordionStates = new Map();
-                    const linkedStatuses: LinkStates = new Map();
-                    const gainLockStatuses: GainLockStates = new Map();
-                    const formOverflowY: Map<string, number> = new Map();
+                  try {
+                    const newForm = await file.readFile(
+                      event.payload.paths[0],
+                      JSON5.parse(JSON5.stringify(configFormFileFormat())),
+                    );
 
-                    try {
-                      const newForm = await file.readFile(
-                        event.payload.paths[0],
-                        JSON5.parse(JSON5.stringify(configFormFileFormat())),
-                      );
-
-                      newTab = {
-                        tab: {
-                          id: id,
-                          tabName: tabName!,
-                        },
-                        tabPage: {
-                          configTabPage: {
-                            filePath: filePath,
-                            portId: "",
-                            configForm: newForm as ConfigType,
-                            configAccordionStatuses: accordionStatuses,
-                            configLinkedStatuses: linkedStatuses,
-                            configGainLockStatuses: gainLockStatuses,
-                            formName: tabName,
-                            originalFile: JSON5.parse(JSON5.stringify(newForm)),
-                            formOverflowY: formOverflowY,
-                          },
-                          logViewerTabPage: null,
-                        },
-                      };
-                    } catch {
-                      toaster.create({
-                        title: "Invalid File",
-                        description: "Invalid file format.",
-                        type: "error",
-                      });
-                      return;
-                    }
-                  } else if (page() === Pages.LogViewer) {
-                    if (!event.payload.paths[0].endsWith("csv")) {
-                      toaster.create({
-                        title: "Invalid File",
-                        description: "Invalid file extension.",
-                        type: "error",
-                      });
-                      return;
-                    }
                     newTab = {
                       tab: {
                         id: id,
                         tabName: tabName!,
                       },
                       tabPage: {
-                        logViewerTabPage: {
+                        configTabPage: {
                           filePath: filePath,
-                          plotSplitIndex: [],
-                          plotContext: [],
-                          plotXScale: [0, 0],
+                          portId: "",
+                          configForm: newForm as ConfigType,
+                          configAccordionStatuses: accordionStatuses,
+                          configLinkedStatuses: linkedStatuses,
+                          configGainLockStatuses: gainLockStatuses,
+                          formName: tabName,
+                          originalFile: JSON5.parse(JSON5.stringify(newForm)),
+                          formOverflowY: formOverflowY,
                         },
-                        configTabPage: null,
+                        logViewerTabPage: null,
                       },
                     };
+                  } catch {
+                    toaster.create({
+                      title: "Invalid File",
+                      description: "Invalid file format.",
+                      type: "error",
+                    });
+                    return;
                   }
+                } else if (page() === Pages.LogViewer) {
+                  if (!event.payload.paths[0].endsWith("csv")) {
+                    toaster.create({
+                      title: "Invalid File",
+                      description: "Invalid file extension.",
+                      type: "error",
+                    });
+                    return;
+                  }
+                  newTab = {
+                    tab: {
+                      id: id,
+                      tabName: tabName!,
+                    },
+                    tabPage: {
+                      logViewerTabPage: {
+                        filePath: filePath,
+                        plotSplitIndex: [],
+                        plotContext: [],
+                        plotXScale: [0, 0],
+                      },
+                      configTabPage: null,
+                    },
+                  };
+                }
+
+                if (tabStore.has(tabStoreKey)) {
                   if (newTab) {
                     const tabCtx = tabStore.get(tabStoreKey)!;
                     tabCtx[1]({
                       tabContext: [...tabCtx[0].tabContext, newTab],
                       focusedTab: newTab.tab.id,
+                    });
+                  }
+                } else {
+                  if (newTab) {
+                    tabStore.set(
+                      tabStoreKey,
+                      createStore({
+                        focusedTab: newTab.tab.id,
+                        tabContext: [newTab],
+                      }),
+                    );
+                  }
+
+                  if (panelIndex !== null) {
+                    panelStore.get(panelKey)![1]((prev) => {
+                      const newSize = 100 / (prev.length + 1);
+                      const changeSize = prev.map((panel) => {
+                        return { ...panel, size: newSize };
+                      });
+                      const newPanel = { id: tabStoreKey, size: newSize };
+                      const updatePanels = [
+                        ...changeSize.slice(0, panelIndex),
+                        newPanel,
+                        ...changeSize.slice(panelIndex),
+                      ];
+                      return updatePanels;
                     });
                   }
                 }

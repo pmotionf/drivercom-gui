@@ -7,6 +7,7 @@ import { Stack } from "styled-system/jsx/stack.mjs";
 import { panelStore, tabStore } from "~/store/GlobalState.ts";
 import { Splitter } from "../ui/splitter.tsx";
 import { PanelLayoutContext } from "./PanelContext.tsx";
+import { trackStore } from "@solid-primitives/deep";
 
 export type PanelContext = {
   id: string;
@@ -94,15 +95,14 @@ export function Panel(props: JSX.HTMLAttributes<HTMLDivElement>) {
 
   createEffect(
     on(
-      () => getCurrentPanelContext(panelLayoutCtx.id).isFileDrop,
+      () => trackStore(getCurrentPanelContext(panelLayoutCtx.id)),
       () => {
+        const ctx = getCurrentPanelContext(panelLayoutCtx.id);
+        console.log(ctx);
         if (getCurrentPanelContext(panelLayoutCtx.id).isFileDrop) {
-          if (isDragging()) {
-            setIsDragging(false);
-          }
-          if (currentDraggingTabLocation() !== "none") {
-            setCurrentDraggingTabLocation("none");
-          }
+          console.log("panel file drop");
+          setIsDragging(false);
+          setCurrentDraggingTabLocation("none");
           setCurrentPanelContextFileDrop(panelLayoutCtx.id);
         }
       },
