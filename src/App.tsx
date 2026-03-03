@@ -283,6 +283,12 @@ function App(props: RouteSectionProps) {
 
   async function enableDropEvent() {
     await getCurrentWebview().onDragDropEvent(async (event) => {
+      // The component cannot directly detect drag leave or file drop events.
+      // Therefore, the dragOver event is used to update the status when a drag leaves.
+      // Since this event belongs to the WebViewer, it can only detect when the file leaves the WebViewer area.
+      // To handle this, the dragOver event retrieves the client rects of each panel
+      // and determines which panel the file is currently being dragged over,
+      // then updates the status accordingly.
       if (event.payload.type === "over") {
         const client = event.payload.position;
         if (page() === Pages.Configuration || page() === Pages.LogViewer) {
@@ -322,6 +328,10 @@ function App(props: RouteSectionProps) {
           }
         }
       }
+
+      // After the file drop event, the drop position is calculated
+      // to decide whether the panel should be split
+      // or the file should be added as a new tab.
       if (event.payload.type === "drop") {
         if (event.payload.paths.length > 1) {
           toaster.create({
