@@ -283,6 +283,45 @@ function App(props: RouteSectionProps) {
 
   async function enableDropEvent() {
     await getCurrentWebview().onDragDropEvent(async (event) => {
+      if (event.payload.type === "over") {
+        const client = event.payload.position;
+        if (page() === Pages.Configuration || page() === Pages.LogViewer) {
+          let dragOverPanel: string = "";
+          if (pageKeys.has(page())) {
+            const panelKey = pageKeys.get(page());
+            const [panels, setPanels] = panelStore.get(panelKey!)!;
+            panels().forEach((panel) => {
+              const currentPanelId = panel.id;
+              const element = document.getElementById(`tabs:${currentPanelId}`);
+
+              if (element) {
+                const clientRect = element.getBoundingClientRect();
+                const top = clientRect.top;
+                const bottom = clientRect.bottom;
+                const left = clientRect.left;
+                const right = clientRect.right;
+
+                if (
+                  top < client.y &&
+                  client.y < bottom &&
+                  left < client.x &&
+                  client.x < right
+                ) {
+                  dragOverPanel = panel.id;
+                }
+              }
+            });
+
+            setPanels((prev) =>
+              prev.map((panel) =>
+                panel.id === dragOverPanel
+                  ? panel
+                  : { ...panel, isFileDrop: true },
+              ),
+            );
+          }
+        }
+      }
       if (event.payload.type === "drop") {
         if (event.payload.paths.length > 1) {
           toaster.create({
@@ -356,15 +395,6 @@ function App(props: RouteSectionProps) {
                   const clientPosition = event.payload.position;
 
                   if (top < clientPosition.y && clientPosition.y < bottom) {
-                    if (
-                      page() === Pages.Logging &&
-                      left < clientPosition.x &&
-                      clientPosition.x < right
-                    ) {
-                      tabStoreKey = currentPanelId;
-                      break;
-                    }
-
                     const currentTabLength =
                       tabStore.get(currentPanelId)![0].tabContext.length;
 
@@ -384,7 +414,6 @@ function App(props: RouteSectionProps) {
                       leftArea <= clientPosition.x &&
                       clientPosition.x <= rightArea
                     ) {
-                      console.log("center");
                       tabStoreKey = currentPanelId;
                       fileDropPanel = currentPanelId;
                       break;
@@ -405,7 +434,6 @@ function App(props: RouteSectionProps) {
                 }
               }
 
-              console.log("before file drop");
               panelStore.get(panelKey)![1]((prev) =>
                 prev.map((panel) => {
                   if (panel.id === fileDropPanel) {
@@ -415,7 +443,6 @@ function App(props: RouteSectionProps) {
                   }
                 }),
               );
-              console.log("after file drop");
 
               if (tabStoreKey.length > 0) {
                 const id = crypto.randomUUID();
