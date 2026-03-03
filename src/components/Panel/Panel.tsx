@@ -85,7 +85,7 @@ export function Panel(props: JSX.HTMLAttributes<HTMLDivElement>) {
     return panelStore.get(panelLayoutCtx.key)![1]((prev) => {
       return prev.map((panel) => {
         if (panel.id === currentId) {
-          return { ...panel, isFileDrop: isFileDrop };
+          return { ...panel, isDragLeave: isFileDrop };
         } else {
           return panel;
         }
@@ -99,7 +99,7 @@ export function Panel(props: JSX.HTMLAttributes<HTMLDivElement>) {
       () => {
         const ctx = getCurrentPanelContext(panelLayoutCtx.id);
         console.log(ctx);
-        if (getCurrentPanelContext(panelLayoutCtx.id).isFileDrop) {
+        if (getCurrentPanelContext(panelLayoutCtx.id).isDragLeave) {
           console.log("panel file drop");
           setIsDragging(false);
           setCurrentDraggingTabLocation("none");

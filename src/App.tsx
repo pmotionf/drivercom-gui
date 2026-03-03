@@ -316,7 +316,7 @@ function App(props: RouteSectionProps) {
               prev.map((panel) =>
                 panel.id === dragOverPanel
                   ? panel
-                  : { ...panel, isFileDrop: true },
+                  : { ...panel, isDragLeave: true },
               ),
             );
           }
@@ -437,7 +437,7 @@ function App(props: RouteSectionProps) {
               panelStore.get(panelKey)![1]((prev) =>
                 prev.map((panel) => {
                   if (panel.id === fileDropPanel) {
-                    return { ...panel, isFileDrop: true };
+                    return { ...panel, isDragLeave: true };
                   } else {
                     return panel;
                   }
