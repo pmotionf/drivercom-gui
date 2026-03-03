@@ -97,10 +97,7 @@ export function Panel(props: JSX.HTMLAttributes<HTMLDivElement>) {
     on(
       () => trackStore(getCurrentPanelContext(panelLayoutCtx.id)),
       () => {
-        const ctx = getCurrentPanelContext(panelLayoutCtx.id);
-        console.log(ctx);
         if (getCurrentPanelContext(panelLayoutCtx.id).isDragLeave) {
-          console.log("panel file drop");
           setIsDragging(false);
           setCurrentDraggingTabLocation("none");
           setCurrentPanelContextFileDrop(panelLayoutCtx.id);
