@@ -89,6 +89,7 @@ import { FileHandler } from "./services/FileHandler.ts";
 import { Toast } from "./components/ui/toast.tsx";
 import { toaster } from "./services/Toaster.ts";
 import { createStore } from "solid-js/store";
+import { getCurrentWindow } from "@tauri-apps/api/window";
 
 type PageMeta = {
   icon: ValidComponent;
@@ -467,11 +468,17 @@ function App(props: RouteSectionProps) {
               type: "error",
             });
           }
+          return;
         }
         if (page() === Pages.LogViewer || page() === Pages.Configuration) {
           if (pageKeys.has(page())) {
             const panelKey = pageKeys.get(page());
-            console.log("drop");
+            const clientPosition = event.payload.position;
+            const scaleFactor = await getCurrentWindow().scaleFactor();
+            const logicalX = clientPosition.x / scaleFactor;
+            const logicalY = clientPosition.y / scaleFactor;
+
+            console.log(panelKey, "panelKey");
             if (panelKey && panelStore.has(panelKey)) {
               const panels = panelStore.get(panelKey)![0]();
               let tabStoreKey = "";
@@ -492,16 +499,14 @@ function App(props: RouteSectionProps) {
                   const widthQuater = clientRect.width * 0.25;
                   const leftArea = left + widthQuater;
                   const rightArea = right - widthQuater;
-                  const clientPosition = event.payload.position;
 
-                  if (top < clientPosition.y && clientPosition.y < bottom) {
+                  console.log(clientRect, logicalX, logicalY);
+
+                  if (top < logicalY && logicalY < bottom) {
                     const currentTabLength =
                       tabStore.get(currentPanelId)![0].tabContext.length;
 
-                    if (
-                      left < clientPosition.x &&
-                      clientPosition.x < leftArea
-                    ) {
+                    if (left < logicalX && logicalX < leftArea) {
                       if (currentTabLength < 1 && panels.length === 1) {
                         tabStoreKey = currentPanelId;
                       } else {
@@ -510,17 +515,11 @@ function App(props: RouteSectionProps) {
                       }
                       fileDropPanel = currentPanelId;
                       break;
-                    } else if (
-                      leftArea <= clientPosition.x &&
-                      clientPosition.x <= rightArea
-                    ) {
+                    } else if (leftArea <= logicalX && logicalX <= rightArea) {
                       tabStoreKey = currentPanelId;
                       fileDropPanel = currentPanelId;
                       break;
-                    } else if (
-                      rightArea < clientPosition.x &&
-                      clientPosition.x < right
-                    ) {
+                    } else if (rightArea < logicalX && logicalX < right) {
                       if (currentTabLength < 1 && panels.length === 1) {
                         tabStoreKey = currentPanelId;
                       } else {
@@ -534,6 +533,8 @@ function App(props: RouteSectionProps) {
                 }
               }
 
+              console.log(tabStoreKey, "tabStoreKey");
+
               panelStore.get(panelKey)![1]((prev) =>
                 prev.map((panel) => {
                   if (panel.id === fileDropPanel) {
@@ -543,6 +544,8 @@ function App(props: RouteSectionProps) {
                   }
                 }),
               );
+
+              console.log(panelStore.get(panelKey)![0]());
 
               if (tabStoreKey.length > 0) {
                 const id = crypto.randomUUID();
@@ -636,6 +639,7 @@ function App(props: RouteSectionProps) {
                       tabContext: [...tabCtx[0].tabContext, newTab],
                       focusedTab: newTab.tab.id,
                     });
+                    console.log(tabStore.get(tabStoreKey)![0]);
                   }
                 } else {
                   if (newTab) {
