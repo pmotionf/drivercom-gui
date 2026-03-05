@@ -991,19 +991,6 @@ export function Logging() {
           </Show>
         </Stack>
       </div>
-      <Show when={logForm.isDragEnter}>
-        <Stack
-          position={"absolute"}
-          width={"100%"}
-          height={"100%"}
-          opacity={"10%"}
-          zIndex={"1"}
-          pointerEvents={"none"}
-          background={"fg.default"}
-          top="0"
-          left="0"
-        />
-      </Show>
     </>
   );
 }

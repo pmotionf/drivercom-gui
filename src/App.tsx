@@ -533,8 +533,6 @@ function App(props: RouteSectionProps) {
                 }
               }
 
-              console.log(tabStoreKey, "tabStoreKey");
-
               panelStore.get(panelKey)![1]((prev) =>
                 prev.map((panel) => {
                   if (panel.id === fileDropPanel) {
@@ -544,8 +542,6 @@ function App(props: RouteSectionProps) {
                   }
                 }),
               );
-
-              console.log(panelStore.get(panelKey)![0]());
 
               if (tabStoreKey.length > 0) {
                 const id = crypto.randomUUID();
