@@ -536,6 +536,11 @@ export function Plot(props: PlotProps) {
     const shiftVisibleState = [...new Set(shiftVisible)];
     const isAllSame = shiftVisibleState.length !== 2;
 
+    // Prevent selection context changes after plot series visibility changes
+    // Plot visibility changes trigger a refresh of the plot API context,
+    // which also refreshes the customize plot context.
+    const prevSelect = getContext().selected;
+
     if (isAllSame) {
       const updateVisible = visible.map((visible, i) => {
         if (indexList.includes(i)) {
@@ -548,6 +553,7 @@ export function Plot(props: PlotProps) {
         }
       });
       setContext()("visible", updateVisible);
+      setContext()("selected", prevSelect);
       return;
     }
   };
@@ -1409,6 +1415,7 @@ export function Plot(props: PlotProps) {
                                 legendIndex(),
                               );
                               setPrevSelect(null);
+                              setPrevVisible(null);
                               return;
                             } else {
                               setContext()("selected", item, isChecked);
@@ -1427,6 +1434,7 @@ export function Plot(props: PlotProps) {
                                   plot,
                                 );
                               }
+                              setPrevSelect(null);
                               setPrevVisible(null);
                               return;
                             } else {
