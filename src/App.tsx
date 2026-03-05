@@ -301,8 +301,6 @@ function App(props: RouteSectionProps) {
         setOverlayHeight(null);
 
         // The component cannot directly detect drag leave or file drop events.
-        // Therefore, the dragOver event is used to update the status when a drag leaves.
-        // Since this event belongs to the WebViewer, it can only detect when the file leaves the WebViewer area.
         // To handle this, the dragOver event retrieves the client rects of each panel
         // and determines which panel the file is currently being dragged over,
         // then updates the status accordingly.
@@ -349,9 +347,9 @@ function App(props: RouteSectionProps) {
                   const left = clientRect.x;
                   const right = clientRect.right;
 
-                  const widthQuater = clientRect.width * 0.25;
-                  const leftArea = left + widthQuater;
-                  const rightArea = right - widthQuater;
+                  const widthQuarter = clientRect.width * 0.25;
+                  const leftArea = left + widthQuarter;
+                  const rightArea = right - widthQuarter;
 
                   if (top < logicalY && logicalY < bottom) {
                     const [tabContext] = tabStore.get(currentPanelId)!;
@@ -467,9 +465,9 @@ function App(props: RouteSectionProps) {
                     const bottom = clientRect.bottom;
                     const left = clientRect.left;
                     const right = clientRect.right;
-                    const widthQuater = clientRect.width * 0.25;
-                    const leftArea = left + widthQuater;
-                    const rightArea = right - widthQuater;
+                    const widthQuarter = clientRect.width * 0.25;
+                    const leftArea = left + widthQuarter;
+                    const rightArea = right - widthQuarter;
 
                     if (top < logicalY && logicalY < bottom) {
                       const currentTabLength =
