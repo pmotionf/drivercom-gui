@@ -854,6 +854,18 @@ export function Plot(props: PlotProps) {
                             max: up.scales.x.max!,
                           });
                         });
+                      } else {
+                        uPlot.sync(group()).plots.forEach((up) => {
+                          const yScales = getPlotYScale(up);
+                          up.setScale("y", {
+                            min: yScales.yMin,
+                            max: yScales.yMax,
+                          });
+                          up.setScale("x", {
+                            min: 0,
+                            max: u.data[0].length - 1,
+                          });
+                        });
                       }
                       return null;
                     };
