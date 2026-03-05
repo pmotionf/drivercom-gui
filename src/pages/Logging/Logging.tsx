@@ -498,8 +498,9 @@ export function Logging() {
   );
 
   return (
-    <>
+    <Show when={pageKeys.has(Pages.Logging) ? true : renderLoggingForm()}>
       <div
+        id={pageKeys.get(Pages.Logging)}
         style={{
           "padding-top": "0.5rem",
           "padding-bottom": "0.5rem",
@@ -991,7 +992,7 @@ export function Logging() {
           </Show>
         </Stack>
       </div>
-    </>
+    </Show>
   );
 }
 
