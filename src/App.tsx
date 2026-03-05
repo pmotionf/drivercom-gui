@@ -91,6 +91,7 @@ import { toaster } from "./services/Toaster.ts";
 import { createStore } from "solid-js/store";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { Stack } from "styled-system/jsx/stack";
+import { UnlistenFn } from "@tauri-apps/api/event";
 
 type PageMeta = {
   icon: ValidComponent;
@@ -283,348 +284,364 @@ function App(props: RouteSectionProps) {
     }
   }
 
+  // This is needed to unlisten drag drop event when app is closed.
+  let unlistenDragDropEvent: UnlistenFn;
+  const [overlayTop, setOverlayTop] = createSignal<number | null>(null);
+  const [overlayLeft, setOverlayLeft] = createSignal<number | null>(null);
+  const [overlayWidth, setOverlayWidth] = createSignal<number | null>(null);
+  const [overlayHeight, setOverlayHeight] = createSignal<number | null>(null);
+
   async function enableDropEvent() {
     const scaleFactor = await getCurrentWindow().scaleFactor();
-    await getCurrentWebview().onDragDropEvent(async (event) => {
-      setOverlayTop(null);
-      setOverlayLeft(null);
-      setOverlayWidth(null);
-      setOverlayHeight(null);
+    unlistenDragDropEvent = await getCurrentWebview().onDragDropEvent(
+      async (event) => {
+        setOverlayTop(null);
+        setOverlayLeft(null);
+        setOverlayWidth(null);
+        setOverlayHeight(null);
 
-      // The component cannot directly detect drag leave or file drop events.
-      // Therefore, the dragOver event is used to update the status when a drag leaves.
-      // Since this event belongs to the WebViewer, it can only detect when the file leaves the WebViewer area.
-      // To handle this, the dragOver event retrieves the client rects of each panel
-      // and determines which panel the file is currently being dragged over,
-      // then updates the status accordingly.
-      if (event.payload.type === "over") {
-        const client = event.payload.position;
-        const logicalX = client.x / scaleFactor;
-        const logicalY = client.y / scaleFactor;
+        // The component cannot directly detect drag leave or file drop events.
+        // Therefore, the dragOver event is used to update the status when a drag leaves.
+        // Since this event belongs to the WebViewer, it can only detect when the file leaves the WebViewer area.
+        // To handle this, the dragOver event retrieves the client rects of each panel
+        // and determines which panel the file is currently being dragged over,
+        // then updates the status accordingly.
+        if (event.payload.type === "over") {
+          const client = event.payload.position;
+          const logicalX = client.x / scaleFactor;
+          const logicalY = client.y / scaleFactor;
 
-        if (page() === Pages.Logging) {
-          const element = document.getElementById(pageKeys.get(Pages.Logging)!);
-          if (element) {
-            const rect = element.getBoundingClientRect();
-            const top = rect.y;
-            const left = rect.x;
+          if (page() === Pages.Logging) {
+            const element = document.getElementById(
+              pageKeys.get(Pages.Logging)!,
+            );
+            if (element) {
+              const rect = element.getBoundingClientRect();
+              const top = rect.y;
+              const left = rect.x;
 
-            if (top < logicalY && logicalY < rect.bottom) {
-              if (left < logicalX && logicalX < rect.right) {
-                setOverlayTop(top);
-                setOverlayHeight(rect.height);
-                setOverlayLeft(left);
-                setOverlayWidth(rect.width);
-              }
-            }
-          }
-          return;
-        }
-
-        if (page() === Pages.Configuration || page() === Pages.LogViewer) {
-          if (pageKeys.has(page())) {
-            const panelKey = pageKeys.get(page());
-            const [panels] = panelStore.get(panelKey!)!;
-
-            for (let i = 0; i < panels().length; i++) {
-              const currentPanelId = panels()[i].id;
-              const element = document.getElementById(`tabs:${currentPanelId}`);
-              if (element) {
-                const clientRect = element.getBoundingClientRect();
-                const top = clientRect.y;
-                const bottom = clientRect.bottom;
-                const left = clientRect.x;
-                const right = clientRect.right;
-
-                const widthQuater = clientRect.width * 0.25;
-                const leftArea = left + widthQuater;
-                const rightArea = right - widthQuater;
-
-                if (top < logicalY && logicalY < bottom) {
-                  const [tabContext] = tabStore.get(currentPanelId)!;
-                  if (
-                    tabContext.tabContext.length === 0 &&
-                    panels().length === 1
-                  ) {
-                    if (left < logicalX && logicalX < right) {
-                      setOverlayTop(top);
-                      setOverlayLeft(left);
-                      setOverlayWidth(clientRect.width);
-                      setOverlayHeight(clientRect.height);
-                    }
-                    break;
-                  }
-                  if (left < logicalX && logicalX < leftArea) {
-                    setOverlayTop(top);
-                    setOverlayLeft(left);
-                    setOverlayWidth(clientRect.width * 0.5);
-                    setOverlayHeight(clientRect.height);
-                    break;
-                  } else if (leftArea <= logicalX && logicalX <= rightArea) {
-                    setOverlayTop(top);
-                    setOverlayLeft(left);
-                    setOverlayWidth(clientRect.width);
-                    setOverlayHeight(clientRect.height);
-                    break;
-                  } else if (rightArea < logicalX && logicalX < right) {
-                    setOverlayTop(top);
-                    setOverlayLeft(left + clientRect.width * 0.5);
-                    setOverlayWidth(clientRect.width * 0.5);
-                    setOverlayHeight(clientRect.height);
-                    break;
-                  }
+              if (top < logicalY && logicalY < rect.bottom) {
+                if (left < logicalX && logicalX < rect.right) {
+                  setOverlayTop(top);
+                  setOverlayHeight(rect.height);
+                  setOverlayLeft(left);
+                  setOverlayWidth(rect.width);
                 }
               }
             }
-          }
-        }
-      }
-
-      // After the file drop event, the drop position is calculated
-      // to decide whether the panel should be split
-      // or the file should be added as a new tab.
-      if (event.payload.type === "drop") {
-        if (event.payload.paths.length > 1) {
-          toaster.create({
-            title: "Invalid files",
-            description: "Invalid multiple files",
-            type: "error",
-          });
-          return;
-        }
-        const file = new FileHandler();
-
-        if (page() === Pages.Logging) {
-          if (!event.payload.paths[0].endsWith("json5")) {
-            toaster.create({
-              title: "Invalid File",
-              description: "Invalid file extension.",
-              type: "error",
-            });
             return;
           }
-          try {
-            const logConfig = await file.readFile(
-              event.payload.paths[0],
-              logFormFileFormat(),
-            );
 
-            setLogForm({
-              ...logForm,
-              title: event.payload.paths[0]
-                .replaceAll("\\", "/")
-                .match(/[^?!//]+$/!)!
-                .toString()
-                .split(".")
-                .shift(),
-              filePath: event.payload.paths[0].replaceAll("\\", "/"),
-              logConfig: logConfig,
-              originalFile: JSON5.parse(JSON5.stringify(logConfig)),
-            });
-          } catch {
-            toaster.create({
-              title: "Invalid File",
-              description: "Invalid file format.",
-              type: "error",
-            });
-          }
-          return;
-        }
-        if (page() === Pages.LogViewer || page() === Pages.Configuration) {
-          if (pageKeys.has(page())) {
-            const panelKey = pageKeys.get(page());
-            const clientPosition = event.payload.position;
-            const logicalX = clientPosition.x / scaleFactor;
-            const logicalY = clientPosition.y / scaleFactor;
+          if (page() === Pages.Configuration || page() === Pages.LogViewer) {
+            if (pageKeys.has(page())) {
+              const panelKey = pageKeys.get(page());
+              const [panels] = panelStore.get(panelKey!)!;
 
-            if (panelKey && panelStore.has(panelKey)) {
-              const panels = panelStore.get(panelKey)![0]();
-              let tabStoreKey = "";
-              let fileDropPanel = "";
-              let panelIndex: number | null = null;
-              for (let i = 0; i < panels.length; i++) {
-                const currentPanelId = panels[i].id;
+              for (let i = 0; i < panels().length; i++) {
+                const currentPanelId = panels()[i].id;
                 const element = document.getElementById(
                   `tabs:${currentPanelId}`,
                 );
-
                 if (element) {
                   const clientRect = element.getBoundingClientRect();
-                  const top = clientRect.top;
+                  const top = clientRect.y;
                   const bottom = clientRect.bottom;
-                  const left = clientRect.left;
+                  const left = clientRect.x;
                   const right = clientRect.right;
+
                   const widthQuater = clientRect.width * 0.25;
                   const leftArea = left + widthQuater;
                   const rightArea = right - widthQuater;
 
                   if (top < logicalY && logicalY < bottom) {
-                    const currentTabLength =
-                      tabStore.get(currentPanelId)![0].tabContext.length;
-
-                    if (left < logicalX && logicalX < leftArea) {
-                      if (currentTabLength < 1 && panels.length === 1) {
-                        tabStoreKey = currentPanelId;
-                      } else {
-                        panelIndex = i;
-                        tabStoreKey = crypto.randomUUID();
+                    const [tabContext] = tabStore.get(currentPanelId)!;
+                    if (
+                      tabContext.tabContext.length === 0 &&
+                      panels().length === 1
+                    ) {
+                      if (left < logicalX && logicalX < right) {
+                        setOverlayTop(top);
+                        setOverlayLeft(left);
+                        setOverlayWidth(clientRect.width);
+                        setOverlayHeight(clientRect.height);
                       }
-                      fileDropPanel = currentPanelId;
+                      break;
+                    }
+                    if (left < logicalX && logicalX < leftArea) {
+                      setOverlayTop(top);
+                      setOverlayLeft(left);
+                      setOverlayWidth(clientRect.width * 0.5);
+                      setOverlayHeight(clientRect.height);
                       break;
                     } else if (leftArea <= logicalX && logicalX <= rightArea) {
-                      tabStoreKey = currentPanelId;
-                      fileDropPanel = currentPanelId;
+                      setOverlayTop(top);
+                      setOverlayLeft(left);
+                      setOverlayWidth(clientRect.width);
+                      setOverlayHeight(clientRect.height);
                       break;
                     } else if (rightArea < logicalX && logicalX < right) {
-                      if (currentTabLength < 1 && panels.length === 1) {
-                        tabStoreKey = currentPanelId;
-                      } else {
-                        panelIndex = i + 1;
-                        tabStoreKey = crypto.randomUUID();
-                      }
-                      fileDropPanel = currentPanelId;
+                      setOverlayTop(top);
+                      setOverlayLeft(left + clientRect.width * 0.5);
+                      setOverlayWidth(clientRect.width * 0.5);
+                      setOverlayHeight(clientRect.height);
                       break;
                     }
                   }
                 }
               }
+            }
+          }
+        }
 
-              panelStore.get(panelKey)![1]((prev) =>
-                prev.map((panel) => {
-                  if (panel.id === fileDropPanel) {
-                    return { ...panel, isDragLeave: true };
-                  } else {
-                    return panel;
-                  }
-                }),
+        // After the file drop event, the drop position is calculated
+        // to decide whether the panel should be split
+        // or the file should be added as a new tab.
+        if (event.payload.type === "drop") {
+          if (event.payload.paths.length > 1) {
+            toaster.create({
+              title: "Invalid files",
+              description: "Invalid multiple files",
+              type: "error",
+            });
+            return;
+          }
+          const file = new FileHandler();
+
+          if (page() === Pages.Logging) {
+            if (!event.payload.paths[0].endsWith("json5")) {
+              toaster.create({
+                title: "Invalid File",
+                description: "Invalid file extension.",
+                type: "error",
+              });
+              return;
+            }
+            try {
+              const logConfig = await file.readFile(
+                event.payload.paths[0],
+                logFormFileFormat(),
               );
 
-              if (tabStoreKey.length > 0) {
-                const id = crypto.randomUUID();
-                const tabName = event.payload.paths[0]
+              setLogForm({
+                ...logForm,
+                title: event.payload.paths[0]
                   .replaceAll("\\", "/")
                   .match(/[^?!//]+$/!)!
                   .toString()
                   .split(".")
-                  .shift();
-                const filePath = event.payload.paths[0].replaceAll("\\", "/");
+                  .shift(),
+                filePath: event.payload.paths[0].replaceAll("\\", "/"),
+                logConfig: logConfig,
+                originalFile: JSON5.parse(JSON5.stringify(logConfig)),
+              });
+            } catch {
+              toaster.create({
+                title: "Invalid File",
+                description: "Invalid file format.",
+                type: "error",
+              });
+            }
+            return;
+          }
+          if (page() === Pages.LogViewer || page() === Pages.Configuration) {
+            if (pageKeys.has(page())) {
+              const panelKey = pageKeys.get(page());
+              const clientPosition = event.payload.position;
+              const logicalX = clientPosition.x / scaleFactor;
+              const logicalY = clientPosition.y / scaleFactor;
 
-                let newTab: TabContext | null = null;
-                if (page() === Pages.Configuration) {
-                  if (!event.payload.paths[0].endsWith("json5")) {
-                    toaster.create({
-                      title: "Invalid File",
-                      description: "Invalid file extension.",
-                      type: "error",
-                    });
-                    return;
+              if (panelKey && panelStore.has(panelKey)) {
+                const panels = panelStore.get(panelKey)![0]();
+                let tabStoreKey = "";
+                let fileDropPanel = "";
+                let panelIndex: number | null = null;
+                for (let i = 0; i < panels.length; i++) {
+                  const currentPanelId = panels[i].id;
+                  const element = document.getElementById(
+                    `tabs:${currentPanelId}`,
+                  );
+
+                  if (element) {
+                    const clientRect = element.getBoundingClientRect();
+                    const top = clientRect.top;
+                    const bottom = clientRect.bottom;
+                    const left = clientRect.left;
+                    const right = clientRect.right;
+                    const widthQuater = clientRect.width * 0.25;
+                    const leftArea = left + widthQuater;
+                    const rightArea = right - widthQuater;
+
+                    if (top < logicalY && logicalY < bottom) {
+                      const currentTabLength =
+                        tabStore.get(currentPanelId)![0].tabContext.length;
+
+                      if (left < logicalX && logicalX < leftArea) {
+                        if (currentTabLength < 1 && panels.length === 1) {
+                          tabStoreKey = currentPanelId;
+                        } else {
+                          panelIndex = i;
+                          tabStoreKey = crypto.randomUUID();
+                        }
+                        fileDropPanel = currentPanelId;
+                        break;
+                      } else if (
+                        leftArea <= logicalX &&
+                        logicalX <= rightArea
+                      ) {
+                        tabStoreKey = currentPanelId;
+                        fileDropPanel = currentPanelId;
+                        break;
+                      } else if (rightArea < logicalX && logicalX < right) {
+                        if (currentTabLength < 1 && panels.length === 1) {
+                          tabStoreKey = currentPanelId;
+                        } else {
+                          panelIndex = i + 1;
+                          tabStoreKey = crypto.randomUUID();
+                        }
+                        fileDropPanel = currentPanelId;
+                        break;
+                      }
+                    }
                   }
-                  const accordionStatuses: AccordionStates = new Map();
-                  const linkedStatuses: LinkStates = new Map();
-                  const gainLockStatuses: GainLockStates = new Map();
-                  const formOverflowY: Map<string, number> = new Map();
+                }
 
-                  try {
-                    const newForm = await file.readFile(
-                      event.payload.paths[0],
-                      JSON5.parse(JSON5.stringify(configFormFileFormat())),
-                    );
+                panelStore.get(panelKey)![1]((prev) =>
+                  prev.map((panel) => {
+                    if (panel.id === fileDropPanel) {
+                      return { ...panel, isDragLeave: true };
+                    } else {
+                      return panel;
+                    }
+                  }),
+                );
 
+                if (tabStoreKey.length > 0) {
+                  const id = crypto.randomUUID();
+                  const tabName = event.payload.paths[0]
+                    .replaceAll("\\", "/")
+                    .match(/[^?!//]+$/!)!
+                    .toString()
+                    .split(".")
+                    .shift();
+                  const filePath = event.payload.paths[0].replaceAll("\\", "/");
+
+                  let newTab: TabContext | null = null;
+                  if (page() === Pages.Configuration) {
+                    if (!event.payload.paths[0].endsWith("json5")) {
+                      toaster.create({
+                        title: "Invalid File",
+                        description: "Invalid file extension.",
+                        type: "error",
+                      });
+                      return;
+                    }
+                    const accordionStatuses: AccordionStates = new Map();
+                    const linkedStatuses: LinkStates = new Map();
+                    const gainLockStatuses: GainLockStates = new Map();
+                    const formOverflowY: Map<string, number> = new Map();
+
+                    try {
+                      const newForm = await file.readFile(
+                        event.payload.paths[0],
+                        JSON5.parse(JSON5.stringify(configFormFileFormat())),
+                      );
+
+                      newTab = {
+                        tab: {
+                          id: id,
+                          tabName: tabName!,
+                        },
+                        tabPage: {
+                          configTabPage: {
+                            filePath: filePath,
+                            portId: "",
+                            configForm: newForm as ConfigType,
+                            configAccordionStatuses: accordionStatuses,
+                            configLinkedStatuses: linkedStatuses,
+                            configGainLockStatuses: gainLockStatuses,
+                            formName: tabName,
+                            originalFile: JSON5.parse(JSON5.stringify(newForm)),
+                            formOverflowY: formOverflowY,
+                          },
+                          logViewerTabPage: null,
+                        },
+                      };
+                    } catch {
+                      toaster.create({
+                        title: "Invalid File",
+                        description: "Invalid file format.",
+                        type: "error",
+                      });
+                      return;
+                    }
+                  } else if (page() === Pages.LogViewer) {
+                    if (!event.payload.paths[0].endsWith("csv")) {
+                      toaster.create({
+                        title: "Invalid File",
+                        description: "Invalid file extension.",
+                        type: "error",
+                      });
+                      return;
+                    }
                     newTab = {
                       tab: {
                         id: id,
                         tabName: tabName!,
                       },
                       tabPage: {
-                        configTabPage: {
+                        logViewerTabPage: {
                           filePath: filePath,
-                          portId: "",
-                          configForm: newForm as ConfigType,
-                          configAccordionStatuses: accordionStatuses,
-                          configLinkedStatuses: linkedStatuses,
-                          configGainLockStatuses: gainLockStatuses,
-                          formName: tabName,
-                          originalFile: JSON5.parse(JSON5.stringify(newForm)),
-                          formOverflowY: formOverflowY,
+                          plotSplitIndex: [],
+                          plotContext: [],
+                          plotXScale: [0, 0],
                         },
-                        logViewerTabPage: null,
+                        configTabPage: null,
                       },
                     };
-                  } catch {
-                    toaster.create({
-                      title: "Invalid File",
-                      description: "Invalid file format.",
-                      type: "error",
-                    });
-                    return;
                   }
-                } else if (page() === Pages.LogViewer) {
-                  if (!event.payload.paths[0].endsWith("csv")) {
-                    toaster.create({
-                      title: "Invalid File",
-                      description: "Invalid file extension.",
-                      type: "error",
-                    });
-                    return;
-                  }
-                  newTab = {
-                    tab: {
-                      id: id,
-                      tabName: tabName!,
-                    },
-                    tabPage: {
-                      logViewerTabPage: {
-                        filePath: filePath,
-                        plotSplitIndex: [],
-                        plotContext: [],
-                        plotXScale: [0, 0],
-                      },
-                      configTabPage: null,
-                    },
-                  };
-                }
 
-                if (tabStore.has(tabStoreKey)) {
-                  if (newTab) {
-                    const tabCtx = tabStore.get(tabStoreKey)!;
-                    tabCtx[1]({
-                      tabContext: [...tabCtx[0].tabContext, newTab],
-                      focusedTab: newTab.tab.id,
-                    });
-                  }
-                } else {
-                  if (newTab) {
-                    tabStore.set(
-                      tabStoreKey,
-                      createStore({
+                  if (tabStore.has(tabStoreKey)) {
+                    if (newTab) {
+                      const tabCtx = tabStore.get(tabStoreKey)!;
+                      tabCtx[1]({
+                        tabContext: [...tabCtx[0].tabContext, newTab],
                         focusedTab: newTab.tab.id,
-                        tabContext: [newTab],
-                      }),
-                    );
-                  }
-
-                  if (panelIndex !== null) {
-                    panelStore.get(panelKey)![1]((prev) => {
-                      const newSize = 100 / (prev.length + 1);
-                      const changeSize = prev.map((panel) => {
-                        return { ...panel, size: newSize };
                       });
-                      const newPanel = { id: tabStoreKey, size: newSize };
-                      const updatePanels = [
-                        ...changeSize.slice(0, panelIndex),
-                        newPanel,
-                        ...changeSize.slice(panelIndex),
-                      ];
-                      return updatePanels;
-                    });
+                    }
+                  } else {
+                    if (newTab) {
+                      tabStore.set(
+                        tabStoreKey,
+                        createStore({
+                          focusedTab: newTab.tab.id,
+                          tabContext: [newTab],
+                        }),
+                      );
+                    }
+
+                    if (panelIndex !== null) {
+                      panelStore.get(panelKey)![1]((prev) => {
+                        const newSize = 100 / (prev.length + 1);
+                        const changeSize = prev.map((panel) => {
+                          return { ...panel, size: newSize };
+                        });
+                        const newPanel = { id: tabStoreKey, size: newSize };
+                        const updatePanels = [
+                          ...changeSize.slice(0, panelIndex),
+                          newPanel,
+                          ...changeSize.slice(panelIndex),
+                        ];
+                        return updatePanels;
+                      });
+                    }
                   }
                 }
               }
             }
           }
         }
-      }
-    });
+      },
+    );
   }
 
   const [version, setVersion] = createSignal("0.0.0");
@@ -684,12 +701,8 @@ function App(props: RouteSectionProps) {
 
   onCleanup(async () => {
     await killTerminal();
+    unlistenDragDropEvent();
   });
-
-  const [overlayTop, setOverlayTop] = createSignal<number | null>(null);
-  const [overlayLeft, setOverlayLeft] = createSignal<number | null>(null);
-  const [overlayWidth, setOverlayWidth] = createSignal<number | null>(null);
-  const [overlayHeight, setOverlayHeight] = createSignal<number | null>(null);
 
   return (
     <GlobalStateContext.Provider value={{ globalState, setGlobalState }}>
