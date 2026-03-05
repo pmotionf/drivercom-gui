@@ -1351,6 +1351,7 @@ export function Plot(props: PlotProps) {
                     size="sm"
                     variant="link"
                     onClick={() => {
+                      const prevSelect = getContext().selected;
                       const newVisible = !getContext()
                         .visible.filter((_, i) => legendIndex().includes(i))
                         .includes(true);
@@ -1366,6 +1367,7 @@ export function Plot(props: PlotProps) {
                           show: val,
                         });
                       });
+                      setContext()("selected", prevSelect);
                       props.onContextChange?.(getContext());
                     }}
                   >
