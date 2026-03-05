@@ -90,6 +90,7 @@ import { Toast } from "./components/ui/toast.tsx";
 import { toaster } from "./services/Toaster.ts";
 import { createStore } from "solid-js/store";
 import { getCurrentWindow } from "@tauri-apps/api/window";
+import { Stack } from "styled-system/jsx/stack";
 
 type PageMeta = {
   icon: ValidComponent;
@@ -124,71 +125,6 @@ function App(props: RouteSectionProps) {
     await getStoreValues();
     await enableDropEvent();
   });
-
-  /*window.addEventListener(
-    "dragover",
-    (e) => {
-      if (e.dataTransfer?.types.includes("Files")) {
-        e.preventDefault();
-      }
-
-      if (page() === Pages.Configuration || page() === Pages.LogViewer) {
-        let dragOverPanel: string = "";
-        if (pageKeys.has(page())) {
-          const panelKey = pageKeys.get(page());
-          const [panels, setPanels] = panelStore.get(panelKey!)!;
-          panels().forEach((panel) => {
-            const currentPanelId = panel.id;
-            const element = document.getElementById(`tabs:${currentPanelId}`);
-
-            if (element) {
-              const clientRect = element.getBoundingClientRect();
-              const top = clientRect.top;
-              const bottom = clientRect.bottom;
-              const left = clientRect.left;
-              const right = clientRect.right;
-
-              if (
-                top < e.clientY &&
-                e.clientY < bottom &&
-                left < e.clientX &&
-                e.clientX < right
-              ) {
-                dragOverPanel = panel.id;
-              }
-            }
-          });
-
-          setPanels((prev) =>
-            prev.map((panel) =>
-              dragOverPanel.length > 0 && panel.id === dragOverPanel
-                ? panel
-                : { ...panel, isDragLeave: true },
-            ),
-          );
-        }
-      } else if (page() === Pages.Logging) {
-        setLogForm((prev) => {
-          return { ...prev, isDragEnter: true };
-        });
-      }
-    },
-    true,
-  );
-
-  window.addEventListener(
-    "drop",
-    (e) => {
-      if (!e.dataTransfer) return;
-
-      if (e.dataTransfer.types.includes("Files")) {
-        e.preventDefault();
-        e.stopPropagation();
-        e.stopImmediatePropagation();
-      }
-    },
-    true,
-    );*/
 
   async function detectCliVersion() {
     const drivercom = Command.sidecar("binaries/drivercom", ["version"]);
@@ -348,7 +284,13 @@ function App(props: RouteSectionProps) {
   }
 
   async function enableDropEvent() {
+    const scaleFactor = await getCurrentWindow().scaleFactor();
     await getCurrentWebview().onDragDropEvent(async (event) => {
+      setOverlayTop(null);
+      setOverlayLeft(null);
+      setOverlayWidth(null);
+      setOverlayHeight(null);
+
       // The component cannot directly detect drag leave or file drop events.
       // Therefore, the dragOver event is used to update the status when a drag leaves.
       // Since this event belongs to the WebViewer, it can only detect when the file leaves the WebViewer area.
@@ -357,65 +299,84 @@ function App(props: RouteSectionProps) {
       // then updates the status accordingly.
       if (event.payload.type === "over") {
         const client = event.payload.position;
+        const logicalX = client.x / scaleFactor;
+        const logicalY = client.y / scaleFactor;
+
+        if (page() === Pages.Logging) {
+          const element = document.getElementById(pageKeys.get(Pages.Logging)!);
+          if (element) {
+            const rect = element.getBoundingClientRect();
+            const top = rect.y;
+            const left = rect.x;
+
+            if (top < logicalY && logicalY < rect.bottom) {
+              if (left < logicalX && logicalX < rect.right) {
+                setOverlayTop(top);
+                setOverlayHeight(rect.height);
+                setOverlayLeft(left);
+                setOverlayWidth(rect.width);
+              }
+            }
+          }
+          return;
+        }
+
         if (page() === Pages.Configuration || page() === Pages.LogViewer) {
-          let dragOverPanel: string = "";
           if (pageKeys.has(page())) {
             const panelKey = pageKeys.get(page());
-            const [panels, setPanels] = panelStore.get(panelKey!)!;
-            panels().forEach((panel) => {
-              const currentPanelId = panel.id;
-              const element = document.getElementById(`tabs:${currentPanelId}`);
+            const [panels] = panelStore.get(panelKey!)!;
 
+            for (let i = 0; i < panels().length; i++) {
+              const currentPanelId = panels()[i].id;
+              const element = document.getElementById(`tabs:${currentPanelId}`);
               if (element) {
                 const clientRect = element.getBoundingClientRect();
-                const top = clientRect.top;
+                const top = clientRect.y;
                 const bottom = clientRect.bottom;
-                const left = clientRect.left;
+                const left = clientRect.x;
                 const right = clientRect.right;
 
-                if (
-                  top < client.y &&
-                  client.y < bottom &&
-                  left < client.x &&
-                  client.x < right
-                ) {
-                  dragOverPanel = panel.id;
+                const widthQuater = clientRect.width * 0.25;
+                const leftArea = left + widthQuater;
+                const rightArea = right - widthQuater;
+
+                if (top < logicalY && logicalY < bottom) {
+                  const [tabContext] = tabStore.get(currentPanelId)!;
+                  if (
+                    tabContext.tabContext.length === 0 &&
+                    panels().length === 1
+                  ) {
+                    if (left < logicalX && logicalX < right) {
+                      setOverlayTop(top);
+                      setOverlayLeft(left);
+                      setOverlayWidth(clientRect.width);
+                      setOverlayHeight(clientRect.height);
+                    }
+                    break;
+                  }
+                  if (left < logicalX && logicalX < leftArea) {
+                    setOverlayTop(top);
+                    setOverlayLeft(left);
+                    setOverlayWidth(clientRect.width * 0.5);
+                    setOverlayHeight(clientRect.height);
+                    break;
+                  } else if (leftArea <= logicalX && logicalX <= rightArea) {
+                    setOverlayTop(top);
+                    setOverlayLeft(left);
+                    setOverlayWidth(clientRect.width);
+                    setOverlayHeight(clientRect.height);
+                    break;
+                  } else if (rightArea < logicalX && logicalX < right) {
+                    setOverlayTop(top);
+                    setOverlayLeft(left + clientRect.width * 0.5);
+                    setOverlayWidth(clientRect.width * 0.5);
+                    setOverlayHeight(clientRect.height);
+                    break;
+                  }
                 }
               }
-            });
-
-            setPanels((prev) =>
-              prev.map((panel) =>
-                dragOverPanel.length > 0 && panel.id === dragOverPanel
-                  ? panel
-                  : { ...panel, isDragLeave: true },
-              ),
-            );
+            }
           }
-        } else if (page() === Pages.Logging) {
-          setLogForm((prev) => {
-            return { ...prev, isDragEnter: true };
-          });
-        }
-      }
-
-      if (event.payload.type === "leave") {
-        if (page() === Pages.Configuration || page() === Pages.LogViewer) {
-          if (pageKeys.has(page())) {
-            const panelKey = pageKeys.get(page());
-            const [, setPanels] = panelStore.get(panelKey!)!;
-            setPanels((prev) =>
-              prev.map((panel) =>
-                !panel.isDragLeave
-                  ? { id: panel.id, size: panel.size, isDragLeave: true }
-                  : panel,
-              ),
-            );
-          }
-        } else if (page() === Pages.Logging) {
-          setLogForm((prev) => {
-            return { ...prev, isDragEnter: false };
-          });
         }
       }
 
@@ -459,7 +420,6 @@ function App(props: RouteSectionProps) {
               filePath: event.payload.paths[0].replaceAll("\\", "/"),
               logConfig: logConfig,
               originalFile: JSON5.parse(JSON5.stringify(logConfig)),
-              isDragEnter: false,
             });
           } catch {
             toaster.create({
@@ -474,11 +434,9 @@ function App(props: RouteSectionProps) {
           if (pageKeys.has(page())) {
             const panelKey = pageKeys.get(page());
             const clientPosition = event.payload.position;
-            const scaleFactor = await getCurrentWindow().scaleFactor();
             const logicalX = clientPosition.x / scaleFactor;
             const logicalY = clientPosition.y / scaleFactor;
 
-            console.log(panelKey, "panelKey");
             if (panelKey && panelStore.has(panelKey)) {
               const panels = panelStore.get(panelKey)![0]();
               let tabStoreKey = "";
@@ -499,8 +457,6 @@ function App(props: RouteSectionProps) {
                   const widthQuater = clientRect.width * 0.25;
                   const leftArea = left + widthQuater;
                   const rightArea = right - widthQuater;
-
-                  console.log(clientRect, logicalX, logicalY);
 
                   if (top < logicalY && logicalY < bottom) {
                     const currentTabLength =
@@ -635,7 +591,6 @@ function App(props: RouteSectionProps) {
                       tabContext: [...tabCtx[0].tabContext, newTab],
                       focusedTab: newTab.tab.id,
                     });
-                    console.log(tabStore.get(tabStoreKey)![0]);
                   }
                 } else {
                   if (newTab) {
@@ -730,6 +685,11 @@ function App(props: RouteSectionProps) {
   onCleanup(async () => {
     await killTerminal();
   });
+
+  const [overlayTop, setOverlayTop] = createSignal<number | null>(null);
+  const [overlayLeft, setOverlayLeft] = createSignal<number | null>(null);
+  const [overlayWidth, setOverlayWidth] = createSignal<number | null>(null);
+  const [overlayHeight, setOverlayHeight] = createSignal<number | null>(null);
 
   return (
     <GlobalStateContext.Provider value={{ globalState, setGlobalState }}>
@@ -1066,6 +1026,29 @@ function App(props: RouteSectionProps) {
           </Toast.Root>
         )}
       </Toast.Toaster>
+
+      <Show
+        when={
+          overlayTop() != null &&
+          overlayLeft() != null &&
+          overlayHeight() != null &&
+          overlayWidth() != null
+        }
+      >
+        <Stack
+          background={"fg.default"}
+          opacity={"10%"}
+          style={{
+            top: `${overlayTop()!}px`,
+            height: `${overlayHeight()!}px`,
+            width: `${overlayWidth()!}px`,
+            left: `${overlayLeft()!}px`,
+            position: "absolute",
+            "pointer-events": "none",
+            "z-index": "10",
+          }}
+        />
+      </Show>
     </GlobalStateContext.Provider>
   );
 }
