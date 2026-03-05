@@ -45,7 +45,6 @@ export type LoggingFormType = {
   logConfig: object;
   accordionStates: AccordionStates;
   originalFile: object;
-  isDragEnter?: boolean;
 };
 
 enum LogButton {
