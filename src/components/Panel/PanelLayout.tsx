@@ -10,7 +10,6 @@ import { PanelLayoutProvider } from "./PanelLayoutProvider.tsx";
 export type PanelSizeContext = {
   id: string;
   size: number;
-  isDragLeave?: boolean;
 };
 
 export type PanelLayoutProps = JSX.HTMLAttributes<HTMLDivElement> & {
