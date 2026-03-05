@@ -33,7 +33,7 @@ export type LegendProps = Omit<StackProps, "stroke"> & {
   series: string;
   visible?: boolean;
   enumValuesMapping?: Map<number, string>;
-  onVisibleChange?: (new_visible: boolean) => void;
+  onVisibleChange?: (new_visible: boolean, shiftKey: boolean) => void;
   color?: string;
   onColorChange?: (new_color: string) => void;
   palette?: string[];
@@ -248,9 +248,10 @@ export function Legend(props: LegendProps) {
           opacity={
             (props.visible != null ? props.visible : visible()) ? "100%" : "30%"
           }
-          onclick={() => {
+          onclick={(e) => {
             props.onVisibleChange?.(
               props.visible != null ? !props.visible : !visible(),
+              e.shiftKey,
             );
             setVisible((prev) => !prev);
           }}

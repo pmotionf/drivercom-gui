@@ -520,6 +520,38 @@ export function Plot(props: PlotProps) {
   const [selectionLeft, setSelectionLeft] = createSignal<number | null>(null);
   const [selectionWidth, setSelectionWidth] = createSignal<number | null>(null);
 
+  const [prevVisible, setPrevVisible] = createSignal<number | null>(null);
+  const multiVisible = (
+    index: number,
+    prevIndex: number,
+    legendIndexes: number[],
+    plot: uPlot,
+  ) => {
+    const visible = getContext().visible;
+    const min = Math.min(index, prevIndex + 1);
+    const max = Math.max(index + 1, prevIndex);
+    const indexList = legendIndexes.slice(min, max);
+
+    const shiftVisible = indexList.map((item) => visible[item]);
+    const shiftVisibleState = [...new Set(shiftVisible)];
+    const isAllSame = shiftVisibleState.length !== 2;
+
+    if (isAllSame) {
+      const updateVisible = visible.map((visible, i) => {
+        if (indexList.includes(i)) {
+          plot.setSeries(i + 1, {
+            show: !shiftVisibleState[0],
+          });
+          return !shiftVisibleState[0];
+        } else {
+          return visible;
+        }
+      });
+      setContext()("visible", updateVisible);
+      return;
+    }
+  };
+
   return (
     <>
       <Splitter.Root
@@ -1385,13 +1417,27 @@ export function Plot(props: PlotProps) {
                             }
                           }}
                           visible={getContext().visible[item]}
-                          onVisibleChange={(new_visible) => {
-                            setContext()("visible", item, new_visible);
-                            // Index must add 1 to account for X-axis "Cycle" series
-                            plot.setSeries(item + 1, {
-                              show: new_visible,
-                            });
-                            props.onContextChange?.(getContext());
+                          onVisibleChange={(new_visible, shiftKey) => {
+                            if (shiftKey) {
+                              if (prevVisible() !== null) {
+                                multiVisible(
+                                  index(),
+                                  prevVisible()!,
+                                  legendIndex(),
+                                  plot,
+                                );
+                              }
+                              setPrevVisible(null);
+                              return;
+                            } else {
+                              setContext()("visible", item, new_visible);
+                              // Index must add 1 to account for X-axis "Cycle" series
+                              plot.setSeries(item + 1, {
+                                show: new_visible,
+                              });
+                              props.onContextChange?.(getContext());
+                              setPrevVisible(index());
+                            }
                           }}
                           color={getContext().color[item]}
                           onColorChange={(new_color) => {
