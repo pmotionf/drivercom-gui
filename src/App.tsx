@@ -125,6 +125,7 @@ function App(props: RouteSectionProps) {
     await prepareConfigTabFormat();
     await getStoreValues();
     await enableDropEvent();
+    setPage(Pages.Configuration);
   });
 
   async function detectCliVersion() {
