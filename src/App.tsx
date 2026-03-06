@@ -91,6 +91,7 @@ import { UnlistenFn } from "@tauri-apps/api/event";
 import { css } from "styled-system/css/css";
 import { Popover } from "./components/ui/popover.tsx";
 import { IconButton } from "./components/ui/icon-button.tsx";
+import { Portal } from "solid-js/web";
 
 type PageMeta = {
   icon: ValidComponent;
@@ -757,7 +758,6 @@ function App(props: RouteSectionProps) {
                     borderRadius: "0.5rem",
                     padding: "0.35rem",
                     width: "min-content",
-                    display: "flex",
                     alignItems: "center",
                     whiteSpace: "nowrap",
                     transition: "background ease-in-out 0.2s",
@@ -795,110 +795,112 @@ function App(props: RouteSectionProps) {
                 <IconInfoCircle />
               </IconButton>
             </Popover.Trigger>
-            <Popover.Positioner>
-              <Popover.Content background={"bg.default"}>
-                <Popover.Arrow>
-                  <Popover.ArrowTip />
-                </Popover.Arrow>
-                <div
-                  id="versions-footer"
-                  style={{
-                    display: "grid",
-                    "grid-template-columns": "6rem auto",
-                  }}
-                >
-                  <Text
-                    size="sm"
-                    fontWeight="light"
+            <Portal>
+              <Popover.Positioner>
+                <Popover.Content background={"bg.default"}>
+                  <Popover.Arrow>
+                    <Popover.ArrowTip />
+                  </Popover.Arrow>
+                  <div
+                    id="versions-footer"
                     style={{
-                      "grid-row": 1,
-                      "grid-column": 1,
+                      display: "grid",
+                      "grid-template-columns": "6rem auto",
                     }}
                   >
-                    <i>GUI Version:</i>
-                  </Text>
+                    <Text
+                      size="sm"
+                      fontWeight="light"
+                      style={{
+                        "grid-row": 1,
+                        "grid-column": 1,
+                      }}
+                    >
+                      <i>GUI Version:</i>
+                    </Text>
+                    <Text
+                      size="sm"
+                      fontWeight="light"
+                      style={{
+                        "grid-row": 1,
+                        "grid-column": 2,
+                      }}
+                    >
+                      {version()}
+                    </Text>
+                    <Text
+                      size="sm"
+                      fontWeight="light"
+                      style={{
+                        "grid-row": 2,
+                        "grid-column": 1,
+                      }}
+                    >
+                      <i>CLI Version:</i>
+                    </Text>
+                    <Text
+                      size="sm"
+                      fontWeight="light"
+                      style={{
+                        "grid-row": 2,
+                        "grid-column": 2,
+                      }}
+                    >
+                      {cliVersion()}
+                    </Text>
+                    <Text
+                      size="sm"
+                      fontWeight="light"
+                      style={{
+                        "grid-row": 3,
+                        "grid-column": 1,
+                      }}
+                    >
+                      <i>Lib Version:</i>
+                    </Text>
+                    <Text
+                      size="sm"
+                      fontWeight="light"
+                      style={{
+                        "grid-row": 3,
+                        "grid-column": 2,
+                      }}
+                    >
+                      {driverComVersion()}
+                    </Text>
+                    <Text
+                      size="sm"
+                      fontWeight="light"
+                      style={{
+                        "grid-row": 4,
+                        "grid-column": 1,
+                      }}
+                    >
+                      <i>API Version:</i>
+                    </Text>
+                    <Text
+                      size="sm"
+                      fontWeight="light"
+                      style={{
+                        "grid-row": 4,
+                        "grid-column": 2,
+                      }}
+                    >
+                      {apiVersion()}
+                    </Text>
+                  </div>
                   <Text
+                    as="div"
                     size="sm"
                     fontWeight="light"
-                    style={{
-                      "grid-row": 1,
-                      "grid-column": 2,
-                    }}
+                    textAlign="center"
+                    marginTop="0.5rem"
                   >
-                    {version()}
+                    <i>{`Copyright © 2024-${new Date().getFullYear()} PMF, Inc.`}</i>
                   </Text>
-                  <Text
-                    size="sm"
-                    fontWeight="light"
-                    style={{
-                      "grid-row": 2,
-                      "grid-column": 1,
-                    }}
-                  >
-                    <i>CLI Version:</i>
-                  </Text>
-                  <Text
-                    size="sm"
-                    fontWeight="light"
-                    style={{
-                      "grid-row": 2,
-                      "grid-column": 2,
-                    }}
-                  >
-                    {cliVersion()}
-                  </Text>
-                  <Text
-                    size="sm"
-                    fontWeight="light"
-                    style={{
-                      "grid-row": 3,
-                      "grid-column": 1,
-                    }}
-                  >
-                    <i>Lib Version:</i>
-                  </Text>
-                  <Text
-                    size="sm"
-                    fontWeight="light"
-                    style={{
-                      "grid-row": 3,
-                      "grid-column": 2,
-                    }}
-                  >
-                    {driverComVersion()}
-                  </Text>
-                  <Text
-                    size="sm"
-                    fontWeight="light"
-                    style={{
-                      "grid-row": 4,
-                      "grid-column": 1,
-                    }}
-                  >
-                    <i>API Version:</i>
-                  </Text>
-                  <Text
-                    size="sm"
-                    fontWeight="light"
-                    style={{
-                      "grid-row": 4,
-                      "grid-column": 2,
-                    }}
-                  >
-                    {apiVersion()}
-                  </Text>
-                </div>
-                <Text
-                  as="div"
-                  size="sm"
-                  fontWeight="light"
-                  textAlign="center"
-                  marginTop="0.5rem"
-                >
-                  <i>{`Copyright © 2024-${new Date().getFullYear()} PMF, Inc.`}</i>
-                </Text>
-              </Popover.Content>
-            </Popover.Positioner>
+                </Popover.Content>
+              </Popover.Positioner>
+            </Portal>
           </Popover.Root>
         </div>
       </div>
