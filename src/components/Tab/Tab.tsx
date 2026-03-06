@@ -193,15 +193,9 @@ export function Tab(props: TabProps) {
                   dragOverScroll(data.offsetX, scrollContainer);
                   setCurrentDraggingTabId(currentDraggingTabId()!);
 
-                  const collapsedSideBarWidth = document.getElementById(
-                    "radio-group:collapsed_side_bar",
-                  )!.offsetWidth;
                   setCurrentMousePointerPosition(() => {
                     return {
-                      x:
-                        data.event.clientX -
-                        mousePositionInsideComponent().x -
-                        collapsedSideBarWidth,
+                      x: data.event.clientX - mousePositionInsideComponent().x,
                       y: data.event.clientY - mousePositionInsideComponent().y,
                     };
                   });
