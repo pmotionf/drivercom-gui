@@ -47,8 +47,6 @@ export type LogViewerTabPageContentProps = {
 
 export type LogViewerTabPage = {
   filePath?: string;
-  header?: string[];
-  series?: number[][];
   plotNames?: string[];
   plotSplitIndex?: number[][];
   plotContext?: PlotContext[];
@@ -271,43 +269,8 @@ export function LogViewerTabPageContent() {
     Map<number, string>
   > | null>(null);
 
-  const getSeries = () => {
-    return getTabContext(tabPageProps.tabId).tabCtx.series;
-  };
-
-  const setSeries = (tabIndex: number, newSeries: number[][]) => {
-    return tabStore.get(tabPageProps.key)?.[1](
-      "tabContext",
-      tabIndex,
-      "tabPage",
-      "logViewerTabPage",
-      "series",
-      newSeries,
-    );
-  };
-
-  const getHeader = () => {
-    return getTabContext(tabPageProps.tabId).tabCtx.header;
-  };
-
-  const setHeader = (tabIndex: number, newHeader: string[]) => {
-    return tabStore.get(tabPageProps.key)?.[1](
-      "tabContext",
-      tabIndex,
-      "tabPage",
-      "logViewerTabPage",
-      "header",
-      newHeader,
-    );
-  };
-
   onMount(async () => {
-    if (
-      !getTabContext(tabPageProps.tabId).tabCtx.series ||
-      !getTabContext(tabPageProps.tabId).tabCtx.header
-    ) {
-      await prepareCsvFile();
-    }
+    await prepareCsvFile();
 
     if (getTabContext(tabPageProps.tabId)) {
       if (getTabContext(tabPageProps.tabId).tabCtx) {
@@ -340,12 +303,9 @@ export function LogViewerTabPageContent() {
       }
     }
 
-    if (
-      splitIndex().length === 0 ||
-      splitIndex().length > getHeader()!.length
-    ) {
+    if (splitIndex().length === 0 || splitIndex().length > header().length) {
       const indexArray = Array.from(
-        { length: getHeader()!.length },
+        { length: header().length },
         (_, index) => index,
       );
       setSplitIndex([indexArray]);
@@ -371,11 +331,14 @@ export function LogViewerTabPageContent() {
     setRender(true);
   });
 
+  const [header, setHeader] = createSignal<string[]>([]);
+  const [series, setSeries] = createSignal<number[][]>([]);
+
   const prepareCsvFile = async () => {
     try {
       const csvFile = await fileHandler.readCsvFile(filePath());
-      setSeries(getTabContext(tabPageProps.tabId).currentIndex, csvFile.series);
-      setHeader(getTabContext(tabPageProps.tabId).currentIndex, csvFile.header);
+      setSeries(csvFile.series);
+      setHeader(csvFile.header);
       if (csvFile.enumSeriesMap) {
         setEnumMappings(csvFile.enumSeriesMap);
       }
@@ -394,7 +357,7 @@ export function LogViewerTabPageContent() {
 
   function resetChart() {
     const indexArray = Array.from(
-      { length: getHeader()!.length },
+      { length: header().length },
       (_, index) => index,
     );
     setSplitIndex([indexArray]);
@@ -669,72 +632,6 @@ export function LogViewerTabPageContent() {
 
   const plotToolBoxWidth = "12em";
 
-  const calculateAcceleration = (velocityData: number[]) => {
-    const dt = 1 / 15000;
-
-    let lastV1 = 0;
-    const acceleration = velocityData.slice(0, -1).map((v1, i) => {
-      const effectiveV1 = v1 !== 0 ? v1 : lastV1;
-      if (effectiveV1 === 0) {
-        return 0;
-      }
-      lastV1 = effectiveV1;
-      const v2 = velocityData[i + 1];
-      const effectiveV2 = v2 !== 0 ? v2 : effectiveV1;
-
-      return (effectiveV2 - effectiveV1) / dt;
-    });
-
-    return [0, ...acceleration];
-  };
-
-  const createAccelerationSeries = (
-    index: number,
-    velocityData: number[],
-    accelerationHeader: string,
-  ) => {
-    const prevPlot = JSON.parse(JSON.stringify(plots[index]));
-    setRender(false);
-
-    const newSeries: number[][] = [
-      ...getSeries()!,
-      calculateAcceleration(velocityData),
-    ];
-    setSeries(getTabContext(tabPageProps.tabId).currentIndex, newSeries);
-
-    const newHeader: string[] = [...getHeader()!, accelerationHeader];
-    setHeader(getTabContext(tabPageProps.tabId).currentIndex, newHeader);
-
-    // Time out for rerendering uPlot.
-    const timeout = setTimeout(() => {
-      setPrevSplitIndex(splitIndex());
-      setSplitIndex(
-        splitIndex().map((split, i) =>
-          i === index ? [...split, newHeader.length - 1] : split,
-        ),
-      );
-
-      const newPlotContext: PlotContext = {
-        visible: [...prevPlot.visible, true],
-        palette: prevPlot.palette,
-        color: [
-          ...prevPlot.color,
-          prevPlot.palette[prevPlot.palette.length % 7],
-        ],
-        style: [...prevPlot.style, 0],
-        selected: [...prevPlot.selected, false],
-        filter: [...prevPlot.filter, 0],
-      };
-      setPlots(index, newPlotContext);
-
-      setRender(true);
-      setPlotYScales((prev) =>
-        prev.map((yScale, i) => (i === index ? { min: 0, max: 0 } : yScale)),
-      );
-      clearTimeout(timeout);
-    }, 0);
-  };
-
   return (
     <>
       <div
@@ -792,8 +689,8 @@ export function LogViewerTabPageContent() {
             {(item, index) => {
               // Header and items need not be derived state, as they will not
               // change within a plot.
-              const currentHeader = item.map((i) => getHeader()![i]);
-              const currentItems = item.map((i) => getSeries()![i]);
+              const currentHeader = item.map((i) => header()![i]);
+              const currentItems = item.map((i) => series()![i]);
 
               // Current ID must be derived state as index can change based on
               // added/merged plots.
@@ -1170,16 +1067,6 @@ export function LogViewerTabPageContent() {
                     legendShrink={isLegendShrink()}
                     onLegendShrinkChange={(newState) => {
                       setIsLegendShrink(newState);
-                    }}
-                    onCreateAcceleration={(
-                      velocityData,
-                      accelerationHeader,
-                    ) => {
-                      createAccelerationSeries(
-                        index(),
-                        velocityData,
-                        accelerationHeader,
-                      );
                     }}
                     style={{
                       width: "100%",

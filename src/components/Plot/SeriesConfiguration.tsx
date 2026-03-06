@@ -14,8 +14,6 @@ import {
 } from "@tabler/icons-solidjs";
 import { ToggleGroup } from "~/components/ui/toggle-group";
 import { LegendStroke } from "./Legend";
-import { Show } from "solid-js";
-import { Checkbox } from "../ui/checkbox";
 
 export type SeriesConfigurationProps = Omit<ColorPicker.RootProps, "stroke"> & {
   series: string;
@@ -27,7 +25,6 @@ export type SeriesConfigurationProps = Omit<ColorPicker.RootProps, "stroke"> & {
     new_color: string,
     new_style: LegendStroke,
     new_filter?: number,
-    create_acceleration?: boolean,
   ) => void;
   onCancel?: () => void;
 };
@@ -51,9 +48,6 @@ export function SeriesConfiguration(props: SeriesConfigurationProps) {
   const [dataFilter, setDataFilter] = createSignal<number>(
     props.dataFilter ?? 0,
   );
-
-  const [createAcceleration, setCreateAcceleration] =
-    createSignal<boolean>(false);
 
   return (
     <Card.Root>
@@ -176,21 +170,6 @@ export function SeriesConfiguration(props: SeriesConfigurationProps) {
             style={{ "grid-row": 2, "grid-column": 2, "margin-top": "0.4rem" }}
           />
         </div>
-
-        <Show when={props.series.includes("velocity")}>
-          <Checkbox
-            checked={createAcceleration()}
-            onCheckedChange={(details) =>
-              setCreateAcceleration(details.checked ? true : false)
-            }
-            marginTop="0.6rem"
-            marginBottom={"0.4rem"}
-          >
-            <Heading as="h6" size="xs">
-              {"Create Acceleration"}
-            </Heading>
-          </Checkbox>
-        </Show>
       </Card.Body>
       <Card.Footer>
         <Button
@@ -199,7 +178,6 @@ export function SeriesConfiguration(props: SeriesConfigurationProps) {
               selectedColor().toString("rgba"),
               stroke(),
               !isNaN(dataFilter()) ? dataFilter() : undefined,
-              createAcceleration(),
             );
           }}
         >

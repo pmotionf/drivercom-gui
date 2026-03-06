@@ -47,7 +47,6 @@ export type LegendProps = Omit<StackProps, "stroke"> & {
   onSelectChange?: (checkBoxValue: boolean, isShiftClick?: boolean) => void;
   filter?: number;
   onFilterChange?: (filter: number) => void;
-  onCreateAcceleration?: () => void;
 };
 
 export enum LegendStroke {
@@ -206,21 +205,13 @@ export function Legend(props: LegendProps) {
                   stroke={stroke()}
                   dataFilter={filter()}
                   palette={props.palette}
-                  onSave={(
-                    new_color,
-                    new_style,
-                    new_filter,
-                    createAcceleration,
-                  ) => {
+                  onSave={(new_color, new_style, new_filter) => {
                     props.onColorChange?.(new_color);
                     props.onStrokeChange?.(new_style);
                     setColor(new_color);
                     setStroke(new_style);
                     props.onFilterChange?.(new_filter ?? 0);
                     setFilter(new_filter ?? 0);
-                    if (createAcceleration) {
-                      props.onCreateAcceleration?.();
-                    }
                     setConfigOpen(false);
                   }}
                   onCancel={() => setConfigOpen(false)}
