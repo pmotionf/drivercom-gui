@@ -142,9 +142,7 @@ export function TabList(
     const tabHeight = tab!.offsetHeight;
     const root = document.getElementById("root");
     const divEnd = root!.offsetWidth;
-
-    const navBar = document.getElementById("radio-group:collapsed_side_bar");
-    const divStart = navBar!.offsetWidth;
+    const divStart = 0;
 
     if (clientX >= tabListContainerEnd) {
       if (clientX >= divEnd) return "none";

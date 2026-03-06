@@ -55,6 +55,8 @@ export function Panel(props: JSX.HTMLAttributes<HTMLDivElement>) {
         style={{
           width: "100%",
           height: "100%",
+          "border-radius": "0",
+          "border-top-width": "0",
         }}
       >
         <PanelContext.Provider
@@ -114,8 +116,6 @@ export function Panel(props: JSX.HTMLAttributes<HTMLDivElement>) {
                       2
                   }px`
                 : `${document.getElementById(`tabs:${panelLayoutCtx.id}`)!.offsetLeft}px`,
-            "border-radius":
-              currentDraggingTabLocation() === "otherPanel" ? "0.5rem" : "0rem",
             opacity:
               currentDraggingTabLocation() === "none" ||
               currentDraggingTabLocation() === "tabList"
@@ -158,7 +158,6 @@ export function Panel(props: JSX.HTMLAttributes<HTMLDivElement>) {
               document.getElementById(`tabs:${getPanelIds()[nextPanel()!]}`)!
                 .offsetLeft
             }px`,
-            "border-radius": "0.5rem",
             opacity: "10%",
             height: `${
               document.getElementById(`tabs:${getPanelIds()[nextPanel()!]}`)!
