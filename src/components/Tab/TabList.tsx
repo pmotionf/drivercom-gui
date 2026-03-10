@@ -139,7 +139,8 @@ export function TabList(
     const tabListContainerEnd = tabListContainerStart + tabListContainerWidth;
 
     const tab = document.getElementById(tabId);
-    const tabHeight = tab!.offsetHeight;
+    const tabClientRect = tab!.getBoundingClientRect();
+    const tabHeight = tabClientRect.bottom;
     const root = document.getElementById("root");
     const divEnd = root!.offsetWidth;
     const divStart = 0;
