@@ -14,6 +14,7 @@ import { Text } from "../ui/text.tsx";
 import { tabStore } from "~/store/GlobalState.ts";
 import { TabContext } from "./TabList.tsx";
 import JSON5 from "json5";
+import { css } from "styled-system/css/css";
 
 export type TabType = {
   id: string;
@@ -150,7 +151,7 @@ export function Tab(props: TabProps) {
       gap="0"
       width={`100%`}
       background={"bg.muted"}
-      style={{ "overflow-y": "hidden", "overflow-x": "auto", padding: "0" }}
+      style={{ padding: "0" }}
       onKeyUp={(e) => {
         if (e.key === "Escape") {
           if (currentDraggingTabId()) {
@@ -160,7 +161,15 @@ export function Tab(props: TabProps) {
       }}
     >
       <div
-        style={{ width: `calc(100% - 2rem)`, display: "flex" }}
+        class={css({
+          _scrollbar: { height: "0px" },
+          width: `calc(100% - 2rem)`,
+          display: "flex",
+          overflowY: "hidden",
+          overflowX: "auto",
+          borderInlineEndWidth: "1px",
+          borderInlineColor: "bg.disabled",
+        })}
         ref={scrollContainer}
       >
         <For each={getTabContexts()}>
@@ -240,7 +249,11 @@ export function Tab(props: TabProps) {
                   alignContent={"center"}
                   alignItems={"centerx"}
                   paddingTop={"0.5em"}
-                  borderWidth={"0px 1px 0px 0px"}
+                  borderWidth={
+                    tabIndex() === getTabContexts().length - 1
+                      ? "0px"
+                      : "0px 1px 0px 0px"
+                  }
                   borderColor={"bg.disabled"}
                   _selected={{
                     background: "bg.default",
