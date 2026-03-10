@@ -1,5 +1,5 @@
 import { JSX } from "solid-js";
-import { For, Portal } from "solid-js/web";
+import { Dynamic, For, Portal } from "solid-js/web";
 import { Tabs } from "~/components/ui/tabs.tsx";
 import { IconButton } from "~/components/ui/icon-button.tsx";
 import { IconPlus, IconX } from "@tabler/icons-solidjs";
@@ -146,10 +146,9 @@ export function Tab(props: TabProps) {
 
   return (
     <Tabs.List
-      height="3rem"
+      height="2rem"
       gap="0"
-      width="100%"
-      ref={scrollContainer}
+      width={`100%`}
       background={"bg.muted"}
       style={{ "overflow-y": "hidden", "overflow-x": "auto", padding: "0" }}
       onKeyUp={(e) => {
@@ -160,181 +159,200 @@ export function Tab(props: TabProps) {
         }
       }}
     >
-      <For each={getTabContexts()}>
-        {(tabCtx, tabIndex) => {
-          return (
-            <div
-              id={`${tabCtx.tab.id}`}
-              style={{
-                opacity:
-                  currentDraggingTabId() === tabCtx.tab.id ? "0%" : "100%",
-                position: "relative",
-                "z-index":
-                  tabCtx.tab.id === currentDraggingTabId() ? "0" : "10",
-              }}
-              onWheel={(e) => mouseWheelHandler(e, scrollContainer)}
-              onMouseEnter={() => {
-                if (currentDraggingTabId()) {
-                  setReorderTabIndex(tabIndex());
-                }
-              }}
-              onMouseLeave={() => setReorderTabIndex(null)}
-              use:dragOptions={{
-                cancel: ".cancel",
-                bounds: "parent",
-                onDragStart: (data) => {
-                  setCurrentDraggingTabId(tabCtx.tab.id);
-                  setMousePositionInsideComponent({
-                    x: data.event.offsetX,
-                    y: data.event.offsetY,
-                  });
-                },
-                onDrag: (data) => {
-                  dragOverScroll(data.offsetX, scrollContainer);
-                  setCurrentDraggingTabId(currentDraggingTabId()!);
-
-                  setCurrentMousePointerPosition(() => {
-                    return {
-                      x: data.event.clientX - mousePositionInsideComponent().x,
-                      y: data.event.clientY - mousePositionInsideComponent().y,
-                    };
-                  });
-
-                  props.onTabDragging?.(
-                    data.event.clientX,
-                    data.event.clientY,
-                    tabCtx.tab.id,
-                  );
-                },
-                onDragEnd: (data) => {
-                  if (reorderTabIndex() !== null) {
-                    const updatedItems = reorderTabsOnDragEnd(
-                      tabIndex(),
-                      reorderTabIndex()!,
-                      getTabContexts(),
-                    );
-                    setTabContext(updatedItems);
-                  }
-
-                  props.onTabDragEnd?.(
-                    data.event.clientX,
-                    data.event.clientY,
-                    tabCtx.tab.id,
-                    tabIndex(),
-                  );
-                  setReorderTabIndex(null);
-                  setCurrentDraggingTabId("");
-                },
-              }}
-            >
-              <Tabs.Trigger
-                value={tabCtx.tab.id}
-                paddingRight="0rem"
-                paddingLeft="0.5rem"
-                height="100%"
-                alignContent={"center"}
-                paddingTop={"0.5em"}
-                borderWidth={"0px 1px 0px 0px"}
-                borderColor={"bg.disabled"}
-                _selected={{
-                  background: "bg.default",
+      <div
+        style={{ width: `calc(100% - 2rem)`, display: "flex" }}
+        ref={scrollContainer}
+      >
+        <For each={getTabContexts()}>
+          {(tabCtx, tabIndex) => {
+            return (
+              <div
+                id={`${tabCtx.tab.id}`}
+                style={{
+                  opacity:
+                    currentDraggingTabId() === tabCtx.tab.id ? "0%" : "100%",
+                  position: "relative",
+                  "z-index":
+                    tabCtx.tab.id === currentDraggingTabId() ? "0" : "10",
                 }}
-                margin="0"
-                gap="0.2em"
+                onWheel={(e) => mouseWheelHandler(e, scrollContainer)}
+                onMouseEnter={() => {
+                  if (currentDraggingTabId()) {
+                    setReorderTabIndex(tabIndex());
+                  }
+                }}
+                onMouseLeave={() => setReorderTabIndex(null)}
+                use:dragOptions={{
+                  cancel: ".cancel",
+                  bounds: "parent",
+                  onDragStart: (data) => {
+                    setCurrentDraggingTabId(tabCtx.tab.id);
+                    setMousePositionInsideComponent({
+                      x: data.event.offsetX,
+                      y: data.event.offsetY,
+                    });
+                  },
+                  onDrag: (data) => {
+                    dragOverScroll(data.offsetX, scrollContainer);
+                    setCurrentDraggingTabId(currentDraggingTabId()!);
+
+                    setCurrentMousePointerPosition(() => {
+                      return {
+                        x:
+                          data.event.clientX - mousePositionInsideComponent().x,
+                        y:
+                          data.event.clientY - mousePositionInsideComponent().y,
+                      };
+                    });
+
+                    props.onTabDragging?.(
+                      data.event.clientX,
+                      data.event.clientY,
+                      tabCtx.tab.id,
+                    );
+                  },
+                  onDragEnd: (data) => {
+                    if (reorderTabIndex() !== null) {
+                      const updatedItems = reorderTabsOnDragEnd(
+                        tabIndex(),
+                        reorderTabIndex()!,
+                        getTabContexts(),
+                      );
+                      setTabContext(updatedItems);
+                    }
+
+                    props.onTabDragEnd?.(
+                      data.event.clientX,
+                      data.event.clientY,
+                      tabCtx.tab.id,
+                      tabIndex(),
+                    );
+                    setReorderTabIndex(null);
+                    setCurrentDraggingTabId("");
+                  },
+                }}
               >
-                <Stack
-                  style={{
-                    width: "0.8em",
-                    height: "0.5em",
-                    "border-radius": "1em",
+                <Tabs.Trigger
+                  value={tabCtx.tab.id}
+                  paddingRight="0rem"
+                  paddingLeft="0.5rem"
+                  height="100%"
+                  alignContent={"center"}
+                  alignItems={"centerx"}
+                  paddingTop={"0.5em"}
+                  borderWidth={"0px 1px 0px 0px"}
+                  borderColor={"bg.disabled"}
+                  _selected={{
+                    background: "bg.default",
                   }}
-                  opacity={isConfigChange(tabIndex()) ? 1 : 0}
-                  background="accent.7"
-                />
-                <Editable.Root
-                  value={tabCtx.tab.tabName}
-                  activationMode="dblclick"
-                  onValueChange={(editableDetails) => {
-                    setTabName(tabIndex(), editableDetails.value);
-                  }}
+                  margin="0"
+                  gap="0.2em"
                 >
-                  <Editable.Area>
-                    <Editable.Input width="10rem" />
-                    <Editable.Preview width="100%" />
-                  </Editable.Area>
-                </Editable.Root>
-                <div class="cancel">
-                  <IconButton
-                    variant="ghost"
-                    size="xs"
-                    onClick={() => {
-                      props.onDeleteTab?.(tabIndex());
-                    }}
-                    width="1em"
-                    borderRadius={"3em"}
-                  >
-                    <IconX />
-                  </IconButton>
-                </div>
-              </Tabs.Trigger>
-              <Show
-                when={
-                  reorderTabIndex() === tabIndex() &&
-                  currentDraggingTabId().length > 0
-                }
-              >
-                <Stack
-                  width="100%"
-                  height="100% "
-                  position="absolute"
-                  top="0"
-                  background="fg.default"
-                  opacity="10%"
-                />
-              </Show>
-              <Portal>
-                {currentDraggingTabId() === tabCtx.tab.id && (
                   <Stack
-                    direction="row"
-                    background={"bg.default"}
                     style={{
-                      position: "absolute",
-                      top: `${currentMousePointerPosition().y}px`,
-                      left: `${currentMousePointerPosition().x}px`,
-                      "padding-left": "0.5rem",
-                      "pointer-events": "none",
-                      "z-index": "15",
-                      height: "3rem",
-                      "padding-top": "0.2em",
+                      width: "0.8em",
+                      height: "0.5em",
+                      "border-radius": "1em",
+                    }}
+                    opacity={isConfigChange(tabIndex()) ? 1 : 0}
+                    background="accent.7"
+                  />
+                  <Editable.Root
+                    fontSize={"sm"}
+                    fontWeight={"medium"}
+                    value={tabCtx.tab.tabName}
+                    activationMode="dblclick"
+                    onValueChange={(editableDetails) => {
+                      setTabName(tabIndex(), editableDetails.value);
                     }}
                   >
-                    <Text
-                      fontWeight="bold"
-                      color="fg.default"
-                      paddingTop="0.5rem"
-                      whiteSpace="nowrap"
+                    <Editable.Area>
+                      <Editable.Input width="10rem" />
+                      <Editable.Preview width="100%" />
+                    </Editable.Area>
+                  </Editable.Root>
+                  <div class="cancel">
+                    <IconButton
+                      variant="ghost"
+                      size="xs"
+                      onClick={() => {
+                        props.onDeleteTab?.(tabIndex());
+                      }}
+                      borderRadius={"3em"}
                     >
-                      {tabCtx.tab.tabName}
-                    </Text>
-                    <IconButton variant="ghost" size="sm" borderRadius="3rem">
-                      <IconX />
+                      <Dynamic
+                        style={{ width: "0.8rem", height: "0.8rem" }}
+                        component={IconX}
+                      />
                     </IconButton>
-                  </Stack>
-                )}
-              </Portal>
-            </div>
-          );
-        }}
-      </For>
+                  </div>
+                </Tabs.Trigger>
+                <Show
+                  when={
+                    reorderTabIndex() === tabIndex() &&
+                    currentDraggingTabId().length > 0
+                  }
+                >
+                  <Stack
+                    width="100%"
+                    height="100% "
+                    position="absolute"
+                    top="0"
+                    background="fg.default"
+                    opacity="10%"
+                  />
+                </Show>
+                <Portal>
+                  {currentDraggingTabId() === tabCtx.tab.id && (
+                    <Stack
+                      direction="row"
+                      background={"bg.default"}
+                      style={{
+                        position: "absolute",
+                        top: `${currentMousePointerPosition().y}px`,
+                        left: `${currentMousePointerPosition().x}px`,
+                        "padding-left": "0.5rem",
+                        "pointer-events": "none",
+                        "z-index": "15",
+                        height: "2rem",
+                        "align-items": "center",
+                      }}
+                    >
+                      <Text
+                        fontWeight="medium"
+                        color="fg.default"
+                        whiteSpace="nowrap"
+                        fontSize={"sm"}
+                      >
+                        {tabCtx.tab.tabName}
+                      </Text>
+                      <IconButton variant="ghost" size="xs" borderRadius="3rem">
+                        <Dynamic
+                          style={{ width: "0.8rem", height: "0.8rem" }}
+                          component={IconX}
+                        />
+                      </IconButton>
+                    </Stack>
+                  )}
+                </Portal>
+              </div>
+            );
+          }}
+        </For>
+      </div>
+
       <IconButton
         variant="ghost"
         borderRadius="3rem"
+        size="xs"
         onClick={() => {
           props.onCreateTab?.();
         }}
-        marginTop="0.2rem"
       >
-        <IconPlus />
+        <Dynamic
+          style={{ width: "0.8rem", height: "0.8rem" }}
+          component={IconPlus}
+        />
       </IconButton>
     </Tabs.List>
   );
