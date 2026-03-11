@@ -53,8 +53,6 @@ import {
   pageKeys,
   tabStore,
   configFormFileFormat,
-  setLogForm,
-  logForm,
   logFormFileFormat,
 } from "./store/GlobalState.ts";
 
@@ -92,6 +90,7 @@ import { css } from "styled-system/css/css";
 import { Popover } from "./components/ui/popover.tsx";
 import { IconButton } from "./components/ui/icon-button.tsx";
 import { Portal } from "solid-js/web";
+import { LoggingAccordionStates } from "./components/Form.tsx";
 
 type PageMeta = {
   icon: ValidComponent;
@@ -310,28 +309,7 @@ function App(props: RouteSectionProps) {
           const logicalX = client.x / scaleFactor;
           const logicalY = client.y / scaleFactor;
 
-          if (page() === Pages.Logging) {
-            const element = document.getElementById(
-              pageKeys.get(Pages.Logging)!,
-            );
-            if (element) {
-              const rect = element.getBoundingClientRect();
-              const top = rect.y;
-              const left = rect.x;
-
-              if (top < logicalY && logicalY < rect.bottom) {
-                if (left < logicalX && logicalX < rect.right) {
-                  setOverlayTop(top);
-                  setOverlayHeight(rect.height);
-                  setOverlayLeft(left);
-                  setOverlayWidth(rect.width);
-                }
-              }
-            }
-            return;
-          }
-
-          if (page() === Pages.Configuration || page() === Pages.LogViewer) {
+          if (page() !== Pages.Monitoring) {
             if (pageKeys.has(page())) {
               const panelKey = pageKeys.get(page());
               const [panels] = panelStore.get(panelKey!)!;
@@ -406,43 +384,7 @@ function App(props: RouteSectionProps) {
           }
           const file = new FileHandler();
 
-          if (page() === Pages.Logging) {
-            if (!event.payload.paths[0].endsWith("json5")) {
-              toaster.create({
-                title: "Invalid File",
-                description: "Invalid file extension.",
-                type: "error",
-              });
-              return;
-            }
-            try {
-              const logConfig = await file.readFile(
-                event.payload.paths[0],
-                logFormFileFormat(),
-              );
-
-              setLogForm({
-                ...logForm,
-                title: event.payload.paths[0]
-                  .replaceAll("\\", "/")
-                  .match(/[^?!//]+$/!)!
-                  .toString()
-                  .split(".")
-                  .shift(),
-                filePath: event.payload.paths[0].replaceAll("\\", "/"),
-                logConfig: logConfig,
-                originalFile: JSON5.parse(JSON5.stringify(logConfig)),
-              });
-            } catch {
-              toaster.create({
-                title: "Invalid File",
-                description: "Invalid file format.",
-                type: "error",
-              });
-            }
-            return;
-          }
-          if (page() === Pages.LogViewer || page() === Pages.Configuration) {
+          if (page() !== Pages.Monitoring) {
             if (pageKeys.has(page())) {
               const panelKey = pageKeys.get(page());
               const clientPosition = event.payload.position;
@@ -563,6 +505,7 @@ function App(props: RouteSectionProps) {
                             formOverflowY: formOverflowY,
                           },
                           logViewerTabPage: null,
+                          loggingTabPage: null,
                         },
                       };
                     } catch {
@@ -595,8 +538,61 @@ function App(props: RouteSectionProps) {
                           plotXScale: [0, 0],
                         },
                         configTabPage: null,
+                        loggingTabPage: null,
                       },
                     };
+                  } else if (page() === Pages.Logging) {
+                    if (!event.payload.paths[0].endsWith("json5")) {
+                      toaster.create({
+                        title: "Invalid File",
+                        description: "Invalid file extension.",
+                        type: "error",
+                      });
+                      return;
+                    }
+                    try {
+                      const logConfig = await file.readFile(
+                        event.payload.paths[0],
+                        logFormFileFormat(),
+                      );
+                      const accordionStatuses: LoggingAccordionStates =
+                        new Map();
+
+                      newTab = {
+                        tab: {
+                          id: id,
+                          tabName: tabName!,
+                        },
+                        tabPage: {
+                          loggingTabPage: {
+                            title: event.payload.paths[0]
+                              .replaceAll("\\", "/")
+                              .match(/[^?!//]+$/!)!
+                              .toString()
+                              .split(".")
+                              .shift()!,
+                            filePath: event.payload.paths[0].replaceAll(
+                              "\\",
+                              "/",
+                            ),
+                            logConfig: logConfig,
+                            originalFile: JSON5.parse(
+                              JSON5.stringify(logConfig),
+                            ),
+                            portId: "",
+                            accordionStates: accordionStatuses,
+                          },
+                          configTabPage: null,
+                          logViewerTabPage: null,
+                        },
+                      };
+                    } catch {
+                      toaster.create({
+                        title: "Invalid File",
+                        description: "Invalid file format.",
+                        type: "error",
+                      });
+                    }
                   }
 
                   if (tabStore.has(tabStoreKey)) {
