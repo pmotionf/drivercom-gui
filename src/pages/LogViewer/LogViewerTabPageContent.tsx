@@ -97,6 +97,7 @@ export function LogViewerTabPageContent() {
           filePath: newFilePath,
         },
         configTabPage: null,
+        loggingTabPage: null,
       },
     };
     setTimeout(() => {
