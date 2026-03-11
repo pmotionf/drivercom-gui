@@ -6,7 +6,6 @@ import { FileMenu } from "~/components/FileMenu";
 import { PortMenu } from "~/components/PortMenu";
 import { TabPageContext } from "~/components/Tab/TabList";
 import { Button } from "~/components/ui/button";
-import { Editable } from "~/components/ui/editable";
 import { Text } from "~/components/ui/text";
 import { Tooltip } from "~/components/ui/tooltip";
 import {
@@ -91,19 +90,13 @@ export function ConfigTabContent() {
     );
   };
 
-  const getFormName = () => {
-    return tabStore.get(configTabProps.key)![0].tabContext[getTabIndex()]
-      .tabPage!.configTabPage!.formName!;
-  };
-
-  const setFormName = (newFormName: string) => {
+  const setTabName = (newName: string) => {
     return tabStore.get(configTabProps.key)![1](
       "tabContext",
       getTabIndex(),
-      "tabPage",
-      "configTabPage",
-      "formName",
-      newFormName,
+      "tab",
+      "tabName",
+      newName,
     );
   };
 
@@ -237,7 +230,7 @@ export function ConfigTabContent() {
   function setFormData(data: object, path: string) {
     setConfigForm(data);
     setFilePath(path);
-    setFormName(path.split("/").pop()!);
+    setTabName(path.split("/").pop()!);
     setRecentConfigFilePaths((prev) => {
       const newRecentFiles = prev.filter(
         (prevFilePath) => prevFilePath !== path,
@@ -315,15 +308,7 @@ export function ConfigTabContent() {
 
   const saveAsFile = async () => {
     try {
-      const config = getConfigForm();
-      const path = await fileHandler.saveFileDialog(
-        "json5",
-        getFilePath()!,
-        getFormName(),
-        config.id !== 0 && config.station !== 0
-          ? `Driver ${config["id" as keyof typeof config]} Station ${config["station" as keyof typeof config]}`
-          : undefined,
-      );
+      const path = await fileHandler.saveFileDialog("json5", getFilePath()!);
       await fileHandler.writeFile(
         path,
         getConfigForm()!,
@@ -471,7 +456,7 @@ export function ConfigTabContent() {
             const newEmptyFile = JSON5.parse(
               JSON5.stringify(configFormFileFormat()),
             );
-            setFormName("New File");
+            setTabName("New File");
             setConfigForm(newEmptyFile);
             setFilePath(null);
             setRender(true);
@@ -545,7 +530,7 @@ export function ConfigTabContent() {
             try {
               setRender(false);
               const config = await getConfigFromPort(getPortId()!);
-              setFormName(getPortId()!);
+              setTabName(getPortId()!);
               setConfigForm(config);
               setOriginalFile(JSON5.parse(JSON.stringify(config)));
               setRender(true);
