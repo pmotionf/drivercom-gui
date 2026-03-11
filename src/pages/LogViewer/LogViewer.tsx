@@ -62,6 +62,7 @@ function LogViewer() {
                     plotXScale: [0, 0],
                   },
                   configTabPage: null,
+                  loggingTabPage: null,
                 },
               };
 
