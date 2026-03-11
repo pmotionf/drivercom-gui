@@ -5,12 +5,12 @@ import {
 } from "~/store/GlobalState";
 import { createListCollection } from "~/components/ui/select";
 import { ListCollection } from "@ark-ui/solid/collection";
-import { AccordionStates, Form } from "~/components/Form";
+import { LoggingAccordionStates, Form } from "~/components/Form";
 
 export type LoggingFormProps = JSX.HTMLAttributes<HTMLDivElement> & {
   id: string;
   formData: object;
-  accordionStates: AccordionStates;
+  accordionStates: LoggingAccordionStates;
   originalFile?: object;
   description?: object;
 };

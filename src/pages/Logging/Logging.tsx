@@ -7,7 +7,7 @@ import {
 } from "~/store/GlobalState.ts";
 import { createSignal, Show } from "solid-js";
 import { onMount } from "solid-js";
-import { AccordionStates } from "~/components/Form.tsx";
+import { LoggingAccordionStates } from "~/components/Form.tsx";
 
 import {
   PanelLayout,
@@ -28,7 +28,7 @@ export type LoggingFormType = {
   filePath: string;
   portId: string;
   logConfig: object;
-  accordionStates: AccordionStates;
+  accordionStates: LoggingAccordionStates;
   originalFile: object;
 };
 
@@ -58,7 +58,7 @@ export function Logging() {
 
   const createLoggingTab = (key: string) => {
     const id = crypto.randomUUID();
-    const accordionStates: AccordionStates = new Map();
+    const accordionStates: LoggingAccordionStates = new Map();
     const newTab: TabContext = {
       tab: {
         id: id,

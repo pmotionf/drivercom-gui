@@ -21,7 +21,7 @@ import JSON5 from "json5";
 import { Tooltip } from "./ui/tooltip.tsx";
 import { IconHelp } from "@tabler/icons-solidjs";
 
-export type AccordionStates = Map<
+export type LoggingAccordionStates = Map<
   string,
   [Accessor<string[]>, Setter<string[]>]
 >;
@@ -34,7 +34,7 @@ export type FormProps = JSX.HTMLAttributes<HTMLDivElement> & {
   originalFile?: object;
   changeUnits?: boolean;
   onItemChange?: () => void;
-  accordionStates: AccordionStates;
+  accordionStates: LoggingAccordionStates;
   linkStates?: LinkStates;
   gainLockStatuses?: GainLockStates;
   gainKinds?: string[];
