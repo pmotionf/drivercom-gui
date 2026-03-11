@@ -3,7 +3,6 @@ import { createStore, SetStoreFunction, Store } from "solid-js/store";
 import { PanelSizeContext } from "~/components/Panel/PanelLayout.tsx";
 import { TabListContext } from "~/components/Tab/TabList.tsx";
 import { Child } from "@tauri-apps/plugin-shell";
-import { LoggingFormType } from "../pages/Logging/Logging.tsx";
 import { DownloadStates } from "~/components/DownloadList.tsx";
 import { IpAddress } from "~/pages/Monitoring/System/IpHistory.tsx";
 import {
@@ -99,15 +98,6 @@ export type PortCommand = {
 };
 
 export const portCommands: Map<number, PortCommand> = new Map();
-
-export const [logForm, setLogForm] = createStore<LoggingFormType>({
-  title: "New file",
-  filePath: "",
-  portId: "",
-  logConfig: {},
-  accordionStates: new Map(),
-  originalFile: {},
-});
 
 export const [csvFileDownloads, setCsvFileDownloads] = createStore<
   DownloadStates[]
