@@ -25,30 +25,34 @@ import {
 import { createEffect, createSignal, on, onMount, Show } from "solid-js";
 import { createStore } from "solid-js/store";
 import { load } from "@tauri-apps/plugin-store";
+import { IconButton } from "~/components/ui/icon-button.tsx";
+import { IconPlus } from "@tabler/icons-solidjs";
+import { Dynamic, Portal } from "solid-js/web";
+import { Menu } from "~/components/ui/menu.tsx";
 
 function Configuration() {
   const [render, setRender] = createSignal<boolean>(false);
 
   onMount(() => {
     if (!pageKeys.has(Pages.Configuration)) {
-      const panelKey = crypto.randomUUID();
-      pageKeys.set(Pages.Configuration, panelKey);
+      const newPanelKey = crypto.randomUUID();
+      pageKeys.set(Pages.Configuration, newPanelKey);
 
       const panelStoreKey = crypto.randomUUID();
       panelStore.set(
-        panelKey,
+        newPanelKey,
         createSignal<PanelSizeContext[]>([{ id: panelStoreKey, size: 100 }]),
       );
       tabStore.set(
         panelStoreKey,
         createStore<TabListContext>({ tabContext: [], focusedTab: "" }),
       );
-      createTab(panelStoreKey);
+      createNewFile(panelStoreKey);
     }
     setRender(true);
   });
 
-  const createTab = (key: string) => {
+  const createNewFile = (key: string) => {
     setRender(false);
     const id = crypto.randomUUID();
     const accordionStatuses: AccordionStates = new Map();
@@ -104,16 +108,81 @@ function Configuration() {
     ),
   );
 
+  const [tabStoreKey, setTabStoreKey] = createSignal<string>("");
+
   return (
-    <Show when={render()}>
-      <PanelLayout id={Pages.Configuration}>
-        <Panel>
-          <TabList onCreateTab={(key) => createTab(key)}>
-            <ConfigTabContent />
-          </TabList>
-        </Panel>
-      </PanelLayout>
-    </Show>
+    <>
+      <Show when={render()}>
+        <PanelLayout id={Pages.Configuration}>
+          <Panel>
+            <TabList
+              createButton={
+                <Menu.Root>
+                  <Menu.Trigger>
+                    <IconButton
+                      size="xs"
+                      variant={"ghost"}
+                      onClick={(e) => {
+                        const clientX = e.clientX;
+                        const pageKey = pageKeys.get(Pages.Configuration)!;
+                        const panels = panelStore.get(pageKey)![0]();
+                        for (let i = 0; i < panels.length; i++) {
+                          const currentPanelId = panels[i].id;
+                          const element = document.getElementById(
+                            `tabs:${currentPanelId}`,
+                          );
+                          if (element) {
+                            const rect = element.getBoundingClientRect();
+                            if (rect.x < clientX && clientX <= rect.right) {
+                              setTabStoreKey(currentPanelId);
+                              break;
+                            }
+                          }
+                        }
+                      }}
+                    >
+                      <Dynamic
+                        style={{ width: "0.8rem", height: "0.8rem" }}
+                        component={IconPlus}
+                      />
+                    </IconButton>
+                  </Menu.Trigger>
+                  <Portal>
+                    <Menu.Positioner>
+                      <Menu.Content>
+                        <Menu.Item
+                          value={"New file"}
+                          onClick={() => {
+                            if (tabStoreKey().length > 0) {
+                              createNewFile(tabStoreKey());
+                            }
+                          }}
+                        >
+                          {"New file"}
+                        </Menu.Item>
+                        <Menu.Item value={"Get from file"}>
+                          {"Get from file"}
+                        </Menu.Item>
+                        <Show when={recentConfigFilePaths().length > 0}>
+                          <Menu.TriggerItem>
+                            {"Open recent files..."}
+                          </Menu.TriggerItem>
+                        </Show>
+                        <Menu.Item value={"Get from port"}>
+                          {"Get from port"}
+                        </Menu.Item>
+                      </Menu.Content>
+                    </Menu.Positioner>
+                  </Portal>
+                </Menu.Root>
+              }
+            >
+              <ConfigTabContent />
+            </TabList>
+          </Panel>
+        </PanelLayout>
+      </Show>
+    </>
   );
 }
 

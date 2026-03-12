@@ -31,6 +31,7 @@ export type TabProps = JSX.HTMLAttributes<HTMLDivElement> & {
     tabIndex: number,
   ) => void;
   onTabDragCancel?: (tabId: string) => void;
+  createButton?: JSX.Element;
   onCreateTab?: () => void;
   onDeleteTab?: (index: number) => void;
 };
@@ -354,19 +355,22 @@ export function Tab(props: TabProps) {
         </For>
       </div>
 
-      <IconButton
-        variant="ghost"
-        borderRadius="3rem"
-        size="xs"
-        onClick={() => {
-          props.onCreateTab?.();
-        }}
-      >
-        <Dynamic
-          style={{ width: "0.8rem", height: "0.8rem" }}
-          component={IconPlus}
-        />
-      </IconButton>
+      <Show when={props.onCreateTab}>
+        <IconButton
+          variant="ghost"
+          borderRadius="3rem"
+          size="xs"
+          onClick={() => {
+            props.onCreateTab?.();
+          }}
+        >
+          <Dynamic
+            style={{ width: "0.8rem", height: "0.8rem" }}
+            component={IconPlus}
+          />
+        </IconButton>
+      </Show>
+      <Show when={props.createButton}>{props.createButton}</Show>
     </Tabs.List>
   );
 }
