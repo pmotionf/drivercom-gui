@@ -1,6 +1,6 @@
 import { toBinary } from "@bufbuild/protobuf";
 import { Request_Kind, Response_TrackConfig_Line } from "~/proto/mmc/core_pb";
-import { Response_Command_Status, Response_Track } from "~/proto/mmc/info_pb";
+import { Response_Command_Status, Response_Line } from "~/proto/mmc/info_pb";
 import {
   Request,
   RequestSchema,
@@ -13,14 +13,14 @@ export type LineType = Omit<
   Response_TrackConfig_Line,
   "$typeName" | "$unknown"
 >;
-export type TrackType = Omit<Response_Track, "$typeName" | "$unknown">;
+export type TrackType = Omit<Response_Line, "$typeName" | "$unknown">;
 
 interface IServerHandler {
   getStatus(): number;
   connect(ip: string, port: string): Promise<void>;
   disconnect(): Promise<void>;
   clearError(lindId: number, driverId?: number): Promise<void>;
-  getSystemInfo(lineId: number): Promise<TrackType>;
+  getSystemInfo(lineIds: number[]): Promise<TrackType[]>;
   getLineConfig(): Promise<LineType[]>;
   getServerName(): Promise<string | null>;
 }
@@ -363,7 +363,7 @@ export class ServerHandler implements IServerHandler {
     }
   }
 
-  async getSystemInfo(lineId: number): Promise<TrackType | never> {
+  async getSystemInfo(lines: number[]): Promise<TrackType[] | never> {
     const payload: Request = {
       body: {
         case: "info",
@@ -373,7 +373,7 @@ export class ServerHandler implements IServerHandler {
             case: "track",
             value: {
               $typeName: "mmc.info.Request.Track",
-              line: lineId,
+              lines: lines,
               infoAxisErrors: true,
               infoCarrierState: true,
               infoAxisState: true,
@@ -401,8 +401,11 @@ export class ServerHandler implements IServerHandler {
           if (info.body.case === "track") {
             const track = decoded.body.value;
             if (track.body.case === "track") {
-              const tracked: TrackType = track.body.value;
-              return Promise.resolve(tracked);
+              const tracked = track.body.value;
+
+              return Promise.resolve(
+                tracked.lines.map((line) => line as TrackType),
+              );
             }
           }
         }
