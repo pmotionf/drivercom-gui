@@ -22,13 +22,17 @@ import {
   GainLockStates,
   LinkStates,
 } from "~/pages/Configuration/ConfigForm/ConfigForm.tsx";
-import { createEffect, createSignal, on, onMount, Show } from "solid-js";
+import { createEffect, createSignal, For, on, onMount, Show } from "solid-js";
 import { createStore } from "solid-js/store";
 import { load } from "@tauri-apps/plugin-store";
 import { IconButton } from "~/components/ui/icon-button.tsx";
-import { IconPlus } from "@tabler/icons-solidjs";
+import { IconChevronRight, IconPlus } from "@tabler/icons-solidjs";
 import { Dynamic, Portal } from "solid-js/web";
 import { Menu } from "~/components/ui/menu.tsx";
+import { detectPort, getConfigFromPort, Port } from "~/services/PortService.ts";
+import { ConfigType } from "src-tauri/generated/config/ConfigType.tsx";
+import { Text } from "~/components/ui/text.tsx";
+import { toaster } from "~/services/Toaster.ts";
 
 function Configuration() {
   const [render, setRender] = createSignal<boolean>(false);
@@ -47,23 +51,23 @@ function Configuration() {
         panelStoreKey,
         createStore<TabListContext>({ tabContext: [], focusedTab: "" }),
       );
-      createNewFile(panelStoreKey);
+      createNewFile(panelStoreKey, configFormFileFormat(), "New File");
     }
     setRender(true);
   });
 
-  const createNewFile = (key: string) => {
+  const createNewFile = (key: string, form: ConfigType, formName: string) => {
     setRender(false);
     const id = crypto.randomUUID();
     const accordionStatuses: AccordionStates = new Map();
     const linkedStatuses: LinkStates = new Map();
     const gainLockStatuses: GainLockStates = new Map();
     const formOverflowY: Map<string, number> = new Map();
-    const newForm = JSON.parse(JSON.stringify(configFormFileFormat()));
+    const newForm = JSON.parse(JSON.stringify(form));
     const newTab = {
       tab: {
         id: id,
-        tabName: "New Tab",
+        tabName: formName,
       },
       tabPage: {
         configTabPage: {
@@ -73,8 +77,7 @@ function Configuration() {
           configAccordionStatuses: accordionStatuses,
           configLinkedStatuses: linkedStatuses,
           configGainLockStatuses: gainLockStatuses,
-          formName: "New File",
-          originalFile: JSON.parse(JSON.stringify(configFormFileFormat())),
+          originalFile: JSON.parse(JSON.stringify(form)),
           formOverflowY: formOverflowY,
         },
       },
@@ -109,6 +112,7 @@ function Configuration() {
   );
 
   const [tabStoreKey, setTabStoreKey] = createSignal<string>("");
+  const [ports, setPorts] = createSignal<Port[]>([]);
 
   return (
     <>
@@ -122,7 +126,7 @@ function Configuration() {
                     <IconButton
                       size="xs"
                       variant={"ghost"}
-                      onClick={(e) => {
+                      onClick={async (e) => {
                         const clientX = e.clientX;
                         const pageKey = pageKeys.get(Pages.Configuration)!;
                         const panels = panelStore.get(pageKey)![0]();
@@ -139,6 +143,9 @@ function Configuration() {
                             }
                           }
                         }
+
+                        const ports = await detectPort();
+                        setPorts(ports);
                       }}
                     >
                       <Dynamic
@@ -154,23 +161,131 @@ function Configuration() {
                           value={"New file"}
                           onClick={() => {
                             if (tabStoreKey().length > 0) {
-                              createNewFile(tabStoreKey());
+                              createNewFile(
+                                tabStoreKey(),
+                                configFormFileFormat(),
+                                "New File",
+                              );
                             }
                           }}
                         >
                           {"New file"}
                         </Menu.Item>
-                        <Menu.Item value={"Get from file"}>
-                          {"Get from file"}
+                        <Menu.Separator />
+                        <Menu.Item value={"Open file"}>
+                          {"Open file..."}
                         </Menu.Item>
                         <Show when={recentConfigFilePaths().length > 0}>
-                          <Menu.TriggerItem>
-                            {"Open recent files..."}
-                          </Menu.TriggerItem>
+                          <Menu.Root positioning={{ placement: "right-end" }}>
+                            <Menu.TriggerItem>
+                              {"Open recent files..."}
+                              <IconChevronRight />
+                            </Menu.TriggerItem>
+                            <Portal>
+                              <Menu.Positioner>
+                                <Menu.Content>
+                                  <For each={recentConfigFilePaths()}>
+                                    {(filePath) => {
+                                      return (
+                                        <Menu.Item value={filePath}>
+                                          {filePath}
+                                        </Menu.Item>
+                                      );
+                                    }}
+                                  </For>
+                                </Menu.Content>
+                              </Menu.Positioner>
+                            </Portal>
+                          </Menu.Root>
                         </Show>
-                        <Menu.Item value={"Get from port"}>
-                          {"Get from port"}
-                        </Menu.Item>
+                        <Menu.Separator />
+
+                        <Show
+                          when={ports().length > 1}
+                          fallback={
+                            <Menu.Item
+                              value={"Get from port"}
+                              disabled={ports().length === 0}
+                              onClick={async () => {
+                                if (ports().length === 0) return;
+                                try {
+                                  const config = await getConfigFromPort(
+                                    ports()[0].id,
+                                  );
+                                  createNewFile(
+                                    tabStoreKey(),
+                                    config,
+                                    ports()[0].id,
+                                  );
+                                } catch (e) {
+                                  toaster.create({
+                                    title: "Communication Error",
+                                    description: e as string,
+                                    type: "error",
+                                  });
+                                }
+                              }}
+                            >
+                              {"Get from port"}
+                            </Menu.Item>
+                          }
+                        >
+                          <Menu.Root positioning={{ placement: "right-end" }}>
+                            <Menu.TriggerItem>
+                              {"Get from port"}
+                              <IconChevronRight />
+                            </Menu.TriggerItem>
+                            <Portal>
+                              <Menu.Positioner>
+                                <Menu.Content>
+                                  <For each={ports()}>
+                                    {(port) => {
+                                      const portId = port.id;
+                                      const version = port.version;
+                                      return (
+                                        <Menu.Item
+                                          value={portId}
+                                          onClick={async () => {
+                                            if (portId.length === 0) return;
+                                            try {
+                                              const config =
+                                                await getConfigFromPort(portId);
+                                              createNewFile(
+                                                tabStoreKey(),
+                                                config,
+                                                portId,
+                                              );
+                                            } catch (e) {
+                                              toaster.create({
+                                                title: "Communication Error",
+                                                description: e as string,
+                                                type: "error",
+                                              });
+                                            }
+                                          }}
+                                          style={{
+                                            "flex-direction": "column",
+                                          }}
+                                        >
+                                          <Text size="sm" width="100%">
+                                            {portId}
+                                          </Text>
+                                          <Text
+                                            fontWeight={"light"}
+                                            size="xs"
+                                            width="100%"
+                                          >
+                                            {version}
+                                          </Text>
+                                        </Menu.Item>
+                                      );
+                                    }}
+                                  </For>
+                                </Menu.Content>
+                              </Menu.Positioner>
+                            </Portal>
+                          </Menu.Root>
+                        </Show>
                       </Menu.Content>
                     </Menu.Positioner>
                   </Portal>
