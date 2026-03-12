@@ -62,6 +62,7 @@ export const TabPageContext = createContext<LogViewerTabPageContentProps>();
 export function TabList(
   props: JSX.HTMLAttributes<HTMLDivElement> & {
     onCreateTab?: (key: string) => void;
+    createButton?: JSX.Element;
   },
 ) {
   const tabListProps = useContext(PanelContext);
@@ -229,16 +230,14 @@ export function TabList(
             style={{
               height: "3rem",
             }}
-            onCreateTab={() => {
-              if (props.onCreateTab) {
-                props.onCreateTab?.(tabListProps.id);
-              } else {
-                setTabContexts([
-                  ...getTabContexts().tabContext,
-                  { tab: { id: crypto.randomUUID(), tabName: "new Tab" } },
-                ]);
-              }
-            }}
+            createButton={props.createButton}
+            onCreateTab={
+              props.onCreateTab
+                ? () => {
+                    props.onCreateTab?.(tabListProps.id);
+                  }
+                : undefined
+            }
             onDeleteTab={(tabIndex) => {
               const nextFocusTabId = getNextFocusTabId(
                 tabIndex,
