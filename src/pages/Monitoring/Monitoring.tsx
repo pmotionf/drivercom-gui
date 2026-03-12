@@ -25,8 +25,8 @@ import {
 } from "../../services/ServerHandler.ts";
 import { SendingCommand, System } from "./System/System.tsx";
 import {
-  Response_Track_Axis_Error,
-  Response_Track_Driver_Error,
+  Response_Line_Axis_Error,
+  Response_Line_Driver_Error,
 } from "~/proto/mmc/info_pb.ts";
 import { StatusPage } from "./MonitoringSidebar/StatusPage.tsx";
 import { reconcile } from "solid-js/store";
@@ -85,10 +85,9 @@ function Monitoring() {
       async () => lines.length,
       async () => {
         if (lines.length >= 1) {
-          let lineId = lines[0].id;
           while (lines.length >= 1) {
             try {
-              await getSystemInfo(lineId);
+              await getSystemInfo(lines.map((line) => line.id));
             } catch (e) {
               if (
                 serverHandler.getStatus() &&
@@ -115,7 +114,6 @@ function Monitoring() {
                 });
               }
             }
-            lineId = lineId + 1 > lines.length ? 1 : lineId + 1;
           }
         }
       },
@@ -123,22 +121,23 @@ function Monitoring() {
     ),
   );
 
-  const getSystemInfo = async (lineId: number): Promise<void> => {
+  const getSystemInfo = async (lineIds: number[]): Promise<void> => {
     try {
-      const systemInfo = await serverHandler.getSystemInfo(lineId);
+      const systemInfo = await serverHandler.getSystemInfo(lineIds);
       if (systemInfo) {
-        const lineIndex = lines.findIndex((line) => line.id === lineId);
-        if (lineIndex === -1) return;
-        setSystems(lineIndex, reconcile(systemInfo));
-
         if (isAutoClearMode()) {
-          if (systemInfo.driverErrors && hasError(systemInfo.driverErrors)) {
-            if (!systemInfo.axisErrors || !hasError(systemInfo.axisErrors)) {
-              await serverHandler.clearError(lineId);
+          let lineId = lines[0].id;
+          for await (const system of systemInfo) {
+            if (system.driverErrors && hasError(system.driverErrors)) {
+              if (!system.axisErrors || !hasError(system.axisErrors)) {
+                await serverHandler.clearError(lineId);
+              }
             }
+            lineId++;
           }
         }
       }
+      setSystems(reconcile(systemInfo));
       return Promise.resolve();
     } catch (e) {
       return Promise.reject(e);
@@ -223,8 +222,8 @@ function Monitoring() {
   // Data for Status Page
   const systemErrors = (): {
     lineName: string;
-    axisErrors: Response_Track_Axis_Error[];
-    driverErrors: Response_Track_Driver_Error[];
+    axisErrors: Response_Line_Axis_Error[];
+    driverErrors: Response_Line_Driver_Error[];
   }[] => {
     return systems.map((system, i) => {
       return {
