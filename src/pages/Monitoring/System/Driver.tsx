@@ -4,8 +4,8 @@ import { Badge } from "~/components/ui/badge.tsx";
 import { Text } from "~/components/ui/text.tsx";
 import { Tooltip } from "~/components/ui/tooltip.tsx";
 import {
-  Response_Track_Driver_Error,
-  Response_Track_Driver_State,
+  Response_Line_Driver_Error,
+  Response_Line_Driver_State,
 } from "~/proto/mmc/info_pb";
 import { Stack } from "styled-system/jsx/stack";
 import {
@@ -24,8 +24,8 @@ export const useAxesContext = () => {
 
 export type DriverProps = JSX.HTMLAttributes<HTMLDivElement> & {
   id: string;
-  driverInfo: Response_Track_Driver_State;
-  driverError: Response_Track_Driver_Error;
+  driverInfo: Response_Line_Driver_State;
+  driverError: Response_Line_Driver_Error;
 };
 
 export function Driver(props: DriverProps) {

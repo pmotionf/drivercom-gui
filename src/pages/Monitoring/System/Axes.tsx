@@ -4,18 +4,18 @@ import { For, Show } from "solid-js/web";
 import { Badge } from "~/components/ui/badge.tsx";
 import { Tooltip } from "~/components/ui/tooltip.tsx";
 import {
-  Response_Track_Axis_Error,
-  Response_Track_Axis_State,
-  Response_Track_Carrier_State,
-  Response_Track_Carrier_State_State,
+  Response_Line_Axis_Error,
+  Response_Line_Axis_State,
+  Response_Line_Carrier_State,
+  Response_Line_Carrier_State_State,
 } from "~/proto/mmc/info_pb.ts";
 import { AxisControlProps, AxisControlButton } from "./AxisControlButton.tsx";
 
 export type AxisProps = AxisControlProps & {
   id: string;
-  axisInfo: Response_Track_Axis_State;
-  axisError: Response_Track_Axis_Error;
-  carrier: Response_Track_Carrier_State[] | null;
+  axisInfo: Response_Line_Axis_State;
+  axisError: Response_Line_Axis_Error;
+  carrier: Response_Line_Carrier_State[] | null;
 };
 
 export function Axis(props: AxisProps) {
@@ -249,7 +249,7 @@ export function Axis(props: AxisProps) {
             <Tooltip.Trigger width={`calc(100% - 3rem)`}>
               <Text width="100%" size="sm" textAlign={"left"}>
                 {typeof carrierState()!.state === "number"
-                  ? Response_Track_Carrier_State_State[carrierState()!.state]
+                  ? Response_Line_Carrier_State_State[carrierState()!.state]
                       .toString()
                       .split(`_`)
                       .splice(2)
@@ -261,7 +261,7 @@ export function Axis(props: AxisProps) {
             <Tooltip.Positioner>
               <Tooltip.Content>
                 {typeof carrierState()!.state === "number"
-                  ? Response_Track_Carrier_State_State[carrierState()!.state]
+                  ? Response_Line_Carrier_State_State[carrierState()!.state]
                       .toString()
                       .split(`_`)
                       .splice(2)

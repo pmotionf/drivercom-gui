@@ -7,8 +7,8 @@ import { Text } from "~/components/ui/text.tsx";
 import { Tooltip } from "~/components/ui/tooltip.tsx";
 import { TrackType, LineType } from "~/services/ServerHandler.ts";
 import {
-  Response_Track_Axis_Error,
-  Response_Track_Driver_Error,
+  Response_Line_Axis_Error,
+  Response_Line_Driver_Error,
 } from "~/proto/mmc/info_pb.ts";
 import {
   LineControlButton,
@@ -59,8 +59,8 @@ export function Line(props: LineProps) {
   };
 
   const showErrorStatus = (
-    axisErrors: Response_Track_Axis_Error[],
-    driverError: Response_Track_Driver_Error[],
+    axisErrors: Response_Line_Axis_Error[],
+    driverError: Response_Line_Driver_Error[],
   ): { field: string; error: string[] }[] => {
     const errorStates: { field: string; error: string[] }[] = [];
     driverError.forEach((error) => {
