@@ -3,8 +3,8 @@ import { Table } from "~/components/ui/table.tsx";
 import { For } from "solid-js";
 import { Text } from "~/components/ui/text";
 import {
-  Response_Track_Axis_Error,
-  Response_Track_Driver_Error,
+  Response_Line_Axis_Error,
+  Response_Line_Driver_Error,
 } from "~/proto/mmc/info_pb";
 import { Show } from "solid-js";
 import { trackStore } from "@solid-primitives/deep";
@@ -13,8 +13,8 @@ import JSON5 from "json5";
 type ErrorTableProps = JSX.HTMLAttributes<HTMLDivElement> & {
   systemErrors: {
     lineName: string;
-    axisErrors: Response_Track_Axis_Error[];
-    driverErrors: Response_Track_Driver_Error[];
+    axisErrors: Response_Line_Axis_Error[];
+    driverErrors: Response_Line_Driver_Error[];
   }[];
   clearErrorAuto: boolean;
 };
@@ -98,7 +98,7 @@ export const ErrorTable = (props: ErrorTableProps) => {
 };
 
 type ErrorTableRowProps = {
-  errors: Response_Track_Axis_Error[] | Response_Track_Driver_Error[];
+  errors: Response_Line_Axis_Error[] | Response_Line_Driver_Error[];
   location: string;
 };
 

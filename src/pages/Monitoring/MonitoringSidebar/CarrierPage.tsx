@@ -1,5 +1,5 @@
 import { Accessor, For, JSX, Setter, createSignal } from "solid-js";
-import { Response_Track_Carrier_State } from "~/proto/mmc/info_pb";
+import { Response_Line_Carrier_State } from "~/proto/mmc/info_pb";
 import { Accordion } from "~/components/ui/accordion";
 import { IconChevronDown } from "@tabler/icons-solidjs";
 import { Text } from "~/components/ui/text";
@@ -25,7 +25,7 @@ export type CarrierPageProps = JSX.HTMLAttributes<HTMLDivElement> & {
 
 export type CarrierState = {
   lineName: string;
-  carrierStates: Response_Track_Carrier_State[];
+  carrierStates: Response_Line_Carrier_State[];
 };
 
 enum ControlMode {

@@ -1,16 +1,15 @@
+import {
+  Response_Line_Axis_Error,
+  Response_Line_Driver_Error,
+} from "~/proto/mmc/info_pb";
 import { ErrorTable } from "./ErrorTable";
 import { Text } from "~/components/ui/text";
-import {
-  Response_Track_Axis_Error,
-  Response_Track_Driver_Error,
-  /*@ts-ignore Ignore git acticon type check */
-} from "../proto/mmc/info_pb";
 
 export type StatusPageProps = {
   systemErrors: {
     lineName: string;
-    axisErrors: Response_Track_Axis_Error[];
-    driverErrors: Response_Track_Driver_Error[];
+    axisErrors: Response_Line_Axis_Error[];
+    driverErrors: Response_Line_Driver_Error[];
   }[];
   clearErrorAuto: boolean;
 };
