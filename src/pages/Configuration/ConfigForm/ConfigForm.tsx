@@ -339,7 +339,7 @@ export function ConfigForm(props: ConfigFormProps) {
     >
       <Tabs.List
         class={css({
-          width: "20%",
+          width: "10rem",
           height: "100%",
           background: "bg.subtle",
           display: "flex",
@@ -384,7 +384,7 @@ export function ConfigForm(props: ConfigFormProps) {
         <Tabs.Content
           value={`${props.id}.tune`}
           style={{
-            width: "80%",
+            width: `calc(100% - 10rem)`,
             height: "100%",
             "padding-left": "0.5rem",
             "padding-right": "0.5rem",

@@ -130,7 +130,7 @@ export const FormNumberInput = (props: FormNumberInputProps) => {
       }}
     >
       <Stack direction="row">
-        <div style={{ width: "50%", display: "flex" }}>
+        <div style={{ width: "12rem", display: "flex" }}>
           <Text
             marginTop="0.4em"
             marginRight="0.5em"
@@ -165,7 +165,13 @@ export const FormNumberInput = (props: FormNumberInputProps) => {
             </Tooltip.Root>
           </Show>
         </div>
-        <div style={{ width: "50%" }}>
+        <div
+          style={{
+            width: `calc(100% - 12rem)`,
+            display: "flex",
+            "flex-direction": "row-reverse",
+          }}
+        >
           <Stack
             ref={divRef}
             style={{
@@ -199,6 +205,7 @@ export const FormNumberInput = (props: FormNumberInputProps) => {
                 "text-overflow": "ellipsis",
                 display: "block",
                 overflow: "hidden",
+                "text-align": "right",
               }}
               disabled={
                 lockStatus && lockStatusKey && lockStatus.has(lockStatusKey)

@@ -1,9 +1,13 @@
-import { IconRuler2, IconRuler2Off } from "@tabler/icons-solidjs";
+import {
+  IconFileDownload,
+  IconRefresh,
+  IconRuler2,
+  IconRuler2Off,
+} from "@tabler/icons-solidjs";
 import { Command } from "@tauri-apps/plugin-shell";
 import { createEffect, createSignal, on, Show, useContext } from "solid-js";
 import { Stack } from "styled-system/jsx";
 import { TabPageContext } from "~/components/Tab/TabList";
-import { Button } from "~/components/ui/button";
 import { Text } from "~/components/ui/text";
 import { Tooltip } from "~/components/ui/tooltip";
 import {
@@ -236,7 +240,7 @@ export function ConfigTabContent() {
     ),
   );
 
-  const topBarHeight = "3rem";
+  const topBarHeight = "2.5rem";
 
   const saveAsFile = async () => {
     try {
@@ -301,47 +305,59 @@ export function ConfigTabContent() {
         "min-width": "35rem",
       }}
     >
-      <Stack
-        direction="row"
-        width="100%"
-        height={topBarHeight}
-        padding="0.2rem "
-      >
-        <Button
-          variant={"outline"}
-          disabled={!getFilePath() || getFilePath()!.length < 1}
-          onClick={async () => {
-            if (!getFilePath()) return;
-            try {
-              setRender(false);
-              const file = await fileHandler.readFile(
-                getFilePath()!,
-                configFormFileFormat(),
-              );
-              setFormData(file!, getFilePath()!);
-              setRender(true);
-            } catch {
-              toaster.create({
-                title: "Invalid File Path",
-                description: "The file path is invalid.",
-                type: "error",
-              });
-              setRecentConfigFilePaths((prev) => {
-                const newRecentFiles = prev.filter(
-                  (prevFilePath) => prevFilePath !== getFilePath()!,
-                );
-                return newRecentFiles;
-              });
-              setRender(true);
-              return;
-            }
-          }}
-        >
-          {"Reload"}
-        </Button>
+      <Stack direction="row" width="100%" height={topBarHeight} gap="0">
+        <Tooltip.Root>
+          <Tooltip.Trigger width="min-content" height="min-content">
+            <IconButton
+              variant={"ghost"}
+              disabled={!getFilePath() || getFilePath()!.length < 1}
+              onClick={async () => {
+                if (!getFilePath()) return;
+                try {
+                  setRender(false);
+                  const file = await fileHandler.readFile(
+                    getFilePath()!,
+                    configFormFileFormat(),
+                  );
+                  setFormData(file!, getFilePath()!);
+                  setRender(true);
+                } catch {
+                  toaster.create({
+                    title: "Invalid File Path",
+                    description: "The file path is invalid.",
+                    type: "error",
+                  });
+                  setRecentConfigFilePaths((prev) => {
+                    const newRecentFiles = prev.filter(
+                      (prevFilePath) => prevFilePath !== getFilePath()!,
+                    );
+                    return newRecentFiles;
+                  });
+                  setRender(true);
+                  return;
+                }
+              }}
+            >
+              <IconRefresh />
+            </IconButton>
+          </Tooltip.Trigger>
+          <Tooltip.Positioner>
+            <Tooltip.Content>{"Reload"}</Tooltip.Content>
+          </Tooltip.Positioner>
+        </Tooltip.Root>
+
         <Menu.Root>
-          <Menu.Trigger>
-            <Button variant={"outline"}>{"Save"}</Button>
+          <Menu.Trigger width="min-content" height={"min-content"}>
+            <Tooltip.Root>
+              <Tooltip.Trigger width="min-content" height={"min-content"}>
+                <IconButton variant={"ghost"}>
+                  <IconFileDownload />
+                </IconButton>
+              </Tooltip.Trigger>
+              <Tooltip.Positioner>
+                <Tooltip.Content>{"Save"}</Tooltip.Content>
+              </Tooltip.Positioner>
+            </Tooltip.Root>
           </Menu.Trigger>
           <Menu.Positioner>
             <Menu.Content>
@@ -363,7 +379,7 @@ export function ConfigTabContent() {
           </Menu.Positioner>
         </Menu.Root>
         <Tooltip.Root>
-          <Tooltip.Trigger width="min-content">
+          <Tooltip.Trigger width="min-content" height="min-content">
             <IconButton
               variant={"ghost"}
               onClick={() => setChangeUnit(!getChangeUnit())}
