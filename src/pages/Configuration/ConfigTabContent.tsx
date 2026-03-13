@@ -2,8 +2,6 @@ import { IconRuler2, IconRuler2Off } from "@tabler/icons-solidjs";
 import { Command } from "@tauri-apps/plugin-shell";
 import { createEffect, createSignal, on, Show, useContext } from "solid-js";
 import { Stack } from "styled-system/jsx";
-import { FileMenu } from "~/components/FileMenu";
-import { PortMenu } from "~/components/PortMenu";
 import { TabPageContext } from "~/components/Tab/TabList";
 import { Button } from "~/components/ui/button";
 import { Text } from "~/components/ui/text";
@@ -12,7 +10,6 @@ import {
   configDescription,
   configFormFileFormat,
   portCommands,
-  recentConfigFilePaths,
   setRecentConfigFilePaths,
   tabStore,
 } from "~/store/GlobalState";
@@ -26,10 +23,9 @@ import { AccordionStates } from "./ConfigForm/ConfigForm";
 import JSON5 from "json5";
 import { Spinner } from "~/components/ui/spinner";
 import { IconButton } from "~/components/ui/icon-button";
-import { ConnectButton } from "../../components/Connect/ConnectButton";
-import { ConfigType } from "src-tauri/generated/config/ConfigType";
 import { toaster } from "~/services/Toaster";
 import { Menu } from "~/components/ui/menu";
+import { ConfigType } from "src-tauri/generated/config/ConfigType";
 
 export type ConfigTabPage = {
   filePath?: string;
@@ -77,17 +73,6 @@ export function ConfigTabContent() {
   const getPortId = () => {
     return tabStore.get(configTabProps.key)![0].tabContext[getTabIndex()]
       .tabPage!.configTabPage!.portId;
-  };
-
-  const setPortId = (id: string) => {
-    return tabStore.get(configTabProps.key)![1](
-      "tabContext",
-      getTabIndex(),
-      "tabPage",
-      "configTabPage",
-      "portId",
-      id,
-    );
   };
 
   const setTabName = (newName: string) => {
@@ -193,40 +178,6 @@ export function ConfigTabContent() {
 
   const fileHandler = new FileHandler();
 
-  async function getConfigFromPort(portId: string): Promise<object> {
-    const configGet = Command.sidecar("binaries/drivercom", [
-      `--port`,
-      portId,
-      `config.get`,
-    ]);
-
-    let stdout = "";
-    configGet.stdout.on("data", (data) => {
-      stdout = stdout + data;
-    });
-
-    let stderr = "";
-    configGet.stderr.on("data", (data) => {
-      stderr = stderr + data;
-    });
-
-    const child = await configGet.spawn();
-    const pid = child.pid;
-    portCommands.set(pid, { port: portId, child: child });
-
-    return new Promise((resolve, reject) => {
-      configGet.on("close", () => {
-        portCommands.delete(pid);
-        return resolve(JSON5.parse(stdout));
-      });
-
-      configGet.on("error", () => {
-        portCommands.delete(pid);
-        return reject(stderr);
-      });
-    });
-  }
-
   function setFormData(data: object, path: string) {
     setConfigForm(data);
     setFilePath(path);
@@ -266,25 +217,6 @@ export function ConfigTabContent() {
         top: top - scrollContainer.offsetTop - one_rem,
       });
     }
-  };
-
-  const checkAvailablePort = (portId: string): boolean => {
-    if (portId.length <= 0) {
-      return false;
-    }
-    if (
-      Array.from(portCommands.values()).some(
-        (command) => command.port === portId,
-      )
-    ) {
-      toaster.create({
-        title: "Communication error",
-        description: "Port is already in use.",
-        type: "error",
-      });
-      return false;
-    }
-    return true;
   };
 
   createEffect(
@@ -447,116 +379,6 @@ export function ConfigTabContent() {
             </Tooltip.Content>
           </Tooltip.Positioner>
         </Tooltip.Root>
-
-        <FileMenu
-          filePath={getFilePath() ? getFilePath()! : ""}
-          recentFiles={recentConfigFilePaths()}
-          onNewFile={() => {
-            setRender(false);
-            const newEmptyFile = JSON5.parse(
-              JSON5.stringify(configFormFileFormat()),
-            );
-            setTabName("New File");
-            setConfigForm(newEmptyFile);
-            setFilePath(null);
-            setRender(true);
-          }}
-          onOpenFile={async () => {
-            const extension = "json5";
-            const path = await fileHandler.openFileDialog(extension);
-            if (!path) return;
-            try {
-              setRender(false);
-              const file = await fileHandler.readFile(
-                path,
-                configFormFileFormat(),
-              );
-              setFormData(file, path);
-              setRender(true);
-            } catch {
-              toaster.create({
-                title: "Invalid File",
-                description: "The file is invalid.",
-                type: "error",
-              });
-              setRecentConfigFilePaths((prev) => {
-                const newRecentFiles = prev.filter(
-                  (prevFilePath) => prevFilePath !== path,
-                );
-                return newRecentFiles;
-              });
-              setRender(true);
-              return;
-            }
-          }}
-          onOpenRecentFile={async (filePath: string) => {
-            try {
-              setRender(false);
-              const file = await fileHandler.readFile(
-                filePath,
-                configFormFileFormat(),
-              );
-              setFormData(file!, filePath);
-              setRender(true);
-            } catch {
-              toaster.create({
-                title: "Invalid File Path",
-                description: "The file path is invalid.",
-                type: "error",
-              });
-              setRecentConfigFilePaths((prev) => {
-                const newRecentFiles = prev.filter(
-                  (prevFilePath) => prevFilePath !== filePath,
-                );
-                return newRecentFiles;
-              });
-              setRender(true);
-              return;
-            }
-          }}
-          onDeleteRecentPath={(index: number) => {
-            setRecentConfigFilePaths((prev) => {
-              return prev.filter((_, i) => i !== index);
-            });
-          }}
-        />
-        <PortMenu
-          portId={getPortId() ? getPortId()! : ""}
-          variant="outline"
-          borderColor="bg.disabled"
-          onGetFromPort={async () => {
-            if (!getPortId() || !checkAvailablePort(getPortId()!)) return;
-            setFilePath(null);
-            try {
-              setRender(false);
-              const config = await getConfigFromPort(getPortId()!);
-              setTabName(getPortId()!);
-              setConfigForm(config);
-              setOriginalFile(JSON5.parse(JSON.stringify(config)));
-              setRender(true);
-            } catch (e) {
-              setRender(true);
-              toaster.create({
-                title: "Communication Error",
-                description: e as string,
-                type: "error",
-              });
-            }
-          }}
-        >
-          <Button
-            disabled={!getPortId() || getPortId()!.length === 0}
-            variant="outline"
-            borderColor="bg.disabled"
-            borderRadius="0.4rem"
-          >
-            Port
-          </Button>
-        </PortMenu>
-        <ConnectButton
-          portId={getPortId() ? getPortId()! : ""}
-          onPortIdChange={(portId) => setPortId(portId)}
-        />
       </Stack>
       <Show
         when={render()}
