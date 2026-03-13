@@ -5,6 +5,7 @@ import {
   tabStore,
   panelStore,
   recentConfigFilePaths,
+  setRecentConfigFilePaths,
 } from "~/store/GlobalState.ts";
 import { Panel } from "~/components/Panel/Panel.tsx";
 import {
@@ -33,9 +34,12 @@ import { detectPort, getConfigFromPort, Port } from "~/services/PortService.ts";
 import { ConfigType } from "src-tauri/generated/config/ConfigType.tsx";
 import { Text } from "~/components/ui/text.tsx";
 import { toaster } from "~/services/Toaster.ts";
+import { FileHandler } from "~/services/FileHandler.ts";
 
 function Configuration() {
   const [render, setRender] = createSignal<boolean>(false);
+  const [tabStoreKey, setTabStoreKey] = createSignal<string>("");
+  const [ports, setPorts] = createSignal<Port[]>([]);
 
   onMount(() => {
     if (!pageKeys.has(Pages.Configuration)) {
@@ -51,12 +55,18 @@ function Configuration() {
         panelStoreKey,
         createStore<TabListContext>({ tabContext: [], focusedTab: "" }),
       );
-      createNewFile(panelStoreKey, configFormFileFormat(), "New File");
+      createNewTab(panelStoreKey, configFormFileFormat(), "New File");
     }
     setRender(true);
   });
 
-  const createNewFile = (key: string, form: ConfigType, formName: string) => {
+  const createNewTab = (
+    key: string,
+    form: ConfigType,
+    formName: string,
+    portId?: string,
+    filePath?: string,
+  ) => {
     setRender(false);
     const id = crypto.randomUUID();
     const accordionStatuses: AccordionStates = new Map();
@@ -71,8 +81,8 @@ function Configuration() {
       },
       tabPage: {
         configTabPage: {
-          filePath: "",
-          portId: "",
+          filePath: filePath ? filePath : "",
+          portId: portId ? portId : "",
           configForm: newForm,
           configAccordionStatuses: accordionStatuses,
           configLinkedStatuses: linkedStatuses,
@@ -111,8 +121,36 @@ function Configuration() {
     ),
   );
 
-  const [tabStoreKey, setTabStoreKey] = createSignal<string>("");
-  const [ports, setPorts] = createSignal<Port[]>([]);
+  const openFile = async (path: string) => {
+    try {
+      const fileHandler = new FileHandler();
+      const file = await fileHandler.readFile(path, configFormFileFormat());
+      const parsePath = path.replaceAll("\\", "/").split("/").pop()!;
+      createNewTab(
+        tabStoreKey(),
+        file as ConfigType,
+        parsePath,
+        undefined,
+        path,
+      );
+      setRecentConfigFilePaths((prev) => {
+        return [path, ...prev.filter((prevPath) => prevPath !== path)];
+      });
+    } catch {
+      toaster.create({
+        title: "Invalid File",
+        description: "The file is invalid.",
+        type: "error",
+      });
+      setRecentConfigFilePaths((prev) => {
+        const newRecentFiles = prev.filter(
+          (prevFilePath) => prevFilePath !== path,
+        );
+        return newRecentFiles;
+      });
+      return;
+    }
+  };
 
   return (
     <>
@@ -161,7 +199,7 @@ function Configuration() {
                           value={"New file"}
                           onClick={() => {
                             if (tabStoreKey().length > 0) {
-                              createNewFile(
+                              createNewTab(
                                 tabStoreKey(),
                                 configFormFileFormat(),
                                 "New File",
@@ -172,7 +210,16 @@ function Configuration() {
                           {"New file"}
                         </Menu.Item>
                         <Menu.Separator />
-                        <Menu.Item value={"Open file"}>
+                        <Menu.Item
+                          value={"Open file"}
+                          onClick={async () => {
+                            const extension = "json5";
+                            const path =
+                              await fileHandler.openFileDialog(extension);
+                            if (!path) return;
+                            await openFile(path);
+                          }}
+                        >
                           {"Open file..."}
                         </Menu.Item>
                         <Show when={recentConfigFilePaths().length > 0}>
@@ -187,7 +234,12 @@ function Configuration() {
                                   <For each={recentConfigFilePaths()}>
                                     {(filePath) => {
                                       return (
-                                        <Menu.Item value={filePath}>
+                                        <Menu.Item
+                                          value={filePath}
+                                          onClick={async () =>
+                                            await openFile(filePath)
+                                          }
+                                        >
                                           {filePath}
                                         </Menu.Item>
                                       );
@@ -212,9 +264,10 @@ function Configuration() {
                                   const config = await getConfigFromPort(
                                     ports()[0].id,
                                   );
-                                  createNewFile(
+                                  createNewTab(
                                     tabStoreKey(),
                                     config,
+                                    ports()[0].id,
                                     ports()[0].id,
                                   );
                                 } catch (e) {
@@ -250,10 +303,11 @@ function Configuration() {
                                             try {
                                               const config =
                                                 await getConfigFromPort(portId);
-                                              createNewFile(
+                                              createNewTab(
                                                 tabStoreKey(),
                                                 config,
                                                 portId,
+                                                ports()[0].id,
                                               );
                                             } catch (e) {
                                               toaster.create({
