@@ -174,18 +174,55 @@ export const ConfigFormatObject = (props: ConfigFormatObjectProps) => {
                 >
                   <Accordion.Item
                     value={accordionItemValue}
-                    borderWidth={"1px"}
                     borderRadius={"0.2rem"}
+                    padding={
+                      props.linkedStatuses &&
+                      props.linkedStatuses.has(Object.keys(value).join(","))
+                        ? "0.5rem"
+                        : "0"
+                    }
                   >
                     <Accordion.ItemTrigger
-                      fontSize={"0.9rem"}
-                      padding={"0.7rem 0.5rem 0.5rem 0.5rem"}
+                      fontSize={
+                        props.linkedStatuses &&
+                        props.linkedStatuses.has(Object.keys(value).join(","))
+                          ? "0.9rem"
+                          : "0.8rem"
+                      }
                       justifyContent={"left"}
                       alignItems={"center"}
+                      paddingBottom={
+                        props.linkedStatuses &&
+                        props.linkedStatuses.has(Object.keys(value).join(","))
+                          ? "0.5rem"
+                          : "0.5rem"
+                      }
+                      borderBottomWidth={"1px"}
+                      paddingTop={
+                        props.linkedStatuses &&
+                        props.linkedStatuses.has(Object.keys(value).join(","))
+                          ? "0.2rem"
+                          : "0.2rem"
+                      }
                     >
-                      <div style={{ width: "50%", display: "flex" }}>
+                      <div
+                        style={{
+                          width: "50%",
+                          display: "flex",
+                          gap: "0.5rem",
+                          "align-items": "center",
+                        }}
+                      >
                         <Text
-                          marginRight={"0.5rem"}
+                          fontWeight={"bold"}
+                          opacity={
+                            props.linkedStatuses &&
+                            props.linkedStatuses.has(
+                              Object.keys(value).join(","),
+                            )
+                              ? "0.7"
+                              : "0.8rem"
+                          }
                         >{`${label} ${innerLabel}`}</Text>
 
                         <Show when={innderDescText}>
@@ -335,7 +372,10 @@ export const ConfigFormatObject = (props: ConfigFormatObjectProps) => {
                         <IconChevronDown />
                       </Accordion.ItemIndicator>
                     </Accordion.ItemTrigger>
-                    <Accordion.ItemContent padding="0.5rem">
+                    <Accordion.ItemContent
+                      padding={"0rem 0.5rem 1rem 0.5rem"}
+                      borderWidth={"0px 1px 1px 1px"}
+                    >
                       <ConfigFormatObject
                         id={innerId}
                         format={innerValues[0]}
@@ -380,14 +420,36 @@ export const ConfigFormatObject = (props: ConfigFormatObjectProps) => {
                 >
                   <Accordion.Item
                     value={accordionItemValue}
-                    borderWidth={"1px"}
                     borderRadius={"0.2rem"}
+                    padding={
+                      props.linkedStatuses &&
+                      props.linkedStatuses.has(Object.keys(value).join(","))
+                        ? "0.5rem"
+                        : "0"
+                    }
                   >
                     <Accordion.ItemTrigger
-                      fontSize={"0.9rem"}
-                      padding={"0.7rem 0.5rem 0.5rem 0.5rem"}
+                      fontSize={
+                        props.linkedStatuses &&
+                        props.linkedStatuses.has(Object.keys(value).join(","))
+                          ? "0.9rem"
+                          : "0.8rem"
+                      }
                       justifyContent={"left"}
                       alignItems={"center"}
+                      paddingBottom={
+                        props.linkedStatuses &&
+                        props.linkedStatuses.has(Object.keys(value).join(","))
+                          ? "0.5rem"
+                          : "0.5rem"
+                      }
+                      borderBottomWidth={"1px"}
+                      paddingTop={
+                        props.linkedStatuses &&
+                        props.linkedStatuses.has(Object.keys(value).join(","))
+                          ? "0.2rem"
+                          : "0.2rem"
+                      }
                     >
                       <div
                         style={{
@@ -397,7 +459,19 @@ export const ConfigFormatObject = (props: ConfigFormatObjectProps) => {
                           "align-items": "center",
                         }}
                       >
-                        <Text>{label}</Text>
+                        <Text
+                          fontWeight={"bold"}
+                          opacity={
+                            props.linkedStatuses &&
+                            props.linkedStatuses.has(
+                              Object.keys(value).join(","),
+                            )
+                              ? "0.7"
+                              : "0.8rem"
+                          }
+                        >
+                          {label}
+                        </Text>
                         <Show when={descriptionText}>
                           <Tooltip.Root>
                             <Tooltip.Trigger>
@@ -457,7 +531,10 @@ export const ConfigFormatObject = (props: ConfigFormatObjectProps) => {
                         <IconChevronDown />
                       </Accordion.ItemIndicator>
                     </Accordion.ItemTrigger>
-                    <Accordion.ItemContent borderWidth="0" padding="0.5rem">
+                    <Accordion.ItemContent
+                      padding={"0rem 0.5rem 0rem 0.5rem"}
+                      borderWidth={"0px 1px 1px 1px"}
+                    >
                       <ConfigFormatObject
                         id={id}
                         format={value}
@@ -489,53 +566,61 @@ export const ConfigFormatObject = (props: ConfigFormatObjectProps) => {
             }
 
             return (
-              <FormNumberInput
-                id={id}
-                label={label}
-                originalValue={
-                  props.originalFile
-                    ? props.originalFile[key as keyof typeof props.originalFile]
-                    : undefined
-                }
-                desc={
-                  props.description && `__${key}` in props.description
-                    ? props.description[
-                        `__${key}` as keyof typeof props.description
-                      ]
-                    : undefined
-                }
-                changeUnits={props.changeUnit}
-                lockStatus={props.gainLockStatuses}
-                lockStatusKey={id}
-                linkStatus={props.linkedStatuses}
-                inputValue={store[key as keyof typeof store]}
-                onInputChange={(value) => {
-                  if (props.linkKey && props.linkedStatuses) {
-                    const parseLinkKey = props.linkKey.split(",");
-                    if (parseLinkKey.some((field) => id.includes(field))) {
-                      const isGain =
-                        id.includes("gain") ||
-                        id.includes("center") ||
-                        id.includes("between");
-                      const linkString = isGain
-                        ? props.id.includes("center")
-                          ? "center"
-                          : "between"
-                        : id.split(".").filter((key) => !isNaN(Number(key)))[0];
-                      props.linkedStatuses.get(props.linkKey)![1]((prev) => [
-                        prev[0],
-                        linkString,
-                      ]);
-                    }
+              <div
+                style={{ "border-top-width": index() === 0 ? "0px" : "1px" }}
+              >
+                <FormNumberInput
+                  id={id}
+                  label={label}
+                  originalValue={
+                    props.originalFile
+                      ? props.originalFile[
+                          key as keyof typeof props.originalFile
+                        ]
+                      : undefined
                   }
-                  setStore(
-                    key as keyof typeof store,
-                    // @ts-ignore: TSC unable to handle generic object type
-                    // in store
-                    value,
-                  );
-                }}
-              />
+                  desc={
+                    props.description && `__${key}` in props.description
+                      ? props.description[
+                          `__${key}` as keyof typeof props.description
+                        ]
+                      : undefined
+                  }
+                  changeUnits={props.changeUnit}
+                  lockStatus={props.gainLockStatuses}
+                  lockStatusKey={id}
+                  linkStatus={props.linkedStatuses}
+                  inputValue={store[key as keyof typeof store]}
+                  onInputChange={(value) => {
+                    if (props.linkKey && props.linkedStatuses) {
+                      const parseLinkKey = props.linkKey.split(",");
+                      if (parseLinkKey.some((field) => id.includes(field))) {
+                        const isGain =
+                          id.includes("gain") ||
+                          id.includes("center") ||
+                          id.includes("between");
+                        const linkString = isGain
+                          ? props.id.includes("center")
+                            ? "center"
+                            : "between"
+                          : id
+                              .split(".")
+                              .filter((key) => !isNaN(Number(key)))[0];
+                        props.linkedStatuses.get(props.linkKey)![1]((prev) => [
+                          prev[0],
+                          linkString,
+                        ]);
+                      }
+                    }
+                    setStore(
+                      key as keyof typeof store,
+                      // @ts-ignore: TSC unable to handle generic object type
+                      // in store
+                      value,
+                    );
+                  }}
+                />
+              </div>
             );
           } else if (typeof value === "boolean") {
             const label = !isNaN(Number(key))

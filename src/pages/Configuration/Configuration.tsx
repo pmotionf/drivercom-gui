@@ -152,6 +152,8 @@ function Configuration() {
     }
   };
 
+  const fileHandler = new FileHandler();
+
   return (
     <>
       <Show when={render()}>
