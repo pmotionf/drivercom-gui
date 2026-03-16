@@ -528,7 +528,7 @@ export async function scanPorts(
         const decode = fromBinary(ResponseSchema, buffer);
         if (decode && decode.body.case === "core") {
           const core = decode.body.value;
-          if (core && core.body.case === "apiVersion") {
+          if (core && core.body.case === "server") {
             found.push(x.payload.id);
           }
         }
@@ -612,7 +612,7 @@ async function getApiVersion(
         case: "core",
         value: {
           $typeName: "mmc.core.Request",
-          kind: Request_Kind.CORE_REQUEST_KIND_API_VERSION,
+          kind: Request_Kind.CORE_REQUEST_KIND_SERVER_INFO,
         },
       },
     };
