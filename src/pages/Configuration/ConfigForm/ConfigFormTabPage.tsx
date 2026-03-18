@@ -50,7 +50,7 @@ export const ConfigFormTabPage = (props: ConfigFormTabPageProps) => {
         height: "100%",
         "overflow-y": "auto",
         "border-width": "0",
-        "justify-content": "left",
+        "justify-content": "center",
         display: "flex",
       }}
       onScroll={(e) => {

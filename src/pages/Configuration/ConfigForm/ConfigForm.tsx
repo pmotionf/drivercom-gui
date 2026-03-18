@@ -1,9 +1,7 @@
-import { Tabs } from "@ark-ui/solid";
 import {
   Accessor,
   createEffect,
   createSignal,
-  For,
   JSX,
   on,
   Setter,
@@ -13,8 +11,6 @@ import { ConfigTuneType } from "src-tauri/generated/config/ConfigTune";
 import { ConfigSystemType } from "src-tauri/generated/config/ConfigSystem";
 import { ConfigCalibrationType } from "src-tauri/generated/config/ConfigCalibration";
 import { configTabForm } from "~/store/GlobalState";
-import { css } from "styled-system/css";
-import { Text } from "~/components/ui/text";
 import { createStore } from "solid-js/store";
 import { ConfigType } from "src-tauri/generated/config/ConfigType";
 
@@ -62,14 +58,6 @@ export type ConfigFormProps = JSX.HTMLAttributes<HTMLFormElement> & {
 
 export function ConfigForm(props: ConfigFormProps) {
   const [config, setConfig] = createStore<ConfigType>(props.config);
-  const focusedTabId = () => props.focusedTab ?? `${props.id}.system`;
-
-  const prettierLabel = (label: string): string => {
-    const prettierLabel = Array.from(label)
-      .map((str, i) => (i === 0 ? str.toUpperCase() : str))
-      .join("");
-    return prettierLabel;
-  };
 
   const dynamic: ("center" | "between")[] = ["center", "between"];
   // Calculate gain automatically.
@@ -325,71 +313,9 @@ export function ConfigForm(props: ConfigFormProps) {
 
   const [render, setRender] = createSignal<boolean>(true);
   return (
-    <Tabs.Root
-      orientation="vertical"
-      value={focusedTabId()}
-      onValueChange={(details) => props.onFocustTabChange?.(details.value)}
-      style={{
-        width: "100%",
-        height: `calc(100% - 2.5rem)`,
-        display: "flex",
-        "border-top-width": "1px",
-        "border-bottom-width": "1px",
-      }}
-    >
-      <Tabs.List
-        class={css({
-          width: "10rem",
-          height: "100%",
-          background: "bg.subtle",
-          display: "flex",
-          flexDirection: "column",
-          padding: "0.5rem",
-          gap: "0.2rem",
-        })}
-      >
-        <For each={Object.keys(configTabForm())}>
-          {(key) => {
-            const currentTabId = `${props.id}.${key}`;
-            return (
-              <Tabs.Trigger
-                class={css({
-                  padding: "0.7rem",
-                  borderRadius: "0.5rem",
-                  textAlign: "left",
-                  background:
-                    focusedTabId() === currentTabId
-                      ? "bg.emphasized"
-                      : "bg.subtle",
-                  fontSize: "0.8rem",
-                  fontWeight: "bold",
-                  paddingLeft: "1rem",
-                  transition: "background ease-in-out 0.2s",
-                  _hover: {
-                    background:
-                      focusedTabId() === currentTabId
-                        ? "bg.emphasized"
-                        : "bg.muted",
-                  },
-                })}
-                value={currentTabId}
-              >
-                <Text>{prettierLabel(key)}</Text>
-              </Tabs.Trigger>
-            );
-          }}
-        </For>
-      </Tabs.List>
+    <div style={{ width: "100%", height: `100%` }}>
       <Show when={render()}>
-        <Tabs.Content
-          value={`${props.id}.tune`}
-          style={{
-            width: `calc(100% - 10rem)`,
-            height: "100%",
-            "padding-left": "0.5rem",
-            "padding-right": "0.5rem",
-          }}
-        >
+        <Show when={props.focusedTab === `${props.id}.tune`}>
           <ConfigFormTabPage
             id={`${props.id}.tune`}
             format={configTabForm().tune}
@@ -402,16 +328,8 @@ export function ConfigForm(props: ConfigFormProps) {
             linkedStatuses={props.linkedStatuses}
             formOverflowY={props.formOverflowY}
           />
-        </Tabs.Content>
-        <Tabs.Content
-          value={`${props.id}.calibration`}
-          style={{
-            width: "80%",
-            height: "100%",
-            "padding-left": "0.5rem",
-            "padding-right": "0.5rem",
-          }}
-        >
+        </Show>
+        <Show when={props.focusedTab === `${props.id}.calibration`}>
           <ConfigFormTabPage
             id={`${props.id}.calibration`}
             format={configTabForm().calibration}
@@ -423,16 +341,8 @@ export function ConfigForm(props: ConfigFormProps) {
             linkedStatuses={props.linkedStatuses}
             formOverflowY={props.formOverflowY}
           />
-        </Tabs.Content>
-        <Tabs.Content
-          value={`${props.id}.system`}
-          style={{
-            width: "80%",
-            height: "100%",
-            "padding-left": "0.5rem",
-            "padding-right": "0.5rem",
-          }}
-        >
+        </Show>
+        <Show when={props.focusedTab === `${props.id}.system`}>
           <ConfigFormTabPage
             id={`${props.id}.system`}
             format={configTabForm().system}
@@ -444,8 +354,8 @@ export function ConfigForm(props: ConfigFormProps) {
             linkedStatuses={props.linkedStatuses}
             formOverflowY={props.formOverflowY}
           />
-        </Tabs.Content>
+        </Show>
       </Show>
-    </Tabs.Root>
+    </div>
   );
 }
