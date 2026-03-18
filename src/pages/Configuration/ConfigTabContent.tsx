@@ -30,6 +30,8 @@ import { IconButton } from "~/components/ui/icon-button";
 import { toaster } from "~/services/Toaster";
 import { Menu } from "~/components/ui/menu";
 import { ConfigType } from "src-tauri/generated/config/ConfigType";
+import { Button } from "~/components/ui/styled/button";
+import { css } from "styled-system/css";
 
 export type ConfigTabPage = {
   filePath?: string;
@@ -306,6 +308,94 @@ export function ConfigTabContent() {
       }}
     >
       <Stack direction="row" width="100%" height={topBarHeight} gap="0">
+        <div
+          style={{ width: `calc(100% - 10rem)`, "border-right-width": "1px" }}
+        >
+          <Button
+            variant={"ghost"}
+            onClick={() => setFocusedTab(`${configTabProps.tabId}.system`)}
+            class={css({
+              borderRadius: "0",
+              fontSize: "0.8rem",
+              transition: "background ease-in-out 0.2s",
+              opacity:
+                getFocusedTab() === `${configTabProps.tabId}.system`
+                  ? "1"
+                  : "0.5",
+              _hover: {
+                background: "bg.default",
+                opacity:
+                  getFocusedTab() === `${configTabProps.tabId}.system`
+                    ? "1"
+                    : "0.7",
+              },
+              borderBottomWidth:
+                getFocusedTab() === `${configTabProps.tabId}.system`
+                  ? "2px"
+                  : "0",
+              padding: "0rem 0.5rem 0rem 0.5rem",
+              borderColor: "accent.8",
+            })}
+          >
+            {"System"}
+          </Button>
+          <Button
+            variant={"ghost"}
+            onClick={() => setFocusedTab(`${configTabProps.tabId}.tune`)}
+            class={css({
+              borderRadius: "0",
+              fontSize: "0.8rem",
+              transition: "background ease-in-out 0.2s",
+              opacity:
+                getFocusedTab() === `${configTabProps.tabId}.tune`
+                  ? "1"
+                  : "0.5",
+              _hover: {
+                background: "bg.default",
+                opacity:
+                  getFocusedTab() === `${configTabProps.tabId}.tune`
+                    ? "1"
+                    : "0.7",
+              },
+              borderBottomWidth:
+                getFocusedTab() === `${configTabProps.tabId}.tune`
+                  ? "2px"
+                  : "0",
+              padding: "0rem 0.5rem 0rem 0.5rem",
+              borderColor: "accent.8",
+            })}
+          >
+            {"Tune"}
+          </Button>
+          <Button
+            variant={"ghost"}
+            onClick={() => setFocusedTab(`${configTabProps.tabId}.calibration`)}
+            class={css({
+              borderRadius: "0",
+              fontSize: "0.8rem",
+              transition: "background ease-in-out 0.2s",
+              opacity:
+                getFocusedTab() === `${configTabProps.tabId}.calibration`
+                  ? "1"
+                  : "0.5",
+              _hover: {
+                background: "bg.default",
+                opacity:
+                  getFocusedTab() === `${configTabProps.tabId}.calibration`
+                    ? "1"
+                    : "0.7",
+              },
+              borderBottomWidth:
+                getFocusedTab() === `${configTabProps.tabId}.calibration`
+                  ? "2px"
+                  : "0",
+              padding: "0rem 0.5rem 0rem 0.5rem",
+              borderColor: "accent.8",
+            })}
+          >
+            {"Calibration"}
+          </Button>
+        </div>
         <Tooltip.Root>
           <Tooltip.Trigger width="min-content" height="min-content">
             <IconButton
@@ -453,7 +543,8 @@ export function ConfigTabContent() {
           ref={scrollContainer}
           style={{
             width: "100%",
-            height: `100%`,
+            height: `calc(100% - 1.5rem)`,
+            "border-top-width": "1px",
           }}
         >
           <ConfigForm
