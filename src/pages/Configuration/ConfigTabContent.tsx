@@ -1,11 +1,20 @@
 import {
+  IconDeviceFloppy,
   IconFileDownload,
+  IconFileUpload,
   IconRefresh,
   IconRuler2,
   IconRuler2Off,
 } from "@tabler/icons-solidjs";
 import { Command } from "@tauri-apps/plugin-shell";
-import { createEffect, createSignal, on, Show, useContext } from "solid-js";
+import {
+  createEffect,
+  createSignal,
+  For,
+  on,
+  Show,
+  useContext,
+} from "solid-js";
 import { Stack } from "styled-system/jsx";
 import { TabPageContext } from "~/components/Tab/TabList";
 import { Text } from "~/components/ui/text";
@@ -32,6 +41,7 @@ import { Menu } from "~/components/ui/menu";
 import { ConfigType } from "src-tauri/generated/config/ConfigType";
 import { Button } from "~/components/ui/styled/button";
 import { css } from "styled-system/css";
+import { detectPort, Port } from "~/services/PortService";
 
 export type ConfigTabPage = {
   filePath?: string;
@@ -197,11 +207,14 @@ export function ConfigTabContent() {
     setOriginalFile(JSON5.parse(JSON5.stringify(data)));
   }
 
-  async function saveConfigToPort(config: object): Promise<string> {
+  async function saveConfigToPort(
+    config: object,
+    portId: string,
+  ): Promise<string> {
     const json_str = JSON.stringify(config, null, "  ");
     const saveConfig = Command.sidecar("binaries/drivercom", [
       `--port`,
-      getPortId()!,
+      portId,
       `config.set`,
       json_str,
     ]);
@@ -265,8 +278,7 @@ export function ConfigTabContent() {
     }
   };
 
-  const saveToPort = async () => {
-    if (!getPortId() || getPortId()!.length === 0) return;
+  const saveToPort = async (portId: string) => {
     if (
       scrollContainer &&
       document.querySelectorAll(`[data-name*="config_field_error"]`).length > 0
@@ -279,7 +291,7 @@ export function ConfigTabContent() {
       });
       return;
     }
-    const outputError = await saveConfigToPort(getConfigForm());
+    const outputError = await saveConfigToPort(getConfigForm(), portId);
     if (outputError.length !== 0) {
       toaster.create({
         title: "Communication Error",
@@ -297,6 +309,8 @@ export function ConfigTabContent() {
       type: "error",
     });
   };
+
+  const [ports, setPorts] = createSignal<Port[]>([]);
 
   return (
     <div
@@ -400,6 +414,23 @@ export function ConfigTabContent() {
           <Tooltip.Trigger width="min-content" height="min-content">
             <IconButton
               variant={"ghost"}
+              onClick={() => setChangeUnit(!getChangeUnit())}
+            >
+              <Show when={getChangeUnit()} fallback={<IconRuler2Off />}>
+                <IconRuler2 />
+              </Show>
+            </IconButton>
+          </Tooltip.Trigger>
+          <Tooltip.Positioner>
+            <Tooltip.Content>
+              {"Change length and weight units"}
+            </Tooltip.Content>
+          </Tooltip.Positioner>
+        </Tooltip.Root>
+        <Tooltip.Root>
+          <Tooltip.Trigger width="min-content" height="min-content">
+            <IconButton
+              variant={"ghost"}
               disabled={!getFilePath() || getFilePath()!.length < 1}
               onClick={async () => {
                 if (!getFilePath()) return;
@@ -436,55 +467,73 @@ export function ConfigTabContent() {
           </Tooltip.Positioner>
         </Tooltip.Root>
 
+        <Tooltip.Root>
+          <Tooltip.Trigger width="min-content" height={"min-content"}>
+            <IconButton
+              variant={"ghost"}
+              onClick={async () => await saveAsFile()}
+            >
+              <IconDeviceFloppy />
+            </IconButton>
+          </Tooltip.Trigger>
+          <Tooltip.Positioner>
+            <Tooltip.Content>{"Save as file"}</Tooltip.Content>
+          </Tooltip.Positioner>
+        </Tooltip.Root>
+
         <Menu.Root>
           <Menu.Trigger width="min-content" height={"min-content"}>
             <Tooltip.Root>
               <Tooltip.Trigger width="min-content" height={"min-content"}>
-                <IconButton variant={"ghost"}>
-                  <IconFileDownload />
+                <IconButton
+                  variant={"ghost"}
+                  onClick={async () => {
+                    const detectedPorts = await detectPort();
+                    setPorts(detectedPorts);
+                    if (ports().length === 1) {
+                      await saveToPort(ports()[0].id);
+                    } else if (ports().length === 0) {
+                      toaster.create({
+                        title: "Invalid Port",
+                        description: "No port detected",
+                        type: "error",
+                      });
+                    }
+                  }}
+                >
+                  <IconFileUpload />
                 </IconButton>
               </Tooltip.Trigger>
               <Tooltip.Positioner>
-                <Tooltip.Content>{"Save"}</Tooltip.Content>
+                <Tooltip.Content>{"Save to port"}</Tooltip.Content>
               </Tooltip.Positioner>
             </Tooltip.Root>
           </Menu.Trigger>
-          <Menu.Positioner>
-            <Menu.Content>
-              <Menu.Item
-                onClick={async () => await saveAsFile()}
-                value={"Save as file"}
-              >
-                {"Save as file"}
-              </Menu.Item>
-              <Menu.Separator />
-              <Menu.Item
-                disabled={!getPortId() || getPortId()!.length < 1}
-                onClick={async () => await saveToPort()}
-                value={"Save to port"}
-              >
-                {"Save to Port"}
-              </Menu.Item>
-            </Menu.Content>
-          </Menu.Positioner>
+          <Show when={ports().length > 1}>
+            <Menu.Positioner>
+              <Menu.Content>
+                <For each={ports()}>
+                  {(port) => {
+                    return (
+                      <Menu.Item
+                        onClick={async () => await saveToPort(port.id)}
+                        value={port.id}
+                        display={"flex"}
+                        flexDir={"column"}
+                        textAlign={"left"}
+                      >
+                        <Text width="100%">{port.id}</Text>
+                        <Text width="100%" fontWeight="light" size="xs">
+                          {port.version}
+                        </Text>
+                      </Menu.Item>
+                    );
+                  }}
+                </For>
+              </Menu.Content>
+            </Menu.Positioner>
+          </Show>
         </Menu.Root>
-        <Tooltip.Root>
-          <Tooltip.Trigger width="min-content" height="min-content">
-            <IconButton
-              variant={"ghost"}
-              onClick={() => setChangeUnit(!getChangeUnit())}
-            >
-              <Show when={getChangeUnit()} fallback={<IconRuler2Off />}>
-                <IconRuler2 />
-              </Show>
-            </IconButton>
-          </Tooltip.Trigger>
-          <Tooltip.Positioner>
-            <Tooltip.Content>
-              {"Change length and weight units"}
-            </Tooltip.Content>
-          </Tooltip.Positioner>
-        </Tooltip.Root>
       </Stack>
       <Show
         when={render()}
