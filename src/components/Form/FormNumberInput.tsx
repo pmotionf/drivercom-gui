@@ -58,63 +58,103 @@ export const FormNumberInput = (props: FormNumberInputProps) => {
     return <>{unit}</>;
   };
 
-  const changeUnitShort = (unitShort: string) => {
+  const changeUnitShort = (unitShort: string, isMillimeter: boolean) => {
     const parseUnit = unitShort.toLowerCase();
-    if (parseUnit === "m") {
-      return "mm";
-    } else if (parseUnit === "dag") {
-      return "kg";
-    } else if (parseUnit === "m/s") {
-      return "mm/s";
-    } else if (parseUnit === "m/s^2") {
-      return "mm/s^2";
+    if (isMillimeter) {
+      if (parseUnit === "m") {
+        return "mm";
+      } else if (parseUnit === "dag") {
+        return "kg";
+      } else if (parseUnit === "m/s") {
+        return "mm/s";
+      } else if (parseUnit === "m/s²") {
+        return "mm/s²";
+      } else {
+        return unitShort;
+      }
     } else {
-      return unitShort;
+      if (parseUnit === "mm") {
+        return "m";
+      } else {
+        return unitShort;
+      }
     }
   };
 
-  const changeUnitLong = (unitLong: string) => {
+  const changeUnitLong = (unitLong: string, isMillimeter: boolean) => {
     const parseUnit = unitLong.toLowerCase();
-    if (parseUnit === "meter") {
-      return "Millimeter";
-    } else if (parseUnit === "decagram") {
-      return "Killogram";
-    } else if (parseUnit === "meters per second") {
-      return "Millimeters Per Second";
-    } else if (parseUnit === "meters per second squared") {
-      return "Millimeters per Second squared";
+    if (isMillimeter) {
+      if (parseUnit === "meter") {
+        return "Millimeter";
+      } else if (parseUnit === "decagram") {
+        return "Killogram";
+      } else if (parseUnit === "meters per second") {
+        return "Millimeters Per Second";
+      } else if (parseUnit === "meters per second squared") {
+        return "Millimeters per Second squared";
+      } else {
+        return unitLong;
+      }
     } else {
-      return unitLong;
+      if (parseUnit === "millimeter") {
+        return "meter";
+      } else {
+        return unitLong;
+      }
     }
   };
 
-  const changeValue = (unitShort: string, value: number) => {
+  const changeValue = (
+    unitShort: string,
+    value: number,
+    isMillimeter: boolean,
+  ) => {
     const parseUnit = unitShort.toLowerCase();
-    if (parseUnit === "m") {
-      return value * 1000;
-    } else if (parseUnit === "dag") {
-      return value * 0.01;
-    } else if (parseUnit === "m/s") {
-      return value * 1000;
-    } else if (parseUnit === "m/s^2") {
-      return value * 1000;
+    if (isMillimeter) {
+      if (parseUnit === "m") {
+        return value * 1000;
+      } else if (parseUnit === "dag") {
+        return value * 0.01;
+      } else if (parseUnit === "m/s") {
+        return value * 1000;
+      } else if (parseUnit === "m/s²") {
+        return value * 1000;
+      } else {
+        return value;
+      }
     } else {
-      return value;
+      if (parseUnit === "mm") {
+        return value * 0.001;
+      } else {
+        return value;
+      }
     }
   };
 
-  const setChangedValue = (unitShort: string, value: number) => {
+  const setChangedValue = (
+    unitShort: string,
+    value: number,
+    isMillimeter: boolean,
+  ) => {
     const parseUnit = unitShort.toLowerCase();
-    if (parseUnit === "m") {
-      return value * 0.001;
-    } else if (parseUnit === "dag") {
-      return value * 100;
-    } else if (parseUnit === "m/s") {
-      return value * 0.001;
-    } else if (parseUnit === "m/s^2") {
-      return value * 0.001;
+    if (isMillimeter) {
+      if (parseUnit === "m") {
+        return value * 0.001;
+      } else if (parseUnit === "dag") {
+        return value * 100;
+      } else if (parseUnit === "m/s") {
+        return value * 0.001;
+      } else if (parseUnit === "m/s²") {
+        return value * 0.001;
+      } else {
+        return value;
+      }
     } else {
-      return value;
+      if (parseUnit === "mm") {
+        return value * 100;
+      } else {
+        return value;
+      }
     }
   };
 
@@ -301,7 +341,6 @@ export const FormNumberInput = (props: FormNumberInputProps) => {
               }}
               placeholder={props.label}
               value={
-                props.changeUnits &&
                 props.desc &&
                 props.desc["unit_short" as keyof typeof props.desc]
                   ? changeValue(
@@ -309,21 +348,19 @@ export const FormNumberInput = (props: FormNumberInputProps) => {
                         "unit_short" as keyof typeof props.desc
                       ] as string,
                       inputValue(),
+                      props.changeUnits ?? false,
                     )
                   : inputValue()
               }
               onChange={(e) => {
                 let inputValue = Number(e.target.value);
-                if (
-                  props.changeUnits &&
-                  props.desc &&
-                  "unit_short" in props.desc
-                ) {
+                if (props.desc && "unit_short" in props.desc) {
                   inputValue = setChangedValue(
                     props.desc[
                       "unit_short" as keyof typeof props.desc
                     ] as string,
                     inputValue,
+                    props.changeUnits ?? false,
                   );
                 }
                 props.onInputChange?.(inputValue);
@@ -339,15 +376,12 @@ export const FormNumberInput = (props: FormNumberInputProps) => {
                 <Tooltip.Trigger>
                   <Text opacity="0.5" marginLeft="0.2em">
                     {parseUnit(
-                      props.changeUnits
-                        ? changeUnitShort(
-                            props.desc![
-                              "unit_short" as keyof typeof props.desc
-                            ] as string,
-                          )
-                        : (props.desc![
-                            "unit_short" as keyof typeof props.desc
-                          ] as string),
+                      changeUnitShort(
+                        props.desc![
+                          "unit_short" as keyof typeof props.desc
+                        ] as string,
+                        props.changeUnits ?? false,
+                      ),
                     )}
                   </Text>
                   <Tooltip.Positioner>
@@ -355,15 +389,12 @@ export const FormNumberInput = (props: FormNumberInputProps) => {
                       when={props.desc!["unit_long" as keyof typeof props.desc]}
                     >
                       <Tooltip.Content>
-                        {props.changeUnits
-                          ? changeUnitLong(
-                              props.desc![
-                                "unit_long" as keyof typeof props.desc
-                              ] as string,
-                            )
-                          : (props.desc![
-                              "unit_long" as keyof typeof props.desc
-                            ] as string)}
+                        {changeUnitLong(
+                          props.desc![
+                            "unit_long" as keyof typeof props.desc
+                          ] as string,
+                          props.changeUnits ?? false,
+                        )}
                       </Tooltip.Content>
                     </Show>
                   </Tooltip.Positioner>
