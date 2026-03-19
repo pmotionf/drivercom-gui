@@ -5,7 +5,6 @@ import {
   tabStore,
   panelStore,
   recentConfigFilePaths,
-  setRecentConfigFilePaths,
 } from "~/store/GlobalState.ts";
 import { Panel } from "~/components/Panel/Panel.tsx";
 import {
@@ -23,24 +22,14 @@ import {
   GainLockStates,
   LinkStates,
 } from "~/pages/Configuration/ConfigForm/ConfigForm.tsx";
-import { createEffect, createSignal, For, on, onMount, Show } from "solid-js";
+import { createEffect, createSignal, on, onMount, Show } from "solid-js";
 import { createStore } from "solid-js/store";
 import { load } from "@tauri-apps/plugin-store";
-import { IconButton } from "~/components/ui/icon-button.tsx";
-import { IconChevronRight, IconPlus } from "@tabler/icons-solidjs";
-import { Dynamic, Portal } from "solid-js/web";
-import { Menu } from "~/components/ui/menu.tsx";
-import { detectPort, getConfigFromPort, Port } from "~/services/PortService.ts";
 import { ConfigType } from "src-tauri/generated/config/ConfigType.tsx";
-import { Text } from "~/components/ui/text.tsx";
-import { toaster } from "~/services/Toaster.ts";
-import { FileHandler } from "~/services/FileHandler.ts";
 import JSON5 from "json5";
 
 function Configuration() {
   const [render, setRender] = createSignal<boolean>(false);
-  const [tabStoreKey, setTabStoreKey] = createSignal<string>("");
-  const [ports, setPorts] = createSignal<Port[]>([]);
 
   onMount(() => {
     if (!pageKeys.has(Pages.Configuration)) {
@@ -122,31 +111,6 @@ function Configuration() {
       { defer: true },
     ),
   );
-
-  const openFile = async (tabStoreKey: string, path: string) => {
-    try {
-      const fileHandler = new FileHandler();
-      const file = await fileHandler.readFile(path, configFormFileFormat());
-      const parsePath = path.replaceAll("\\", "/").split("/").pop()!;
-      createNewTab(tabStoreKey, file as ConfigType, parsePath, undefined, path);
-      setRecentConfigFilePaths((prev) => {
-        return [path, ...prev.filter((prevPath) => prevPath !== path)];
-      });
-    } catch {
-      toaster.create({
-        title: "Invalid File",
-        description: "The file is invalid.",
-        type: "error",
-      });
-      setRecentConfigFilePaths((prev) => {
-        const newRecentFiles = prev.filter(
-          (prevFilePath) => prevFilePath !== path,
-        );
-        return newRecentFiles;
-      });
-      return;
-    }
-  };
 
   return (
     <>
