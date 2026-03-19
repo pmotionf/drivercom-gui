@@ -12,6 +12,7 @@ import { FormNumberInput } from "../../../components/Form/FormNumberInput";
 import { Text } from "../../../components/ui/text";
 import { IconChevronDown } from "@tabler/icons-solidjs";
 import { ConfigFormatObject } from "./ConfigFormatObject";
+import { prettierLabel } from "~/utils/PrettierLabel";
 
 export type ConfigFormTabPageProps = {
   id: string;
@@ -100,7 +101,6 @@ export const ConfigFormTabPage = (props: ConfigFormTabPageProps) => {
                 }
                 return (
                   <Accordion.Root
-                    // marginTop="0.5rem"
                     multiple
                     style={{ "border-width": "0" }}
                     defaultValue={getAccordionValue()}
@@ -119,7 +119,7 @@ export const ConfigFormTabPage = (props: ConfigFormTabPageProps) => {
                         fontWeight={"bold"}
                         borderBottomWidth={"1px"}
                       >
-                        <Text>{key}</Text>
+                        <Text>{prettierLabel(key)}</Text>
                         <Accordion.ItemIndicator>
                           <IconChevronDown />
                         </Accordion.ItemIndicator>
