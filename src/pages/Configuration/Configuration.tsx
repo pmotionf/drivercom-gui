@@ -35,6 +35,7 @@ import { ConfigType } from "src-tauri/generated/config/ConfigType.tsx";
 import { Text } from "~/components/ui/text.tsx";
 import { toaster } from "~/services/Toaster.ts";
 import { FileHandler } from "~/services/FileHandler.ts";
+import JSON5 from "json5";
 
 function Configuration() {
   const [render, setRender] = createSignal<boolean>(false);
@@ -122,18 +123,12 @@ function Configuration() {
     ),
   );
 
-  const openFile = async (path: string) => {
+  const openFile = async (tabStoreKey: string, path: string) => {
     try {
       const fileHandler = new FileHandler();
       const file = await fileHandler.readFile(path, configFormFileFormat());
       const parsePath = path.replaceAll("\\", "/").split("/").pop()!;
-      createNewTab(
-        tabStoreKey(),
-        file as ConfigType,
-        parsePath,
-        undefined,
-        path,
-      );
+      createNewTab(tabStoreKey, file as ConfigType, parsePath, undefined, path);
       setRecentConfigFilePaths((prev) => {
         return [path, ...prev.filter((prevPath) => prevPath !== path)];
       });
@@ -153,201 +148,21 @@ function Configuration() {
     }
   };
 
-  const fileHandler = new FileHandler();
-
   return (
     <>
       <Show when={render()}>
         <PanelLayout id={Pages.Configuration}>
           <Panel>
             <TabList
-              createButton={
-                <Menu.Root>
-                  <Menu.Trigger>
-                    <IconButton
-                      size="xs"
-                      variant={"ghost"}
-                      onClick={async (e) => {
-                        const clientX = e.clientX;
-                        const pageKey = pageKeys.get(Pages.Configuration)!;
-                        const panels = panelStore.get(pageKey)![0]();
-                        for (let i = 0; i < panels.length; i++) {
-                          const currentPanelId = panels[i].id;
-                          const element = document.getElementById(
-                            `tabs:${currentPanelId}`,
-                          );
-                          if (element) {
-                            const rect = element.getBoundingClientRect();
-                            if (rect.x < clientX && clientX <= rect.right) {
-                              setTabStoreKey(currentPanelId);
-                              break;
-                            }
-                          }
-                        }
-
-                        const ports = await detectPort();
-                        setPorts(ports);
-                      }}
-                    >
-                      <Dynamic
-                        style={{ width: "0.8rem", height: "0.8rem" }}
-                        component={IconPlus}
-                      />
-                    </IconButton>
-                  </Menu.Trigger>
-                  <Portal>
-                    <Menu.Positioner>
-                      <Menu.Content>
-                        <Menu.Item
-                          value={"New file"}
-                          onClick={() => {
-                            if (tabStoreKey().length > 0) {
-                              createNewTab(
-                                tabStoreKey(),
-                                configFormFileFormat(),
-                                "New File",
-                              );
-                            }
-                          }}
-                        >
-                          {"New file"}
-                        </Menu.Item>
-                        <Menu.Separator />
-                        <Menu.Item
-                          value={"Open file"}
-                          onClick={async () => {
-                            const extension = "json5";
-                            const path =
-                              await fileHandler.openFileDialog(extension);
-                            if (!path) return;
-                            await openFile(path);
-                          }}
-                        >
-                          {"Open file..."}
-                        </Menu.Item>
-                        <Show when={recentConfigFilePaths().length > 0}>
-                          <Menu.Root positioning={{ placement: "right-end" }}>
-                            <Menu.TriggerItem>
-                              {"Open recent files..."}
-                              <IconChevronRight />
-                            </Menu.TriggerItem>
-                            <Portal>
-                              <Menu.Positioner>
-                                <Menu.Content>
-                                  <For each={recentConfigFilePaths()}>
-                                    {(filePath) => {
-                                      return (
-                                        <Menu.Item
-                                          value={filePath}
-                                          onClick={async () =>
-                                            await openFile(filePath)
-                                          }
-                                        >
-                                          {filePath}
-                                        </Menu.Item>
-                                      );
-                                    }}
-                                  </For>
-                                </Menu.Content>
-                              </Menu.Positioner>
-                            </Portal>
-                          </Menu.Root>
-                        </Show>
-                        <Menu.Separator />
-
-                        <Show
-                          when={ports().length > 1}
-                          fallback={
-                            <Menu.Item
-                              value={"Get from port"}
-                              disabled={ports().length === 0}
-                              onClick={async () => {
-                                if (ports().length === 0) return;
-                                try {
-                                  const config = await getConfigFromPort(
-                                    ports()[0].id,
-                                  );
-                                  createNewTab(
-                                    tabStoreKey(),
-                                    config,
-                                    ports()[0].id,
-                                    ports()[0].id,
-                                  );
-                                } catch (e) {
-                                  toaster.create({
-                                    title: "Communication Error",
-                                    description: e as string,
-                                    type: "error",
-                                  });
-                                }
-                              }}
-                            >
-                              {"Get from port"}
-                            </Menu.Item>
-                          }
-                        >
-                          <Menu.Root positioning={{ placement: "right-end" }}>
-                            <Menu.TriggerItem>
-                              {"Get from port"}
-                              <IconChevronRight />
-                            </Menu.TriggerItem>
-                            <Portal>
-                              <Menu.Positioner>
-                                <Menu.Content>
-                                  <For each={ports()}>
-                                    {(port) => {
-                                      const portId = port.id;
-                                      const version = port.version;
-                                      return (
-                                        <Menu.Item
-                                          value={portId}
-                                          onClick={async () => {
-                                            if (portId.length === 0) return;
-                                            try {
-                                              const config =
-                                                await getConfigFromPort(portId);
-                                              createNewTab(
-                                                tabStoreKey(),
-                                                config,
-                                                portId,
-                                                ports()[0].id,
-                                              );
-                                            } catch (e) {
-                                              toaster.create({
-                                                title: "Communication Error",
-                                                description: e as string,
-                                                type: "error",
-                                              });
-                                            }
-                                          }}
-                                          style={{
-                                            "flex-direction": "column",
-                                          }}
-                                        >
-                                          <Text size="sm" width="100%">
-                                            {portId}
-                                          </Text>
-                                          <Text
-                                            fontWeight={"light"}
-                                            size="xs"
-                                            width="100%"
-                                          >
-                                            {version}
-                                          </Text>
-                                        </Menu.Item>
-                                      );
-                                    }}
-                                  </For>
-                                </Menu.Content>
-                              </Menu.Positioner>
-                            </Portal>
-                          </Menu.Root>
-                        </Show>
-                      </Menu.Content>
-                    </Menu.Positioner>
-                  </Portal>
-                </Menu.Root>
-              }
+              onCreateTab={(tabStoreKey) => {
+                createNewTab(
+                  tabStoreKey,
+                  JSON5.parse(
+                    JSON5.stringify(configFormFileFormat()),
+                  ) as ConfigType,
+                  "New File",
+                );
+              }}
             >
               <ConfigTabContent />
             </TabList>

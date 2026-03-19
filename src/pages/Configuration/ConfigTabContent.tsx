@@ -1,9 +1,11 @@
 import {
+  IconChevronRight,
   IconDeviceFloppy,
-  IconFileUpload,
-  IconRefresh,
+  IconFileImport,
   IconRuler2,
   IconRuler2Off,
+  IconSettingsDown,
+  IconSettingsUp,
 } from "@tabler/icons-solidjs";
 import { Command } from "@tauri-apps/plugin-shell";
 import {
@@ -23,6 +25,7 @@ import {
   configFormFileFormat,
   configTabForm,
   portCommands,
+  recentConfigFilePaths,
   setRecentConfigFilePaths,
   tabStore,
 } from "~/store/GlobalState";
@@ -41,7 +44,7 @@ import { Menu } from "~/components/ui/menu";
 import { ConfigType } from "src-tauri/generated/config/ConfigType";
 import { Button } from "~/components/ui/styled/button";
 import { css } from "styled-system/css";
-import { detectPort, Port } from "~/services/PortService";
+import { detectPort, getConfigFromPort, Port } from "~/services/PortService";
 
 export type ConfigTabPage = {
   filePath?: string;
@@ -194,7 +197,7 @@ export function ConfigTabContent() {
 
   const fileHandler = new FileHandler();
 
-  function setFormData(data: object, path: string) {
+  function setFormData(data: ConfigType, path: string) {
     setConfigForm(data);
     setFilePath(path);
     setTabName(path.split("/").pop()!);
@@ -312,6 +315,52 @@ export function ConfigTabContent() {
 
   const [ports, setPorts] = createSignal<Port[]>([]);
 
+  const openFile = async (path: string) => {
+    try {
+      setRender(false);
+      const file = (await fileHandler.readFile(
+        path,
+        configFormFileFormat(),
+      )) as ConfigType;
+      setFormData(file!, path);
+      setRender(true);
+    } catch {
+      toaster.create({
+        title: "Invalid File Path",
+        description: "The file path is invalid.",
+        type: "error",
+      });
+      setRecentConfigFilePaths((prev) => {
+        const newRecentFiles = prev.filter(
+          (prevFilePath) => prevFilePath !== path,
+        );
+        return newRecentFiles;
+      });
+      setRender(true);
+      return;
+    }
+  };
+
+  const getFromPort = async (portId: string) => {
+    try {
+      setRender(false);
+      const config = await getConfigFromPort(portId);
+      setConfigForm(config);
+      setFilePath("");
+      setTabName(portId);
+      setOriginalFile(JSON5.parse(JSON5.stringify(config)));
+      setRender(true);
+    } catch {
+      toaster.create({
+        title: "Invalid File Path",
+        description: "The file path is invalid.",
+        type: "error",
+      });
+      setRender(true);
+      return;
+    }
+  };
+
   return (
     <div
       style={{
@@ -340,10 +389,7 @@ export function ConfigTabContent() {
           gap="0"
           background={"bg.muted"}
         >
-          <div
-            style={{ width: `calc(100% - 10rem)`, "border-right-width": "1px" }}
-            class={css({ borderColor: "gray.6" })}
-          >
+          <div style={{ width: `calc(100% - 10rem)` }}>
             <For each={Object.keys(configTabForm())}>
               {(formatKey) => {
                 return (
@@ -381,7 +427,15 @@ export function ConfigTabContent() {
             </For>
           </div>
           <Tooltip.Root>
-            <Tooltip.Trigger width="min-content" height="min-content">
+            <Tooltip.Trigger
+              width="min-content"
+              height="min-content"
+              style={{
+                "border-right-width": "1px",
+                "border-left-width": "1px",
+              }}
+              borderColor={"gray.5"}
+            >
               <IconButton
                 variant={"ghost"}
                 onClick={() => setChangeUnit(!getChangeUnit())}
@@ -397,48 +451,92 @@ export function ConfigTabContent() {
               </Tooltip.Content>
             </Tooltip.Positioner>
           </Tooltip.Root>
-          <Tooltip.Root>
-            <Tooltip.Trigger width="min-content" height="min-content">
-              <IconButton
-                variant={"ghost"}
-                disabled={!getFilePath() || getFilePath()!.length < 1}
-                onClick={async () => {
-                  if (!getFilePath()) return;
-                  try {
-                    setRender(false);
-                    const file = await fileHandler.readFile(
-                      getFilePath()!,
-                      configFormFileFormat(),
-                    );
-                    setFormData(file!, getFilePath()!);
-                    setRender(true);
-                  } catch {
-                    toaster.create({
-                      title: "Invalid File Path",
-                      description: "The file path is invalid.",
-                      type: "error",
-                    });
-                    setRecentConfigFilePaths((prev) => {
-                      const newRecentFiles = prev.filter(
-                        (prevFilePath) => prevFilePath !== getFilePath()!,
-                      );
-                      return newRecentFiles;
-                    });
-                    setRender(true);
-                    return;
-                  }
-                }}
-              >
-                <IconRefresh />
-              </IconButton>
-            </Tooltip.Trigger>
-            <Tooltip.Positioner>
-              <Tooltip.Content>{"Reload"}</Tooltip.Content>
-            </Tooltip.Positioner>
-          </Tooltip.Root>
+          {/*Open file button */}
+          <Menu.Root>
+            <Menu.Trigger>
+              <Tooltip.Root>
+                <Tooltip.Trigger width="min-content" height="min-content">
+                  <IconButton variant={"ghost"}>
+                    <IconFileImport />
+                  </IconButton>
+                </Tooltip.Trigger>
+                <Tooltip.Positioner>
+                  <Tooltip.Content>{"Import File"}</Tooltip.Content>
+                </Tooltip.Positioner>
+              </Tooltip.Root>
+            </Menu.Trigger>
+            <Menu.Positioner>
+              <Menu.Content>
+                <Menu.Item
+                  value={`${getTabId()}.openFile`}
+                  onClick={async () => {
+                    try {
+                      const path = await fileHandler.openFileDialog("json5");
+                      await openFile(path);
+                    } catch {
+                      toaster.create({
+                        title: "Invalid File Path",
+                        description: "The file path is invalid.",
+                        type: "error",
+                      });
+                      return;
+                    }
+                  }}
+                >
+                  {"Open File..."}
+                </Menu.Item>
+                <Show when={recentConfigFilePaths().length >= 1}>
+                  <Menu.Root positioning={{ placement: "right-end" }}>
+                    <Menu.TriggerItem>
+                      <Text width={`calc(100% - 0.5rem)`}>
+                        {"Open Recent Files..."}
+                      </Text>
+                      <IconChevronRight />
+                    </Menu.TriggerItem>
+                    <Show when={recentConfigFilePaths().length >= 1}>
+                      <Menu.Positioner>
+                        <Menu.Content>
+                          <For each={recentConfigFilePaths()}>
+                            {(filePath) => {
+                              if (filePath.length < 1) return;
+                              const parseFilePath = filePath
+                                .replaceAll("\\", "/")
+                                .split("/");
+                              const fileName = parseFilePath.pop();
+                              const restFilePath = parseFilePath
+                                .slice(0 - 1)
+                                .join("/");
+                              return (
+                                <Menu.Item
+                                  value={filePath}
+                                  onClick={async () => await openFile(filePath)}
+                                >
+                                  <div>
+                                    <Text>{fileName}</Text>
+                                    <Text size="xs" fontWeight="light">
+                                      {restFilePath}
+                                    </Text>
+                                  </div>
+                                </Menu.Item>
+                              );
+                            }}
+                          </For>
+                        </Menu.Content>
+                      </Menu.Positioner>
+                    </Show>
+                  </Menu.Root>
+                </Show>
+              </Menu.Content>
+            </Menu.Positioner>
+          </Menu.Root>
 
           <Tooltip.Root>
-            <Tooltip.Trigger width="min-content" height={"min-content"}>
+            <Tooltip.Trigger
+              width="min-content"
+              height={"min-content"}
+              borderRightWidth="1px"
+              borderColor="grey.5"
+            >
               <IconButton
                 variant={"ghost"}
                 onClick={async () => await saveAsFile()}
@@ -450,7 +548,62 @@ export function ConfigTabContent() {
               <Tooltip.Content>{"Save as file"}</Tooltip.Content>
             </Tooltip.Positioner>
           </Tooltip.Root>
+          {/*Get from port */}
+          <Menu.Root>
+            <Menu.Trigger width="min-content" height={"min-content"}>
+              <Tooltip.Root>
+                <Tooltip.Trigger width="min-content" height={"min-content"}>
+                  <IconButton
+                    variant={"ghost"}
+                    onClick={async () => {
+                      const detectedPorts = await detectPort();
+                      setPorts(detectedPorts);
+                      if (ports().length === 1) {
+                        await getFromPort(ports()[0].id);
+                      } else if (ports().length === 0) {
+                        toaster.create({
+                          title: "Invalid Port",
+                          description: "No port detected",
+                          type: "error",
+                        });
+                      }
+                    }}
+                  >
+                    <IconSettingsUp />
+                  </IconButton>
+                </Tooltip.Trigger>
+                <Tooltip.Positioner>
+                  <Tooltip.Content>{"Get from port"}</Tooltip.Content>
+                </Tooltip.Positioner>
+              </Tooltip.Root>
+            </Menu.Trigger>
+            <Show when={ports().length > 1}>
+              <Menu.Positioner>
+                <Menu.Content>
+                  <For each={ports()}>
+                    {(port) => {
+                      return (
+                        <Menu.Item
+                          onClick={async () => await getFromPort(port.id)}
+                          value={port.id}
+                          display={"flex"}
+                          flexDir={"column"}
+                          textAlign={"left"}
+                        >
+                          <Text width="100%">{port.id}</Text>
+                          <Text width="100%" fontWeight="light" size="xs">
+                            {port.version}
+                          </Text>
+                        </Menu.Item>
+                      );
+                    }}
+                  </For>
+                </Menu.Content>
+              </Menu.Positioner>
+            </Show>
+          </Menu.Root>
 
+          {/* Save to port */}
           <Menu.Root>
             <Menu.Trigger width="min-content" height={"min-content"}>
               <Tooltip.Root>
@@ -471,7 +624,7 @@ export function ConfigTabContent() {
                       }
                     }}
                   >
-                    <IconFileUpload />
+                    <IconSettingsDown />
                   </IconButton>
                 </Tooltip.Trigger>
                 <Tooltip.Positioner>
