@@ -459,35 +459,40 @@ export const ConfigFormatObject = (props: ConfigFormatObjectProps) => {
                           "align-items": "center",
                         }}
                       >
-                        <Text
-                          fontWeight={"bold"}
-                          opacity={
-                            props.linkedStatuses &&
-                            props.linkedStatuses.has(
-                              Object.keys(value).join(","),
-                            )
-                              ? "0.7"
-                              : "0.8rem"
-                          }
+                        <div
+                          style={{
+                            width: descriptionText ? "15rem" : "unset",
+                          }}
                         >
-                          {label}
-                        </Text>
-                        <Show when={descriptionText}>
-                          <Tooltip.Root>
-                            <Tooltip.Trigger>
-                              <IconHelp size="1em" opacity={0.5} />
-                            </Tooltip.Trigger>
-                            <Tooltip.Positioner>
-                              <Tooltip.Content>
-                                {
-                                  descriptionText![
-                                    "description" as keyof typeof descriptionText
-                                  ]
-                                }
-                              </Tooltip.Content>
-                            </Tooltip.Positioner>
-                          </Tooltip.Root>
-                        </Show>
+                          <Text
+                            fontWeight={"bold"}
+                            opacity={
+                              props.linkedStatuses &&
+                              props.linkedStatuses.has(
+                                Object.keys(value).join(","),
+                              )
+                                ? "0.7"
+                                : "0.8rem"
+                            }
+                          >
+                            {label}
+                          </Text>
+                          <Show when={descriptionText}>
+                            <Text
+                              size="xs"
+                              fontWeight="light"
+                              style={{
+                                width: "100%",
+                              }}
+                            >
+                              {
+                                descriptionText![
+                                  "description" as keyof typeof descriptionText
+                                ]
+                              }
+                            </Text>
+                          </Show>
+                        </div>
                         <Show
                           when={
                             props.linkedStatuses &&

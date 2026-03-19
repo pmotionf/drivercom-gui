@@ -7,7 +7,6 @@ import {
 import { Show } from "solid-js";
 import {
   IconExclamationCircle,
-  IconHelp,
   IconLock,
   IconLockOff,
 } from "@tabler/icons-solidjs";
@@ -129,45 +128,121 @@ export const FormNumberInput = (props: FormNumberInputProps) => {
         width: "100%",
       }}
     >
-      <Stack direction="row">
-        <div style={{ width: "12rem", display: "flex" }}>
-          <Text
-            marginTop="0.4em"
-            marginRight="0.5em"
-            fontWeight="medium"
-            borderColor="accent.7"
-            height="1.5em"
-            paddingLeft="0.1em"
-            paddingRight="0.1em"
-            borderBottomWidth={
-              props.originalValue !== inputValue() ? "2px" : "0px"
-            }
-          >
-            {props.label}
-          </Text>
+      <Stack direction="row" alignItems="center">
+        <div style={{ width: "15rem", display: "flex" }}>
+          <div style={{ width: `calc(100% - 0.5rem)` }}>
+            <Text
+              marginTop="0.4em"
+              fontWeight="medium"
+              borderColor="accent.7"
+              height="1.5em"
+              borderBottomWidth={
+                props.originalValue !== inputValue() ? "2px" : "0px"
+              }
+              width="min-content"
+            >
+              {props.label}
+            </Text>
+            <Show
+              when={
+                props.desc &&
+                "description" in props.desc &&
+                typeof props.desc["description" as keyof typeof props.desc] ===
+                  "string"
+              }
+            >
+              <Text size="xs" fontWeight="light">
+                {props.desc!["description" as keyof typeof props.desc]}
+              </Text>
+            </Show>
+          </div>
+
           <Show
-            when={
-              props.desc &&
-              "description" in props.desc &&
-              typeof props.desc["description" as keyof typeof props.desc] ===
-                "string"
-            }
+            when={lockStatus && lockStatusKey && lockStatus.has(lockStatusKey)}
           >
             <Tooltip.Root>
-              <Tooltip.Trigger>
-                <IconHelp size="1em" opacity={0.5} />
+              <Tooltip.Trigger width="min-content">
+                <IconButton
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  borderRadius="3rem"
+                  height="min-content"
+                  paddingTop="0.2rem"
+                  paddingBottom="0.2rem"
+                  opacity={lockStatus!.get(lockStatusKey!)![0]() ? "1" : "0.5"}
+                  onClick={() => {
+                    if (!lockStatus) return;
+                    lockStatus.get(lockStatusKey!)![1]((prev) => !prev);
+
+                    const gainKey = lockStatusKey!
+                      .split(".")
+                      .slice(0, -2)
+                      .join(".");
+                    const isCenter = props.id.includes("center");
+                    const oppositeDynPos = isCenter ? "between" : "center";
+                    const currentDynPos = isCenter ? "center" : "between";
+
+                    if (props.lockStatus!.has(gainKey)) {
+                      const updateValue = Array.from(
+                        props.lockStatus!.entries(),
+                      )
+                        .filter(
+                          (entry) =>
+                            entry[0] !== gainKey &&
+                            entry[0].includes(currentDynPos),
+                        )
+                        .some((entry) => entry[1][0]() === true);
+                      props.lockStatus!.get(gainKey)![1](updateValue);
+                    }
+
+                    if (!props.linkStatus) return;
+                    const link = props.linkStatus.get("gain")![0]();
+                    if (link[0]) {
+                      const endkey = lockStatusKey!.replace(
+                        currentDynPos,
+                        oppositeDynPos,
+                      );
+                      if (props.lockStatus!.has(endkey)) {
+                        props.lockStatus!.get(endkey)![1]((prev) => !prev);
+                      }
+
+                      const oppositeGainKey = endkey
+                        .split(".")
+                        .slice(0, -2)
+                        .join(".");
+                      if (props.lockStatus!.has(oppositeGainKey)) {
+                        const updateValue = Array.from(
+                          props.lockStatus!.entries(),
+                        )
+                          .filter(
+                            (entry) =>
+                              entry[0] !== oppositeGainKey &&
+                              entry[0].includes(oppositeDynPos),
+                          )
+                          .some((entry) => entry[1][0]() === true);
+                        props.lockStatus!.get(oppositeGainKey)![1](updateValue);
+                      }
+                    }
+                  }}
+                >
+                  <Show
+                    when={lockStatus && lockStatus.get(lockStatusKey!)![0]()}
+                    fallback={<IconLockOff />}
+                  >
+                    <IconLock />
+                  </Show>
+                </IconButton>
               </Tooltip.Trigger>
               <Tooltip.Positioner>
-                <Tooltip.Content>
-                  {props.desc!["description" as keyof typeof props.desc]}
-                </Tooltip.Content>
+                <Tooltip.Content>{"Lock auto calculation"}</Tooltip.Content>
               </Tooltip.Positioner>
             </Tooltip.Root>
           </Show>
         </div>
         <div
           style={{
-            width: `calc(100% - 12rem)`,
+            width: `calc(100% - 15rem)`,
             display: "flex",
             "flex-direction": "row-reverse",
           }}
@@ -177,7 +252,7 @@ export const FormNumberInput = (props: FormNumberInputProps) => {
             style={{
               width: "100%",
               padding: "0.4rem",
-              "border-radius": "0.5rem",
+              "border-radius": "0.2rem",
               "border-width": "1px",
               gap: "0",
             }}
@@ -189,10 +264,8 @@ export const FormNumberInput = (props: FormNumberInputProps) => {
             <input
               style={{
                 width:
-                  lockStatus && lockStatusKey && lockStatus.has(lockStatusKey)
-                    ? props.desc && "unit_short" in props.desc
-                      ? `calc(100% - 4em)`
-                      : `calc(100% - 1em)`
+                  props.desc && "unit_short" in props.desc
+                    ? `calc(100% - 1em)`
                     : "100%",
                 outline: "none",
                 opacity:
@@ -302,94 +375,6 @@ export const FormNumberInput = (props: FormNumberInputProps) => {
                 color="red"
                 data-name="config_field_error"
               />
-            </Show>
-            <Show
-              when={
-                lockStatus && lockStatusKey && lockStatus.has(lockStatusKey)
-              }
-            >
-              <Tooltip.Root>
-                <Tooltip.Trigger width="min-content">
-                  <IconButton
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    borderRadius="3rem"
-                    height="min-content"
-                    paddingTop="0.2rem"
-                    paddingBottom="0.2rem"
-                    opacity={
-                      lockStatus!.get(lockStatusKey!)![0]() ? "1" : "0.5"
-                    }
-                    onClick={() => {
-                      if (!lockStatus) return;
-                      lockStatus.get(lockStatusKey!)![1]((prev) => !prev);
-
-                      const gainKey = lockStatusKey!
-                        .split(".")
-                        .slice(0, -2)
-                        .join(".");
-                      const isCenter = props.id.includes("center");
-                      const oppositeDynPos = isCenter ? "between" : "center";
-                      const currentDynPos = isCenter ? "center" : "between";
-
-                      if (props.lockStatus!.has(gainKey)) {
-                        const updateValue = Array.from(
-                          props.lockStatus!.entries(),
-                        )
-                          .filter(
-                            (entry) =>
-                              entry[0] !== gainKey &&
-                              entry[0].includes(currentDynPos),
-                          )
-                          .some((entry) => entry[1][0]() === true);
-                        props.lockStatus!.get(gainKey)![1](updateValue);
-                      }
-
-                      if (!props.linkStatus) return;
-                      const link = props.linkStatus.get("gain")![0]();
-                      if (link[0]) {
-                        const endkey = lockStatusKey!.replace(
-                          currentDynPos,
-                          oppositeDynPos,
-                        );
-                        if (props.lockStatus!.has(endkey)) {
-                          props.lockStatus!.get(endkey)![1]((prev) => !prev);
-                        }
-
-                        const oppositeGainKey = endkey
-                          .split(".")
-                          .slice(0, -2)
-                          .join(".");
-                        if (props.lockStatus!.has(oppositeGainKey)) {
-                          const updateValue = Array.from(
-                            props.lockStatus!.entries(),
-                          )
-                            .filter(
-                              (entry) =>
-                                entry[0] !== oppositeGainKey &&
-                                entry[0].includes(oppositeDynPos),
-                            )
-                            .some((entry) => entry[1][0]() === true);
-                          props.lockStatus!.get(oppositeGainKey)![1](
-                            updateValue,
-                          );
-                        }
-                      }
-                    }}
-                  >
-                    <Show
-                      when={lockStatus && lockStatus.get(lockStatusKey!)![0]()}
-                      fallback={<IconLockOff />}
-                    >
-                      <IconLock />
-                    </Show>
-                  </IconButton>
-                </Tooltip.Trigger>
-                <Tooltip.Positioner>
-                  <Tooltip.Content>{"Lock auto calculation"}</Tooltip.Content>
-                </Tooltip.Positioner>
-              </Tooltip.Root>
             </Show>
           </Stack>
         </div>
