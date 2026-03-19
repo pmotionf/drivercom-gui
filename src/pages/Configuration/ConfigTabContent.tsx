@@ -95,6 +95,17 @@ export function ConfigTabContent() {
       .tabPage!.configTabPage!.portId;
   };
 
+  const setPortId = (newPortId: string) => {
+    return tabStore.get(configTabProps.key)![1](
+      "tabContext",
+      getTabIndex(),
+      "tabPage",
+      "configTabPage",
+      "portId",
+      newPortId,
+    );
+  };
+
   const setTabName = (newName: string) => {
     return tabStore.get(configTabProps.key)![1](
       "tabContext",
@@ -270,7 +281,9 @@ export function ConfigTabContent() {
         configFormFileFormat(),
       );
       if (getFilePath() && getFilePath() === path) {
+        setRender(false);
         setOriginalFile(JSON5.parse(JSON5.stringify(getConfigForm())));
+        setRender(true);
       }
     } catch {
       toaster.create({
@@ -304,7 +317,8 @@ export function ConfigTabContent() {
       });
       return;
     }
-    if (!getFilePath()) {
+
+    if (getPortId() && getPortId() === portId) {
       setOriginalFile(JSON5.parse(JSON5.stringify(getConfigForm())));
     }
     toaster.create({
@@ -316,7 +330,7 @@ export function ConfigTabContent() {
 
   const [ports, setPorts] = createSignal<Port[]>([]);
 
-  const openFile = async (path: string) => {
+  const getConfigFromFile = async (path: string) => {
     try {
       setRender(false);
       const file = (await fileHandler.readFile(
@@ -325,6 +339,7 @@ export function ConfigTabContent() {
       )) as ConfigType;
       setFormData(file!, path);
       setRender(true);
+      setPortId("");
     } catch {
       toaster.create({
         title: "Invalid File Path",
@@ -351,6 +366,7 @@ export function ConfigTabContent() {
       setTabName(portId);
       setOriginalFile(JSON5.parse(JSON5.stringify(config)));
       setRender(true);
+      setPortId(portId);
     } catch {
       toaster.create({
         title: "Invalid File Path",
@@ -473,7 +489,7 @@ export function ConfigTabContent() {
                   onClick={async () => {
                     try {
                       const path = await fileHandler.openFileDialog("json5");
-                      await openFile(path);
+                      await getConfigFromFile(path);
                     } catch {
                       toaster.create({
                         title: "Invalid File Path",
@@ -510,7 +526,9 @@ export function ConfigTabContent() {
                               return (
                                 <Menu.Item
                                   value={filePath}
-                                  onClick={async () => await openFile(filePath)}
+                                  onClick={async () =>
+                                    await getConfigFromFile(filePath)
+                                  }
                                 >
                                   <div>
                                     <Text>{fileName}</Text>
