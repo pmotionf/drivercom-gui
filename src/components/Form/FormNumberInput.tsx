@@ -151,7 +151,7 @@ export const FormNumberInput = (props: FormNumberInputProps) => {
                   "string"
               }
             >
-              <Text size="xs" fontWeight="light">
+              <Text size="xs" fontWeight="light" color="gray.9">
                 {props.desc!["description" as keyof typeof props.desc]}
               </Text>
             </Show>

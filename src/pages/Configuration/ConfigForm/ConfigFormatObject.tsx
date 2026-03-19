@@ -484,6 +484,7 @@ export const ConfigFormatObject = (props: ConfigFormatObjectProps) => {
                               style={{
                                 width: "100%",
                               }}
+                              color="gray.9"
                             >
                               {
                                 descriptionText![
