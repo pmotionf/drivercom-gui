@@ -56,7 +56,7 @@ export const FormCheckBox = (props: FormCheckBoxProps) => {
             }
             width="min-content"
           >
-            {key}
+            {key.replaceAll(" ", "_")}
           </Text>
           <Show
             when={

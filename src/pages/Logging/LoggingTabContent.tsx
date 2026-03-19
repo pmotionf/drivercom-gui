@@ -23,13 +23,11 @@ import {
 } from "@tabler/icons-solidjs";
 import { IconButton } from "~/components/ui/icon-button.tsx";
 import { onMount } from "solid-js";
-import { Editable } from "~/components/ui/editable.tsx";
 import { Tooltip } from "~/components/ui/tooltip.tsx";
 import { createEffect } from "solid-js";
 import { on } from "solid-js";
 import { FileMenu } from "~/components/FileMenu.tsx";
 import { PortMenu } from "~/components/PortMenu.tsx";
-import { ConnectButton } from "../../components/Connect/ConnectButton.tsx";
 import { Button } from "~/components/ui/button.tsx";
 import { FileHandler } from "../../services/FileHandler.ts";
 import { DownloadStates, DownloadStatus } from "~/components/DownloadList.tsx";
@@ -593,16 +591,10 @@ export function LoggingTabContent() {
       >
         <Stack
           style={{
-            width: "40%",
-            height: `calc(100% - 1rem)`,
-            "margin-top": "0.5rem",
-            "padding-top": "1rem",
-            "padding-bottom": "1rem",
-            "padding-left": "1rem",
-            "padding-right": "1rem",
-            "min-width": "30rem",
-            "border-radius": "0.5rem",
-            "box-shadow": "0px 0px 15px 1px rgb(0,0,0,0.05)",
+            width: "50%",
+            "padding-left": "0.5rem",
+            "padding-right": "0.5rem",
+            "min-width": "35rem",
             "border-width": "1px",
           }}
           borderColor="bg.muted"
@@ -610,41 +602,6 @@ export function LoggingTabContent() {
         >
           <Show when={renderLoggingForm()}>
             <Stack direction="row" width="100%">
-              <Tooltip.Root positioning={{ placement: "bottom-start" }}>
-                <Tooltip.Trigger width={`calc(100% - 17rem)`}>
-                  <Editable.Root
-                    placeholder="File name"
-                    defaultValue={getTitle()}
-                    activationMode="dblclick"
-                    onValueCommit={(e) => {
-                      setTitle(e.value);
-                    }}
-                    fontWeight="bold"
-                    fontSize="2xl"
-                    textAlign="left"
-                  >
-                    <Editable.Area>
-                      <Editable.Input width="100%" />
-                      <Editable.Preview
-                        style={{
-                          "white-space": "nowrap",
-                          "text-overflow": "ellipsis",
-                          display: "block",
-                          overflow: "hidden",
-                        }}
-                      />
-                    </Editable.Area>
-                  </Editable.Root>
-                </Tooltip.Trigger>
-                <Show when={getFilePath().length !== 0}>
-                  <Tooltip.Positioner>
-                    <Tooltip.Content backgroundColor="bg.default">
-                      <Text color="fg.default">{getFilePath()}</Text>
-                    </Tooltip.Content>
-                  </Tooltip.Positioner>
-                </Show>
-              </Tooltip.Root>
-
               <FileMenu
                 filePath={getFilePath()}
                 recentFiles={recentLogFilePaths()}
@@ -705,30 +662,6 @@ export function LoggingTabContent() {
                       return i !== index;
                     });
                   });
-                }}
-                onReloadFile={async () => {
-                  if (getFilePath().length === 0) return;
-                  setRenderLoggingForm(false);
-                  try {
-                    const file = await fileHandler.readFile(
-                      getFilePath(),
-                      logFormFileFormat(),
-                    );
-                    setLoggingConfig(file);
-                    setOriginalFile(JSON5.parse(JSON5.stringify(file)));
-                  } catch {
-                    toaster.create({
-                      title: "Invalid File Path",
-                      description: "The file path is invalid.",
-                      type: "error",
-                    });
-                    setRecentLogFilePaths((prev) => {
-                      return prev.filter(
-                        (prevFilePath) => prevFilePath !== getFilePath(),
-                      );
-                    });
-                  }
-                  refresh();
                 }}
                 onSaveFile={async () => {
                   try {
@@ -1038,10 +971,6 @@ export function LoggingTabContent() {
                 </Show>
                 {/* Get Log button need to add tooltip */}
               </Stack>
-              <ConnectButton
-                portId={getPortId()}
-                onPortIdChange={(portId) => setPortId(portId)}
-              />
             </Stack>
 
             <LoggingForm

@@ -181,7 +181,7 @@ export const FormNumberInput = (props: FormNumberInputProps) => {
               }
               width="min-content"
             >
-              {props.label}
+              {props.label.replaceAll(" ", "_")}
             </Text>
             <Show
               when={
