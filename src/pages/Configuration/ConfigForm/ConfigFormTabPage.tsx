@@ -125,7 +125,7 @@ export const ConfigFormTabPage = (props: ConfigFormTabPageProps) => {
                         </Accordion.ItemIndicator>
                       </Accordion.ItemTrigger>
                       <Accordion.ItemContent
-                        padding="0 0.5rem 0 0.5rem"
+                        padding={"0rem 0.5rem 0.5rem 0.5rem"}
                         borderWidth={"0px 1px 1px 1px"}
                         borderRadius={"0.2rem"}
                       >
