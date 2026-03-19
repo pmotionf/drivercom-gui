@@ -1,6 +1,5 @@
 import {
   IconDeviceFloppy,
-  IconFileDownload,
   IconFileUpload,
   IconRefresh,
   IconRuler2,
@@ -22,6 +21,7 @@ import { Tooltip } from "~/components/ui/tooltip";
 import {
   configDescription,
   configFormFileFormat,
+  configTabForm,
   portCommands,
   setRecentConfigFilePaths,
   tabStore,
@@ -314,303 +314,276 @@ export function ConfigTabContent() {
 
   return (
     <div
-      id={configTabProps.key}
       style={{
+        display: "flex",
+        "justify-content": "center",
+        padding: "0.5rem",
+        width: "100%",
         height: "100%",
-        width: `100% `,
-        "min-width": "35rem",
       }}
     >
-      <Stack direction="row" width="100%" height={topBarHeight} gap="0">
-        <div
-          style={{ width: `calc(100% - 10rem)`, "border-right-width": "1px" }}
+      <div
+        id={configTabProps.key}
+        style={{
+          height: "100%",
+          width: `40% `,
+          "min-width": "35rem",
+          "border-radius": "0.2rem",
+          "border-width": "1px",
+        }}
+        class={css({ borderColor: "gray.5" })}
+      >
+        <Stack
+          direction="row"
+          width="100%"
+          height={topBarHeight}
+          gap="0"
+          background={"bg.muted"}
         >
-          <Button
-            variant={"ghost"}
-            onClick={() => setFocusedTab(`${configTabProps.tabId}.system`)}
-            class={css({
-              borderRadius: "0",
-              fontSize: "0.8rem",
-              transition: "background ease-in-out 0.2s",
-              opacity:
-                getFocusedTab() === `${configTabProps.tabId}.system`
-                  ? "1"
-                  : "0.5",
-              _hover: {
-                background: "bg.default",
-                opacity:
-                  getFocusedTab() === `${configTabProps.tabId}.system`
-                    ? "1"
-                    : "0.7",
-              },
-              borderBottomWidth:
-                getFocusedTab() === `${configTabProps.tabId}.system`
-                  ? "2px"
-                  : "0",
-              padding: "0rem 0.5rem 0rem 0.5rem",
-              borderColor: "accent.8",
-            })}
+          <div
+            style={{ width: `calc(100% - 10rem)`, "border-right-width": "1px" }}
+            class={css({ borderColor: "gray.6" })}
           >
-            {"System"}
-          </Button>
-          <Button
-            variant={"ghost"}
-            onClick={() => setFocusedTab(`${configTabProps.tabId}.tune`)}
-            class={css({
-              borderRadius: "0",
-              fontSize: "0.8rem",
-              transition: "background ease-in-out 0.2s",
-              opacity:
-                getFocusedTab() === `${configTabProps.tabId}.tune`
-                  ? "1"
-                  : "0.5",
-              _hover: {
-                background: "bg.default",
-                opacity:
-                  getFocusedTab() === `${configTabProps.tabId}.tune`
-                    ? "1"
-                    : "0.7",
-              },
-              borderBottomWidth:
-                getFocusedTab() === `${configTabProps.tabId}.tune`
-                  ? "2px"
-                  : "0",
-              padding: "0rem 0.5rem 0rem 0.5rem",
-              borderColor: "accent.8",
-            })}
-          >
-            {"Tune"}
-          </Button>
-          <Button
-            variant={"ghost"}
-            onClick={() => setFocusedTab(`${configTabProps.tabId}.calibration`)}
-            class={css({
-              borderRadius: "0",
-              fontSize: "0.8rem",
-              transition: "background ease-in-out 0.2s",
-              opacity:
-                getFocusedTab() === `${configTabProps.tabId}.calibration`
-                  ? "1"
-                  : "0.5",
-              _hover: {
-                background: "bg.default",
-                opacity:
-                  getFocusedTab() === `${configTabProps.tabId}.calibration`
-                    ? "1"
-                    : "0.7",
-              },
-              borderBottomWidth:
-                getFocusedTab() === `${configTabProps.tabId}.calibration`
-                  ? "2px"
-                  : "0",
-              padding: "0rem 0.5rem 0rem 0.5rem",
-              borderColor: "accent.8",
-            })}
-          >
-            {"Calibration"}
-          </Button>
-        </div>
-        <Tooltip.Root>
-          <Tooltip.Trigger width="min-content" height="min-content">
-            <IconButton
-              variant={"ghost"}
-              onClick={() => setChangeUnit(!getChangeUnit())}
-            >
-              <Show when={getChangeUnit()} fallback={<IconRuler2Off />}>
-                <IconRuler2 />
-              </Show>
-            </IconButton>
-          </Tooltip.Trigger>
-          <Tooltip.Positioner>
-            <Tooltip.Content>
-              {"Change length and weight units"}
-            </Tooltip.Content>
-          </Tooltip.Positioner>
-        </Tooltip.Root>
-        <Tooltip.Root>
-          <Tooltip.Trigger width="min-content" height="min-content">
-            <IconButton
-              variant={"ghost"}
-              disabled={!getFilePath() || getFilePath()!.length < 1}
-              onClick={async () => {
-                if (!getFilePath()) return;
-                try {
-                  setRender(false);
-                  const file = await fileHandler.readFile(
-                    getFilePath()!,
-                    configFormFileFormat(),
-                  );
-                  setFormData(file!, getFilePath()!);
-                  setRender(true);
-                } catch {
-                  toaster.create({
-                    title: "Invalid File Path",
-                    description: "The file path is invalid.",
-                    type: "error",
-                  });
-                  setRecentConfigFilePaths((prev) => {
-                    const newRecentFiles = prev.filter(
-                      (prevFilePath) => prevFilePath !== getFilePath()!,
+            <For each={Object.keys(configTabForm())}>
+              {(formatKey) => {
+                return (
+                  <Button
+                    variant={"ghost"}
+                    onClick={() =>
+                      setFocusedTab(`${configTabProps.tabId}.${formatKey}`)
+                    }
+                    class={css({
+                      borderRadius: "0",
+                      fontSize: "0.8rem",
+                      transition: "background ease-in-out 0.2s",
+                      opacity:
+                        getFocusedTab() ===
+                        `${configTabProps.tabId}.${formatKey}`
+                          ? "1"
+                          : "0.5",
+                      background:
+                        getFocusedTab() ===
+                        `${configTabProps.tabId}.${formatKey}`
+                          ? "bg.default"
+                          : "bg.muted",
+                      padding: "1rem",
+                      height:
+                        getFocusedTab() ===
+                        `${configTabProps.tabId}.${formatKey}`
+                          ? `calc(100% + 1px)`
+                          : "100%",
+                    })}
+                  >
+                    {formatKey}
+                  </Button>
+                );
+              }}
+            </For>
+          </div>
+          <Tooltip.Root>
+            <Tooltip.Trigger width="min-content" height="min-content">
+              <IconButton
+                variant={"ghost"}
+                onClick={() => setChangeUnit(!getChangeUnit())}
+              >
+                <Show when={getChangeUnit()} fallback={<IconRuler2Off />}>
+                  <IconRuler2 />
+                </Show>
+              </IconButton>
+            </Tooltip.Trigger>
+            <Tooltip.Positioner>
+              <Tooltip.Content>
+                {"Change length and weight units"}
+              </Tooltip.Content>
+            </Tooltip.Positioner>
+          </Tooltip.Root>
+          <Tooltip.Root>
+            <Tooltip.Trigger width="min-content" height="min-content">
+              <IconButton
+                variant={"ghost"}
+                disabled={!getFilePath() || getFilePath()!.length < 1}
+                onClick={async () => {
+                  if (!getFilePath()) return;
+                  try {
+                    setRender(false);
+                    const file = await fileHandler.readFile(
+                      getFilePath()!,
+                      configFormFileFormat(),
                     );
-                    return newRecentFiles;
-                  });
-                  setRender(true);
-                  return;
-                }
+                    setFormData(file!, getFilePath()!);
+                    setRender(true);
+                  } catch {
+                    toaster.create({
+                      title: "Invalid File Path",
+                      description: "The file path is invalid.",
+                      type: "error",
+                    });
+                    setRecentConfigFilePaths((prev) => {
+                      const newRecentFiles = prev.filter(
+                        (prevFilePath) => prevFilePath !== getFilePath()!,
+                      );
+                      return newRecentFiles;
+                    });
+                    setRender(true);
+                    return;
+                  }
+                }}
+              >
+                <IconRefresh />
+              </IconButton>
+            </Tooltip.Trigger>
+            <Tooltip.Positioner>
+              <Tooltip.Content>{"Reload"}</Tooltip.Content>
+            </Tooltip.Positioner>
+          </Tooltip.Root>
+
+          <Tooltip.Root>
+            <Tooltip.Trigger width="min-content" height={"min-content"}>
+              <IconButton
+                variant={"ghost"}
+                onClick={async () => await saveAsFile()}
+              >
+                <IconDeviceFloppy />
+              </IconButton>
+            </Tooltip.Trigger>
+            <Tooltip.Positioner>
+              <Tooltip.Content>{"Save as file"}</Tooltip.Content>
+            </Tooltip.Positioner>
+          </Tooltip.Root>
+
+          <Menu.Root>
+            <Menu.Trigger width="min-content" height={"min-content"}>
+              <Tooltip.Root>
+                <Tooltip.Trigger width="min-content" height={"min-content"}>
+                  <IconButton
+                    variant={"ghost"}
+                    onClick={async () => {
+                      const detectedPorts = await detectPort();
+                      setPorts(detectedPorts);
+                      if (ports().length === 1) {
+                        await saveToPort(ports()[0].id);
+                      } else if (ports().length === 0) {
+                        toaster.create({
+                          title: "Invalid Port",
+                          description: "No port detected",
+                          type: "error",
+                        });
+                      }
+                    }}
+                  >
+                    <IconFileUpload />
+                  </IconButton>
+                </Tooltip.Trigger>
+                <Tooltip.Positioner>
+                  <Tooltip.Content>{"Save to port"}</Tooltip.Content>
+                </Tooltip.Positioner>
+              </Tooltip.Root>
+            </Menu.Trigger>
+            <Show when={ports().length > 1}>
+              <Menu.Positioner>
+                <Menu.Content>
+                  <For each={ports()}>
+                    {(port) => {
+                      return (
+                        <Menu.Item
+                          onClick={async () => await saveToPort(port.id)}
+                          value={port.id}
+                          display={"flex"}
+                          flexDir={"column"}
+                          textAlign={"left"}
+                        >
+                          <Text width="100%">{port.id}</Text>
+                          <Text width="100%" fontWeight="light" size="xs">
+                            {port.version}
+                          </Text>
+                        </Menu.Item>
+                      );
+                    }}
+                  </For>
+                </Menu.Content>
+              </Menu.Positioner>
+            </Show>
+          </Menu.Root>
+        </Stack>
+        <Show
+          when={render()}
+          fallback={
+            <div
+              style={{
+                display: "flex",
+                "flex-direction": "column",
+                "align-items": "center",
+                "justify-content": "center",
+                width: "100%",
+                height: "100%",
+                "border-top-width": render() ? "0px" : "1px",
               }}
             >
-              <IconRefresh />
-            </IconButton>
-          </Tooltip.Trigger>
-          <Tooltip.Positioner>
-            <Tooltip.Content>{"Reload"}</Tooltip.Content>
-          </Tooltip.Positioner>
-        </Tooltip.Root>
-
-        <Tooltip.Root>
-          <Tooltip.Trigger width="min-content" height={"min-content"}>
-            <IconButton
-              variant={"ghost"}
-              onClick={async () => await saveAsFile()}
-            >
-              <IconDeviceFloppy />
-            </IconButton>
-          </Tooltip.Trigger>
-          <Tooltip.Positioner>
-            <Tooltip.Content>{"Save as file"}</Tooltip.Content>
-          </Tooltip.Positioner>
-        </Tooltip.Root>
-
-        <Menu.Root>
-          <Menu.Trigger width="min-content" height={"min-content"}>
-            <Tooltip.Root>
-              <Tooltip.Trigger width="min-content" height={"min-content"}>
-                <IconButton
-                  variant={"ghost"}
-                  onClick={async () => {
-                    const detectedPorts = await detectPort();
-                    setPorts(detectedPorts);
-                    if (ports().length === 1) {
-                      await saveToPort(ports()[0].id);
-                    } else if (ports().length === 0) {
-                      toaster.create({
-                        title: "Invalid Port",
-                        description: "No port detected",
-                        type: "error",
-                      });
-                    }
-                  }}
-                >
-                  <IconFileUpload />
-                </IconButton>
-              </Tooltip.Trigger>
-              <Tooltip.Positioner>
-                <Tooltip.Content>{"Save to port"}</Tooltip.Content>
-              </Tooltip.Positioner>
-            </Tooltip.Root>
-          </Menu.Trigger>
-          <Show when={ports().length > 1}>
-            <Menu.Positioner>
-              <Menu.Content>
-                <For each={ports()}>
-                  {(port) => {
-                    return (
-                      <Menu.Item
-                        onClick={async () => await saveToPort(port.id)}
-                        value={port.id}
-                        display={"flex"}
-                        flexDir={"column"}
-                        textAlign={"left"}
-                      >
-                        <Text width="100%">{port.id}</Text>
-                        <Text width="100%" fontWeight="light" size="xs">
-                          {port.version}
-                        </Text>
-                      </Menu.Item>
-                    );
-                  }}
-                </For>
-              </Menu.Content>
-            </Menu.Positioner>
-          </Show>
-        </Menu.Root>
-      </Stack>
-      <Show
-        when={render()}
-        fallback={
-          <div
-            style={{
-              display: "flex",
-              "flex-direction": "column",
-              "align-items": "center",
-              "justify-content": "center",
-              width: "100%",
-              height: "100%",
-              "border-top-width": render() ? "0px" : "1px",
-            }}
-          >
-            <Spinner
-              display="flex"
-              justifySelf={"center"}
-              justifyItems={"center"}
-              size="xl"
-              borderLeftColor={"bg.muted"}
-              borderBottomColor={"bg.muted"}
-              borderRightColor={"fg.muted"}
-              borderTopColor={"fg.muted"}
-              borderWidth={"5px"}
-            />
-            <Text
-              marginTop="1em"
-              size="lg"
-              fontWeight={"bold"}
-              maxWidth="50%"
-              textAlign="center"
-            >
-              {getFilePath()
-                ? `Get config from "${getFilePath()}".`
-                : getPortId() && getPortId()!.length > 0
-                  ? `Get config from "${getPortId()}".`
-                  : `Get new config.`}
-            </Text>
-            <Text
-              display="flex"
-              justifySelf={"center"}
-              marginTop="0.5em"
-              size="md"
-            >
-              {getFilePath()
-                ? `Opening...`
-                : getPortId() && getPortId()!.length > 0
-                  ? `Downloading...`
-                  : `Opening...`}
-            </Text>
-          </div>
-        }
-      >
-        <div
-          ref={scrollContainer}
-          style={{
-            width: "100%",
-            height: `calc(100% - 1.5rem)`,
-            "border-top-width": "1px",
-          }}
+              <Spinner
+                display="flex"
+                justifySelf={"center"}
+                justifyItems={"center"}
+                size="xl"
+                borderLeftColor={"bg.muted"}
+                borderBottomColor={"bg.muted"}
+                borderRightColor={"fg.muted"}
+                borderTopColor={"fg.muted"}
+                borderWidth={"5px"}
+              />
+              <Text
+                marginTop="1em"
+                size="lg"
+                fontWeight={"bold"}
+                maxWidth="50%"
+                textAlign="center"
+              >
+                {getFilePath()
+                  ? `Get config from "${getFilePath()}".`
+                  : getPortId() && getPortId()!.length > 0
+                    ? `Get config from "${getPortId()}".`
+                    : `Get new config.`}
+              </Text>
+              <Text
+                display="flex"
+                justifySelf={"center"}
+                marginTop="0.5em"
+                size="md"
+              >
+                {getFilePath()
+                  ? `Opening...`
+                  : getPortId() && getPortId()!.length > 0
+                    ? `Downloading...`
+                    : `Opening...`}
+              </Text>
+            </div>
+          }
         >
-          <ConfigForm
-            id={getTabId()}
-            description={configDescription()}
-            originalFile={getOriginalFile()}
-            changeUnits={getChangeUnit() ? getChangeUnit() : undefined}
-            focusedTab={getFocusedTab()}
-            onFocustTabChange={(tabId) => setFocusedTab(tabId)}
-            config={getConfigForm()!}
-            linkedStatuses={getLinkedStatuses()!}
-            accordionStatuses={getAccordionStatuses()!}
-            gainLockStatuses={getGainLockStatuses()!}
-            formOverflowY={getFormScrollTop()!}
-          />
-        </div>
-      </Show>
+          <div
+            ref={scrollContainer}
+            style={{
+              width: "100%",
+              height: `calc(100% - 2.5rem)`,
+              "border-top-width": "1px",
+              padding: "0 0.5rem 0.5rem 0.5rem",
+            }}
+            class={css({ borderColor: "gray.7" })}
+          >
+            <ConfigForm
+              id={getTabId()}
+              description={configDescription()}
+              originalFile={getOriginalFile()}
+              changeUnits={getChangeUnit() ? getChangeUnit() : undefined}
+              focusedTab={getFocusedTab()}
+              onFocustTabChange={(tabId) => setFocusedTab(tabId)}
+              config={getConfigForm()!}
+              linkedStatuses={getLinkedStatuses()!}
+              accordionStatuses={getAccordionStatuses()!}
+              gainLockStatuses={getGainLockStatuses()!}
+              formOverflowY={getFormScrollTop()!}
+            />
+          </div>
+        </Show>
+      </div>
     </div>
   );
 }

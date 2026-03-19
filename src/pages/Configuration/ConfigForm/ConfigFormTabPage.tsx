@@ -57,7 +57,7 @@ export const ConfigFormTabPage = (props: ConfigFormTabPageProps) => {
         props.formOverflowY.set(props.id, e.target.scrollTop);
       }}
     >
-      <div style={{ width: "40%", height: "100%", "min-width": "30rem" }}>
+      <div style={{ width: "100%", height: "100%", "min-width": "32rem" }}>
         <For each={Object.entries(props.format)}>
           {(entry, index) => {
             const key = entry[0];
