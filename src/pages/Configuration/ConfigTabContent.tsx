@@ -1,11 +1,11 @@
 import {
   IconChevronRight,
   IconDeviceFloppy,
+  IconFileDownload,
   IconFileImport,
   IconRuler2,
   IconRuler2Off,
-  IconSettingsDown,
-  IconSettingsUp,
+  IconSettingsShare,
 } from "@tabler/icons-solidjs";
 import { Command } from "@tauri-apps/plugin-shell";
 import {
@@ -45,6 +45,7 @@ import { ConfigType } from "src-tauri/generated/config/ConfigType";
 import { Button } from "~/components/ui/styled/button";
 import { css } from "styled-system/css";
 import { detectPort, getConfigFromPort, Port } from "~/services/PortService";
+import { prettierLabel } from "~/utils/PrettierLabel";
 
 export type ConfigTabPage = {
   filePath?: string;
@@ -420,7 +421,7 @@ export function ConfigTabContent() {
                           : "100%",
                     })}
                   >
-                    {formatKey}
+                    {prettierLabel(formatKey)}
                   </Button>
                 );
               }}
@@ -569,7 +570,7 @@ export function ConfigTabContent() {
                       }
                     }}
                   >
-                    <IconSettingsUp />
+                    <IconFileDownload />
                   </IconButton>
                 </Tooltip.Trigger>
                 <Tooltip.Positioner>
@@ -624,7 +625,7 @@ export function ConfigTabContent() {
                       }
                     }}
                   >
-                    <IconSettingsDown />
+                    <IconSettingsShare />
                   </IconButton>
                 </Tooltip.Trigger>
                 <Tooltip.Positioner>

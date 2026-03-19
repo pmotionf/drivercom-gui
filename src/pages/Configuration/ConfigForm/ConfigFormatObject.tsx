@@ -18,6 +18,7 @@ import {
   IconChevronDown,
   IconHelp,
 } from "@tabler/icons-solidjs";
+import { prettierLabel } from "~/utils/PrettierLabel";
 
 export type ConfigFormatObjectProps = {
   id: string;
@@ -223,7 +224,7 @@ export const ConfigFormatObject = (props: ConfigFormatObjectProps) => {
                               ? "0.7"
                               : "0.8rem"
                           }
-                        >{`${label} ${innerLabel}`}</Text>
+                        >{`${prettierLabel(label)} ${prettierLabel(innerLabel)}`}</Text>
 
                         <Show when={innderDescText}>
                           <Tooltip.Root>
@@ -475,7 +476,7 @@ export const ConfigFormatObject = (props: ConfigFormatObjectProps) => {
                                 : "0.8rem"
                             }
                           >
-                            {label}
+                            {prettierLabel(label)}
                           </Text>
                           <Show when={descriptionText}>
                             <Text
