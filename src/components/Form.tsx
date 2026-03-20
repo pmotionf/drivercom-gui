@@ -227,7 +227,9 @@ export function Form(props: FormProps) {
                     // in store
                     value,
                   );
-                  props.onItemChange?.();
+                  console.log(value, object);
+
+                  //props.onItemChange?.();
                 }}
               />
             );
