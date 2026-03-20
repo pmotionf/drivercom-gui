@@ -1,7 +1,19 @@
-import { createSignal, onMount, onCleanup, createEffect, on } from "solid-js";
+import {
+  createSignal,
+  onMount,
+  onCleanup,
+  createEffect,
+  on,
+  For,
+} from "solid-js";
 import { Splitter } from "../../components/ui/splitter.tsx";
 import { IconButton } from "~/components/ui/icon-button.tsx";
-import { IconChevronDown, IconChevronUp } from "@tabler/icons-solidjs";
+import {
+  IconChevronDown,
+  IconChevronUp,
+  IconDeviceComputerCamera,
+  IconDeviceComputerCameraOff,
+} from "@tabler/icons-solidjs";
 import { css } from "styled-system/css/css";
 import { Show } from "solid-js/web";
 import {
@@ -55,6 +67,7 @@ import { disconnect } from "@kuyoonjo/tauri-plugin-tcp";
 import CarrierPage, { CarrierState } from "./MonitoringSidebar/CarrierPage.tsx";
 import { load } from "@tauri-apps/plugin-store";
 import { toaster } from "~/services/Toaster.ts";
+import { Text } from "~/components/ui/text.tsx";
 
 export type Lines = LineType[];
 export type Systems = TrackType[];
@@ -290,6 +303,8 @@ function Monitoring() {
     ),
   );
 
+  const [showTopView, setShowTopView] = createSignal<boolean>(true);
+
   return (
     <>
       <Splitter.Root
@@ -315,158 +330,285 @@ function Monitoring() {
           borderWidth="0"
           backgroundColor="transparent"
         >
-          <Show when={lines.length > 0}>
-            <System
-              lines={lines}
-              systems={systems}
-              sendingCommand={sendingCmd()}
-              disableMmcCliBtn={disableMmcCliBtn()}
-              onPull={async (
-                lineName,
-                commandDirection,
-                axis,
-                carrierId,
-                destination,
-                disableCas,
-              ) => {
-                try {
-                  setSendingCmd({ line: lineName, axisId: Number(axis) });
-                  await pullCarrier(
-                    commandDirection,
+          <Show when={lines && lines.length > 0 && systems.length > 0}>
+            <Show
+              when={showTopView()}
+              fallback={
+                <System
+                  lines={lines}
+                  systems={systems}
+                  sendingCommand={sendingCmd()}
+                  disableMmcCliBtn={disableMmcCliBtn()}
+                  onPull={async (
                     lineName,
+                    commandDirection,
                     axis,
                     carrierId,
                     destination,
                     disableCas,
-                  );
-                  setSendingCmd(null);
-                } catch (e) {
-                  toaster.create({
-                    title: "Error",
-                    description: e as string,
-                    type: "error",
-                  });
-                  setSendingCmd(null);
-                }
-              }}
-              onStopPull={async (line, axisId) => {
-                try {
-                  setSendingCmd({ line: line, axisId: axisId });
-                  await stopPull(line, axisId);
-                  setSendingCmd(null);
-                } catch (e) {
-                  toaster.create({
-                    title: "Error",
-                    description: e as string,
-                    type: "error",
-                  });
-                  setSendingCmd(null);
-                }
-              }}
-              onPush={async (lineName, commandDirection, axis, carrierId) => {
-                try {
-                  setSendingCmd({ line: lineName, axisId: Number(axis) });
-                  await pushCarrier(
-                    commandDirection,
+                  ) => {
+                    try {
+                      setSendingCmd({ line: lineName, axisId: Number(axis) });
+                      await pullCarrier(
+                        commandDirection,
+                        lineName,
+                        axis,
+                        carrierId,
+                        destination,
+                        disableCas,
+                      );
+                      setSendingCmd(null);
+                    } catch (e) {
+                      toaster.create({
+                        title: "Error",
+                        description: e as string,
+                        type: "error",
+                      });
+                      setSendingCmd(null);
+                    }
+                  }}
+                  onStopPull={async (line, axisId) => {
+                    try {
+                      setSendingCmd({ line: line, axisId: axisId });
+                      await stopPull(line, axisId);
+                      setSendingCmd(null);
+                    } catch (e) {
+                      toaster.create({
+                        title: "Error",
+                        description: e as string,
+                        type: "error",
+                      });
+                      setSendingCmd(null);
+                    }
+                  }}
+                  onPush={async (
                     lineName,
+                    commandDirection,
                     axis,
                     carrierId,
-                  );
-                  setSendingCmd(null);
-                } catch (e) {
-                  toaster.create({
-                    title: "Error",
-                    description: e as string,
-                    type: "error",
-                  });
-                  setSendingCmd(null);
-                }
-              }}
-              onStopPush={async (line, axisId) => {
-                try {
-                  setSendingCmd({ line: line, axisId: axisId });
-                  await stopPush(line, axisId);
-                  setSendingCmd(null);
-                } catch (e) {
-                  toaster.create({
-                    title: "Error",
-                    description: e as string,
-                    type: "error",
-                  });
-                  setSendingCmd(null);
-                }
-              }}
-              onStopCommand={async (line, axisId) => {
-                setSendingCmd({ line: line, axisId: axisId });
-                await stopCommand();
-                setSendingCmd(null);
-              }}
-              onInitialize={async (
-                lineName,
-                axisId,
-                direction,
-                carrierId,
-                axisLink,
-              ) => {
-                try {
-                  setSendingCmd({ line: lineName, axisId: axisId });
-                  await initialize(
+                  ) => {
+                    try {
+                      setSendingCmd({ line: lineName, axisId: Number(axis) });
+                      await pushCarrier(
+                        commandDirection,
+                        lineName,
+                        axis,
+                        carrierId,
+                      );
+                      setSendingCmd(null);
+                    } catch (e) {
+                      toaster.create({
+                        title: "Error",
+                        description: e as string,
+                        type: "error",
+                      });
+                      setSendingCmd(null);
+                    }
+                  }}
+                  onStopPush={async (line, axisId) => {
+                    try {
+                      setSendingCmd({ line: line, axisId: axisId });
+                      await stopPush(line, axisId);
+                      setSendingCmd(null);
+                    } catch (e) {
+                      toaster.create({
+                        title: "Error",
+                        description: e as string,
+                        type: "error",
+                      });
+                      setSendingCmd(null);
+                    }
+                  }}
+                  onStopCommand={async (line, axisId) => {
+                    setSendingCmd({ line: line, axisId: axisId });
+                    await stopCommand();
+                    setSendingCmd(null);
+                  }}
+                  onInitialize={async (
                     lineName,
                     axisId,
                     direction,
                     carrierId,
                     axisLink,
-                  );
-                  setSendingCmd(null);
-                } catch (e) {
-                  toaster.create({
-                    title: "Error",
-                    description: e as string,
-                    type: "error",
-                  });
-                  setSendingCmd(null);
-                }
-              }}
-              onDeinitialize={async (lineName, axisId) => {
-                try {
-                  setSendingCmd({ line: lineName, axisId: axisId });
-                  await deinitialize(lineName, axisId);
-                  setSendingCmd(null);
-                } catch (e) {
-                  toaster.create({
-                    title: "Error",
-                    description: e as string,
-                    type: "error",
-                  });
-                  setSendingCmd(null);
-                }
-              }}
-              onLineCommands={async (params) => {
-                setSendingCmd({ line: params.line, axisId: NaN });
-                try {
-                  if (params.speed) {
-                    await setSpeed(params.line, params.speed);
-                  }
-                  if (params.acceleration) {
-                    await setAcceleration(params.line, params.acceleration);
-                  }
-                  if (params.setZero) {
-                    await setZero(params.line);
-                  }
-                  if (params.calibrate) {
-                    await calibrate(params.line);
-                  }
-                  setSendingCmd(null);
-                } catch (e) {
-                  toaster.create({
-                    title: "Error",
-                    description: e as string,
-                    type: "error",
-                  });
-                  setSendingCmd(null);
-                }
-              }}
-            />
+                  ) => {
+                    try {
+                      setSendingCmd({ line: lineName, axisId: axisId });
+                      await initialize(
+                        lineName,
+                        axisId,
+                        direction,
+                        carrierId,
+                        axisLink,
+                      );
+                      setSendingCmd(null);
+                    } catch (e) {
+                      toaster.create({
+                        title: "Error",
+                        description: e as string,
+                        type: "error",
+                      });
+                      setSendingCmd(null);
+                    }
+                  }}
+                  onDeinitialize={async (lineName, axisId) => {
+                    try {
+                      setSendingCmd({ line: lineName, axisId: axisId });
+                      await deinitialize(lineName, axisId);
+                      setSendingCmd(null);
+                    } catch (e) {
+                      toaster.create({
+                        title: "Error",
+                        description: e as string,
+                        type: "error",
+                      });
+                      setSendingCmd(null);
+                    }
+                  }}
+                  onLineCommands={async (params) => {
+                    setSendingCmd({ line: params.line, axisId: NaN });
+                    try {
+                      if (params.speed) {
+                        await setSpeed(params.line, params.speed);
+                      }
+                      if (params.acceleration) {
+                        await setAcceleration(params.line, params.acceleration);
+                      }
+                      if (params.setZero) {
+                        await setZero(params.line);
+                      }
+                      if (params.calibrate) {
+                        await calibrate(params.line);
+                      }
+                      setSendingCmd(null);
+                    } catch (e) {
+                      toaster.create({
+                        title: "Error",
+                        description: e as string,
+                        type: "error",
+                      });
+                      setSendingCmd(null);
+                    }
+                  }}
+                />
+              }
+            >
+              <div style={{ width: "100%", height: "100%" }}>
+                <For each={lines!}>
+                  {(line, lineIndex) => {
+                    const axisLength = line.axisLength;
+                    const lineWidth = axisLength * line.axes;
+                    const lineHeight = "8rem";
+                    const driverIds = Array.from(
+                      { length: line.drivers },
+                      (_, i) => i + 1,
+                    );
+
+                    const [x, setX] = createSignal<number>(0);
+                    const [y, setY] = createSignal<number>(lineIndex() * 200);
+
+                    return (
+                      <div
+                        style={{
+                          height: "max-content",
+                          width: "max-content",
+                          position: "absolute",
+                          top: `${y()}px`,
+                          left: `${x()}px`,
+                        }}
+                      >
+                        <Text>{line.name}</Text>
+                        <div
+                          style={{
+                            width: `${lineWidth}px`,
+                            height: `${lineHeight}`,
+                            "border-width": "1px",
+                            "border-radius": "0.2rem",
+                            display: "flex",
+                          }}
+                        >
+                          <For each={driverIds}>
+                            {(driverId) => {
+                              const axesLength =
+                                driverId !== driverIds.length
+                                  ? 3
+                                  : line.axes % 3 !== 0
+                                    ? 2
+                                    : 3;
+                              const axesIds = Array.from(
+                                { length: axesLength },
+                                (_, i) => i + 1,
+                              );
+                              const driverWidth = axisLength * axesLength;
+
+                              return (
+                                <div
+                                  style={{
+                                    width: `${driverWidth}px`,
+                                    height: "100%",
+                                    "border-width": "1px",
+                                  }}
+                                >
+                                  <Text height="1.5rem">{`Driver ${driverId}`}</Text>
+                                  <div
+                                    style={{
+                                      width: "100%",
+                                      display: "flex",
+                                      height: `calc(100% - 1.5rem)`,
+                                    }}
+                                  >
+                                    <For each={axesIds}>
+                                      {(axesId) => {
+                                        return (
+                                          <div
+                                            style={{
+                                              width: `${axisLength}px`,
+                                              height: `calc(100% - 0.5rem)`,
+                                              "border-width": "1px",
+                                            }}
+                                          >
+                                            <Text>{`Axis ${axesId}`}</Text>
+                                          </div>
+                                        );
+                                      }}
+                                    </For>
+                                  </div>
+                                </div>
+                              );
+                            }}
+                          </For>
+                        </div>
+                        <Show
+                          when={
+                            systems[lineIndex()].carrierState &&
+                            systems[lineIndex()].carrierState.length > 0
+                          }
+                        >
+                          <For each={systems[lineIndex()].carrierState}>
+                            {(carrier) => {
+                              return (
+                                <div
+                                  class={css({ background: "fg.default" })}
+                                  style={{
+                                    width: `${line.carrierLength}px `,
+                                    height: "3rem",
+                                    "border-width": "1px",
+                                    position: "absolute",
+                                    left: `calc(${x()}px + ${carrier.position}px) `,
+                                    top: `calc(${y()}px + 5.5rem)`,
+                                  }}
+                                >
+                                  <Text color="bg.default">{`Carrier ${carrier.id}`}</Text>
+                                </div>
+                              );
+                            }}
+                          </For>
+                        </Show>
+                      </div>
+                    );
+                  }}
+                </For>
+              </div>
+            </Show>
           </Show>
         </Splitter.Panel>
 
@@ -696,6 +838,19 @@ function Monitoring() {
           </Tabs.Root>
         </Splitter.Panel>
       </Splitter.Root>
+      <IconButton
+        size="xs"
+        variant={"ghost"}
+        opacity={showTopView() ? "1" : "0.5"}
+        position="absolute"
+        top="0"
+        right="0"
+        onClick={() => setShowTopView((prev) => !prev)}
+      >
+        <Show when={showTopView()} fallback={<IconDeviceComputerCameraOff />}>
+          <IconDeviceComputerCamera />
+        </Show>
+      </IconButton>
     </>
   );
 }
