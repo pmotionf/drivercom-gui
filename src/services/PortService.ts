@@ -56,8 +56,8 @@ async function detectFirmwareVersion(portId: string): Promise<string | null> {
 }
 
 export const checkAvailablePort = (portId: string): boolean => {
-  if (portId.length <= 0) {
-    return false;
+  if (portId.length === 0) {
+    return true;
   }
   if (
     Array.from(portCommands.values()).some((command) => command.port === portId)

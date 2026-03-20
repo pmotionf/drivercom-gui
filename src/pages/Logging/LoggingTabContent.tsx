@@ -389,6 +389,9 @@ export function LoggingTabContent() {
     });
 
     logGet.on("close", (data) => {
+      if (pid) {
+        portCommands.delete(pid);
+      }
       if (data.code === null) {
         toaster.create({
           title: "Download Fail",
@@ -420,12 +423,12 @@ export function LoggingTabContent() {
       }
 
       logGet.removeAllListeners();
-      if (pid) {
-        portCommands.delete(pid);
-      }
     });
 
     logGet.on("error", async (error) => {
+      if (pid) {
+        portCommands.delete(pid);
+      }
       toaster.create({
         title: "Download Fail",
         description: error,
@@ -440,9 +443,6 @@ export function LoggingTabContent() {
       }
 
       logGet.removeAllListeners();
-      if (pid) {
-        portCommands.delete(pid);
-      }
     });
 
     const child = await logGet.spawn();
@@ -633,8 +633,6 @@ export function LoggingTabContent() {
     try {
       if (!checkAvailablePort(portId)) return;
       const logConfig = await getLogConfigFromPort(getPortId());
-      const config = await getConfigFromPort(getPortId());
-      setTitle(`Line ${config.id} driver ${config.station}`);
       setTabName(portId);
       setPortId(portId);
       setFilePath("");
@@ -863,7 +861,19 @@ export function LoggingTabContent() {
               <ConnectButton
                 buttonProps={{ variant: "ghost" }}
                 portId={getPortId()}
-                onPortIdChange={(portId) => setPortId(portId)}
+                onPortIdChange={async (portId) => {
+                  try {
+                    const config = await getConfigFromPort(getPortId());
+                    setTitle(`Line ${config.id} driver ${config.station}`);
+                    setPortId(portId);
+                  } catch {
+                    toaster.create({
+                      title: "Invalid Port",
+                      description: "Port is Invalid",
+                      type: "error",
+                    });
+                  }
+                }}
               />
               {/*Get from port */}
               <Tooltip.Root>

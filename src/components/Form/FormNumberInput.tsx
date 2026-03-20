@@ -354,13 +354,17 @@ export const FormNumberInput = (props: FormNumberInputProps) => {
               }
               onChange={(e) => {
                 let inputValue = Number(e.target.value);
-                if (props.desc && "unit_short" in props.desc) {
+                if (
+                  props.desc &&
+                  "unit_short" in props.desc &&
+                  props.changeUnits !== undefined
+                ) {
                   inputValue = setChangedValue(
                     props.desc[
                       "unit_short" as keyof typeof props.desc
                     ] as string,
                     inputValue,
-                    props.changeUnits ?? false,
+                    props.changeUnits,
                   );
                 }
                 props.onInputChange?.(inputValue);

@@ -84,7 +84,6 @@ export function Logging() {
       setTimeout(() => {
         tabCtx[1]("focusedTab", newTab.tab.id);
       });
-      console.log(tabCtx[0]);
     }
     setRender(true);
   };
