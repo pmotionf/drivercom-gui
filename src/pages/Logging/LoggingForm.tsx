@@ -39,9 +39,8 @@ export function LoggingForm(props: LoggingFormProps) {
       ref={props.ref}
       style={{
         "overflow-y": "auto",
-        "border-top-width": "1px",
-        "border-bottom-width": "1px",
-        "padding-bottom": "0.5rem",
+        "padding-left": "0.5rem",
+        "padding-right": "0.5rem",
       }}
     >
       <Form

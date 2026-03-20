@@ -62,11 +62,11 @@ export function Logging() {
     const newTab: TabContext = {
       tab: {
         id: id,
-        tabName: "New Tab",
+        tabName: "New file",
       },
       tabPage: {
         loggingTabPage: {
-          title: "New file",
+          title: "No port",
           portId: "",
           logConfig: JSON5.parse(JSON5.stringify(logFormFileFormat())),
           originalFile: JSON5.parse(JSON5.stringify(logFormFileFormat())),

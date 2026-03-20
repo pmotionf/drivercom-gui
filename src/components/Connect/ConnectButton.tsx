@@ -5,7 +5,7 @@ import {
   IconX,
 } from "@tabler/icons-solidjs";
 import { Popover } from "~/components/ui/popover.tsx";
-import { createSignal, JSX, Show } from "solid-js";
+import { createSignal, Show } from "solid-js";
 import { portList, setPortList } from "../../store/GlobalState.ts";
 //@ts-ignore Implicitly has an 'any' type.
 import { Stack } from "styled-system/jsx/stack.mjs";
@@ -18,10 +18,12 @@ import { Portal } from "solid-js/web";
 import { csvFileDownloads } from "../../store/GlobalState.ts";
 import { DownloadStatus } from "~/components/DownloadList.tsx";
 import { toaster } from "~/services/Toaster.ts";
+import type { ComponentProps } from "solid-js";
 
-export type ConnectButtonProps = JSX.HTMLAttributes<HTMLButtonElement> & {
+export type ConnectButtonProps = {
   portId: string;
   onPortIdChange?: (portId: string) => void;
+  buttonProps?: ComponentProps<typeof IconButton>;
 };
 
 export function ConnectButton(props: ConnectButtonProps) {
@@ -83,7 +85,7 @@ export function ConnectButton(props: ConnectButtonProps) {
   }
 
   return (
-    <Popover.Root positioning={{ placement: "bottom-end" }}>
+    <Popover.Root positioning={{ placement: "bottom-start" }}>
       <Popover.Trigger maxWidth="min-content" gap="" padding="0" {...props}>
         <Tooltip.Root>
           <Tooltip.Trigger
@@ -91,11 +93,15 @@ export function ConnectButton(props: ConnectButtonProps) {
             cursor={"-moz-grab"}
           >
             <IconButton
-              variant="outline"
-              borderColor="bg.disabled"
-              backgroundColor="bg.default"
-              cursor={"-moz-grab"}
-              opacity={props.portId.length === 0 ? "0.7" : "1"}
+              {...(props.buttonProps
+                ? props.buttonProps
+                : {
+                    variant: "outline",
+                    borderColor: "bg.diabled",
+                    cursor: "-moz-grab",
+                    opacity: props.portId.length === 0 ? "0.7" : "1",
+                    backgroundColor: "bg.default",
+                  })}
             >
               {props.portId.length === 0 ? (
                 <IconPlugConnectedX />
