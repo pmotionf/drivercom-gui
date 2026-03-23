@@ -862,10 +862,15 @@ export function LoggingTabContent() {
                 buttonProps={{ variant: "ghost" }}
                 portId={getPortId()}
                 onPortIdChange={async (portId) => {
+                  setPortId(portId);
+
+                  if (portId.length === 0) {
+                    setTitle("No port");
+                    return;
+                  }
                   try {
-                    const config = await getConfigFromPort(getPortId());
-                    setTitle(`Line ${config.id} driver ${config.station}`);
-                    setPortId(portId);
+                    const config = await getConfigFromPort(portId);
+                    setTitle(`Driver ${config.id} Station ${config.station}`);
                   } catch {
                     toaster.create({
                       title: "Invalid Port",
