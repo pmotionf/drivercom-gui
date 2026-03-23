@@ -1,11 +1,4 @@
-import {
-  createSignal,
-  onMount,
-  onCleanup,
-  createEffect,
-  on,
-  For,
-} from "solid-js";
+import { createSignal, onMount, onCleanup, createEffect, on } from "solid-js";
 import { Splitter } from "../../components/ui/splitter.tsx";
 import { IconButton } from "~/components/ui/icon-button.tsx";
 import {
@@ -67,7 +60,7 @@ import { disconnect } from "@kuyoonjo/tauri-plugin-tcp";
 import CarrierPage, { CarrierState } from "./MonitoringSidebar/CarrierPage.tsx";
 import { load } from "@tauri-apps/plugin-store";
 import { toaster } from "~/services/Toaster.ts";
-import { Text } from "~/components/ui/text.tsx";
+import { SystemTopView } from "./TopView/SystemTopView.tsx";
 
 export type Lines = LineType[];
 export type Systems = TrackType[];
@@ -492,122 +485,7 @@ function Monitoring() {
                 />
               }
             >
-              <div style={{ width: "100%", height: "100%" }}>
-                <For each={lines!}>
-                  {(line, lineIndex) => {
-                    const axisLength = line.axisLength;
-                    const lineWidth = axisLength * line.axes;
-                    const lineHeight = "8rem";
-                    const driverIds = Array.from(
-                      { length: line.drivers },
-                      (_, i) => i + 1,
-                    );
-
-                    const [x, setX] = createSignal<number>(0);
-                    const [y, setY] = createSignal<number>(lineIndex() * 200);
-
-                    return (
-                      <div
-                        style={{
-                          height: "max-content",
-                          width: "max-content",
-                          position: "absolute",
-                          top: `${y()}px`,
-                          left: `${x()}px`,
-                        }}
-                      >
-                        <Text>{line.name}</Text>
-                        <div
-                          style={{
-                            width: `${lineWidth}px`,
-                            height: `${lineHeight}`,
-                            "border-width": "1px",
-                            "border-radius": "0.2rem",
-                            display: "flex",
-                          }}
-                        >
-                          <For each={driverIds}>
-                            {(driverId) => {
-                              const axesLength =
-                                driverId !== driverIds.length
-                                  ? 3
-                                  : line.axes % 3 !== 0
-                                    ? 2
-                                    : 3;
-                              const axesIds = Array.from(
-                                { length: axesLength },
-                                (_, i) => i + 1,
-                              );
-                              const driverWidth = axisLength * axesLength;
-
-                              return (
-                                <div
-                                  style={{
-                                    width: `${driverWidth}px`,
-                                    height: "100%",
-                                    "border-width": "1px",
-                                  }}
-                                >
-                                  <Text height="1.5rem">{`Driver ${driverId}`}</Text>
-                                  <div
-                                    style={{
-                                      width: "100%",
-                                      display: "flex",
-                                      height: `calc(100% - 1.5rem)`,
-                                    }}
-                                  >
-                                    <For each={axesIds}>
-                                      {(axesId) => {
-                                        return (
-                                          <div
-                                            style={{
-                                              width: `${axisLength}px`,
-                                              height: `calc(100% - 0.5rem)`,
-                                              "border-width": "1px",
-                                            }}
-                                          >
-                                            <Text>{`Axis ${axesId}`}</Text>
-                                          </div>
-                                        );
-                                      }}
-                                    </For>
-                                  </div>
-                                </div>
-                              );
-                            }}
-                          </For>
-                        </div>
-                        <Show
-                          when={
-                            systems[lineIndex()].carrierState &&
-                            systems[lineIndex()].carrierState.length > 0
-                          }
-                        >
-                          <For each={systems[lineIndex()].carrierState}>
-                            {(carrier) => {
-                              return (
-                                <div
-                                  class={css({ background: "fg.default" })}
-                                  style={{
-                                    width: `${line.carrierLength}px `,
-                                    height: "3rem",
-                                    "border-width": "1px",
-                                    position: "absolute",
-                                    left: `calc(${x()}px + ${carrier.position}px) `,
-                                    top: `calc(${y()}px + 5.5rem)`,
-                                  }}
-                                >
-                                  <Text color="bg.default">{`Carrier ${carrier.id}`}</Text>
-                                </div>
-                              );
-                            }}
-                          </For>
-                        </Show>
-                      </div>
-                    );
-                  }}
-                </For>
-              </div>
+              <SystemTopView line={lines!} system={systems} />
             </Show>
           </Show>
         </Splitter.Panel>
