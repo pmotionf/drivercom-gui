@@ -65,7 +65,7 @@ export const FormCheckBox = (props: FormCheckBoxProps) => {
                 "string"
             }
           >
-            <Text size="xs" fontWeight="light" color="gray.9">
+            <Text size="xs" fontWeight="light" color="fg.muted">
               {props.desc!["description" as keyof typeof props.desc]}
             </Text>
           </Show>

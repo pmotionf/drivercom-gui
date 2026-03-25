@@ -46,7 +46,7 @@ export const FormCollapsibleObject = (props: FormCollapsibleObjectProps) => {
                 .replaceAll(",", "")}`}
             </Text>
             <Show when={props.triggerDescription}>
-              <Text size="xs" fontWeight="light" color="gray.9">
+              <Text size="xs" fontWeight="light" color="fg.muted">
                 {
                   props.triggerDescription![
                     "description" as keyof typeof props.triggerDescription
