@@ -4,6 +4,7 @@ import { Text } from "~/components/ui/text";
 import { css } from "styled-system/css";
 import { createDraggable } from "@neodrag/solid";
 import { Badge } from "~/components/ui/badge";
+import { createStore } from "solid-js/store";
 
 export type SystemTopViewProps = { line: Lines; system: Systems };
 
@@ -14,6 +15,19 @@ export const SystemTopView = (props: SystemTopViewProps) => {
   //@ts-ignore This draggable is needed to use neo-drag.
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { draggable: dragOptions } = createDraggable();
+
+  const [positionStateStore, setPositionStateStore] = createStore<
+    { line: string; rotate: boolean; positionX: number; positionY: number }[]
+  >(
+    Array.from(lines()).map((line, i) => {
+      return {
+        line: line.name,
+        rotate: false,
+        positionX: 0,
+        positionY: i * 200,
+      };
+    }),
+  );
 
   return (
     <div style={{ width: "100%", height: "100%" }}>
@@ -26,13 +40,22 @@ export const SystemTopView = (props: SystemTopViewProps) => {
             { length: line.drivers },
             (_, i) => i + 1,
           );
-          const [x, setX] = createSignal<number>(0);
-          const [y, setY] = createSignal<number>(lineIndex() * 200);
+          //const [x, setX] = createSignal<number>(0);
+          // const [y, setY] = createSignal<number>(lineIndex() * 200);
           const carrierGap = (line.axisLength - line.carrierLength) * 0.5;
 
           return (
             <div
               id={line.name}
+              onContextMenu={(e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                setPositionStateStore(
+                  lineIndex(),
+                  "rotate",
+                  !positionStateStore[lineIndex()].rotate,
+                );
+              }}
               style={{
                 height: "max-content",
                 width: "max-content",
@@ -41,14 +64,14 @@ export const SystemTopView = (props: SystemTopViewProps) => {
                 "border-radius": "0.2rem",
               }}
               use:dragOptions={{
-                bounds: "parent",
+                // bounds: "parent",
                 position: {
-                  x: x(),
-                  y: y(),
+                  x: positionStateStore[lineIndex()].positionX,
+                  y: positionStateStore[lineIndex()].positionY,
                 },
                 onDragEnd: ({ offsetX, offsetY }) => {
-                  setX(offsetX);
-                  setY(offsetY);
+                  setPositionStateStore(lineIndex(), "positionX", offsetX);
+                  setPositionStateStore(lineIndex(), "positionY", offsetY);
                 },
               }}
             >
@@ -64,11 +87,17 @@ export const SystemTopView = (props: SystemTopViewProps) => {
               <div
                 class={css({ background: "bg.default" })}
                 style={{
-                  width: `${lineWidth}px`,
-                  height: `${lineHeight}`,
+                  width: positionStateStore[lineIndex()].rotate
+                    ? `${lineHeight}`
+                    : `${lineWidth}px`,
+                  height: positionStateStore[lineIndex()].rotate
+                    ? `${lineWidth}px`
+                    : `${lineHeight}`,
                   "border-width": "1px",
                   "border-radius": "0.2rem",
-                  display: "flex",
+                  display: positionStateStore[lineIndex()].rotate
+                    ? undefined
+                    : "flex",
                 }}
               >
                 <For each={driverIds}>
@@ -88,10 +117,17 @@ export const SystemTopView = (props: SystemTopViewProps) => {
                     return (
                       <div
                         style={{
-                          width: `${driverWidth}px`,
-                          height: "100%",
+                          width: positionStateStore[lineIndex()].rotate
+                            ? "100%"
+                            : `${driverWidth}px`,
+                          height: positionStateStore[lineIndex()].rotate
+                            ? `${driverWidth}px`
+                            : "100%",
                           "border-left-width":
                             line.drivers === 1 ? "0px" : "1px",
+                          display: positionStateStore[lineIndex()].rotate
+                            ? "flex"
+                            : undefined,
                         }}
                       >
                         <Badge
@@ -105,12 +141,22 @@ export const SystemTopView = (props: SystemTopViewProps) => {
                               ? "accent.customGreen"
                               : "bg.canvas"
                           }
-                        >{`Driver ${driverId}`}</Badge>
+                        >
+                          {positionStateStore[lineIndex()].rotate
+                            ? `D${driverId}`
+                            : `Driver ${driverId}`}
+                        </Badge>
                         <div
                           style={{
-                            width: "100%",
-                            display: "flex",
-                            height: `calc(100% - 1.5rem)`,
+                            width: positionStateStore[lineIndex()].rotate
+                              ? `calc(100% - 1.5rem)`
+                              : "100%",
+                            display: positionStateStore[lineIndex()].rotate
+                              ? "unset"
+                              : "flex",
+                            height: positionStateStore[lineIndex()].rotate
+                              ? "100%"
+                              : `calc(100% - 1.5rem)`,
                           }}
                         >
                           <For each={axesIds}>
@@ -118,21 +164,35 @@ export const SystemTopView = (props: SystemTopViewProps) => {
                               return (
                                 <div
                                   style={{
-                                    width: `${axisLength}px`,
-                                    height: `calc(100% - 0.5rem)`,
-                                    "border-width": "1px 0px 1px 0px",
+                                    width: positionStateStore[lineIndex()]
+                                      .rotate
+                                      ? "100%"
+                                      : `${axisLength}px`,
+                                    height: positionStateStore[lineIndex()]
+                                      .rotate
+                                      ? `${axisLength}px`
+                                      : `calc(100% - 0.5rem)`,
+                                    "border-width": positionStateStore[
+                                      lineIndex()
+                                    ].rotate
+                                      ? "0px 0px 1px 1px"
+                                      : "1px 1px 1px 0px",
                                     "border-left-width":
                                       axesId === 1 ? "0px" : "1px",
                                   }}
                                 >
                                   <Badge
                                     marginLeft={"0.2rem"}
-                                    paddingTop=" 0rem"
+                                    paddingTop="0rem"
                                     paddingBottom="0rem"
                                     height="1.5rem"
                                     paddingLeft="0.4rem"
                                     paddingRight="0.4rem"
-                                  >{`Axis ${axesId}`}</Badge>
+                                  >
+                                    {positionStateStore[lineIndex()].rotate
+                                      ? `A${axesId}`
+                                      : `Axis ${axesId}`}
+                                  </Badge>
                                 </div>
                               );
                             }}
@@ -159,12 +219,20 @@ export const SystemTopView = (props: SystemTopViewProps) => {
                           borderColor: "bg.disabled",
                         })}
                         style={{
-                          width: `${line.carrierLength}px `,
-                          height: "3.6rem",
+                          width: positionStateStore[lineIndex()].rotate
+                            ? "3.6rem"
+                            : `${line.carrierLength}px `,
+                          height: positionStateStore[lineIndex()].rotate
+                            ? `${line.carrierLength}px `
+                            : "3.6rem",
                           "border-width": "1px",
                           position: "absolute",
-                          left: `calc(${carrierGap}px + ${carrier.position}px)`,
-                          top: `5.2rem`,
+                          left: positionStateStore[lineIndex()].rotate
+                            ? "4.2rem"
+                            : `calc(${carrierGap}px + ${carrier.position}px)`,
+                          top: positionStateStore[lineIndex()].rotate
+                            ? `calc(${carrierGap}px + ${carrier.position}px + 1.5rem)`
+                            : `5.2rem`,
                           "z-index": "10",
                           "border-radius": "0.2rem",
                         }}
