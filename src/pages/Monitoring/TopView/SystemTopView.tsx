@@ -1,9 +1,8 @@
-import { createSignal, For, Show } from "solid-js";
+import { For, Show } from "solid-js";
 import { Lines, Systems } from "../Monitoring";
 import { Text } from "~/components/ui/text";
 import { css } from "styled-system/css";
 import { createDraggable } from "@neodrag/solid";
-import { Badge } from "~/components/ui/badge";
 import { createStore } from "solid-js/store";
 
 export type SystemTopViewProps = { line: Lines; system: Systems };
@@ -24,7 +23,7 @@ export const SystemTopView = (props: SystemTopViewProps) => {
         line: line.name,
         rotate: false,
         positionX: 0,
-        positionY: i * 200,
+        positionY: i * 250,
       };
     }),
   );
@@ -35,14 +34,12 @@ export const SystemTopView = (props: SystemTopViewProps) => {
         {(line, lineIndex) => {
           const axisLength = line.axisLength;
           const lineWidth = axisLength * line.axes;
-          const lineHeight = "8rem";
           const driverIds = Array.from(
             { length: line.drivers },
             (_, i) => i + 1,
           );
-          //const [x, setX] = createSignal<number>(0);
-          // const [y, setY] = createSignal<number>(lineIndex() * 200);
           const carrierGap = (line.axisLength - line.carrierLength) * 0.5;
+          const carrierWidth = 200;
 
           return (
             <div
@@ -57,14 +54,17 @@ export const SystemTopView = (props: SystemTopViewProps) => {
                 );
               }}
               style={{
-                height: "max-content",
-                width: "max-content",
+                height: positionStateStore[lineIndex()].rotate
+                  ? `${lineWidth}px`
+                  : `calc(${carrierWidth}px + 2rem)`,
+                width: positionStateStore[lineIndex()].rotate
+                  ? `calc(${carrierWidth}px + 2rem)`
+                  : `${lineWidth}px`,
                 position: "absolute",
                 cursor: "grab",
-                "border-radius": "0.2rem",
               }}
               use:dragOptions={{
-                // bounds: "parent",
+                bounds: "parent",
                 position: {
                   x: positionStateStore[lineIndex()].positionX,
                   y: positionStateStore[lineIndex()].positionY,
@@ -88,16 +88,11 @@ export const SystemTopView = (props: SystemTopViewProps) => {
                 class={css({ background: "bg.default" })}
                 style={{
                   width: positionStateStore[lineIndex()].rotate
-                    ? `${lineHeight}`
+                    ? `calc(${carrierWidth}px + 2rem)`
                     : `${lineWidth}px`,
                   height: positionStateStore[lineIndex()].rotate
                     ? `${lineWidth}px`
-                    : `${lineHeight}`,
-                  "border-width": "1px",
-                  "border-radius": "0.2rem",
-                  display: positionStateStore[lineIndex()].rotate
-                    ? undefined
-                    : "flex",
+                    : `calc(${carrierWidth}px + 2rem)`,
                 }}
               >
                 <For each={driverIds}>
@@ -117,82 +112,164 @@ export const SystemTopView = (props: SystemTopViewProps) => {
                     return (
                       <div
                         style={{
-                          width: positionStateStore[lineIndex()].rotate
-                            ? "100%"
-                            : `${driverWidth}px`,
-                          height: positionStateStore[lineIndex()].rotate
-                            ? `${driverWidth}px`
-                            : "100%",
-                          "border-left-width":
-                            line.drivers === 1 ? "0px" : "1px",
                           display: positionStateStore[lineIndex()].rotate
                             ? "flex"
                             : undefined,
+                          height: positionStateStore[lineIndex()].rotate
+                            ? `${driverWidth}px`
+                            : `calc(${carrierWidth}px + 2rem)`,
+                          width: positionStateStore[lineIndex()].rotate
+                            ? `calc(${carrierWidth}px + 2rem)`
+                            : `${driverWidth}px`,
                         }}
                       >
-                        <Badge
-                          marginBottom="0.1rem"
-                          marginLeft={"0.1rem"}
-                          paddingTop=" 0rem"
-                          paddingBottom="0rem"
-                          background={
-                            system()[lineIndex()].driverState[driverId - 1]
-                              .connected
+                        <div
+                          class={css({
+                            background: system()[lineIndex()].driverState[
+                              driverId - 1
+                            ].connected
                               ? "accent.customGreen"
-                              : "bg.canvas"
-                          }
+                              : "bg.disabled",
+                          })}
+                          style={{
+                            height: positionStateStore[lineIndex()].rotate
+                              ? `${driverWidth}px`
+                              : "1rem",
+                            width: positionStateStore[lineIndex()].rotate
+                              ? "1rem"
+                              : `${driverWidth}px`,
+                          }}
                         >
-                          {positionStateStore[lineIndex()].rotate
-                            ? `D${driverId}`
-                            : `Driver ${driverId}`}
-                        </Badge>
+                          <Text
+                            size="xs"
+                            borderRadius="0.2rem"
+                            letterSpacing={
+                              positionStateStore[lineIndex()].rotate
+                                ? "0.5rem"
+                                : "0"
+                            }
+                            padding={"0"}
+                            writingMode={
+                              positionStateStore[lineIndex()].rotate
+                                ? "vertical-lr"
+                                : undefined
+                            }
+                            textOrientation={
+                              positionStateStore[lineIndex()].rotate
+                                ? "upright"
+                                : undefined
+                            }
+                          >
+                            {positionStateStore[lineIndex()].rotate
+                              ? `D${driverId}`
+                              : `Driver ${driverId}`}
+                          </Text>
+                        </div>
+
                         <div
                           style={{
                             width: positionStateStore[lineIndex()].rotate
-                              ? `calc(100% - 1.5rem)`
-                              : "100%",
-                            display: positionStateStore[lineIndex()].rotate
-                              ? "unset"
-                              : "flex",
+                              ? `calc(${carrierWidth}px + 1rem)`
+                              : `${driverWidth}px`,
                             height: positionStateStore[lineIndex()].rotate
-                              ? "100%"
-                              : `calc(100% - 1.5rem)`,
+                              ? `${driverWidth}px`
+                              : `calc(${carrierWidth}px + 1rem)`,
+
+                            display: positionStateStore[lineIndex()].rotate
+                              ? undefined
+                              : "flex",
+                            "border-width": "1px",
                           }}
                         >
                           <For each={axesIds}>
-                            {(axesId) => {
+                            {(axisId) => {
                               return (
                                 <div
                                   style={{
                                     width: positionStateStore[lineIndex()]
                                       .rotate
-                                      ? "100%"
+                                      ? `calc(${carrierWidth}px + 1rem)`
                                       : `${axisLength}px`,
                                     height: positionStateStore[lineIndex()]
                                       .rotate
                                       ? `${axisLength}px`
-                                      : `calc(100% - 0.5rem)`,
-                                    "border-width": positionStateStore[
+                                      : `calc(${carrierWidth}px + 1rem)`,
+                                    display: "flex",
+                                    "flex-direction": positionStateStore[
                                       lineIndex()
                                     ].rotate
-                                      ? "0px 0px 1px 1px"
-                                      : "1px 1px 1px 0px",
-                                    "border-left-width":
-                                      axesId === 1 ? "0px" : "1px",
+                                      ? "row"
+                                      : "column",
+                                    gap: "0",
                                   }}
                                 >
-                                  <Badge
-                                    marginLeft={"0.2rem"}
-                                    paddingTop="0rem"
-                                    paddingBottom="0rem"
-                                    height="1.5rem"
-                                    paddingLeft="0.4rem"
-                                    paddingRight="0.4rem"
+                                  <div
+                                    class={css({
+                                      background: "bg.muted",
+                                      borderColor: "bg.disabled",
+                                    })}
+                                    style={{
+                                      width: positionStateStore[lineIndex()]
+                                        .rotate
+                                        ? "1rem"
+                                        : `${axisLength}px`,
+                                      height: positionStateStore[lineIndex()]
+                                        .rotate
+                                        ? `${axisLength}px`
+                                        : "1rem",
+                                      "border-width": positionStateStore[
+                                        lineIndex()
+                                      ].rotate
+                                        ? "0px 0px 1px 0px"
+                                        : axisId === axesIds.length
+                                          ? "0px"
+                                          : "0px 1px 0px 0px",
+                                    }}
                                   >
-                                    {positionStateStore[lineIndex()].rotate
-                                      ? `A${axesId}`
-                                      : `Axis ${axesId}`}
-                                  </Badge>
+                                    <Text
+                                      size="xs"
+                                      borderRadius="0.2rem"
+                                      letterSpacing={
+                                        positionStateStore[lineIndex()].rotate
+                                          ? "0.5rem"
+                                          : "0"
+                                      }
+                                      padding={"0"}
+                                      writingMode={
+                                        positionStateStore[lineIndex()].rotate
+                                          ? "vertical-lr"
+                                          : undefined
+                                      }
+                                      textOrientation={
+                                        positionStateStore[lineIndex()].rotate
+                                          ? "upright"
+                                          : undefined
+                                      }
+                                    >
+                                      {positionStateStore[lineIndex()].rotate
+                                        ? `A${axisId}`
+                                        : `Axis ${axisId}`}
+                                    </Text>
+                                  </div>
+                                  <div
+                                    style={{
+                                      width: positionStateStore[lineIndex()]
+                                        .rotate
+                                        ? `calc(${carrierWidth}px + 1rem)`
+                                        : `${axisLength}px`,
+                                      height: positionStateStore[lineIndex()]
+                                        .rotate
+                                        ? `${axisLength}px`
+                                        : `calc(${carrierWidth}px + 1rem)`,
+                                      "border-width": positionStateStore[
+                                        lineIndex()
+                                      ].rotate
+                                        ? "0px 0px 1px 0px"
+                                        : axisId === axesIds.length
+                                          ? "0px"
+                                          : "0px 1px 0px 0px",
+                                    }}
+                                  />
                                 </div>
                               );
                             }}
