@@ -297,19 +297,19 @@ export const SystemTopView = (props: SystemTopViewProps) => {
                         })}
                         style={{
                           width: positionStateStore[lineIndex()].rotate
-                            ? "3.6rem"
+                            ? `${carrierWidth}px`
                             : `${line.carrierLength}px `,
                           height: positionStateStore[lineIndex()].rotate
                             ? `${line.carrierLength}px `
-                            : "3.6rem",
+                            : `${carrierWidth}px`,
                           "border-width": "1px",
                           position: "absolute",
                           left: positionStateStore[lineIndex()].rotate
-                            ? "4.2rem"
+                            ? "2rem"
                             : `calc(${carrierGap}px + ${carrier.position}px)`,
                           top: positionStateStore[lineIndex()].rotate
                             ? `calc(${carrierGap}px + ${carrier.position}px + 1.5rem)`
-                            : `5.2rem`,
+                            : `3.5rem`,
                           "z-index": "10",
                           "border-radius": "0.2rem",
                         }}
