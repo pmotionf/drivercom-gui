@@ -6,7 +6,6 @@ import { Show, For, createSignal, onMount } from "solid-js";
 import { Accordion } from "../../../components/ui/accordion";
 import { IconButton } from "../../../components/ui/icon-button";
 import { Text } from "../../../components/ui/text";
-import { Tooltip } from "../../../components/ui/tooltip";
 import { FormNumberInput } from "../../../components/Form/FormNumberInput";
 import { FormCheckBox } from "../../../components/Form/FormCheckBox";
 
@@ -16,9 +15,10 @@ import {
   IconLink,
   IconLinkOff,
   IconChevronDown,
-  IconHelp,
 } from "@tabler/icons-solidjs";
 import { prettierLabel } from "~/utils/PrettierLabel";
+import { FlipSensorExample } from "./FlipSensorExample";
+import { SwapSensorExample } from "./SwapSensorExample";
 
 export type ConfigFormatObjectProps = {
   id: string;
@@ -227,20 +227,20 @@ export const ConfigFormatObject = (props: ConfigFormatObjectProps) => {
                         >{`${prettierLabel(label)} ${prettierLabel(innerLabel)}`}</Text>
 
                         <Show when={innderDescText}>
-                          <Tooltip.Root>
-                            <Tooltip.Trigger>
-                              <IconHelp size="1em" opacity={0.5} />
-                            </Tooltip.Trigger>
-                            <Tooltip.Positioner>
-                              <Tooltip.Content>
-                                {
-                                  innderDescText![
-                                    "description" as keyof typeof innderDescText
-                                  ]
-                                }
-                              </Tooltip.Content>
-                            </Tooltip.Positioner>
-                          </Tooltip.Root>
+                          <Text
+                            size="xs"
+                            fontWeight="light"
+                            style={{
+                              width: "100%",
+                            }}
+                            color="gray.9"
+                          >
+                            {
+                              innderDescText![
+                                "description" as keyof typeof innderDescText
+                              ]
+                            }
+                          </Text>
                         </Show>
                         <Show
                           when={
@@ -403,7 +403,6 @@ export const ConfigFormatObject = (props: ConfigFormatObjectProps) => {
               if (props.accordionStatuses && !props.accordionStatuses.has(id)) {
                 props.accordionStatuses.set(id, [accordionItemValue]);
               }
-
               return (
                 <Accordion.Root
                   multiple
@@ -462,7 +461,7 @@ export const ConfigFormatObject = (props: ConfigFormatObjectProps) => {
                       >
                         <div
                           style={{
-                            width: descriptionText ? "15rem" : "unset",
+                            width: descriptionText ? "20rem" : "unset",
                           }}
                         >
                           <Text
@@ -492,6 +491,16 @@ export const ConfigFormatObject = (props: ConfigFormatObjectProps) => {
                                   "description" as keyof typeof descriptionText
                                 ]
                               }
+                              <Show
+                                when={label.toLowerCase() === "flip_sensors"}
+                              >
+                                <FlipSensorExample />
+                              </Show>
+                              <Show
+                                when={label.toLowerCase() === "swap_sensors"}
+                              >
+                                <SwapSensorExample />
+                              </Show>
                             </Text>
                           </Show>
                         </div>
@@ -534,9 +543,17 @@ export const ConfigFormatObject = (props: ConfigFormatObjectProps) => {
                           </IconButton>
                         </Show>
                       </div>
-                      <Accordion.ItemIndicator marginLeft={`50%`}>
-                        <IconChevronDown />
-                      </Accordion.ItemIndicator>
+                      <div
+                        style={{
+                          width: "100%",
+                          display: "flex",
+                          "flex-direction": "row-reverse",
+                        }}
+                      >
+                        <Accordion.ItemIndicator>
+                          <IconChevronDown />
+                        </Accordion.ItemIndicator>
+                      </div>
                     </Accordion.ItemTrigger>
                     <Accordion.ItemContent
                       padding={"0rem 0.5rem 0.5rem 0.5rem"}
