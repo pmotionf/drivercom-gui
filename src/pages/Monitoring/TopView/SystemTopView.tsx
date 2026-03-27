@@ -226,7 +226,7 @@ export const SystemTopView = (props: SystemTopViewProps) => {
                   }}
                 >
                   <For each={axesIds}>
-                    {(axisId) => {
+                    {(axisId, axisIndex) => {
                       return (
                         <div
                           style={{
@@ -246,7 +246,17 @@ export const SystemTopView = (props: SystemTopViewProps) => {
                         >
                           <div
                             class={css({
-                              background: "bg.muted",
+                              background:
+                                system()[lineIndex()].axisState[axisIndex()]
+                                  .waitingPull ||
+                                system()[lineIndex()].axisState[axisIndex()]
+                                  .waitingPush
+                                  ? "accent.customOrange"
+                                  : system()[lineIndex()].axisState[axisIndex()]
+                                        .motorActive
+                                    ? "accent.customGreen"
+                                    : "bg.muted",
+                              opacity: "0.8",
                               borderColor: "bg.disabled",
                             })}
                             style={{
@@ -313,13 +323,16 @@ export const SystemTopView = (props: SystemTopViewProps) => {
                     {(axisId) => {
                       return (
                         <div
+                          class={css({
+                            background: "bg.canvas",
+                          })}
                           style={{
                             width: positionStateStore[lineIndex()].isVertical
-                              ? `${carrierWidth}px`
+                              ? `${carrierWidth - 2}px`
                               : `${axisLength}px`,
                             height: positionStateStore[lineIndex()].isVertical
                               ? `${axisLength}px`
-                              : `${carrierWidth}px `,
+                              : `${carrierWidth - 2}px `,
                             "border-width": positionStateStore[lineIndex()]
                               .isVertical
                               ? "0px 0px 1px 0px"
@@ -358,11 +371,27 @@ export const SystemTopView = (props: SystemTopViewProps) => {
                           "border-width": "1px",
                           position: "absolute",
                           left: positionStateStore[lineIndex()].isVertical
-                            ? "2rem"
-                            : `calc(${carrierGap}px + ${carrier.position}px)`,
+                            ? positionStateStore[
+                                lineIndex()
+                              ].direction.includes("reverse")
+                              ? "0"
+                              : "2rem"
+                            : positionStateStore[
+                                  lineIndex()
+                                ].direction.includes("reverse")
+                              ? `calc(${axisLength * line.axes}px - ${line.carrierLength}px - ${carrierGap}px - ${carrier.position}px)`
+                              : `calc(${carrierGap}px + ${carrier.position}px)`,
                           top: positionStateStore[lineIndex()].isVertical
-                            ? `calc(${carrierGap}px + ${carrier.position}px + 1.5rem)`
-                            : `3.5rem`,
+                            ? positionStateStore[
+                                lineIndex()
+                              ].direction.includes("reverse")
+                              ? `calc(${axisLength * line.axes}px - ${line.carrierLength}px - ${carrierGap}px - ${carrier.position}px + 1.5rem)`
+                              : `calc(${carrierGap}px + ${carrier.position}px + 1.5rem)`
+                            : positionStateStore[
+                                  lineIndex()
+                                ].direction.includes("reverse")
+                              ? "1.5rem"
+                              : "3.5rem",
                           "z-index": "10",
                           "border-radius": "0.2rem",
                         }}
