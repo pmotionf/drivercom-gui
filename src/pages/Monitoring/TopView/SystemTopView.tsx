@@ -16,12 +16,17 @@ export const SystemTopView = (props: SystemTopViewProps) => {
   const { draggable: dragOptions } = createDraggable();
 
   const [positionStateStore, setPositionStateStore] = createStore<
-    { line: string; rotate: boolean; positionX: number; positionY: number }[]
+    {
+      line: string;
+      isVertical: boolean;
+      positionX: number;
+      positionY: number;
+    }[]
   >(
     Array.from(lines()).map((line, i) => {
       return {
         line: line.name,
-        rotate: false,
+        isVertical: false,
         positionX: 0,
         positionY: i * 250,
       };
@@ -49,15 +54,15 @@ export const SystemTopView = (props: SystemTopViewProps) => {
                 e.preventDefault();
                 setPositionStateStore(
                   lineIndex(),
-                  "rotate",
-                  !positionStateStore[lineIndex()].rotate,
+                  "isVertical",
+                  !positionStateStore[lineIndex()].isVertical,
                 );
               }}
               style={{
-                height: positionStateStore[lineIndex()].rotate
+                height: positionStateStore[lineIndex()].isVertical
                   ? `${lineWidth}px`
                   : `calc(${carrierWidth}px + 2rem)`,
-                width: positionStateStore[lineIndex()].rotate
+                width: positionStateStore[lineIndex()].isVertical
                   ? `calc(${carrierWidth}px + 2rem)`
                   : `${lineWidth}px`,
                 position: "absolute",
@@ -87,10 +92,10 @@ export const SystemTopView = (props: SystemTopViewProps) => {
               <div
                 class={css({ background: "bg.default" })}
                 style={{
-                  width: positionStateStore[lineIndex()].rotate
+                  width: positionStateStore[lineIndex()].isVertical
                     ? `calc(${carrierWidth}px + 2rem)`
                     : `${lineWidth}px`,
-                  height: positionStateStore[lineIndex()].rotate
+                  height: positionStateStore[lineIndex()].isVertical
                     ? `${lineWidth}px`
                     : `calc(${carrierWidth}px + 2rem)`,
                 }}
@@ -112,13 +117,13 @@ export const SystemTopView = (props: SystemTopViewProps) => {
                     return (
                       <div
                         style={{
-                          display: positionStateStore[lineIndex()].rotate
+                          display: positionStateStore[lineIndex()].isVertical
                             ? "flex"
                             : undefined,
-                          height: positionStateStore[lineIndex()].rotate
+                          height: positionStateStore[lineIndex()].isVertical
                             ? `${driverWidth}px`
                             : `calc(${carrierWidth}px + 2rem)`,
-                          width: positionStateStore[lineIndex()].rotate
+                          width: positionStateStore[lineIndex()].isVertical
                             ? `calc(${carrierWidth}px + 2rem)`
                             : `${driverWidth}px`,
                         }}
@@ -132,10 +137,10 @@ export const SystemTopView = (props: SystemTopViewProps) => {
                               : "bg.disabled",
                           })}
                           style={{
-                            height: positionStateStore[lineIndex()].rotate
+                            height: positionStateStore[lineIndex()].isVertical
                               ? `${driverWidth}px`
                               : "1rem",
-                            width: positionStateStore[lineIndex()].rotate
+                            width: positionStateStore[lineIndex()].isVertical
                               ? "1rem"
                               : `${driverWidth}px`,
                           }}
@@ -144,23 +149,23 @@ export const SystemTopView = (props: SystemTopViewProps) => {
                             size="xs"
                             borderRadius="0.2rem"
                             letterSpacing={
-                              positionStateStore[lineIndex()].rotate
+                              positionStateStore[lineIndex()].isVertical
                                 ? "0.5rem"
                                 : "0"
                             }
                             padding={"0"}
                             writingMode={
-                              positionStateStore[lineIndex()].rotate
+                              positionStateStore[lineIndex()].isVertical
                                 ? "vertical-lr"
                                 : undefined
                             }
                             textOrientation={
-                              positionStateStore[lineIndex()].rotate
+                              positionStateStore[lineIndex()].isVertical
                                 ? "upright"
                                 : undefined
                             }
                           >
-                            {positionStateStore[lineIndex()].rotate
+                            {positionStateStore[lineIndex()].isVertical
                               ? `D${driverId}`
                               : `Driver ${driverId}`}
                           </Text>
@@ -168,14 +173,14 @@ export const SystemTopView = (props: SystemTopViewProps) => {
 
                         <div
                           style={{
-                            width: positionStateStore[lineIndex()].rotate
+                            width: positionStateStore[lineIndex()].isVertical
                               ? `calc(${carrierWidth}px + 1rem)`
                               : `${driverWidth}px`,
-                            height: positionStateStore[lineIndex()].rotate
+                            height: positionStateStore[lineIndex()].isVertical
                               ? `${driverWidth}px`
                               : `calc(${carrierWidth}px + 1rem)`,
 
-                            display: positionStateStore[lineIndex()].rotate
+                            display: positionStateStore[lineIndex()].isVertical
                               ? undefined
                               : "flex",
                             "border-width": "1px",
@@ -187,17 +192,17 @@ export const SystemTopView = (props: SystemTopViewProps) => {
                                 <div
                                   style={{
                                     width: positionStateStore[lineIndex()]
-                                      .rotate
+                                      .isVertical
                                       ? `calc(${carrierWidth}px + 1rem)`
                                       : `${axisLength}px`,
                                     height: positionStateStore[lineIndex()]
-                                      .rotate
+                                      .isVertical
                                       ? `${axisLength}px`
                                       : `calc(${carrierWidth}px + 1rem)`,
                                     display: "flex",
                                     "flex-direction": positionStateStore[
                                       lineIndex()
-                                    ].rotate
+                                    ].isVertical
                                       ? "row"
                                       : "column",
                                     gap: "0",
@@ -210,16 +215,16 @@ export const SystemTopView = (props: SystemTopViewProps) => {
                                     })}
                                     style={{
                                       width: positionStateStore[lineIndex()]
-                                        .rotate
+                                        .isVertical
                                         ? "1rem"
                                         : `${axisLength}px`,
                                       height: positionStateStore[lineIndex()]
-                                        .rotate
+                                        .isVertical
                                         ? `${axisLength}px`
                                         : "1rem",
                                       "border-width": positionStateStore[
                                         lineIndex()
-                                      ].rotate
+                                      ].isVertical
                                         ? "0px 0px 1px 0px"
                                         : axisId === axesIds.length
                                           ? "0px"
@@ -230,23 +235,27 @@ export const SystemTopView = (props: SystemTopViewProps) => {
                                       size="xs"
                                       borderRadius="0.2rem"
                                       letterSpacing={
-                                        positionStateStore[lineIndex()].rotate
+                                        positionStateStore[lineIndex()]
+                                          .isVertical
                                           ? "0.5rem"
                                           : "0"
                                       }
                                       padding={"0"}
                                       writingMode={
-                                        positionStateStore[lineIndex()].rotate
+                                        positionStateStore[lineIndex()]
+                                          .isVertical
                                           ? "vertical-lr"
                                           : undefined
                                       }
                                       textOrientation={
-                                        positionStateStore[lineIndex()].rotate
+                                        positionStateStore[lineIndex()]
+                                          .isVertical
                                           ? "upright"
                                           : undefined
                                       }
                                     >
-                                      {positionStateStore[lineIndex()].rotate
+                                      {positionStateStore[lineIndex()]
+                                        .isVertical
                                         ? `A${axisId}`
                                         : `Axis ${axisId}`}
                                     </Text>
@@ -254,16 +263,16 @@ export const SystemTopView = (props: SystemTopViewProps) => {
                                   <div
                                     style={{
                                       width: positionStateStore[lineIndex()]
-                                        .rotate
+                                        .isVertical
                                         ? `calc(${carrierWidth}px + 1rem)`
                                         : `${axisLength}px`,
                                       height: positionStateStore[lineIndex()]
-                                        .rotate
+                                        .isVertical
                                         ? `${axisLength}px`
                                         : `calc(${carrierWidth}px + 1rem)`,
                                       "border-width": positionStateStore[
                                         lineIndex()
-                                      ].rotate
+                                      ].isVertical
                                         ? "0px 0px 1px 0px"
                                         : axisId === axesIds.length
                                           ? "0px"
@@ -296,18 +305,18 @@ export const SystemTopView = (props: SystemTopViewProps) => {
                           borderColor: "bg.disabled",
                         })}
                         style={{
-                          width: positionStateStore[lineIndex()].rotate
+                          width: positionStateStore[lineIndex()].isVertical
                             ? `${carrierWidth}px`
                             : `${line.carrierLength}px `,
-                          height: positionStateStore[lineIndex()].rotate
+                          height: positionStateStore[lineIndex()].isVertical
                             ? `${line.carrierLength}px `
                             : `${carrierWidth}px`,
                           "border-width": "1px",
                           position: "absolute",
-                          left: positionStateStore[lineIndex()].rotate
+                          left: positionStateStore[lineIndex()].isVertical
                             ? "2rem"
                             : `calc(${carrierGap}px + ${carrier.position}px)`,
-                          top: positionStateStore[lineIndex()].rotate
+                          top: positionStateStore[lineIndex()].isVertical
                             ? `calc(${carrierGap}px + ${carrier.position}px + 1.5rem)`
                             : `3.5rem`,
                           "z-index": "10",
