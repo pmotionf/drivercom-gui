@@ -7,6 +7,8 @@ import { createStore } from "solid-js/store";
 
 export type SystemTopViewProps = { line: Lines; system: Systems };
 
+type Direction = "column" | "row" | "column-reverse" | "row-reverse";
+
 export const SystemTopView = (props: SystemTopViewProps) => {
   const lines = () => props.line;
   const system = () => props.system;
@@ -19,6 +21,7 @@ export const SystemTopView = (props: SystemTopViewProps) => {
     {
       line: string;
       isVertical: boolean;
+      direction: Direction;
       positionX: number;
       positionY: number;
     }[]
@@ -27,6 +30,7 @@ export const SystemTopView = (props: SystemTopViewProps) => {
       return {
         line: line.name,
         isVertical: false,
+        direction: "column",
         positionX: 0,
         positionY: i * 250,
       };
@@ -45,6 +49,7 @@ export const SystemTopView = (props: SystemTopViewProps) => {
           );
           const carrierGap = (line.axisLength - line.carrierLength) * 0.5;
           const carrierWidth = 200;
+          const axesIds = Array.from({ length: line.axes }, (_, i) => i + 1);
 
           return (
             <div
@@ -56,6 +61,18 @@ export const SystemTopView = (props: SystemTopViewProps) => {
                   lineIndex(),
                   "isVertical",
                   !positionStateStore[lineIndex()].isVertical,
+                );
+                setPositionStateStore(
+                  lineIndex(),
+                  "direction",
+                  positionStateStore[lineIndex()].direction === "column"
+                    ? "row"
+                    : positionStateStore[lineIndex()].direction === "row"
+                      ? "column-reverse"
+                      : positionStateStore[lineIndex()].direction ===
+                          "column-reverse"
+                        ? "row-reverse"
+                        : "column",
                 );
               }}
               style={{
@@ -98,36 +115,46 @@ export const SystemTopView = (props: SystemTopViewProps) => {
                   height: positionStateStore[lineIndex()].isVertical
                     ? `${lineWidth}px`
                     : `calc(${carrierWidth}px + 2rem)`,
+                  display: "flex",
+                  "flex-direction": positionStateStore[lineIndex()].direction,
                 }}
               >
-                <For each={driverIds}>
-                  {(driverId) => {
-                    const axesLength =
-                      driverId !== driverIds.length
-                        ? 3
-                        : line.axes % 3 !== 0
-                          ? 2
-                          : 3;
-                    const axesIds = Array.from(
-                      { length: axesLength },
-                      (_, i) => i + 1,
-                    );
-                    const driverWidth = axisLength * axesLength;
+                <div
+                  style={{
+                    width: positionStateStore[lineIndex()].isVertical
+                      ? ` 1rem`
+                      : `${axisLength * line.axes}px`,
+                    height: positionStateStore[lineIndex()].isVertical
+                      ? `${axisLength * line.axes}px`
+                      : `1rem`,
 
-                    return (
-                      <div
-                        style={{
-                          display: positionStateStore[lineIndex()].isVertical
-                            ? "flex"
-                            : undefined,
-                          height: positionStateStore[lineIndex()].isVertical
-                            ? `${driverWidth}px`
-                            : `calc(${carrierWidth}px + 2rem)`,
-                          width: positionStateStore[lineIndex()].isVertical
-                            ? `calc(${carrierWidth}px + 2rem)`
-                            : `${driverWidth}px`,
-                        }}
-                      >
+                    display: "flex",
+                    "flex-direction": positionStateStore[
+                      lineIndex()
+                    ].direction.includes("column")
+                      ? (positionStateStore[lineIndex()].direction.replace(
+                          "column",
+                          "row",
+                        ) as Direction)
+                      : (positionStateStore[lineIndex()].direction.replace(
+                          "row",
+                          "column",
+                        ) as Direction),
+                    "border-width": "1px",
+                  }}
+                >
+                  <For each={driverIds}>
+                    {(driverId) => {
+                      const axesLength =
+                        driverId !== driverIds.length
+                          ? 3
+                          : line.axes % 3 !== 0
+                            ? 2
+                            : 3;
+
+                      const driverWidth = axisLength * axesLength;
+
+                      return (
                         <div
                           class={css({
                             background: system()[lineIndex()].driverState[
@@ -170,124 +197,141 @@ export const SystemTopView = (props: SystemTopViewProps) => {
                               : `Driver ${driverId}`}
                           </Text>
                         </div>
+                      );
+                    }}
+                  </For>
+                </div>
+                <div
+                  style={{
+                    width: positionStateStore[lineIndex()].isVertical
+                      ? ` 1rem`
+                      : `${axisLength * line.axes}px`,
+                    height: positionStateStore[lineIndex()].isVertical
+                      ? `${axisLength * line.axes}px`
+                      : `1rem`,
 
+                    display: "flex",
+                    "flex-direction": positionStateStore[
+                      lineIndex()
+                    ].direction.includes("column")
+                      ? (positionStateStore[lineIndex()].direction.replace(
+                          "column",
+                          "row",
+                        ) as Direction)
+                      : (positionStateStore[lineIndex()].direction.replace(
+                          "row",
+                          "column",
+                        ) as Direction),
+                    "border-width": "1px",
+                  }}
+                >
+                  <For each={axesIds}>
+                    {(axisId) => {
+                      return (
                         <div
                           style={{
                             width: positionStateStore[lineIndex()].isVertical
                               ? `calc(${carrierWidth}px + 1rem)`
-                              : `${driverWidth}px`,
+                              : `${axisLength}px`,
                             height: positionStateStore[lineIndex()].isVertical
-                              ? `${driverWidth}px`
+                              ? `${axisLength}px`
                               : `calc(${carrierWidth}px + 1rem)`,
-
-                            display: positionStateStore[lineIndex()].isVertical
-                              ? undefined
-                              : "flex",
-                            "border-width": "1px",
+                            display: "flex",
+                            "flex-direction": positionStateStore[lineIndex()]
+                              .isVertical
+                              ? "row"
+                              : "column",
+                            gap: "0",
                           }}
                         >
-                          <For each={axesIds}>
-                            {(axisId) => {
-                              return (
-                                <div
-                                  style={{
-                                    width: positionStateStore[lineIndex()]
-                                      .isVertical
-                                      ? `calc(${carrierWidth}px + 1rem)`
-                                      : `${axisLength}px`,
-                                    height: positionStateStore[lineIndex()]
-                                      .isVertical
-                                      ? `${axisLength}px`
-                                      : `calc(${carrierWidth}px + 1rem)`,
-                                    display: "flex",
-                                    "flex-direction": positionStateStore[
-                                      lineIndex()
-                                    ].isVertical
-                                      ? "row"
-                                      : "column",
-                                    gap: "0",
-                                  }}
-                                >
-                                  <div
-                                    class={css({
-                                      background: "bg.muted",
-                                      borderColor: "bg.disabled",
-                                    })}
-                                    style={{
-                                      width: positionStateStore[lineIndex()]
-                                        .isVertical
-                                        ? "1rem"
-                                        : `${axisLength}px`,
-                                      height: positionStateStore[lineIndex()]
-                                        .isVertical
-                                        ? `${axisLength}px`
-                                        : "1rem",
-                                      "border-width": positionStateStore[
-                                        lineIndex()
-                                      ].isVertical
-                                        ? "0px 0px 1px 0px"
-                                        : axisId === axesIds.length
-                                          ? "0px"
-                                          : "0px 1px 0px 0px",
-                                    }}
-                                  >
-                                    <Text
-                                      size="xs"
-                                      borderRadius="0.2rem"
-                                      letterSpacing={
-                                        positionStateStore[lineIndex()]
-                                          .isVertical
-                                          ? "0.5rem"
-                                          : "0"
-                                      }
-                                      padding={"0"}
-                                      writingMode={
-                                        positionStateStore[lineIndex()]
-                                          .isVertical
-                                          ? "vertical-lr"
-                                          : undefined
-                                      }
-                                      textOrientation={
-                                        positionStateStore[lineIndex()]
-                                          .isVertical
-                                          ? "upright"
-                                          : undefined
-                                      }
-                                    >
-                                      {positionStateStore[lineIndex()]
-                                        .isVertical
-                                        ? `A${axisId}`
-                                        : `Axis ${axisId}`}
-                                    </Text>
-                                  </div>
-                                  <div
-                                    style={{
-                                      width: positionStateStore[lineIndex()]
-                                        .isVertical
-                                        ? `calc(${carrierWidth}px + 1rem)`
-                                        : `${axisLength}px`,
-                                      height: positionStateStore[lineIndex()]
-                                        .isVertical
-                                        ? `${axisLength}px`
-                                        : `calc(${carrierWidth}px + 1rem)`,
-                                      "border-width": positionStateStore[
-                                        lineIndex()
-                                      ].isVertical
-                                        ? "0px 0px 1px 0px"
-                                        : axisId === axesIds.length
-                                          ? "0px"
-                                          : "0px 1px 0px 0px",
-                                    }}
-                                  />
-                                </div>
-                              );
+                          <div
+                            class={css({
+                              background: "bg.muted",
+                              borderColor: "bg.disabled",
+                            })}
+                            style={{
+                              width: positionStateStore[lineIndex()].isVertical
+                                ? "1rem"
+                                : `${axisLength}px`,
+                              height: positionStateStore[lineIndex()].isVertical
+                                ? `${axisLength}px`
+                                : "1rem",
+                              "border-width": positionStateStore[lineIndex()]
+                                .isVertical
+                                ? "0px 0px 1px 0px"
+                                : axisId === axesIds.length
+                                  ? "0px"
+                                  : "0px 1px 0px 0px",
                             }}
-                          </For>
+                          >
+                            <Text
+                              size="xs"
+                              borderRadius="0.2rem"
+                              letterSpacing={
+                                positionStateStore[lineIndex()].isVertical
+                                  ? "0.5rem"
+                                  : "0"
+                              }
+                              padding={"0"}
+                              writingMode={
+                                positionStateStore[lineIndex()].isVertical
+                                  ? "vertical-lr"
+                                  : undefined
+                              }
+                              textOrientation={
+                                positionStateStore[lineIndex()].isVertical
+                                  ? "upright"
+                                  : undefined
+                              }
+                            >
+                              {positionStateStore[lineIndex()].isVertical
+                                ? `A${axisId}`
+                                : `Axis ${axisId}`}
+                            </Text>
+                          </div>
                         </div>
-                      </div>
-                    );
+                      );
+                    }}
+                  </For>
+                </div>
+                <div
+                  style={{
+                    width: positionStateStore[lineIndex()].isVertical
+                      ? `${carrierWidth}px `
+                      : `${axisLength * line.axes}px`,
+                    height: positionStateStore[lineIndex()].isVertical
+                      ? `${axisLength * line.axes}px`
+                      : `${carrierWidth}px`,
+
+                    display: positionStateStore[lineIndex()].isVertical
+                      ? undefined
+                      : "flex",
+                    "border-width": "1px",
                   }}
-                </For>
+                >
+                  <For each={axesIds}>
+                    {(axisId) => {
+                      return (
+                        <div
+                          style={{
+                            width: positionStateStore[lineIndex()].isVertical
+                              ? `${carrierWidth}px`
+                              : `${axisLength}px`,
+                            height: positionStateStore[lineIndex()].isVertical
+                              ? `${axisLength}px`
+                              : `${carrierWidth}px `,
+                            "border-width": positionStateStore[lineIndex()]
+                              .isVertical
+                              ? "0px 0px 1px 0px"
+                              : axisId === axesIds.length
+                                ? "0px"
+                                : "0px 1px 0px 0px",
+                          }}
+                        />
+                      );
+                    }}
+                  </For>
+                </div>
               </div>
               <Show
                 when={
