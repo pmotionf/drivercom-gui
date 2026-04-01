@@ -130,7 +130,6 @@ export const SystemTopView = (props: SystemTopViewProps) => {
                   }}
                   onMouseDown={(e) => e.stopPropagation()}
                   use:dragOptions={{
-                    //bounds: "parent",
                     position: {
                       x: positionStateStore[lineIndex()].positionX,
                       y: positionStateStore[lineIndex()].positionY,
@@ -222,6 +221,7 @@ export const SystemTopView = (props: SystemTopViewProps) => {
                               <Text
                                 size="xs"
                                 borderRadius="0.2rem"
+                                textAlign={"center"}
                                 letterSpacing={
                                   positionStateStore[lineIndex()].isVertical
                                     ? "0.5rem"
@@ -331,6 +331,7 @@ export const SystemTopView = (props: SystemTopViewProps) => {
                                 <Text
                                   size="xs"
                                   borderRadius="0.2rem"
+                                  textAlign={"center"}
                                   letterSpacing={
                                     positionStateStore[lineIndex()].isVertical
                                       ? "0.5rem"
