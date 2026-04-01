@@ -51,7 +51,7 @@ export const SystemTopView = (props: SystemTopViewProps) => {
         initScale: 1,
         bounds: false,
         wheelable: true,
-        draggable: false,
+        draggable: true,
         zoomRatio: 0.1,
       });
     }
@@ -66,6 +66,11 @@ export const SystemTopView = (props: SystemTopViewProps) => {
       ref={containerRef}
       class="zoomist-container"
       style={{ width: "100%", height: "100%" }}
+      onDblClick={() => {
+        if (zoomistInstance !== null) {
+          zoomistInstance.reset();
+        }
+      }}
     >
       <div
         class="zoomist-wrapper"
@@ -90,6 +95,7 @@ export const SystemTopView = (props: SystemTopViewProps) => {
               return (
                 <div
                   id={line.name}
+                  class="zoomist-not-draggable"
                   onClick={(e) => e.stopPropagation()}
                   onContextMenu={(e) => {
                     e.stopPropagation();
