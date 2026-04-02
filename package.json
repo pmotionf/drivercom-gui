@@ -22,7 +22,7 @@
     "unpack-mmc-api": "bun unpack-mmcApi.js",
     "mmc-api": "bun run fetch-mmc-api && bun run unpack-mmc-api && bun run buf generate",
     "mmc-api-version": "mkdir -p src-tauri/generated && cd src-tauri/generated  && gh release -R pmotionf/mmc-api list --json name,tagName,publishedAt,isLatest > api.json",
-    "pretauri": "bun run drivercom && bun run mmc-cli && bun run prep && bun run mmc-api&& bun run mmc-api-version && bun run rustscan",
+    "pretauri": "bun run drivercom && bun run mmc-cli && bun run prep && bun run mmc-api-version && bun run rustscan",
     "tauri": "tauri",
     "fmt": "bun prettier --write src",
     "fmt-check": "bun prettier --version && bun prettier --config .prettierrc.json --check src",
