@@ -35,7 +35,7 @@ export const SystemTopView = (props: SystemTopViewProps) => {
         isVertical: false,
         direction: "column",
         positionX: 0,
-        positionY: i * 250,
+        positionY: i * (line.carrierWidth + 100),
       };
     }),
   );
@@ -86,7 +86,7 @@ export const SystemTopView = (props: SystemTopViewProps) => {
                 (_, i) => i + 1,
               );
               const carrierGap = (line.axisLength - line.carrierLength) * 0.5;
-              const carrierWidth = 200;
+              const carrierWidth = line.carrierWidth;
               const axesIds = Array.from(
                 { length: line.axes },
                 (_, i) => i + 1,

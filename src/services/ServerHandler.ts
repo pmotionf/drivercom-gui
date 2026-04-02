@@ -345,6 +345,7 @@ export class ServerHandler implements IServerHandler {
                     name: line.name,
                     axes: line.axes,
                     carrierLength: line.carrierLength,
+                    carrierWidth: line.carrierWidth,
                     axisLength: line.axisLength,
                     drivers: line.drivers,
                   };
