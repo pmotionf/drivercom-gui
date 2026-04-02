@@ -724,6 +724,7 @@ function Monitoring() {
         top="0"
         right="0"
         onClick={() => setShowTopView((prev) => !prev)}
+        zIndex="10"
       >
         <Show when={showTopView()} fallback={<IconDeviceComputerCameraOff />}>
           <IconDeviceComputerCamera />
