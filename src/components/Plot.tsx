@@ -817,11 +817,11 @@ export function Plot(props: PlotProps) {
                               let startNumber = Math.min(y0, y1);
                               let endNumber = Math.max(y0, y1);
                               if (endNumber - uOverTop >= uOverHeight) {
-                                endNumber = uOverHeight;
+                                endNumber = uOverTop + uOverHeight;
                               }
 
                               if (startNumber - uOverTop <= 0) {
-                                startNumber = 0;
+                                startNumber = uOverTop;
                               }
 
                               const cursorMin = startNumber - uOverTop;
