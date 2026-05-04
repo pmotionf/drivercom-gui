@@ -4,10 +4,13 @@ import { createDraggable } from "@neodrag/solid";
 import { createStore } from "solid-js/store";
 import { onMount, onCleanup } from "solid-js";
 import Zoomist from "zoomist";
-import "zoomist/css"; // 스타일 임포트 필수
+import "zoomist/css";
 import { LineTopView } from "./LineTopView";
 
-export type SystemTopViewProps = { line: Lines; system: Systems };
+export type SystemTopViewProps = {
+  line: Lines;
+  system: Systems;
+};
 
 export type Direction = "column" | "row" | "column-reverse" | "row-reverse";
 
@@ -43,6 +46,8 @@ export const SystemTopView = (props: SystemTopViewProps) => {
 
   let containerRef: HTMLDivElement | undefined;
   let zoomistInstance: Zoomist | null = null;
+
+  const linkedList: Map<string, string> = new Map();
 
   onMount(() => {
     if (containerRef) {
@@ -85,7 +90,6 @@ export const SystemTopView = (props: SystemTopViewProps) => {
                   <LineTopView
                     line={line}
                     system={system()[lineIndex()]}
-                    linked={true}
                     positionStateStore={positionStateStore[lineIndex()]}
                     onStorePosition={(offsetX, offsetY) => {
                       setPositionStateStore(lineIndex(), "positionX", offsetX);

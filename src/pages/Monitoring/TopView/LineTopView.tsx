@@ -2,17 +2,19 @@ import { LineType, TrackType } from "~/services/ServerHandler";
 import { Direction, PositionStateStore } from "./SystemTopView";
 import { Text } from "~/components/ui/text";
 import { css } from "styled-system/css";
-import { For, Show } from "solid-js";
+import { For, Show, createSignal } from "solid-js";
 import { createDraggable } from "@neodrag/solid";
 
-export function LineTopView(props: {
+export type LineTopViewProps = {
   line: LineType;
   system: TrackType;
   positionStateStore: PositionStateStore;
-  linked?: boolean;
   onRotate?: () => void;
   onStorePosition?: (offsetX: number, offsetY: number) => void;
-}) {
+  linked?: LineTopViewProps;
+};
+
+export function LineTopView(props: LineTopViewProps) {
   const line = props.line;
   const axisLength = line.axisLength;
   const lineWidth = axisLength * line.axes;
@@ -25,15 +27,21 @@ export function LineTopView(props: {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { draggable: dragOptions } = createDraggable();
 
+  const [onRightClick, setRightClick] = createSignal<boolean>(false);
+  const [outsideClick, setOutSideClick] = createSignal<boolean>(false);
+
   return (
     <div
       id={line.name}
       class="zoomist-not-draggable cancel"
       onClick={(e) => e.stopPropagation()}
       onContextMenu={(e) => {
-        e.stopPropagation();
-        e.preventDefault();
-        props.onRotate?.();
+        // e.stopPropagation();
+        // e.preventDefault();
+        // props.onRotate?.();
+      }}
+      onContextLost={() => {
+        console.log("context lost");
       }}
       style={{
         height: props.positionStateStore.isVertical
@@ -359,6 +367,7 @@ export function LineTopView(props: {
           }}
         </For>
       </Show>
+      <Show when={onRightClick()}></Show>
     </div>
   );
 }

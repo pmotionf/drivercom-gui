@@ -74,7 +74,9 @@ function Monitoring() {
 
   onCleanup(async () => {
     if (lines.length > 0) {
+      console.log("before  disconnect");
       await serverHandler.disconnect();
+      console.log("after disconnect");
       setSendingCmd(null);
       if (getMmccliStatus() !== MmcCliState.Unloaded) {
         await exit();
@@ -301,6 +303,13 @@ function Monitoring() {
   return (
     <>
       <Splitter.Root
+        onContextMenu={(e) => {
+          console.log("context");
+        }}
+        onContentVisibilityAutoStateChange={() => {
+          console.log("content");
+        }}
+        oncontentvisibilityautostatechange={(e) => console.log("state change")}
         orientation="vertical"
         panels={[
           { id: `panel` },
