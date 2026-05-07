@@ -1444,6 +1444,10 @@ export function Plot(props: PlotProps) {
                               plot.setSeries(item + 1, {
                                 show: new_visible,
                               });
+                              plot.setScale("y", {
+                                min: plot.scales.y.min!,
+                                max: plot.scales.y.max!,
+                              });
                               props.onContextChange?.(getContext());
                               setPrevVisible(index());
                             }
