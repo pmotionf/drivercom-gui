@@ -567,7 +567,7 @@ export function Plot(props: PlotProps) {
         size={
           props.legendPanelSize
             ? [100 - props.legendPanelSize, props.legendPanelSize]
-            : [100, 0]
+            : [80, 20]
         }
         onResize={(details) => {
           const size = details.size;
@@ -1051,7 +1051,6 @@ export function Plot(props: PlotProps) {
             id={`legend-${props.id}`}
             borderWidth="0"
             style={{
-              "min-width": props.legendShrink ? "0" : "15.5em",
               width: "100%",
               height: "100%",
               padding: "0",
