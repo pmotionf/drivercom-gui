@@ -565,7 +565,7 @@ export function Plot(props: PlotProps) {
         id={props.id}
         panels={[{ id: `plot-${props.id}` }, { id: `legend-${props.id}` }]}
         size={
-          props.legendPanelSize
+          props.legendPanelSize != null
             ? [100 - props.legendPanelSize, props.legendPanelSize]
             : [80, 20]
         }
