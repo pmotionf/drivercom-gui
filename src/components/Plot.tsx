@@ -111,6 +111,20 @@ export function Plot(props: PlotProps) {
 
   const group = () => props.group ?? props.id ?? "";
 
+  const expandLegend = () => {
+    props.onLegendShrinkChange?.(false);
+    props.onLegendPanelSize?.(20);
+  };
+
+  const collapseLegend = () => {
+    props.onLegendShrinkChange?.(true);
+    props.onLegendPanelSize?.(0);
+  };
+
+  onMount(() => {
+    expandLegend();
+  });
+
   const [ctx, setCtx] = createStore(
     props.context ? props.context : ({} as PlotContext),
   );
@@ -570,8 +584,14 @@ export function Plot(props: PlotProps) {
             : [80, 20]
         }
         onResize={(details) => {
-          const size = details.size;
-          const updatedSize = size[1];
+          const updatedSize = details.size[1];
+          // Threshold for auto collapse Legend
+          if (updatedSize <= 0.5) {
+            collapseLegend();
+            return;
+          }
+
+          props.onLegendShrinkChange?.(false);
           props.onLegendPanelSize?.(updatedSize);
         }}
       >
@@ -1027,9 +1047,11 @@ export function Plot(props: PlotProps) {
             padding="0"
             variant="ghost"
             onClick={() => {
-              props.onLegendShrinkChange?.(
-                props.legendShrink !== undefined ? !props.legendShrink : false,
-              );
+              if (props.legendShrink) {
+                expandLegend();
+              } else {
+                collapseLegend();
+              }
             }}
             marginRight={props.legendShrink ? "1em" : "0em"}
           >
