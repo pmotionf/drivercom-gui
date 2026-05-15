@@ -108,12 +108,15 @@ export function Plot(props: PlotProps) {
   const [render, setRender] = createSignal(false);
   const [cursorIdx, setCursorIdx] = createSignal<number | null>(null);
   let plot: uPlot;
+  let lastExpandedLegendPanelSize: number | null = null;
 
   const group = () => props.group ?? props.id ?? "";
 
   const expandLegend = () => {
     props.onLegendShrinkChange?.(false);
-    props.onLegendPanelSize?.(20);
+    props.onLegendPanelSize?.(
+      lastExpandedLegendPanelSize === null ? 20 : lastExpandedLegendPanelSize,
+    );
   };
 
   const collapseLegend = () => {
@@ -1050,6 +1053,10 @@ export function Plot(props: PlotProps) {
               if (props.legendShrink) {
                 expandLegend();
               } else {
+                lastExpandedLegendPanelSize =
+                  props.legendPanelSize != null && props.legendPanelSize > 0.5
+                    ? props.legendPanelSize
+                    : lastExpandedLegendPanelSize;
                 collapseLegend();
               }
             }}
