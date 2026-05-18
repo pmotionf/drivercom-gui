@@ -965,7 +965,6 @@ export function Plot(props: PlotProps) {
                       (acc, val) => (val.length > acc.length ? val : acc),
                       "",
                     );
-                    console.log(longestVal);
 
                     let axisSize = baseAxisSize;
                     if (longestVal != "") {
