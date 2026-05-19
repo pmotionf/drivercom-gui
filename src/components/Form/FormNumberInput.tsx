@@ -409,6 +409,7 @@ export const FormNumberInput = (props: FormNumberInputProps) => {
               <IconExclamationCircle
                 color="red"
                 data-name="config_field_error"
+                style={{ "margin-left": "0.2em" }}
               />
             </Show>
           </Stack>
