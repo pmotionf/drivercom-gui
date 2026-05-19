@@ -1,5 +1,6 @@
 import {
   createEffect,
+  createMemo,
   createSignal,
   For,
   JSX,
@@ -109,14 +110,81 @@ export function Plot(props: PlotProps) {
   const [cursorIdx, setCursorIdx] = createSignal<number | null>(null);
   let plot: uPlot;
   let lastExpandedLegendPanelSize: number | null = null;
+  let splitterRootRef: HTMLDivElement | undefined;
+  let plotPanelRef: HTMLDivElement | undefined;
+  let legendPanelRef: HTMLDivElement | undefined;
+  let toolboxRef: HTMLDivElement | undefined;
+  let resizeObserver: ResizeObserver | undefined;
 
   const group = () => props.group ?? props.id ?? "";
 
+  const observeForLegendMinSize = (el: HTMLElement | undefined) => {
+    if (!el) return;
+
+    resizeObserver?.observe(el);
+    requestAnimationFrame(updateLegendMinPanelSize);
+  };
+
+  onMount(() => {
+    resizeObserver = new ResizeObserver(() => {
+      requestAnimationFrame(updateLegendMinPanelSize);
+    });
+    observeForLegendMinSize(splitterRootRef);
+    observeForLegendMinSize(plotPanelRef);
+    observeForLegendMinSize(legendPanelRef);
+    observeForLegendMinSize(toolboxRef);
+    updateLegendMinPanelSize();
+  });
+
+  onCleanup(() => {
+    resizeObserver?.disconnect();
+  });
+
+  const [legendMinPanelSize, setLegendMinPanelSize] = createSignal(0);
+  const updateLegendMinPanelSize = () => {
+    const toolboxWidth = toolboxRef?.getBoundingClientRect().width ?? 0;
+    const plotWidth = plotPanelRef?.getBoundingClientRect().width ?? 0;
+    const legendWidth = legendPanelRef?.getBoundingClientRect().width ?? 0;
+    const panelWidth =
+      plotWidth + legendWidth ||
+      splitterRootRef?.getBoundingClientRect().width ||
+      0;
+    if (toolboxWidth <= 0 || panelWidth <= 0) return;
+
+    const minSize = ((toolboxWidth + 8) / panelWidth) * 100;
+    setLegendMinPanelSize(Math.min(100, Math.ceil(minSize * 10) / 10));
+  };
+
+  const clampLegendPanelSize = (size: number) => {
+    // Legend Collapse Threshold
+    if (size <= 0.5) return 0;
+    return Math.max(size, legendMinPanelSize());
+  };
+
+  const resolvedLegendPanelSize = createMemo(() => {
+    if (props.legendShrink) return 0;
+
+    const size = props.legendPanelSize ?? 20;
+    return clampLegendPanelSize(size);
+  });
+
+  const setLegendPanelSize = (size: number) => {
+    const nextSize = clampLegendPanelSize(size);
+    props.onLegendShrinkChange?.(nextSize === 0);
+    props.onLegendPanelSize?.(nextSize);
+
+    if (nextSize > 0.5) {
+      lastExpandedLegendPanelSize = nextSize;
+    }
+  };
+
   const expandLegend = () => {
+    updateLegendMinPanelSize();
+
     props.onLegendShrinkChange?.(false);
-    props.onLegendPanelSize?.(
-      lastExpandedLegendPanelSize === null ? 20 : lastExpandedLegendPanelSize,
-    );
+    const size =
+      lastExpandedLegendPanelSize === null ? 20 : lastExpandedLegendPanelSize;
+    props.onLegendPanelSize?.(clampLegendPanelSize(size));
   };
 
   const collapseLegend = () => {
@@ -578,27 +646,32 @@ export function Plot(props: PlotProps) {
     <>
       <Splitter.Root
         {...rest}
+        ref={(el) => {
+          splitterRootRef = el;
+          observeForLegendMinSize(el);
+        }}
         background="bg.default"
-        id={props.id}
-        panels={[{ id: `plot-${props.id}` }, { id: `legend-${props.id}` }]}
-        size={
-          props.legendPanelSize != null
-            ? [100 - props.legendPanelSize, props.legendPanelSize]
-            : [80, 20]
-        }
+        id={`splitter-${props.id}`}
+        panels={[
+          { id: `plot-${props.id}`, minSize: 0 },
+          { id: `legend-${props.id}`, minSize: 0 },
+        ]}
+        size={[100 - resolvedLegendPanelSize(), resolvedLegendPanelSize()]}
+        onResizeStart={() => {
+          updateLegendMinPanelSize();
+        }}
         onResize={(details) => {
-          const updatedSize = details.size[1];
-          // Threshold for auto collapse Legend
-          if (updatedSize <= 0.5) {
-            collapseLegend();
-            return;
-          }
-
-          props.onLegendShrinkChange?.(false);
-          props.onLegendPanelSize?.(updatedSize);
+          setLegendPanelSize(details.size[1]);
         }}
       >
-        <Splitter.Panel id={`plot-${props.id}`} borderWidth="0">
+        <Splitter.Panel
+          ref={(el) => {
+            plotPanelRef = el;
+            observeForLegendMinSize(el);
+          }}
+          id={`plot-${props.id}`}
+          borderWidth="0"
+        >
           <div id={props.id} style={{ width: "100%", height: "100%" }}>
             <SolidUplot
               style={{ cursor: "default" }}
@@ -1076,6 +1149,10 @@ export function Plot(props: PlotProps) {
         </Stack>
         <Show when={!props.legendShrink}>
           <Splitter.Panel
+            ref={(el) => {
+              legendPanelRef = el;
+              observeForLegendMinSize(el);
+            }}
             id={`legend-${props.id}`}
             borderWidth="0"
             style={{
@@ -1105,6 +1182,10 @@ export function Plot(props: PlotProps) {
               }}
             >
               <Stack
+                ref={(el) => {
+                  toolboxRef = el;
+                  observeForLegendMinSize(el);
+                }}
                 direction="row"
                 id={`toolBox:${props.id}`}
                 width="15em"
