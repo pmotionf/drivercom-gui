@@ -238,19 +238,35 @@ export function ConfigTabContent() {
   }
 
   let scrollContainer: HTMLDivElement | undefined;
-  const scrollToWrongField = (scrollContainer: HTMLDivElement) => {
-    const top = Array.from(
-      document.querySelectorAll(`[data-name*="config_field_error"]`),
-    )[0].parentElement?.offsetTop;
+  const getConfigFieldErrors = () =>
+    Array.from(
+      document.querySelectorAll<HTMLElement>(
+        `[data-name*="config_field_error"]`,
+      ),
+    );
 
-    if (top) {
-      const one_rem = parseFloat(
-        getComputedStyle(document.documentElement).fontSize,
-      );
-      scrollContainer.scrollTo({
-        top: top - scrollContainer.offsetTop - one_rem,
-      });
-    }
+  const scrollToWrongField = () => {
+    const anInvalidField = getConfigFieldErrors()[0];
+    const fieldContainer = anInvalidField?.closest("[data-config-field]");
+    if (!fieldContainer) return;
+
+    fieldContainer.scrollIntoView({
+      behavior: "smooth",
+      block: "center",
+      inline: "nearest",
+    });
+  };
+
+  const noSaveWhenConfigErrors = () => {
+    if (getConfigFieldErrors().length === 0) return false;
+    if (scrollContainer) scrollToWrongField();
+
+    toaster.create({
+      title: "Invalid Configuration",
+      description: "Invalid input(s)",
+      type: "error",
+    });
+    return true;
   };
 
   createEffect(
@@ -273,6 +289,7 @@ export function ConfigTabContent() {
   const topBarHeight = "2.5rem";
 
   const saveAsFile = async () => {
+    if (noSaveWhenConfigErrors()) return;
     try {
       const path = await fileHandler.saveFileDialog("json5", getFilePath()!);
       await fileHandler.writeFile(
@@ -296,11 +313,15 @@ export function ConfigTabContent() {
   };
 
   const saveToPort = async (portId: string) => {
+    if (noSaveWhenConfigErrors()) {
+      scrollToWrongField();
+      return;
+    }
     if (
       scrollContainer &&
       document.querySelectorAll(`[data-name*="config_field_error"]`).length > 0
     ) {
-      scrollToWrongField(scrollContainer);
+      scrollToWrongField();
       toaster.create({
         title: "Invalid File",
         description: "The file is invalid.",

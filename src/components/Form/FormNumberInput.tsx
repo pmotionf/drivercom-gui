@@ -162,6 +162,7 @@ export const FormNumberInput = (props: FormNumberInputProps) => {
 
   return (
     <div
+      data-config-field
       style={{
         "margin-top": "1rem",
         "margin-bottom": "0.5rem",
