@@ -416,7 +416,7 @@ export const FormNumberInput = (props: FormNumberInputProps) => {
       </Stack>
       <Show when={!Number.isFinite(props.inputValue)}>
         <Text size="sm" color="red" marginLeft={"50%"} paddingLeft="0.5em">
-          {`Invalid ${typeof props.inputValue}.`}
+          {`Invalid ${typeof props.inputValue}`}
         </Text>
       </Show>
     </div>
