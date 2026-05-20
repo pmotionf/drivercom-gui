@@ -127,13 +127,17 @@ export function Plot(props: PlotProps) {
 
   onMount(() => {
     resizeObserver = new ResizeObserver(() => {
-      requestAnimationFrame(updateLegendMinPanelSize);
+      requestAnimationFrame(() => {
+        updateLegendMinPanelSize();
+        keepLegendAbsoluteWidth();
+      });
     });
     observeForLegendMinSize(splitterRootRef);
     observeForLegendMinSize(plotPanelRef);
     observeForLegendMinSize(legendPanelRef);
     observeForLegendMinSize(toolboxRef);
     updateLegendMinPanelSize();
+    keepLegendAbsoluteWidth();
   });
 
   onCleanup(() => {
@@ -161,6 +165,27 @@ export function Plot(props: PlotProps) {
     return Math.max(size, legendMinPanelSize());
   };
 
+  let previousSplitterWidth = 0;
+  const keepLegendAbsoluteWidth = () => {
+    if (props.legendShrink) return;
+
+    const splitterWidth = splitterRootRef?.getBoundingClientRect().width ?? 0;
+    if (splitterWidth <= 0) return;
+    if (previousSplitterWidth <= 0) {
+      previousSplitterWidth = splitterWidth;
+      return;
+    }
+    if (previousSplitterWidth === splitterWidth) return;
+
+    const currentLegendProzent = props.legendPanelSize ?? 20;
+    const legendWidthPx = (currentLegendProzent / 100) * previousSplitterWidth;
+    const nextLegendProzent = (legendWidthPx / splitterWidth) * 100;
+    const nextSize = clampLegendPanelSize(nextLegendProzent);
+    props.onLegendPanelSize?.(nextSize);
+    props.onLegendShrinkChange?.(nextSize === 0);
+    previousSplitterWidth = splitterWidth;
+  };
+
   const resolvedLegendPanelSize = createMemo(() => {
     if (props.legendShrink) return 0;
 
@@ -173,9 +198,7 @@ export function Plot(props: PlotProps) {
     props.onLegendShrinkChange?.(nextSize === 0);
     props.onLegendPanelSize?.(nextSize);
 
-    if (nextSize > 0.5) {
-      lastExpandedLegendPanelSize = nextSize;
-    }
+    if (nextSize > 0.5) lastExpandedLegendPanelSize = nextSize;
   };
 
   const expandLegend = () => {
@@ -658,6 +681,9 @@ export function Plot(props: PlotProps) {
         ]}
         size={[100 - resolvedLegendPanelSize(), resolvedLegendPanelSize()]}
         onResizeStart={() => {
+          previousSplitterWidth =
+            splitterRootRef?.getBoundingClientRect().width ??
+            previousSplitterWidth;
           updateLegendMinPanelSize();
         }}
         onResize={(details) => {
