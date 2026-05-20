@@ -824,9 +824,6 @@ export function LogViewerTabPageContent() {
                           class="handle"
                           size="sm"
                           marginTop="0.4em"
-                          onClick={() => {
-                            setDragging(index());
-                          }}
                         >
                           <IconGridDots />
                         </IconButton>
