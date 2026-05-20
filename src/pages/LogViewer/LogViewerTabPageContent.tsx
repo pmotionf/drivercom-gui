@@ -824,6 +824,7 @@ export function LogViewerTabPageContent() {
                           class="handle"
                           size="sm"
                           marginTop="0.4em"
+                          cursor="grab"
                         >
                           <IconGridDots />
                         </IconButton>
