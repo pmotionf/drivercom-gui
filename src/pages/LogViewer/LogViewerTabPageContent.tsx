@@ -819,17 +819,24 @@ export function LogViewerTabPageContent() {
                         </Tooltip.Root>
                       </Show>
                       <Show when={splitIndex().length > 1}>
-                        <IconButton
-                          variant={"outline"}
-                          class="handle"
-                          size="sm"
-                          marginTop="0.4em"
-                          onClick={() => {
-                            setDragging(index());
-                          }}
-                        >
-                          <IconGridDots />
-                        </IconButton>
+                        <Tooltip.Root>
+                          <Tooltip.Trigger>
+                            <IconButton
+                              variant={"outline"}
+                              class="handle"
+                              size="sm"
+                              marginTop="0.4em"
+                              cursor="grab"
+                            >
+                              <IconGridDots />
+                            </IconButton>
+                          </Tooltip.Trigger>
+                          <Tooltip.Positioner>
+                            <Tooltip.Content backgroundColor="bg.default">
+                              <Text color="fg.default"> Reorder Graph</Text>
+                            </Tooltip.Content>
+                          </Tooltip.Positioner>
+                        </Tooltip.Root>
                       </Show>
                     </Stack>
                     <Checkbox
