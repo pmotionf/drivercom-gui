@@ -723,7 +723,7 @@ dependencies = [
 
 [[package]]
 name = "drivercom-gui"
-version = "0.14.6"
+version = "0.14.7"
 dependencies = [
  "ipnet",
  "local-ip-address",
