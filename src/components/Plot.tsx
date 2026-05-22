@@ -160,8 +160,6 @@ export function Plot(props: PlotProps) {
   };
 
   const clampLegendPanelSize = (size: number) => {
-    // Legend Collapse Threshold
-    if (size <= 0.5) return 0;
     return Math.max(size, legendMinPanelSize());
   };
 
@@ -197,8 +195,6 @@ export function Plot(props: PlotProps) {
     const nextSize = clampLegendPanelSize(size);
     props.onLegendShrinkChange?.(nextSize === 0);
     props.onLegendPanelSize?.(nextSize);
-
-    if (nextSize > 0.5) lastExpandedLegendPanelSize = nextSize;
   };
 
   const expandLegend = () => {
@@ -208,11 +204,6 @@ export function Plot(props: PlotProps) {
     const size =
       lastExpandedLegendPanelSize === null ? 20 : lastExpandedLegendPanelSize;
     props.onLegendPanelSize?.(clampLegendPanelSize(size));
-  };
-
-  const collapseLegend = () => {
-    props.onLegendShrinkChange?.(true);
-    props.onLegendPanelSize?.(0);
   };
 
   onMount(() => {
@@ -1152,10 +1143,9 @@ export function Plot(props: PlotProps) {
                 expandLegend();
               } else {
                 lastExpandedLegendPanelSize =
-                  props.legendPanelSize != null && props.legendPanelSize > 0.5
+                  props.legendPanelSize != null
                     ? props.legendPanelSize
                     : lastExpandedLegendPanelSize;
-                collapseLegend();
               }
             }}
             marginRight={props.legendShrink ? "1em" : "0em"}
