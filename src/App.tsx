@@ -920,7 +920,9 @@ function App(props: RouteSectionProps) {
         {(toast) => (
           <Toast.Root>
             <Toast.Title>{toast().title}</Toast.Title>
-            <Toast.Description>{toast().description}</Toast.Description>
+            <Toast.Description style={{ "white-space": "pre-line" }}>
+              {toast().description}
+            </Toast.Description>
             {toast().action && (
               <Toast.ActionTrigger>
                 <Text

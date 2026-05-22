@@ -205,6 +205,87 @@ export function ConfigTabContent() {
     );
   };
 
+  type ConfigValidationError = {
+    tabId: string;
+    label: string;
+  };
+
+  type ConfigTabFormValue = ReturnType<typeof configTabForm>;
+  type ConfigDescriptionValue = ReturnType<typeof configDescription>;
+  type UnknownRecord = Record<string, unknown>;
+
+  const isRecord = (value: unknown): value is UnknownRecord =>
+    typeof value === "object" && value !== null;
+
+  const isHiddenDescription = (description: unknown, key: string) => {
+    if (!isRecord(description)) return false;
+    const descriptionMeta = description[`__${key}`];
+    return isRecord(descriptionMeta) && descriptionMeta.hidden === true;
+  };
+
+  const getAllConfigValidationErrors = (): ConfigValidationError[] => {
+    const errors: ConfigValidationError[] = [];
+    const check = (
+      tabKey: string,
+      format: unknown,
+      config: unknown,
+      description: unknown,
+      path: string,
+    ) => {
+      if (!isRecord(format)) return;
+
+      const configRecord = isRecord(config) ? config : {};
+      const descriptionRecord = isRecord(description) ? description : {};
+
+      Object.entries(format).forEach(([key, formatValue]) => {
+        if (key === "_" || isHiddenDescription(descriptionRecord, key)) return;
+
+        const label = `${path} > ${prettierLabel(key)}`;
+        if (typeof formatValue === "number") {
+          const value = configRecord[key];
+          if (
+            value === "" ||
+            value === null ||
+            value === undefined ||
+            !Number.isFinite(Number(value))
+          ) {
+            errors.push({
+              tabId: `${getTabId()}.${tabKey}`,
+              label,
+            });
+          }
+          return;
+        }
+
+        if (isRecord(formatValue)) {
+          check(
+            tabKey,
+            formatValue,
+            configRecord[key],
+            descriptionRecord[key],
+            label,
+          );
+        }
+      });
+    };
+
+    const form: ConfigTabFormValue = configTabForm();
+    const description: ConfigDescriptionValue = configDescription();
+    Object.entries(form).forEach(([tabKey, format]) => {
+      check(
+        tabKey,
+        format,
+        getConfigForm(),
+        description,
+        prettierLabel(tabKey),
+      );
+    });
+    return errors;
+  };
+
+  const invalidFieldToastDescription = (errors: ConfigValidationError[]) =>
+    `${errors.map((error) => `• ${error.label}`).join("\n")}`;
+
   const [render, setRender] = createSignal<boolean>(true);
 
   const fileHandler = new FileHandler();
@@ -258,7 +339,29 @@ export function ConfigTabContent() {
   };
 
   const noSaveWhenConfigErrors = () => {
-    if (getConfigFieldErrors().length === 0) return false;
+    const invalidFields = getAllConfigValidationErrors();
+
+    if (invalidFields.length === 0 && getConfigFieldErrors().length === 0)
+      return false;
+
+    if (invalidFields.length > 0) {
+      const firstInvalidField = invalidFields[0];
+      if (getFocusedTab() !== firstInvalidField.tabId) {
+        setFocusedTab(firstInvalidField.tabId);
+        setTimeout(scrollToWrongField, 0);
+      } else if (scrollContainer) {
+        scrollToWrongField();
+      }
+
+      toaster.create({
+        title: "Invalid Configuration",
+        description: invalidFieldToastDescription(invalidFields),
+        type: "error",
+      });
+
+      return true;
+    }
+
     if (scrollContainer) scrollToWrongField();
 
     toaster.create({
