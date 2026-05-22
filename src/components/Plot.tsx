@@ -107,7 +107,7 @@ export function Plot(props: PlotProps) {
   let theme = globalState.theme;
 
   const [render, setRender] = createSignal(false);
-  const [cursorIdx, setCursorIdx] = createSignal<number | null>(0);
+  const [cursorIdx, setCursorIdx] = createSignal<number | null>(null);
   let plot: uPlot;
   let lastExpandedLegendPanelSize: number | null = null;
   let splitterRootRef: HTMLDivElement | undefined;
