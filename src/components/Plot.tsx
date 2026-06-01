@@ -63,8 +63,8 @@ export type PlotProps = JSX.HTMLAttributes<HTMLDivElement> & {
   onXScaleChange?: (xRange: [number, number]) => void;
   yScale?: { min: number; max: number };
   onYScaleChange?: (yScale: { min: number; max: number }) => void;
-  legendPanelSize?: number;
-  onLegendPanelSize?: (size: number) => void;
+  legendPanelWidthPx?: number;
+  onLegendPanelWidthPx?: (widthPx: number) => void;
   legendShrink?: boolean;
   onLegendShrinkChange?: (isShrink: boolean) => void;
 };
@@ -98,8 +98,8 @@ export function Plot(props: PlotProps) {
     "onXScaleChange",
     "yScale",
     "onYScaleChange",
-    "onLegendPanelSize",
-    "legendPanelSize",
+    "onLegendPanelWidthPx",
+    "legendPanelWidthPx",
     "legendShrink",
     "onLegendShrinkChange",
   ]);
@@ -109,7 +109,6 @@ export function Plot(props: PlotProps) {
   const [render, setRender] = createSignal(false);
   const [cursorIdx, setCursorIdx] = createSignal<number | null>(null);
   let plot: uPlot;
-  let lastExpandedLegendPanelSize: number | null = null;
   let splitterRootRef: HTMLDivElement | undefined;
   let plotPanelRef: HTMLDivElement | undefined;
   let legendPanelRef: HTMLDivElement | undefined;
@@ -118,97 +117,99 @@ export function Plot(props: PlotProps) {
 
   const group = () => props.group ?? props.id ?? "";
 
+  const DEFAULT_LEGEND_WIDTH_PX = 280;
+  const [splitterWidthPx, setSplitterWidthPx] = createSignal(0);
+  const [legendMinWidthPx, setLegendMinWidthPx] = createSignal(0);
+  const [localLegendPanelWidthPx, setLocalLegendPanelWidthPx] = createSignal(
+    DEFAULT_LEGEND_WIDTH_PX,
+  );
+
+  const legendPanelWidthPx = () =>
+    props.legendPanelWidthPx ?? localLegendPanelWidthPx();
+
+  const updateLegendPanelWidthPx = (widthPx: number) => {
+    setLocalLegendPanelWidthPx(widthPx);
+    props.onLegendPanelWidthPx?.(widthPx);
+  };
+
   const observeForLegendMinSize = (el: HTMLElement | undefined) => {
     if (!el) return;
 
     resizeObserver?.observe(el);
-    requestAnimationFrame(updateLegendMinPanelSize);
+    requestAnimationFrame(updateLegendMeasurements);
+  };
+
+  const updateLegendMeasurements = () => {
+    const splitterWidth = splitterRootRef?.getBoundingClientRect().width ?? 0;
+    const toolboxWidth = toolboxRef?.getBoundingClientRect().width ?? 0;
+
+    if (splitterWidth > 0) setSplitterWidthPx(splitterWidth);
+    if (toolboxWidth > 0) setLegendMinWidthPx(Math.ceil(toolboxWidth + 8));
   };
 
   onMount(() => {
     resizeObserver = new ResizeObserver(() => {
-      requestAnimationFrame(() => {
-        updateLegendMinPanelSize();
-        keepLegendAbsoluteWidth();
-      });
+      requestAnimationFrame(updateLegendMeasurements);
     });
+
     observeForLegendMinSize(splitterRootRef);
     observeForLegendMinSize(plotPanelRef);
     observeForLegendMinSize(legendPanelRef);
     observeForLegendMinSize(toolboxRef);
-    updateLegendMinPanelSize();
-    keepLegendAbsoluteWidth();
+    updateLegendMeasurements();
   });
 
   onCleanup(() => {
     resizeObserver?.disconnect();
   });
 
-  const [legendMinPanelSize, setLegendMinPanelSize] = createSignal(0);
-  const updateLegendMinPanelSize = () => {
-    const toolboxWidth = toolboxRef?.getBoundingClientRect().width ?? 0;
-    const plotWidth = plotPanelRef?.getBoundingClientRect().width ?? 0;
-    const legendWidth = legendPanelRef?.getBoundingClientRect().width ?? 0;
-    const panelWidth =
-      plotWidth + legendWidth ||
-      splitterRootRef?.getBoundingClientRect().width ||
-      0;
-    if (toolboxWidth <= 0 || panelWidth <= 0) return;
+  const resolvedLegendWidthPx = createMemo(() => {
+    if (props.legendShrink) return 0;
 
-    const minSize = ((toolboxWidth + 8) / panelWidth) * 100;
-    setLegendMinPanelSize(Math.min(100, Math.ceil(minSize * 10) / 10));
-  };
+    const requestedWidthPx = legendPanelWidthPx();
 
-  const clampLegendPanelSize = (size: number) => {
-    return Math.max(size, legendMinPanelSize());
-  };
+    const rootWidthPx = splitterWidthPx();
 
-  let previousSplitterWidth = 0;
-  const keepLegendAbsoluteWidth = () => {
-    if (props.legendShrink) return;
+    if (rootWidthPx <= 0) return requestedWidthPx;
 
-    const splitterWidth = splitterRootRef?.getBoundingClientRect().width ?? 0;
-    if (splitterWidth <= 0) return;
-    if (previousSplitterWidth <= 0) {
-      previousSplitterWidth = splitterWidth;
-      return;
-    }
-    if (previousSplitterWidth === splitterWidth) return;
-
-    const currentLegendProzent = props.legendPanelSize ?? 20;
-    const legendWidthPx = (currentLegendProzent / 100) * previousSplitterWidth;
-    const nextLegendProzent = (legendWidthPx / splitterWidth) * 100;
-    const nextSize = clampLegendPanelSize(nextLegendProzent);
-    props.onLegendPanelSize?.(nextSize);
-    props.onLegendShrinkChange?.(nextSize === 0);
-    previousSplitterWidth = splitterWidth;
-  };
+    return Math.min(
+      Math.max(requestedWidthPx, legendMinWidthPx()),
+      rootWidthPx,
+    );
+  });
 
   const resolvedLegendPanelSize = createMemo(() => {
     if (props.legendShrink) return 0;
 
-    const size = props.legendPanelSize ?? 20;
-    return clampLegendPanelSize(size);
+    const rootWidthPx = splitterWidthPx();
+    if (rootWidthPx <= 0) return 20;
+
+    return (resolvedLegendWidthPx() / rootWidthPx) * 100;
   });
 
-  const setLegendPanelSize = (size: number) => {
-    const nextSize = clampLegendPanelSize(size);
-    props.onLegendShrinkChange?.(nextSize === 0);
-    props.onLegendPanelSize?.(nextSize);
+  const setLegendPanelSize = (sizePercent: number) => {
+    const rootWidthPx = splitterWidthPx();
+
+    if (rootWidthPx <= 0) return;
+
+    const requestedWidthPx = (sizePercent / 100) * rootWidthPx;
+    const nextWidthPx = Math.max(requestedWidthPx, legendMinWidthPx());
+
+    props.onLegendShrinkChange?.(false);
+    updateLegendPanelWidthPx(nextWidthPx);
+  };
+
+  const collapseLegend = () => {
+    updateLegendPanelWidthPx(resolvedLegendWidthPx());
+    props.onLegendShrinkChange?.(true);
   };
 
   const expandLegend = () => {
-    updateLegendMinPanelSize();
-
     props.onLegendShrinkChange?.(false);
-    const size =
-      lastExpandedLegendPanelSize === null ? 20 : lastExpandedLegendPanelSize;
-    props.onLegendPanelSize?.(clampLegendPanelSize(size));
-  };
+    const nextWidthPx = legendPanelWidthPx();
 
-  onMount(() => {
-    expandLegend();
-  });
+    updateLegendPanelWidthPx(Math.max(nextWidthPx, legendMinWidthPx()));
+  };
 
   const [ctx, setCtx] = createStore(
     props.context ? props.context : ({} as PlotContext),
@@ -672,10 +673,7 @@ export function Plot(props: PlotProps) {
         ]}
         size={[100 - resolvedLegendPanelSize(), resolvedLegendPanelSize()]}
         onResizeStart={() => {
-          previousSplitterWidth =
-            splitterRootRef?.getBoundingClientRect().width ??
-            previousSplitterWidth;
-          updateLegendMinPanelSize();
+          updateLegendMeasurements();
         }}
         onResize={(details) => {
           setLegendPanelSize(details.size[1]);
@@ -1142,10 +1140,7 @@ export function Plot(props: PlotProps) {
               if (props.legendShrink) {
                 expandLegend();
               } else {
-                lastExpandedLegendPanelSize =
-                  props.legendPanelSize != null
-                    ? props.legendPanelSize
-                    : lastExpandedLegendPanelSize;
+                collapseLegend();
               }
             }}
             marginRight={props.legendShrink ? "1em" : "0em"}
