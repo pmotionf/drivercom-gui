@@ -52,7 +52,7 @@ export type LogViewerTabPage = {
   plotContext?: PlotContext[];
   plotXScale?: [number, number];
   plotYScales?: { min: number; max: number }[];
-  legendPanelSize?: number;
+  legendPanelWidthPx?: number;
   legendShrink?: boolean;
 };
 
@@ -158,14 +158,14 @@ export function LogViewerTabPageContent() {
     );
   };
 
-  const setLegendSplitter = (tabIndex: number, newSize: number) => {
+  const setLegendPanelWidthPx = (tabIndex: number, widthPx: number) => {
     return tabStore.get(tabPageProps.key)?.[1](
       "tabContext",
       tabIndex,
       "tabPage",
       "logViewerTabPage",
-      "legendPanelSize",
-      newSize,
+      "legendPanelWidthPx",
+      widthPx,
     );
   };
 
@@ -470,19 +470,18 @@ export function LogViewerTabPageContent() {
     return plots[index].selected.every((b) => !b);
   };
 
-  const [legendSplitterSize, setLegendSplitterSize] = createSignal<number>(
-    getTabContext(tabPageProps.tabId).tabCtx.legendPanelSize
-      ? getTabContext(tabPageProps.tabId).tabCtx.legendPanelSize!
-      : 0,
-  );
+  const [legendPanelWidthPx, setLegendPanelWidthPxSignal] =
+    createSignal<number>(
+      getTabContext(tabPageProps.tabId).tabCtx.legendPanelWidthPx ?? 280,
+    );
 
   createEffect(
     on(
-      () => legendSplitterSize(),
+      () => legendPanelWidthPx(),
       () => {
-        setLegendSplitter(
+        setLegendPanelWidthPx(
           getTabContext(tabPageProps.tabId).currentIndex,
-          legendSplitterSize(),
+          legendPanelWidthPx(),
         );
       },
       { defer: true },
@@ -1027,9 +1026,9 @@ export function LogViewerTabPageContent() {
                     series={currentItems}
                     context={plots[index()]}
                     enumMapping={enumMappings() ? enumMappings()! : undefined}
-                    legendPanelSize={legendSplitterSize()}
-                    onLegendPanelSize={(size) => {
-                      setLegendSplitterSize(size);
+                    legendPanelWidthPx={legendPanelWidthPx()}
+                    onLegendPanelWidthPx={(widthPx) => {
+                      setLegendPanelWidthPxSignal(widthPx);
                     }}
                     onContextChange={(ctx) => {
                       if (
