@@ -145,7 +145,7 @@ export function Plot(props: PlotProps) {
     const toolboxWidth = toolboxRef?.getBoundingClientRect().width ?? 0;
 
     if (splitterWidth > 0) setSplitterWidthPx(splitterWidth);
-    if (toolboxWidth > 0) setLegendMinWidthPx(Math.ceil(toolboxWidth + 8));
+    if (toolboxWidth > 0) setLegendMinWidthPx(Math.ceil(toolboxWidth + 15));
   };
 
   onMount(() => {
