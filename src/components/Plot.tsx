@@ -174,7 +174,7 @@ export function Plot(props: PlotProps) {
 
     return Math.min(
       Math.max(requestedWidthPx, legendMinWidthPx()),
-      rootWidthPx,
+      rootWidthPx * 0.8,
     );
   });
 
