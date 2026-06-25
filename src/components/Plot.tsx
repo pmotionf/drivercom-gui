@@ -118,7 +118,6 @@ export function Plot(props: PlotProps) {
   const group = () => props.group ?? props.id ?? "";
 
   const DEFAULT_LEGEND_WIDTH_PX = 280;
-  const LEGEND_COLLAPSE_THRESHOLD_PERCENT = 1;
   const [splitterWidthPx, setSplitterWidthPx] = createSignal(0);
   const [legendMinWidthPx, setLegendMinWidthPx] = createSignal(0);
   const [localLegendPanelWidthPx, setLocalLegendPanelWidthPx] = createSignal(
@@ -192,7 +191,7 @@ export function Plot(props: PlotProps) {
     const rootWidthPx = splitterWidthPx();
 
     if (rootWidthPx <= 0) return;
-    if (sizePercent <= LEGEND_COLLAPSE_THRESHOLD_PERCENT) {
+    if (sizePercent <= 1) {
       collapseLegend();
       return;
     }
