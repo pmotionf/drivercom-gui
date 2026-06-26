@@ -231,6 +231,7 @@ export function ConfigTabContent() {
       config: unknown,
       description: unknown,
       path: string,
+      parentLabel?: string,
     ) => {
       if (!isRecord(format)) return;
 
@@ -240,7 +241,13 @@ export function ConfigTabContent() {
       Object.entries(format).forEach(([key, formatValue]) => {
         if (key === "_" || isHiddenDescription(descriptionRecord, key)) return;
 
-        const label = `${path} > ${prettierLabel(key)}`;
+        const isArrayIndex = /^\d+$/.test(key);
+        const labelPart =
+          isArrayIndex && parentLabel
+            ? `${parentLabel} ${Number(key) + 1}`
+            : prettierLabel(key);
+        const label = `${path} > ${labelPart}`;
+
         if (typeof formatValue === "number") {
           const value = configRecord[key];
           if (
@@ -264,6 +271,7 @@ export function ConfigTabContent() {
             configRecord[key],
             descriptionRecord[key],
             label,
+            labelPart,
           );
         }
       });
