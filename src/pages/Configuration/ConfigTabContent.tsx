@@ -259,63 +259,84 @@ export function ConfigTabContent() {
     );
   };
 
-  const getAllConfigValidationErrors = (): ConfigValidationError[] => {
+  const collectConfigValidationErrors = (
+    baseTabId: string,
+    tabKey: string,
+    format: ConfigFormat,
+    config: ConfigValue,
+    description: DescriptionValue,
+    path: string,
+    parentLabel?: string,
+  ): ConfigValidationError[] => {
     const errors: ConfigValidationError[] = [];
-    const check = (
-      tabKey: string,
-      format: ConfigFormat,
-      config: ConfigValue,
-      description: DescriptionValue,
-      path: string,
-      parentLabel?: string,
-    ) => {
-      entriesOf(format).forEach(([key, formatValue]) => {
-        if (key === "_" || isHiddenDescription(description, key)) return;
 
-        const isArrayIndex = /^\d+$/.test(key);
-        const labelPart =
-          isArrayIndex && parentLabel
-            ? `${parentLabel} ${Number(key) + 1}`
-            : prettierLabel(key);
-        const label = `${path} > ${labelPart}`;
+    entriesOf(format).forEach(([key, formatValue]) => {
+      if (key === "_" || isHiddenDescription(description, key)) return;
 
-        if (typeof formatValue === "number") {
-          const value = getChild(config, key);
-          if (
-            value === "" ||
-            value === null ||
-            value === undefined ||
-            !Number.isFinite(Number(value))
-          ) {
-            errors.push({
-              tabId: `${getTabId()}.${tabKey}`,
-              label,
-            });
-          }
-          return;
+      const isArrayIndex = /^\d+$/.test(key);
+      const labelPart =
+        isArrayIndex && parentLabel
+          ? `${parentLabel} ${Number(key) + 1}`
+          : prettierLabel(key);
+
+      const label = `${path} > ${labelPart}`;
+
+      if (typeof formatValue === "number") {
+        const value = getChild(config, key);
+
+        if (
+          value === "" ||
+          value === null ||
+          value === undefined ||
+          !Number.isFinite(Number(value))
+        ) {
+          errors.push({
+            tabId: `${baseTabId}.${tabKey}`,
+            label,
+          });
         }
 
-        if (isBranch(formatValue)) {
-          check(
+        return;
+      }
+
+      if (isBranch(formatValue)) {
+        errors.push(
+          ...collectConfigValidationErrors(
+            baseTabId,
             tabKey,
             formatValue,
             asBranch(getChild(config, key)),
             asBranch(getChild(description, key)),
             label,
             labelPart,
-          );
-        }
-      });
-    };
+          ),
+        );
+      }
+    });
 
+    return errors;
+  };
+
+  const getAllConfigValidationErrors = (): ConfigValidationError[] => {
+    const errors: ConfigValidationError[] = [];
     const form = configTabForm() as ConfigFormat;
     const config = getConfigForm() as ConfigValue;
     const description = configDescription() as DescriptionValue;
+    const baseTabId = getTabId();
 
     entriesOf(form).forEach(([tabKey, format]) => {
       if (!isBranch(format)) return;
 
-      check(tabKey, format, config, description, prettierLabel(tabKey));
+      errors.push(
+        ...collectConfigValidationErrors(
+          baseTabId,
+          tabKey,
+          format,
+          config,
+          description,
+          prettierLabel(tabKey),
+        ),
+      );
     });
     return errors;
   };
