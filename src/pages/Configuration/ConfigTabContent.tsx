@@ -227,12 +227,12 @@ export function ConfigTabContent() {
   type DescriptionLeaf = string | number | boolean | null | undefined;
   type DescriptionValue = Branch<DescriptionLeaf>;
 
-  const isRecord = <TLeaf,>(
+  const isBranch = <TLeaf,>(
     value: Tree<TLeaf> | undefined,
   ): value is Branch<TLeaf> => typeof value === "object" && value !== null;
 
   const asBranch = <TLeaf,>(value: Tree<TLeaf> | undefined): Branch<TLeaf> =>
-    isRecord(value) ? value : {};
+    isBranch(value) ? value : {};
 
   const getChild = <TLeaf,>(
     branch: Branch<TLeaf>,
@@ -255,7 +255,7 @@ export function ConfigTabContent() {
     const descriptionMeta = getChild(description, `__${key}`);
 
     return (
-      isRecord(descriptionMeta) && getChild(descriptionMeta, "hidden") === true
+      isBranch(descriptionMeta) && getChild(descriptionMeta, "hidden") === true
     );
   };
 
@@ -295,7 +295,7 @@ export function ConfigTabContent() {
           return;
         }
 
-        if (isRecord(formatValue)) {
+        if (isBranch(formatValue)) {
           check(
             tabKey,
             formatValue,
@@ -313,7 +313,7 @@ export function ConfigTabContent() {
     const description = configDescription() as DescriptionValue;
 
     entriesOf(form).forEach(([tabKey, format]) => {
-      if (!isRecord(format)) return;
+      if (!isBranch(format)) return;
 
       check(tabKey, format, config, description, prettierLabel(tabKey));
     });
