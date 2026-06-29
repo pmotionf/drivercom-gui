@@ -210,36 +210,67 @@ export function ConfigTabContent() {
     label: string;
   };
 
-  type ConfigTabFormValue = ReturnType<typeof configTabForm>;
-  type ConfigDescriptionValue = ReturnType<typeof configDescription>;
-  type UnknownRecord = Record<string, unknown>;
+  type Tree<TLeaf> = TLeaf | Branch<TLeaf>;
 
-  const isRecord = (value: unknown): value is UnknownRecord =>
-    typeof value === "object" && value !== null;
+  type Branch<TLeaf> =
+    | {
+        [key: string]: Tree<TLeaf>;
+      }
+    | Tree<TLeaf>[];
 
-  const isHiddenDescription = (description: unknown, key: string) => {
-    if (!isRecord(description)) return false;
-    const descriptionMeta = description[`__${key}`];
-    return isRecord(descriptionMeta) && descriptionMeta.hidden === true;
+  type ConfigFormatLeaf = string | number | boolean | null | undefined;
+  type ConfigFormat = Branch<ConfigFormatLeaf>;
+
+  type ConfigValueLeaf = string | number | boolean | null | undefined;
+  type ConfigValue = Branch<ConfigValueLeaf>;
+
+  type DescriptionLeaf = string | number | boolean | null | undefined;
+  type DescriptionValue = Branch<DescriptionLeaf>;
+
+  const isRecord = <TLeaf,>(
+    value: Tree<TLeaf> | undefined,
+  ): value is Branch<TLeaf> => typeof value === "object" && value !== null;
+
+  const asBranch = <TLeaf,>(value: Tree<TLeaf> | undefined): Branch<TLeaf> =>
+    isRecord(value) ? value : {};
+
+  const getChild = <TLeaf,>(
+    branch: Branch<TLeaf>,
+    key: string,
+  ): Tree<TLeaf> | undefined => {
+    if (Array.isArray(branch)) {
+      return /^\d+$/.test(key) ? branch[Number(key)] : undefined;
+    }
+
+    return branch[key];
+  };
+
+  const entriesOf = <TLeaf,>(branch: Branch<TLeaf>) =>
+    Object.entries(branch) as [string, Tree<TLeaf>][];
+
+  const isHiddenDescription = (
+    description: DescriptionValue,
+    key: string,
+  ): boolean => {
+    const descriptionMeta = getChild(description, `__${key}`);
+
+    return (
+      isRecord(descriptionMeta) && getChild(descriptionMeta, "hidden") === true
+    );
   };
 
   const getAllConfigValidationErrors = (): ConfigValidationError[] => {
     const errors: ConfigValidationError[] = [];
     const check = (
       tabKey: string,
-      format: unknown,
-      config: unknown,
-      description: unknown,
+      format: ConfigFormat,
+      config: ConfigValue,
+      description: DescriptionValue,
       path: string,
       parentLabel?: string,
     ) => {
-      if (!isRecord(format)) return;
-
-      const configRecord = isRecord(config) ? config : {};
-      const descriptionRecord = isRecord(description) ? description : {};
-
-      Object.entries(format).forEach(([key, formatValue]) => {
-        if (key === "_" || isHiddenDescription(descriptionRecord, key)) return;
+      entriesOf(format).forEach(([key, formatValue]) => {
+        if (key === "_" || isHiddenDescription(description, key)) return;
 
         const isArrayIndex = /^\d+$/.test(key);
         const labelPart =
@@ -249,7 +280,7 @@ export function ConfigTabContent() {
         const label = `${path} > ${labelPart}`;
 
         if (typeof formatValue === "number") {
-          const value = configRecord[key];
+          const value = getChild(config, key);
           if (
             value === "" ||
             value === null ||
@@ -268,8 +299,8 @@ export function ConfigTabContent() {
           check(
             tabKey,
             formatValue,
-            configRecord[key],
-            descriptionRecord[key],
+            asBranch(getChild(config, key)),
+            asBranch(getChild(description, key)),
             label,
             labelPart,
           );
@@ -277,16 +308,14 @@ export function ConfigTabContent() {
       });
     };
 
-    const form: ConfigTabFormValue = configTabForm();
-    const description: ConfigDescriptionValue = configDescription();
-    Object.entries(form).forEach(([tabKey, format]) => {
-      check(
-        tabKey,
-        format,
-        getConfigForm(),
-        description,
-        prettierLabel(tabKey),
-      );
+    const form = configTabForm() as ConfigFormat;
+    const config = getConfigForm() as ConfigValue;
+    const description = configDescription() as DescriptionValue;
+
+    entriesOf(form).forEach(([tabKey, format]) => {
+      if (!isRecord(format)) return;
+
+      check(tabKey, format, config, description, prettierLabel(tabKey));
     });
     return errors;
   };
