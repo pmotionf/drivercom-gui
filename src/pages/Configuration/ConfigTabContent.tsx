@@ -376,7 +376,6 @@ export function ConfigTabContent() {
     return output.stderr;
   }
 
-  let scrollContainer: HTMLDivElement | undefined;
   const getConfigFieldErrors = () =>
     Array.from(
       document.querySelectorAll<HTMLElement>(
@@ -407,7 +406,7 @@ export function ConfigTabContent() {
       if (getFocusedTab() !== firstInvalidField.tabId) {
         setFocusedTab(firstInvalidField.tabId);
         setTimeout(scrollToWrongField, 0);
-      } else if (scrollContainer) {
+      } else {
         scrollToWrongField();
       }
 
@@ -420,7 +419,7 @@ export function ConfigTabContent() {
       return true;
     }
 
-    if (scrollContainer) scrollToWrongField();
+    scrollToWrongField();
 
     toaster.create({
       title: "Invalid Configuration",
@@ -474,22 +473,8 @@ export function ConfigTabContent() {
   };
 
   const saveToPort = async (portId: string) => {
-    if (noSaveWhenConfigErrors()) {
-      scrollToWrongField();
-      return;
-    }
-    if (
-      scrollContainer &&
-      document.querySelectorAll(`[data-name*="config_field_error"]`).length > 0
-    ) {
-      scrollToWrongField();
-      toaster.create({
-        title: "Invalid File",
-        description: "The file is invalid.",
-        type: "error",
-      });
-      return;
-    }
+    if (noSaveWhenConfigErrors()) return;
+
     const outputError = await saveConfigToPort(getConfigForm(), portId);
     if (outputError.length !== 0) {
       toaster.create({
@@ -913,7 +898,6 @@ export function ConfigTabContent() {
           }
         >
           <div
-            ref={scrollContainer}
             style={{
               width: "100%",
               height: `calc(100% - 2.5rem)`,
