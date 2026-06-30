@@ -47,6 +47,28 @@ import { css } from "styled-system/css";
 import { detectPort, getConfigFromPort, Port } from "~/services/PortService";
 import { prettierLabel } from "~/utils/PrettierLabel";
 
+type ConfigValidationError = {
+  tabId: string;
+  label: string;
+};
+
+type Tree<TLeaf> = TLeaf | Branch<TLeaf>;
+
+type Branch<TLeaf> =
+  | {
+      [key: string]: Tree<TLeaf>;
+    }
+  | Tree<TLeaf>[];
+
+type ConfigFormatLeaf = string | number | boolean | null | undefined;
+type ConfigFormat = Branch<ConfigFormatLeaf>;
+
+type ConfigValueLeaf = string | number | boolean | null | undefined;
+type ConfigValue = Branch<ConfigValueLeaf>;
+
+type DescriptionLeaf = string | number | boolean | null | undefined;
+type DescriptionValue = Branch<DescriptionLeaf>;
+
 export type ConfigTabPage = {
   filePath?: string;
   portId?: string;
@@ -204,28 +226,6 @@ export function ConfigTabContent() {
       isChangeUnit,
     );
   };
-
-  type ConfigValidationError = {
-    tabId: string;
-    label: string;
-  };
-
-  type Tree<TLeaf> = TLeaf | Branch<TLeaf>;
-
-  type Branch<TLeaf> =
-    | {
-        [key: string]: Tree<TLeaf>;
-      }
-    | Tree<TLeaf>[];
-
-  type ConfigFormatLeaf = string | number | boolean | null | undefined;
-  type ConfigFormat = Branch<ConfigFormatLeaf>;
-
-  type ConfigValueLeaf = string | number | boolean | null | undefined;
-  type ConfigValue = Branch<ConfigValueLeaf>;
-
-  type DescriptionLeaf = string | number | boolean | null | undefined;
-  type DescriptionValue = Branch<DescriptionLeaf>;
 
   const isBranch = <TLeaf,>(
     value: Tree<TLeaf> | undefined,
