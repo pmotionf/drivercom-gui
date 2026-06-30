@@ -234,12 +234,16 @@ export function ConfigTabContent() {
   const asBranch = <TLeaf,>(value: Tree<TLeaf> | undefined): Branch<TLeaf> =>
     isBranch(value) ? value : {};
 
+  const ARRAY_INDEX_KEY_REGEX = /^\d+$/;
+  const isArrayIndexKey = (key: string): boolean =>
+    ARRAY_INDEX_KEY_REGEX.test(key);
+
   const getChild = <TLeaf,>(
     branch: Branch<TLeaf>,
     key: string,
   ): Tree<TLeaf> | undefined => {
     if (Array.isArray(branch)) {
-      return /^\d+$/.test(key) ? branch[Number(key)] : undefined;
+      return ARRAY_INDEX_KEY_REGEX.test(key) ? branch[Number(key)] : undefined;
     }
 
     return branch[key];
@@ -273,7 +277,7 @@ export function ConfigTabContent() {
     entriesOf(format).forEach(([key, formatValue]) => {
       if (key === "_" || isHiddenDescription(description, key)) return;
 
-      const isArrayIndex = /^\d+$/.test(key);
+      const isArrayIndex = isArrayIndexKey(key);
       const labelPart =
         isArrayIndex && parentLabel
           ? `${parentLabel} ${Number(key) + 1}`
