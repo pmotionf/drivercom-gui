@@ -45,7 +45,6 @@ import {
   MmcCliState,
   setSpeed,
   setAcceleration,
-  setZero,
   moveCarrier,
 } from "../../services/MmcCliHandler.ts";
 import { disconnect } from "@kuyoonjo/tauri-plugin-tcp";
@@ -464,7 +463,7 @@ function Monitoring() {
                     await setAcceleration(params.line, params.acceleration);
                   }
                   if (params.setZero) {
-                    await setZero(params.line);
+                    await commandServerHandler.setZero(lineId);
                   }
                   if (params.calibrate) {
                     await commandServerHandler.calibrate(lineId);
