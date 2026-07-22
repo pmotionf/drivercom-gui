@@ -32,7 +32,6 @@ import { StatusPage } from "./MonitoringSidebar/StatusPage.tsx";
 import { reconcile } from "solid-js/store";
 import {
   exit,
-  pullCarrier,
   prepareMmccli,
   connectMmcServer,
   loadConfig,
@@ -317,20 +316,36 @@ function Monitoring() {
               onPull={async (
                 lineName,
                 commandDirection,
-                axis,
+                axisId,
                 carrierId,
                 destination,
                 disableCas,
               ) => {
                 try {
-                  setSendingCmd({ line: lineName, axisId: Number(axis) });
-                  await pullCarrier(
-                    commandDirection,
-                    lineName,
-                    axis,
-                    carrierId,
-                    destination,
-                    disableCas,
+                  setSendingCmd({ line: lineName, axisId: Number(axisId) });
+                  const lineIndex = lines.findIndex(
+                    (line) => line.name === lineName,
+                  );
+                  const lineId = lineIndex + 1;
+                  const speed = lines[lineIndex].speed;
+                  const acceleration = lines[lineIndex].acceleration;
+                  await commandServerHandler.pull(
+                    lineId,
+                    Number(axisId),
+                    Number(carrierId),
+                    commandDirection === "forward"
+                      ? Request_Direction.FORWARD
+                      : Request_Direction.BACKWARD,
+                    speed,
+                    acceleration,
+                    typeof disableCas === "string"
+                      ? disableCas === "off"
+                        ? true
+                        : false
+                      : disableCas,
+                    typeof destination === "string"
+                      ? Number(destination)
+                      : destination,
                   );
                   setSendingCmd(null);
                 } catch (e) {

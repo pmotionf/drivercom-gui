@@ -13,11 +13,13 @@ import {
   Request_Deinitialize,
   Request_Direction,
   Request_Initialize,
+  Request_Pull,
   Request_Push,
   Request_SetZero,
   Request_StopPull,
   Request_StopPush,
 } from "~/proto/mmc/command_pb";
+import { Control } from "~/proto/mmc/control_pb";
 
 export type LineType = Omit<
   Response_TrackConfig_Line,
@@ -414,6 +416,85 @@ export class ServerHandler implements IServerHandler {
         value: {
           body: {
             case: "setZero",
+            value: request,
+          },
+          $typeName: "mmc.command.Request",
+        },
+      },
+      $typeName: "mmc.Request",
+    };
+
+    try {
+      await this.sendRequest(payload);
+      await this.waitResponse();
+
+      if (this._response) {
+        const decoded = this._decodeResponse(this._response);
+        if (decoded.body.case === "command") {
+          const command = decoded.body.value;
+          if (command.body.case === "id") {
+            const commandId = command.body.value;
+            return Promise.resolve(commandId);
+          }
+        }
+        return Promise.reject("Command Error");
+      }
+      return Promise.reject("Invalid response.");
+    } catch (e) {
+      return Promise.reject(e);
+    }
+  }
+
+  async pull(
+    line: number,
+    axisId: number,
+    carrier: number,
+    direction: Request_Direction,
+    speed: number,
+    acceleration: number,
+    disableCas?: boolean,
+    target?: number,
+  ): Promise<void> {
+    try {
+      const request: Request_Pull = {
+        line: line,
+        axis: axisId,
+        carrier: carrier,
+        direction: direction,
+        velocity: speed,
+        acceleration: acceleration,
+        transition: {
+          $typeName: "mmc.command.Request.Pull.Transition",
+          disableCas: disableCas ?? false,
+          target: target ?? 0,
+          control: Control.POSITION,
+        },
+        $typeName: "mmc.command.Request.Pull",
+      };
+      const commandId = await this.requestPull(request);
+      if (!commandId) {
+        return Promise.reject("The response is invalid");
+      }
+      await this.getCommandInfo(commandId);
+
+      const clearedId = await this.requestRemoveCommand(commandId);
+      if (clearedId !== commandId) {
+        return Promise.reject("Command `Remove command` error");
+      }
+    } catch (e) {
+      return Promise.reject(e);
+    }
+
+    return Promise.resolve();
+  }
+
+  private async requestPull(request: Request_Pull): Promise<number> {
+    const payload: Request = {
+      body: {
+        case: "command",
+        value: {
+          body: {
+            case: "pull",
             value: request,
           },
           $typeName: "mmc.command.Request",
