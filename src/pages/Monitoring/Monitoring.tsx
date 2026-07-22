@@ -47,7 +47,6 @@ import {
   setAcceleration,
   setZero,
   calibrate,
-  initialize,
   deinitialize,
   moveCarrier,
 } from "../../services/MmcCliHandler.ts";
@@ -55,6 +54,7 @@ import { disconnect } from "@kuyoonjo/tauri-plugin-tcp";
 import CarrierPage, { CarrierState } from "./MonitoringSidebar/CarrierPage.tsx";
 import { load } from "@tauri-apps/plugin-store";
 import { toaster } from "~/services/Toaster.ts";
+import { Request_Direction } from "~/proto/mmc/command_pb.ts";
 
 export type Lines = LineType[];
 export type Systems = TrackType[];
@@ -64,11 +64,12 @@ function Monitoring() {
   const [systems, setSystems] = createStore<Systems>([]);
 
   const [isAutoClearMode, setIsAutoClearMode] = createSignal<boolean>(false);
-  const serverHandler = new ServerHandler();
+  const monitoringServerHandler = new ServerHandler();
+  const commandServerHandler = new ServerHandler();
 
   onCleanup(async () => {
     if (lines.length > 0) {
-      await serverHandler.disconnect();
+      await monitoringServerHandler.disconnect();
       setSendingCmd(null);
       if (getMmccliStatus() !== MmcCliState.Unloaded) {
         await exit();
@@ -90,10 +91,10 @@ function Monitoring() {
               await getSystemInfo(lines.map((line) => line.id));
             } catch (e) {
               if (
-                serverHandler.getStatus() &&
-                serverHandler.getStatus() === WebSocket.OPEN
+                monitoringServerHandler.getStatus() &&
+                monitoringServerHandler.getStatus() === WebSocket.OPEN
               ) {
-                await serverHandler.disconnect();
+                await monitoringServerHandler.disconnect();
               }
 
               if (getMmccliStatus() !== MmcCliState.Unloaded) {
@@ -123,14 +124,14 @@ function Monitoring() {
 
   const getSystemInfo = async (lineIds: number[]): Promise<void> => {
     try {
-      const systemInfo = await serverHandler.getSystemInfo(lineIds);
+      const systemInfo = await monitoringServerHandler.getSystemInfo(lineIds);
       if (systemInfo) {
         if (isAutoClearMode()) {
           let lineId = lines[0].id;
           for await (const system of systemInfo) {
             if (system.driverErrors && hasError(system.driverErrors)) {
               if (!system.axisErrors || !hasError(system.axisErrors)) {
-                await serverHandler.clearError(lineId);
+                await monitoringServerHandler.clearError(lineId);
               }
             }
             lineId++;
@@ -189,7 +190,7 @@ function Monitoring() {
   });
 
   const addIpHistory = async (ip: string, port: string) => {
-    const serverName = await serverHandler.getServerName();
+    const serverName = await monitoringServerHandler.getServerName();
     const newIp: IpAddress = {
       ip: ip,
       port: port,
@@ -410,12 +411,22 @@ function Monitoring() {
               ) => {
                 try {
                   setSendingCmd({ line: lineName, axisId: axisId });
-                  await initialize(
-                    lineName,
+                  const lineId =
+                    lines.findIndex((line) => line.name === lineName) + 1;
+                  await commandServerHandler.initalize(
+                    lineId,
                     axisId,
-                    direction,
-                    carrierId,
-                    axisLink,
+                    Number(carrierId),
+                    direction === "backward"
+                      ? Request_Direction.BACKWARD
+                      : Request_Direction.FORWARD,
+                    typeof axisLink === "string"
+                      ? axisLink === "backward"
+                        ? Request_Direction.BACKWARD
+                        : axisLink === "none"
+                          ? Request_Direction.UNSPECIFIED
+                          : Request_Direction.FORWARD
+                      : axisLink,
                   );
                   setSendingCmd(null);
                 } catch (e) {
@@ -573,19 +584,22 @@ function Monitoring() {
                   onConnectServer={async (ip: string, port: string) => {
                     setConnectBtnLoading(true);
                     try {
-                      await serverHandler.connect(ip, port);
+                      await monitoringServerHandler.connect(ip, port);
+                      await commandServerHandler.connect(ip, port);
                       const serverResponse: LineType[] =
-                        await serverHandler.getLineConfig();
+                        await monitoringServerHandler.getLineConfig();
                       await addIpHistory(ip, port);
                       setLines(serverResponse);
                       setConnectBtnLoading(false);
-                      if (serverHandler.getStatus() === WebSocket.OPEN) {
+                      if (
+                        monitoringServerHandler.getStatus() === WebSocket.OPEN
+                      ) {
                         setIsConnect(true);
                       }
                     } catch {
                       setConnectBtnLoading(false);
                       deleteIpHistory(ip, port);
-                      await serverHandler.disconnect();
+                      await monitoringServerHandler.disconnect();
                       setIsConnect(false);
                     }
                   }}
@@ -594,7 +608,8 @@ function Monitoring() {
                     setLines([]);
                     setSystems([]);
 
-                    await serverHandler.disconnect();
+                    await monitoringServerHandler.disconnect();
+                    await commandServerHandler.disconnect();
 
                     setConnectBtnLoading(false);
                     setIsConnect(false);
