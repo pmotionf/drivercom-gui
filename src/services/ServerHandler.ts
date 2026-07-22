@@ -9,6 +9,7 @@ import {
 } from "~/proto/mmc_pb";
 import { fromBinary } from "@bufbuild/protobuf";
 import {
+  Request_Calibrate,
   Request_Deinitialize,
   Request_Direction,
   Request_Initialize,
@@ -32,6 +33,8 @@ interface IServerHandler {
     direction: Request_Direction,
     linkAxis?: Request_Direction,
   ): Promise<void>;
+  deinitailize(line: number, axisId: number): Promise<void>;
+  calibrate(line: number): Promise<void>;
   getSystemInfo(lineIds: number[]): Promise<TrackType[]>;
   getLineConfig(): Promise<LineType[]>;
   getServerName(): Promise<string | null>;
@@ -274,6 +277,65 @@ export class ServerHandler implements IServerHandler {
         value: {
           body: {
             case: "deinitialize",
+            value: request,
+          },
+          $typeName: "mmc.command.Request",
+        },
+      },
+      $typeName: "mmc.Request",
+    };
+
+    try {
+      await this.sendRequest(payload);
+      await this.waitResponse();
+
+      if (this._response) {
+        const decoded = this._decodeResponse(this._response);
+        if (decoded.body.case === "command") {
+          const command = decoded.body.value;
+          if (command.body.case === "id") {
+            const commandId = command.body.value;
+            return Promise.resolve(commandId);
+          }
+        }
+        return Promise.reject("Command Error");
+      }
+      return Promise.reject("Invalid response.");
+    } catch (e) {
+      return Promise.reject(e);
+    }
+  }
+
+  async calibrate(line: number): Promise<void> {
+    try {
+      const request: Request_Calibrate = {
+        line: line,
+        $typeName: "mmc.command.Request.Calibrate",
+      };
+      const commandId = await this.requestCalibrate(request);
+      if (!commandId) {
+        return Promise.reject("The response is invalid");
+      }
+      await this.getCommandInfo(commandId);
+
+      const clearedId = await this.requestRemoveCommand(commandId);
+      if (clearedId !== commandId) {
+        return Promise.reject("Command `Remove command` error");
+      }
+    } catch (e) {
+      return Promise.reject(e);
+    }
+
+    return Promise.resolve();
+  }
+
+  async requestCalibrate(request: Request_Calibrate): Promise<number> {
+    const payload: Request = {
+      body: {
+        case: "command",
+        value: {
+          body: {
+            case: "calibrate",
             value: request,
           },
           $typeName: "mmc.command.Request",

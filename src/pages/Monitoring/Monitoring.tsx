@@ -46,7 +46,6 @@ import {
   setSpeed,
   setAcceleration,
   setZero,
-  calibrate,
   moveCarrier,
 } from "../../services/MmcCliHandler.ts";
 import { disconnect } from "@kuyoonjo/tauri-plugin-tcp";
@@ -442,7 +441,7 @@ function Monitoring() {
                   setSendingCmd({ line: lineName, axisId: axisId });
                   const lineId =
                     lines.findIndex((line) => line.name === lineName) + 1;
-                  await commandServerHandler.deinitailize(lineId, axisId)
+                  await commandServerHandler.deinitailize(lineId, axisId);
                   setSendingCmd(null);
                 } catch (e) {
                   toaster.create({
@@ -455,6 +454,8 @@ function Monitoring() {
               }}
               onLineCommands={async (params) => {
                 setSendingCmd({ line: params.line, axisId: NaN });
+                const lineId =
+                  lines.findIndex((line) => line.name == params.line) + 1;
                 try {
                   if (params.speed) {
                     await setSpeed(params.line, params.speed);
@@ -466,7 +467,7 @@ function Monitoring() {
                     await setZero(params.line);
                   }
                   if (params.calibrate) {
-                    await calibrate(params.line);
+                    await commandServerHandler.calibrate(lineId);
                   }
                   setSendingCmd(null);
                 } catch (e) {
