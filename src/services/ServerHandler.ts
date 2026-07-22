@@ -8,6 +8,7 @@ import {
   ResponseSchema,
 } from "~/proto/mmc_pb";
 import { fromBinary } from "@bufbuild/protobuf";
+import { Request_Direction, Request_Initialize } from "~/proto/mmc/command_pb";
 
 export type LineType = Omit<
   Response_TrackConfig_Line,
@@ -20,6 +21,13 @@ interface IServerHandler {
   connect(ip: string, port: string): Promise<void>;
   disconnect(): Promise<void>;
   clearError(lindId: number, driverId?: number): Promise<void>;
+  initalize(
+    line: number,
+    axis: number,
+    carrier: number,
+    direction: Request_Direction,
+    linkAxis?: Request_Direction,
+  ): Promise<void>;
   getSystemInfo(lineIds: number[]): Promise<TrackType[]>;
   getLineConfig(): Promise<LineType[]>;
   getServerName(): Promise<string | null>;
@@ -152,6 +160,75 @@ export class ServerHandler implements IServerHandler {
       return Promise.resolve();
     } else {
       return Promise.reject("Server is already disconnected.");
+    }
+  }
+
+  async initalize(
+    line: number,
+    axis: number,
+    carrier: number,
+    direction: Request_Direction,
+    linkAxis?: Request_Direction,
+  ): Promise<void> {
+    try {
+      const request: Request_Initialize = {
+        line: line,
+        axis: axis,
+        carrier: carrier,
+        direction: direction,
+        linkAxis: linkAxis,
+        $typeName: "mmc.command.Request.Initialize",
+      };
+      const commandId = await this.requestInitialize(request);
+      if (!commandId) {
+        return Promise.reject("The response is invalid");
+      }
+      await this.getCommandInfo(commandId);
+
+      const clearedId = await this.requestRemoveCommand(commandId);
+      if (clearedId !== commandId) {
+        return Promise.reject("Command `Remove command` error");
+      }
+    } catch (e) {
+      return Promise.reject(e);
+    }
+
+    return Promise.resolve();
+  }
+
+  async requestInitialize(request: Request_Initialize): Promise<number> {
+    const payload: Request = {
+      body: {
+        case: "command",
+        value: {
+          body: {
+            case: "initialize",
+            value: request,
+          },
+          $typeName: "mmc.command.Request",
+        },
+      },
+      $typeName: "mmc.Request",
+    };
+
+    try {
+      await this.sendRequest(payload);
+      await this.waitResponse();
+
+      if (this._response) {
+        const decoded = this._decodeResponse(this._response);
+        if (decoded.body.case === "command") {
+          const command = decoded.body.value;
+          if (command.body.case === "id") {
+            const commandId = command.body.value;
+            return Promise.resolve(commandId);
+          }
+        }
+        return Promise.reject("Command Error");
+      }
+      return Promise.reject("Invalid response.");
+    } catch (e) {
+      return Promise.reject(e);
     }
   }
 
