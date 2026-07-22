@@ -34,7 +34,6 @@ import {
   exit,
   pullCarrier,
   pushCarrier,
-  stopPush,
   prepareMmccli,
   connectMmcServer,
   loadConfig,
@@ -384,7 +383,9 @@ function Monitoring() {
               onStopPush={async (line, axisId) => {
                 try {
                   setSendingCmd({ line: line, axisId: axisId });
-                  await stopPush(line, axisId);
+                  const lineId =
+                    lines.findIndex((lineCtx) => lineCtx.name === line) + 1;
+                  await commandServerHandler.stopPush(lineId, axisId);
                   setSendingCmd(null);
                 } catch (e) {
                   toaster.create({
