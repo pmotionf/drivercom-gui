@@ -33,7 +33,6 @@ import { reconcile } from "solid-js/store";
 import {
   exit,
   pullCarrier,
-  pushCarrier,
   prepareMmccli,
   connectMmcServer,
   loadConfig,
@@ -359,14 +358,26 @@ function Monitoring() {
                   setSendingCmd(null);
                 }
               }}
-              onPush={async (lineName, commandDirection, axis, carrierId) => {
+              onPush={async (lineName, commandDirection, axisId, carrierId) => {
                 try {
-                  setSendingCmd({ line: lineName, axisId: Number(axis) });
-                  await pushCarrier(
-                    commandDirection,
-                    lineName,
-                    axis,
-                    carrierId,
+                  setSendingCmd({ line: lineName, axisId: Number(axisId) });
+                  const lineIndex = lines.findIndex(
+                    (line) => line.name == lineName,
+                  );
+                  const lineId = lineIndex + 1;
+                  const speed = lines[lineIndex].speed;
+                  const acceleration = lines[lineIndex].acceleration;
+                  await commandServerHandler.push(
+                    lineId,
+                    Number(axisId),
+                    commandDirection === "forward"
+                      ? Request_Direction.FORWARD
+                      : Request_Direction.BACKWARD,
+                    speed,
+                    acceleration,
+                    typeof carrierId === "string"
+                      ? Number(carrierId)
+                      : carrierId,
                   );
                   setSendingCmd(null);
                 } catch (e) {
