@@ -21,7 +21,7 @@ import {
 export type LineType = Omit<
   Response_TrackConfig_Line,
   "$typeName" | "$unknown"
->;
+> & { speed: number; acceleration: number };
 export type TrackType = Omit<Response_Line, "$typeName" | "$unknown">;
 
 interface IServerHandler {
@@ -754,6 +754,8 @@ export class ServerHandler implements IServerHandler {
                     carrierLength: line.carrierLength,
                     axisLength: line.axisLength,
                     drivers: line.drivers,
+                    speed: 1200,
+                    acceleration: 7800,
                   };
                   return newLine;
                 },

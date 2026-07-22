@@ -41,8 +41,6 @@ import {
   stopCommand,
   getMmccliStatus,
   MmcCliState,
-  setSpeed,
-  setAcceleration,
   moveCarrier,
 } from "../../services/MmcCliHandler.ts";
 import { disconnect } from "@kuyoonjo/tauri-plugin-tcp";
@@ -455,14 +453,16 @@ function Monitoring() {
               }}
               onLineCommands={async (params) => {
                 setSendingCmd({ line: params.line, axisId: NaN });
-                const lineId =
-                  lines.findIndex((line) => line.name == params.line) + 1;
+                const lineIndex = lines.findIndex(
+                  (line) => line.name == params.line,
+                );
+                const lineId = lineIndex + 1;
                 try {
                   if (params.speed) {
-                    await setSpeed(params.line, params.speed);
+                    setLines(lineIndex, "speed", params.speed);
                   }
                   if (params.acceleration) {
-                    await setAcceleration(params.line, params.acceleration);
+                    setLines(lineIndex, "acceleration", params.acceleration);
                   }
                   if (params.setZero) {
                     await commandServerHandler.setZero(lineId);
