@@ -33,7 +33,6 @@ import { reconcile } from "solid-js/store";
 import {
   exit,
   pullCarrier,
-  stopPull,
   pushCarrier,
   stopPush,
   prepareMmccli,
@@ -350,7 +349,9 @@ function Monitoring() {
               onStopPull={async (line, axisId) => {
                 try {
                   setSendingCmd({ line: line, axisId: axisId });
-                  await stopPull(line, axisId);
+                  const lineId =
+                    lines.findIndex((lineCtx) => lineCtx.name === line) + 1;
+                  await commandServerHandler.stopPull(lineId, axisId);
                   setSendingCmd(null);
                 } catch (e) {
                   toaster.create({

@@ -14,6 +14,7 @@ import {
   Request_Direction,
   Request_Initialize,
   Request_SetZero,
+  Request_StopPull,
 } from "~/proto/mmc/command_pb";
 
 export type LineType = Omit<
@@ -37,6 +38,7 @@ interface IServerHandler {
   deinitailize(line: number, axisId: number): Promise<void>;
   calibrate(line: number): Promise<void>;
   setZero(line: number): Promise<void>;
+  stopPull(line: number, axisId: number): Promise<void>;
   getSystemInfo(lineIds: number[]): Promise<TrackType[]>;
   getLineConfig(): Promise<LineType[]>;
   getServerName(): Promise<string | null>;
@@ -205,7 +207,9 @@ export class ServerHandler implements IServerHandler {
     return Promise.resolve();
   }
 
-  async requestInitialize(request: Request_Initialize): Promise<number> {
+  private async requestInitialize(
+    request: Request_Initialize,
+  ): Promise<number> {
     const payload: Request = {
       body: {
         case: "command",
@@ -272,7 +276,9 @@ export class ServerHandler implements IServerHandler {
     return Promise.resolve();
   }
 
-  async requestDeinitialize(request: Request_Deinitialize): Promise<number> {
+  private async requestDeinitialize(
+    request: Request_Deinitialize,
+  ): Promise<number> {
     const payload: Request = {
       body: {
         case: "command",
@@ -331,7 +337,7 @@ export class ServerHandler implements IServerHandler {
     return Promise.resolve();
   }
 
-  async requestCalibrate(request: Request_Calibrate): Promise<number> {
+  private async requestCalibrate(request: Request_Calibrate): Promise<number> {
     const payload: Request = {
       body: {
         case: "command",
@@ -390,13 +396,77 @@ export class ServerHandler implements IServerHandler {
     return Promise.resolve();
   }
 
-  async requestSetZero(request: Request_SetZero): Promise<number> {
+  private async requestSetZero(request: Request_SetZero): Promise<number> {
     const payload: Request = {
       body: {
         case: "command",
         value: {
           body: {
             case: "setZero",
+            value: request,
+          },
+          $typeName: "mmc.command.Request",
+        },
+      },
+      $typeName: "mmc.Request",
+    };
+
+    try {
+      await this.sendRequest(payload);
+      await this.waitResponse();
+
+      if (this._response) {
+        const decoded = this._decodeResponse(this._response);
+        if (decoded.body.case === "command") {
+          const command = decoded.body.value;
+          if (command.body.case === "id") {
+            const commandId = command.body.value;
+            return Promise.resolve(commandId);
+          }
+        }
+        return Promise.reject("Command Error");
+      }
+      return Promise.reject("Invalid response.");
+    } catch (e) {
+      return Promise.reject(e);
+    }
+  }
+
+  async stopPull(line: number, axisId: number): Promise<void> {
+    try {
+      const request: Request_StopPull = {
+        line: line,
+        axes: {
+          $typeName: "Range",
+          start: axisId,
+          end: axisId,
+        },
+        $typeName: "mmc.command.Request.StopPull",
+      };
+      const commandId = await this.requestStopPull(request);
+      if (!commandId) {
+        return Promise.reject("The response is invalid");
+      }
+      await this.getCommandInfo(commandId);
+
+      const clearedId = await this.requestRemoveCommand(commandId);
+      if (clearedId !== commandId) {
+        return Promise.reject("Command `Remove command` error");
+      }
+    } catch (e) {
+      return Promise.reject(e);
+    }
+
+    return Promise.resolve();
+  }
+
+  private async requestStopPull(request: Request_StopPull): Promise<number> {
+    const payload: Request = {
+      body: {
+        case: "command",
+        value: {
+          body: {
+            case: "stopPull",
             value: request,
           },
           $typeName: "mmc.command.Request",
