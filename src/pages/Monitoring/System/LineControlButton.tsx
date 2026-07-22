@@ -2,7 +2,6 @@ import { IconButton, IconButtonProps } from "~/components/ui/icon-button.tsx";
 import { IconDots } from "@tabler/icons-solidjs";
 import { Popover } from "~/components/ui/popover.tsx";
 import { createSignal, Show } from "solid-js";
-import { getAcceleration, getSpeed } from "~/services/MmcCliHandler.ts";
 import { Text } from "~/components/ui/text.tsx";
 import { Button } from "~/components/ui/button.tsx";
 import { SendingCommand } from "./System.tsx";
@@ -17,6 +16,8 @@ export type LineCommandParameters = {
 
 export type LineControlProps = {
   lineName: string;
+  acceleration: number;
+  speed: number;
   disableCommandButton: boolean;
   disableCalibrateButton: boolean;
   disableSetZeroButton: boolean;
@@ -34,13 +35,13 @@ enum LineCommand {
 export function LineControlButton(props: LineControlProps & IconButtonProps) {
   const { ...IconButtonProps } = props;
 
-  const [speed, setSpeed] = createSignal<number>(NaN);
-  const [speedInput, setSpeedInput] = createSignal<string>("");
-  const [speedUnit, setSpeedUnit] = createSignal<string>("");
+  const [speedInput, setSpeedInput] = createSignal<string>(`${props.speed}`);
+  const speedUnit = "mm/s";
 
-  const [acceleration, setacceleration] = createSignal<number>(NaN);
-  const [accelerationInput, setaccelerationInput] = createSignal<string>("");
-  const [accelerationUnit, setaccelerationUnit] = createSignal<string>("");
+  const [accelerationInput, setaccelerationInput] = createSignal<string>(
+    `${props.acceleration}`,
+  );
+  const accelerationUnit = "mm/s²";
 
   const [lastCommand, setLastCommand] = createSignal<LineCommand>(
     LineCommand.None,
@@ -53,42 +54,7 @@ export function LineControlButton(props: LineControlProps & IconButtonProps) {
 
   return (
     <Show when={!disableBtn()}>
-      <Popover.Root
-        onOpenChange={async (e) => {
-          if (e.open) {
-            if (isNaN(speed())) {
-              const speed = await getSpeed(props.lineName);
-              if (speed) {
-                const match = speed.match(/^\d+/);
-                const value = match ? match[0] : `NaN`;
-                setSpeed(Number(value));
-                setSpeedInput(value);
-                setSpeedUnit(
-                  speed.match(/\s([^\s]+)$/)
-                    ? speed.match(/\s([^\s]+)$/)![1]
-                    : "mm/s",
-                );
-              }
-            }
-
-            if (isNaN(acceleration())) {
-              const accelaraion = await getAcceleration(props.lineName);
-              if (accelaraion) {
-                const match = accelaraion.match(/^\d+/);
-                const value = match ? match[0] : `NaN`;
-                setacceleration(Number(value));
-                setaccelerationInput(value);
-
-                setaccelerationUnit(
-                  accelaraion.match(/\s([^\s]+)$/)
-                    ? accelaraion.match(/\s([^\s]+)$/)![1]
-                    : "mm/s²",
-                );
-              }
-            }
-          }
-        }}
-      >
+      <Popover.Root>
         <Popover.Trigger
           width="min-content"
           height={"min-content"}
@@ -145,8 +111,8 @@ export function LineControlButton(props: LineControlProps & IconButtonProps) {
                     : false
                 }
                 disabled={
-                  acceleration() !== Number(accelerationInput()) ||
-                  speed() !== Number(speedInput())
+                  props.acceleration !== Number(accelerationInput()) ||
+                  props.speed !== Number(speedInput())
                     ? sendingCommand()
                       ? sendingCommand()!.line === props.lineName
                         ? isNaN(sendingCommand()!.axisId) &&
@@ -163,31 +129,24 @@ export function LineControlButton(props: LineControlProps & IconButtonProps) {
                   e.stopPropagation();
 
                   if (
-                    speed() !== Number(speedInput()) ||
-                    acceleration() !== Number(accelerationInput())
+                    props.speed !== Number(speedInput()) ||
+                    props.acceleration !== Number(accelerationInput())
                   ) {
                     const saveProps: LineCommandParameters = {
                       line: props.lineName,
                       speed:
-                        speed() === Number(speedInput()) ||
+                        props.speed === Number(speedInput()) ||
                         isNaN(Number(speedInput()))
                           ? undefined
                           : Number(speedInput()),
                       acceleration:
-                        acceleration() === Number(accelerationInput()) ||
+                        props.acceleration === Number(accelerationInput()) ||
                         isNaN(Number(accelerationInput()))
                           ? undefined
                           : Number(accelerationInput()),
                     };
                     setLastCommand(LineCommand.SaveVelocity);
                     props.onLineCommand?.(saveProps);
-                  }
-
-                  if (speed() !== Number(speedInput())) {
-                    setSpeed(NaN);
-                  }
-                  if (acceleration() !== Number(accelerationInput())) {
-                    setacceleration(NaN);
                   }
                 }}
               >
@@ -240,7 +199,7 @@ export function LineControlButton(props: LineControlProps & IconButtonProps) {
                   onClick={(e) => e.stopPropagation()}
                 />
                 <Text size="sm" opacity="0.7" fontWeight="medium">
-                  {speedUnit()}
+                  {speedUnit}
                 </Text>
               </div>
 
@@ -289,7 +248,7 @@ export function LineControlButton(props: LineControlProps & IconButtonProps) {
                   onKeyDown={(e) => e.stopPropagation()}
                 />
                 <Text size="sm" opacity="0.7" fontWeight="medium">
-                  {accelerationUnit()}
+                  {accelerationUnit}
                 </Text>
               </div>
             </div>

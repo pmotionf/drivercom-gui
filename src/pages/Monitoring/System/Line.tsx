@@ -208,6 +208,8 @@ export function Line(props: LineProps) {
         </Show>
         <LineControlButton
           lineName={props.line.name}
+          acceleration={props.line.acceleration}
+          speed={props.line.speed}
           disableCommandButton={disableBtn()}
           disableCalibrateButton={disableCalibrateButton()}
           disableSetZeroButton={disableSetZeroButton()}
