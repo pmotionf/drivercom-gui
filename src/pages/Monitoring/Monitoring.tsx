@@ -47,7 +47,6 @@ import {
   setAcceleration,
   setZero,
   calibrate,
-  deinitialize,
   moveCarrier,
 } from "../../services/MmcCliHandler.ts";
 import { disconnect } from "@kuyoonjo/tauri-plugin-tcp";
@@ -441,7 +440,9 @@ function Monitoring() {
               onDeinitialize={async (lineName, axisId) => {
                 try {
                   setSendingCmd({ line: lineName, axisId: axisId });
-                  await deinitialize(lineName, axisId);
+                  const lineId =
+                    lines.findIndex((line) => line.name === lineName) + 1;
+                  await commandServerHandler.deinitailize(lineId, axisId)
                   setSendingCmd(null);
                 } catch (e) {
                   toaster.create({
