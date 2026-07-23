@@ -261,7 +261,7 @@ function Monitoring() {
               systems={systems}
               sendingCommand={sendingCmd()}
               onPull={async (
-                lineName,
+                lineIndex,
                 commandDirection,
                 axisId,
                 carrierId,
@@ -269,10 +269,8 @@ function Monitoring() {
                 disableCas,
               ) => {
                 try {
+                  const lineName = lines[lineIndex].name;
                   setSendingCmd({ line: lineName, axisId: Number(axisId) });
-                  const lineIndex = lines.findIndex(
-                    (line) => line.name === lineName,
-                  );
                   const lineId = lineIndex + 1;
                   const speed = lines[lineIndex].speed;
                   const acceleration = lines[lineIndex].acceleration;
@@ -304,11 +302,11 @@ function Monitoring() {
                   setSendingCmd(null);
                 }
               }}
-              onStopPull={async (line, axisId) => {
+              onStopPull={async (lineIndex, axisId) => {
                 try {
-                  setSendingCmd({ line: line, axisId: axisId });
-                  const lineId =
-                    lines.findIndex((lineCtx) => lineCtx.name === line) + 1;
+                  const lineName = lines[lineIndex].name;
+                  setSendingCmd({ line: lineName, axisId: axisId });
+                  const lineId = lineIndex + 1;
                   await commandServerHandler.stopPull(lineId, axisId);
                   setSendingCmd(null);
                 } catch (e) {
@@ -320,12 +318,16 @@ function Monitoring() {
                   setSendingCmd(null);
                 }
               }}
-              onPush={async (lineName, commandDirection, axisId, carrierId) => {
+              onPush={async (
+                lineIndex,
+                commandDirection,
+                axisId,
+                carrierId,
+              ) => {
                 try {
+                  const lineName = lines[lineIndex].name;
                   setSendingCmd({ line: lineName, axisId: Number(axisId) });
-                  const lineIndex = lines.findIndex(
-                    (line) => line.name == lineName,
-                  );
+
                   const lineId = lineIndex + 1;
                   const speed = lines[lineIndex].speed;
                   const acceleration = lines[lineIndex].acceleration;
@@ -351,11 +353,12 @@ function Monitoring() {
                   setSendingCmd(null);
                 }
               }}
-              onStopPush={async (line, axisId) => {
+              onStopPush={async (lineIndex, axisId) => {
                 try {
-                  setSendingCmd({ line: line, axisId: axisId });
-                  const lineId =
-                    lines.findIndex((lineCtx) => lineCtx.name === line) + 1;
+                  const lineName = lines[lineIndex].name;
+                  setSendingCmd({ line: lineName, axisId: axisId });
+
+                  const lineId = lineIndex + 1;
                   await commandServerHandler.stopPush(lineId, axisId);
                   setSendingCmd(null);
                 } catch (e) {
@@ -368,16 +371,17 @@ function Monitoring() {
                 }
               }}
               onInitialize={async (
-                lineName,
+                lineIndex,
                 axisId,
                 direction,
                 carrierId,
                 axisLink,
               ) => {
                 try {
+                  const lineName = lines[lineIndex].name;
                   setSendingCmd({ line: lineName, axisId: axisId });
-                  const lineId =
-                    lines.findIndex((line) => line.name === lineName) + 1;
+
+                  const lineId = lineIndex + 1;
                   await commandServerHandler.initalize(
                     lineId,
                     axisId,
@@ -403,11 +407,11 @@ function Monitoring() {
                   setSendingCmd(null);
                 }
               }}
-              onDeinitialize={async (lineName, axisId) => {
+              onDeinitialize={async (lineIndex, axisId) => {
                 try {
+                  const lineName = lines[lineIndex].name;
                   setSendingCmd({ line: lineName, axisId: axisId });
-                  const lineId =
-                    lines.findIndex((line) => line.name === lineName) + 1;
+                  const lineId = lineIndex + 1;
                   await commandServerHandler.deinitailize(lineId, axisId);
                   setSendingCmd(null);
                 } catch (e) {

@@ -34,29 +34,29 @@ export type SystemProps = JSX.HTMLAttributes<HTMLDivElement> & {
   sendingCommand: SendingCommand;
   onLineCommands?: (params: SystemLineCommandParam) => void;
   onPush?: (
-    line: string,
+    lineIndex: number,
     commandDirection: string,
     axis: string,
     carrier?: string,
   ) => void;
   onPull?: (
-    line: string,
+    lineIndex: number,
     commandDirection: string,
     axis: string,
     carrier: string,
     destination?: string,
     cas?: string,
   ) => void;
-  onStopPull?: (line: string, axisId: number) => void;
-  onStopPush?: (line: string, axisId: number) => void;
+  onStopPull?: (lineIndex: number, axisId: number) => void;
+  onStopPush?: (lineIndex: number, axisId: number) => void;
   onInitialize?: (
-    line: string,
+    lineIndex: number,
     axisId: number,
     direction: string,
     carrierId: string,
     linkAxis?: string,
   ) => void;
-  onDeinitialize?: (line: string, axisId: number) => void;
+  onDeinitialize?: (lineIndex: number, axisId: number) => void;
 };
 
 export function System(props: SystemProps) {
@@ -145,8 +145,8 @@ export function System(props: SystemProps) {
           <DragDropSensors />
           <SortableProvider ids={ids()}>
             <For each={items()}>
-              {(item) => {
-                const sortable = createSortable(item);
+              {(lineIndex) => {
+                const sortable = createSortable(lineIndex);
                 //@ts-ignore Using Library
                 const [state] = useDragDropContext();
 
@@ -161,14 +161,14 @@ export function System(props: SystemProps) {
                     }}
                   >
                     <Line
-                      line={props.lines[item]}
-                      system={props.systems[item]}
-                      disableCalibrateButton={disableCalibrateButton(item)}
-                      disableSetZeroButton={disableSetZero(item)}
+                      line={props.lines[lineIndex]}
+                      system={props.systems[lineIndex]}
+                      disableCalibrateButton={disableCalibrateButton(lineIndex)}
+                      disableSetZeroButton={disableSetZero(lineIndex)}
                       sendingCommand={props.sendingCommand}
                       onLineCommands={(param) => {
                         const newParam: SystemLineCommandParam = {
-                          lineIndex: item,
+                          lineIndex: lineIndex,
                           speed: param.speed,
                           acceleration: param.acceleration,
                           calibrate: param.calibrate,
@@ -177,7 +177,7 @@ export function System(props: SystemProps) {
                         props.onLineCommands?.(newParam);
                       }}
                     >
-                      <Show when={props.systems[item]}>
+                      <Show when={props.systems[lineIndex]}>
                         <Stack
                           width="100%"
                           height="100%"
@@ -188,16 +188,18 @@ export function System(props: SystemProps) {
                           <For
                             each={Array.from(
                               {
-                                length: props.lines[item].drivers,
+                                length: props.lines[lineIndex].drivers,
                               },
                               (_, i) => i,
                             )}
                           >
                             {(driverIndex) => {
                               const maximumAxisLength = 3;
-                              const lineAxesLength = props.lines[item].axes;
+                              const lineAxesLength =
+                                props.lines[lineIndex].axes;
                               const driverAxesLength =
-                                driverIndex + 1 === props.lines[item].drivers!
+                                driverIndex + 1 ===
+                                props.lines[lineIndex].drivers!
                                   ? lineAxesLength % maximumAxisLength !== 0
                                     ? lineAxesLength % maximumAxisLength
                                     : maximumAxisLength
@@ -207,12 +209,12 @@ export function System(props: SystemProps) {
                                   <Driver
                                     id={`${driverIndex + 1}`}
                                     driverInfo={
-                                      props.systems[item].driverState[
+                                      props.systems[lineIndex].driverState[
                                         driverIndex
                                       ]
                                     }
                                     driverError={
-                                      props.systems[item].driverErrors[
+                                      props.systems[lineIndex].driverErrors[
                                         driverIndex
                                       ]
                                     }
@@ -239,7 +241,7 @@ export function System(props: SystemProps) {
                                               sendingCommand={
                                                 props.sendingCommand &&
                                                 props.sendingCommand.line ===
-                                                  props.lines[item].name &&
+                                                  props.lines[lineIndex].name &&
                                                 props.sendingCommand.axisId ===
                                                   axisId
                                                   ? true
@@ -251,18 +253,17 @@ export function System(props: SystemProps) {
                                                   : false
                                               }
                                               axisError={
-                                                props.systems[item].axisErrors[
-                                                  axisIndex
-                                                ]
+                                                props.systems[lineIndex]
+                                                  .axisErrors[axisIndex]
                                               }
                                               axisInfo={
-                                                props.systems[item].axisState[
-                                                  axisIndex
-                                                ]
+                                                props.systems[lineIndex]
+                                                  .axisState[axisIndex]
                                               }
                                               carrier={
-                                                props.systems[item].carrierState
-                                                  ? props.systems[item]
+                                                props.systems[lineIndex]
+                                                  .carrierState
+                                                  ? props.systems[lineIndex]
                                                       .carrierState
                                                   : null
                                               }
@@ -273,7 +274,7 @@ export function System(props: SystemProps) {
                                                 des,
                                               ) => {
                                                 props.onPull?.(
-                                                  props.lines[item].name,
+                                                  lineIndex,
                                                   axisDirection,
                                                   `${axisId}`,
                                                   carrierId,
@@ -286,7 +287,7 @@ export function System(props: SystemProps) {
                                                 carrierId,
                                               ) => {
                                                 props.onPush?.(
-                                                  props.lines[item].name,
+                                                  lineIndex,
                                                   axisDirection,
                                                   `${axisId}`,
                                                   carrierId,
@@ -294,13 +295,13 @@ export function System(props: SystemProps) {
                                               }}
                                               onStopPull={() => {
                                                 props.onStopPull?.(
-                                                  props.lines[item].name,
+                                                  lineIndex,
                                                   axisId,
                                                 );
                                               }}
                                               onStopPush={() => {
                                                 props.onStopPush?.(
-                                                  props.lines[item].name,
+                                                  lineIndex,
                                                   axisId,
                                                 );
                                               }}
@@ -310,7 +311,7 @@ export function System(props: SystemProps) {
                                                 axisLink,
                                               ) => {
                                                 props.onInitialize?.(
-                                                  props.lines[item].name,
+                                                  lineIndex,
                                                   axisId,
                                                   direction,
                                                   carrierId,
@@ -319,7 +320,7 @@ export function System(props: SystemProps) {
                                               }}
                                               onDeinitialize={() => {
                                                 props.onDeinitialize?.(
-                                                  props.lines[item].name,
+                                                  lineIndex,
                                                   axisId,
                                                 );
                                               }}
