@@ -13,6 +13,7 @@ import {
   Request_Deinitialize,
   Request_Direction,
   Request_Initialize,
+  Request_Move,
   Request_Pull,
   Request_Push,
   Request_SetZero,
@@ -694,6 +695,83 @@ export class ServerHandler implements IServerHandler {
         value: {
           body: {
             case: "stopPush",
+            value: request,
+          },
+          $typeName: "mmc.command.Request",
+        },
+      },
+      $typeName: "mmc.Request",
+    };
+
+    try {
+      await this.sendRequest(payload);
+      await this.waitResponse();
+
+      if (this._response) {
+        const decoded = this._decodeResponse(this._response);
+        if (decoded.body.case === "command") {
+          const command = decoded.body.value;
+          if (command.body.case === "id") {
+            const commandId = command.body.value;
+            return Promise.resolve(commandId);
+          }
+        }
+        return Promise.reject("Command Error");
+      }
+      return Promise.reject("Invalid response.");
+    } catch (e) {
+      return Promise.reject(e);
+    }
+  }
+
+  async moveCarrier(
+    line: number,
+    targetKind: "axis" | "location" | "distance",
+    targetValue: number,
+    carrier: number,
+    control: Control,
+    disableCas: boolean,
+    speed: number,
+    acceleration: number,
+  ): Promise<void> {
+    try {
+      const request: Request_Move = {
+        line: line,
+        carrier: carrier,
+        target: {
+          case: targetKind,
+          value: targetValue,
+        },
+        control: control,
+        disableCas: disableCas,
+        velocity: speed,
+        acceleration: acceleration,
+        $typeName: "mmc.command.Request.Move",
+      };
+      const commandId = await this.requestMoveCarrier(request);
+      if (!commandId) {
+        return Promise.reject("The response is invalid");
+      }
+      await this.getCommandInfo(commandId);
+
+      const clearedId = await this.requestRemoveCommand(commandId);
+      if (clearedId !== commandId) {
+        return Promise.reject("Command `Remove command` error");
+      }
+    } catch (e) {
+      return Promise.reject(e);
+    }
+
+    return Promise.resolve();
+  }
+
+  private async requestMoveCarrier(request: Request_Move): Promise<number> {
+    const payload: Request = {
+      body: {
+        case: "command",
+        value: {
+          body: {
+            case: "move",
             value: request,
           },
           $typeName: "mmc.command.Request",
