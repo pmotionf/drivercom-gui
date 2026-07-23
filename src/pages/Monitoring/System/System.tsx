@@ -28,7 +28,6 @@ export type SystemProps = JSX.HTMLAttributes<HTMLDivElement> & {
   lines: Store<Lines>;
   systems: Store<Systems>;
   sendingCommand: SendingCommand;
-  disableMmcCliBtn: boolean;
   onLineCommands?: (params: LineCommandParameters) => void;
   onPush?: (
     line: string,
@@ -46,7 +45,6 @@ export type SystemProps = JSX.HTMLAttributes<HTMLDivElement> & {
   ) => void;
   onStopPull?: (line: string, axisId: number) => void;
   onStopPush?: (line: string, axisId: number) => void;
-  onStopCommand?: (line: string, axisId: number) => void;
   onInitialize?: (
     line: string,
     axisId: number,
@@ -83,8 +81,6 @@ export function System(props: SystemProps) {
       }
     }
   };
-
-  const disableBtn = () => props.disableMmcCliBtn;
 
   const disableCalibrateButton = (index: number): boolean => {
     if (!props.systems[index] || !props.lines[index]) return true;
@@ -163,7 +159,6 @@ export function System(props: SystemProps) {
                     <Line
                       line={props.lines[item]}
                       system={props.systems[item]}
-                      disableCommandButton={disableBtn()}
                       disableCalibrateButton={disableCalibrateButton(item)}
                       disableSetZeroButton={disableSetZero(item)}
                       sendingCommand={props.sendingCommand}
@@ -242,9 +237,6 @@ export function System(props: SystemProps) {
                                                   ? true
                                                   : false
                                               }
-                                              disableMmcCliButton={
-                                                props.disableMmcCliBtn
-                                              }
                                               axisError={
                                                 props.systems[item].axisErrors[
                                                   axisIndex
@@ -295,12 +287,6 @@ export function System(props: SystemProps) {
                                               }}
                                               onStopPush={() => {
                                                 props.onStopPush?.(
-                                                  props.lines[item].name,
-                                                  axisId,
-                                                );
-                                              }}
-                                              onStopCommand={() => {
-                                                props.onStopCommand?.(
                                                   props.lines[item].name,
                                                   axisId,
                                                 );

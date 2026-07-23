@@ -7,11 +7,8 @@ import { Show } from "solid-js/web";
 import {
   ipHistory,
   monitoringInputs,
-  page,
-  Pages,
   setDetectedServer,
   setIpHistory,
-  tcpClientIds,
 } from "~/store/GlobalState.ts";
 import { createStore } from "solid-js/store";
 import { IpAddress } from "~/pages/Monitoring/System/IpHistory.tsx";
@@ -30,17 +27,6 @@ import {
 } from "~/proto/mmc/info_pb.ts";
 import { StatusPage } from "./MonitoringSidebar/StatusPage.tsx";
 import { reconcile } from "solid-js/store";
-import {
-  exit,
-  prepareMmccli,
-  connectMmcServer,
-  loadConfig,
-  findMmcServer,
-  stopCommand,
-  getMmccliStatus,
-  MmcCliState,
-} from "../../services/MmcCliHandler.ts";
-import { disconnect } from "@kuyoonjo/tauri-plugin-tcp";
 import CarrierPage, { CarrierState } from "./MonitoringSidebar/CarrierPage.tsx";
 import { load } from "@tauri-apps/plugin-store";
 import { toaster } from "~/services/Toaster.ts";
@@ -61,15 +47,10 @@ function Monitoring() {
   onCleanup(async () => {
     if (lines.length > 0) {
       await monitoringServerHandler.disconnect();
+      await commandServerHandler.disconnect();
       setSendingCmd(null);
-      if (getMmccliStatus() !== MmcCliState.Unloaded) {
-        await exit();
-      }
       setIsConnect(false);
     }
-    const disconnectServer = tcpClientIds.map((id) => disconnect(id));
-    await Promise.allSettled(disconnectServer);
-    tcpClientIds.splice(0, tcpClientIds.length);
   });
 
   createEffect(
@@ -86,11 +67,7 @@ function Monitoring() {
                 monitoringServerHandler.getStatus() === WebSocket.OPEN
               ) {
                 await monitoringServerHandler.disconnect();
-              }
-
-              if (getMmccliStatus() !== MmcCliState.Unloaded) {
-                setDisableMmcCliBtn(true);
-                await exit();
+                await commandServerHandler.disconnect();
               }
 
               if (lines.length > 0) {
@@ -173,10 +150,6 @@ function Monitoring() {
     if (!monitoringInputs.has("port")) {
       monitoringInputs.set("port", createSignal<string>(""));
     }
-
-    if (getMmccliStatus() !== MmcCliState.Unloaded) {
-      await exit();
-    }
     setRender(true);
   });
 
@@ -237,32 +210,7 @@ function Monitoring() {
 
   const [isConnect, setIsConnect] = createSignal<boolean>(false);
 
-  async function connectMmcCli(ip: string) {
-    try {
-      const findPort = await findMmcServer(ip);
-      if (findPort && page() === Pages.Monitoring) {
-        await prepareMmccli();
-        await loadConfig(ip, findPort);
-        await connectMmcServer();
-        return Promise.resolve();
-      }
-      return Promise.reject("Invalid Tcp Connection");
-    } catch {
-      return Promise.reject("Invalid Tcp Connection");
-    }
-  }
-
   const [sendingCmd, setSendingCmd] = createSignal<SendingCommand | null>(null);
-
-  const [mmcCliConnectLoading, setMmcCliConnectLoading] =
-    createSignal<boolean>(false);
-  const [disableMmcCliBtn, setDisableMmcCliBtn] = createSignal<boolean>(true);
-
-  const [carrierTabRender, setCarrierTabRender] = createSignal<boolean>(true);
-  const carrierTabRefresh = () => {
-    setCarrierTabRender(false);
-    setCarrierTabRender(true);
-  };
 
   createEffect(
     on(
@@ -312,7 +260,6 @@ function Monitoring() {
               lines={lines}
               systems={systems}
               sendingCommand={sendingCmd()}
-              disableMmcCliBtn={disableMmcCliBtn()}
               onPull={async (
                 lineName,
                 commandDirection,
@@ -419,11 +366,6 @@ function Monitoring() {
                   });
                   setSendingCmd(null);
                 }
-              }}
-              onStopCommand={async (line, axisId) => {
-                setSendingCmd({ line: line, axisId: axisId });
-                await stopCommand();
-                setSendingCmd(null);
               }}
               onInitialize={async (
                 lineName,
@@ -566,22 +508,19 @@ function Monitoring() {
               >
                 {"Control"}
               </Tabs.Trigger>
-              <Show when={carrierTabRender()}>
-                <Tabs.Trigger
-                  value="Carriers"
-                  padding="0.5em"
-                  borderRadius={"0"}
-                  borderTopWidth={"0"}
-                  disabled={
-                    carrierStates()
-                      .map((state) => state.carrierStates)
-                      .concat().length < 1 ||
-                    getMmccliStatus() === MmcCliState.Unloaded
-                  }
-                >
-                  {"Carriers"}
-                </Tabs.Trigger>
-              </Show>
+              <Tabs.Trigger
+                value="Carriers"
+                padding="0.5em"
+                borderRadius={"0"}
+                borderTopWidth={"0"}
+                disabled={
+                  carrierStates()
+                    .map((state) => state.carrierStates)
+                    .concat().length < 1
+                }
+              >
+                {"Carriers"}
+              </Tabs.Trigger>
               {/* Resize trigger */}
               <IconButton
                 size="sm"
@@ -629,6 +568,7 @@ function Monitoring() {
                       setConnectBtnLoading(false);
                       deleteIpHistory(ip, port);
                       await monitoringServerHandler.disconnect();
+                      await commandServerHandler.disconnect();
                       setIsConnect(false);
                     }
                   }}
@@ -642,43 +582,6 @@ function Monitoring() {
 
                     setConnectBtnLoading(false);
                     setIsConnect(false);
-                  }}
-                  mmcCliBtnLoading={mmcCliConnectLoading()}
-                  onConnectMmccli={async (ip: string) => {
-                    setMmcCliConnectLoading(true);
-                    try {
-                      let checkWebsocket: ServerHandler | null =
-                        new ServerHandler();
-                      await checkWebsocket.connect(ip, "443");
-                      await checkWebsocket.disconnect();
-                      checkWebsocket = null;
-                      await connectMmcCli(ip);
-                      setDisableMmcCliBtn(false);
-                      setMmcCliConnectLoading(false);
-                      carrierTabRefresh();
-                    } catch {
-                      setMmcCliConnectLoading(false);
-                      setSendingCmd(null);
-                      if (!disableMmcCliBtn) {
-                        setDisableMmcCliBtn(true);
-                      }
-                      if (getMmccliStatus() !== MmcCliState.Unloaded) {
-                        await exit();
-                      }
-                    }
-                  }}
-                  onDisconnectMmccli={async (
-                    isIpChange: boolean | undefined,
-                  ) => {
-                    setMmcCliConnectLoading(true);
-                    setSendingCmd(null);
-                    if (getMmccliStatus() !== MmcCliState.Unloaded) {
-                      await exit();
-                    }
-                    setDisableMmcCliBtn(true);
-                    if (!isIpChange) {
-                      setMmcCliConnectLoading(false);
-                    }
                   }}
                 />
               </Show>
