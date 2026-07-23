@@ -81,7 +81,6 @@ export function CarrierPage(props: CarrierPageProps) {
     cas?: boolean,
   ) => {
     setLastCommandKey(mapKey);
-    console.log(targetKind);
     props.onCarrierMove?.(
       line,
       carrierId,
@@ -212,7 +211,6 @@ export function CarrierPage(props: CarrierPageProps) {
                                         ? TargetKind.Distance
                                         : TargetKind.Location;
                                   setTargetKind(newTargetKind);
-                                  console.log(targetKind());
                                 }}
                               >
                                 <Select.Control>

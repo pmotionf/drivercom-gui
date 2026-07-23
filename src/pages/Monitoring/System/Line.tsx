@@ -19,7 +19,6 @@ import { SendingCommand } from "./System.tsx";
 export type LineProps = JSX.HTMLAttributes<HTMLDivElement> & {
   line: LineType;
   system?: TrackType;
-  disableCommandButton: boolean;
   disableCalibrateButton: boolean;
   disableSetZeroButton: boolean;
   sendingCommand: SendingCommand;
@@ -78,7 +77,6 @@ export function Line(props: LineProps) {
     return errorStates;
   };
 
-  const disableBtn = () => props.disableCommandButton;
   const isSendingCommand = () => props.sendingCommand;
   const disableCalibrateButton = () => props.disableCalibrateButton;
   const disableSetZeroButton = () => props.disableSetZeroButton;
@@ -210,7 +208,6 @@ export function Line(props: LineProps) {
           lineName={props.line.name}
           acceleration={props.line.acceleration}
           speed={props.line.speed}
-          disableCommandButton={disableBtn()}
           disableCalibrateButton={disableCalibrateButton()}
           disableSetZeroButton={disableSetZeroButton()}
           sendingCommand={isSendingCommand()}

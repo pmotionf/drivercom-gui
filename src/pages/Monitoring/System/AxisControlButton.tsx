@@ -16,7 +16,6 @@ export type AxisControlProps = {
   hasCarrier?: boolean;
   sendingCommand: boolean;
   disableCommandButton: boolean;
-  disableMmcCliButton: boolean;
   onPull?: (
     axisDirection: string,
     carrierId: string,
