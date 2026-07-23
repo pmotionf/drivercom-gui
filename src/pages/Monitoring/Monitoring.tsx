@@ -270,13 +270,13 @@ function Monitoring() {
               ) => {
                 try {
                   const lineName = lines[lineIndex].name;
-                  setSendingCmd({ line: lineName, axisId: Number(axisId) });
+                  setSendingCmd({ line: lineName, axisId: axisId });
                   const lineId = lineIndex + 1;
                   const speed = lines[lineIndex].speed;
                   const acceleration = lines[lineIndex].acceleration;
                   await commandServerHandler.pull(
                     lineId,
-                    Number(axisId),
+                    axisId,
                     Number(carrierId),
                     commandDirection === "forward"
                       ? Request_Direction.FORWARD
@@ -326,14 +326,14 @@ function Monitoring() {
               ) => {
                 try {
                   const lineName = lines[lineIndex].name;
-                  setSendingCmd({ line: lineName, axisId: Number(axisId) });
+                  setSendingCmd({ line: lineName, axisId: axisId });
 
                   const lineId = lineIndex + 1;
                   const speed = lines[lineIndex].speed;
                   const acceleration = lines[lineIndex].acceleration;
                   await commandServerHandler.push(
                     lineId,
-                    Number(axisId),
+                    axisId,
                     commandDirection === "forward"
                       ? Request_Direction.FORWARD
                       : Request_Direction.BACKWARD,
