@@ -24,11 +24,15 @@ export type SendingCommand = {
   movingCarrier?: boolean;
 } | null;
 
+type SystemLineCommandParam = {
+  lineIndex: number;
+} & LineCommandParameters;
+
 export type SystemProps = JSX.HTMLAttributes<HTMLDivElement> & {
   lines: Store<Lines>;
   systems: Store<Systems>;
   sendingCommand: SendingCommand;
-  onLineCommands?: (params: LineCommandParameters) => void;
+  onLineCommands?: (params: SystemLineCommandParam) => void;
   onPush?: (
     line: string,
     commandDirection: string,
@@ -162,7 +166,16 @@ export function System(props: SystemProps) {
                       disableCalibrateButton={disableCalibrateButton(item)}
                       disableSetZeroButton={disableSetZero(item)}
                       sendingCommand={props.sendingCommand}
-                      onLineCommands={(param) => props.onLineCommands?.(param)}
+                      onLineCommands={(param) => {
+                        const newParam: SystemLineCommandParam = {
+                          lineIndex: item,
+                          speed: param.speed,
+                          acceleration: param.acceleration,
+                          calibrate: param.calibrate,
+                          setZero: param.setZero,
+                        };
+                        props.onLineCommands?.(newParam);
+                      }}
                     >
                       <Show when={props.systems[item]}>
                         <Stack
