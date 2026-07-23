@@ -420,17 +420,19 @@ function Monitoring() {
                 }
               }}
               onLineCommands={async (params) => {
-                setSendingCmd({ line: params.line, axisId: NaN });
-                const lineIndex = lines.findIndex(
-                  (line) => line.name == params.line,
-                );
-                const lineId = lineIndex + 1;
+                const lineName = lines[params.lineIndex].name;
+                setSendingCmd({ line: lineName, axisId: NaN });
+                const lineId = params.lineIndex + 1;
                 try {
                   if (params.speed) {
-                    setLines(lineIndex, "speed", params.speed);
+                    setLines(params.lineIndex, "speed", params.speed);
                   }
                   if (params.acceleration) {
-                    setLines(lineIndex, "acceleration", params.acceleration);
+                    setLines(
+                      params.lineIndex,
+                      "acceleration",
+                      params.acceleration,
+                    );
                   }
                   if (params.setZero) {
                     await commandServerHandler.setZero(lineId);

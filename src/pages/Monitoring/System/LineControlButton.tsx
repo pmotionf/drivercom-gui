@@ -7,7 +7,6 @@ import { Button } from "~/components/ui/button.tsx";
 import { SendingCommand } from "./System.tsx";
 
 export type LineCommandParameters = {
-  line: string;
   speed?: number;
   acceleration?: number;
   calibrate?: boolean;
@@ -130,7 +129,6 @@ export function LineControlButton(props: LineControlProps & IconButtonProps) {
                   props.acceleration !== Number(accelerationInput())
                 ) {
                   const saveProps: LineCommandParameters = {
-                    line: props.lineName,
                     speed:
                       props.speed === Number(speedInput()) ||
                       isNaN(Number(speedInput()))
@@ -268,7 +266,6 @@ export function LineControlButton(props: LineControlProps & IconButtonProps) {
               height="1.5rem"
               onClick={() => {
                 const commandProps: LineCommandParameters = {
-                  line: props.lineName,
                   setZero: true,
                 };
                 setLastCommand(LineCommand.SetZero);
@@ -307,7 +304,6 @@ export function LineControlButton(props: LineControlProps & IconButtonProps) {
               height="1.5rem"
               onClick={() => {
                 const commandProps: LineCommandParameters = {
-                  line: props.lineName,
                   calibrate: true,
                 };
                 setLastCommand(LineCommand.Calibrate);
