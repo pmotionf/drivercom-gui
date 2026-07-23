@@ -16,7 +16,8 @@ export type CarrierPageProps = JSX.HTMLAttributes<HTMLDivElement> & {
   onCarrierMove?: (
     line: string,
     carrier: number,
-    target: string,
+    targetKind: TargetKind,
+    targetValue: string,
     controlMode?: string,
     cas?: string,
   ) => void;
@@ -34,9 +35,9 @@ enum ControlMode {
 }
 
 enum TargetKind {
-  Axis = "Axis",
-  Location = "Location",
-  Distance = "Distance",
+  Axis = "axis",
+  Location = "location",
+  Distance = "distance",
 }
 
 export function CarrierPage(props: CarrierPageProps) {
@@ -80,10 +81,12 @@ export function CarrierPage(props: CarrierPageProps) {
     cas?: boolean,
   ) => {
     setLastCommandKey(mapKey);
+    console.log(targetKind);
     props.onCarrierMove?.(
       line,
       carrierId,
-      `${targetValue}${targetKind}`,
+      targetKind,
+      targetValue,
       controlMode,
       cas ? undefined : "off",
     );
@@ -200,12 +203,16 @@ export function CarrierPage(props: CarrierPageProps) {
                                 collection={targetKindCollection}
                                 defaultValue={[targetKind()]}
                                 onValueChange={(details) => {
-                                  setTargetKind(
-                                    TargetKind[
-                                      details.items[0]
-                                        .label as keyof typeof TargetKind
-                                    ],
-                                  );
+                                  const currentItemLabel =
+                                    details.items[0].label;
+                                  const newTargetKind =
+                                    currentItemLabel === "axis"
+                                      ? TargetKind.Axis
+                                      : currentItemLabel === "distance"
+                                        ? TargetKind.Distance
+                                        : TargetKind.Location;
+                                  setTargetKind(newTargetKind);
+                                  console.log(targetKind());
                                 }}
                               >
                                 <Select.Control>

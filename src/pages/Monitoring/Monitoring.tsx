@@ -39,13 +39,13 @@ import {
   stopCommand,
   getMmccliStatus,
   MmcCliState,
-  moveCarrier,
 } from "../../services/MmcCliHandler.ts";
 import { disconnect } from "@kuyoonjo/tauri-plugin-tcp";
 import CarrierPage, { CarrierState } from "./MonitoringSidebar/CarrierPage.tsx";
 import { load } from "@tauri-apps/plugin-store";
 import { toaster } from "~/services/Toaster.ts";
 import { Request_Direction } from "~/proto/mmc/command_pb.ts";
+import { Control } from "~/proto/mmc/control_pb.ts";
 
 export type Lines = LineType[];
 export type Systems = TrackType[];
@@ -715,7 +715,8 @@ function Monitoring() {
                 onCarrierMove={async (
                   line,
                   carrier,
-                  target,
+                  targetKind,
+                  targetValue,
                   controlMode,
                   cas,
                 ) => {
@@ -724,8 +725,25 @@ function Monitoring() {
                     axisId: NaN,
                     movingCarrier: true,
                   });
+                  const lineIndex = lines.findIndex(
+                    (lineCtx) => lineCtx.name === line,
+                  );
+                  const lineId = lineIndex + 1;
+                  const speed = lines[lineIndex].speed;
+                  const acceleration = lines[lineIndex].acceleration;
                   try {
-                    await moveCarrier(line, carrier, target, controlMode, cas);
+                    await commandServerHandler.moveCarrier(
+                      lineId,
+                      targetKind,
+                      Number(targetValue),
+                      carrier,
+                      controlMode === "position"
+                        ? Control.POSITION
+                        : Control.VELOCITY,
+                      cas === "off" ? true : false,
+                      speed,
+                      acceleration,
+                    );
                   } catch (e) {
                     toaster.create({
                       title: `Control Error`,
