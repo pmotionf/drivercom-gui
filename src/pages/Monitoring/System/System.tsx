@@ -36,13 +36,13 @@ export type SystemProps = JSX.HTMLAttributes<HTMLDivElement> & {
   onPush?: (
     lineIndex: number,
     commandDirection: string,
-    axis: string,
+    axis: number,
     carrier?: string,
   ) => void;
   onPull?: (
     lineIndex: number,
     commandDirection: string,
-    axis: string,
+    axis: number,
     carrier: string,
     destination?: string,
     cas?: string,
@@ -276,7 +276,7 @@ export function System(props: SystemProps) {
                                                 props.onPull?.(
                                                   lineIndex,
                                                   axisDirection,
-                                                  `${axisId}`,
+                                                  axisId,
                                                   carrierId,
                                                   des,
                                                   cas,
@@ -289,7 +289,7 @@ export function System(props: SystemProps) {
                                                 props.onPush?.(
                                                   lineIndex,
                                                   axisDirection,
-                                                  `${axisId}`,
+                                                  axisId,
                                                   carrierId,
                                                 );
                                               }}
