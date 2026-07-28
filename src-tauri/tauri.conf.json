@@ -3,7 +3,7 @@
   "productName": "Drivercom",
   "identifier": "com.pmotionf.drivercom-gui",
   "build": {
-    "beforeDevCommand": "bun run dev",
+    "beforeDevCommand": "pnpm run dev",
     "devUrl": "http://localhost:1420",
     "beforeBuildCommand": "bun run build",
     "frontendDist": "../dist"
@@ -33,6 +33,6 @@
       "icons/icon.icns",
       "icons/icon.ico"
     ],
-    "externalBin": ["binaries/drivercom", "binaries/rustscan"]
+    "externalBin": ["binaries/drivercom"]
   }
 }
