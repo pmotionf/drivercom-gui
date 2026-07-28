@@ -64,7 +64,6 @@ import { DownloadList } from "./components/DownloadList.tsx";
 //@ts-ignore This file is generate after run compiler.
 import api from "src-tauri/generated/api.json";
 import JSON5 from "json5";
-import { killTerminal } from "./services/MmcCliHandler.ts";
 import { load } from "@tauri-apps/plugin-store";
 import { IpAddress } from "./pages/Monitoring/System/IpHistory.tsx";
 import { ConfigTuneType } from "src-tauri/generated/config/ConfigTune.tsx";
@@ -694,7 +693,6 @@ function App(props: RouteSectionProps) {
   );
 
   onCleanup(async () => {
-    await killTerminal();
     unlistenDragDropEvent();
   });
 
