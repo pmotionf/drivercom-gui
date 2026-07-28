@@ -3,6 +3,8 @@ import JSON5 from "json5";
 import { writeFileSync } from "fs";
 import process from "node:process";
 import path from "node:path";
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
 
 const rustInfo = execSync("rustc -vV");
 const targetTriple = /host: (\S+)/g.exec(rustInfo)[1];
@@ -13,6 +15,9 @@ if (!targetTriple) {
   process.exitCode = 1;
   process.exit();
 }
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 const binaryName = path.resolve(
   __dirname,
