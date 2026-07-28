@@ -1,0 +1,4 @@
+allowBuilds:
+  '@bufbuild/buf': false
+  esbuild: false
+  vue-demi: false
