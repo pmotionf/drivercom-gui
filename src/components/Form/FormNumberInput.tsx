@@ -162,6 +162,7 @@ export const FormNumberInput = (props: FormNumberInputProps) => {
 
   return (
     <div
+      data-config-field
       style={{
         "margin-top": "1rem",
         "margin-bottom": "0.5rem",
@@ -409,6 +410,7 @@ export const FormNumberInput = (props: FormNumberInputProps) => {
               <IconExclamationCircle
                 color="red"
                 data-name="config_field_error"
+                style={{ "margin-left": "0.2em" }}
               />
             </Show>
           </Stack>
@@ -416,7 +418,7 @@ export const FormNumberInput = (props: FormNumberInputProps) => {
       </Stack>
       <Show when={!Number.isFinite(props.inputValue)}>
         <Text size="sm" color="red" marginLeft={"50%"} paddingLeft="0.5em">
-          {`Invalid ${typeof props.inputValue}.`}
+          {`Invalid ${typeof props.inputValue}`}
         </Text>
       </Show>
     </div>

@@ -47,6 +47,28 @@ import { css } from "styled-system/css";
 import { detectPort, getConfigFromPort, Port } from "~/services/PortService";
 import { prettierLabel } from "~/utils/PrettierLabel";
 
+type ConfigValidationError = {
+  tabId: string;
+  label: string;
+};
+
+type Tree<TLeaf> = TLeaf | Branch<TLeaf>;
+
+type Branch<TLeaf> =
+  | {
+      [key: string]: Tree<TLeaf>;
+    }
+  | Tree<TLeaf>[];
+
+type ConfigFormatLeaf = string | number | boolean | null | undefined;
+type ConfigFormat = Branch<ConfigFormatLeaf>;
+
+type ConfigValueLeaf = string | number | boolean | null | undefined;
+type ConfigValue = Branch<ConfigValueLeaf>;
+
+type DescriptionLeaf = string | number | boolean | null | undefined;
+type DescriptionValue = Branch<DescriptionLeaf>;
+
 export type ConfigTabPage = {
   filePath?: string;
   portId?: string;
@@ -205,6 +227,127 @@ export function ConfigTabContent() {
     );
   };
 
+  const isBranch = <TLeaf,>(
+    value: Tree<TLeaf> | undefined,
+  ): value is Branch<TLeaf> => typeof value === "object" && value !== null;
+
+  const asBranch = <TLeaf,>(value: Tree<TLeaf> | undefined): Branch<TLeaf> =>
+    isBranch(value) ? value : {};
+
+  const ARRAY_INDEX_KEY_REGEX = /^\d+$/;
+  const isArrayIndexKey = (key: string): boolean =>
+    ARRAY_INDEX_KEY_REGEX.test(key);
+
+  const getChild = <TLeaf,>(
+    branch: Branch<TLeaf>,
+    key: string,
+  ): Tree<TLeaf> | undefined => {
+    if (Array.isArray(branch)) {
+      return ARRAY_INDEX_KEY_REGEX.test(key) ? branch[Number(key)] : undefined;
+    }
+
+    return branch[key];
+  };
+
+  const entriesOf = <TLeaf,>(branch: Branch<TLeaf>) =>
+    Object.entries(branch) as [string, Tree<TLeaf>][];
+
+  const isHiddenDescription = (
+    description: DescriptionValue,
+    key: string,
+  ): boolean => {
+    const descriptionMeta = getChild(description, `__${key}`);
+
+    return (
+      isBranch(descriptionMeta) && getChild(descriptionMeta, "hidden") === true
+    );
+  };
+
+  const collectConfigValidationErrors = (
+    baseTabId: string,
+    tabKey: string,
+    format: ConfigFormat,
+    config: ConfigValue,
+    description: DescriptionValue,
+    path: string,
+    parentLabel?: string,
+  ): ConfigValidationError[] => {
+    const errors: ConfigValidationError[] = [];
+
+    entriesOf(format).forEach(([key, formatValue]) => {
+      if (key === "_" || isHiddenDescription(description, key)) return;
+
+      const isArrayIndex = isArrayIndexKey(key);
+      const labelPart =
+        isArrayIndex && parentLabel
+          ? `${parentLabel} ${Number(key) + 1}`
+          : prettierLabel(key);
+
+      const label = `${path} > ${labelPart}`;
+
+      if (typeof formatValue === "number") {
+        const value = getChild(config, key);
+
+        if (
+          value === "" ||
+          value === null ||
+          value === undefined ||
+          !Number.isFinite(Number(value))
+        ) {
+          errors.push({
+            tabId: `${baseTabId}.${tabKey}`,
+            label,
+          });
+        }
+
+        return;
+      }
+
+      if (isBranch(formatValue)) {
+        errors.push(
+          ...collectConfigValidationErrors(
+            baseTabId,
+            tabKey,
+            formatValue,
+            asBranch(getChild(config, key)),
+            asBranch(getChild(description, key)),
+            label,
+            labelPart,
+          ),
+        );
+      }
+    });
+
+    return errors;
+  };
+
+  const getAllConfigValidationErrors = (): ConfigValidationError[] => {
+    const errors: ConfigValidationError[] = [];
+    const form = configTabForm() as ConfigFormat;
+    const config = getConfigForm() as ConfigValue;
+    const description = configDescription() as DescriptionValue;
+    const baseTabId = getTabId();
+
+    entriesOf(form).forEach(([tabKey, format]) => {
+      if (!isBranch(format)) return;
+
+      errors.push(
+        ...collectConfigValidationErrors(
+          baseTabId,
+          tabKey,
+          format,
+          config,
+          description,
+          prettierLabel(tabKey),
+        ),
+      );
+    });
+    return errors;
+  };
+
+  const invalidFieldToastDescription = (errors: ConfigValidationError[]) =>
+    `${errors.map((error) => `• ${error.label}`).join("\n")}`;
+
   const [render, setRender] = createSignal<boolean>(true);
 
   const fileHandler = new FileHandler();
@@ -237,20 +380,57 @@ export function ConfigTabContent() {
     return output.stderr;
   }
 
-  let scrollContainer: HTMLDivElement | undefined;
-  const scrollToWrongField = (scrollContainer: HTMLDivElement) => {
-    const top = Array.from(
-      document.querySelectorAll(`[data-name*="config_field_error"]`),
-    )[0].parentElement?.offsetTop;
+  const getConfigFieldErrors = () =>
+    Array.from(
+      document.querySelectorAll<HTMLElement>(
+        `[data-name*="config_field_error"]`,
+      ),
+    );
 
-    if (top) {
-      const one_rem = parseFloat(
-        getComputedStyle(document.documentElement).fontSize,
-      );
-      scrollContainer.scrollTo({
-        top: top - scrollContainer.offsetTop - one_rem,
+  const scrollToWrongField = () => {
+    const anInvalidField = getConfigFieldErrors()[0];
+    const fieldContainer = anInvalidField?.closest("[data-config-field]");
+    if (!fieldContainer) return;
+
+    fieldContainer.scrollIntoView({
+      behavior: "smooth",
+      block: "center",
+      inline: "nearest",
+    });
+  };
+
+  const noSaveWhenConfigErrors = () => {
+    const invalidFields = getAllConfigValidationErrors();
+
+    if (invalidFields.length === 0 && getConfigFieldErrors().length === 0)
+      return false;
+
+    if (invalidFields.length > 0) {
+      const firstInvalidField = invalidFields[0];
+      if (getFocusedTab() !== firstInvalidField.tabId) {
+        setFocusedTab(firstInvalidField.tabId);
+        setTimeout(scrollToWrongField, 0);
+      } else {
+        scrollToWrongField();
+      }
+
+      toaster.create({
+        title: "Invalid Configuration",
+        description: invalidFieldToastDescription(invalidFields),
+        type: "error",
       });
+
+      return true;
     }
+
+    scrollToWrongField();
+
+    toaster.create({
+      title: "Invalid Configuration",
+      description: "Invalid input(s)",
+      type: "error",
+    });
+    return true;
   };
 
   createEffect(
@@ -273,6 +453,7 @@ export function ConfigTabContent() {
   const topBarHeight = "2.5rem";
 
   const saveAsFile = async () => {
+    if (noSaveWhenConfigErrors()) return;
     try {
       const path = await fileHandler.saveFileDialog("json5", getFilePath()!);
       await fileHandler.writeFile(
@@ -296,18 +477,8 @@ export function ConfigTabContent() {
   };
 
   const saveToPort = async (portId: string) => {
-    if (
-      scrollContainer &&
-      document.querySelectorAll(`[data-name*="config_field_error"]`).length > 0
-    ) {
-      scrollToWrongField(scrollContainer);
-      toaster.create({
-        title: "Invalid File",
-        description: "The file is invalid.",
-        type: "error",
-      });
-      return;
-    }
+    if (noSaveWhenConfigErrors()) return;
+
     const outputError = await saveConfigToPort(getConfigForm(), portId);
     if (outputError.length !== 0) {
       toaster.create({
@@ -731,7 +902,6 @@ export function ConfigTabContent() {
           }
         >
           <div
-            ref={scrollContainer}
             style={{
               width: "100%",
               height: `calc(100% - 2.5rem)`,
