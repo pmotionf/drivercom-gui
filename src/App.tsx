@@ -22,7 +22,6 @@ import {
   IconInfoCircle,
   IconMoonFilled,
   IconSunFilled,
-  IconX,
 } from "@tabler/icons-solidjs";
 
 import {
@@ -56,7 +55,7 @@ import {
   logFormFileFormat,
 } from "./store/GlobalState.ts";
 
-import { SegmentGroup } from "~/components/ui/segment-group.tsx";
+import * as SegmentGroup from "~/components/ui/segment-group.tsx";
 import { Text } from "~/components/ui/text.tsx";
 
 import { Command } from "@tauri-apps/plugin-shell";
@@ -79,14 +78,14 @@ import {
 } from "~/pages/Configuration/ConfigForm/ConfigForm.tsx";
 import { TabContext } from "~/components/Tab/TabList.tsx";
 import { FileHandler } from "./services/FileHandler.ts";
-import { Toast } from "./components/ui/toast.tsx";
+import { Toaster } from "./components/ui/toast.tsx";
 import { toaster } from "./services/Toaster.ts";
 import { createStore } from "solid-js/store";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { Stack } from "styled-system/jsx/stack";
 import { UnlistenFn } from "@tauri-apps/api/event";
 import { css } from "styled-system/css/css";
-import { Popover } from "./components/ui/popover.tsx";
+import * as Popover from "./components/ui/popover.tsx";
 import { IconButton } from "./components/ui/icon-button.tsx";
 import { Portal } from "solid-js/web";
 import { LoggingAccordionStates } from "./components/Form.tsx";
@@ -759,7 +758,7 @@ function App(props: RouteSectionProps) {
                   })}
                 >
                   <Text
-                    size="sm"
+                    textStyle="sm"
                     opacity={page().toString() === val() ? "1" : "0.6"}
                   >
                     {pages[val()].label}
@@ -771,8 +770,8 @@ function App(props: RouteSectionProps) {
             </Index>
           </SegmentGroup.Root>
           <IconButton
-            variant="ghost"
-            size="xs"
+            variant="plain"
+            textStyle="xs"
             onclick={toggleTheme}
             gridRow={1}
             gridColumn={2}
@@ -786,7 +785,7 @@ function App(props: RouteSectionProps) {
           </IconButton>
           <Popover.Root>
             <Popover.Trigger gridRow={1} gridColumn={3}>
-              <IconButton size="xs" variant="ghost">
+              <IconButton textStyle="xs" variant="plain">
                 <IconInfoCircle />
               </IconButton>
             </Popover.Trigger>
@@ -804,7 +803,7 @@ function App(props: RouteSectionProps) {
                     }}
                   >
                     <Text
-                      size="sm"
+                      textStyle="sm"
                       fontWeight="light"
                       style={{
                         "grid-row": 1,
@@ -814,7 +813,7 @@ function App(props: RouteSectionProps) {
                       <i>GUI Version:</i>
                     </Text>
                     <Text
-                      size="sm"
+                      textStyle="sm"
                       fontWeight="light"
                       style={{
                         "grid-row": 1,
@@ -824,7 +823,7 @@ function App(props: RouteSectionProps) {
                       {version()}
                     </Text>
                     <Text
-                      size="sm"
+                      textStyle="sm"
                       fontWeight="light"
                       style={{
                         "grid-row": 2,
@@ -834,7 +833,7 @@ function App(props: RouteSectionProps) {
                       <i>CLI Version:</i>
                     </Text>
                     <Text
-                      size="sm"
+                      textStyle="sm"
                       fontWeight="light"
                       style={{
                         "grid-row": 2,
@@ -844,7 +843,7 @@ function App(props: RouteSectionProps) {
                       {cliVersion()}
                     </Text>
                     <Text
-                      size="sm"
+                      textStyle="sm"
                       fontWeight="light"
                       style={{
                         "grid-row": 3,
@@ -854,7 +853,7 @@ function App(props: RouteSectionProps) {
                       <i>Lib Version:</i>
                     </Text>
                     <Text
-                      size="sm"
+                      textStyle="sm"
                       fontWeight="light"
                       style={{
                         "grid-row": 3,
@@ -864,7 +863,7 @@ function App(props: RouteSectionProps) {
                       {driverComVersion()}
                     </Text>
                     <Text
-                      size="sm"
+                      textStyle="sm"
                       fontWeight="light"
                       style={{
                         "grid-row": 4,
@@ -874,7 +873,7 @@ function App(props: RouteSectionProps) {
                       <i>API Version:</i>
                     </Text>
                     <Text
-                      size="sm"
+                      textStyle="sm"
                       fontWeight="light"
                       style={{
                         "grid-row": 4,
@@ -886,7 +885,7 @@ function App(props: RouteSectionProps) {
                   </div>
                   <Text
                     as="div"
-                    size="sm"
+                    textStyle="sm"
                     fontWeight="light"
                     textAlign="center"
                     marginTop="0.5rem"
@@ -914,36 +913,8 @@ function App(props: RouteSectionProps) {
           style={{ position: "absolute", right: "1rem", bottom: "1rem" }}
         />
       </Show>
-      <Toast.Toaster toaster={toaster}>
-        {(toast) => (
-          <Toast.Root>
-            <Toast.Title>{toast().title}</Toast.Title>
-            <Toast.Description>{toast().description}</Toast.Description>
-            {toast().action && (
-              <Toast.ActionTrigger>
-                <Text
-                  size="sm"
-                  style={{
-                    width: "100%",
-                    height: "1rem",
-                    display: "block",
-                    "white-space": "none",
-                    overflow: "hidden",
-                    "text-overflow": "ellipsis",
-                    "text-decoration": "underline",
-                  }}
-                  fontWeight="bold"
-                >
-                  {toast().action?.label}
-                </Text>
-              </Toast.ActionTrigger>
-            )}
-            <Toast.CloseTrigger>
-              <IconX />
-            </Toast.CloseTrigger>
-          </Toast.Root>
-        )}
-      </Toast.Toaster>
+      <Toaster/>
+
 
       <Show
         when={

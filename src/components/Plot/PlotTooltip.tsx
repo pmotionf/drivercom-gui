@@ -119,10 +119,10 @@ export const PlotToolTip = (
                       }
                     />
                   </Stack>
-                  <Text size="sm" fontWeight="bold">
+                  <Text textStyle="sm" fontWeight="bold">
                     {series.label}:
                   </Text>
-                  <Text size="sm">
+                  <Text textStyle="sm">
                     {enumValues
                       ? `${enumValues.get(props.u.data[i() + 1][props.cursor.xValue]!)}(${props.u.data[i() + 1][props.cursor.xValue]})`
                       : props.u.data[i() + 1][props.cursor.xValue]}

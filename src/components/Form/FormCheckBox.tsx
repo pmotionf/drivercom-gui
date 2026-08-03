@@ -1,4 +1,4 @@
-import { Checkbox } from "../ui/checkbox";
+import * as Checkbox from "../ui/checkbox";
 import { Text } from "../ui/text";
 import { Show } from "solid-js";
 
@@ -28,7 +28,7 @@ export const FormCheckBox = (props: FormCheckBoxProps) => {
         height: "max-content",
       }}
     >
-      <Checkbox
+      <Checkbox.Root
         id={props.id}
         checked={props.checked}
         onCheckedChange={(e) => {
@@ -44,6 +44,10 @@ export const FormCheckBox = (props: FormCheckBoxProps) => {
         marginRight="0.5em"
         alignItems={"center"}
       >
+        <Checkbox.HiddenInput />
+        <Checkbox.Control>
+          <Checkbox.Indicator />
+        </Checkbox.Control>
         <div>
           <Text
             fontWeight="medium"
@@ -65,12 +69,12 @@ export const FormCheckBox = (props: FormCheckBoxProps) => {
                 "string"
             }
           >
-            <Text size="xs" fontWeight="light" color="fg.muted">
+            <Text textStyle="xs" fontWeight="light" color="fg.muted">
               {props.desc!["description" as keyof typeof props.desc]}
             </Text>
           </Show>
         </div>
-      </Checkbox>
+      </Checkbox.Root>
     </div>
   );
 };

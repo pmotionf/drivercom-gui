@@ -3,7 +3,7 @@ import {
   logStartCombinatorList,
   logStartConditionList,
 } from "~/store/GlobalState";
-import { createListCollection } from "~/components/ui/select";
+import { createListCollection } from "@ark-ui/solid/collection";
 import { ListCollection } from "@ark-ui/solid/collection";
 import { LoggingAccordionStates, Form } from "~/components/Form";
 

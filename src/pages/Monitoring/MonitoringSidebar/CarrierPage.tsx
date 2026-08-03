@@ -1,12 +1,12 @@
 import { Accessor, For, JSX, Setter, createSignal } from "solid-js";
 import { Response_Line_Carrier_State } from "~/proto/mmc/info_pb";
-import { Accordion } from "~/components/ui/accordion";
+import * as Accordion from "~/components/ui/accordion";
 import { IconChevronDown } from "@tabler/icons-solidjs";
 import { Text } from "~/components/ui/text";
 import { Input } from "~/components/ui/input";
-import { ToggleGroup } from "~/components/ui/toggle-group";
+import * as ToggleGroup from "~/components/ui/toggle-group";
 import { Button } from "~/components/ui/button";
-import { Select } from "~/components/ui/select";
+import * as Select from "~/components/ui/select";
 import { createListCollection, ListCollection } from "@ark-ui/solid";
 import { SendingCommand } from "../System/System";
 import { Show } from "solid-js";

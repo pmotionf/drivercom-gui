@@ -1,5 +1,5 @@
 import { JSX, on, createEffect, createSignal } from "solid-js";
-import { Table } from "~/components/ui/table.tsx";
+import * as Table from "~/components/ui/table.tsx";
 import { For } from "solid-js";
 import { Text } from "~/components/ui/text";
 import {
@@ -48,13 +48,13 @@ export const ErrorTable = (props: ErrorTableProps) => {
 
   return (
     <>
-      <Text fontWeight="bold" color="fg.subtle" size="sm" marginBottom="0.5em">
+      <Text fontWeight="bold" color="fg.subtle" textStyle="sm" marginBottom="0.5em">
         Error
       </Text>
       <Show
         when={showTable()}
         fallback={
-          <Text color="fg.subtle" size="sm">
+          <Text color="fg.subtle" textStyle="sm">
             No errors.
           </Text>
         }

@@ -1,5 +1,5 @@
 import { Setter } from "solid-js";
-import { Switch } from "~/components/ui/switch";
+import * as Switch from "~/components/ui/switch";
 import { Text } from "~/components/ui/text";
 
 export type ControlPageProps = {
@@ -17,17 +17,14 @@ export const ControlPage = (props: ControlPageProps) => {
         "flex-direction": "column",
       }}
     >
-      <Switch
-        checked={props.isAutoMode}
-        onCheckedChange={(e) => {
-          props.changeAutoMode(e.checked);
-        }}
-      >
-        <Text size="sm" fontWeight="bold">
-          {"Clear Errors Automatically"}
-        </Text>
-      </Switch>
-      <Text size="sm">{"Clear non-critical errors automatically."}</Text>
+      <Switch.Root checked = {props.isAutoMode} onCheckedChange = {(e) => props.changeAutoMode?.(e.checked)}>
+        <Switch.Control>
+          <Switch.Thumb/>
+        </Switch.Control>
+        <Switch.Label textStyle = "sm" fontWeight = "bold">{"Clear Errors Automatically"} </Switch.Label>
+        <Switch.HiddenInput/>
+      </Switch.Root>
+      <Text textStyle="sm">{"Clear non-critical errors automatically."}</Text>
     </div>
   );
 };

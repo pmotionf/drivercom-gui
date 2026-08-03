@@ -191,7 +191,7 @@ export const FormNumberInput = (props: FormNumberInputProps) => {
                   "string"
               }
             >
-              <Text size="xs" fontWeight="light" color="fg.muted">
+              <Text textStyle="xs" fontWeight="light" color="fg.muted">
                 {props.desc!["description" as keyof typeof props.desc]}
               </Text>
             </Show>
@@ -200,84 +200,79 @@ export const FormNumberInput = (props: FormNumberInputProps) => {
           <Show
             when={lockStatus && lockStatusKey && lockStatus.has(lockStatusKey)}
           >
-            <Tooltip.Root>
-              <Tooltip.Trigger width="min-content">
-                <IconButton
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  borderRadius="3rem"
-                  height="min-content"
-                  paddingTop="0.2rem"
-                  paddingBottom="0.2rem"
-                  opacity={lockStatus!.get(lockStatusKey!)![0]() ? "1" : "0.5"}
-                  onClick={() => {
-                    if (!lockStatus) return;
-                    lockStatus.get(lockStatusKey!)![1]((prev) => !prev);
+            <Tooltip content = "Lock auto calculation">
+              <IconButton
+                type="button"
+                variant="plain"
+                size="sm"
+                borderRadius="3rem"
+                height="min-content"
+                paddingTop="0.2rem"
+                paddingBottom="0.2rem"
+                opacity={lockStatus!.get(lockStatusKey!)![0]() ? "1" : "0.5"}
+                onClick={() => {
+                  if (!lockStatus) return;
+                  lockStatus.get(lockStatusKey!)![1]((prev) => !prev);
 
-                    const gainKey = lockStatusKey!
+                  const gainKey = lockStatusKey!
+                    .split(".")
+                    .slice(0, -2)
+                    .join(".");
+                  const isCenter = props.id.includes("center");
+                  const oppositeDynPos = isCenter ? "between" : "center";
+                  const currentDynPos = isCenter ? "center" : "between";
+
+                  if (props.lockStatus!.has(gainKey)) {
+                    const updateValue = Array.from(
+                      props.lockStatus!.entries(),
+                    )
+                      .filter(
+                        (entry) =>
+                          entry[0] !== gainKey &&
+                          entry[0].includes(currentDynPos),
+                      )
+                      .some((entry) => entry[1][0]() === true);
+                    props.lockStatus!.get(gainKey)![1](updateValue);
+                  }
+
+                  if (!props.linkStatus) return;
+                  const link = props.linkStatus.get("gain")![0]();
+                  if (link[0]) {
+                    const endkey = lockStatusKey!.replace(
+                      currentDynPos,
+                      oppositeDynPos,
+                    );
+                    if (props.lockStatus!.has(endkey)) {
+                      props.lockStatus!.get(endkey)![1]((prev) => !prev);
+                    }
+
+                    const oppositeGainKey = endkey
                       .split(".")
                       .slice(0, -2)
                       .join(".");
-                    const isCenter = props.id.includes("center");
-                    const oppositeDynPos = isCenter ? "between" : "center";
-                    const currentDynPos = isCenter ? "center" : "between";
-
-                    if (props.lockStatus!.has(gainKey)) {
+                    if (props.lockStatus!.has(oppositeGainKey)) {
                       const updateValue = Array.from(
                         props.lockStatus!.entries(),
                       )
                         .filter(
                           (entry) =>
-                            entry[0] !== gainKey &&
-                            entry[0].includes(currentDynPos),
+                            entry[0] !== oppositeGainKey &&
+                            entry[0].includes(oppositeDynPos),
                         )
                         .some((entry) => entry[1][0]() === true);
-                      props.lockStatus!.get(gainKey)![1](updateValue);
+                      props.lockStatus!.get(oppositeGainKey)![1](updateValue);
                     }
-
-                    if (!props.linkStatus) return;
-                    const link = props.linkStatus.get("gain")![0]();
-                    if (link[0]) {
-                      const endkey = lockStatusKey!.replace(
-                        currentDynPos,
-                        oppositeDynPos,
-                      );
-                      if (props.lockStatus!.has(endkey)) {
-                        props.lockStatus!.get(endkey)![1]((prev) => !prev);
-                      }
-
-                      const oppositeGainKey = endkey
-                        .split(".")
-                        .slice(0, -2)
-                        .join(".");
-                      if (props.lockStatus!.has(oppositeGainKey)) {
-                        const updateValue = Array.from(
-                          props.lockStatus!.entries(),
-                        )
-                          .filter(
-                            (entry) =>
-                              entry[0] !== oppositeGainKey &&
-                              entry[0].includes(oppositeDynPos),
-                          )
-                          .some((entry) => entry[1][0]() === true);
-                        props.lockStatus!.get(oppositeGainKey)![1](updateValue);
-                      }
-                    }
-                  }}
+                  }
+                }}
+              >
+                <Show
+                  when={lockStatus && lockStatus.get(lockStatusKey!)![0]()}
+                  fallback={<IconLockOff />}
                 >
-                  <Show
-                    when={lockStatus && lockStatus.get(lockStatusKey!)![0]()}
-                    fallback={<IconLockOff />}
-                  >
-                    <IconLock />
-                  </Show>
-                </IconButton>
-              </Tooltip.Trigger>
-              <Tooltip.Positioner>
-                <Tooltip.Content>{"Lock auto calculation"}</Tooltip.Content>
-              </Tooltip.Positioner>
-            </Tooltip.Root>
+                  <IconLock />
+                </Show>
+              </IconButton>
+            </Tooltip>
           </Show>
         </div>
         <div
@@ -376,34 +371,23 @@ export const FormNumberInput = (props: FormNumberInputProps) => {
                 props.desc!["unit_short" as keyof typeof props.desc]
               }
             >
-              <Tooltip.Root>
-                <Tooltip.Trigger>
-                  <Text opacity="0.5" marginLeft="0.2em">
-                    {parseUnit(
-                      changeUnitShort(
-                        props.desc![
-                          "unit_short" as keyof typeof props.desc
-                        ] as string,
-                        props.changeUnits ?? false,
-                      ),
-                    )}
-                  </Text>
-                  <Tooltip.Positioner>
-                    <Show
-                      when={props.desc!["unit_long" as keyof typeof props.desc]}
-                    >
-                      <Tooltip.Content>
-                        {changeUnitLong(
-                          props.desc![
-                            "unit_long" as keyof typeof props.desc
-                          ] as string,
-                          props.changeUnits ?? false,
-                        )}
-                      </Tooltip.Content>
-                    </Show>
-                  </Tooltip.Positioner>
-                </Tooltip.Trigger>
-              </Tooltip.Root>
+              <Tooltip content = {changeUnitLong(
+                props.desc![
+                  "unit_long" as keyof typeof props.desc
+                ] as string,
+                props.changeUnits ?? false,
+              )}>
+                <Text opacity="0.5" marginLeft="0.2em">
+                  {parseUnit(
+                    changeUnitShort(
+                      props.desc![
+                        "unit_short" as keyof typeof props.desc
+                      ] as string,
+                      props.changeUnits ?? false,
+                    ),
+                  )}
+                </Text>
+              </Tooltip>
             </Show>
             <Show when={!Number.isFinite(props.inputValue)}>
               <IconExclamationCircle
@@ -415,7 +399,7 @@ export const FormNumberInput = (props: FormNumberInputProps) => {
         </div>
       </Stack>
       <Show when={!Number.isFinite(props.inputValue)}>
-        <Text size="sm" color="red" marginLeft={"50%"} paddingLeft="0.5em">
+        <Text textStyle="sm" color="red" marginLeft={"50%"} paddingLeft="0.5em">
           {`Invalid ${typeof props.inputValue}.`}
         </Text>
       </Show>

@@ -1,5 +1,5 @@
 import { createSignal, onMount, onCleanup, createEffect, on } from "solid-js";
-import { Splitter } from "../../components/ui/splitter.tsx";
+import * as Splitter from "../../components/ui/splitter.tsx";
 import { IconButton } from "~/components/ui/icon-button.tsx";
 import { IconChevronDown, IconChevronUp } from "@tabler/icons-solidjs";
 import { css } from "styled-system/css/css";
@@ -12,7 +12,7 @@ import {
 } from "~/store/GlobalState.ts";
 import { createStore } from "solid-js/store";
 import { IpAddress } from "~/pages/Monitoring/System/IpHistory.tsx";
-import { Tabs } from "~/components/ui/tabs.tsx";
+import * as Tabs from "~/components/ui/tabs.tsx";
 import { ControlPage } from "./MonitoringSidebar/ControlPage.tsx";
 import { ConnectPage } from "./MonitoringSidebar/ConnectPage.tsx";
 import {
@@ -482,7 +482,7 @@ function Monitoring() {
           <Tabs.Root
             defaultValue="Connect"
             style={{ width: "100%", height: "100%" }}
-            variant="outline"
+            variant="line"
           >
             <Tabs.List
               gap="0"
@@ -530,7 +530,7 @@ function Monitoring() {
               {/* Resize trigger */}
               <IconButton
                 size="sm"
-                variant="ghost"
+                variant="plain"
                 onClick={() => setShowSideBar(!showSideBar())}
                 position="absolute"
                 top="0.1rem"

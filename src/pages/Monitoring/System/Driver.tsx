@@ -65,8 +65,20 @@ export function Driver(props: DriverProps) {
           display: "flex",
         }}
       >
-        <Tooltip.Root positioning={{ placement: "bottom-start" }}>
-          <Tooltip.Trigger>
+        <Tooltip content={
+          <Show when={findField(props.driverInfo).length > 0}>
+
+                <Text> Info </Text>
+                <For each={findField(props.driverInfo)}>
+                  {(field) => {
+                    return <Text fontWeight="medium">{field}</Text>;
+                  }}
+                </For>
+
+
+          </Show>
+
+        } positioning={{ placement: "bottom-start" }}>
             <Badge
               background={
                 props.driverInfo.connected ? "accent.customGreen" : "bg.canvas"
@@ -83,24 +95,20 @@ export function Driver(props: DriverProps) {
               </Show>
               <Text fontWeight="bold">Driver {props.id}</Text>
             </Badge>
-          </Tooltip.Trigger>
-          <Show when={findField(props.driverInfo).length > 0}>
-            <Tooltip.Positioner>
-              <Tooltip.Content width="100%" minWidth="10rem">
-                <Text> Info </Text>
-                <For each={findField(props.driverInfo)}>
-                  {(field) => {
-                    return <Text fontWeight="medium">{field}</Text>;
-                  }}
-                </For>
-              </Tooltip.Content>
-            </Tooltip.Positioner>
-          </Show>
-        </Tooltip.Root>
+
+        </Tooltip>
 
         <Show when={findField(props.driverError).length > 0}>
-          <Tooltip.Root positioning={{ placement: "bottom-start" }}>
-            <Tooltip.Trigger>
+          <Tooltip content={
+            <>
+              <Text>Error</Text>
+              <For each={findField(props.driverError)}>
+                {(errorField) => {
+                  return <Text fontWeight="medium">{errorField}</Text>;
+                }}
+              </For>
+            </>
+          } positioning={{ placement: "bottom-start" }}>
               <Stack
                 backgroundColor="red.9"
                 style={{
@@ -110,19 +118,7 @@ export function Driver(props: DriverProps) {
                   "margin-left": "0.5em",
                 }}
               />
-            </Tooltip.Trigger>
-
-            <Tooltip.Positioner>
-              <Tooltip.Content width="100%" minWidth="10rem">
-                <Text>Error</Text>
-                <For each={findField(props.driverError)}>
-                  {(errorField) => {
-                    return <Text fontWeight="medium">{errorField}</Text>;
-                  }}
-                </For>
-              </Tooltip.Content>
-            </Tooltip.Positioner>
-          </Tooltip.Root>
+          </Tooltip>
         </Show>
       </div>
       {props.children}

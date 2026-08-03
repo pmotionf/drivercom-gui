@@ -1,4 +1,4 @@
-import { Accordion } from "../ui/accordion";
+import * as Accordion from "../ui/accordion";
 import { Text } from "../ui/text";
 import { Stack } from "styled-system/jsx";
 import { Show } from "solid-js";
@@ -34,7 +34,7 @@ export const FormCollapsibleObject = (props: FormCollapsibleObjectProps) => {
       <Accordion.Item value={itemId}>
         <Accordion.ItemTrigger borderBottomWidth={"1px"}>
           <Stack gap="0" alignItems={"center"}>
-            <Text fontWeight="bold" color="fg.default" size="sm" width="100%">
+            <Text fontWeight="bold" color="fg.default" textStyle="sm" width="100%">
               {`${key[0].toUpperCase()}${Array.from(key.slice(1, key.length))
                 .map((char, index) => {
                   if (key[index] === "_") {
@@ -46,7 +46,7 @@ export const FormCollapsibleObject = (props: FormCollapsibleObjectProps) => {
                 .replaceAll(",", "")}`}
             </Text>
             <Show when={props.triggerDescription}>
-              <Text size="xs" fontWeight="light" color="fg.muted">
+              <Text textStyle="xs" fontWeight="light" color="fg.muted">
                 {
                   props.triggerDescription![
                     "description" as keyof typeof props.triggerDescription

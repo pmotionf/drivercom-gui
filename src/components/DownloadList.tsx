@@ -279,12 +279,12 @@ export const DownloadList = (props: JSX.HTMLAttributes<HTMLDivElement>) => {
           >
             <IconButton
               size="xs"
-              variant="ghost"
+              variant="plain"
               onClick={() => setCsvFileDownloads([])}
             >
               <IconX />
             </IconButton>
-            <Text size="xs" width="100%" paddingLeft="1em" fontWeight="bold">
+            <Text textStyle="xs" width="100%" paddingLeft="1em" fontWeight="bold">
               {"Downloads"}
             </Text>
           </Stack>
@@ -301,7 +301,7 @@ export const DownloadList = (props: JSX.HTMLAttributes<HTMLDivElement>) => {
                 return (
                   <Button
                     textAlign={"left"}
-                    variant="ghost"
+                    variant="plain"
                     width="100%"
                     alignItems="center"
                     padding="0.5em 0 0.5em 0.5em"
@@ -352,7 +352,7 @@ export const DownloadList = (props: JSX.HTMLAttributes<HTMLDivElement>) => {
                           overflow: "hidden",
                         }}
                         height="min-content"
-                        size="md"
+                        textStyle="md"
                         fontWeight="bold"
                       >
                         {download.filePath
@@ -363,7 +363,7 @@ export const DownloadList = (props: JSX.HTMLAttributes<HTMLDivElement>) => {
                       <Show when={download.status === DownloadStatus.Success}>
                         <Text
                           height="min-content"
-                          size="sm"
+                          textStyle="sm"
                           color="fg.muted"
                           fontWeight="medium"
                           style={{
@@ -384,7 +384,7 @@ export const DownloadList = (props: JSX.HTMLAttributes<HTMLDivElement>) => {
                       <Show when={download.status === DownloadStatus.Error}>
                         <Text
                           height="min-content"
-                          size="sm"
+                          textStyle="sm"
                           color="fg.muted"
                           fontWeight="medium"
                         >
@@ -394,7 +394,7 @@ export const DownloadList = (props: JSX.HTMLAttributes<HTMLDivElement>) => {
                       <Show when={download.status === DownloadStatus.Paused}>
                         <Text
                           height="min-content"
-                          size="sm"
+                          textStyle="sm"
                           color="fg.muted"
                           fontWeight="medium"
                         >
@@ -404,7 +404,7 @@ export const DownloadList = (props: JSX.HTMLAttributes<HTMLDivElement>) => {
                       <Show when={download.status === DownloadStatus.Cancel}>
                         <Text
                           height="min-content"
-                          size="sm"
+                          textStyle="sm"
                           color="fg.muted"
                           fontWeight="medium"
                         >
@@ -417,7 +417,7 @@ export const DownloadList = (props: JSX.HTMLAttributes<HTMLDivElement>) => {
                         <div
                           style={{ display: "flex", "align-items": "center" }}
                         >
-                          <Text width="2.5em" size="xs">
+                          <Text width="2.5em" textStyle="xs">
                             {`${download.downloadProgress}%`}
                           </Text>
                           <div style={{ width: `calc(100% - 3em)` }}>
@@ -453,7 +453,7 @@ export const DownloadList = (props: JSX.HTMLAttributes<HTMLDivElement>) => {
                         fallback={
                           <IconButton
                             size="xs"
-                            variant="ghost"
+                            variant="plain"
                             width="2em"
                             onClick={(e) => {
                               e.stopPropagation();
@@ -469,7 +469,7 @@ export const DownloadList = (props: JSX.HTMLAttributes<HTMLDivElement>) => {
                         <IconButton
                           width="2em"
                           size="xs"
-                          variant={"ghost"}
+                          variant={"plain"}
                           onClick={async (e) => {
                             e.stopPropagation();
                             if (portCommands.has(download.pid)) {
@@ -499,7 +499,7 @@ export const DownloadList = (props: JSX.HTMLAttributes<HTMLDivElement>) => {
                       >
                         <IconButton
                           size="sm"
-                          variant="ghost"
+                          variant="plain"
                           width="2em"
                           onClick={async (e) => {
                             e.stopPropagation();

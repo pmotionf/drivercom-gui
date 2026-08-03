@@ -1,10 +1,10 @@
 import { JSX } from "solid-js";
 import { Dynamic, For, Portal } from "solid-js/web";
-import { Tabs } from "~/components/ui/tabs.tsx";
+import * as Tabs from "~/components/ui/tabs.tsx";
 import { IconButton } from "~/components/ui/icon-button.tsx";
 import { IconPlus, IconX } from "@tabler/icons-solidjs";
 import { createSignal } from "solid-js";
-import { Editable } from "../ui/editable.tsx";
+import * as Editable from "../ui/editable.tsx";
 import { Show } from "solid-js/web";
 import { createDraggable } from "@neodrag/solid";
 //@ts-ignore Has an Any type error
@@ -287,7 +287,7 @@ export function Tab(props: TabProps) {
                   </Editable.Root>
                   <div class="cancel">
                     <IconButton
-                      variant="ghost"
+                      variant="plain"
                       size="xs"
                       onClick={() => {
                         props.onDeleteTab?.(tabIndex());
@@ -340,7 +340,7 @@ export function Tab(props: TabProps) {
                       >
                         {tabCtx.tab.tabName}
                       </Text>
-                      <IconButton variant="ghost" size="xs" borderRadius="3rem">
+                      <IconButton variant="plain" size="xs" borderRadius="3rem">
                         <Dynamic
                           style={{ width: "0.8rem", height: "0.8rem" }}
                           component={IconX}
@@ -357,7 +357,7 @@ export function Tab(props: TabProps) {
 
       <Show when={props.onCreateTab}>
         <IconButton
-          variant="ghost"
+          variant="plain"
           borderRadius="3rem"
           size="xs"
           onClick={() => {

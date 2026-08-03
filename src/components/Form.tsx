@@ -11,7 +11,7 @@ import { FormCheckBox } from "./Form/FormCheckBox.tsx";
 import { FormNumberInput } from "./Form/FormNumberInput.tsx";
 import { FormCollapsibleObject } from "./Form/FormCollapsibleObject.tsx";
 import { ListCollection } from "@ark-ui/solid";
-import { Select } from "./ui/select.tsx";
+import * as Select from "./ui/select.tsx";
 import { createStore } from "solid-js/store";
 import { Tooltip } from "./ui/tooltip.tsx";
 import { IconHelp } from "@tabler/icons-solidjs";
@@ -262,20 +262,11 @@ export function Form(props: FormProps) {
                     {`${key[0].toUpperCase()}${key.slice(1, key.length)}`}
                   </Text>
                   <Show when={description}>
-                    <Tooltip.Root>
-                      <Tooltip.Trigger>
-                        <IconHelp size="1em" opacity={0.5} />
-                      </Tooltip.Trigger>
-                      <Tooltip.Positioner>
-                        <Tooltip.Content>
-                          {
-                            description![
-                              "description" as keyof typeof description
-                            ]
-                          }
-                        </Tooltip.Content>
-                      </Tooltip.Positioner>
-                    </Tooltip.Root>
+                    <Tooltip content = {description![
+                      "description" as keyof typeof description
+                    ]}>
+                      <IconHelp size="1em" opacity={0.5} />
+                    </Tooltip>
                   </Show>
                 </div>
 

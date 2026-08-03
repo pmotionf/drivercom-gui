@@ -1,11 +1,12 @@
 import { IconButton, IconButtonProps } from "~/components/ui/icon-button.tsx";
 import { IconDots } from "@tabler/icons-solidjs";
-import { Popover } from "~/components/ui/popover.tsx";
+import * as Popover from "~/components/ui/popover.tsx";
 import { Input } from "~/components/ui/input.tsx";
 import { Button } from "~/components/ui/button.tsx";
 import { createSignal, For, Show } from "solid-js";
 import { Text } from "~/components/ui/text.tsx";
-import { createListCollection, Select } from "~/components/ui/select.tsx";
+import * as Select from "~/components/ui/select.tsx";
+import { createListCollection } from "@ark-ui/solid";
 
 export enum AxisDirection {
   FORWARD = "forward",
@@ -121,7 +122,7 @@ export function AxisControlButton(props: AxisControlProps & IconButtonProps) {
             >
               <Text
                 fontWeight={"bold"}
-                size="sm"
+                textStyle="sm"
                 width={`100%`}
                 style={{ "grid-row": 1, "grid-column": 1 }}
               >
@@ -185,7 +186,7 @@ export function AxisControlButton(props: AxisControlProps & IconButtonProps) {
               </Button>
 
               <Text
-                size="sm"
+                textStyle="sm"
                 style={{
                   "grid-row": 2,
                   "grid-column": 1,
@@ -211,7 +212,7 @@ export function AxisControlButton(props: AxisControlProps & IconButtonProps) {
                 {pushDirection()}
               </Button>
               <Text
-                size="sm"
+                textStyle="sm"
                 style={{
                   opacity: pushCarrierId().length > 0 ? "1" : "0.5",
                   "grid-row": 2,
@@ -251,7 +252,7 @@ export function AxisControlButton(props: AxisControlProps & IconButtonProps) {
             >
               <Text
                 fontWeight={"bold"}
-                size="sm"
+                textStyle="sm"
                 width={"100%"}
                 style={{ "grid-row": 1, "grid-column": 1 }}
               >
@@ -316,7 +317,7 @@ export function AxisControlButton(props: AxisControlProps & IconButtonProps) {
                     ? "Pull"
                     : "Stop"}
               </Button>
-              <Text size="sm" style={{ "grid-row": 2, "grid-column": 1 }}>
+              <Text textStyle="sm" style={{ "grid-row": 2, "grid-column": 1 }}>
                 {"Carrier"}
               </Text>
               <Input
@@ -330,7 +331,7 @@ export function AxisControlButton(props: AxisControlProps & IconButtonProps) {
                 padding="0.2rem"
               />
 
-              <Text size="sm" style={{ "grid-row": 2, "grid-column": 2 }}>
+              <Text textStyle="sm" style={{ "grid-row": 2, "grid-column": 2 }}>
                 {"Direction"}
               </Text>
               <Button
@@ -350,7 +351,7 @@ export function AxisControlButton(props: AxisControlProps & IconButtonProps) {
               </Button>
 
               <Text
-                size="sm"
+                textStyle="sm"
                 style={{
                   "grid-row": 4,
                   "grid-column": 2,
@@ -378,7 +379,7 @@ export function AxisControlButton(props: AxisControlProps & IconButtonProps) {
               </Button>
 
               <Text
-                size="sm"
+                textStyle="sm"
                 style={{
                   "grid-row": 4,
                   "grid-column": 1,
@@ -424,7 +425,7 @@ export function AxisControlButton(props: AxisControlProps & IconButtonProps) {
               }}
             >
               <Text
-                size="sm"
+                textStyle="sm"
                 fontWeight="bold"
                 style={{ "grid-row": 1, "grid-column": 1 }}
               >
@@ -460,7 +461,7 @@ export function AxisControlButton(props: AxisControlProps & IconButtonProps) {
                 {props.hasCarrier ? "Deinitialize" : "Initialize"}
               </Button>
               <Text
-                size="sm"
+                textStyle="sm"
                 style={{
                   "grid-row": 2,
                   "grid-column": 1,
@@ -486,7 +487,7 @@ export function AxisControlButton(props: AxisControlProps & IconButtonProps) {
                 {initializeDirection()}
               </Button>
               <Text
-                size="sm"
+                textStyle="sm"
                 fontWeight="medium"
                 style={{ "grid-row": 2, "grid-column": 2 }}
               >
@@ -502,7 +503,7 @@ export function AxisControlButton(props: AxisControlProps & IconButtonProps) {
                 padding="0.2rem"
               />
               <Text
-                size="sm"
+                textStyle="sm"
                 fontWeight="medium"
                 style={{
                   "grid-row": 4,
