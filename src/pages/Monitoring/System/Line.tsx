@@ -1,6 +1,6 @@
 import { JSX, useContext, createContext } from "solid-js";
 import { For, Show } from "solid-js/web";
-import { Accordion } from "~/components/ui/accordion.tsx";
+import * as Accordion from "~/components/ui/accordion.tsx";
 import { ChevronDownIcon } from "lucide-solid";
 import { Stack } from "styled-system/jsx/stack";
 import { Text } from "~/components/ui/text.tsx";
@@ -96,60 +96,58 @@ export function Line(props: LineProps) {
         <Accordion.ItemIndicator class="cancel">
           <ChevronDownIcon />
         </Accordion.ItemIndicator>
-        <Tooltip.Root positioning={{ placement: "bottom-start" }}>
-          <Tooltip.Trigger width="min-content">
-            <Text>{props.line.name}</Text>
-          </Tooltip.Trigger>
-          <Tooltip.Positioner>
-            <Tooltip.Content width="100%" minWidth={"15em"}>
-              <For
-                each={Object.entries(props.line).filter(
-                  (entry) => entry[0] !== "name" && entry[0] !== "id",
-                )}
-              >
-                {([key, value]) => {
-                  return (
-                    <div
+        <Tooltip content={
+          <>
+            <For
+              each={Object.entries(props.line).filter(
+                (entry) => entry[0] !== "name" && entry[0] !== "id",
+              )}
+            >
+              {([key, value]) => {
+                return (
+                  <div
+                    style={{
+                      width: `100%`,
+                      display: "flex",
+                    }}
+                  >
+                    <Text width="60%">
+                      {Array.from(key)
+                        .map((char, i) => {
+                          if (i === 0) {
+                            return char.toUpperCase();
+                          }
+                          if (/^[A-Z]*$/.test(char)) {
+                            return `_${char}`;
+                          }
+                          return char;
+                        })
+                        .join("")
+                        .replaceAll("_", " ")}
+                    </Text>
+                    <Text
+                      width="40%"
+                      fontWeight={"medium"}
                       style={{
-                        width: `100%`,
-                        display: "flex",
+                        overflow: "hidden",
+                        "white-space": "nowrap",
+                        display: "block",
+                        "text-overflow": "ellipsis",
                       }}
                     >
-                      <Text width="60%">
-                        {Array.from(key)
-                          .map((char, i) => {
-                            if (i === 0) {
-                              return char.toUpperCase();
-                            }
-                            if (/^[A-Z]*$/.test(char)) {
-                              return `_${char}`;
-                            }
-                            return char;
-                          })
-                          .join("")
-                          .replaceAll("_", " ")}
-                      </Text>
-                      <Text
-                        width="40%"
-                        fontWeight={"medium"}
-                        style={{
-                          overflow: "hidden",
-                          "white-space": "nowrap",
-                          display: "block",
-                          "text-overflow": "ellipsis",
-                        }}
-                      >
-                        {typeof value === "number" && !Number.isInteger(value)
-                          ? `${Number(value.toFixed(5))}m`
-                          : value}
-                      </Text>
-                    </div>
-                  );
-                }}
-              </For>
-            </Tooltip.Content>
-          </Tooltip.Positioner>
-        </Tooltip.Root>
+                      {typeof value === "number" && !Number.isInteger(value)
+                        ? `${Number(value.toFixed(5))}m`
+                        : value}
+                    </Text>
+                  </div>
+                );
+              }}
+            </For>
+
+          </>
+        } positioning={{ placement: "bottom-start" }}>
+            <Text>{props.line.name}</Text>
+        </Tooltip>
 
         <Show
           when={
@@ -161,10 +159,35 @@ export function Line(props: LineProps) {
               findErrorField(props.system.driverErrors).length > 0)
           }
         >
-          <Tooltip.Root positioning={{ placement: "bottom-start" }}>
-            <Tooltip.Trigger
-              style={{ width: "min-content", "text-align": "left" }}
-            >
+          <Tooltip content={
+            <>
+              <For
+                each={showErrorStatus(
+                  props.system!.axisErrors!,
+                  props.system!.driverErrors!,
+                )}
+              >
+                {(error) => (
+                  <Stack direction="row" width="100%" minWidth={"16em"}>
+                    <Text overflow="hidden" width="30%">
+                      {error.field}
+                    </Text>
+                    <div style={{ width: "70%" }}>
+                      <For each={error.error}>
+                        {(err) => (
+                          <Text width="100%" fontWeight={"medium"}>
+                            {err}
+                          </Text>
+                        )}
+                      </For>
+                    </div>
+                  </Stack>
+                )}
+              </For>
+            </>
+
+          } positioning={{ placement: "bottom-start" }}>
+
               <Stack
                 backgroundColor="red.9"
                 style={{
@@ -174,35 +197,7 @@ export function Line(props: LineProps) {
                   "margin-top": "0.3rem",
                 }}
               />
-            </Tooltip.Trigger>
-            <Tooltip.Positioner>
-              <Tooltip.Content>
-                <For
-                  each={showErrorStatus(
-                    props.system!.axisErrors!,
-                    props.system!.driverErrors!,
-                  )}
-                >
-                  {(error) => (
-                    <Stack direction="row" width="100%" minWidth={"16em"}>
-                      <Text overflow="hidden" width="30%">
-                        {error.field}
-                      </Text>
-                      <div style={{ width: "70%" }}>
-                        <For each={error.error}>
-                          {(err) => (
-                            <Text width="100%" fontWeight={"medium"}>
-                              {err}
-                            </Text>
-                          )}
-                        </For>
-                      </div>
-                    </Stack>
-                  )}
-                </For>
-              </Tooltip.Content>
-            </Tooltip.Positioner>
-          </Tooltip.Root>
+          </Tooltip>
         </Show>
         <LineControlButton
           lineName={props.line.name}
@@ -212,7 +207,7 @@ export function Line(props: LineProps) {
           disableSetZeroButton={disableSetZeroButton()}
           sendingCommand={isSendingCommand()}
           onLineCommand={(saveProps) => props.onLineCommands?.(saveProps)}
-          variant={"ghost"}
+          variant={"plain"}
           size="xs"
         />
       </Accordion.ItemTrigger>

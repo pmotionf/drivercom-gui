@@ -1,6 +1,6 @@
 import { IconButton, IconButtonProps } from "~/components/ui/icon-button.tsx";
 import { IconDots } from "@tabler/icons-solidjs";
-import { Popover } from "~/components/ui/popover.tsx";
+import * as Popover from "~/components/ui/popover.tsx";
 import { createSignal } from "solid-js";
 import { Text } from "~/components/ui/text.tsx";
 import { Button } from "~/components/ui/button.tsx";
@@ -79,7 +79,7 @@ export function LineControlButton(props: LineControlProps & IconButtonProps) {
             }}
           >
             <Text
-              size="sm"
+              textStyle="sm"
               style={{
                 "grid-row": 1,
                 "grid-column": 1,
@@ -150,7 +150,7 @@ export function LineControlButton(props: LineControlProps & IconButtonProps) {
 
             {/* Speed */}
             <Text
-              size="sm"
+              textStyle="sm"
               fontWeight={"medium"}
               style={{
                 "grid-row": 2,
@@ -193,14 +193,14 @@ export function LineControlButton(props: LineControlProps & IconButtonProps) {
                 }}
                 onClick={(e) => e.stopPropagation()}
               />
-              <Text size="sm" opacity="0.7" fontWeight="medium">
+              <Text textStyle="sm" opacity="0.7" fontWeight="medium">
                 {speedUnit}
               </Text>
             </div>
 
             {/* Acceleration */}
             <Text
-              size="sm"
+              textStyle="sm"
               style={{
                 "grid-row": 2,
                 "grid-column": 2,
@@ -242,7 +242,7 @@ export function LineControlButton(props: LineControlProps & IconButtonProps) {
                 onClick={(e) => e.stopPropagation()}
                 onKeyDown={(e) => e.stopPropagation()}
               />
-              <Text size="sm" opacity="0.7" fontWeight="medium">
+              <Text textStyle="sm" opacity="0.7" fontWeight="medium">
                 {accelerationUnit}
               </Text>
             </div>

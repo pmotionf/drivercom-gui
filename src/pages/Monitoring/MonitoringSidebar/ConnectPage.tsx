@@ -114,14 +114,14 @@ export const ConnectPage = (props: ConnectPageProps) => {
             e.preventDefault();
           }}
         >
-          <Text size="lg" fontWeight="bold" width={`calc(100% - 1rem)`}>
+          <Text textStyle="lg" fontWeight="bold" width={`calc(100% - 1rem)`}>
             Connect
           </Text>
           <div style={{ display: "flex", "margin-top": "1rem" }}>
-            <Text size="sm" style={{ width: "50%" }}>
+            <Text textStyle="sm" style={{ width: "50%" }}>
               IP
             </Text>
-            <Text size="sm" style={{ width: "50%" }}>
+            <Text textStyle="sm" style={{ width: "50%" }}>
               Port
             </Text>
           </div>
@@ -241,7 +241,7 @@ export const ConnectPage = (props: ConnectPageProps) => {
           when={detectedServer().length > 0}
           fallback={
             <div style={{ "padding-left": "1em" }}>
-              <Text size="sm"> Not found.</Text>
+              <Text textStyle="sm"> Not found.</Text>
             </div>
           }
         >

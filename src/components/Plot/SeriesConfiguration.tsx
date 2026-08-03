@@ -1,18 +1,18 @@
 import { createSignal, For, splitProps } from "solid-js";
 import { parseColor } from "@ark-ui/solid";
-import { ColorPicker } from "~/components/ui/color-picker";
+import * as ColorPicker from "~/components/ui/color-picker";
 import { Heading } from "~/components/ui/heading";
 import { IconButton } from "~/components/ui/icon-button";
 import { Input } from "~/components/ui/input";
 import { Button } from "~/components/ui/button";
-import { Card } from "../ui/card";
+import * as Card from "../ui/card";
 import {
   IconLine,
   IconLineDashed,
   IconPoint,
   IconX,
 } from "@tabler/icons-solidjs";
-import { ToggleGroup } from "~/components/ui/toggle-group";
+import * as ToggleGroup from "~/components/ui/toggle-group";
 import { LegendStroke } from "./Legend";
 
 export type SeriesConfigurationProps = Omit<ColorPicker.RootProps, "stroke"> & {
@@ -56,7 +56,7 @@ export function SeriesConfiguration(props: SeriesConfigurationProps) {
         <Card.Description>{props.series}</Card.Description>
         <IconButton
           position="absolute"
-          variant="ghost"
+          variant="plain"
           top="2"
           right="2"
           onClick={() => props.onCancel?.()}
@@ -95,7 +95,7 @@ export function SeriesConfiguration(props: SeriesConfigurationProps) {
             <ColorPicker.ChannelSliderTrack />
             <ColorPicker.ChannelSliderThumb />
           </ColorPicker.ChannelSlider>
-          <Heading as="h6" size="xs" style={{ "margin-top": "0.2rem" }}>
+          <Heading as="h6" textStyle="xs" style={{ "margin-top": "0.2rem" }}>
             Color Palette
           </Heading>
           <ColorPicker.SwatchGroup>
@@ -117,7 +117,7 @@ export function SeriesConfiguration(props: SeriesConfigurationProps) {
         >
           <Heading
             as="h6"
-            size="xs"
+            textStyle="xs"
             style={{ "margin-top": "0.6rem", "grid-row": 1, "grid-column": 1 }}
           >
             Style
@@ -152,7 +152,7 @@ export function SeriesConfiguration(props: SeriesConfigurationProps) {
           </ToggleGroup.Root>
           <Heading
             as="h6"
-            size="xs"
+            textStyle="xs"
             style={{
               "margin-top": "0.6rem",
               "white-space": "nowrap",

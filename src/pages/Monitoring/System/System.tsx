@@ -1,6 +1,6 @@
 import { JSX, Show, createSignal } from "solid-js";
 import { Line } from "./Line.tsx";
-import { Accordion } from "~/components/ui";
+import * as Accordion from "~/components/ui/accordion.tsx";
 import { For } from "solid-js/web";
 import { Driver } from "./Driver.tsx";
 import { Axis } from "./Axes.tsx";

@@ -17,7 +17,7 @@ import uPlot from "uplot";
 import "uplot/dist/uPlot.min.css";
 
 import { GlobalStateContext } from "~/store/GlobalState";
-import { ToggleGroup } from "~/components/ui/toggle-group";
+import * as ToggleGroup from "~/components/ui/toggle-group";
 import { IconButton } from "~/components/ui/icon-button";
 import {
   IconArrowsMove,
@@ -37,9 +37,8 @@ import {
 import { Stack } from "styled-system/jsx";
 import { Legend, LegendStroke } from "./Plot/Legend";
 import { Tooltip } from "./ui/tooltip";
-import { Text } from "./ui/text";
 import { Portal } from "solid-js/web";
-import { Splitter } from "./ui/splitter";
+import * as Splitter from "./ui/splitter";
 import type { CursorPluginMessageBus } from "@dschz/solid-uplot/plugins";
 import { SolidUplot, createPluginBus } from "@dschz/solid-uplot";
 import type { UplotPluginFactory } from "@dschz/solid-uplot";
@@ -1139,7 +1138,7 @@ export function Plot(props: PlotProps) {
           <IconButton
             size="sm"
             padding="0"
-            variant="ghost"
+            variant="plain"
             onClick={() => {
               if (props.legendShrink) {
                 expandLegend();
@@ -1206,35 +1205,28 @@ export function Plot(props: PlotProps) {
                 width="15em"
                 gap="1em"
               >
-                <Tooltip.Root>
-                  <Tooltip.Trigger>
-                    <IconButton
-                      variant="outline"
-                      disabled={zoomReset()}
-                      onclick={() => {
-                        uPlot.sync(group()).plots.forEach((up: uPlot) => {
-                          const xMax = Number(up.data[0].length - 1);
-                          up.setScale("x", { min: 0, max: xMax });
+                <Tooltip content = "Zoom Reset">
+                  <IconButton
+                    variant="outline"
+                    disabled={zoomReset()}
+                    onclick={() => {
+                      uPlot.sync(group()).plots.forEach((up: uPlot) => {
+                        const xMax = Number(up.data[0].length - 1);
+                        up.setScale("x", { min: 0, max: xMax });
 
-                          const yScales = getPlotYScale(up);
-                          up.setScale("y", {
-                            min: yScales.yMin,
-                            max: yScales.yMax,
-                          });
-                          setXRange(xMax);
-                          props.onXScaleChange?.([0, xMax]);
+                        const yScales = getPlotYScale(up);
+                        up.setScale("y", {
+                          min: yScales.yMin,
+                          max: yScales.yMax,
                         });
-                      }}
-                    >
-                      <IconZoomReset />
-                    </IconButton>
-                  </Tooltip.Trigger>
-                  <Tooltip.Positioner>
-                    <Tooltip.Content backgroundColor="bg.default">
-                      <Text color="fg.default">Zoom Reset</Text>
-                    </Tooltip.Content>
-                  </Tooltip.Positioner>
-                </Tooltip.Root>
+                        setXRange(xMax);
+                        props.onXScaleChange?.([0, xMax]);
+                      });
+                    }}
+                  >
+                    <IconZoomReset />
+                  </IconButton>
+                </Tooltip>
 
                 <ToggleGroup.Root
                   value={[CursorMode[lastCursorMode()]]}
@@ -1250,127 +1242,89 @@ export function Plot(props: PlotProps) {
                     }
                   }}
                 >
-                  <Tooltip.Root>
-                    <Tooltip.Trigger>
-                      <ToggleGroup.Item
-                        value={CursorMode[CursorMode.Pan]}
-                        aria-label="Toggle Pan"
-                        color={
-                          cursorMode() === CursorMode.Pan
-                            ? "fg.default"
-                            : "fg.muted"
-                        }
-                        bgColor={
-                          cursorMode() === CursorMode.Pan
-                            ? "bg.emphasized"
-                            : lastCursorMode() === CursorMode.Pan
-                              ? "bg.subtle"
-                              : "bg.default"
-                        }
-                      >
-                        <IconArrowsMove />
-                      </ToggleGroup.Item>
-                    </Tooltip.Trigger>
-                    <Portal>
-                      <Tooltip.Positioner>
-                        <Tooltip.Content backgroundColor="bg.default">
-                          <Text color="fg.default">Plot Panning</Text>
-                        </Tooltip.Content>
-                      </Tooltip.Positioner>
-                    </Portal>
-                  </Tooltip.Root>
+                  <Tooltip content = "Plot Panning">
+                    <ToggleGroup.Item
+                      value={CursorMode[CursorMode.Pan]}
+                      aria-label="Toggle Pan"
+                      color={
+                        cursorMode() === CursorMode.Pan
+                          ? "fg.default"
+                          : "fg.muted"
+                      }
+                      bgColor={
+                        cursorMode() === CursorMode.Pan
+                          ? "bg.emphasized"
+                          : lastCursorMode() === CursorMode.Pan
+                            ? "bg.subtle"
+                            : "bg.default"
+                      }
+                    >
+                      <IconArrowsMove />
+                    </ToggleGroup.Item>
+                  </Tooltip>
 
-                  <Tooltip.Root>
-                    <Tooltip.Trigger>
-                      <ToggleGroup.Item
-                        value={CursorMode[CursorMode.Horizontal]}
-                        aria-label="Toggle Selection Zoom"
-                        color={
-                          cursorMode() === CursorMode.Horizontal
-                            ? "fg.default"
-                            : "fg.muted"
-                        }
-                        bgColor={
-                          cursorMode() === CursorMode.Horizontal
-                            ? "bg.emphasized"
-                            : lastCursorMode() === CursorMode.Horizontal
-                              ? "bg.subtle"
-                              : "bg.default"
-                        }
-                      >
-                        <IconArrowsMoveHorizontal />
-                      </ToggleGroup.Item>
-                    </Tooltip.Trigger>
-                    <Portal>
-                      <Tooltip.Positioner>
-                        <Tooltip.Content backgroundColor="bg.default">
-                          <Text color="fg.default">
-                            Horizontal Zoom (Shift)
-                          </Text>
-                        </Tooltip.Content>
-                      </Tooltip.Positioner>
-                    </Portal>
-                  </Tooltip.Root>
+                  <Tooltip content = "Horizontal Zoom (Shift)">
+                    <ToggleGroup.Item
+                      value={CursorMode[CursorMode.Horizontal]}
+                      aria-label="Toggle Selection Zoom"
+                      color={
+                        cursorMode() === CursorMode.Horizontal
+                          ? "fg.default"
+                          : "fg.muted"
+                      }
+                      bgColor={
+                        cursorMode() === CursorMode.Horizontal
+                          ? "bg.emphasized"
+                          : lastCursorMode() === CursorMode.Horizontal
+                            ? "bg.subtle"
+                            : "bg.default"
+                      }
+                    >
+                      <IconArrowsMoveHorizontal />
+                    </ToggleGroup.Item>
+                  </Tooltip>
 
-                  <Tooltip.Root>
-                    <Tooltip.Trigger>
-                      <ToggleGroup.Item
-                        value={CursorMode[CursorMode.Vertical]}
-                        aria-label="Toggle Cursor Lock"
-                        color={
-                          cursorMode() === CursorMode.Vertical
-                            ? "fg.default"
-                            : "fg.muted"
-                        }
-                        bgColor={
-                          cursorMode() === CursorMode.Vertical
-                            ? "bg.emphasized"
-                            : lastCursorMode() === CursorMode.Vertical
-                              ? "bg.subtle"
-                              : "bg.default"
-                        }
-                      >
-                        <IconArrowsMoveVertical />
-                      </ToggleGroup.Item>
-                    </Tooltip.Trigger>
-                    <Portal>
-                      <Tooltip.Positioner>
-                        <Tooltip.Content backgroundColor="bg.default">
-                          <Text color="fg.default">Vertical Zoom (Ctrl)</Text>
-                        </Tooltip.Content>
-                      </Tooltip.Positioner>
-                    </Portal>
-                  </Tooltip.Root>
+                  <Tooltip content = "Vertical Zoom (Ctrl)">
+                    <ToggleGroup.Item
+                      value={CursorMode[CursorMode.Vertical]}
+                      aria-label="Toggle Cursor Lock"
+                      color={
+                        cursorMode() === CursorMode.Vertical
+                          ? "fg.default"
+                          : "fg.muted"
+                      }
+                      bgColor={
+                        cursorMode() === CursorMode.Vertical
+                          ? "bg.emphasized"
+                          : lastCursorMode() === CursorMode.Vertical
+                            ? "bg.subtle"
+                            : "bg.default"
+                      }
+                    >
+                      <IconArrowsMoveVertical />
+                    </ToggleGroup.Item>
+                  </Tooltip>
 
-                  <Tooltip.Root>
-                    <Tooltip.Trigger>
-                      <ToggleGroup.Item
-                        value={CursorMode[CursorMode.Lock]}
-                        aria-label="Toggle Cursor Lock"
-                        color={
-                          cursorMode() === CursorMode.Lock
-                            ? "fg.default"
-                            : "fg.muted"
-                        }
-                        bgColor={
-                          cursorMode() === CursorMode.Lock
-                            ? "bg.emphasized"
-                            : lastCursorMode() === CursorMode.Lock
-                              ? "bg.subtle"
-                              : "bg.default"
-                        }
-                      >
-                        <IconCrosshair />
-                      </ToggleGroup.Item>
-                    </Tooltip.Trigger>
-                    <Portal>
-                      <Tooltip.Positioner>
-                        <Tooltip.Content backgroundColor="bg.default">
-                          <Text color="fg.default">Cursor Lock (Alt)</Text>
-                        </Tooltip.Content>
-                      </Tooltip.Positioner>
-                    </Portal>
-                  </Tooltip.Root>
+                  <Tooltip content = "Cursor Lock (Alt)">
+                    <ToggleGroup.Item
+                      value={CursorMode[CursorMode.Lock]}
+                      aria-label="Toggle Cursor Lock"
+                      color={
+                        cursorMode() === CursorMode.Lock
+                          ? "fg.default"
+                          : "fg.muted"
+                      }
+                      bgColor={
+                        cursorMode() === CursorMode.Lock
+                          ? "bg.emphasized"
+                          : lastCursorMode() === CursorMode.Lock
+                            ? "bg.subtle"
+                            : "bg.default"
+                      }
+                    >
+                      <IconCrosshair />
+                    </ToggleGroup.Item>
+                  </Tooltip>
                 </ToggleGroup.Root>
               </Stack>
             </Stack>
@@ -1415,7 +1369,7 @@ export function Plot(props: PlotProps) {
                   height="1em"
                 />
                 <IconButton
-                  variant="ghost"
+                  variant="plain"
                   onClick={() => setSearchInput("")}
                   padding="0"
                   size="sm"
@@ -1427,34 +1381,27 @@ export function Plot(props: PlotProps) {
                   <IconX />
                 </IconButton>
               </Stack>
-              <Tooltip.Root>
-                <Tooltip.Trigger>
-                  <IconButton
-                    variant="outline"
-                    onClick={() => {
-                      if (showLegendCheckBox()) {
-                        setContext()(
-                          "selected",
-                          props.header.map(() => false),
-                        );
-                      }
-                      setShowLegendCheckBox(!showLegendCheckBox());
-                    }}
+              <Tooltip content = "Select">
+                <IconButton
+                  variant="outline"
+                  onClick={() => {
+                    if (showLegendCheckBox()) {
+                      setContext()(
+                        "selected",
+                        props.header.map(() => false),
+                      );
+                    }
+                    setShowLegendCheckBox(!showLegendCheckBox());
+                  }}
+                >
+                  <Show
+                    when={showLegendCheckBox()}
+                    fallback={<IconLocationOff />}
                   >
-                    <Show
-                      when={showLegendCheckBox()}
-                      fallback={<IconLocationOff />}
-                    >
-                      <IconLocation />
-                    </Show>
-                  </IconButton>
-                </Tooltip.Trigger>
-                <Tooltip.Positioner>
-                  <Tooltip.Content backgroundColor="bg.default">
-                    <Text color="fg.default">Select</Text>
-                  </Tooltip.Content>
-                </Tooltip.Positioner>
-              </Tooltip.Root>
+                    <IconLocation />
+                  </Show>
+                </IconButton>
+              </Tooltip>
             </Stack>
             <Stack
               style={{
@@ -1471,7 +1418,7 @@ export function Plot(props: PlotProps) {
                 <Stack direction="row" gap="1.5">
                   <IconButton
                     size="sm"
-                    variant="link"
+                    variant="subtle"
                     onClick={() => {
                       const prevSelect = getContext().selected;
                       const newVisible = !getContext()

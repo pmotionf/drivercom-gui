@@ -1,6 +1,6 @@
 import { JSX } from "solid-js";
-import { Menu } from "./ui/menu.tsx";
-import { Button } from "./ui/styled/button.tsx";
+import * as Menu from "./ui/menu.tsx";
+import { Button } from "./ui/button.tsx";
 import { IconChevronRight, IconX } from "@tabler/icons-solidjs";
 import { For } from "solid-js/web";
 import { Text } from "./ui/text.tsx";
@@ -110,7 +110,7 @@ export function FileMenu(props: FileMenuProps) {
                         <IconButton
                           width="2rem"
                           size="sm"
-                          variant="ghost"
+                          variant="plain"
                           onClick={() => {
                             props.onDeleteRecentPath?.(index());
                           }}

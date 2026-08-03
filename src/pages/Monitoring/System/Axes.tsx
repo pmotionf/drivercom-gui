@@ -70,8 +70,23 @@ export function Axis(props: AxisProps) {
             width: `calc(100% - 1em)`,
           }}
         >
-          <Tooltip.Root>
-            <Tooltip.Trigger width="min-content">
+          <Tooltip content={
+            <>
+              <Text>Info</Text>
+              <For each={Object.entries(props.axisInfo)}>
+                {([key, value]) => {
+                  if (typeof value == "boolean" && key.includes("waiting")) {
+                    const prettierLabel = `${key[0].toUpperCase()}${key.slice(1, key.length)}`;
+                    return (
+                      <Text fontWeight="medium" opacity={value ? "1" : "0.4"}>
+                        {prettierLabel}
+                      </Text>
+                    );
+                  }
+                }}
+              </For>
+            </>
+          }>
               <Badge
                 width="min-content"
                 backgroundColor={
@@ -86,32 +101,24 @@ export function Axis(props: AxisProps) {
                 height="min-content"
                 borderWidth="0"
               >
-                <Text size="sm">Axis {axisId}</Text>
+                <Text textStyle="sm">Axis {axisId}</Text>
               </Badge>
-            </Tooltip.Trigger>
+          </Tooltip>
 
-            <Tooltip.Positioner>
-              <Tooltip.Content>
-                <Text>Info</Text>
-                <For each={Object.entries(props.axisInfo)}>
+          <Show when={props.axisError.overcurrent}>
+            <Tooltip content={
+              <>
+                <Text>Error</Text>
+                <For each={Object.entries(props.axisError)}>
                   {([key, value]) => {
-                    if (typeof value == "boolean" && key.includes("waiting")) {
+                    if (typeof value === "boolean" && value) {
                       const prettierLabel = `${key[0].toUpperCase()}${key.slice(1, key.length)}`;
-                      return (
-                        <Text fontWeight="medium" opacity={value ? "1" : "0.4"}>
-                          {prettierLabel}
-                        </Text>
-                      );
+                      return <Text fontWeight="medium">{prettierLabel}</Text>;
                     }
                   }}
                 </For>
-              </Tooltip.Content>
-            </Tooltip.Positioner>
-          </Tooltip.Root>
-
-          <Show when={props.axisError.overcurrent}>
-            <Tooltip.Root>
-              <Tooltip.Trigger width="min-content">
+              </>
+            }>
                 <Stack
                   backgroundColor="red.9"
                   style={{
@@ -121,26 +128,11 @@ export function Axis(props: AxisProps) {
                     "margin-left": "0.5em",
                   }}
                 />
-              </Tooltip.Trigger>
-
-              <Tooltip.Positioner>
-                <Tooltip.Content>
-                  <Text>Error</Text>
-                  <For each={Object.entries(props.axisError)}>
-                    {([key, value]) => {
-                      if (typeof value === "boolean" && value) {
-                        const prettierLabel = `${key[0].toUpperCase()}${key.slice(1, key.length)}`;
-                        return <Text fontWeight="medium">{prettierLabel}</Text>;
-                      }
-                    }}
-                  </For>
-                </Tooltip.Content>
-              </Tooltip.Positioner>
-            </Tooltip.Root>
+            </Tooltip>
           </Show>
         </div>
         <AxisControlButton
-          variant={"ghost"}
+          variant={"plain"}
           size="sm"
           borderRadius={"1em"}
           height="2rem"
@@ -186,8 +178,16 @@ export function Axis(props: AxisProps) {
           >
             Carrier {carrierState()!.id}
           </Text>
-          <Tooltip.Root>
-            <Tooltip.Trigger width="min-content">
+          <Tooltip content={
+            <Text>
+              {carrierState()!.casDisabled
+                ? "Disabled"
+                : carrierState()!.casTriggered
+                  ? "Triggered"
+                  : "Enabled"}
+            </Text>
+
+          }>
               <Badge
                 style={{
                   width: "min-content",
@@ -204,29 +204,17 @@ export function Axis(props: AxisProps) {
               >
                 CAS
               </Badge>
-            </Tooltip.Trigger>
-            <Tooltip.Positioner>
-              <Tooltip.Content>
-                <Text>
-                  {carrierState()!.casDisabled
-                    ? "Disabled"
-                    : carrierState()!.casTriggered
-                      ? "Triggered"
-                      : "Enabled"}
-                </Text>
-              </Tooltip.Content>
-            </Tooltip.Positioner>
-          </Tooltip.Root>
+          </Tooltip>
         </div>
 
         <Show when={carrierState()!.position}>
           <Stack direction="row" gap="0">
-            <Text width="3rem" size="sm" fontWeight="bold">
+            <Text width="3rem" textStyle="sm" fontWeight="bold">
               Pos
             </Text>
             <Text
               width={`calc(100% - 3rem)`}
-              size="sm"
+              textStyle="sm"
               style={{
                 "text-overflow": "ellipsis",
                 "white-space": "nowrap",
@@ -241,12 +229,20 @@ export function Axis(props: AxisProps) {
           </Stack>
         </Show>
         <Stack direction="row" gap="0">
-          <Text width="3rem" size="sm" fontWeight="bold">
+          <Text width="3rem" textStyle="sm" fontWeight="bold">
             State
           </Text>
-          <Tooltip.Root>
-            <Tooltip.Trigger width={`calc(100% - 3rem)`}>
-              <Text width="100%" size="sm" textAlign={"left"}>
+          <Tooltip content={
+            typeof carrierState()!.state === "number"
+              ? Response_Line_Carrier_State_State[carrierState()!.state]
+                  .toString()
+                  .split(`_`)
+                  .splice(2)
+                  .toString()
+                  .replaceAll(`,`, " ")
+              : ""
+          }>
+              <Text width="100%" textStyle="sm" textAlign={"left"}>
                 {typeof carrierState()!.state === "number"
                   ? Response_Line_Carrier_State_State[carrierState()!.state]
                       .toString()
@@ -256,20 +252,8 @@ export function Axis(props: AxisProps) {
                       .replaceAll(`,`, " ")
                   : ""}
               </Text>
-            </Tooltip.Trigger>
-            <Tooltip.Positioner>
-              <Tooltip.Content>
-                {typeof carrierState()!.state === "number"
-                  ? Response_Line_Carrier_State_State[carrierState()!.state]
-                      .toString()
-                      .split(`_`)
-                      .splice(2)
-                      .toString()
-                      .replaceAll(`,`, " ")
-                  : ""}
-              </Tooltip.Content>
-            </Tooltip.Positioner>
-          </Tooltip.Root>
+
+          </Tooltip>
         </Stack>
       </Show>
     </Stack>

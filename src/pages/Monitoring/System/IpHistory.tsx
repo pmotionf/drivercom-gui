@@ -33,13 +33,13 @@ export function IpHistory(props: IpHistoryProps) {
           height: "1.5rem",
         }}
       >
-        <Text width={"45%"} size="sm">
+        <Text width={"45%"} textStyle="sm">
           {"Name"}
         </Text>
-        <Text width={`40%`} size="sm">
+        <Text width={`40%`} textStyle="sm">
           {"IP"}
         </Text>
-        <Text size="sm" width="15%">
+        <Text textStyle="sm" width="15%">
           {"Port"}
         </Text>
       </div>
@@ -124,7 +124,7 @@ export function IpHistory(props: IpHistoryProps) {
               </Stack>
               <Show when={index() === hoverDiv()}>
                 <IconButton
-                  variant="ghost"
+                  variant="plain"
                   size="xs"
                   style={{ width: "2rem", "border-radius": "2rem" }}
                   onClick={() => props.onDeleteIp(index())}

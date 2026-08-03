@@ -4,7 +4,7 @@ import {
   IconPlugConnectedX,
   IconX,
 } from "@tabler/icons-solidjs";
-import { Popover } from "~/components/ui/popover.tsx";
+import * as Popover from "~/components/ui/popover.tsx";
 import { createSignal, Show } from "solid-js";
 import { portList, setPortList } from "../../store/GlobalState.ts";
 //@ts-ignore Implicitly has an 'any' type.
@@ -14,7 +14,6 @@ import { Command } from "@tauri-apps/plugin-shell";
 import { For } from "solid-js";
 import { Tooltip } from "~/components/ui/tooltip.tsx";
 import { Button } from "~/components/ui/button.tsx";
-import { Portal } from "solid-js/web";
 import { csvFileDownloads } from "../../store/GlobalState.ts";
 import { DownloadStatus } from "~/components/DownloadList.tsx";
 import { toaster } from "~/services/Toaster.ts";
@@ -87,11 +86,15 @@ export function ConnectButton(props: ConnectButtonProps) {
   return (
     <Popover.Root positioning={{ placement: "bottom-start" }}>
       <Popover.Trigger maxWidth="min-content" gap="" padding="0" {...props}>
-        <Tooltip.Root>
-          <Tooltip.Trigger
-            color={props.portId.length === 0 ? "fg.subtle" : "fg.default"}
-            cursor={"-moz-grab"}
-          >
+        <Tooltip content={
+
+          <Show when={props.portId.length !== 0}>
+
+                  {props.portId}
+
+          </Show>
+        }>
+
             <IconButton
               {...(props.buttonProps
                 ? props.buttonProps
@@ -109,21 +112,8 @@ export function ConnectButton(props: ConnectButtonProps) {
                 <IconPlugConnected />
               )}
             </IconButton>
-          </Tooltip.Trigger>
-          <Show when={props.portId.length !== 0}>
-            <Portal>
-              <Tooltip.Positioner>
-                <Tooltip.Content
-                  backgroundColor="bg.default"
-                  color="fg.default"
-                  textAlign="left"
-                >
-                  {props.portId}
-                </Tooltip.Content>
-              </Tooltip.Positioner>
-            </Portal>
-          </Show>
-        </Tooltip.Root>
+
+        </Tooltip>
       </Popover.Trigger>
       <Popover.Positioner>
         <Popover.Content
@@ -139,7 +129,7 @@ export function ConnectButton(props: ConnectButtonProps) {
               width={`calc(100% - 3em)`}
               paddingTop="0.3em"
               opacity={portList().length === 0 ? "30%" : "100%"}
-              size="md"
+              textStyle="md"
               textAlign="left"
               textOverflow="ellipsis"
               overflow="hidden"
@@ -192,13 +182,12 @@ export function ConnectButton(props: ConnectButtonProps) {
                       padding: "0",
                       "align-items": "left",
                     }}
-                    variant="ghost"
+                    variant="plain"
                     onClick={() => {
                       props.onPortIdChange?.(port.id);
                     }}
                   >
-                    <Tooltip.Root>
-                      <Tooltip.Trigger width={`calc(75% - 3em)`}>
+                    <Tooltip content = {port.id}>
                         <Text
                           style={{
                             width: "100%",
@@ -208,19 +197,13 @@ export function ConnectButton(props: ConnectButtonProps) {
                             "white-space": "nowrap",
                             "padding-left": "0.5em",
                           }}
-                          size="sm"
+                          textStyle="sm"
                         >
                           {port.id}
                         </Text>
-                      </Tooltip.Trigger>
-                      <Portal>
-                        <Tooltip.Positioner>
-                          <Tooltip.Content>{port.id}</Tooltip.Content>
-                        </Tooltip.Positioner>
-                      </Portal>
-                    </Tooltip.Root>
-                    <Tooltip.Root>
-                      <Tooltip.Trigger width={`25% `}>
+
+                    </Tooltip>
+                    <Tooltip content = {port.version}>
                         <Text
                           style={{
                             width: "100%",
@@ -231,17 +214,11 @@ export function ConnectButton(props: ConnectButtonProps) {
                             "padding-left": "0.5em",
                             opacity: "0.5",
                           }}
-                          size="sm"
+                          textStyle="sm"
                         >
                           {port.version}
                         </Text>
-                      </Tooltip.Trigger>
-                      <Portal>
-                        <Tooltip.Positioner>
-                          <Tooltip.Content>{port.version}</Tooltip.Content>
-                        </Tooltip.Positioner>
-                      </Portal>
-                    </Tooltip.Root>
+                    </Tooltip>
                     <Show
                       when={port.id === props.portId}
                       fallback={<div style={{ width: "3em" }} />}
@@ -254,7 +231,7 @@ export function ConnectButton(props: ConnectButtonProps) {
                           e.stopPropagation();
                           props.onPortIdChange?.("");
                         }}
-                        variant="ghost"
+                        variant="plain"
                         margin="0"
                         padding="0"
                       >

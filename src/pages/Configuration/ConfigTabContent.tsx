@@ -40,9 +40,9 @@ import JSON5 from "json5";
 import { Spinner } from "~/components/ui/spinner";
 import { IconButton } from "~/components/ui/icon-button";
 import { toaster } from "~/services/Toaster";
-import { Menu } from "~/components/ui/menu";
+import * as Menu from "~/components/ui/menu";
 import { ConfigType } from "src-tauri/generated/config/ConfigType";
-import { Button } from "~/components/ui/styled/button";
+import { Button } from "~/components/ui/button";
 import { css } from "styled-system/css";
 import { detectPort, getConfigFromPort, Port } from "~/services/PortService";
 import { prettierLabel } from "~/utils/PrettierLabel";
@@ -411,7 +411,7 @@ export function ConfigTabContent() {
               {(formatKey) => {
                 return (
                   <Button
-                    variant={"ghost"}
+                    variant={"plain"}
                     onClick={() =>
                       setFocusedTab(`${configTabProps.tabId}.${formatKey}`)
                     }
@@ -443,44 +443,24 @@ export function ConfigTabContent() {
               }}
             </For>
           </div>
-          <Tooltip.Root>
-            <Tooltip.Trigger
-              width="min-content"
-              height="min-content"
-              style={{
-                "border-right-width": "1px",
-                "border-left-width": "1px",
-              }}
-              borderColor={"gray.5"}
+          <Tooltip content = "Change length and weight units">
+            <IconButton
+              variant={"plain"}
+              onClick={() => setChangeUnit(!getChangeUnit())}
             >
-              <IconButton
-                variant={"ghost"}
-                onClick={() => setChangeUnit(!getChangeUnit())}
-              >
-                <Show when={getChangeUnit()} fallback={<IconRuler2Off />}>
-                  <IconRuler2 />
-                </Show>
-              </IconButton>
-            </Tooltip.Trigger>
-            <Tooltip.Positioner>
-              <Tooltip.Content>
-                {"Change length and weight units"}
-              </Tooltip.Content>
-            </Tooltip.Positioner>
-          </Tooltip.Root>
+              <Show when={getChangeUnit()} fallback={<IconRuler2Off />}>
+                <IconRuler2 />
+              </Show>
+            </IconButton>
+          </Tooltip>
           {/*Open file button */}
           <Menu.Root>
             <Menu.Trigger>
-              <Tooltip.Root>
-                <Tooltip.Trigger width="min-content" height="min-content">
-                  <IconButton variant={"ghost"}>
-                    <IconFileImport />
-                  </IconButton>
-                </Tooltip.Trigger>
-                <Tooltip.Positioner>
-                  <Tooltip.Content>{"Import File"}</Tooltip.Content>
-                </Tooltip.Positioner>
-              </Tooltip.Root>
+              <Tooltip content = "Import File">
+                <IconButton variant={"plain"}>
+                  <IconFileImport />
+                </IconButton>
+              </Tooltip>
             </Menu.Trigger>
             <Menu.Positioner>
               <Menu.Content>
@@ -532,7 +512,7 @@ export function ConfigTabContent() {
                                 >
                                   <div>
                                     <Text>{fileName}</Text>
-                                    <Text size="xs" fontWeight="light">
+                                    <Text textStyle="xs" fontWeight="light">
                                       {restFilePath}
                                     </Text>
                                   </div>
@@ -549,52 +529,37 @@ export function ConfigTabContent() {
             </Menu.Positioner>
           </Menu.Root>
 
-          <Tooltip.Root>
-            <Tooltip.Trigger
-              width="min-content"
-              height={"min-content"}
-              borderRightWidth="1px"
-              borderColor="grey.5"
+          <Tooltip content = "Save as file">
+            <IconButton
+              variant={"plain"}
+              onClick={async () => await saveAsFile()}
             >
-              <IconButton
-                variant={"ghost"}
-                onClick={async () => await saveAsFile()}
-              >
-                <IconDeviceFloppy />
-              </IconButton>
-            </Tooltip.Trigger>
-            <Tooltip.Positioner>
-              <Tooltip.Content>{"Save as file"}</Tooltip.Content>
-            </Tooltip.Positioner>
-          </Tooltip.Root>
+              <IconDeviceFloppy />
+            </IconButton>
+          </Tooltip>
           {/*Get from port */}
           <Menu.Root>
             <Menu.Trigger width="min-content" height={"min-content"}>
-              <Tooltip.Root>
-                <Tooltip.Trigger width="min-content" height={"min-content"}>
-                  <IconButton
-                    variant={"ghost"}
-                    onClick={async () => {
-                      const detectedPorts = await detectPort();
-                      setPorts(detectedPorts);
-                      if (ports().length === 1) {
-                        await getFromPort(ports()[0].id);
-                      } else if (ports().length === 0) {
-                        toaster.create({
-                          title: "Invalid Port",
-                          description: "No port detected",
-                          type: "error",
-                        });
-                      }
-                    }}
-                  >
-                    <IconFileDownload />
-                  </IconButton>
-                </Tooltip.Trigger>
-                <Tooltip.Positioner>
-                  <Tooltip.Content>{"Get from port"}</Tooltip.Content>
-                </Tooltip.Positioner>
-              </Tooltip.Root>
+              <Tooltip content = "Get from port">
+                <IconButton
+                  variant={"plain"}
+                  onClick={async () => {
+                    const detectedPorts = await detectPort();
+                    setPorts(detectedPorts);
+                    if (ports().length === 1) {
+                      await getFromPort(ports()[0].id);
+                    } else if (ports().length === 0) {
+                      toaster.create({
+                        title: "Invalid Port",
+                        description: "No port detected",
+                        type: "error",
+                      });
+                    }
+                  }}
+                >
+                  <IconFileDownload />
+                </IconButton>
+              </Tooltip>
             </Menu.Trigger>
             <Show when={ports().length > 1}>
               <Menu.Positioner>
@@ -610,7 +575,7 @@ export function ConfigTabContent() {
                           textAlign={"left"}
                         >
                           <Text width="100%">{port.id}</Text>
-                          <Text width="100%" fontWeight="light" size="xs">
+                          <Text width="100%" fontWeight="light" textStyle="xs">
                             {port.version}
                           </Text>
                         </Menu.Item>
@@ -625,31 +590,26 @@ export function ConfigTabContent() {
           {/* Save to port */}
           <Menu.Root>
             <Menu.Trigger width="min-content" height={"min-content"}>
-              <Tooltip.Root>
-                <Tooltip.Trigger width="min-content" height={"min-content"}>
-                  <IconButton
-                    variant={"ghost"}
-                    onClick={async () => {
-                      const detectedPorts = await detectPort();
-                      setPorts(detectedPorts);
-                      if (ports().length === 1) {
-                        await saveToPort(ports()[0].id);
-                      } else if (ports().length === 0) {
-                        toaster.create({
-                          title: "Invalid Port",
-                          description: "No port detected",
-                          type: "error",
-                        });
-                      }
-                    }}
-                  >
-                    <IconSettingsShare />
-                  </IconButton>
-                </Tooltip.Trigger>
-                <Tooltip.Positioner>
-                  <Tooltip.Content>{"Save to port"}</Tooltip.Content>
-                </Tooltip.Positioner>
-              </Tooltip.Root>
+              <Tooltip content = "Save to port">
+                <IconButton
+                  variant={"plain"}
+                  onClick={async () => {
+                    const detectedPorts = await detectPort();
+                    setPorts(detectedPorts);
+                    if (ports().length === 1) {
+                      await saveToPort(ports()[0].id);
+                    } else if (ports().length === 0) {
+                      toaster.create({
+                        title: "Invalid Port",
+                        description: "No port detected",
+                        type: "error",
+                      });
+                    }
+                  }}
+                >
+                  <IconSettingsShare />
+                </IconButton>
+              </Tooltip>
             </Menu.Trigger>
             <Show when={ports().length > 1}>
               <Menu.Positioner>
@@ -665,7 +625,7 @@ export function ConfigTabContent() {
                           textAlign={"left"}
                         >
                           <Text width="100%">{port.id}</Text>
-                          <Text width="100%" fontWeight="light" size="xs">
+                          <Text width="100%" fontWeight="light" textStyle="xs">
                             {port.version}
                           </Text>
                         </Menu.Item>
@@ -704,7 +664,7 @@ export function ConfigTabContent() {
               />
               <Text
                 marginTop="1em"
-                size="lg"
+                textStyle="lg"
                 fontWeight={"bold"}
                 maxWidth="50%"
                 textAlign="center"
@@ -719,7 +679,7 @@ export function ConfigTabContent() {
                 display="flex"
                 justifySelf={"center"}
                 marginTop="0.5em"
-                size="md"
+                textStyle="md"
               >
                 {getFilePath()
                   ? `Opening...`

@@ -19,7 +19,7 @@ import {
 } from "@tabler/icons-solidjs";
 import { Stack } from "styled-system/jsx";
 import { Text } from "~/components/ui/text";
-import { Checkbox } from "~/components/ui/checkbox";
+import * as Checkbox from "~/components/ui/checkbox";
 import { Tooltip } from "~/components/ui/tooltip";
 import { tabStore } from "~/store/GlobalState.ts";
 import { on } from "solid-js";
@@ -30,7 +30,7 @@ import { FileHandler } from "../../services/FileHandler";
 import { createDraggable } from "@neodrag/solid";
 import { css } from "styled-system/css";
 import { Portal } from "solid-js/web";
-import { Editable } from "~/components/ui/editable";
+import * as Editable from "~/components/ui/editable";
 import { Spinner } from "~/components/ui/spinner";
 
 export type ErrorMessage = {
@@ -671,7 +671,7 @@ export function LogViewerTabPageContent() {
               />
               <Text
                 marginTop="1em"
-                size="lg"
+                textStyle="lg"
                 fontWeight={"bold"}
                 maxWidth="50%"
                 textAlign="center"
@@ -680,7 +680,7 @@ export function LogViewerTabPageContent() {
                 display="flex"
                 justifySelf={"center"}
                 marginTop="0.5em"
-                size="md"
+                textStyle="md"
               >{`Your file will be opened...`}</Text>
             </div>
           }
@@ -795,31 +795,23 @@ export function LogViewerTabPageContent() {
                       width={`calc(100% - ${plotToolBoxWidth})`}
                     >
                       <Show when={index() === 0}>
-                        <Tooltip.Root>
-                          <Tooltip.Trigger>
-                            <IconButton
-                              variant="outline"
-                              disabled={splitIndex().length <= 1}
-                              onclick={() => {
-                                setPrevSplitIndex(splitIndex());
-                                resetChart();
-                                setMergePlotIndexes([]);
-                              }}
-                              size="sm"
-                            >
-                              <IconRestore />
-                            </IconButton>
-                          </Tooltip.Trigger>
-                          <Tooltip.Positioner>
-                            <Tooltip.Content backgroundColor="bg.default">
-                              <Text color="fg.default">Reset</Text>
-                            </Tooltip.Content>
-                          </Tooltip.Positioner>
-                        </Tooltip.Root>
+                        <Tooltip content = "Reset">
+                          <IconButton
+                            variant="outline"
+                            disabled={splitIndex().length <= 1}
+                            onclick={() => {
+                              setPrevSplitIndex(splitIndex());
+                              resetChart();
+                              setMergePlotIndexes([]);
+                            }}
+                            size="sm"
+                          >
+                            <IconRestore />
+                          </IconButton>
+                        </Tooltip>
                       </Show>
                       <Show when={splitIndex().length > 1}>
-                        <Tooltip.Root>
-                          <Tooltip.Trigger>
+                        <Tooltip content={"Reorder Graph"}>
                             <IconButton
                               variant={"outline"}
                               class="handle"
@@ -829,31 +821,31 @@ export function LogViewerTabPageContent() {
                             >
                               <IconGridDots />
                             </IconButton>
-                          </Tooltip.Trigger>
-                          <Tooltip.Positioner>
-                            <Tooltip.Content backgroundColor="bg.default">
-                              <Text color="fg.default"> Reorder Graph</Text>
-                            </Tooltip.Content>
-                          </Tooltip.Positioner>
-                        </Tooltip.Root>
+
+                        </Tooltip>
                       </Show>
                     </Stack>
-                    <Checkbox
+                    <Checkbox.Root
                       checked={mergePlotIndexes().indexOf(index()) !== -1}
-                      onCheckedChange={(checkBoxState) => {
-                        if (checkBoxState.checked === true) {
-                          setMergePlotIndexes((prev) => {
-                            return [...prev, index()];
-                          });
-                        } else {
-                          setMergePlotIndexes((prev) => {
-                            return prev.filter(
-                              (graphIndex) => graphIndex !== index(),
-                            );
-                          });
-                        }
-                      }}
-                    />
+                    onCheckedChange={(checkBoxState) => {
+                      if (checkBoxState.checked === true) {
+                        setMergePlotIndexes((prev) => {
+                          return [...prev, index()];
+                        });
+                      } else {
+                        setMergePlotIndexes((prev) => {
+                          return prev.filter(
+                            (graphIndex) => graphIndex !== index(),
+                          );
+                        });
+                      }
+                    }}>
+                      <Checkbox.HiddenInput />
+                      <Checkbox.Control>
+                        <Checkbox.Indicator/>
+                      </Checkbox.Control>
+                    </Checkbox.Root>
+
                     <Editable.Root
                       height="2em"
                       width="5.5em"
@@ -881,142 +873,121 @@ export function LogViewerTabPageContent() {
                         />
                       </Editable.Area>
                     </Editable.Root>
-                    <Tooltip.Root>
-                      <Tooltip.Trigger>
-                        <IconButton
-                          onClick={() => {
-                            setPrevSplitIndex(splitIndex());
-                            mergePlot(mergePlotIndexes());
-                            setMergePlotIndexes([]);
-                          }}
-                          disabled={
-                            mergePlotIndexes().length < 2 ||
-                            mergePlotIndexes().indexOf(index()) === -1
+                    <Tooltip content = "Merge">
+                      <IconButton
+                        onClick={() => {
+                          setPrevSplitIndex(splitIndex());
+                          mergePlot(mergePlotIndexes());
+                          setMergePlotIndexes([]);
+                        }}
+                        disabled={
+                          mergePlotIndexes().length < 2 ||
+                          mergePlotIndexes().indexOf(index()) === -1
+                        }
+                        size="xs"
+                      >
+                        <IconFold />
+                      </IconButton>
+                    </Tooltip>
+                    <Tooltip content = "Split">
+                      <IconButton
+                        size="xs"
+                        onClick={() => {
+                          setPrevSplitIndex(splitIndex());
+                          splitPlot(index());
+                          setMergePlotIndexes([]);
+                        }}
+                        disabled={
+                          currentHeader.length <= 1 ||
+                          !plots[index()] ||
+                          !plots[index()].selected ||
+                          allSelected(index()) ||
+                          allNotSelected(index())
+                        }
+                      >
+                        <IconSeparatorHorizontal />
+                      </IconButton>
+                    </Tooltip>
+                    <Tooltip content = "Save">
+                      <IconButton
+                        size="xs"
+                        variant={"outline"}
+                        onClick={async () => {
+                          const visible = plots[index()].visible;
+                          if (!visible.includes(true)) {
+                            tabPageProps!.toaster.create({
+                              title: "Invalid Legend",
+                              description: "There is no visible legends.",
+                              type: "error",
+                            });
+                            return;
                           }
-                          size="xs"
-                        >
-                          <IconFold />
-                        </IconButton>
-                      </Tooltip.Trigger>
-                      <Tooltip.Positioner>
-                        <Tooltip.Content backgroundColor="bg.default">
-                          <Text color="fg.default">Merge</Text>
-                        </Tooltip.Content>
-                      </Tooltip.Positioner>
-                    </Tooltip.Root>
-                    <Tooltip.Root>
-                      <Tooltip.Trigger>
-                        <IconButton
-                          size="xs"
-                          onClick={() => {
-                            setPrevSplitIndex(splitIndex());
-                            splitPlot(index());
-                            setMergePlotIndexes([]);
-                          }}
-                          disabled={
-                            currentHeader.length <= 1 ||
-                            !plots[index()] ||
-                            !plots[index()].selected ||
-                            allSelected(index()) ||
-                            allNotSelected(index())
+                          const visibleHeader = currentHeader.filter(
+                            (_, i) => visible[i],
+                          );
+                          const visibleSeries = currentItems.filter(
+                            (_, i) => visible[i],
+                          );
+
+                          const xMin = Math.floor(plotZoomState()[0]);
+                          const xMax = Math.floor(plotZoomState()[1]);
+                          if (xMax - xMin < 1) {
+                            tabPageProps!.toaster.create({
+                              title: "Invalid Range",
+                              description:
+                                "The x-axis doesn't have enough range.",
+                              type: "error",
+                            });
+                            return;
                           }
-                        >
-                          <IconSeparatorHorizontal />
-                        </IconButton>
-                      </Tooltip.Trigger>
-                      <Tooltip.Positioner>
-                        <Tooltip.Content backgroundColor="bg.default">
-                          <Text color="fg.default">Split</Text>
-                        </Tooltip.Content>
-                      </Tooltip.Positioner>
-                    </Tooltip.Root>
-                    <Tooltip.Root>
-                      <Tooltip.Trigger>
-                        <IconButton
-                          size="xs"
-                          variant={"outline"}
-                          onClick={async () => {
-                            const visible = plots[index()].visible;
-                            if (!visible.includes(true)) {
-                              tabPageProps!.toaster.create({
-                                title: "Invalid Legend",
-                                description: "There is no visible legends.",
-                                type: "error",
-                              });
-                              return;
-                            }
-                            const visibleHeader = currentHeader.filter(
-                              (_, i) => visible[i],
-                            );
-                            const visibleSeries = currentItems.filter(
-                              (_, i) => visible[i],
-                            );
 
-                            const xMin = Math.floor(plotZoomState()[0]);
-                            const xMax = Math.floor(plotZoomState()[1]);
-                            if (xMax - xMin < 1) {
-                              tabPageProps!.toaster.create({
-                                title: "Invalid Range",
-                                description:
-                                  "The x-axis doesn't have enough range.",
-                                type: "error",
-                              });
-                              return;
-                            }
-
-                            const path = await fileHandler.saveFileDialog(
-                              "csv",
-                              filePath(),
-                              tabName(),
+                          const path = await fileHandler.saveFileDialog(
+                            "csv",
+                            filePath(),
+                            tabName(),
+                          );
+                          if (path) {
+                            await saveCsvFile(
+                              path,
+                              visibleHeader.filter(
+                                (header) => !header.includes("acceleration"),
+                              ),
+                              visibleSeries.filter(
+                                (_, seriesIndex) =>
+                                  !visibleHeader[seriesIndex].includes(
+                                    "acceleration",
+                                  ),
+                              ),
+                              xMin,
+                              xMax,
+                              enumMappings() ? enumMappings()! : undefined,
                             );
-                            if (path) {
-                              await saveCsvFile(
-                                path,
-                                visibleHeader.filter(
-                                  (header) => !header.includes("acceleration"),
-                                ),
-                                visibleSeries.filter(
-                                  (_, seriesIndex) =>
-                                    !visibleHeader[seriesIndex].includes(
-                                      "acceleration",
-                                    ),
-                                ),
-                                xMin,
-                                xMax,
-                                enumMappings() ? enumMappings()! : undefined,
-                              );
-                              tabPageProps!.toaster.create({
-                                title: "Saved File Successfully",
-                                description: "The file is saved.",
-                                type: "success",
-                                action:
-                                  path !== filePath()
-                                    ? {
-                                        label: path,
-                                        onClick: () => {
-                                          addNewTab(path);
-                                        },
-                                      }
-                                    : undefined,
-                              });
-                            }
-                            if (path === filePath()) {
-                              setRender(false);
-                              setTimeout(async () => {
-                                await prepareCsvFile();
-                              }, 200);
-                            }
-                          }}
-                        >
-                          <IconFileDownload />
-                        </IconButton>
-                      </Tooltip.Trigger>
-                      <Tooltip.Positioner>
-                        <Tooltip.Content backgroundColor="bg.default">
-                          <Text color="fg.default">Save</Text>
-                        </Tooltip.Content>
-                      </Tooltip.Positioner>
-                    </Tooltip.Root>
+                            tabPageProps!.toaster.create({
+                              title: "Saved File Successfully",
+                              description: "The file is saved.",
+                              type: "success",
+                              action:
+                                path !== filePath()
+                                  ? {
+                                      label: path,
+                                      onClick: () => {
+                                        addNewTab(path);
+                                      },
+                                    }
+                                  : undefined,
+                            });
+                          }
+                          if (path === filePath()) {
+                            setRender(false);
+                            setTimeout(async () => {
+                              await prepareCsvFile();
+                            }, 200);
+                          }
+                        }}
+                      >
+                        <IconFileDownload />
+                      </IconButton>
+                    </Tooltip>
                   </Stack>
                   <Plot
                     id={currentID()}
@@ -1116,7 +1087,7 @@ export function LogViewerTabPageContent() {
               "border-width": "1px",
             }}
           >
-            <Text size="xs" fontWeight={"bold"}>
+            <Text textStyle="xs" fontWeight={"bold"}>
               {plotNames[dragging()!]}
             </Text>
           </Stack>

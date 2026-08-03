@@ -12,7 +12,7 @@ import { Stack, StackProps } from "styled-system/jsx";
 import uPlot from "uplot";
 
 import { Button } from "~/components/ui/button";
-import { Dialog } from "~/components/ui/dialog";
+import * as Dialog from "~/components/ui/dialog";
 import { IconButton } from "~/components/ui/icon-button";
 import { Text } from "~/components/ui/text";
 import { SeriesConfiguration } from "./SeriesConfiguration";
@@ -25,7 +25,7 @@ import {
 } from "@tabler/icons-solidjs";
 import { Heading } from "../ui/heading";
 import { Portal } from "solid-js/web";
-import { Checkbox } from "../ui/checkbox";
+import * as Checkbox from "../ui/checkbox";
 
 export type LegendProps = Omit<StackProps, "stroke"> & {
   plot: uPlot;
@@ -169,7 +169,12 @@ export function Legend(props: LegendProps) {
               props.onSelectChange?.(!props.selected, e.shiftKey);
             }}
           >
-            <Checkbox checked={props.selected === true} />
+            <Checkbox.Root checked={props.selected === true} >
+              <Checkbox.HiddenInput />
+              <Checkbox.Control>
+                <Checkbox.Indicator/>
+              </Checkbox.Control>
+            </Checkbox.Root>
           </div>
         </Show>
         <Dialog.Root
@@ -179,7 +184,7 @@ export function Legend(props: LegendProps) {
           unmountOnExit
         >
           <IconButton
-            variant="link"
+            variant="subtle"
             disabled={!(props.visible != null ? props.visible : visible())}
             opacity={
               (props.visible != null ? props.visible : visible())
@@ -225,7 +230,7 @@ export function Legend(props: LegendProps) {
         when={!props.readonly}
         fallback={
           <Heading
-            size="sm"
+            textStyle="sm"
             fontWeight="medium"
             style={{ "justify-content": "left" }}
           >
@@ -234,7 +239,7 @@ export function Legend(props: LegendProps) {
         }
       >
         <Button
-          variant="link"
+          variant="subtle"
           style={{ "justify-content": "left" }}
           opacity={
             (props.visible != null ? props.visible : visible()) ? "100%" : "30%"
@@ -251,7 +256,7 @@ export function Legend(props: LegendProps) {
         </Button>
       </Show>
       <Text
-        size="sm"
+        textStyle="sm"
         style={{
           "white-space": "nowrap",
         }}

@@ -6,7 +6,7 @@ import {
   Show,
   useContext,
 } from "solid-js";
-import { Tabs } from "~/components/ui/tabs.tsx";
+import * as Tabs from "~/components/ui/tabs.tsx";
 import { Tab, TabType } from "~/components/Tab/Tab.tsx";
 import { For } from "solid-js/web";
 import {
@@ -217,8 +217,7 @@ export function TabList(
             return;
           }
           if (
-            getTabContexts().focusedTab !== tabDetails.value &&
-            tabDetails.value
+            getTabContexts().focusedTab !== tabDetails.value
           ) {
             setFocusTab(tabDetails.value);
           }

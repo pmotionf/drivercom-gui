@@ -37,7 +37,7 @@ import JSON5 from "json5";
 import { load } from "@tauri-apps/plugin-store";
 import { toaster } from "~/services/Toaster.ts";
 import { TabPageContext } from "~/components/Tab/TabList.tsx";
-import { Menu } from "~/components/ui/menu.tsx";
+import * as Menu from "~/components/ui/menu.tsx";
 import { ConnectButton } from "~/components/Connect/ConnectButton.tsx";
 import { getConfigFromPort } from "~/services/PortService.ts";
 
@@ -761,16 +761,11 @@ export function LoggingTabContent() {
               {/*Open file button */}
               <Menu.Root>
                 <Menu.Trigger>
-                  <Tooltip.Root>
-                    <Tooltip.Trigger width="min-content" height="min-content">
-                      <IconButton variant={"ghost"}>
+                  <Tooltip content = {"Import File"}>
+                      <IconButton variant={"plain"}>
                         <IconFileImport />
                       </IconButton>
-                    </Tooltip.Trigger>
-                    <Tooltip.Positioner>
-                      <Tooltip.Content>{"Import File"}</Tooltip.Content>
-                    </Tooltip.Positioner>
-                  </Tooltip.Root>
+                  </Tooltip>
                 </Menu.Trigger>
                 <Menu.Positioner>
                   <Menu.Content>
@@ -822,7 +817,7 @@ export function LoggingTabContent() {
                                     >
                                       <div>
                                         <Text>{fileName}</Text>
-                                        <Text size="xs" fontWeight="light">
+                                        <Text textStyle="xs" fontWeight="light">
                                           {restFilePath}
                                         </Text>
                                       </div>
@@ -839,27 +834,18 @@ export function LoggingTabContent() {
                 </Menu.Positioner>
               </Menu.Root>
 
-              <Tooltip.Root>
-                <Tooltip.Trigger
-                  width="min-content"
-                  height={"min-content"}
-                  borderRightWidth="1px"
-                  borderColor="grey.5"
-                >
+              <Tooltip content = {"Save as file"}>
+
                   <IconButton
-                    variant={"ghost"}
+                    variant={"plain"}
                     onClick={async () => await saveAsFile()}
                   >
                     <IconDeviceFloppy />
                   </IconButton>
-                </Tooltip.Trigger>
-                <Tooltip.Positioner>
-                  <Tooltip.Content>{"Save as file"}</Tooltip.Content>
-                </Tooltip.Positioner>
-              </Tooltip.Root>
+              </Tooltip>
 
               <ConnectButton
-                buttonProps={{ variant: "ghost" }}
+                buttonProps={{ variant: "plain" }}
                 portId={getPortId()}
                 onPortIdChange={async (portId) => {
                   setPortId(portId);
@@ -881,10 +867,11 @@ export function LoggingTabContent() {
                 }}
               />
               {/*Get from port */}
-              <Tooltip.Root>
-                <Tooltip.Trigger width="min-content" height={"min-content"}>
+              <Tooltip content={
+                "Get from port"
+              }>
                   <IconButton
-                    variant={"ghost"}
+                    variant={"plain"}
                     disabled={!getPortId() || getPortId().length === 0}
                     onClick={async () => {
                       if (!getPortId() || getPortId().length === 0) return;
@@ -893,17 +880,12 @@ export function LoggingTabContent() {
                   >
                     <IconFileDownload />
                   </IconButton>
-                </Tooltip.Trigger>
-                <Tooltip.Positioner>
-                  <Tooltip.Content>{"Get from port"}</Tooltip.Content>
-                </Tooltip.Positioner>
-              </Tooltip.Root>
+              </Tooltip>
 
               {/* Save to port */}
-              <Tooltip.Root>
-                <Tooltip.Trigger width="min-content" height={"min-content"}>
+              <Tooltip content = {"Save to port"}>
                   <IconButton
-                    variant={"ghost"}
+                    variant={"plain"}
                     disabled={!getPortId() || getPortId().length === 0}
                     onClick={async () => {
                       if (!getPortId() || getPortId().length === 0) return;
@@ -912,17 +894,12 @@ export function LoggingTabContent() {
                   >
                     <IconSettingsShare />
                   </IconButton>
-                </Tooltip.Trigger>
-                <Tooltip.Positioner>
-                  <Tooltip.Content>{"Save to port"}</Tooltip.Content>
-                </Tooltip.Positioner>
-              </Tooltip.Root>
+              </Tooltip>
 
               <Show
                 when={currentLogStatus() === ".started"}
                 fallback={
-                  <Tooltip.Root>
-                    <Tooltip.Trigger>
+                  <Tooltip content = {"Start logging"}>
                       <IconButton
                         disabled={
                           disableBtn() === LogButton.Start ||
@@ -973,21 +950,14 @@ export function LoggingTabContent() {
                           }
                         }}
                         size="sm"
-                        variant="ghost"
+                        variant="plain"
                       >
                         <IconPlayerPlay />
                       </IconButton>
-                    </Tooltip.Trigger>
-                    <Tooltip.Positioner>
-                      <Tooltip.Content backgroundColor="bg.default">
-                        <Text color="fg.default">Start Logging</Text>
-                      </Tooltip.Content>
-                    </Tooltip.Positioner>
-                  </Tooltip.Root>
+                  </Tooltip>
                 }
               >
-                <Tooltip.Root>
-                  <Tooltip.Trigger>
+                <Tooltip content = {"Stop logging"}>
                     <IconButton
                       disabled={disableBtn() === LogButton.Stop}
                       onClick={async () => {
@@ -1011,17 +981,11 @@ export function LoggingTabContent() {
                         }
                       }}
                       size="sm"
-                      variant="ghost"
+                      variant="plain"
                     >
                       <IconPlayerStop />
                     </IconButton>
-                  </Tooltip.Trigger>
-                  <Tooltip.Positioner>
-                    <Tooltip.Content backgroundColor="bg.default">
-                      <Text color="fg.default">Stop Logging</Text>
-                    </Tooltip.Content>
-                  </Tooltip.Positioner>
-                </Tooltip.Root>
+                </Tooltip>
               </Show>
 
               <Show
@@ -1031,8 +995,9 @@ export function LoggingTabContent() {
                   cyclesCompleted() === 0
                 }
                 fallback={
-                  <Tooltip.Root>
-                    <Tooltip.Trigger>
+                  <Tooltip content={
+                    "Get Log"
+                  }>
                       <Button
                         disabled={disableBtn() === LogButton.Download}
                         loading={csvFileDownloads.some(
@@ -1063,24 +1028,18 @@ export function LoggingTabContent() {
                             });
                           }
                         }}
-                        variant="ghost"
+                        variant="plain"
                         userSelect="none"
                         size="sm"
                       >
                         <IconFileDownload />
                       </Button>
-                    </Tooltip.Trigger>
-                    <Tooltip.Positioner>
-                      <Tooltip.Content backgroundColor="bg.default">
-                        <Text color="fg.default">Get Log</Text>
-                      </Tooltip.Content>
-                    </Tooltip.Positioner>
-                  </Tooltip.Root>
+
+                  </Tooltip>
                 }
               >
                 {/* Refresh Log Status btn */}
-                <Tooltip.Root>
-                  <Tooltip.Trigger>
+                <Tooltip content = {"Refresh log status"}>
                     <IconButton
                       disabled={getPortId().length === 0}
                       onClick={async () => {
@@ -1098,18 +1057,13 @@ export function LoggingTabContent() {
                           setCyclesCompleted(null);
                         }
                       }}
-                      variant="ghost"
+                      variant="plain"
                       size="sm"
                     >
                       <IconReload />
                     </IconButton>
-                  </Tooltip.Trigger>
-                  <Tooltip.Positioner>
-                    <Tooltip.Content backgroundColor="bg.default">
-                      <Text color="fg.default">Refresh Log Status</Text>
-                    </Tooltip.Content>
-                  </Tooltip.Positioner>
-                </Tooltip.Root>
+
+                </Tooltip>
               </Show>
               {/* Get Log button need to add tooltip */}
             </Stack>

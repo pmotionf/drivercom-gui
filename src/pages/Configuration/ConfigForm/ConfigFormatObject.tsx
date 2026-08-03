@@ -3,7 +3,7 @@ import { LinkStates } from "./ConfigForm";
 import { GainLockStates } from "./ConfigForm";
 import { createStore } from "solid-js/store";
 import { Show, For, createSignal, onMount } from "solid-js";
-import { Accordion } from "../../../components/ui/accordion";
+import * as Accordion from "../../../components/ui/accordion";
 import { IconButton } from "../../../components/ui/icon-button";
 import { Text } from "../../../components/ui/text";
 import { FormNumberInput } from "../../../components/Form/FormNumberInput";
@@ -173,6 +173,7 @@ export const ConfigFormatObject = (props: ConfigFormatObjectProps) => {
                     }
                   }}
                 >
+
                   <Accordion.Item
                     value={accordionItemValue}
                     borderRadius={"0.2rem"}
@@ -228,7 +229,7 @@ export const ConfigFormatObject = (props: ConfigFormatObjectProps) => {
 
                         <Show when={innderDescText}>
                           <Text
-                            size="xs"
+                            textStyle="xs"
                             fontWeight="light"
                             style={{
                               width: "100%",
@@ -250,7 +251,7 @@ export const ConfigFormatObject = (props: ConfigFormatObjectProps) => {
                         >
                           <IconButton
                             size="xs"
-                            variant={"ghost"}
+                            variant={"plain"}
                             opacity={
                               props.gainLockStatuses!.get(innerId)![0]()
                                 ? "1"
@@ -322,7 +323,7 @@ export const ConfigFormatObject = (props: ConfigFormatObjectProps) => {
                                     .includes(true)
                                 : false
                             }
-                            variant={"ghost"}
+                            variant={"plain"}
                             opacity={
                               props.linkedStatuses!.get(
                                 Object.keys(value).join(","),
@@ -416,8 +417,8 @@ export const ConfigFormatObject = (props: ConfigFormatObjectProps) => {
                     if (props.accordionStatuses) {
                       props.accordionStatuses.set(id, details.value);
                     }
-                  }}
-                >
+                  }}>
+
                   <Accordion.Item
                     value={accordionItemValue}
                     borderRadius={"0.2rem"}
@@ -477,9 +478,10 @@ export const ConfigFormatObject = (props: ConfigFormatObjectProps) => {
                           >
                             {prettierLabel(label)}
                           </Text>
+
                           <Show when={descriptionText}>
                             <Text
-                              size="xs"
+                              textStyle="xs"
                               fontWeight="light"
                               style={{
                                 width: "100%",
@@ -503,7 +505,9 @@ export const ConfigFormatObject = (props: ConfigFormatObjectProps) => {
                               </Show>
                             </Text>
                           </Show>
+
                         </div>
+
                         <Show
                           when={
                             props.linkedStatuses &&
@@ -514,7 +518,7 @@ export const ConfigFormatObject = (props: ConfigFormatObjectProps) => {
                         >
                           <IconButton
                             size="xs"
-                            variant={"ghost"}
+                            variant={"plain"}
                             opacity={
                               props.linkedStatuses!.get(
                                 Object.keys(value).join(","),
@@ -577,6 +581,7 @@ export const ConfigFormatObject = (props: ConfigFormatObjectProps) => {
                       />
                     </Accordion.ItemContent>
                   </Accordion.Item>
+
                 </Accordion.Root>
               );
             }

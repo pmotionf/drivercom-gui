@@ -1,6 +1,6 @@
 import { createSignal } from "solid-js";
-import { Menu } from "./ui/menu.tsx";
-import { Button } from "./ui/styled/button.tsx";
+import * as Menu from "./ui/menu.tsx";
+import { Button } from "./ui/button.tsx";
 import { csvFileDownloads } from "~/store/GlobalState.ts";
 import { DownloadStatus } from "./DownloadList.tsx";
 import { ButtonProps } from "./ui/button.tsx";
