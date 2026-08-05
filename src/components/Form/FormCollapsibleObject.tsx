@@ -34,7 +34,12 @@ export const FormCollapsibleObject = (props: FormCollapsibleObjectProps) => {
       <Accordion.Item value={itemId}>
         <Accordion.ItemTrigger borderBottomWidth={"1px"}>
           <Stack gap="0" alignItems={"center"}>
-            <Text fontWeight="bold" color="fg.default" textStyle="sm" width="100%">
+            <Text
+              fontWeight="bold"
+              color="fg.default"
+              textStyle="sm"
+              width="100%"
+            >
               {`${key[0].toUpperCase()}${Array.from(key.slice(1, key.length))
                 .map((char, index) => {
                   if (key[index] === "_") {

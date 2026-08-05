@@ -169,10 +169,10 @@ export function Legend(props: LegendProps) {
               props.onSelectChange?.(!props.selected, e.shiftKey);
             }}
           >
-            <Checkbox.Root checked={props.selected === true} >
+            <Checkbox.Root checked={props.selected === true}>
               <Checkbox.HiddenInput />
               <Checkbox.Control>
-                <Checkbox.Indicator/>
+                <Checkbox.Indicator />
               </Checkbox.Control>
             </Checkbox.Root>
           </div>

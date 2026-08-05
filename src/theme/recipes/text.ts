@@ -1,6 +1,6 @@
-import { defineRecipe } from '@pandacss/dev'
+import { defineRecipe } from "@pandacss/dev";
 
 export const text = defineRecipe({
-  className: 'text',
+  className: "text",
   variants: {},
-})
+});

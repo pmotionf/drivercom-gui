@@ -173,7 +173,6 @@ export const ConfigFormatObject = (props: ConfigFormatObjectProps) => {
                     }
                   }}
                 >
-
                   <Accordion.Item
                     value={accordionItemValue}
                     borderRadius={"0.2rem"}
@@ -417,8 +416,8 @@ export const ConfigFormatObject = (props: ConfigFormatObjectProps) => {
                     if (props.accordionStatuses) {
                       props.accordionStatuses.set(id, details.value);
                     }
-                  }}>
-
+                  }}
+                >
                   <Accordion.Item
                     value={accordionItemValue}
                     borderRadius={"0.2rem"}
@@ -505,7 +504,6 @@ export const ConfigFormatObject = (props: ConfigFormatObjectProps) => {
                               </Show>
                             </Text>
                           </Show>
-
                         </div>
 
                         <Show
@@ -581,7 +579,6 @@ export const ConfigFormatObject = (props: ConfigFormatObjectProps) => {
                       />
                     </Accordion.ItemContent>
                   </Accordion.Item>
-
                 </Accordion.Root>
               );
             }

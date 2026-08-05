@@ -262,9 +262,11 @@ export function Form(props: FormProps) {
                     {`${key[0].toUpperCase()}${key.slice(1, key.length)}`}
                   </Text>
                   <Show when={description}>
-                    <Tooltip content = {description![
-                      "description" as keyof typeof description
-                    ]}>
+                    <Tooltip
+                      content={
+                        description!["description" as keyof typeof description]
+                      }
+                    >
                       <IconHelp size="1em" opacity={0.5} />
                     </Tooltip>
                   </Show>

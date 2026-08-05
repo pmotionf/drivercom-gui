@@ -110,6 +110,6 @@ export const recipes = {
   textarea,
   toast,
   toggleGroup,
-  tooltip
-}
-export const slotRecipes = {}
+  tooltip,
+};
+export const slotRecipes = {};

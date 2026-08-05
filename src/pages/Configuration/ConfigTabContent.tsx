@@ -443,7 +443,7 @@ export function ConfigTabContent() {
               }}
             </For>
           </div>
-          <Tooltip content = "Change length and weight units">
+          <Tooltip content="Change length and weight units">
             <IconButton
               variant={"plain"}
               onClick={() => setChangeUnit(!getChangeUnit())}
@@ -456,7 +456,7 @@ export function ConfigTabContent() {
           {/*Open file button */}
           <Menu.Root>
             <Menu.Trigger>
-              <Tooltip content = "Import File">
+              <Tooltip content="Import File">
                 <IconButton variant={"plain"}>
                   <IconFileImport />
                 </IconButton>
@@ -529,7 +529,7 @@ export function ConfigTabContent() {
             </Menu.Positioner>
           </Menu.Root>
 
-          <Tooltip content = "Save as file">
+          <Tooltip content="Save as file">
             <IconButton
               variant={"plain"}
               onClick={async () => await saveAsFile()}
@@ -540,7 +540,7 @@ export function ConfigTabContent() {
           {/*Get from port */}
           <Menu.Root>
             <Menu.Trigger width="min-content" height={"min-content"}>
-              <Tooltip content = "Get from port">
+              <Tooltip content="Get from port">
                 <IconButton
                   variant={"plain"}
                   onClick={async () => {
@@ -590,7 +590,7 @@ export function ConfigTabContent() {
           {/* Save to port */}
           <Menu.Root>
             <Menu.Trigger width="min-content" height={"min-content"}>
-              <Tooltip content = "Save to port">
+              <Tooltip content="Save to port">
                 <IconButton
                   variant={"plain"}
                   onClick={async () => {

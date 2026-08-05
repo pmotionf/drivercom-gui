@@ -1,20 +1,20 @@
-import { collapsibleAnatomy } from '@ark-ui/solid/anatomy'
-import { defineSlotRecipe } from '@pandacss/dev'
+import { collapsibleAnatomy } from "@ark-ui/solid/anatomy";
+import { defineSlotRecipe } from "@pandacss/dev";
 
 export const collapsible = defineSlotRecipe({
-  className: 'collapsible',
+  className: "collapsible",
   slots: collapsibleAnatomy.keys(),
   base: {
     content: {
-      overflow: 'hidden',
+      overflow: "hidden",
       _open: {
-        animationName: 'expand-height, fade-in',
-        animationDuration: 'slow',
+        animationName: "expand-height, fade-in",
+        animationDuration: "slow",
       },
       _closed: {
-        animationName: 'collapse-height, fade-out',
-        animationDuration: 'normal',
+        animationName: "collapse-height, fade-out",
+        animationDuration: "normal",
       },
     },
   },
-})
+});

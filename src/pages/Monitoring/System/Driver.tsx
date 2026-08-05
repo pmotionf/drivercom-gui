@@ -65,59 +65,60 @@ export function Driver(props: DriverProps) {
           display: "flex",
         }}
       >
-        <Tooltip content={
-          <Show when={findField(props.driverInfo).length > 0}>
-
-                <Text> Info </Text>
-                <For each={findField(props.driverInfo)}>
-                  {(field) => {
-                    return <Text fontWeight="medium">{field}</Text>;
-                  }}
-                </For>
-
-
-          </Show>
-
-        } positioning={{ placement: "bottom-start" }}>
-            <Badge
-              background={
-                props.driverInfo.connected ? "accent.customGreen" : "bg.canvas"
-              }
-              paddingLeft={"0.4rem"}
-              paddingRight={"0.4rem"}
-              gap={"0.2rem"}
-            >
-              <Show when={props.driverInfo.paused}>
-                <IconPlayerPauseFilled class={css({ color: "fg.default" })} />
-              </Show>
-              <Show when={props.driverInfo.stopped}>
-                <IconAlertTriangle class={css({ color: "fg.default" })} />
-              </Show>
-              <Text fontWeight="bold">Driver {props.id}</Text>
-            </Badge>
-
+        <Tooltip
+          content={
+            <Show when={findField(props.driverInfo).length > 0}>
+              <Text> Info </Text>
+              <For each={findField(props.driverInfo)}>
+                {(field) => {
+                  return <Text fontWeight="medium">{field}</Text>;
+                }}
+              </For>
+            </Show>
+          }
+          positioning={{ placement: "bottom-start" }}
+        >
+          <Badge
+            background={
+              props.driverInfo.connected ? "accent.customGreen" : "bg.canvas"
+            }
+            paddingLeft={"0.4rem"}
+            paddingRight={"0.4rem"}
+            gap={"0.2rem"}
+          >
+            <Show when={props.driverInfo.paused}>
+              <IconPlayerPauseFilled class={css({ color: "fg.default" })} />
+            </Show>
+            <Show when={props.driverInfo.stopped}>
+              <IconAlertTriangle class={css({ color: "fg.default" })} />
+            </Show>
+            <Text fontWeight="bold">Driver {props.id}</Text>
+          </Badge>
         </Tooltip>
 
         <Show when={findField(props.driverError).length > 0}>
-          <Tooltip content={
-            <>
-              <Text>Error</Text>
-              <For each={findField(props.driverError)}>
-                {(errorField) => {
-                  return <Text fontWeight="medium">{errorField}</Text>;
-                }}
-              </For>
-            </>
-          } positioning={{ placement: "bottom-start" }}>
-              <Stack
-                backgroundColor="red.9"
-                style={{
-                  width: "0.5rem",
-                  height: "0.5rem",
-                  "border-radius": "1rem",
-                  "margin-left": "0.5em",
-                }}
-              />
+          <Tooltip
+            content={
+              <>
+                <Text>Error</Text>
+                <For each={findField(props.driverError)}>
+                  {(errorField) => {
+                    return <Text fontWeight="medium">{errorField}</Text>;
+                  }}
+                </For>
+              </>
+            }
+            positioning={{ placement: "bottom-start" }}
+          >
+            <Stack
+              backgroundColor="red.9"
+              style={{
+                width: "0.5rem",
+                height: "0.5rem",
+                "border-radius": "1rem",
+                "margin-left": "0.5em",
+              }}
+            />
           </Tooltip>
         </Show>
       </div>

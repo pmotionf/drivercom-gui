@@ -284,7 +284,12 @@ export const DownloadList = (props: JSX.HTMLAttributes<HTMLDivElement>) => {
             >
               <IconX />
             </IconButton>
-            <Text textStyle="xs" width="100%" paddingLeft="1em" fontWeight="bold">
+            <Text
+              textStyle="xs"
+              width="100%"
+              paddingLeft="1em"
+              fontWeight="bold"
+            >
               {"Downloads"}
             </Text>
           </Stack>

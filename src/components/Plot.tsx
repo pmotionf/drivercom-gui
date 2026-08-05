@@ -1205,7 +1205,7 @@ export function Plot(props: PlotProps) {
                 width="15em"
                 gap="1em"
               >
-                <Tooltip content = "Zoom Reset">
+                <Tooltip content="Zoom Reset">
                   <IconButton
                     variant="outline"
                     disabled={zoomReset()}
@@ -1242,7 +1242,7 @@ export function Plot(props: PlotProps) {
                     }
                   }}
                 >
-                  <Tooltip content = "Plot Panning">
+                  <Tooltip content="Plot Panning">
                     <ToggleGroup.Item
                       value={CursorMode[CursorMode.Pan]}
                       aria-label="Toggle Pan"
@@ -1263,7 +1263,7 @@ export function Plot(props: PlotProps) {
                     </ToggleGroup.Item>
                   </Tooltip>
 
-                  <Tooltip content = "Horizontal Zoom (Shift)">
+                  <Tooltip content="Horizontal Zoom (Shift)">
                     <ToggleGroup.Item
                       value={CursorMode[CursorMode.Horizontal]}
                       aria-label="Toggle Selection Zoom"
@@ -1284,7 +1284,7 @@ export function Plot(props: PlotProps) {
                     </ToggleGroup.Item>
                   </Tooltip>
 
-                  <Tooltip content = "Vertical Zoom (Ctrl)">
+                  <Tooltip content="Vertical Zoom (Ctrl)">
                     <ToggleGroup.Item
                       value={CursorMode[CursorMode.Vertical]}
                       aria-label="Toggle Cursor Lock"
@@ -1305,7 +1305,7 @@ export function Plot(props: PlotProps) {
                     </ToggleGroup.Item>
                   </Tooltip>
 
-                  <Tooltip content = "Cursor Lock (Alt)">
+                  <Tooltip content="Cursor Lock (Alt)">
                     <ToggleGroup.Item
                       value={CursorMode[CursorMode.Lock]}
                       aria-label="Toggle Cursor Lock"
@@ -1381,7 +1381,7 @@ export function Plot(props: PlotProps) {
                   <IconX />
                 </IconButton>
               </Stack>
-              <Tooltip content = "Select">
+              <Tooltip content="Select">
                 <IconButton
                   variant="outline"
                   onClick={() => {

@@ -1,26 +1,26 @@
-import { pinInputAnatomy } from '@ark-ui/solid/anatomy'
-import { defineSlotRecipe } from '@pandacss/dev'
-import { input } from './input'
+import { pinInputAnatomy } from "@ark-ui/solid/anatomy";
+import { defineSlotRecipe } from "@pandacss/dev";
+import { input } from "./input";
 
 export const pinInput = defineSlotRecipe({
-  className: 'pin-input',
+  className: "pin-input",
   slots: pinInputAnatomy.keys(),
   base: {
     input: {
       ...input.base,
-      textAlign: 'center',
-      width: 'var(--input-height)',
-      px: '1!',
+      textAlign: "center",
+      width: "var(--input-height)",
+      px: "1!",
     },
     control: {
-      display: 'inline-flex',
-      gap: '2',
-      isolation: 'isolate',
+      display: "inline-flex",
+      gap: "2",
+      isolation: "isolate",
     },
   },
   defaultVariants: {
-    size: 'md',
-    variant: 'outline',
+    size: "md",
+    variant: "outline",
   },
 
   variants: {
@@ -40,8 +40,8 @@ export const pinInput = defineSlotRecipe({
       xl: {
         input: input.variants?.size?.xl,
       },
-      '2xl': {
-        input: input.variants?.size?.['2xl'],
+      "2xl": {
+        input: input.variants?.size?.["2xl"],
       },
     },
     variant: {
@@ -50,4 +50,4 @@ export const pinInput = defineSlotRecipe({
       flushed: { input: input.variants?.variant?.flushed },
     },
   },
-})
+});

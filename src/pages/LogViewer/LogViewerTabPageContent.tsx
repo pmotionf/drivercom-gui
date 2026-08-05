@@ -795,7 +795,7 @@ export function LogViewerTabPageContent() {
                       width={`calc(100% - ${plotToolBoxWidth})`}
                     >
                       <Show when={index() === 0}>
-                        <Tooltip content = "Reset">
+                        <Tooltip content="Reset">
                           <IconButton
                             variant="outline"
                             disabled={splitIndex().length <= 1}
@@ -812,37 +812,37 @@ export function LogViewerTabPageContent() {
                       </Show>
                       <Show when={splitIndex().length > 1}>
                         <Tooltip content={"Reorder Graph"}>
-                            <IconButton
-                              variant={"outline"}
-                              class="handle"
-                              size="sm"
-                              marginTop="0.4em"
-                              cursor="grab"
-                            >
-                              <IconGridDots />
-                            </IconButton>
-
+                          <IconButton
+                            variant={"outline"}
+                            class="handle"
+                            size="sm"
+                            marginTop="0.4em"
+                            cursor="grab"
+                          >
+                            <IconGridDots />
+                          </IconButton>
                         </Tooltip>
                       </Show>
                     </Stack>
                     <Checkbox.Root
                       checked={mergePlotIndexes().indexOf(index()) !== -1}
-                    onCheckedChange={(checkBoxState) => {
-                      if (checkBoxState.checked === true) {
-                        setMergePlotIndexes((prev) => {
-                          return [...prev, index()];
-                        });
-                      } else {
-                        setMergePlotIndexes((prev) => {
-                          return prev.filter(
-                            (graphIndex) => graphIndex !== index(),
-                          );
-                        });
-                      }
-                    }}>
+                      onCheckedChange={(checkBoxState) => {
+                        if (checkBoxState.checked === true) {
+                          setMergePlotIndexes((prev) => {
+                            return [...prev, index()];
+                          });
+                        } else {
+                          setMergePlotIndexes((prev) => {
+                            return prev.filter(
+                              (graphIndex) => graphIndex !== index(),
+                            );
+                          });
+                        }
+                      }}
+                    >
                       <Checkbox.HiddenInput />
                       <Checkbox.Control>
-                        <Checkbox.Indicator/>
+                        <Checkbox.Indicator />
                       </Checkbox.Control>
                     </Checkbox.Root>
 
@@ -873,7 +873,7 @@ export function LogViewerTabPageContent() {
                         />
                       </Editable.Area>
                     </Editable.Root>
-                    <Tooltip content = "Merge">
+                    <Tooltip content="Merge">
                       <IconButton
                         onClick={() => {
                           setPrevSplitIndex(splitIndex());
@@ -889,7 +889,7 @@ export function LogViewerTabPageContent() {
                         <IconFold />
                       </IconButton>
                     </Tooltip>
-                    <Tooltip content = "Split">
+                    <Tooltip content="Split">
                       <IconButton
                         size="xs"
                         onClick={() => {
@@ -908,7 +908,7 @@ export function LogViewerTabPageContent() {
                         <IconSeparatorHorizontal />
                       </IconButton>
                     </Tooltip>
-                    <Tooltip content = "Save">
+                    <Tooltip content="Save">
                       <IconButton
                         size="xs"
                         variant={"outline"}

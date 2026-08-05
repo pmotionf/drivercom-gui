@@ -17,12 +17,17 @@ export const ControlPage = (props: ControlPageProps) => {
         "flex-direction": "column",
       }}
     >
-      <Switch.Root checked = {props.isAutoMode} onCheckedChange = {(e) => props.changeAutoMode?.(e.checked)}>
+      <Switch.Root
+        checked={props.isAutoMode}
+        onCheckedChange={(e) => props.changeAutoMode?.(e.checked)}
+      >
         <Switch.Control>
-          <Switch.Thumb/>
+          <Switch.Thumb />
         </Switch.Control>
-        <Switch.Label textStyle = "sm" fontWeight = "bold">{"Clear Errors Automatically"} </Switch.Label>
-        <Switch.HiddenInput/>
+        <Switch.Label textStyle="sm" fontWeight="bold">
+          {"Clear Errors Automatically"}{" "}
+        </Switch.Label>
+        <Switch.HiddenInput />
       </Switch.Root>
       <Text textStyle="sm">{"Clear non-critical errors automatically."}</Text>
     </div>

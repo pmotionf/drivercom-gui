@@ -1,38 +1,38 @@
-import { defineRecipe } from '@pandacss/dev'
+import { defineRecipe } from "@pandacss/dev";
 
 export const group = defineRecipe({
-  className: 'group',
+  className: "group",
   base: {
-    display: 'inline-flex',
-    position: 'relative',
-    gap: '2',
-    '& > *': {
+    display: "inline-flex",
+    position: "relative",
+    gap: "2",
+    "& > *": {
       _focusVisible: {
         zIndex: 1,
       },
     },
   },
   defaultVariants: {
-    orientation: 'horizontal',
+    orientation: "horizontal",
   },
   variants: {
     orientation: {
       horizontal: {
-        flexDirection: 'row',
+        flexDirection: "row",
       },
       vertical: {
-        flexDirection: 'column',
+        flexDirection: "column",
       },
     },
     attached: {
       true: {
-        gap: '0',
+        gap: "0",
       },
     },
     grow: {
       true: {
-        display: 'flex',
-        '& > *': {
+        display: "flex",
+        "& > *": {
           flex: 1,
         },
       },
@@ -40,38 +40,38 @@ export const group = defineRecipe({
   },
   compoundVariants: [
     {
-      orientation: 'horizontal',
+      orientation: "horizontal",
       attached: true,
       css: {
-        '& > *:first-child': {
-          borderEndRadius: '0',
-          marginEnd: '-1px',
+        "& > *:first-child": {
+          borderEndRadius: "0",
+          marginEnd: "-1px",
         },
-        '& > *:last-child': {
-          borderStartRadius: '0',
+        "& > *:last-child": {
+          borderStartRadius: "0",
         },
-        '& > *:not(:first-child):not(:last-child)': {
-          borderRadius: '0',
-          marginEnd: '-1px',
+        "& > *:not(:first-child):not(:last-child)": {
+          borderRadius: "0",
+          marginEnd: "-1px",
         },
       },
     },
     {
-      orientation: 'vertical',
+      orientation: "vertical",
       attached: true,
       css: {
-        '& > *:first-child': {
-          borderBottomRadius: '0',
-          marginBottom: '-1px',
+        "& > *:first-child": {
+          borderBottomRadius: "0",
+          marginBottom: "-1px",
         },
-        '& > *:last-child': {
-          borderTopRadius: '0',
+        "& > *:last-child": {
+          borderTopRadius: "0",
         },
-        '& > *:not(:first-child):not(:last-child)': {
-          borderRadius: '0',
-          marginBottom: '-1px',
+        "& > *:not(:first-child):not(:last-child)": {
+          borderRadius: "0",
+          marginBottom: "-1px",
         },
       },
     },
   ],
-})
+});

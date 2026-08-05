@@ -200,7 +200,7 @@ export const FormNumberInput = (props: FormNumberInputProps) => {
           <Show
             when={lockStatus && lockStatusKey && lockStatus.has(lockStatusKey)}
           >
-            <Tooltip content = "Lock auto calculation">
+            <Tooltip content="Lock auto calculation">
               <IconButton
                 type="button"
                 variant="plain"
@@ -223,9 +223,7 @@ export const FormNumberInput = (props: FormNumberInputProps) => {
                   const currentDynPos = isCenter ? "center" : "between";
 
                   if (props.lockStatus!.has(gainKey)) {
-                    const updateValue = Array.from(
-                      props.lockStatus!.entries(),
-                    )
+                    const updateValue = Array.from(props.lockStatus!.entries())
                       .filter(
                         (entry) =>
                           entry[0] !== gainKey &&
@@ -371,12 +369,12 @@ export const FormNumberInput = (props: FormNumberInputProps) => {
                 props.desc!["unit_short" as keyof typeof props.desc]
               }
             >
-              <Tooltip content = {changeUnitLong(
-                props.desc![
-                  "unit_long" as keyof typeof props.desc
-                ] as string,
-                props.changeUnits ?? false,
-              )}>
+              <Tooltip
+                content={changeUnitLong(
+                  props.desc!["unit_long" as keyof typeof props.desc] as string,
+                  props.changeUnits ?? false,
+                )}
+              >
                 <Text opacity="0.5" marginLeft="0.2em">
                   {parseUnit(
                     changeUnitShort(
