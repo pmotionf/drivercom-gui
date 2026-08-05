@@ -913,8 +913,7 @@ function App(props: RouteSectionProps) {
           style={{ position: "absolute", right: "1rem", bottom: "1rem" }}
         />
       </Show>
-      <Toaster/>
-
+      <Toaster />
 
       <Show
         when={

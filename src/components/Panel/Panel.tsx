@@ -57,6 +57,7 @@ export function Panel(props: JSX.HTMLAttributes<HTMLDivElement>) {
           height: "100%",
           "border-radius": "0",
           "border-top-width": "0",
+          padding: "0",
         }}
       >
         <PanelContext.Provider

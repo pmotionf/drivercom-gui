@@ -86,33 +86,26 @@ export function ConnectButton(props: ConnectButtonProps) {
   return (
     <Popover.Root positioning={{ placement: "bottom-start" }}>
       <Popover.Trigger maxWidth="min-content" gap="" padding="0" {...props}>
-        <Tooltip content={
-
-          <Show when={props.portId.length !== 0}>
-
-                  {props.portId}
-
-          </Show>
-        }>
-
-            <IconButton
-              {...(props.buttonProps
-                ? props.buttonProps
-                : {
-                    variant: "outline",
-                    borderColor: "bg.diabled",
-                    cursor: "-moz-grab",
-                    opacity: props.portId.length === 0 ? "0.7" : "1",
-                    backgroundColor: "bg.default",
-                  })}
-            >
-              {props.portId.length === 0 ? (
-                <IconPlugConnectedX />
-              ) : (
-                <IconPlugConnected />
-              )}
-            </IconButton>
-
+        <Tooltip
+          content={<Show when={props.portId.length !== 0}>{props.portId}</Show>}
+        >
+          <IconButton
+            {...(props.buttonProps
+              ? props.buttonProps
+              : {
+                  variant: "outline",
+                  borderColor: "bg.diabled",
+                  cursor: "-moz-grab",
+                  opacity: props.portId.length === 0 ? "0.7" : "1",
+                  backgroundColor: "bg.default",
+                })}
+          >
+            {props.portId.length === 0 ? (
+              <IconPlugConnectedX />
+            ) : (
+              <IconPlugConnected />
+            )}
+          </IconButton>
         </Tooltip>
       </Popover.Trigger>
       <Popover.Positioner>
@@ -187,37 +180,36 @@ export function ConnectButton(props: ConnectButtonProps) {
                       props.onPortIdChange?.(port.id);
                     }}
                   >
-                    <Tooltip content = {port.id}>
-                        <Text
-                          style={{
-                            width: "100%",
-                            "text-align": "left",
-                            "text-overflow": "ellipsis",
-                            overflow: "hidden",
-                            "white-space": "nowrap",
-                            "padding-left": "0.5em",
-                          }}
-                          textStyle="sm"
-                        >
-                          {port.id}
-                        </Text>
-
+                    <Tooltip content={port.id}>
+                      <Text
+                        style={{
+                          width: "100%",
+                          "text-align": "left",
+                          "text-overflow": "ellipsis",
+                          overflow: "hidden",
+                          "white-space": "nowrap",
+                          "padding-left": "0.5em",
+                        }}
+                        textStyle="sm"
+                      >
+                        {port.id}
+                      </Text>
                     </Tooltip>
-                    <Tooltip content = {port.version}>
-                        <Text
-                          style={{
-                            width: "100%",
-                            "text-align": "left",
-                            "text-overflow": "ellipsis",
-                            overflow: "hidden",
-                            "white-space": "nowrap",
-                            "padding-left": "0.5em",
-                            opacity: "0.5",
-                          }}
-                          textStyle="sm"
-                        >
-                          {port.version}
-                        </Text>
+                    <Tooltip content={port.version}>
+                      <Text
+                        style={{
+                          width: "100%",
+                          "text-align": "left",
+                          "text-overflow": "ellipsis",
+                          overflow: "hidden",
+                          "white-space": "nowrap",
+                          "padding-left": "0.5em",
+                          opacity: "0.5",
+                        }}
+                        textStyle="sm"
+                      >
+                        {port.version}
+                      </Text>
                     </Tooltip>
                     <Show
                       when={port.id === props.portId}

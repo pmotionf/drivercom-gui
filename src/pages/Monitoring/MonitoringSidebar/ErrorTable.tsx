@@ -48,7 +48,12 @@ export const ErrorTable = (props: ErrorTableProps) => {
 
   return (
     <>
-      <Text fontWeight="bold" color="fg.subtle" textStyle="sm" marginBottom="0.5em">
+      <Text
+        fontWeight="bold"
+        color="fg.subtle"
+        textStyle="sm"
+        marginBottom="0.5em"
+      >
         Error
       </Text>
       <Show

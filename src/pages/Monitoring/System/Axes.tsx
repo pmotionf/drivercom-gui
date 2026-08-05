@@ -70,64 +70,68 @@ export function Axis(props: AxisProps) {
             width: `calc(100% - 1em)`,
           }}
         >
-          <Tooltip content={
-            <>
-              <Text>Info</Text>
-              <For each={Object.entries(props.axisInfo)}>
-                {([key, value]) => {
-                  if (typeof value == "boolean" && key.includes("waiting")) {
-                    const prettierLabel = `${key[0].toUpperCase()}${key.slice(1, key.length)}`;
-                    return (
-                      <Text fontWeight="medium" opacity={value ? "1" : "0.4"}>
-                        {prettierLabel}
-                      </Text>
-                    );
-                  }
-                }}
-              </For>
-            </>
-          }>
-              <Badge
-                width="min-content"
-                backgroundColor={
-                  props.axisInfo.waitingPull || props.axisInfo.waitingPush
-                    ? "accent.customOrange"
-                    : props.axisInfo.motorActive
-                      ? "accent.customGreen"
-                      : "bg.emphasized"
-                }
-                paddingLeft="0.5rem"
-                paddingRight="0.5rem"
-                height="min-content"
-                borderWidth="0"
-              >
-                <Text textStyle="sm">Axis {axisId}</Text>
-              </Badge>
-          </Tooltip>
-
-          <Show when={props.axisError.overcurrent}>
-            <Tooltip content={
+          <Tooltip
+            content={
               <>
-                <Text>Error</Text>
-                <For each={Object.entries(props.axisError)}>
+                <Text>Info</Text>
+                <For each={Object.entries(props.axisInfo)}>
                   {([key, value]) => {
-                    if (typeof value === "boolean" && value) {
+                    if (typeof value == "boolean" && key.includes("waiting")) {
                       const prettierLabel = `${key[0].toUpperCase()}${key.slice(1, key.length)}`;
-                      return <Text fontWeight="medium">{prettierLabel}</Text>;
+                      return (
+                        <Text fontWeight="medium" opacity={value ? "1" : "0.4"}>
+                          {prettierLabel}
+                        </Text>
+                      );
                     }
                   }}
                 </For>
               </>
-            }>
-                <Stack
-                  backgroundColor="red.9"
-                  style={{
-                    width: "0.5rem",
-                    height: "0.5rem",
-                    "border-radius": "1rem",
-                    "margin-left": "0.5em",
-                  }}
-                />
+            }
+          >
+            <Badge
+              width="min-content"
+              backgroundColor={
+                props.axisInfo.waitingPull || props.axisInfo.waitingPush
+                  ? "accent.customOrange"
+                  : props.axisInfo.motorActive
+                    ? "accent.customGreen"
+                    : "bg.emphasized"
+              }
+              paddingLeft="0.5rem"
+              paddingRight="0.5rem"
+              height="min-content"
+              borderWidth="0"
+            >
+              <Text textStyle="sm">Axis {axisId}</Text>
+            </Badge>
+          </Tooltip>
+
+          <Show when={props.axisError.overcurrent}>
+            <Tooltip
+              content={
+                <>
+                  <Text>Error</Text>
+                  <For each={Object.entries(props.axisError)}>
+                    {([key, value]) => {
+                      if (typeof value === "boolean" && value) {
+                        const prettierLabel = `${key[0].toUpperCase()}${key.slice(1, key.length)}`;
+                        return <Text fontWeight="medium">{prettierLabel}</Text>;
+                      }
+                    }}
+                  </For>
+                </>
+              }
+            >
+              <Stack
+                backgroundColor="red.9"
+                style={{
+                  width: "0.5rem",
+                  height: "0.5rem",
+                  "border-radius": "1rem",
+                  "margin-left": "0.5em",
+                }}
+              />
             </Tooltip>
           </Show>
         </div>
@@ -178,32 +182,33 @@ export function Axis(props: AxisProps) {
           >
             Carrier {carrierState()!.id}
           </Text>
-          <Tooltip content={
-            <Text>
-              {carrierState()!.casDisabled
-                ? "Disabled"
-                : carrierState()!.casTriggered
-                  ? "Triggered"
-                  : "Enabled"}
-            </Text>
-
-          }>
-              <Badge
-                style={{
-                  width: "min-content",
-                  "border-width": "0",
-                }}
-                size="sm"
-                backgroundColor={
-                  carrierState()!.casDisabled
-                    ? "accent.customOrange"
-                    : carrierState()!.casTriggered
-                      ? "accent.customGreen"
-                      : "bg.emphasized"
-                }
-              >
-                CAS
-              </Badge>
+          <Tooltip
+            content={
+              <Text>
+                {carrierState()!.casDisabled
+                  ? "Disabled"
+                  : carrierState()!.casTriggered
+                    ? "Triggered"
+                    : "Enabled"}
+              </Text>
+            }
+          >
+            <Badge
+              style={{
+                width: "min-content",
+                "border-width": "0",
+              }}
+              size="sm"
+              backgroundColor={
+                carrierState()!.casDisabled
+                  ? "accent.customOrange"
+                  : carrierState()!.casTriggered
+                    ? "accent.customGreen"
+                    : "bg.emphasized"
+              }
+            >
+              CAS
+            </Badge>
           </Tooltip>
         </div>
 
@@ -232,27 +237,28 @@ export function Axis(props: AxisProps) {
           <Text width="3rem" textStyle="sm" fontWeight="bold">
             State
           </Text>
-          <Tooltip content={
-            typeof carrierState()!.state === "number"
-              ? Response_Line_Carrier_State_State[carrierState()!.state]
-                  .toString()
-                  .split(`_`)
-                  .splice(2)
-                  .toString()
-                  .replaceAll(`,`, " ")
-              : ""
-          }>
-              <Text width="100%" textStyle="sm" textAlign={"left"}>
-                {typeof carrierState()!.state === "number"
-                  ? Response_Line_Carrier_State_State[carrierState()!.state]
-                      .toString()
-                      .split(`_`)
-                      .splice(2)
-                      .toString()
-                      .replaceAll(`,`, " ")
-                  : ""}
-              </Text>
-
+          <Tooltip
+            content={
+              typeof carrierState()!.state === "number"
+                ? Response_Line_Carrier_State_State[carrierState()!.state]
+                    .toString()
+                    .split(`_`)
+                    .splice(2)
+                    .toString()
+                    .replaceAll(`,`, " ")
+                : ""
+            }
+          >
+            <Text width="100%" textStyle="sm" textAlign={"left"}>
+              {typeof carrierState()!.state === "number"
+                ? Response_Line_Carrier_State_State[carrierState()!.state]
+                    .toString()
+                    .split(`_`)
+                    .splice(2)
+                    .toString()
+                    .replaceAll(`,`, " ")
+                : ""}
+            </Text>
           </Tooltip>
         </Stack>
       </Show>

@@ -151,7 +151,7 @@ export function Tab(props: TabProps) {
       height="2rem"
       gap="0"
       width={`100%`}
-      background={"bg.muted"}
+      background="gray.2"
       style={{ padding: "0" }}
       onKeyUp={(e) => {
         if (e.key === "Escape") {
@@ -244,23 +244,31 @@ export function Tab(props: TabProps) {
               >
                 <Tabs.Trigger
                   value={tabCtx.tab.id}
-                  paddingRight="0rem"
-                  paddingLeft="0.5rem"
+                  class={css({
+                    padding: 0,
+                    borderRightWidth: 1,
+                    cursor: "pointer",
+                  })}
+                  width="fit-content"
                   height="100%"
-                  alignContent={"center"}
-                  alignItems={"centerx"}
-                  paddingTop={"0.5em"}
                   borderWidth={
                     tabIndex() === getTabContexts().length - 1
                       ? "0px"
                       : "0px 1px 0px 0px"
                   }
                   borderColor={"bg.disabled"}
+                  background="gray.2"
                   _selected={{
-                    background: "bg.default",
+                    background: "Background",
+                  }}
+                  _hover={{
+                    background:
+                      getFocusTabId() === tabCtx.tab.id
+                        ? "bg.default"
+                        : "gray.3",
                   }}
                   margin="0"
-                  gap="0.2em"
+                  gap="0"
                 >
                   <Stack
                     style={{
@@ -282,7 +290,11 @@ export function Tab(props: TabProps) {
                   >
                     <Editable.Area>
                       <Editable.Input width="10rem" />
-                      <Editable.Preview width="100%" />
+                      <Editable.Preview
+                        width="100%"
+                        _hover={{ background: "transparent" }}
+                        cursor="pointer"
+                      />
                     </Editable.Area>
                   </Editable.Root>
                   <div class="cancel">

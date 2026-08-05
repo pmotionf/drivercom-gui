@@ -96,57 +96,59 @@ export function Line(props: LineProps) {
         <Accordion.ItemIndicator class="cancel">
           <ChevronDownIcon />
         </Accordion.ItemIndicator>
-        <Tooltip content={
-          <>
-            <For
-              each={Object.entries(props.line).filter(
-                (entry) => entry[0] !== "name" && entry[0] !== "id",
-              )}
-            >
-              {([key, value]) => {
-                return (
-                  <div
-                    style={{
-                      width: `100%`,
-                      display: "flex",
-                    }}
-                  >
-                    <Text width="60%">
-                      {Array.from(key)
-                        .map((char, i) => {
-                          if (i === 0) {
-                            return char.toUpperCase();
-                          }
-                          if (/^[A-Z]*$/.test(char)) {
-                            return `_${char}`;
-                          }
-                          return char;
-                        })
-                        .join("")
-                        .replaceAll("_", " ")}
-                    </Text>
-                    <Text
-                      width="40%"
-                      fontWeight={"medium"}
+        <Tooltip
+          content={
+            <>
+              <For
+                each={Object.entries(props.line).filter(
+                  (entry) => entry[0] !== "name" && entry[0] !== "id",
+                )}
+              >
+                {([key, value]) => {
+                  return (
+                    <div
                       style={{
-                        overflow: "hidden",
-                        "white-space": "nowrap",
-                        display: "block",
-                        "text-overflow": "ellipsis",
+                        width: `100%`,
+                        display: "flex",
                       }}
                     >
-                      {typeof value === "number" && !Number.isInteger(value)
-                        ? `${Number(value.toFixed(5))}m`
-                        : value}
-                    </Text>
-                  </div>
-                );
-              }}
-            </For>
-
-          </>
-        } positioning={{ placement: "bottom-start" }}>
-            <Text>{props.line.name}</Text>
+                      <Text width="60%">
+                        {Array.from(key)
+                          .map((char, i) => {
+                            if (i === 0) {
+                              return char.toUpperCase();
+                            }
+                            if (/^[A-Z]*$/.test(char)) {
+                              return `_${char}`;
+                            }
+                            return char;
+                          })
+                          .join("")
+                          .replaceAll("_", " ")}
+                      </Text>
+                      <Text
+                        width="40%"
+                        fontWeight={"medium"}
+                        style={{
+                          overflow: "hidden",
+                          "white-space": "nowrap",
+                          display: "block",
+                          "text-overflow": "ellipsis",
+                        }}
+                      >
+                        {typeof value === "number" && !Number.isInteger(value)
+                          ? `${Number(value.toFixed(5))}m`
+                          : value}
+                      </Text>
+                    </div>
+                  );
+                }}
+              </For>
+            </>
+          }
+          positioning={{ placement: "bottom-start" }}
+        >
+          <Text>{props.line.name}</Text>
         </Tooltip>
 
         <Show
@@ -159,44 +161,45 @@ export function Line(props: LineProps) {
               findErrorField(props.system.driverErrors).length > 0)
           }
         >
-          <Tooltip content={
-            <>
-              <For
-                each={showErrorStatus(
-                  props.system!.axisErrors!,
-                  props.system!.driverErrors!,
-                )}
-              >
-                {(error) => (
-                  <Stack direction="row" width="100%" minWidth={"16em"}>
-                    <Text overflow="hidden" width="30%">
-                      {error.field}
-                    </Text>
-                    <div style={{ width: "70%" }}>
-                      <For each={error.error}>
-                        {(err) => (
-                          <Text width="100%" fontWeight={"medium"}>
-                            {err}
-                          </Text>
-                        )}
-                      </For>
-                    </div>
-                  </Stack>
-                )}
-              </For>
-            </>
-
-          } positioning={{ placement: "bottom-start" }}>
-
-              <Stack
-                backgroundColor="red.9"
-                style={{
-                  width: "0.5rem",
-                  height: "0.5rem",
-                  "border-radius": "1rem",
-                  "margin-top": "0.3rem",
-                }}
-              />
+          <Tooltip
+            content={
+              <>
+                <For
+                  each={showErrorStatus(
+                    props.system!.axisErrors!,
+                    props.system!.driverErrors!,
+                  )}
+                >
+                  {(error) => (
+                    <Stack direction="row" width="100%" minWidth={"16em"}>
+                      <Text overflow="hidden" width="30%">
+                        {error.field}
+                      </Text>
+                      <div style={{ width: "70%" }}>
+                        <For each={error.error}>
+                          {(err) => (
+                            <Text width="100%" fontWeight={"medium"}>
+                              {err}
+                            </Text>
+                          )}
+                        </For>
+                      </div>
+                    </Stack>
+                  )}
+                </For>
+              </>
+            }
+            positioning={{ placement: "bottom-start" }}
+          >
+            <Stack
+              backgroundColor="red.9"
+              style={{
+                width: "0.5rem",
+                height: "0.5rem",
+                "border-radius": "1rem",
+                "margin-top": "0.3rem",
+              }}
+            />
           </Tooltip>
         </Show>
         <LineControlButton

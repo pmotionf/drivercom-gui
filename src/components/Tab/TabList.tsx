@@ -208,6 +208,7 @@ export function TabList(
     <>
       <Tabs.Root
         id={tabListProps.id}
+        fitted
         width="100%"
         height="100%"
         value={getTabContexts().focusedTab}
@@ -216,9 +217,7 @@ export function TabList(
             setIsTabClicked(true);
             return;
           }
-          if (
-            getTabContexts().focusedTab !== tabDetails.value
-          ) {
+          if (getTabContexts().focusedTab !== tabDetails.value) {
             setFocusTab(tabDetails.value);
           }
         }}
