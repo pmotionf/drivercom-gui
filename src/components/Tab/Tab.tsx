@@ -258,8 +258,10 @@ export function Tab(props: TabProps) {
                   }
                   borderColor={"bg.disabled"}
                   background="gray.2"
+                  opacity="0.7"
                   _selected={{
-                    background: "Background",
+                    background: "gray.1",
+                    opacity: "1",
                   }}
                   _hover={{
                     background:
