@@ -428,14 +428,14 @@ export function Plot(props: PlotProps) {
     getComputedCSSVariableValue("--colors-fg-default"),
   );
   const [bgMuted, setBgMuted] = createSignal<string>(
-    getComputedCSSVariableValue("--colors-bg-muted"),
+    getComputedCSSVariableValue("--colors-gray-3"),
   );
 
   createEffect(() => {
     if (globalState.theme !== theme) {
       theme = globalState.theme;
       setFgDefault(getComputedCSSVariableValue("--colors-fg-default"));
-      setBgMuted(getComputedCSSVariableValue("--colors-bg-muted"));
+      setBgMuted(getComputedCSSVariableValue("--colors-gray-3"));
     }
   });
 
@@ -692,7 +692,6 @@ export function Plot(props: PlotProps) {
         >
           <div id={props.id} style={{ width: "100%", height: "100%" }}>
             <SolidUplot
-              style={{ cursor: "default" }}
               onCreate={(e) => {
                 plot = e as uPlot;
                 setRender(true);
@@ -1092,6 +1091,7 @@ export function Plot(props: PlotProps) {
                   : [
                       {
                         label: "Cycle",
+                        stroke: "#ffffff",
                       },
                       ...props.header.map((_, index) => ({
                         label: props.header[index],
