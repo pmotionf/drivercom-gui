@@ -55,7 +55,6 @@ import {
   logFormFileFormat,
 } from "./store/GlobalState.ts";
 
-import * as SegmentGroup from "~/components/ui/segment-group.tsx";
 import { Text } from "~/components/ui/text.tsx";
 
 import { Command } from "@tauri-apps/plugin-shell";
@@ -89,6 +88,7 @@ import * as Popover from "./components/ui/popover.tsx";
 import { IconButton } from "./components/ui/icon-button.tsx";
 import { Portal } from "solid-js/web";
 import { LoggingAccordionStates } from "./components/Form.tsx";
+import { Button } from "./components/ui/button.tsx";
 
 type PageMeta = {
   icon: ValidComponent;
@@ -706,7 +706,7 @@ function App(props: RouteSectionProps) {
         onDrop={(e) => e.stopPropagation()}
       >
         <div
-          class={css({ background: "bg.muted", borderColor: "bg.disabled" })}
+          class={css({ background: "gray.2" })}
           style={{
             width: "100vw",
             height: navbarHeight,
@@ -715,47 +715,37 @@ function App(props: RouteSectionProps) {
             "border-bottom-width": "1px",
           }}
         >
-          <SegmentGroup.Root
+          <div
             id="collapsed_side_bar"
-            orientation="horizontal"
-            justifyContent={"left"}
-            gridRow={1}
-            gridColumn={1}
-            value={page()}
-            onValueChange={(e) => {
-              if (e != null) {
-                setPage(e.value! as Pages);
-              }
-            }}
             style={{
               width: `100%`,
               height: `calc(${navbarHeight} - 1px)`,
               "border-width": "0",
+              "grid-row": 1,
+              "grid-column": 1,
+              "align-items": "center",
+              "padding-left": "0.1rem",
             }}
-            background="{colors.gray.3}"
-            gap="0.2rem"
-            alignItems={"center"}
-            paddingLeft="0.1rem"
           >
             <Index each={Object.keys(pages)}>
               {(val) => (
-                <SegmentGroup.Item
-                  value={val()}
-                  disabled={pages[val()].disabled}
+                <Button
                   class={css({
-                    _hover: {
-                      background:
-                        page().toString() === val()
-                          ? "bg.muted"
-                          : "bg.disabled",
-                    },
-                    borderRadius: "0.5rem",
-                    padding: "0.35rem",
                     width: "min-content",
+                    height: navbarHeight,
                     alignItems: "center",
                     whiteSpace: "nowrap",
                     transition: "background ease-in-out 0.2s",
+                    _hover: {
+                      background:
+                        page() === val()
+                          ? "transparent"
+                          : "gray.plain.bg.hover",
+                    },
                   })}
+                  variant="plain"
+                  disabled={pages[val()].disabled}
+                  onClick={() => setPage(val() as Pages)}
                 >
                   <Text
                     textStyle="sm"
@@ -763,16 +753,14 @@ function App(props: RouteSectionProps) {
                   >
                     {pages[val()].label}
                   </Text>
-                  <SegmentGroup.ItemControl />
-                  <SegmentGroup.ItemHiddenInput />
-                </SegmentGroup.Item>
+                </Button>
               )}
             </Index>
-          </SegmentGroup.Root>
+          </div>
           <IconButton
             variant="plain"
-            textStyle="xs"
             onclick={toggleTheme}
+            size="xs"
             gridRow={1}
             gridColumn={2}
           >
@@ -785,13 +773,13 @@ function App(props: RouteSectionProps) {
           </IconButton>
           <Popover.Root>
             <Popover.Trigger gridRow={1} gridColumn={3}>
-              <IconButton textStyle="xs" variant="plain">
+              <IconButton size="xs" variant="plain">
                 <IconInfoCircle />
               </IconButton>
             </Popover.Trigger>
             <Portal>
               <Popover.Positioner>
-                <Popover.Content background={"bg.default"}>
+                <Popover.Content background={"bg.default"} padding="0.5rem">
                   <Popover.Arrow>
                     <Popover.ArrowTip />
                   </Popover.Arrow>

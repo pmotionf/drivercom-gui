@@ -1,6 +1,7 @@
 export const conditions = {
   extend: {
-    light: ":root &, .light &",
+    dark: '.dark &, [data-theme="dark"] &',
+    light: '.light &, [data-theme="light"] &',
     invalid: "&:is(:user-invalid, [data-invalid], [aria-invalid=true])",
     hover: "&:not(:disabled):hover",
     active: "&:not(:disabled):active",
