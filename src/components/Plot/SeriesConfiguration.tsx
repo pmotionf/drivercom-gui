@@ -174,12 +174,13 @@ export function SeriesConfiguration(props: SeriesConfigurationProps) {
                     LegendStroke[stroke()] === LegendStroke[LegendStroke.Line]
                       ? "Background"
                       : "gray.1",
-                }
+                },
               })}
             >
               <IconLine />
             </ToggleGroup.Item>
-            <ToggleGroup.Item value={LegendStroke[LegendStroke.Dash]}
+            <ToggleGroup.Item
+              value={LegendStroke[LegendStroke.Dash]}
               class={css({
                 background:
                   LegendStroke[stroke()] === LegendStroke[LegendStroke.Dash]
@@ -192,12 +193,13 @@ export function SeriesConfiguration(props: SeriesConfigurationProps) {
                     LegendStroke[stroke()] === LegendStroke[LegendStroke.Dash]
                       ? "Background"
                       : "gray.1",
-                }
+                },
               })}
             >
               <IconLineDashed />
             </ToggleGroup.Item>
-            <ToggleGroup.Item value={LegendStroke[LegendStroke.Dot]}
+            <ToggleGroup.Item
+              value={LegendStroke[LegendStroke.Dot]}
               class={css({
                 background:
                   LegendStroke[stroke()] === LegendStroke[LegendStroke.Dot]
@@ -211,8 +213,9 @@ export function SeriesConfiguration(props: SeriesConfigurationProps) {
                     LegendStroke[stroke()] === LegendStroke[LegendStroke.Dot]
                       ? "Background"
                       : "gray.1",
-                }
-              })}>
+                },
+              })}
+            >
               <IconPoint />
             </ToggleGroup.Item>
           </ToggleGroup.Root>

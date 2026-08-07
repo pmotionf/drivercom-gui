@@ -250,11 +250,7 @@ function Monitoring() {
         width="100%"
         height="100%"
       >
-        <Splitter.Panel
-          id={`panel`}
-          borderWidth="0"
-          backgroundColor="transparent"
-        >
+        <Splitter.Panel id={`panel`} borderWidth="0" borderRadius="0">
           <Show when={lines.length > 0}>
             <System
               lines={lines}
@@ -461,14 +457,12 @@ function Monitoring() {
         <Show when={showSideBar()}>
           <Splitter.ResizeTrigger
             id={`panel:sidebar`}
-            class={css({ borderColor: "bg.default", background: "bg.canvas" })}
-            style={{
-              width: "100%",
-              height: "1px",
-              "border-radius": "0",
-              padding: "0",
-              margin: "0",
-            }}
+            class={css({
+              background: "gray.1",
+              borderRadius: "0",
+              borderWidth: "0px",
+              minHeight: "0.5",
+            })}
           />
         </Show>
 
@@ -477,7 +471,8 @@ function Monitoring() {
           borderWidth="0"
           borderTopWidth={"1px"}
           borderColor={"bg.disabled"}
-          backgroundColor="transparent"
+          padding="0"
+          borderRadius="0rem"
         >
           <Tabs.Root
             defaultValue="Connect"
@@ -544,7 +539,11 @@ function Monitoring() {
             </Tabs.List>
             <Tabs.Content
               value="Connect"
-              style={{ width: "100%", height: "100%" }}
+              style={{
+                width: "100%",
+                height: "100%",
+                padding: "0.5rem 1rem 0rem 1rem ",
+              }}
               overflowY="auto"
             >
               <Show when={showConnectPage()}>
@@ -594,7 +593,11 @@ function Monitoring() {
             </Tabs.Content>
             <Tabs.Content
               value="Control"
-              style={{ width: "100%", height: "100%" }}
+              style={{
+                width: "100%",
+                height: "100%",
+                padding: "0.5rem 1rem 0rem 1rem ",
+              }}
             >
               <ControlPage
                 isAutoMode={isAutoClearMode()}
@@ -604,7 +607,11 @@ function Monitoring() {
             <Tabs.Content
               value="Status"
               overflowY="auto"
-              style={{ width: "100%", height: "100%" }}
+              style={{
+                width: "100%",
+                height: "100%",
+                padding: "0.5rem 1rem 0rem 1rem ",
+              }}
             >
               <StatusPage
                 systemErrors={systemErrors()}
@@ -614,7 +621,11 @@ function Monitoring() {
             <Tabs.Content
               value="Carriers"
               overflowY="auto"
-              style={{ width: "100%", height: "100%" }}
+              style={{
+                width: "100%",
+                height: "100%",
+                padding: "0.5rem 1rem 0rem 1rem ",
+              }}
               paddingTop={"0rem"}
               paddingBottom={"0rem"}
             >
