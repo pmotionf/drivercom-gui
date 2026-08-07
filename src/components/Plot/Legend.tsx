@@ -161,7 +161,7 @@ export function Legend(props: LegendProps) {
   const strokeIconSize: string = "1.2rem";
 
   return (
-    <Stack direction="row" gap="1" {...rest}>
+    <Stack direction="row" gap="0.2rem" alignItems="center" {...rest}>
       <Show when={!props.readonly}>
         <Show when={props.showSelectCheckBox}>
           <div
@@ -184,7 +184,8 @@ export function Legend(props: LegendProps) {
           unmountOnExit
         >
           <IconButton
-            variant="subtle"
+            size="xs"
+            variant="plain"
             disabled={!(props.visible != null ? props.visible : visible())}
             opacity={
               (props.visible != null ? props.visible : visible())
@@ -239,8 +240,11 @@ export function Legend(props: LegendProps) {
         }
       >
         <Button
-          variant="subtle"
+          size="xs"
+          variant="plain"
+          _hover={{ background: "Background" }}
           style={{ "justify-content": "left" }}
+          padding="0"
           opacity={
             (props.visible != null ? props.visible : visible()) ? "100%" : "30%"
           }
