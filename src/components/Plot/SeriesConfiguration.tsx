@@ -50,9 +50,9 @@ export function SeriesConfiguration(props: SeriesConfigurationProps) {
   );
 
   return (
-    <Card.Root>
+    <Card.Root style={{ padding: "0" }}>
       <Card.Header>
-        <Card.Title>Configuration</Card.Title>
+        <Card.Title>Configuration asd</Card.Title>
         <Card.Description>{props.series}</Card.Description>
         <IconButton
           position="absolute"
@@ -80,9 +80,26 @@ export function SeriesConfiguration(props: SeriesConfigurationProps) {
               channel="hex"
               asChild={(inputProps) => <Input {...inputProps()} />}
             />
-            <IconButton variant="outline">
-              <ColorPicker.ValueSwatch />
-            </IconButton>
+            <div
+              style={{
+                width: "3rem",
+                height: "2.5rem",
+                "border-width": "1px",
+                display: "flex",
+                "align-items": "center",
+                "justify-content": "center",
+                "border-radius": "0.2rem",
+              }}
+            >
+              <div
+                style={{
+                  width: "1.8rem",
+                  height: "1.8rem",
+                  "border-radius": "0.2rem",
+                  background: `${selectedColor()}`,
+                }}
+              />
+            </div>
           </ColorPicker.Control>
           <ColorPicker.Area>
             <ColorPicker.AreaBackground />
@@ -108,6 +125,7 @@ export function SeriesConfiguration(props: SeriesConfigurationProps) {
             </For>
           </ColorPicker.SwatchGroup>
         </ColorPicker.Root>
+
         <div
           style={{
             display: "grid",

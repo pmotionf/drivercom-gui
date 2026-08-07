@@ -204,7 +204,7 @@ export function Legend(props: LegendProps) {
           <Portal>
             <Dialog.Backdrop />
             <Dialog.Positioner>
-              <Dialog.Content>
+              <Dialog.Content padding="0">
                 <SeriesConfiguration
                   series={props.series}
                   color={color()}
