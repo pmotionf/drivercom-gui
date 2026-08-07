@@ -1412,13 +1412,14 @@ export function Plot(props: PlotProps) {
                 height: `calc(100% - 5em)`,
                 "overflow-x": "auto",
                 "overflow-y": "auto",
+                gap: 0,
               }}
             >
               <Show when={render()}>
-                <Stack direction="row" gap="1.5">
+                <Stack direction="row" gap="0.2rem">
                   <IconButton
-                    size="sm"
-                    variant="subtle"
+                    size="xs"
+                    variant="plain"
                     onClick={() => {
                       const prevSelect = getContext().selected;
                       const newVisible = !getContext()
