@@ -14,6 +14,7 @@ import {
 } from "@tabler/icons-solidjs";
 import * as ToggleGroup from "~/components/ui/toggle-group";
 import { LegendStroke } from "./Legend";
+import { css } from "styled-system/css";
 
 export type SeriesConfigurationProps = Omit<ColorPicker.RootProps, "stroke"> & {
   series: string;
@@ -155,16 +156,63 @@ export function SeriesConfiguration(props: SeriesConfigurationProps) {
                 setStroke(current_stroke);
               }
             }}
-            width="7.6rem"
+            width="10rem"
             style={{ "margin-top": "0.4rem", "grid-row": 2, "grid-column": 1 }}
           >
-            <ToggleGroup.Item value={LegendStroke[LegendStroke.Line]}>
+            <ToggleGroup.Item
+              value={LegendStroke[LegendStroke.Line]}
+              class={css({
+                background:
+                  LegendStroke[stroke()] === LegendStroke[LegendStroke.Line]
+                    ? "Background"
+                    : "gray.2",
+                padding: "0.5rem",
+                borderWidth: "1px 0px 1px 1px",
+                borderRadius: "0.3rem 0 0 0.3rem",
+                _hover: {
+                  background:
+                    LegendStroke[stroke()] === LegendStroke[LegendStroke.Line]
+                      ? "Background"
+                      : "gray.1",
+                }
+              })}
+            >
               <IconLine />
             </ToggleGroup.Item>
-            <ToggleGroup.Item value={LegendStroke[LegendStroke.Dash]}>
+            <ToggleGroup.Item value={LegendStroke[LegendStroke.Dash]}
+              class={css({
+                background:
+                  LegendStroke[stroke()] === LegendStroke[LegendStroke.Dash]
+                    ? "Background"
+                    : "gray.2",
+                padding: "0.5rem",
+                borderWidth: "1px",
+                _hover: {
+                  background:
+                    LegendStroke[stroke()] === LegendStroke[LegendStroke.Dash]
+                      ? "Background"
+                      : "gray.1",
+                }
+              })}
+            >
               <IconLineDashed />
             </ToggleGroup.Item>
-            <ToggleGroup.Item value={LegendStroke[LegendStroke.Dot]}>
+            <ToggleGroup.Item value={LegendStroke[LegendStroke.Dot]}
+              class={css({
+                background:
+                  LegendStroke[stroke()] === LegendStroke[LegendStroke.Dot]
+                    ? "Background"
+                    : "gray.2",
+                padding: "0.5rem",
+                borderWidth: "1px 1px 1px 0px",
+                borderRadius: "0 0.3rem 0.3rem 0",
+                _hover: {
+                  background:
+                    LegendStroke[stroke()] === LegendStroke[LegendStroke.Dot]
+                      ? "Background"
+                      : "gray.1",
+                }
+              })}>
               <IconPoint />
             </ToggleGroup.Item>
           </ToggleGroup.Root>
