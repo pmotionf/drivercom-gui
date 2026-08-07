@@ -1253,11 +1253,16 @@ export function Plot(props: PlotProps) {
                       }
                       bgColor={
                         cursorMode() === CursorMode.Pan
-                          ? "bg.emphasized"
-                          : lastCursorMode() === CursorMode.Pan
-                            ? "bg.subtle"
-                            : "bg.default"
+                          ? "gray.3"
+                          : "Background"
                       }
+                      _hover={{
+                        background:
+                          cursorMode() === CursorMode.Pan ? "gray.3" : "gray.2",
+                      }}
+                      padding="0.4rem"
+                      borderWidth="1px"
+                      borderRadius="0.3rem 0 0 0.3rem"
                     >
                       <IconArrowsMove />
                     </ToggleGroup.Item>
@@ -1274,11 +1279,17 @@ export function Plot(props: PlotProps) {
                       }
                       bgColor={
                         cursorMode() === CursorMode.Horizontal
-                          ? "bg.emphasized"
-                          : lastCursorMode() === CursorMode.Horizontal
-                            ? "bg.subtle"
-                            : "bg.default"
+                          ? "gray.3"
+                          : "Background"
                       }
+                      _hover={{
+                        background:
+                          cursorMode() === CursorMode.Horizontal
+                            ? "gray.3"
+                            : "gray.2",
+                      }}
+                      padding="0.4rem"
+                      borderWidth="1px 1px 1px 0px"
                     >
                       <IconArrowsMoveHorizontal />
                     </ToggleGroup.Item>
@@ -1295,11 +1306,17 @@ export function Plot(props: PlotProps) {
                       }
                       bgColor={
                         cursorMode() === CursorMode.Vertical
-                          ? "bg.emphasized"
-                          : lastCursorMode() === CursorMode.Vertical
-                            ? "bg.subtle"
-                            : "bg.default"
+                          ? "gray.3"
+                          : "Background"
                       }
+                      _hover={{
+                        background:
+                          cursorMode() === CursorMode.Vertical
+                            ? "gray.3"
+                            : "gray.2",
+                      }}
+                      padding="0.4rem"
+                      borderWidth="1px 1px 1px 0px"
                     >
                       <IconArrowsMoveVertical />
                     </ToggleGroup.Item>
@@ -1316,11 +1333,18 @@ export function Plot(props: PlotProps) {
                       }
                       bgColor={
                         cursorMode() === CursorMode.Lock
-                          ? "bg.emphasized"
-                          : lastCursorMode() === CursorMode.Lock
-                            ? "bg.subtle"
-                            : "bg.default"
+                          ? "gray.3"
+                          : "Background"
                       }
+                      _hover={{
+                        background:
+                          cursorMode() === CursorMode.Lock
+                            ? "gray.3"
+                            : "gray.2",
+                      }}
+                      padding="0.4rem"
+                      borderWidth="1px 1px 1px 0px"
+                      borderRadius="0 0.3rem 0.3rem 0"
                     >
                       <IconCrosshair />
                     </ToggleGroup.Item>
