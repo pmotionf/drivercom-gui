@@ -96,7 +96,7 @@ export const ConnectPage = (props: ConnectPageProps) => {
     <div
       style={{
         display: "flex",
-        height: "100%",
+        height: `calc(100% - 1rem)`,
       }}
     >
       {/* Connect Area */}
@@ -135,7 +135,7 @@ export const ConnectPage = (props: ConnectPageProps) => {
                 }
               }}
               type="text"
-              class={css({ backgroundColor: "bg.muted" })}
+              class={css({ backgroundColor: "gray.3" })}
               style={{
                 width: `calc(50% - 1rem)`,
                 padding: "0.2em 0.5em 0.2em 0.5em",
@@ -157,7 +157,7 @@ export const ConnectPage = (props: ConnectPageProps) => {
                   setPort(e.target.value);
                 }
               }}
-              class={css({ backgroundColor: "bg.muted" })}
+              class={css({ backgroundColor: "gray.3" })}
               style={{
                 width: "50%",
                 padding: "0.2em 0.5em 0.2em 0.5em",
