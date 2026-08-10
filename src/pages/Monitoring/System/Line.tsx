@@ -82,11 +82,7 @@ export function Line(props: LineProps) {
   const disableSetZeroButton = () => props.disableSetZeroButton;
 
   return (
-    <Accordion.Item
-      value={props.line.name!}
-      backgroundColor="bg.canvas"
-      borderBottomWidth="1px"
-    >
+    <Accordion.Item value={props.line.name!} borderBottomWidth="1px">
       <Accordion.ItemTrigger
         padding="0.6rem"
         paddingLeft="1rem"

@@ -250,7 +250,12 @@ function Monitoring() {
         width="100%"
         height="100%"
       >
-        <Splitter.Panel id={`panel`} borderWidth="0" borderRadius="0">
+        <Splitter.Panel
+          id={`panel`}
+          borderWidth="0"
+          borderRadius="0"
+          padding="0"
+        >
           <Show when={lines.length > 0}>
             <System
               lines={lines}
@@ -478,6 +483,7 @@ function Monitoring() {
             defaultValue="Connect"
             style={{ width: "100%", height: "100%" }}
             variant="line"
+            gap="0"
           >
             <Tabs.List
               gap="0"
@@ -624,10 +630,8 @@ function Monitoring() {
               style={{
                 width: "100%",
                 height: "100%",
-                padding: "0.5rem 1rem 0rem 1rem ",
+                padding: "0em 0.5rem 0rem 0.5rem ",
               }}
-              paddingTop={"0rem"}
-              paddingBottom={"0rem"}
             >
               <CarrierPage
                 carrierStates={carrierStates()}
