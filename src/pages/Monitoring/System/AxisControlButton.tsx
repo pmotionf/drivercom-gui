@@ -106,7 +106,7 @@ export function AxisControlButton(props: AxisControlProps & IconButtonProps) {
           </IconButton>
         </Popover.Trigger>
         <Popover.Positioner>
-          <Popover.Content width="12rem">
+          <Popover.Content width="fit-content" padding="0.5rem">
             <Popover.Arrow>
               <Popover.ArrowTip />
             </Popover.Arrow>

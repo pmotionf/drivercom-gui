@@ -63,7 +63,8 @@ export function LineControlButton(props: LineControlProps & IconButtonProps) {
       </Popover.Trigger>
       <Popover.Positioner>
         <Popover.Content
-          width="max-content"
+          width="fit-content"
+          padding="0.5rem"
           onClick={(e) => e.stopPropagation()}
           direction={"column"}
         >
