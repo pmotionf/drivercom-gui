@@ -45,6 +45,28 @@ export default defineConfig({
 
       semanticTokens: {
         colors: {
+          accent: {
+            customGreen: {
+              value: {
+                _light: "#a8dcab",
+                _dark: "#0f6b4c",
+              },
+            },
+            customRed: {
+              value: {
+                _light: "#fdc8c8",
+                _dark: "#bd2f31",
+              },
+            },
+            customOrange: {
+              value: {
+                _light: "#F7ce82",
+                _dark: "#b4820F",
+              },
+            },
+
+          },
+
           fg: {
             default: {
               value: {
@@ -85,7 +107,8 @@ export default defineConfig({
           indigo: indigo,
           gray: neutral,
           red: red,
-          green: green
+          green: green,
+
         },
 
         shadows: shadows,
@@ -102,7 +125,8 @@ export default defineConfig({
           l3: {
             value: "{radii.md}"
           }
-        }
+        },
+
       }
     },
 
