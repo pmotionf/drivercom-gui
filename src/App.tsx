@@ -456,13 +456,14 @@ function App(props: RouteSectionProps) {
 
                 if (tabStoreKey.length > 0) {
                   const id = crypto.randomUUID();
-                  const tabName = event.payload.paths[0]
-                    .replaceAll("\\", "/")
-                    .match(/[^?!//]+$/!)!
-                    .toString()
-                    .split(".")
-                    .shift();
                   const filePath = event.payload.paths[0].replaceAll("\\", "/");
+                  const parseFileName = filePath.split("/").pop()!;
+                  const fileExtentionStartIndex =
+                    parseFileName.lastIndexOf(".");
+                  const tabName = parseFileName.slice(
+                    0,
+                    fileExtentionStartIndex,
+                  );
 
                   let newTab: TabContext | null = null;
                   if (page() === Pages.Configuration) {
