@@ -39,7 +39,7 @@ import { AccordionStates } from "./ConfigForm/ConfigForm";
 import JSON5 from "json5";
 import { Spinner } from "~/components/ui/spinner";
 import { IconButton } from "~/components/ui/icon-button";
-import { toaster } from "~/services/Toaster";
+import { toaster } from "~/components/ui/toast.tsx";
 import * as Menu from "~/components/ui/menu";
 import { ConfigType } from "src-tauri/generated/config/ConfigType";
 import { Button } from "~/components/ui/button";

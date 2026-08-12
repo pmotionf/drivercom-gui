@@ -31,7 +31,7 @@ const Indicator = (props: IconProps) => {
   return (
     <Show when={StatusIcon()}>
       {(Icon_) => (
-        <Icon data-type={toast().type} {...props}>
+        <Icon size = "xl" data-type={toast().type} {...props}>
           <Icon_ />
         </Icon>
       )}
@@ -40,10 +40,11 @@ const Indicator = (props: IconProps) => {
 }
 
 export const toaster = createToaster({
-  placement: 'bottom-end',
+  placement: "top-end",
   pauseOnPageIdle: true,
   overlap: true,
   max: 5,
+  gap: 24
 })
 
 export const Toaster = () => {

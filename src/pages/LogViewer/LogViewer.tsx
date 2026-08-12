@@ -4,7 +4,7 @@ import { TabContext, TabList } from "~/components/Tab/TabList";
 import { Pages, tabStore } from "~/store/GlobalState";
 import { LogViewerTabPageContent } from "./LogViewerTabPageContent";
 import { open } from "@tauri-apps/plugin-dialog";
-import { toaster } from "~/services/Toaster";
+import { toaster } from "~/components/ui/toast.tsx";
 
 function LogViewer() {
   async function openFileDialog(): Promise<{

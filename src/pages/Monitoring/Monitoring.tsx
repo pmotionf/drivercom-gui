@@ -29,7 +29,7 @@ import { StatusPage } from "./MonitoringSidebar/StatusPage.tsx";
 import { reconcile } from "solid-js/store";
 import CarrierPage, { CarrierState } from "./MonitoringSidebar/CarrierPage.tsx";
 import { load } from "@tauri-apps/plugin-store";
-import { toaster } from "~/services/Toaster.ts";
+import { toaster } from "~/components/ui/toast.tsx";
 import { Request_Direction } from "~/proto/mmc/command_pb.ts";
 import { Control } from "~/proto/mmc/control_pb.ts";
 
