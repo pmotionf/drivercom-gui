@@ -268,7 +268,7 @@ export class ServerHandler implements IServerHandler {
           value: {
             start: axisId,
             end: axisId,
-            $typeName: "Range",
+            $typeName: "root.Range",
           },
         },
         $typeName: "mmc.command.Request.Deinitialize",
@@ -530,7 +530,7 @@ export class ServerHandler implements IServerHandler {
       const request: Request_StopPull = {
         line: line,
         axes: {
-          $typeName: "Range",
+          $typeName: "root.Range",
           start: axisId,
           end: axisId,
         },
@@ -665,7 +665,7 @@ export class ServerHandler implements IServerHandler {
       const request: Request_StopPush = {
         line: line,
         axes: {
-          $typeName: "Range",
+          $typeName: "root.Range",
           start: axisId,
           end: axisId,
         },
