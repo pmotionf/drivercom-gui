@@ -55,6 +55,7 @@ export type PlotProps = JSX.HTMLAttributes<HTMLDivElement> & {
   name: string;
   header: string[];
   series: number[][];
+  legendPanelMinWidth?: number;
   enumMapping?: Map<string, Map<number, string>>;
   context?: PlotContext;
   onContextChange?: (context: PlotContext) => void;
@@ -116,12 +117,10 @@ export function Plot(props: PlotProps) {
 
   const group = () => props.group ?? props.id ?? "";
 
-  const DEFAULT_LEGEND_WIDTH_PX = 280;
-  const [splitterWidthPx, setSplitterWidthPx] = createSignal(0);
-  const [legendMinWidthPx, setLegendMinWidthPx] = createSignal(0);
-  const [localLegendPanelWidthPx, setLocalLegendPanelWidthPx] = createSignal(
-    DEFAULT_LEGEND_WIDTH_PX,
+  const [splitterWidthPx, setSplitterWidthPx] = createSignal(
+    props.legendPanelMinWidth ?? 0,
   );
+  const [localLegendPanelWidthPx, setLocalLegendPanelWidthPx] = createSignal(0);
 
   const legendPanelWidthPx = () =>
     props.legendPanelWidthPx ?? localLegendPanelWidthPx();
@@ -140,10 +139,7 @@ export function Plot(props: PlotProps) {
 
   const updateLegendMeasurements = () => {
     const splitterWidth = splitterRootRef?.getBoundingClientRect().width ?? 0;
-    const toolboxWidth = toolboxRef?.getBoundingClientRect().width ?? 0;
-
     if (splitterWidth > 0) setSplitterWidthPx(splitterWidth);
-    if (toolboxWidth > 0) setLegendMinWidthPx(Math.ceil(toolboxWidth + 15));
   };
 
   onMount(() => {
@@ -172,7 +168,7 @@ export function Plot(props: PlotProps) {
     if (rootWidthPx <= 0) return requestedWidthPx;
 
     return Math.min(
-      Math.max(requestedWidthPx, legendMinWidthPx()),
+      Math.max(requestedWidthPx, props.legendPanelMinWidth ?? 0),
       rootWidthPx * 0.8,
     );
   });
@@ -196,7 +192,10 @@ export function Plot(props: PlotProps) {
     }
 
     const requestedWidthPx = (sizePercent / 100) * rootWidthPx;
-    const nextWidthPx = Math.max(requestedWidthPx, legendMinWidthPx());
+    const nextWidthPx = Math.max(
+      requestedWidthPx,
+      props.legendPanelMinWidth ?? 0,
+    );
 
     props.onLegendShrinkChange?.(false);
     updateLegendPanelWidthPx(nextWidthPx);
@@ -211,7 +210,9 @@ export function Plot(props: PlotProps) {
     props.onLegendShrinkChange?.(false);
     const nextWidthPx = legendPanelWidthPx();
 
-    updateLegendPanelWidthPx(Math.max(nextWidthPx, legendMinWidthPx()));
+    updateLegendPanelWidthPx(
+      Math.max(nextWidthPx, props.legendPanelMinWidth ?? 0),
+    );
   };
 
   const [ctx, setCtx] = createStore(
