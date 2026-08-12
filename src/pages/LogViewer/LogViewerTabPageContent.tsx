@@ -631,6 +631,8 @@ export function LogViewerTabPageContent() {
   };
 
   const plotToolBoxWidth = "12em";
+  const tablist = document.querySelector(`[data-part = "list"]`);
+  const tabListHeight = tablist!.getBoundingClientRect().height;
 
   return (
     <>
@@ -742,8 +744,10 @@ export function LogViewerTabPageContent() {
                             const top = clientRec.top;
                             const bottom = clientRec.bottom;
                             if (top < clientY && clientY < bottom) {
-                              setOverlayTop(clientRec.top);
-                              setOverlayBottom(clientRec.bottom);
+                              setOverlayTop(clientRec.top - tabListHeight);
+                              setOverlayBottom(
+                                clientRec.bottom - tabListHeight,
+                              );
                               dragIndex = num;
                               break;
                             }
@@ -1093,7 +1097,7 @@ export function LogViewerTabPageContent() {
           opacity={"0.1"}
           style={{
             position: "absolute",
-            top: `max(${overlayTop()}px, 3rem)`,
+            top: `max(${overlayTop()}px, ${tabListHeight}px)`,
             width: `${document.getElementById(`${divId}:${dragOverIndex()}`)!.offsetWidth}px`,
             left: `${document.getElementById(`${divId}:${dragOverIndex()}`)!.offsetLeft}px`,
             height: `calc(${overlayBottom()!}px - max(${overlayTop()}px, 3rem)) `,
@@ -1104,7 +1108,7 @@ export function LogViewerTabPageContent() {
       <Show when={typeof dragging() === "number"}>
         <Portal>
           <Stack
-            background={"bg.default"}
+            background={"gray.1"}
             borderRadius={"0.2em"}
             style={{
               position: "absolute",
