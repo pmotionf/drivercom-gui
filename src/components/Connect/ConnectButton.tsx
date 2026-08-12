@@ -16,7 +16,7 @@ import { Tooltip } from "~/components/ui/tooltip.tsx";
 import { Button } from "~/components/ui/button.tsx";
 import { csvFileDownloads } from "../../store/GlobalState.ts";
 import { DownloadStatus } from "~/components/DownloadList.tsx";
-import { toaster } from "~/services/Toaster.ts";
+import { toaster } from "~/components/ui/toast.tsx";
 import type { ComponentProps } from "solid-js";
 
 export type ConnectButtonProps = {

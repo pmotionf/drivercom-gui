@@ -18,7 +18,7 @@ import { createStore } from "solid-js/store";
 import { PanelContext } from "../Panel/Panel.tsx";
 import { ConfigTabPage } from "~/pages/Configuration/ConfigTabContent.tsx";
 import { createSignal } from "solid-js";
-import { toaster } from "~/services/Toaster.ts";
+import { toaster } from "~/components/ui/toast.tsx";
 import { LoggingPageTabContentType } from "~/pages/Logging/Logging.tsx";
 
 type ValueOf<Obj> = Obj[keyof Obj];

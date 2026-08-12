@@ -35,7 +35,7 @@ import { FileHandler } from "../../services/FileHandler.ts";
 import { DownloadStates, DownloadStatus } from "~/components/DownloadList.tsx";
 import JSON5 from "json5";
 import { load } from "@tauri-apps/plugin-store";
-import { toaster } from "~/services/Toaster.ts";
+import { toaster } from "~/components/ui/toast.tsx";
 import { TabPageContext } from "~/components/Tab/TabList.tsx";
 import * as Menu from "~/components/ui/menu.tsx";
 import { ConnectButton } from "~/components/Connect/ConnectButton.tsx";

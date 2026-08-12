@@ -1,6 +1,6 @@
 import { Command } from "@tauri-apps/plugin-shell";
 import { portCommands } from "~/store/GlobalState";
-import { toaster } from "./Toaster";
+import { toaster } from "~/components/ui/toast.tsx";
 import JSON5 from "json5";
 import { ConfigType } from "src-tauri/generated/config/ConfigType";
 
