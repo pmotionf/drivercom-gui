@@ -632,7 +632,6 @@ export function LogViewerTabPageContent() {
 
   const plotToolBoxWidth = "13.5rem";
   const tablist = document.querySelector(`[data-part = "list"]`);
-  const tabListHeight = tablist!.getBoundingClientRect().height;
 
   return (
     <>
@@ -770,6 +769,8 @@ export function LogViewerTabPageContent() {
                             const top = clientRec.top;
                             const bottom = clientRec.bottom;
                             if (top < clientY && clientY < bottom) {
+                              const tabListHeight =
+                                tablist!.getBoundingClientRect().height;
                               setOverlayTop(clientRec.top - tabListHeight);
                               setOverlayBottom(
                                 clientRec.bottom - tabListHeight,
@@ -1111,7 +1112,7 @@ export function LogViewerTabPageContent() {
           opacity={"0.1"}
           style={{
             position: "absolute",
-            top: `max(${overlayTop()}px, ${tabListHeight}px)`,
+            top: `max(${overlayTop()}px, ${tablist!.getBoundingClientRect().height}px)`,
             width: `${document.getElementById(`${divId}:${dragOverIndex()}`)!.offsetWidth}px`,
             left: `${document.getElementById(`${divId}:${dragOverIndex()}`)!.offsetLeft}px`,
             height: `calc(${overlayBottom()!}px - max(${overlayTop()}px, 3rem)) `,
