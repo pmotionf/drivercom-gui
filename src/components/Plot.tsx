@@ -173,15 +173,6 @@ export function Plot(props: PlotProps) {
     );
   });
 
-  const resolvedLegendPanelSize = createMemo(() => {
-    if (props.legendShrink) return 0;
-
-    const rootWidthPx = splitterWidthPx();
-    if (rootWidthPx <= 0) return 20;
-
-    return (resolvedLegendWidthPx() / rootWidthPx) * 100;
-  });
-
   const setLegendPanelSize = (sizePercent: number) => {
     const rootWidthPx = splitterWidthPx();
 
@@ -661,21 +652,41 @@ export function Plot(props: PlotProps) {
     }
   };
 
+  const rootObserver = new ResizeObserver((entry) => {
+    const element = entry[0];
+    const rect = element.contentRect;
+    setRootWidth(rect.width);
+  });
+
+  const [rootWidth, setRootWidth] = createSignal<number>(0);
+
+  const convertPixelToPercent = (rootWidth: number, elementWidth: number) => {
+    return (elementWidth / rootWidth) * 100;
+  };
+
   return (
     <>
       <Splitter.Root
         {...rest}
         ref={(el) => {
           splitterRootRef = el;
+          rootObserver.observe(splitterRootRef);
           observeForLegendMinSize(el);
         }}
         background="bg.default"
         id={`splitter-${props.id}`}
-        panels={[
-          { id: `plot-${props.id}` },
-          { id: `legend-${props.id}`},
+        panels={[{ id: `plot-${props.id}` }, { id: `legend-${props.id}` }]}
+        size={[
+          100 -
+            convertPixelToPercent(
+              rootWidth(),
+              props.legendPanelWidthPx ?? props.legendPanelMinWidth ?? 0,
+            ),
+          convertPixelToPercent(
+            rootWidth(),
+            props.legendPanelWidthPx ?? props.legendPanelMinWidth ?? 0,
+          ),
         ]}
-        size={[100 - resolvedLegendPanelSize(), resolvedLegendPanelSize()]}
         onResizeStart={() => {
           updateLegendMeasurements();
         }}
@@ -690,8 +701,13 @@ export function Plot(props: PlotProps) {
           }}
           id={`plot-${props.id}`}
           borderWidth="0"
+          gap="0"
+          padding="0"
         >
-          <div id={props.id} style={{ width: "100%", height: "100%" }}>
+          <div
+            id={props.id}
+            style={{ width: `calc(100% - 2.5rem)`, height: "100%" }}
+          >
             <SolidUplot
               onCreate={(e) => {
                 plot = e as uPlot;
@@ -1133,9 +1149,6 @@ export function Plot(props: PlotProps) {
           </div>
 
           <style>{selection_css}</style>
-        </Splitter.Panel>
-
-        <Stack direction="row" height="100%" gap="0">
           <IconButton
             size="sm"
             padding="0"
@@ -1153,15 +1166,16 @@ export function Plot(props: PlotProps) {
               <IconChevronLeftPipe />
             </Show>
           </IconButton>
-          <Show when={!props.legendShrink}>
-            <Splitter.ResizeTrigger
-              id={`plot-${props.id}:legend-${props.id}`}
-              opacity="0%"
-              onMouseEnter={(e) => (e.currentTarget.style.opacity = "100%")}
-              onMouseLeave={(e) => (e.currentTarget.style.opacity = "0%")}
-            />
-          </Show>
-        </Stack>
+        </Splitter.Panel>
+        <Show when={!props.legendShrink}>
+          <Splitter.ResizeTrigger
+            id={`plot-${props.id}:legend-${props.id}`}
+            opacity="0%"
+            onMouseEnter={(e) => (e.currentTarget.style.opacity = "100%")}
+            onMouseLeave={(e) => (e.currentTarget.style.opacity = "0%")}
+          />
+        </Show>
+
         <Show when={!props.legendShrink}>
           <Splitter.Panel
             ref={(el) => {
@@ -1175,7 +1189,7 @@ export function Plot(props: PlotProps) {
               height: "100%",
               padding: "0",
               "align-items": "normal",
-              "border-radius" : "0"
+              "border-radius": "0",
             }}
             onMouseEnter={() => {
               setEnterSplitter(true);
@@ -1194,7 +1208,7 @@ export function Plot(props: PlotProps) {
               style={{
                 height: "2.5em",
                 width: "100%",
-                "padding-right" : "1.8rem"
+                "padding-right": "1.8rem",
               }}
             >
               <Stack
@@ -1204,12 +1218,11 @@ export function Plot(props: PlotProps) {
                 }}
                 direction="row"
                 id={`toolBox:${props.id}`}
-                minWidth = "13rem"
-
+                minWidth="13rem"
               >
-                <Tooltip content="Zoom Reset" >
+                <Tooltip content="Zoom Reset">
                   <IconButton
-                    marginRight = "0.2rem"
+                    marginRight="0.2rem"
                     variant="outline"
                     disabled={zoomReset()}
                     onclick={() => {
