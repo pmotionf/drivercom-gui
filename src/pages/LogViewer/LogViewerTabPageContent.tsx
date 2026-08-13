@@ -158,7 +158,10 @@ export function LogViewerTabPageContent() {
     );
   };
 
-  const setLegendPanelWidthPx = (tabIndex: number, widthPx: number) => {
+  const setLegendPanelWidthPx = (
+    tabIndex: number,
+    widthPx: number | undefined,
+  ) => {
     return tabStore.get(tabPageProps.key)?.[1](
       "tabContext",
       tabIndex,
@@ -470,10 +473,9 @@ export function LogViewerTabPageContent() {
     return plots[index].selected.every((b) => !b);
   };
 
-  const [legendPanelWidthPx, setLegendPanelWidthPxSignal] =
-    createSignal<number>(
-      getTabContext(tabPageProps.tabId).tabCtx.legendPanelWidthPx ?? 280,
-    );
+  const [legendPanelWidthPx, setLegendPanelWidthPxSignal] = createSignal<
+    number | undefined
+  >(getTabContext(tabPageProps.tabId).tabCtx.legendPanelWidthPx);
 
   createEffect(
     on(
