@@ -173,25 +173,6 @@ export function Plot(props: PlotProps) {
     );
   });
 
-  const setLegendPanelSize = (sizePercent: number) => {
-    const rootWidthPx = splitterWidthPx();
-
-    if (rootWidthPx <= 0) return;
-    if (sizePercent <= 1) {
-      collapseLegend();
-      return;
-    }
-
-    const requestedWidthPx = (sizePercent / 100) * rootWidthPx;
-    const nextWidthPx = Math.max(
-      requestedWidthPx,
-      props.legendPanelMinWidth ?? 0,
-    );
-
-    props.onLegendShrinkChange?.(false);
-    updateLegendPanelWidthPx(nextWidthPx);
-  };
-
   const collapseLegend = () => {
     updateLegendPanelWidthPx(resolvedLegendWidthPx());
     props.onLegendShrinkChange?.(true);
@@ -664,14 +645,16 @@ export function Plot(props: PlotProps) {
     return (elementWidth / rootWidth) * 100;
   };
 
+  const convertPercentToPixel = (percent: number, rootWidth: number) => {
+    return rootWidth * percent * 0.01;
+  };
+
   return (
     <>
       <Splitter.Root
         {...rest}
         ref={(el) => {
-          splitterRootRef = el;
-          rootObserver.observe(splitterRootRef);
-          observeForLegendMinSize(el);
+          rootObserver.observe(el);
         }}
         background="bg.default"
         id={`splitter-${props.id}`}
@@ -691,7 +674,26 @@ export function Plot(props: PlotProps) {
           updateLegendMeasurements();
         }}
         onResize={(details) => {
-          setLegendPanelSize(details.size[1]);
+          const legendPanelSize = convertPercentToPixel(
+            details.size[1],
+            rootWidth(),
+          );
+          if (props.legendPanelMinWidth) {
+            const legendPanelMinWidth = props.legendPanelMinWidth;
+            if (legendPanelSize > legendPanelMinWidth) {
+              props.onLegendPanelWidthPx?.(legendPanelSize);
+              props.onLegendShrinkChange?.(false);
+            } else {
+              const legendMinWidhtSizeQuater = legendPanelMinWidth * 0.25;
+              if (legendPanelSize > legendMinWidhtSizeQuater) {
+                props.onLegendPanelWidthPx?.(legendPanelMinWidth);
+                props.onLegendShrinkChange?.(false);
+              } else {
+                props.onLegendPanelWidthPx?.(0);
+                props.onLegendShrinkChange?.(true);
+              }
+            }
+          }
         }}
       >
         <Splitter.Panel
