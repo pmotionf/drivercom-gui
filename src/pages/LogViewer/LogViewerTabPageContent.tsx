@@ -630,7 +630,7 @@ export function LogViewerTabPageContent() {
     scrollContainer.scrollTo({ top: movement });
   };
 
-  const plotToolBoxWidth = "13.6rem";
+  const plotToolBoxWidth = "13.5rem";
   const tablist = document.querySelector(`[data-part = "list"]`);
   const tabListHeight = tablist!.getBoundingClientRect().height;
 

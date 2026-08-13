@@ -672,8 +672,8 @@ export function Plot(props: PlotProps) {
         background="bg.default"
         id={`splitter-${props.id}`}
         panels={[
-          { id: `plot-${props.id}`, minSize: 0 },
-          { id: `legend-${props.id}`, minSize: 0 },
+          { id: `plot-${props.id}` },
+          { id: `legend-${props.id}`},
         ]}
         size={[100 - resolvedLegendPanelSize(), resolvedLegendPanelSize()]}
         onResizeStart={() => {
@@ -1175,7 +1175,7 @@ export function Plot(props: PlotProps) {
               height: "100%",
               padding: "0",
               "align-items": "normal",
-              "padding-right": "0.2em",
+              "border-radius" : "0"
             }}
             onMouseEnter={() => {
               setEnterSplitter(true);
@@ -1194,6 +1194,7 @@ export function Plot(props: PlotProps) {
               style={{
                 height: "2.5em",
                 width: "100%",
+                "padding-right" : "1.8rem"
               }}
             >
               <Stack
@@ -1203,11 +1204,12 @@ export function Plot(props: PlotProps) {
                 }}
                 direction="row"
                 id={`toolBox:${props.id}`}
-                width="15em"
-                gap="1em"
+                minWidth = "13rem"
+
               >
-                <Tooltip content="Zoom Reset">
+                <Tooltip content="Zoom Reset" >
                   <IconButton
+                    marginRight = "0.2rem"
                     variant="outline"
                     disabled={zoomReset()}
                     onclick={() => {
