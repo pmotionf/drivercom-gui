@@ -18,6 +18,7 @@ import { csvFileDownloads } from "../../store/GlobalState.ts";
 import { DownloadStatus } from "~/components/DownloadList.tsx";
 import { toaster } from "~/components/ui/toast.tsx";
 import type { ComponentProps } from "solid-js";
+import { css } from "styled-system/css/css";
 
 export type ConnectButtonProps = {
   portId: string;
@@ -87,7 +88,8 @@ export function ConnectButton(props: ConnectButtonProps) {
     <Popover.Root positioning={{ placement: "bottom-start" }}>
       <Popover.Trigger maxWidth="min-content" gap="" padding="0" {...props}>
         <Tooltip
-          content={<Show when={props.portId.length !== 0}>{props.portId}</Show>}
+          disabled={props.portId.length <= 0}
+          content={<Show when={props.portId.length > 0}>{props.portId}</Show>}
         >
           <IconButton
             {...(props.buttonProps
@@ -110,7 +112,7 @@ export function ConnectButton(props: ConnectButtonProps) {
       </Popover.Trigger>
       <Popover.Positioner>
         <Popover.Content
-          padding="0.5em"
+          padding="0.5rem"
           width="100%"
           maxHeight="11em"
           minWidth="16em"
@@ -167,58 +169,73 @@ export function ConnectButton(props: ConnectButtonProps) {
               <For each={portList()}>
                 {(port) => (
                   <Button
-                    style={{
+                    class={css({
                       width: "100%",
-                      "flex-direction": "row",
-                      "font-weight": "normal",
+                      flexDirection: "row",
+                      fontWeight: "normal",
                       gap: "0",
                       padding: "0",
-                      "align-items": "left",
-                    }}
+                      justifyContent: "left",
+                    })}
                     variant="plain"
                     onClick={() => {
                       props.onPortIdChange?.(port.id);
                     }}
                   >
-                    <Tooltip content={port.id}>
-                      <Text
-                        style={{
-                          width: "100%",
-                          "text-align": "left",
-                          "text-overflow": "ellipsis",
-                          overflow: "hidden",
-                          "white-space": "nowrap",
-                          "padding-left": "0.5em",
-                        }}
-                        textStyle="sm"
-                      >
-                        {port.id}
-                      </Text>
-                    </Tooltip>
-                    <Tooltip content={port.version}>
-                      <Text
-                        style={{
-                          width: "100%",
-                          "text-align": "left",
-                          "text-overflow": "ellipsis",
-                          overflow: "hidden",
-                          "white-space": "nowrap",
-                          "padding-left": "0.5em",
-                          opacity: "0.5",
-                        }}
-                        textStyle="sm"
-                      >
-                        {port.version}
-                      </Text>
-                    </Tooltip>
+                    <div
+                      style={{
+                        width: `50%`,
+                        "justify-content": "left",
+                        display: "flex",
+                      }}
+                    >
+                      <Tooltip content={port.id}>
+                        <Text
+                          style={{
+                            width: "100%",
+                            "text-align": "left",
+                            "text-overflow": "ellipsis",
+                            overflow: "hidden",
+                            "white-space": "nowrap",
+                            "padding-left": "0.5rem",
+                          }}
+                          textStyle="sm"
+                        >
+                          {port.id}
+                        </Text>
+                      </Tooltip>
+                    </div>
+                    <div
+                      style={{
+                        width: `calc(50% - 2.5rem)`,
+                        "justify-content": "left",
+                        display: "flex",
+                      }}
+                    >
+                      <Tooltip content={port.version}>
+                        <Text
+                          style={{
+                            width: "100%",
+                            "text-align": "left",
+                            "text-overflow": "ellipsis",
+                            overflow: "hidden",
+                            "white-space": "nowrap",
+                            opacity: "0.5",
+                          }}
+                          textStyle="sm"
+                        >
+                          {port.version}
+                        </Text>
+                      </Tooltip>
+                    </div>
                     <Show
                       when={port.id === props.portId}
-                      fallback={<div style={{ width: "3em" }} />}
+                      fallback={<div style={{ width: "2.5rem" }} />}
                     >
                       <IconButton
                         size="sm"
-                        width="3em"
-                        borderRadius="3em"
+                        width="2.5rem"
+                        borderRadius="3rem"
                         onClick={(e) => {
                           e.stopPropagation();
                           props.onPortIdChange?.("");
