@@ -610,7 +610,7 @@ export function LoggingTabContent() {
       toaster.create({
         title: "Communication Success",
         description: "Log saved to port successfully.",
-        type: "error",
+        type: "success",
       });
       const logStatus = await getCurrentLogStatus(portId);
       setCurrentLogStatus(logStatus.logStatus);
