@@ -158,18 +158,17 @@ export function LogViewerTabPageContent() {
     );
   };
 
-  const setLegendPanelWidthPx = (
-    tabIndex: number,
-    widthPx: number | undefined,
-  ) => {
-    return tabStore.get(tabPageProps.key)?.[1](
-      "tabContext",
-      tabIndex,
-      "tabPage",
-      "logViewerTabPage",
-      "legendPanelWidthPx",
-      widthPx,
-    );
+  const setLegendPanelWidthPx = (tabIndex: number, widthPx: number | null) => {
+    if (widthPx) {
+      return tabStore.get(tabPageProps.key)?.[1](
+        "tabContext",
+        tabIndex,
+        "tabPage",
+        "logViewerTabPage",
+        "legendPanelWidthPx",
+        widthPx,
+      );
+    }
   };
 
   const setLegendShrink = (tabIndex: number, newStatus: boolean) => {
@@ -474,8 +473,8 @@ export function LogViewerTabPageContent() {
   };
 
   const [legendPanelWidthPx, setLegendPanelWidthPxSignal] = createSignal<
-    number | undefined
-  >(getTabContext(tabPageProps.tabId).tabCtx.legendPanelWidthPx);
+    number | null
+  >(getTabContext(tabPageProps.tabId).tabCtx.legendPanelWidthPx ?? null);
 
   createEffect(
     on(
@@ -483,7 +482,7 @@ export function LogViewerTabPageContent() {
       () => {
         setLegendPanelWidthPx(
           getTabContext(tabPageProps.tabId).currentIndex,
-          legendPanelWidthPx(),
+          legendPanelWidthPx() ?? null,
         );
       },
       { defer: true },
@@ -1046,7 +1045,7 @@ export function LogViewerTabPageContent() {
                       series={currentItems}
                       context={plots[index()]}
                       enumMapping={enumMappings() ? enumMappings()! : undefined}
-                      legendPanelWidthPx={legendPanelWidthPx()}
+                      legendPanelWidthPx={legendPanelWidthPx() ?? undefined}
                       onLegendPanelWidthPx={(widthPx) => {
                         setLegendPanelWidthPxSignal(widthPx);
                       }}
