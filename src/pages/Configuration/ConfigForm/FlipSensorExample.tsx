@@ -8,9 +8,15 @@ import { Tooltip } from "~/components/ui/tooltip";
 export const FlipSensorExample = () => {
   return (
     <Tooltip
+      contentProps={{
+        style: {
+          "max-width": "50rem",
+          ["--tooltip-bg" as string]: "var(--colors-gray-1)",
+        },
+      }}
       content={
         <div
-          class={css({ background: "bg.default", color: "fg.default" })}
+          class={css({ background: "gray.1", color: "fg.default" })}
           style={{ display: "flex", width: "30rem", height: "10rem" }}
         >
           <div style={{ width: "14rem", height: "9rem" }}>
