@@ -627,6 +627,11 @@ export function Plot(props: PlotProps) {
           <div
             id={props.id}
             style={{ width: `calc(100% - 2.5rem)`, height: "100%" }}
+            onMouseLeave={() => {
+              if (cursorMode() !== CursorMode.Lock) {
+                setCursorIdx(null)
+              }
+            }}
           >
             <SolidUplot
               onCreate={(e) => {
@@ -1118,7 +1123,7 @@ export function Plot(props: PlotProps) {
             <Stack
               direction="row-reverse"
               style={{
-                height: "2.5em",
+                height: "2.3rem",
                 width: "100%",
                 "padding-right": "1.8rem",
               }}
@@ -1278,16 +1283,18 @@ export function Plot(props: PlotProps) {
             </Stack>
 
             <Stack
-              width={`calc(100% - 1em)`}
+              width={`calc(100% - 1rem)`}
               height={"2.5em"}
               direction="row"
               marginTop={"0.5em"}
+              paddingLeft="0.8rem"
+              paddingRight = "1rem"
             >
               <Stack
                 width="100%"
                 direction="row"
                 borderWidth="1px"
-                borderRadius="1em"
+                borderRadius="0.4rem"
                 paddingLeft="0.5em"
                 height="2em"
                 marginTop="0.3em"
@@ -1332,6 +1339,7 @@ export function Plot(props: PlotProps) {
               <Tooltip content="Select">
                 <IconButton
                   variant="outline"
+                  size = "xs"
                   onClick={() => {
                     if (showLegendCheckBox()) {
                       setContext()(
@@ -1361,6 +1369,7 @@ export function Plot(props: PlotProps) {
                 "overflow-x": "auto",
                 "overflow-y": "auto",
                 gap: 0,
+                "padding-left" : "0.5rem"
               }}
             >
               <Show when={render()}>
