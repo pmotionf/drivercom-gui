@@ -274,7 +274,10 @@ export function ConfigTabContent() {
 
   const saveAsFile = async () => {
     try {
-      const path = await fileHandler.saveFileDialog("json5", getFilePath()!);
+      const path = await fileHandler.saveFileDialog(
+        "json5",
+        getFilePath() ?? "",
+      );
       await fileHandler.writeFile(
         path,
         getConfigForm()!,
@@ -285,10 +288,10 @@ export function ConfigTabContent() {
         setOriginalFile(JSON5.parse(JSON5.stringify(getConfigForm())));
         setRender(true);
       }
-    } catch {
+    } catch (e) {
       toaster.create({
         title: "Invalid File",
-        description: "The file is invalid.",
+        description: `${e}`,
         type: "error",
       });
       return;
@@ -324,7 +327,7 @@ export function ConfigTabContent() {
     toaster.create({
       title: "Communication Success",
       description: "Configuration saved to port successfully.",
-      type: "error",
+      type: "success",
     });
   };
 
