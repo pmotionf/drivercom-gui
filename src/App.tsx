@@ -780,7 +780,7 @@ function App(props: RouteSectionProps) {
             </Popover.Trigger>
             <Portal>
               <Popover.Positioner>
-                <Popover.Content background={"bg.default"} padding="0.5rem">
+                <Popover.Content background={"gray.1"} padding="0.5rem">
                   <Popover.Arrow>
                     <Popover.ArrowTip />
                   </Popover.Arrow>

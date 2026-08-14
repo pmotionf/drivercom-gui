@@ -260,7 +260,7 @@ export const DownloadList = (props: JSX.HTMLAttributes<HTMLDivElement>) => {
     <Show when={openPopover()}>
       <div {...props}>
         <div
-          class={css({ background: "bg.default", boxShadow: "md" })}
+          class={css({ background: "gray.1", boxShadow: "md" })}
           style={{
             width: "16em",
             "max-height": "15em",
