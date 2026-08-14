@@ -40,6 +40,7 @@ import { TabPageContext } from "~/components/Tab/TabList.tsx";
 import * as Menu from "~/components/ui/menu.tsx";
 import { ConnectButton } from "~/components/Connect/ConnectButton.tsx";
 import { getConfigFromPort } from "~/services/PortService.ts";
+import { Portal } from "solid-js/web";
 
 enum LogButton {
   Start,
@@ -796,37 +797,42 @@ export function LoggingTabContent() {
                           <IconChevronRight />
                         </Menu.TriggerItem>
                         <Show when={recentLogFilePaths().length >= 1}>
-                          <Menu.Positioner>
-                            <Menu.Content>
-                              <For each={recentLogFilePaths()}>
-                                {(filePath) => {
-                                  if (filePath.length < 1) return;
-                                  const parseFilePath = filePath
-                                    .replaceAll("\\", "/")
-                                    .split("/");
-                                  const fileName = parseFilePath.pop();
-                                  const restFilePath = parseFilePath
-                                    .slice(0 - 1)
-                                    .join("/");
-                                  return (
-                                    <Menu.Item
-                                      value={filePath}
-                                      onClick={async () =>
-                                        await readLogFile(filePath)
-                                      }
-                                    >
-                                      <div>
-                                        <Text>{fileName}</Text>
-                                        <Text textStyle="xs" fontWeight="light">
-                                          {restFilePath}
-                                        </Text>
-                                      </div>
-                                    </Menu.Item>
-                                  );
-                                }}
-                              </For>
-                            </Menu.Content>
-                          </Menu.Positioner>
+                          <Portal>
+                            <Menu.Positioner>
+                              <Menu.Content>
+                                <For each={recentLogFilePaths()}>
+                                  {(filePath) => {
+                                    if (filePath.length < 1) return;
+                                    const parseFilePath = filePath
+                                      .replaceAll("\\", "/")
+                                      .split("/");
+                                    const fileName = parseFilePath.pop();
+                                    const restFilePath = parseFilePath
+                                      .slice(0 - 1)
+                                      .join("/");
+                                    return (
+                                      <Menu.Item
+                                        value={filePath}
+                                        onClick={async () =>
+                                          await readLogFile(filePath)
+                                        }
+                                      >
+                                        <div>
+                                          <Text>{fileName}</Text>
+                                          <Text
+                                            textStyle="xs"
+                                            fontWeight="light"
+                                          >
+                                            {restFilePath}
+                                          </Text>
+                                        </div>
+                                      </Menu.Item>
+                                    );
+                                  }}
+                                </For>
+                              </Menu.Content>
+                            </Menu.Positioner>
+                          </Portal>
                         </Show>
                       </Menu.Root>
                     </Show>

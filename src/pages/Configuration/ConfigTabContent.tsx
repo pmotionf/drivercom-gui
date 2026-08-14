@@ -46,6 +46,7 @@ import { Button } from "~/components/ui/button";
 import { css } from "styled-system/css";
 import { detectPort, getConfigFromPort, Port } from "~/services/PortService";
 import { prettierLabel } from "~/utils/PrettierLabel";
+import { Portal } from "solid-js/web";
 
 export type ConfigTabPage = {
   filePath?: string;
@@ -494,37 +495,39 @@ export function ConfigTabContent() {
                       <IconChevronRight />
                     </Menu.TriggerItem>
                     <Show when={recentConfigFilePaths().length >= 1}>
-                      <Menu.Positioner>
-                        <Menu.Content>
-                          <For each={recentConfigFilePaths()}>
-                            {(filePath) => {
-                              if (filePath.length < 1) return;
-                              const parseFilePath = filePath
-                                .replaceAll("\\", "/")
-                                .split("/");
-                              const fileName = parseFilePath.pop();
-                              const restFilePath = parseFilePath
-                                .slice(0 - 1)
-                                .join("/");
-                              return (
-                                <Menu.Item
-                                  value={filePath}
-                                  onClick={async () =>
-                                    await getConfigFromFile(filePath)
-                                  }
-                                >
-                                  <div>
-                                    <Text>{fileName}</Text>
-                                    <Text textStyle="xs" fontWeight="light">
-                                      {restFilePath}
-                                    </Text>
-                                  </div>
-                                </Menu.Item>
-                              );
-                            }}
-                          </For>
-                        </Menu.Content>
-                      </Menu.Positioner>
+                      <Portal>
+                        <Menu.Positioner>
+                          <Menu.Content>
+                            <For each={recentConfigFilePaths()}>
+                              {(filePath) => {
+                                if (filePath.length < 1) return;
+                                const parseFilePath = filePath
+                                  .replaceAll("\\", "/")
+                                  .split("/");
+                                const fileName = parseFilePath.pop();
+                                const restFilePath = parseFilePath
+                                  .slice(0 - 1)
+                                  .join("/");
+                                return (
+                                  <Menu.Item
+                                    value={filePath}
+                                    onClick={async () =>
+                                      await getConfigFromFile(filePath)
+                                    }
+                                  >
+                                    <div>
+                                      <Text>{fileName}</Text>
+                                      <Text textStyle="xs" fontWeight="light">
+                                        {restFilePath}
+                                      </Text>
+                                    </div>
+                                  </Menu.Item>
+                                );
+                              }}
+                            </For>
+                          </Menu.Content>
+                        </Menu.Positioner>
+                      </Portal>
                     </Show>
                   </Menu.Root>
                 </Show>
@@ -565,28 +568,34 @@ export function ConfigTabContent() {
               </Tooltip>
             </Menu.Trigger>
             <Show when={ports().length > 1}>
-              <Menu.Positioner>
-                <Menu.Content>
-                  <For each={ports()}>
-                    {(port) => {
-                      return (
-                        <Menu.Item
-                          onClick={async () => await getFromPort(port.id)}
-                          value={port.id}
-                          display={"flex"}
-                          flexDir={"column"}
-                          textAlign={"left"}
-                        >
-                          <Text width="100%">{port.id}</Text>
-                          <Text width="100%" fontWeight="light" textStyle="xs">
-                            {port.version}
-                          </Text>
-                        </Menu.Item>
-                      );
-                    }}
-                  </For>
-                </Menu.Content>
-              </Menu.Positioner>
+              <Portal>
+                <Menu.Positioner>
+                  <Menu.Content>
+                    <For each={ports()}>
+                      {(port) => {
+                        return (
+                          <Menu.Item
+                            onClick={async () => await getFromPort(port.id)}
+                            value={port.id}
+                            display={"flex"}
+                            flexDir={"column"}
+                            textAlign={"left"}
+                          >
+                            <Text width="100%">{port.id}</Text>
+                            <Text
+                              width="100%"
+                              fontWeight="light"
+                              textStyle="xs"
+                            >
+                              {port.version}
+                            </Text>
+                          </Menu.Item>
+                        );
+                      }}
+                    </For>
+                  </Menu.Content>
+                </Menu.Positioner>
+              </Portal>
             </Show>
           </Menu.Root>
 
