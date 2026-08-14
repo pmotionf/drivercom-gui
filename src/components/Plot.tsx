@@ -1181,9 +1181,7 @@ export function Plot(props: PlotProps) {
                           : "fg.muted"
                       }
                       bgColor={
-                        cursorMode() === CursorMode.Pan
-                          ? "gray.3"
-                          : "Background"
+                        cursorMode() === CursorMode.Pan ? "gray.3" : "gray.1"
                       }
                       _hover={{
                         background:
@@ -1209,7 +1207,7 @@ export function Plot(props: PlotProps) {
                       bgColor={
                         cursorMode() === CursorMode.Horizontal
                           ? "gray.3"
-                          : "Background"
+                          : "gray.1"
                       }
                       _hover={{
                         background:
@@ -1236,7 +1234,7 @@ export function Plot(props: PlotProps) {
                       bgColor={
                         cursorMode() === CursorMode.Vertical
                           ? "gray.3"
-                          : "Background"
+                          : "gray.1"
                       }
                       _hover={{
                         background:
@@ -1261,9 +1259,7 @@ export function Plot(props: PlotProps) {
                           : "fg.muted"
                       }
                       bgColor={
-                        cursorMode() === CursorMode.Lock
-                          ? "gray.3"
-                          : "Background"
+                        cursorMode() === CursorMode.Lock ? "gray.3" : "gray.1"
                       }
                       _hover={{
                         background:
@@ -1288,7 +1284,7 @@ export function Plot(props: PlotProps) {
               direction="row"
               marginTop={"0.5em"}
               paddingLeft="0.8rem"
-              paddingRight = "1rem"
+              paddingRight="1rem"
             >
               <Stack
                 width="100%"
@@ -1339,7 +1335,7 @@ export function Plot(props: PlotProps) {
               <Tooltip content="Select">
                 <IconButton
                   variant="outline"
-                  size = "xs"
+                  size="xs"
                   onClick={() => {
                     if (showLegendCheckBox()) {
                       setContext()(
@@ -1369,7 +1365,7 @@ export function Plot(props: PlotProps) {
                 "overflow-x": "auto",
                 "overflow-y": "auto",
                 gap: 0,
-                "padding-left" : "0.5rem"
+                "padding-left": "0.5rem",
               }}
             >
               <Show when={render()}>

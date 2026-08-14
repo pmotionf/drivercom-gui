@@ -58,7 +58,7 @@ export const PlotToolTip = (
     <Portal>
       <Stack
         id={props.cursor.plotId + "tooltip"}
-        background="bg.default"
+        background="gray.1"
         gap="0"
         style={{
           "border-radius": "0.5rem",
