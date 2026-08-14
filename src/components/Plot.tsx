@@ -629,7 +629,7 @@ export function Plot(props: PlotProps) {
             style={{ width: `calc(100% - 2.5rem)`, height: "100%" }}
             onMouseLeave={() => {
               if (cursorMode() !== CursorMode.Lock) {
-                setCursorIdx(null)
+                setCursorIdx(null);
               }
             }}
           >
