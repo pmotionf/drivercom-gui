@@ -717,6 +717,17 @@ export function LoggingTabContent() {
     }
   };
 
+  const getCurrentDateWithTime = () => {
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, "0");
+    const day = String(today.getDate()).padStart(2, "0");
+    const hours = String(today.getHours()).padStart(2, "0");
+    const minutes = String(today.getMinutes()).padStart(2, "0");
+    const date = `${year}-${month}-${day} ${hours}:${minutes}`;
+    return date;
+  };
+
   return (
     <Show when={pageKeys.has(Pages.Logging) ? true : renderLoggingForm()}>
       <div
@@ -1007,10 +1018,12 @@ export function LoggingTabContent() {
                         try {
                           if (!checkAvailablePort(getPortId())) return;
                           setDisableBtn(LogButton.Download);
+
+                          const date = getCurrentDateWithTime();
                           const path = await fileHandler.saveFileDialog(
                             "csv",
                             getFilePath(),
-                            getTitle(),
+                            getTitle() + " " + date,
                           );
                           setDisableBtn(LogButton.None);
                           await saveLogCsvFile(
