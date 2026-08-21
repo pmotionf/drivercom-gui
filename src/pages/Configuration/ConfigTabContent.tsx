@@ -708,7 +708,6 @@ export function ConfigTabContent() {
               width: "100%",
               height: `calc(100% - 2.5rem)`,
               "border-top-width": "1px",
-              padding: "0 0.5rem 0.5rem 0.5rem",
             }}
             class={css({ borderColor: "gray.7" })}
           >

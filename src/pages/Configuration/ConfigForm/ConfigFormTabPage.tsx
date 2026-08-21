@@ -47,10 +47,12 @@ export const ConfigFormTabPage = (props: ConfigFormTabPageProps) => {
       id={props.id}
       ref={ref}
       style={{
-        width: "100%",
+        width: `100%`,
         height: "100%",
         "overflow-y": "auto",
+        "overflow-x": "hidden",
         "border-width": "0",
+        padding: "0rem 1rem 0rem 1rem",
         "justify-content": "center",
         display: "flex",
       }}
