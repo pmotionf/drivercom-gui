@@ -1,7 +1,7 @@
 interface IWebsocketManger {
   connect(ip: string, port: string): Promise<void>;
   disconnect(): Promise<void>;
-  send(buffer: ArrayBuffer, timeout: number): Promise<ArrayBuffer>;
+  send(buffer: Uint8Array, timeout: number): Promise<ArrayBuffer>;
   getStatus(): number;
 }
 
@@ -117,7 +117,7 @@ export class WebsocketManger implements IWebsocketManger {
     });
   }
 
-  async send(buffer: ArrayBuffer, timeout: number): Promise<ArrayBuffer> {
+  async send(buffer: Uint8Array, timeout: number): Promise<ArrayBuffer> {
     if (this.getStatus() !== WebSocket.OPEN)
       return Promise.reject(WebSocketError.NOT_CONNECTED_TO_SERVER);
     if (this._commandPending)
