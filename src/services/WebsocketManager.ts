@@ -10,7 +10,7 @@ type IpAddress = {
   port: string | null;
 };
 
-enum WebSocketError {
+export enum WebSocketError {
   NOT_CONNECTED_TO_SERVER = "NOT_CONNECTED_TO_SERVER",
   SEND_FAILED = "SEND_FAILED",
   SOCKET_ERROR = "SOCKET_ERROR",
