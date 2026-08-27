@@ -101,43 +101,42 @@ export function Line(props: LineProps) {
                 )}
               >
                 {([key, value]) => {
-                  return (
-                    <div
-                      style={{
-                        width: `100%`,
-                        display: "flex",
-                      }}
-                    >
-                      <Text width="60%">
-                        {Array.from(key)
-                          .map((char, i) => {
-                            if (i === 0) {
-                              return char.toUpperCase();
-                            }
-                            if (/^[A-Z]*$/.test(char)) {
-                              return `_${char}`;
-                            }
-                            return char;
-                          })
-                          .join("")
-                          .replaceAll("_", " ")}
-                      </Text>
-                      <Text
-                        width="40%"
-                        fontWeight={"medium"}
+                  if (typeof value === "number" || typeof value === "string")
+                    return (
+                      <div
                         style={{
-                          overflow: "hidden",
-                          "white-space": "nowrap",
-                          display: "block",
-                          "text-overflow": "ellipsis",
+                          width: `100%`,
+                          display: "flex",
                         }}
                       >
-                        {typeof value === "number" && !Number.isInteger(value)
-                          ? `${Number(value.toFixed(5))}m`
-                          : value}
-                      </Text>
-                    </div>
-                  );
+                        <Text width="60%">
+                          {Array.from(key)
+                            .map((char, i) => {
+                              if (i === 0) {
+                                return char.toUpperCase();
+                              }
+                              if (/^[A-Z]*$/.test(char)) {
+                                return `_${char}`;
+                              }
+                              return char;
+                            })
+                            .join("")
+                            .replaceAll("_", " ")}
+                        </Text>
+                        <Text
+                          width="40%"
+                          fontWeight={"medium"}
+                          style={{
+                            overflow: "hidden",
+                            "white-space": "nowrap",
+                            display: "block",
+                            "text-overflow": "ellipsis",
+                          }}
+                        >
+                          {value}
+                        </Text>
+                      </div>
+                    );
                 }}
               </For>
             </>

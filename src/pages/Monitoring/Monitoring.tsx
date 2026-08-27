@@ -15,10 +15,7 @@ import { IpAddress } from "~/pages/Monitoring/System/IpHistory.tsx";
 import * as Tabs from "~/components/ui/tabs.tsx";
 import { ControlPage } from "./MonitoringSidebar/ControlPage.tsx";
 import { ConnectPage } from "./MonitoringSidebar/ConnectPage.tsx";
-import {
-  LineType,
-  TrackType,
-} from "../../services/ServerHandler.ts";
+import { LineType, TrackType } from "../../services/ServerHandler.ts";
 import { SendingCommand, System } from "./System/System.tsx";
 import {
   Response_Line_Axis_Error,
@@ -44,13 +41,13 @@ function Monitoring() {
   const [isAutoClearMode, setIsAutoClearMode] = createSignal<boolean>(false);
   const commandServerHandler = new MmcCommandWebsocket();
   const clearErrorSocket = new MmcCommandWebsocket();
-  const monitoringServerHandler = new MonitoringWebsocket()
+  const monitoringServerHandler = new MonitoringWebsocket();
 
   onCleanup(async () => {
     if (lines.length > 0) {
-      await monitoringServerHandler.socket.disconnect();
-      await clearErrorSocket.socket.disconnect();
-      await commandServerHandler.socket.disconnect();
+      await monitoringServerHandler.disconnect();
+      await clearErrorSocket.disconnect();
+      await commandServerHandler.disconnect();
       setSendingCmd(null);
       setIsConnect(false);
     }
@@ -66,12 +63,12 @@ function Monitoring() {
               await getSystemInfo(lines.map((line) => line.id));
             } catch (e) {
               if (
-                monitoringServerHandler.socket.getStatus() &&
-                monitoringServerHandler.socket.getStatus() === WebSocket.OPEN
+                monitoringServerHandler.getStatus() &&
+                monitoringServerHandler.getStatus() === WebSocket.OPEN
               ) {
-                await monitoringServerHandler.socket.disconnect();
-                await clearErrorSocket.socket.disconnect();
-                await commandServerHandler.socket.disconnect();
+                await monitoringServerHandler.disconnect();
+                await clearErrorSocket.disconnect();
+                await commandServerHandler.disconnect();
               }
 
               if (lines.length > 0) {
@@ -103,7 +100,7 @@ function Monitoring() {
           for await (const system of systemInfo) {
             if (system.driverErrors && hasError(system.driverErrors)) {
               if (!system.axisErrors || !hasError(system.axisErrors)) {
-                await clearErrorSocket.clearError(lineId)
+                await clearErrorSocket.clearError(lineId);
               }
             }
             lineId++;
@@ -568,39 +565,38 @@ function Monitoring() {
                     setConnectBtnLoading(true);
 
                     try {
-                      await monitoringServerHandler.socket.connect(ip, port);
-                      await clearErrorSocket.socket.connect(ip, port)
-                      await commandServerHandler.socket.connect(ip, port);
-                      const serverResponse: LineType[] =
-                        (await monitoringServerHandler.getLineConfig()).map(
-                          (line) => {
-                            const newLine: LineType = {
-                              id: line.id,
-                              name: line.name,
-                              axes: line.axes,
-                              carrierLength: line.carrierLength,
-                              axisLength: line.axisLength,
-                              drivers: line.drivers,
-                              speed: 1200,
-                              acceleration: 7800,
-                            };
-                            return newLine;
-                          },
-                        );
+                      await monitoringServerHandler.connect(ip, port);
+                      await clearErrorSocket.connect(ip, port);
+                      await commandServerHandler.connect(ip, port);
+                      const serverResponse: LineType[] = (
+                        await monitoringServerHandler.getLineConfig()
+                      ).map((line) => {
+                        const newLine: LineType = {
+                          id: line.id,
+                          name: line.name,
+                          axes: line.axes,
+                          carrierLength: line.carrierLength,
+                          axisLength: line.axisLength,
+                          drivers: line.drivers,
+                          speed: 1200,
+                          acceleration: 7800,
+                        };
+                        return newLine;
+                      });
                       await addIpHistory(ip, port);
                       setLines(serverResponse);
                       setConnectBtnLoading(false);
                       if (
-                        monitoringServerHandler.socket.getStatus() === WebSocket.OPEN
+                        monitoringServerHandler.getStatus() === WebSocket.OPEN
                       ) {
                         setIsConnect(true);
                       }
-                    } catch  {
+                    } catch {
                       setConnectBtnLoading(false);
                       deleteIpHistory(ip, port);
-                      await monitoringServerHandler.socket.disconnect();
-                      await clearErrorSocket.socket.disconnect();
-                      await commandServerHandler.socket.disconnect();
+                      await monitoringServerHandler.disconnect();
+                      await clearErrorSocket.disconnect();
+                      await commandServerHandler.disconnect();
                       setIsConnect(false);
                     }
                   }}
@@ -609,9 +605,9 @@ function Monitoring() {
                     setLines([]);
                     setSystems([]);
 
-                    await monitoringServerHandler.socket.disconnect();
-                    await clearErrorSocket.socket.disconnect();
-                    await commandServerHandler.socket.disconnect();
+                    await monitoringServerHandler.disconnect();
+                    await clearErrorSocket.disconnect();
+                    await commandServerHandler.disconnect();
                     setConnectBtnLoading(false);
                     setIsConnect(false);
                   }}

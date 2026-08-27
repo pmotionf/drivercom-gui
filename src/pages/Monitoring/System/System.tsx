@@ -185,9 +185,7 @@ export function System(props: SystemProps) {
                           overflowX="auto"
                           gap="1rem"
                         >
-                          <For
-                            each={props.lines[lineIndex].drivers}
-                          >
+                          <For each={props.lines[lineIndex].drivers}>
                             {(driver) => {
                               return (
                                 <div>
@@ -214,12 +212,11 @@ export function System(props: SystemProps) {
                                           {
                                             length: driver.axes,
                                           },
-                                          (_, i) =>
-                                            driver.id * (i + 1),
+                                          (_, i) => driver.id * (i + 1),
                                         )}
                                       >
                                         {(axisId) => {
-                                          const axisIndex = axisId - 1
+                                          const axisIndex = axisId - 1;
                                           return (
                                             <Axis
                                               id={`${driver.id}:${axisId}`}
