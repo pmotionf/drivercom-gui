@@ -186,36 +186,21 @@ export function System(props: SystemProps) {
                           gap="1rem"
                         >
                           <For
-                            each={Array.from(
-                              {
-                                length: props.lines[lineIndex].drivers,
-                              },
-                              (_, i) => i,
-                            )}
+                            each={props.lines[lineIndex].drivers}
                           >
-                            {(driverIndex) => {
-                              const maximumAxisLength = 3;
-                              const lineAxesLength =
-                                props.lines[lineIndex].axes;
-                              const driverAxesLength =
-                                driverIndex + 1 ===
-                                props.lines[lineIndex].drivers!
-                                  ? lineAxesLength % maximumAxisLength !== 0
-                                    ? lineAxesLength % maximumAxisLength
-                                    : maximumAxisLength
-                                  : maximumAxisLength;
+                            {(driver) => {
                               return (
                                 <div>
                                   <Driver
-                                    id={`${driverIndex + 1}`}
+                                    id={`${driver.id}`}
                                     driverInfo={
                                       props.systems[lineIndex].driverState[
-                                        driverIndex
+                                        driver.id - 1
                                       ]
                                     }
                                     driverError={
                                       props.systems[lineIndex].driverErrors[
-                                        driverIndex
+                                        driver.id - 1
                                       ]
                                     }
                                   >
@@ -227,17 +212,17 @@ export function System(props: SystemProps) {
                                       <For
                                         each={Array.from(
                                           {
-                                            length: driverAxesLength,
+                                            length: driver.axes,
                                           },
                                           (_, i) =>
-                                            driverIndex * maximumAxisLength + i,
+                                            driver.id * (i + 1),
                                         )}
                                       >
-                                        {(axisIndex) => {
-                                          const axisId = axisIndex + 1;
+                                        {(axisId) => {
+                                          const axisIndex = axisId - 1
                                           return (
                                             <Axis
-                                              id={`${driverIndex + 1}:${axisId}`}
+                                              id={`${driver.id}:${axisId}`}
                                               sendingCommand={
                                                 props.sendingCommand &&
                                                 props.sendingCommand.line ===
