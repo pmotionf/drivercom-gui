@@ -18,6 +18,7 @@ export enum WebSocketError {
   DISCONNECT_FAILED = "DISCONNECT_FAILED",
   CONNECT_FAILED = "CONNECT_FAILED",
   COMMAND_CONFLICTED = "COMMAND_CONFLICTED",
+  RESPONSE_ERROR = "RESPONSE_ERROR"
 }
 
 export class WebsocketManger implements IWebsocketManger {
