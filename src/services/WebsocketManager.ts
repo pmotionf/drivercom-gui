@@ -1,4 +1,4 @@
-interface IWebsocketManger {
+export interface IWebsocketManger {
   connect(ip: string, port: string): Promise<void>;
   disconnect(): Promise<void>;
   send(buffer: Uint8Array, timeout: number): Promise<ArrayBuffer>;
@@ -18,14 +18,14 @@ export enum WebSocketError {
   DISCONNECT_FAILED = "DISCONNECT_FAILED",
   CONNECT_FAILED = "CONNECT_FAILED",
   COMMAND_CONFLICTED = "COMMAND_CONFLICTED",
-  RESPONSE_ERROR = "RESPONSE_ERROR"
+  RESPONSE_ERROR = "RESPONSE_ERROR",
 }
 
 export class WebsocketManger implements IWebsocketManger {
   // Store IP address
   private _ipAdress: IpAddress = { ip: null, port: null };
 
-  private _socket: WebSocket | null = null
+  private _socket: WebSocket | null = null;
 
   /* Return Web socket status.
     This Status is provided by websocket interface.
@@ -35,7 +35,7 @@ export class WebsocketManger implements IWebsocketManger {
       readonly CLOSED: 3;
   */
   getStatus(): number {
-    if(!this._socket) return WebSocket.CLOSED
+    if (!this._socket) return WebSocket.CLOSED;
     return this._socket.readyState;
   }
 
@@ -49,13 +49,18 @@ export class WebsocketManger implements IWebsocketManger {
     this._commandPending = false;
   }
 
-  private _socketOpenHandler = (ip: string, port: string, socket : WebSocket) => {
+  private _socketOpenHandler = (
+    ip: string,
+    port: string,
+    socket: WebSocket,
+  ) => {
     this._ipAdress.ip = ip;
     this._ipAdress.port = port;
-    this._socket = socket
+    this._socket = socket;
   };
 
-  private _socketCleanUp = (socket: WebSocket) => {
+  private _socketCleanUp = (socket: WebSocket | null) => {
+    if (!socket) return;
     socket.onclose = null;
     socket.onerror = null;
     socket.onopen = null;
@@ -63,17 +68,19 @@ export class WebsocketManger implements IWebsocketManger {
   };
 
   private _socketCloseHandler = () => {
-    this._completeCommand();
+    this._socketCleanUp(this._socket);
+
     if (this._socket) {
-      this._socketCleanUp(this._socket);
+      this._socket = null;
+    }
+
+    if (this._commandPending) {
+      this._completeCommand();
     }
   };
 
   private _socketErrorHandler = () => {
     this._completeCommand();
-    if (this._socket) {
-      this._socketCleanUp(this._socket);
-    }
   };
 
   async connect(ip: string, port: string): Promise<void> {
@@ -98,11 +105,11 @@ export class WebsocketManger implements IWebsocketManger {
 
   async disconnect(): Promise<void> {
     if (this.getStatus() !== WebSocket.OPEN) {
-      return Promise.reject(WebSocketError.NOT_CONNECTED_TO_SERVER);
+      throw WebSocketError.NOT_CONNECTED_TO_SERVER;
     }
     return await new Promise((resolve, reject) => {
       try {
-        if(!this._socket) return reject(WebSocketError.DISCONNECT_FAILED)
+        if (!this._socket) return reject(WebSocketError.DISCONNECT_FAILED);
         this._socket.onclose = () => {
           this._socketCloseHandler();
           resolve();
@@ -120,17 +127,16 @@ export class WebsocketManger implements IWebsocketManger {
 
   async send(buffer: Uint8Array, timeout: number): Promise<ArrayBuffer> {
     if (this.getStatus() !== WebSocket.OPEN)
-      return Promise.reject(WebSocketError.NOT_CONNECTED_TO_SERVER);
-    if (this._commandPending)
-      return Promise.reject(WebSocketError.COMMAND_CONFLICTED);
+      throw WebSocketError.NOT_CONNECTED_TO_SERVER;
+    if (this._commandPending) throw WebSocketError.COMMAND_CONFLICTED;
     this._startCommand();
 
     return await new Promise((resolve, reject) => {
-      if(!this._socket) return reject(WebSocketError.NOT_CONNECTED_TO_SERVER)
+      if (!this._socket) return reject(WebSocketError.NOT_CONNECTED_TO_SERVER);
       const timeoutId = setTimeout(() => {
         this._completeCommand();
-        if (!this._socket) return reject(WebSocketError.NOT_CONNECTED_TO_SERVER);
-        this._socketCleanUp(this._socket);
+        if (!this._socket)
+          return reject(WebSocketError.NOT_CONNECTED_TO_SERVER);
         reject(WebSocketError.RESPONSE_TIME_OUT);
       }, timeout);
       try {
@@ -146,8 +152,8 @@ export class WebsocketManger implements IWebsocketManger {
         };
         this._socket.send(buffer);
       } catch {
-        clearTimeout(timeoutId)
-        this._completeCommand()
+        clearTimeout(timeoutId);
+        this._completeCommand();
         reject(WebSocketError.SEND_FAILED);
       }
     });
