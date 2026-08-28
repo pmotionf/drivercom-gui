@@ -5,7 +5,7 @@ import { ChevronDownIcon } from "lucide-solid";
 import { Stack } from "styled-system/jsx/stack";
 import { Text } from "~/components/ui/text.tsx";
 import { Tooltip } from "~/components/ui/tooltip.tsx";
-import { TrackType, LineType } from "~/services/ServerHandler.ts";
+
 import {
   Response_Line_Axis_Error,
   Response_Line_Driver_Error,
@@ -15,10 +15,11 @@ import {
   LineCommandParameters,
 } from "./LineControlButton.tsx";
 import { SendingCommand } from "./System.tsx";
+import { Line as LineType, LineConfig } from "../Monitoring.tsx";
 
 export type LineProps = JSX.HTMLAttributes<HTMLDivElement> & {
-  line: LineType;
-  system?: TrackType;
+  line: LineConfig;
+  system?: LineType;
   disableCalibrateButton: boolean;
   disableSetZeroButton: boolean;
   sendingCommand: SendingCommand;

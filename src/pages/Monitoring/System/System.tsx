@@ -14,9 +14,9 @@ import {
   createSortable,
   closestCenter,
 } from "@thisbeyond/solid-dnd";
-import { Lines, Systems } from "~/pages/Monitoring/Monitoring.tsx";
 import { Stack } from "styled-system/jsx/stack";
 import { LineCommandParameters } from "./LineControlButton.tsx";
+import { Line as LineType, LineConfig } from "../Monitoring.tsx";
 
 export type SendingCommand = {
   line: string;
@@ -29,8 +29,8 @@ type SystemLineCommandParam = {
 } & LineCommandParameters;
 
 export type SystemProps = JSX.HTMLAttributes<HTMLDivElement> & {
-  lines: Store<Lines>;
-  systems: Store<Systems>;
+  lines: Store<LineConfig[]>;
+  systems: Store<LineType[]>;
   sendingCommand: SendingCommand;
   onLineCommands?: (params: SystemLineCommandParam) => void;
   onPush?: (
