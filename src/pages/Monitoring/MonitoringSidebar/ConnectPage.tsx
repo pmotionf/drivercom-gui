@@ -12,7 +12,7 @@ import { CreateToasterReturn } from "@ark-ui/solid";
 import { css } from "styled-system/css";
 import { createSignal } from "solid-js";
 import { invoke } from "@tauri-apps/api/core";
-import { ServerHandler } from "~/services/ServerHandler";
+import { MonitoringWebsocket } from "~/services/MonitoringWebsocket";
 
 export type ConnectPageProps = {
   isConnect: boolean;
@@ -57,7 +57,7 @@ export const ConnectPage = (props: ConnectPageProps) => {
 
   const findServer = async (ipAddr: string): Promise<void> => {
     const port = "443";
-    const handler = new ServerHandler();
+    const handler = new MonitoringWebsocket();
 
     try {
       await handler.connect(ipAddr, port);

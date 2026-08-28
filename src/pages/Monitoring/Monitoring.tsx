@@ -15,9 +15,9 @@ import { IpAddress } from "~/pages/Monitoring/System/IpHistory.tsx";
 import * as Tabs from "~/components/ui/tabs.tsx";
 import { ControlPage } from "./MonitoringSidebar/ControlPage.tsx";
 import { ConnectPage } from "./MonitoringSidebar/ConnectPage.tsx";
-import { LineType, TrackType } from "../../services/ServerHandler.ts";
 import { SendingCommand, System } from "./System/System.tsx";
 import {
+  Response_Line,
   Response_Line_Axis_Error,
   Response_Line_Driver_Error,
 } from "~/proto/mmc/info_pb.ts";
@@ -30,13 +30,17 @@ import { Request_Direction } from "~/proto/mmc/command_pb.ts";
 import { Control } from "~/proto/mmc/control_pb.ts";
 import { MonitoringWebsocket } from "~/services/MonitoringWebsocket.ts";
 import { MmcCommandWebsocket } from "~/services/MmcCommandWebsocket.ts";
+import { Response_TrackConfig_Line } from "~/proto/mmc/core_pb.ts";
 
-export type Lines = LineType[];
-export type Systems = TrackType[];
+export type LineConfig = Omit<
+  Response_TrackConfig_Line,
+  "$typeName" | "$unknown"
+> & { speed: number; acceleration: number };
+export type Line = Omit<Response_Line, "$typeName" | "$unknown">;
 
 function Monitoring() {
-  const [lines, setLines] = createStore<Lines>([]);
-  const [systems, setSystems] = createStore<Systems>([]);
+  const [lines, setLines] = createStore<LineConfig[]>([]);
+  const [systems, setSystems] = createStore<Line[]>([]);
 
   const [isAutoClearMode, setIsAutoClearMode] = createSignal<boolean>(false);
   const commandServerHandler = new MmcCommandWebsocket();
@@ -568,10 +572,10 @@ function Monitoring() {
                       await monitoringServerHandler.connect(ip, port);
                       await clearErrorSocket.connect(ip, port);
                       await commandServerHandler.connect(ip, port);
-                      const serverResponse: LineType[] = (
+                      const serverResponse: LineConfig[] = (
                         await monitoringServerHandler.getLineConfig()
                       ).map((line) => {
-                        const newLine: LineType = {
+                        const newLine: LineConfig = {
                           id: line.id,
                           name: line.name,
                           axes: line.axes,
