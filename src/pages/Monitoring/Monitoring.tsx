@@ -31,6 +31,7 @@ import { Control } from "~/proto/mmc/control_pb.ts";
 import { MonitoringWebsocket } from "~/services/MonitoringWebsocket.ts";
 import { MmcCommandWebsocket } from "~/services/MmcCommandWebsocket.ts";
 import { Response_TrackConfig_Line } from "~/proto/mmc/core_pb.ts";
+import { ScenarioPage } from "./MonitoringSidebar/ScenarioPage.tsx";
 
 export type LineConfig = Omit<
   Response_TrackConfig_Line,
@@ -521,6 +522,15 @@ function Monitoring() {
                 {"Control"}
               </Tabs.Trigger>
               <Tabs.Trigger
+                value="Scenario"
+                padding="0.5em"
+                borderRadius={"0"}
+                borderTopWidth={"0"}
+                disabled={lines.length === 0}
+              >
+                {"Scenario"}
+              </Tabs.Trigger>
+              <Tabs.Trigger
                 value="Carriers"
                 padding="0.5em"
                 borderRadius={"0"}
@@ -699,6 +709,12 @@ function Monitoring() {
                   setSendingCmd(null);
                 }}
               />
+            </Tabs.Content>
+            <Tabs.Content
+              value={"Scenario"}
+              style={{ width: "100%", height: "100%" }}
+            >
+              <ScenarioPage commandWebsocket={commandServerHandler} />
             </Tabs.Content>
           </Tabs.Root>
         </Splitter.Panel>
