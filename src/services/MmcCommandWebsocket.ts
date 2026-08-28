@@ -124,9 +124,10 @@ export class MmcCommandWebsocket {
     }
   }
 
-  private async _runCommand(payload: Request): Promise<void> {
+  async runCommand(commandPayload: CommandRequest): Promise<void> {
     if (!this._isSocketOpen()) throw WebSocketError.NOT_CONNECTED_TO_SERVER;
     try {
+      const payload = this._generateCommandRequest(commandPayload);
       const message = this.protobuf.encode(payload);
       const response = await this.socket.send(message, 1000);
       const decodedReponse = this.protobuf.decode(response);
@@ -137,7 +138,6 @@ export class MmcCommandWebsocket {
           const commandId = command.body.value;
           await this._waitCommandComplete(commandId);
           await this._clearCommand(commandId);
-
           return;
         }
       }
@@ -160,8 +160,7 @@ export class MmcCommandWebsocket {
         },
         $typeName: "mmc.command.Request",
       };
-      const payload = this._generateCommandRequest(commandPayload);
-      await this._runCommand(payload);
+      await this.runCommand(commandPayload);
       return;
     } catch (err) {
       throw new Error(err as string);
@@ -190,8 +189,7 @@ export class MmcCommandWebsocket {
         },
         $typeName: "mmc.command.Request",
       };
-      const payload = this._generateCommandRequest(commandPayload);
-      await this._runCommand(payload);
+      await this.runCommand(commandPayload);
       return;
     } catch (err) {
       throw new Error(err as string);
@@ -218,8 +216,7 @@ export class MmcCommandWebsocket {
         },
         $typeName: "mmc.command.Request",
       };
-      const payload = this._generateCommandRequest(commandPayload);
-      await this._runCommand(payload);
+      await this.runCommand(commandPayload);
       return;
     } catch (err) {
       throw new Error(err as string);
@@ -238,8 +235,7 @@ export class MmcCommandWebsocket {
         },
         $typeName: "mmc.command.Request",
       };
-      const payload = this._generateCommandRequest(commandPayload);
-      await this._runCommand(payload);
+      await this.runCommand(commandPayload);
       return;
     } catch (err) {
       throw new Error(err as string);
@@ -270,8 +266,7 @@ export class MmcCommandWebsocket {
           },
         },
       };
-      const payload = this._generateCommandRequest(commandPayload);
-      await this._runCommand(payload);
+      await this.runCommand(commandPayload);
       return;
     } catch (err) {
       throw new Error(err as string);
@@ -295,8 +290,7 @@ export class MmcCommandWebsocket {
           },
         },
       };
-      const payload = this._generateCommandRequest(commandPayload);
-      await this._runCommand(payload);
+      await this.runCommand(commandPayload);
       return;
     } catch (err) {
       throw new Error(err as string);
@@ -325,8 +319,7 @@ export class MmcCommandWebsocket {
           },
         },
       };
-      const payload = this._generateCommandRequest(commandPayload);
-      await this._runCommand(payload);
+      await this.runCommand(commandPayload);
       return;
     } catch (err) {
       throw new Error(err as string);
@@ -361,8 +354,7 @@ export class MmcCommandWebsocket {
           },
         },
       };
-      const payload = this._generateCommandRequest(commandPayload);
-      await this._runCommand(payload);
+      await this.runCommand(commandPayload);
       return;
     } catch (err) {
       throw new Error(err as string);
