@@ -714,7 +714,10 @@ function Monitoring() {
               value={"Scenario"}
               style={{ width: "100%", height: "100%" }}
             >
-              <ScenarioPage commandWebsocket={commandServerHandler} />
+              <ScenarioPage
+                commandWebsocket={commandServerHandler}
+                carrierStates={carrierStates()}
+              />
             </Tabs.Content>
           </Tabs.Root>
         </Splitter.Panel>

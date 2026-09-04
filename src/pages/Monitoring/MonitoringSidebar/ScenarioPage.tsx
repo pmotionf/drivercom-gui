@@ -23,6 +23,7 @@ import { Button } from "~/components/ui/button";
 import { MmcCommandWebsocket } from "~/services/MmcCommandWebsocket";
 import { Response_Line_Carrier_State_State } from "~/proto/mmc/info_pb";
 import { Control } from "~/proto/mmc/control_pb";
+import { CarrierState } from "./CarrierPage";
 
 const mmcCommandField = [
   "initialize",
@@ -31,16 +32,28 @@ const mmcCommandField = [
   "push",
   "pull",
 ] as const;
-type SettingField = (typeof mmcCommandField)[number];
+type MmcCommandField = (typeof mmcCommandField)[number];
 
+const waitCommands = [
+  Response_Line_Carrier_State_State.CARRIER_STATE_INITIALIZE_COMPLETED,
+  Response_Line_Carrier_State_State.CARRIER_STATE_MOVE_COMPLETED,
+];
 type WaitCommand = {
   case: "wait";
-  value: { carrierState: Response_Line_Carrier_State_State };
+  value: {
+    carrierState: Response_Line_Carrier_State_State;
+    lineId: number;
+    carrierId: number;
+    timeout?: number;
+  };
 };
 type MmcCommand = { case: "mmcCommand"; value: { command: CommandRequest } };
 type ScenarioCommand = MmcCommand | WaitCommand;
 
-export function ScenarioPage(props: { commandWebsocket: MmcCommandWebsocket }) {
+export function ScenarioPage(props: {
+  commandWebsocket: MmcCommandWebsocket;
+  carrierStates: CarrierState[];
+}) {
   const scenarioDropDivId = "scenario_drop_space";
   const [scenarioCommands, setScenarioCommands] = createStore<
     ScenarioCommand[]
@@ -49,7 +62,9 @@ export function ScenarioPage(props: { commandWebsocket: MmcCommandWebsocket }) {
   const [scenarioAcceleration, setScenarioAcceleration] =
     createSignal<number>(7800);
 
-  const commandRequestValue = (field: SettingField): CommandRequest | null => {
+  const commandRequestValue = (
+    field: MmcCommandField,
+  ): CommandRequest | null => {
     if (field == "initialize") {
       const newRequest: CommandRequest = {
         $typeName: "mmc.command.Request",
@@ -196,6 +211,42 @@ export function ScenarioPage(props: { commandWebsocket: MmcCommandWebsocket }) {
   };
   const tabList = ["Move", "Wait"];
 
+  const getCarrierInfo = (lineId: number, carrierId: number) => {
+    if (lineId > props.carrierStates.length) return null;
+    const findLine = props.carrierStates[lineId - 1];
+    const findCarrier = findLine.carrierStates.find(
+      (status) => status.id === carrierId,
+    );
+    return findCarrier ?? null;
+  };
+
+  const waitForCarrierState = async (
+    commandValue: WaitCommand,
+  ): Promise<boolean> => {
+    const { lineId, carrierId, carrierState, timeout } = commandValue.value;
+    const startTime = Date.now();
+    let isSuccess = false;
+
+    while (!isSuccess) {
+      await new Promise((resolve) => setTimeout(resolve, 100));
+      const carrierInfo = getCarrierInfo(lineId, carrierId);
+      if (!carrierInfo) {
+        break;
+      }
+      if (timeout && timeout > 0 && Date.now() - startTime >= timeout) {
+        break;
+      }
+      if (carrierInfo.state === carrierState) {
+        isSuccess = true;
+        break;
+      } else {
+        continue;
+      }
+    }
+    console.log(isSuccess);
+    return isSuccess;
+  };
+
   return (
     <div style={{ width: "100%", height: "100%", display: "flex" }}>
       <Tabs.Root
@@ -213,9 +264,83 @@ export function ScenarioPage(props: { commandWebsocket: MmcCommandWebsocket }) {
 
         <Show when={tabRender()} fallback={<></>}>
           <Tabs.Content value={tabList[0]} userSelect="none">
+            <For each={mmcCommandField}>
+              {(field) => {
+                return (
+                  <div
+                    class={css({
+                      padding: "0.5rem",
+                      borderWidth: "1px",
+                      zIndex: 100,
+                      position: "relative",
+                      background: "gray.1",
+                    })}
+                    use:dragOptions={{
+                      onDragStart: () => {
+                        setIsDragging(scenarioCommands.length);
+                      },
+                      onDrag: (data) => {
+                        const clientX = data.event.clientX;
+                        const clientY = data.event.clientY;
+                        setDragPosition({
+                          clientX: clientX,
+                          clientY: clientY,
+                        });
+                      },
+                      onDragEnd: (data) => {
+                        const clientX = data.event.clientX;
+                        const clientY = data.event.clientY;
+
+                        const dropDiv =
+                          document.getElementById(scenarioDropDivId);
+                        if (dropDiv) {
+                          const getBound = dropDiv.getBoundingClientRect();
+                          const divLeft = getBound.left;
+                          const divTop = getBound.top;
+
+                          if (clientX > divLeft && clientY > divTop) {
+                            const newRequest = commandRequestValue(field);
+                            if (newRequest !== null) {
+                              if (typeof isDragOver() === "number") {
+                                setScenarioCommands((prev) => {
+                                  const reorderIndex = isDragOver()!;
+                                  const parseCommand: MmcCommand = {
+                                    case: "mmcCommand",
+                                    value: { command: newRequest },
+                                  };
+                                  const newCommands = [
+                                    ...prev.slice(0, reorderIndex),
+                                    parseCommand,
+                                    ...prev.slice(reorderIndex, prev.length),
+                                  ];
+                                  return newCommands;
+                                });
+                              } else {
+                                setScenarioCommands(scenarioCommands.length, {
+                                  case: "mmcCommand",
+                                  value: { command: newRequest },
+                                });
+                              }
+                            }
+                          }
+                        }
+                        setDragPosition(null);
+                        setIsDragging(null);
+                        setIsDragOver(null);
+                        tabRefresh();
+                      },
+                    }}
+                  >
+                    <Text style={{ "user-select": "none" }}>{field}</Text>
+                  </div>
+                );
+              }}
+            </For>
+          </Tabs.Content>
+          <Tabs.Content value={tabList[1]}>
             <div>
-              <For each={mmcCommandField}>
-                {(field) => {
+              <For each={waitCommands}>
+                {(wait) => {
                   return (
                     <div
                       class={css({
@@ -249,28 +374,30 @@ export function ScenarioPage(props: { commandWebsocket: MmcCommandWebsocket }) {
                             const divTop = getBound.top;
 
                             if (clientX > divLeft && clientY > divTop) {
-                              const newRequest = commandRequestValue(field);
-                              if (newRequest !== null) {
-                                if (typeof isDragOver() === "number") {
-                                  setScenarioCommands((prev) => {
-                                    const reorderIndex = isDragOver()!;
-                                    const parseCommand: MmcCommand = {
-                                      case: "mmcCommand",
-                                      value: { command: newRequest },
-                                    };
-                                    const newCommands = [
-                                      ...prev.slice(0, reorderIndex),
-                                      parseCommand,
-                                      ...prev.slice(reorderIndex, prev.length),
-                                    ];
-                                    return newCommands;
-                                  });
-                                } else {
-                                  setScenarioCommands(scenarioCommands.length, {
-                                    case: "mmcCommand",
-                                    value: { command: newRequest },
-                                  });
-                                }
+                              const parseCommand: WaitCommand = {
+                                case: "wait",
+                                value: {
+                                  carrierState: wait,
+                                  carrierId: 0,
+                                  lineId: 0,
+                                },
+                              };
+                              if (typeof isDragOver() === "number") {
+                                setScenarioCommands((prev) => {
+                                  const reorderIndex = isDragOver()!;
+
+                                  const newCommands = [
+                                    ...prev.slice(0, reorderIndex),
+                                    parseCommand,
+                                    ...prev.slice(reorderIndex, prev.length),
+                                  ];
+                                  return newCommands;
+                                });
+                              } else {
+                                setScenarioCommands(
+                                  scenarioCommands.length,
+                                  parseCommand,
+                                );
                               }
                             }
                           }
@@ -281,15 +408,17 @@ export function ScenarioPage(props: { commandWebsocket: MmcCommandWebsocket }) {
                         },
                       }}
                     >
-                      <Text style={{ "user-select": "none" }}>{field}</Text>
+                      <Text style={{ "user-select": "none" }}>
+                        {Response_Line_Carrier_State_State[wait].replace(
+                          "CARRIER_STATE",
+                          "WAIT",
+                        )}
+                      </Text>
                     </div>
                   );
                 }}
               </For>
             </div>
-          </Tabs.Content>
-          <Tabs.Content value={tabList[1]}>
-            <div></div>
           </Tabs.Content>
         </Show>
       </Tabs.Root>
@@ -307,45 +436,44 @@ export function ScenarioPage(props: { commandWebsocket: MmcCommandWebsocket }) {
       >
         <For each={scenarioCommands}>
           {(scenarioCommand, index) => {
-            if (scenarioCommand.case === "mmcCommand")
-              return (
-                <Show when={commandRender()}>
-                  <ScenarioCommand
-                    command={scenarioCommand.value.command}
-                    isCommandDragging={isDragging() ? true : false}
-                    dragPosition={dragPosition() ?? undefined}
-                    onCommandDrag={(clientX, clientY) => {
-                      if (clientX && clientY) {
-                        setDragPosition({ clientX: clientX, clientY: clientY });
-                      } else {
-                        setDragPosition(null);
-                      }
-                    }}
-                    onCommandDelete={() => {
-                      deleteScenarioCommand(index());
-                    }}
-                    onDragStart={() => {
-                      setIsDragging(index());
-                    }}
-                    onDragEnd={() => {
-                      if (
-                        typeof isDragging() === "number" &&
-                        typeof isDragOver() === "number"
-                      ) {
-                        reorderCommand(isDragging()!, isDragOver()!);
-                        commandSpaceRefresh();
-                      }
-                      setIsDragging(null);
-                    }}
-                    onDragEnter={() => {
-                      setIsDragOver(index());
-                    }}
-                    onDragLeave={() => {
-                      setIsDragOver(null);
-                    }}
-                  />
-                </Show>
-              );
+            return (
+              <Show when={commandRender()}>
+                <ScenarioCommand
+                  command={scenarioCommand}
+                  isCommandDragging={isDragging() ? true : false}
+                  dragPosition={dragPosition() ?? undefined}
+                  onCommandDrag={(clientX, clientY) => {
+                    if (clientX && clientY) {
+                      setDragPosition({ clientX: clientX, clientY: clientY });
+                    } else {
+                      setDragPosition(null);
+                    }
+                  }}
+                  onCommandDelete={() => {
+                    deleteScenarioCommand(index());
+                  }}
+                  onDragStart={() => {
+                    setIsDragging(index());
+                  }}
+                  onDragEnd={() => {
+                    if (
+                      typeof isDragging() === "number" &&
+                      typeof isDragOver() === "number"
+                    ) {
+                      reorderCommand(isDragging()!, isDragOver()!);
+                      commandSpaceRefresh();
+                    }
+                    setIsDragging(null);
+                  }}
+                  onDragEnter={() => {
+                    setIsDragOver(index());
+                  }}
+                  onDragLeave={() => {
+                    setIsDragOver(null);
+                  }}
+                />
+              </Show>
+            );
           }}
         </For>
         <div
@@ -383,6 +511,16 @@ export function ScenarioPage(props: { commandWebsocket: MmcCommandWebsocket }) {
                     console.error(err);
                     break;
                   }
+                } else if (command.case === "wait") {
+                  try {
+                    const result = await waitForCarrierState(command);
+                    console.log(result);
+                    if (!result) {
+                      break;
+                    }
+                  } catch {
+                    break;
+                  }
                 }
               }
             }}
@@ -397,7 +535,7 @@ export function ScenarioPage(props: { commandWebsocket: MmcCommandWebsocket }) {
 
 function ScenarioCommand(
   props: JSX.HTMLAttributes<HTMLDivElement> & {
-    command: CommandRequest;
+    command: ScenarioCommand;
     onCommandDelete?: () => void;
     onDragStart?: () => void;
     onCommandDrag?: (clientX: number | null, clientY: number | null) => void;
@@ -415,7 +553,7 @@ function ScenarioCommand(
   const [showOverlay, setShowOverlay] = createSignal<boolean>(false);
   const [dragStarted, setDragStarted] = createSignal<boolean>(false);
   let commandRef: HTMLDivElement | undefined;
-  const [obj, setObj] = createStore<CommandRequest>(props.command);
+  const [obj, setObj] = createStore<ScenarioCommand>(props.command);
 
   createEffect(
     on(
@@ -484,34 +622,94 @@ function ScenarioCommand(
         },
       }}
     >
-      <Text fontWeight="bold" marginRight={"0.5rem"}>
-        {obj.body.case}
-      </Text>
-      <Show when={obj.body.value}>
-        <For
-          each={Object.keys(obj.body.value!).filter(
-            (key) => key !== "$typeName",
-          )}
-        >
-          {(key) => {
-            return (
-              <ScenarioValue
-                key={key}
-                value={obj.body.value![key as keyof typeof obj.body.value]}
-                onValueChange={(value) =>
-                  setObj(
-                    "body",
-                    "value",
-                    key as keyof typeof obj.body.value,
-                    //@ts-ignore type is checked
-                    value,
-                  )
-                }
-              />
-            );
-          }}
-        </For>
-      </Show>
+      {obj.case === "mmcCommand" ? (
+        <>
+          <Text fontWeight="bold" marginRight={"0.5rem"}>
+            {obj.value.command.body.case}
+          </Text>
+          <For
+            each={Object.keys(obj.value.command.body.value!).filter(
+              (key) => key !== "$typeName",
+            )}
+          >
+            {(key) => {
+              return (
+                <ScenarioValue
+                  key={key}
+                  value={
+                    obj.value.command.body.value![
+                      key as keyof typeof obj.value.command.body.value
+                    ]!
+                  }
+                  onValueChange={(value) => {
+                    if (obj.case === "mmcCommand") {
+                      setObj(
+                        "value",
+                        //@ts-ignore type is checked
+                        "command",
+                        "body",
+                        "value",
+                        key as keyof typeof obj.value.command,
+                        //@ts-ignore type is checked
+                        value,
+                      );
+                    }
+                  }}
+                />
+              );
+            }}
+          </For>
+        </>
+      ) : (
+        <>
+          <Text>
+            {Response_Line_Carrier_State_State[obj.value.carrierState].replace(
+              "CARRIER_STATE",
+              "WAIT",
+            )}
+          </Text>
+          <Text>{"Line"}</Text>
+          <Input
+            width="2rem"
+            value={obj.value.lineId ?? ""}
+            onChange={(e) => {
+              setObj(
+                "value",
+                //@ts-ignore
+                "lineId",
+                isNaN(Number(e.target.value)) ? null : Number(e.target.value),
+              );
+            }}
+          />
+          <Text>{"Carrier"}</Text>
+          <Input
+            width="2rem"
+            value={obj.value.carrierId ?? ""}
+            onChange={(e) => {
+              setObj(
+                "value",
+                //@ts-ignore
+                "carrierId",
+                isNaN(Number(e.target.value)) ? null : Number(e.target.value),
+              );
+            }}
+          />
+          <Text opacity={obj.value.timeout ? "1" : "0.5"}>{"Time-out"}</Text>
+          <Input
+            opacity={obj.value.timeout ? "1" : "0.5"}
+            width="2rem"
+            value={obj.value.timeout ?? ""}
+            onChange={(e) => {
+              setObj(
+                "value",
+                //@ts-ignore
+                "timeout",
+                isNaN(Number(e.target.value)) ? null : Number(e.target.value),
+              );
+            }}
+          />
+        </>
+      )}
       <IconButton
         position="absolute"
         right={itemPadding}
