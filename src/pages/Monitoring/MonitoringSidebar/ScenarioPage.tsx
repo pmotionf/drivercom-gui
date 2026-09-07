@@ -246,6 +246,10 @@ export function ScenarioPage(props: {
     return isSuccess;
   };
 
+  const [currentRunningCommand, setCurrentRunningCommand] = createSignal<
+    number | null
+  >(null);
+
   return (
     <div style={{ width: "100%", height: "100%", display: "flex" }}>
       <Tabs.Root
@@ -439,6 +443,12 @@ export function ScenarioPage(props: {
               <Show when={commandRender()}>
                 <ScenarioCommand
                   command={scenarioCommand}
+                  isRunning={
+                    currentRunningCommand() &&
+                    index() === currentRunningCommand()
+                      ? true
+                      : false
+                  }
                   isCommandDragging={isDragging() ? true : false}
                   dragPosition={dragPosition() ?? undefined}
                   onCommandDrag={(clientX, clientY) => {
@@ -500,7 +510,11 @@ export function ScenarioPage(props: {
             right="0"
             onClick={async () => {
               if (scenarioCommands.length < 1) return;
-              for await (const command of scenarioCommands) {
+              for await (const [
+                commandIndex,
+                command,
+              ] of scenarioCommands.entries()) {
+                setCurrentRunningCommand(commandIndex);
                 if (command.case === "mmcCommand") {
                   try {
                     await props.commandWebsocket.runCommand(
@@ -508,18 +522,22 @@ export function ScenarioPage(props: {
                     );
                   } catch (err) {
                     console.error(err);
+                    setCurrentRunningCommand(null);
                     break;
                   }
                 } else if (command.case === "wait") {
                   try {
                     const result = await waitForCarrierState(command);
                     if (!result) {
+                      setCurrentRunningCommand(null);
                       break;
                     }
                   } catch {
+                    setCurrentRunningCommand(null);
                     break;
                   }
                 }
+                setCurrentRunningCommand(null);
               }
             }}
           >
@@ -534,6 +552,7 @@ export function ScenarioPage(props: {
 function ScenarioCommand(
   props: JSX.HTMLAttributes<HTMLDivElement> & {
     command: ScenarioCommand;
+    isRunning: boolean;
     onCommandDelete?: () => void;
     onDragStart?: () => void;
     onCommandDrag?: (clientX: number | null, clientY: number | null) => void;
@@ -602,7 +621,7 @@ function ScenarioCommand(
         borderWidth: "1px",
         padding: `${itemPadding}`,
         alignItems: "center",
-        background: "gray.1",
+        background: props.isRunning ? "gray.3" : "gray.1",
         zIndex: dragStarted() ? 10 : 1,
       })}
       use:dragOptions={{
