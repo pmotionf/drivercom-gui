@@ -92,7 +92,7 @@ export function Axis(props: AxisProps) {
             <Badge
               width="min-content"
               backgroundColor={
-                props.axisInfo.waitingPull || props.axisInfo.waitingPush
+                props.axisInfo.waitingPull
                   ? "accent.customOrange"
                   : props.axisInfo.motorActive
                     ? "accent.customGreen"
@@ -154,14 +154,12 @@ export function Axis(props: AxisProps) {
           sendingCommand={props.sendingCommand}
           disableCommandButton={props.disableCommandButton}
           stopPullDisabled={!props.axisInfo.waitingPull === true}
-          stopPushDisabled={!props.axisInfo.waitingPush === true}
-          onPull={(axisDirection, carrierId, cas, destination) =>
-            props.onPull?.(axisDirection, carrierId, cas, destination)
+          onPull={(axisDirection, carrierId) =>
+            props.onPull?.(axisDirection, carrierId)
           }
-          onPush={(axisDirection, carrierId) => {
-            props.onPush?.(axisDirection, carrierId);
+          onPush={(axisDirection) => {
+            props.onPush?.(axisDirection);
           }}
-          onStopPush={() => props.onStopPush?.()}
           onStopPull={() => props.onStopPull?.()}
           onStopCommand={() => props.onStopCommand?.()}
           onInitialize={(direction, carrierId, axisLink) =>
@@ -182,34 +180,6 @@ export function Axis(props: AxisProps) {
           >
             Carrier {carrierState()!.id}
           </Text>
-          <Tooltip
-            content={
-              <Text>
-                {carrierState()!.casDisabled
-                  ? "Disabled"
-                  : carrierState()!.casTriggered
-                    ? "Triggered"
-                    : "Enabled"}
-              </Text>
-            }
-          >
-            <Badge
-              style={{
-                width: "min-content",
-                "border-width": "0",
-              }}
-              size="sm"
-              backgroundColor={
-                carrierState()!.casDisabled
-                  ? "accent.customOrange"
-                  : carrierState()!.casTriggered
-                    ? "accent.customGreen"
-                    : "bg.emphasized"
-              }
-            >
-              CAS
-            </Badge>
-          </Tooltip>
         </div>
 
         <Show when={carrierState()!.position}>

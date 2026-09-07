@@ -33,22 +33,14 @@ export type SystemProps = JSX.HTMLAttributes<HTMLDivElement> & {
   systems: Store<LineType[]>;
   sendingCommand: SendingCommand;
   onLineCommands?: (params: SystemLineCommandParam) => void;
-  onPush?: (
-    lineIndex: number,
-    commandDirection: string,
-    axis: number,
-    carrier?: string,
-  ) => void;
+  onPush?: (lineIndex: number, commandDirection: string, axis: number) => void;
   onPull?: (
     lineIndex: number,
     commandDirection: string,
     axis: number,
     carrier: string,
-    destination?: string,
-    cas?: string,
   ) => void;
   onStopPull?: (lineIndex: number, axisId: number) => void;
-  onStopPush?: (lineIndex: number, axisId: number) => void;
   onInitialize?: (
     lineIndex: number,
     axisId: number,
@@ -104,19 +96,6 @@ export function System(props: SystemProps) {
     return disableCalibrate;
   };
 
-  const disableSetZero = (index: number): boolean => {
-    if (!props.systems[index] || !props.lines[index]) return true;
-    const currentSystem = props.systems[index];
-    const carrierState = currentSystem.carrierState;
-    if (carrierState.length === 0) return true;
-
-    const filterFirstAxisCarrier = carrierState.filter(
-      (state) => state.axisMain === 1 || state.axisAuxiliary === 1,
-    );
-    const disableSetZero = filterFirstAxisCarrier.length === 0;
-    return disableSetZero;
-  };
-
   return (
     <div
       style={{
@@ -164,7 +143,6 @@ export function System(props: SystemProps) {
                       line={props.lines[lineIndex]}
                       system={props.systems[lineIndex]}
                       disableCalibrateButton={disableCalibrateButton(lineIndex)}
-                      disableSetZeroButton={disableSetZero(lineIndex)}
                       sendingCommand={props.sendingCommand}
                       onLineCommands={(param) => {
                         const newParam: SystemLineCommandParam = {
@@ -172,7 +150,6 @@ export function System(props: SystemProps) {
                           speed: param.speed,
                           acceleration: param.acceleration,
                           calibrate: param.calibrate,
-                          setZero: param.setZero,
                         };
                         props.onLineCommands?.(newParam);
                       }}
@@ -252,37 +229,23 @@ export function System(props: SystemProps) {
                                               onPull={(
                                                 axisDirection,
                                                 carrierId,
-                                                cas,
-                                                des,
                                               ) => {
                                                 props.onPull?.(
                                                   lineIndex,
                                                   axisDirection,
                                                   axisId,
                                                   carrierId,
-                                                  des,
-                                                  cas,
                                                 );
                                               }}
-                                              onPush={(
-                                                axisDirection,
-                                                carrierId,
-                                              ) => {
+                                              onPush={(axisDirection) => {
                                                 props.onPush?.(
                                                   lineIndex,
                                                   axisDirection,
                                                   axisId,
-                                                  carrierId,
                                                 );
                                               }}
                                               onStopPull={() => {
                                                 props.onStopPull?.(
-                                                  lineIndex,
-                                                  axisId,
-                                                );
-                                              }}
-                                              onStopPush={() => {
-                                                props.onStopPush?.(
                                                   lineIndex,
                                                   axisId,
                                                 );

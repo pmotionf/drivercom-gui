@@ -246,26 +246,6 @@ export class MmcCommandWebsocket {
     }
   }
 
-  async setZero(line: number): Promise<void> {
-    try {
-      const commandPayload: CommandRequest = {
-        $typeName: "mmc.command.Request",
-        body: {
-          case: "setZero",
-          value: {
-            line: line,
-            $typeName: "mmc.command.Request.SetZero",
-          },
-        },
-      };
-      const payload = this._generateCommandRequest(commandPayload);
-      await this._runCommand(payload);
-      return;
-    } catch (err) {
-      throw new Error(err as string);
-    }
-  }
-
   async pull(
     line: number,
     axisId: number,
@@ -273,8 +253,6 @@ export class MmcCommandWebsocket {
     direction: Request_Direction,
     speed: number,
     acceleration: number,
-    disableCas?: boolean,
-    target?: number,
   ): Promise<void> {
     try {
       const commandPayload: CommandRequest = {
@@ -289,12 +267,6 @@ export class MmcCommandWebsocket {
             direction: direction,
             velocity: speed,
             acceleration: acceleration,
-            transition: {
-              $typeName: "mmc.command.Request.Pull.Transition",
-              disableCas: disableCas ?? false,
-              target: target ?? 0,
-              control: Control.POSITION,
-            },
           },
         },
       };
@@ -337,7 +309,6 @@ export class MmcCommandWebsocket {
     direction: Request_Direction,
     speed: number,
     acceleration: number,
-    carrier?: number,
   ): Promise<void> {
     try {
       const commandPayload: CommandRequest = {
@@ -351,32 +322,6 @@ export class MmcCommandWebsocket {
             direction: direction,
             velocity: speed,
             acceleration: acceleration,
-            carrier: carrier,
-          },
-        },
-      };
-      const payload = this._generateCommandRequest(commandPayload);
-      await this._runCommand(payload);
-      return;
-    } catch (err) {
-      throw new Error(err as string);
-    }
-  }
-
-  async stopPush(line: number, axisId: number): Promise<void> {
-    try {
-      const commandPayload: CommandRequest = {
-        $typeName: "mmc.command.Request",
-        body: {
-          case: "stopPush",
-          value: {
-            $typeName: "mmc.command.Request.StopPush",
-            line: line,
-            axes: {
-              $typeName: "root.Range",
-              start: axisId,
-              end: axisId,
-            },
           },
         },
       };
@@ -394,7 +339,6 @@ export class MmcCommandWebsocket {
     targetValue: number,
     carrier: number,
     control: Control,
-    disableCas: boolean,
     speed: number,
     acceleration: number,
   ): Promise<void> {
@@ -412,7 +356,6 @@ export class MmcCommandWebsocket {
               value: targetValue,
             },
             control: control,
-            disableCas: disableCas,
             velocity: speed,
             acceleration: acceleration,
           },
