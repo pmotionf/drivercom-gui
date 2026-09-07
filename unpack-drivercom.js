@@ -7,8 +7,9 @@ import { Open } from "unzipper";
 import { execSync } from "node:child_process";
 
 const extension = process.platform === "win32" ? ".exe" : "";
-const rustInfo = execSync("rustc -vV");
+const rustInfo = execSync("rustc -vV").toString();
 const targetTriple = /host: (\S+)/g.exec(rustInfo)[1];
+
 if (!targetTriple) {
   console.error("Failed to determine platform target triple");
   process.exitCode = 1;
