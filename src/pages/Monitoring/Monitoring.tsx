@@ -544,8 +544,8 @@ function Monitoring() {
                           carrierLength: line.carrierLength,
                           axisLength: line.axisLength,
                           drivers: line.drivers,
-                          speed: 1200,
-                          acceleration: 7800,
+                          speed: 40,
+                          acceleration: 40,
                         };
                         return newLine;
                       });
