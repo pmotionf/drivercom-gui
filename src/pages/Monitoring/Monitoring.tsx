@@ -205,6 +205,7 @@ function Monitoring() {
   };
 
   const carrierStates = (): CarrierState[] => {
+    if (lines.length !== systems.length) return [];
     return systems.map((system, i) => {
       return {
         lineName: lines.length > 0 ? lines[i].name : "",
@@ -261,7 +262,7 @@ function Monitoring() {
           borderRadius="0"
           padding="0"
         >
-          <Show when={lines.length > 0}>
+          <Show when={lines.length > 0 && systems.length > 0}>
             <System
               lines={lines}
               systems={systems}
@@ -568,12 +569,13 @@ function Monitoring() {
                   }}
                   onDisconnectServer={async () => {
                     setConnectBtnLoading(true);
-                    setLines([]);
                     setSystems([]);
+                    setLines([]);
 
                     await monitoringServerHandler.disconnect();
                     await clearErrorSocket.disconnect();
                     await commandServerHandler.disconnect();
+
                     setConnectBtnLoading(false);
                     setIsConnect(false);
                   }}
