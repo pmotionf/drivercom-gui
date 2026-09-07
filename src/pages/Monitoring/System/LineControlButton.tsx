@@ -10,7 +10,6 @@ export type LineCommandParameters = {
   speed?: number;
   acceleration?: number;
   calibrate?: boolean;
-  setZero?: boolean;
 };
 
 export type LineControlProps = {
@@ -18,14 +17,12 @@ export type LineControlProps = {
   acceleration: number;
   speed: number;
   disableCalibrateButton: boolean;
-  disableSetZeroButton: boolean;
   sendingCommand: SendingCommand;
   onLineCommand?: (save: LineCommandParameters) => void;
 };
 
 enum LineCommand {
   SaveVelocity,
-  SetZero,
   Calibrate,
   None,
 }
@@ -47,7 +44,6 @@ export function LineControlButton(props: LineControlProps & IconButtonProps) {
 
   const sendingCommand = () => props.sendingCommand;
   const disableCalibrate = () => props.disableCalibrateButton;
-  const disableSetZero = () => props.disableSetZeroButton;
 
   return (
     <Popover.Root>
@@ -260,44 +256,6 @@ export function LineControlButton(props: LineControlProps & IconButtonProps) {
               "align-items": "center",
             }}
           >
-            <Button
-              size="xs"
-              fontWeight={"medium"}
-              style={{ "grid-row": 1, "grid-column": 2 }}
-              height="1.5rem"
-              onClick={() => {
-                const commandProps: LineCommandParameters = {
-                  setZero: true,
-                };
-                setLastCommand(LineCommand.SetZero);
-                props.onLineCommand?.(commandProps);
-              }}
-              loading={
-                sendingCommand() &&
-                sendingCommand()!.line === props.lineName &&
-                isNaN(sendingCommand()!.axisId) &&
-                !sendingCommand()!.movingCarrier &&
-                lastCommand() === LineCommand.SetZero
-                  ? true
-                  : false
-              }
-              disabled={
-                !disableSetZero()
-                  ? sendingCommand()
-                    ? sendingCommand()!.line === props.lineName
-                      ? isNaN(sendingCommand()!.axisId) &&
-                        !sendingCommand()!.movingCarrier
-                        ? lastCommand() === LineCommand.SetZero
-                          ? false
-                          : true
-                        : true
-                      : true
-                    : false
-                  : true
-              }
-            >
-              {"Set Zero"}
-            </Button>
             <Button
               size="xs"
               fontWeight={"medium"}

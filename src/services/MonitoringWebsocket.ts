@@ -106,6 +106,10 @@ export class MonitoringWebsocket {
               infoAxisState: true,
               infoDriverErrors: true,
               infoDriverState: true,
+              registerX: true,
+              registerY: true,
+              registerWr: true,
+              registerWw: true,
               filter: {
                 case: undefined,
                 value: undefined,

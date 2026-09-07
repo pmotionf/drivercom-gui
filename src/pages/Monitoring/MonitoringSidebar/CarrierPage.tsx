@@ -41,7 +41,6 @@ enum TargetKind {
 }
 
 export function CarrierPage(props: CarrierPageProps) {
-  const casMap: Map<string, [Accessor<boolean>, Setter<boolean>]> = new Map();
   const controlModeMap: Map<
     string,
     [Accessor<ControlMode>, Setter<ControlMode>]
@@ -78,7 +77,6 @@ export function CarrierPage(props: CarrierPageProps) {
     targetKind: TargetKind,
     targetValue: string,
     controlMode: ControlMode,
-    cas?: boolean,
   ) => {
     setLastCommandKey(mapKey);
     props.onCarrierMove?.(
@@ -87,7 +85,6 @@ export function CarrierPage(props: CarrierPageProps) {
       targetKind,
       targetValue,
       controlMode,
-      cas ? undefined : "off",
     );
   };
 
@@ -113,13 +110,6 @@ export function CarrierPage(props: CarrierPageProps) {
                     <For each={carrier.carrierStates}>
                       {(carrierState) => {
                         const mapKey = `${carrier.lineName}${carrierState.id}`;
-                        if (!casMap.has(mapKey)) {
-                          casMap.set(
-                            mapKey,
-                            createSignal<boolean>(!carrierState.casDisabled),
-                          );
-                        }
-                        const [cas, setCas] = casMap.get(mapKey)!;
 
                         if (!controlModeMap.has(mapKey)) {
                           controlModeMap.set(
@@ -186,7 +176,6 @@ export function CarrierPage(props: CarrierPageProps) {
                                       targetKind(),
                                       targetValue(),
                                       controlMode(),
-                                      cas(),
                                     );
                                   }
                                 }}
@@ -269,16 +258,6 @@ export function CarrierPage(props: CarrierPageProps) {
                                 {"Velocity"}
                               </ToggleGroup.Item>
                             </ToggleGroup.Root>
-                            <Text style={{ "grid-row": 2, "grid-column": 3 }}>
-                              {"CAS"}
-                            </Text>
-                            <Button
-                              variant={cas() ? "solid" : "outline"}
-                              style={{ "grid-row": 3, "grid-column": 3 }}
-                              onClick={() => setCas(!cas())}
-                            >
-                              {cas() ? "on" : "off"}
-                            </Button>
                             <Button
                               style={{ "grid-row": 3, "grid-column": 4 }}
                               disabled={
@@ -309,7 +288,6 @@ export function CarrierPage(props: CarrierPageProps) {
                                   targetKind(),
                                   targetValue(),
                                   controlMode(),
-                                  cas(),
                                 );
                               }}
                             >

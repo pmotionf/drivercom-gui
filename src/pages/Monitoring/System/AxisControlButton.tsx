@@ -17,15 +17,9 @@ export type AxisControlProps = {
   hasCarrier?: boolean;
   sendingCommand: boolean;
   disableCommandButton: boolean;
-  onPull?: (
-    axisDirection: string,
-    carrierId: string,
-    cas: string,
-    destination?: string,
-  ) => void;
-  onPush?: (axisDirection: string, carrierId?: string) => void;
+  onPull?: (axisDirection: string, carrierId: string) => void;
+  onPush?: (axisDirection: string) => void;
   onStopPull?: () => void;
-  onStopPush?: () => void;
   onStopCommand?: () => void;
   onInitialize?: (
     direction: string,
@@ -34,7 +28,6 @@ export type AxisControlProps = {
   ) => void;
   onDeinitialize?: () => void;
   stopPullDisabled?: boolean;
-  stopPushDisabled?: boolean;
 };
 
 enum AxisCommandType {
@@ -49,11 +42,6 @@ enum AxisCommandType {
   None,
 }
 
-enum CasState {
-  On = "on",
-  Off = "off",
-}
-
 enum AxisLink {
   None = "none",
   Left = "left",
@@ -63,16 +51,13 @@ enum AxisLink {
 export function AxisControlButton(props: AxisControlProps & IconButtonProps) {
   const { onPull, onPush, onStopPull, onStopPush, ...IconButtonProps } = props;
 
-  const [pushCarrierId, setPushCarrierId] = createSignal<string>("");
   const [pushDirection, setPushDirection] = createSignal<AxisDirection>(
     AxisDirection.FORWARD,
   );
   const [pullCarrierId, setPullCarrierId] = createSignal<string>("");
-  const [pullDestination, setPullDestination] = createSignal<string>("");
   const [pullDirection, setPullDirection] = createSignal<AxisDirection>(
     AxisDirection.BACKWARD,
   );
-  const [casEnable, setCasEnable] = createSignal<CasState>(CasState.On);
 
   const [initializeCarrierId, setInitializeCarrierId] =
     createSignal<string>("");
@@ -160,12 +145,7 @@ export function AxisControlButton(props: AxisControlProps & IconButtonProps) {
                     return;
                   }
                   if (props.stopPushDisabled === true && onPush) {
-                    onPush(
-                      pushDirection(),
-                      pushCarrierId().length === 0
-                        ? undefined
-                        : pushCarrierId(),
-                    );
+                    onPush(pushDirection());
                     setLastCommand(AxisCommandType.Push);
                     return;
                   }
@@ -180,9 +160,7 @@ export function AxisControlButton(props: AxisControlProps & IconButtonProps) {
                 (lastCommand() === AxisCommandType.Push ||
                   lastCommand() === AxisCommandType.StopPush)
                   ? "Cancel"
-                  : props.stopPushDisabled === true
-                    ? "Push"
-                    : "Stop"}
+                  : "Push"}
               </Button>
 
               <Text
@@ -211,30 +189,6 @@ export function AxisControlButton(props: AxisControlProps & IconButtonProps) {
               >
                 {pushDirection()}
               </Button>
-              <Text
-                textStyle="sm"
-                style={{
-                  opacity: pushCarrierId().length > 0 ? "1" : "0.5",
-                  "grid-row": 2,
-                  "grid-column": 2,
-                }}
-              >
-                {"Carrier"}
-              </Text>
-              <Input
-                value={pushCarrierId()}
-                onChange={(e) =>
-                  setPushCarrierId(Number(e.target.value).toString())
-                }
-                height="2rem"
-                padding="0.2rem"
-                style={{
-                  width: `4rem`,
-                  opacity: pushCarrierId().length > 0 ? "1" : "0.5",
-                  "grid-row": 3,
-                  "grid-column": 2,
-                }}
-              />
             </div>
 
             {/* Pull */}
@@ -290,14 +244,7 @@ export function AxisControlButton(props: AxisControlProps & IconButtonProps) {
                     return;
                   }
                   if (props.stopPullDisabled === true && onPull) {
-                    onPull(
-                      pullDirection(),
-                      pullCarrierId(),
-                      casEnable(),
-                      pullDestination().length === 0
-                        ? undefined
-                        : pullDestination(),
-                    );
+                    onPull(pullDirection(), pullCarrierId());
                     setLastCommand(AxisCommandType.Pull);
                     return;
                   }
@@ -349,68 +296,6 @@ export function AxisControlButton(props: AxisControlProps & IconButtonProps) {
               >
                 {pullDirection()}
               </Button>
-
-              <Text
-                textStyle="sm"
-                style={{
-                  "grid-row": 4,
-                  "grid-column": 2,
-                  opacity: casEnable() === CasState.On ? "0.5" : "1",
-                }}
-              >
-                {"CAS"}
-              </Text>
-              <Button
-                variant={"outline"}
-                style={{
-                  "grid-row": 5,
-                  "grid-column": 2,
-                  opacity: casEnable() === CasState.On ? "0.5" : "1",
-                }}
-                onClick={() =>
-                  setCasEnable((prev) =>
-                    prev === CasState.On ? CasState.Off : CasState.On,
-                  )
-                }
-                height={"2rem"}
-                padding="0.4rem"
-              >
-                {casEnable()}
-              </Button>
-
-              <Text
-                textStyle="sm"
-                style={{
-                  "grid-row": 4,
-                  "grid-column": 1,
-                  opacity:
-                    pullDestination().length > 0 && pullDestination() !== "NaN"
-                      ? "1"
-                      : "0.5",
-                }}
-              >
-                {"Destination"}
-              </Text>
-              <Input
-                style={{
-                  "grid-row": 5,
-                  "grid-column": 1,
-                  opacity:
-                    pullDestination().length > 0 && pullDestination() !== "NaN"
-                      ? "1"
-                      : "0.5",
-                }}
-                value={pullDestination()}
-                onChange={(e) => {
-                  if (isNaN(Number(e.target.value))) {
-                    setPullDestination("NaN");
-                  } else {
-                    setPullDestination(e.target.value);
-                  }
-                }}
-                height={"2rem"}
-                padding="0.2rem"
-              />
             </div>
 
             <div

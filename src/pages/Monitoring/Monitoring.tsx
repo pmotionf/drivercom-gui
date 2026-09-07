@@ -271,8 +271,6 @@ function Monitoring() {
                 commandDirection,
                 axisId,
                 carrierId,
-                destination,
-                disableCas,
               ) => {
                 try {
                   const lineName = lines[lineIndex].name;
@@ -289,14 +287,6 @@ function Monitoring() {
                       : Request_Direction.BACKWARD,
                     speed,
                     acceleration,
-                    typeof disableCas === "string"
-                      ? disableCas === "off"
-                        ? true
-                        : false
-                      : disableCas,
-                    typeof destination === "string"
-                      ? Number(destination)
-                      : destination,
                   );
                   setSendingCmd(null);
                 } catch (e) {
@@ -324,12 +314,7 @@ function Monitoring() {
                   setSendingCmd(null);
                 }
               }}
-              onPush={async (
-                lineIndex,
-                commandDirection,
-                axisId,
-                carrierId,
-              ) => {
+              onPush={async (lineIndex, commandDirection, axisId) => {
                 try {
                   const lineName = lines[lineIndex].name;
                   setSendingCmd({ line: lineName, axisId: axisId });
@@ -345,27 +330,7 @@ function Monitoring() {
                       : Request_Direction.BACKWARD,
                     speed,
                     acceleration,
-                    typeof carrierId === "string"
-                      ? Number(carrierId)
-                      : carrierId,
                   );
-                  setSendingCmd(null);
-                } catch (e) {
-                  toaster.create({
-                    title: "Error",
-                    description: e as string,
-                    type: "error",
-                  });
-                  setSendingCmd(null);
-                }
-              }}
-              onStopPush={async (lineIndex, axisId) => {
-                try {
-                  const lineName = lines[lineIndex].name;
-                  setSendingCmd({ line: lineName, axisId: axisId });
-
-                  const lineId = lineIndex + 1;
-                  await commandServerHandler.stopPush(lineId, axisId);
                   setSendingCmd(null);
                 } catch (e) {
                   toaster.create({
@@ -443,9 +408,6 @@ function Monitoring() {
                       "acceleration",
                       params.acceleration,
                     );
-                  }
-                  if (params.setZero) {
-                    await commandServerHandler.setZero(lineId);
                   }
                   if (params.calibrate) {
                     await commandServerHandler.calibrate(lineId);
@@ -663,7 +625,6 @@ function Monitoring() {
                   targetKind,
                   targetValue,
                   controlMode,
-                  cas,
                 ) => {
                   setSendingCmd({
                     line: line,
@@ -685,7 +646,6 @@ function Monitoring() {
                       controlMode === "position"
                         ? Control.POSITION
                         : Control.VELOCITY,
-                      cas === "off" ? true : false,
                       speed,
                       acceleration,
                     );
