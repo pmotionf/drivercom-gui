@@ -30,13 +30,15 @@ enum LineCommand {
 export function LineControlButton(props: LineControlProps & IconButtonProps) {
   const { ...IconButtonProps } = props;
 
-  const [speedInput, setSpeedInput] = createSignal<string>(`${props.speed}`);
-  const speedUnit = "mm/s";
+  const [velocityInput, setVelocityInput] = createSignal<string>(
+    `${props.speed}`,
+  );
+  const velocityUnit = "%";
 
   const [accelerationInput, setaccelerationInput] = createSignal<string>(
     `${props.acceleration}`,
   );
-  const accelerationUnit = "mm/s²";
+  const accelerationUnit = "%";
 
   const [lastCommand, setLastCommand] = createSignal<LineCommand>(
     LineCommand.None,
@@ -105,7 +107,7 @@ export function LineControlButton(props: LineControlProps & IconButtonProps) {
               }
               disabled={
                 props.acceleration !== Number(accelerationInput()) ||
-                props.speed !== Number(speedInput())
+                props.speed !== Number(velocityInput())
                   ? sendingCommand()
                     ? sendingCommand()!.line === props.lineName
                       ? isNaN(sendingCommand()!.axisId) &&
@@ -122,15 +124,15 @@ export function LineControlButton(props: LineControlProps & IconButtonProps) {
                 e.stopPropagation();
 
                 if (
-                  props.speed !== Number(speedInput()) ||
+                  props.speed !== Number(velocityInput()) ||
                   props.acceleration !== Number(accelerationInput())
                 ) {
                   const saveProps: LineCommandParameters = {
                     speed:
-                      props.speed === Number(speedInput()) ||
-                      isNaN(Number(speedInput()))
+                      props.speed === Number(velocityInput()) ||
+                      isNaN(Number(velocityInput()))
                         ? undefined
-                        : Number(speedInput()),
+                        : Number(velocityInput()),
                     acceleration:
                       props.acceleration === Number(accelerationInput()) ||
                       isNaN(Number(accelerationInput()))
@@ -170,9 +172,9 @@ export function LineControlButton(props: LineControlProps & IconButtonProps) {
               }}
             >
               <input
-                value={speedInput()}
-                onInput={(e) => setSpeedInput(e.target.value)}
-                onChange={(e) => setSpeedInput(`${Number(e.target.value)}`)}
+                value={velocityInput()}
+                onInput={(e) => setVelocityInput(e.target.value)}
+                onChange={(e) => setVelocityInput(`${Number(e.target.value)}`)}
                 onKeyDown={(e) => {
                   e.stopPropagation();
                 }}
@@ -191,7 +193,7 @@ export function LineControlButton(props: LineControlProps & IconButtonProps) {
                 onClick={(e) => e.stopPropagation()}
               />
               <Text textStyle="sm" opacity="0.7" fontWeight="medium">
-                {speedUnit}
+                {velocityUnit}
               </Text>
             </div>
 
