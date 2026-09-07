@@ -96,6 +96,16 @@ export function System(props: SystemProps) {
     return disableCalibrate;
   };
 
+  const getPrevAxesLength = (line: LineConfig, driverIndex: number) => {
+    const drivers = line.drivers;
+    const prevDrivers = drivers
+      .slice(0, driverIndex)
+      .map((driver) => driver.axes);
+    if (prevDrivers.length === 0) return 0;
+    const prevDriverLength = prevDrivers.reduce((a, b) => a + b);
+    return prevDriverLength;
+  };
+
   return (
     <div
       style={{
@@ -128,7 +138,6 @@ export function System(props: SystemProps) {
                 const sortable = createSortable(lineIndex);
                 //@ts-ignore Using Library
                 const [state] = useDragDropContext();
-
                 return (
                   <div
                     //@ts-ignore Using Library
@@ -163,7 +172,11 @@ export function System(props: SystemProps) {
                           gap="1rem"
                         >
                           <For each={props.lines[lineIndex].drivers}>
-                            {(driver) => {
+                            {(driver, driverIndex) => {
+                              const prevDriverLength = getPrevAxesLength(
+                                props.lines[lineIndex],
+                                driverIndex(),
+                              );
                               return (
                                 <div>
                                   <Driver
@@ -189,7 +202,7 @@ export function System(props: SystemProps) {
                                           {
                                             length: driver.axes,
                                           },
-                                          (_, i) => driver.id * (i + 1),
+                                          (_, i) => prevDriverLength + i + 1,
                                         )}
                                       >
                                         {(axisId) => {
