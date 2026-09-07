@@ -640,43 +640,7 @@ function ScenarioCommand(
       }}
     >
       {obj.case === "mmcCommand" ? (
-        <>
-          <Text fontWeight="bold" marginRight={"0.5rem"}>
-            {obj.value.command.body.case}
-          </Text>
-          <For
-            each={Object.keys(obj.value.command.body.value!).filter(
-              (key) => key !== "$typeName",
-            )}
-          >
-            {(key) => {
-              return (
-                <ScenarioValue
-                  key={key}
-                  value={
-                    obj.value.command.body.value![
-                      key as keyof typeof obj.value.command.body.value
-                    ]!
-                  }
-                  onValueChange={(value) => {
-                    if (obj.case === "mmcCommand") {
-                      setObj(
-                        "value",
-                        //@ts-ignore type is checked
-                        "command",
-                        "body",
-                        "value",
-                        key as keyof typeof obj.value.command,
-                        //@ts-ignore type is checked
-                        value,
-                      );
-                    }
-                  }}
-                />
-              );
-            }}
-          </For>
-        </>
+        <MmcCommandBlock command={obj.value.command}/>
       ) : (
         <>
           <Text>
@@ -752,7 +716,54 @@ function ScenarioCommand(
   );
 }
 
-function ScenarioValue(props: {
+function MmcCommandBlock(props: { command: CommandRequest }) {
+  const [obj, setObj] = createStore<CommandRequest>(props.command)
+  if (obj.body.value === undefined) return;
+
+  return (
+    <>
+      <Text fontWeight="bold" marginRight={"0.5rem"}>
+        {obj.body.case}
+      </Text>
+      {"target" in obj.body.value &&
+        <>
+          <Text> Target Axis </Text>
+          <Input width={"2rem"}  />
+        </>
+      }
+      <For
+        each={Object.keys(obj.body.value).filter(
+          (key) => key !== "$typeName",
+        )}
+      >
+        {(key) => {
+          if(key !== "target" && key !== "acceleration" && key !== "velocity")
+          return (
+            <MmcCommandValue
+              key={key}
+              value={
+                obj.body.value![
+                  key as keyof typeof obj.body.value
+                ]!
+              }
+              onValueChange={(value) => {
+                setObj(
+                  "body",
+                  "value",
+                  //@ts-ignore
+                  key as keyof typeof obj.body.value,
+                  value
+                )
+              }}
+            />
+          );
+        }}
+      </For>
+    </>
+  )
+}
+
+function MmcCommandValue(props: {
   key: string;
   value: string | number | object;
   onValueChange?: (value: string | number | object) => void;
@@ -782,7 +793,7 @@ function ScenarioValue(props: {
       <For each={Object.keys(obj).filter((key) => key !== "$typeName")}>
         {(key) => {
           return (
-            <ScenarioValue
+            <MmcCommandValue
               key={key}
               value={obj[key as keyof typeof obj]}
               onValueChange={(value) => {
