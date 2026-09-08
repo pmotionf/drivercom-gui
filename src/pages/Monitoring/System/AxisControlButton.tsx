@@ -34,7 +34,6 @@ enum AxisCommandType {
   Pull,
   StopPull,
   Push,
-  StopPush,
   PullCancel,
   PushCancel,
   Initialize,
@@ -49,7 +48,7 @@ enum AxisLink {
 }
 
 export function AxisControlButton(props: AxisControlProps & IconButtonProps) {
-  const { onPull, onPush, onStopPull, onStopPush, ...IconButtonProps } = props;
+  const { onPull, onPush, onStopPull, ...IconButtonProps } = props;
 
   const [pushDirection, setPushDirection] = createSignal<AxisDirection>(
     AxisDirection.FORWARD,
@@ -125,7 +124,6 @@ export function AxisControlButton(props: AxisControlProps & IconButtonProps) {
                   props.disableCommandButton
                     ? props.sendingCommand
                       ? lastCommand() !== AxisCommandType.Push &&
-                        lastCommand() !== AxisCommandType.StopPush &&
                         lastCommand() !== AxisCommandType.None
                       : true
                     : false
@@ -137,30 +135,20 @@ export function AxisControlButton(props: AxisControlProps & IconButtonProps) {
                 onClick={() => {
                   if (
                     props.sendingCommand &&
-                    (lastCommand() === AxisCommandType.Push ||
-                      lastCommand() === AxisCommandType.StopPush)
+                    lastCommand() === AxisCommandType.Push
                   ) {
                     props.onStopCommand?.();
                     setLastCommand(AxisCommandType.PushCancel);
                     return;
                   }
-                  if (props.stopPushDisabled === true && onPush) {
+                  if (onPush) {
                     onPush(pushDirection());
                     setLastCommand(AxisCommandType.Push);
                     return;
                   }
-                  if (props.stopPushDisabled === false && onStopPush) {
-                    onStopPush();
-                    setLastCommand(AxisCommandType.StopPush);
-                    return;
-                  }
                 }}
               >
-                {props.sendingCommand &&
-                (lastCommand() === AxisCommandType.Push ||
-                  lastCommand() === AxisCommandType.StopPush)
-                  ? "Cancel"
-                  : "Push"}
+                {"Push"}
               </Button>
 
               <Text
