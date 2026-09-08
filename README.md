@@ -4,19 +4,19 @@
 
 ### Requirements
 
-1. `bun`
+1. `pnpm`
 2. `rustc` & `cargo`
 
 ### Setup
 
-`bun i`
+`pnpm i`
 
-`bun run fmt`
+`pnpm fmt`
 
-`bun run tsc`
+`pnpm check`
 
-`bun run test`
+`pnpm test`
 
 ### Running
 
-To run a development build, use `bun run tauri dev`
+To run a development build, use `pnpm tauri dev`
