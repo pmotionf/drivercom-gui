@@ -58,9 +58,9 @@ export function ScenarioPage(props: {
   const [scenarioCommands, setScenarioCommands] = createStore<
     ScenarioCommand[]
   >([]);
-  const [scenarioVeloctiy, setScenarioVelocity] = createSignal<number>(1200);
+  const [scenarioVeloctiy, setScenarioVelocity] = createSignal<number>(40);
   const [scenarioAcceleration, setScenarioAcceleration] =
-    createSignal<number>(7800);
+    createSignal<number>(40);
 
   const commandRequestValue = (
     field: MmcCommandField,
