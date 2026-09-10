@@ -40,9 +40,8 @@ export const ConnectPage = (props: ConnectPageProps) => {
     return props.inputs.get("port")![1](newPort);
   };
 
-  const ipRegex = /^(?!0)(?!.*\.$)((1?\d?\d|25[0-5]|2[0-4]\d)(\.|$)){4}$/;
   const isInvalidIp = (): boolean => {
-    return !ipRegex.test(ip()) || port().length < 1 || isNaN(Number(port()));
+    return URL.canParse(`ws://${ip()}:${port()}`) === false;
   };
 
   const toaster = props.toaster;
