@@ -5,25 +5,8 @@ import { Request_Kind, Response_TrackConfig_Line } from "~/proto/mmc/core_pb";
 import { Response_Line } from "~/proto/mmc/info_pb";
 
 export class MonitoringWebsocket {
-  private readonly socket = new WebsocketManger();
+  readonly socket = new WebsocketManager();
   private readonly protobuf = new ProtobufManager();
-  private _isSocketOpen = () => this.socket.getStatus() === WebSocket.OPEN;
-
-  async connect(ip: string, port: string): Promise<void> {
-    return await this.socket.connect(ip, port);
-  }
-
-  async disconnect(): Promise<void> {
-    return await this.socket.disconnect();
-  }
-
-  async send(buffer: Uint8Array, timeout: number): Promise<ArrayBuffer> {
-    return await this.socket.send(buffer, timeout);
-  }
-
-  getStatus(): number {
-    return this.socket.getStatus();
-  }
 
   async getLineConfig(): Promise<Response_TrackConfig_Line[]> {
     if (!this._isSocketOpen()) {
