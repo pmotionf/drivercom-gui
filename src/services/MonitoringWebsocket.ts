@@ -1,6 +1,6 @@
 import { Request } from "~/proto/mmc_pb";
 import { ProtobufManager } from "./ProtobufManager";
-import { WebSocketError, WebsocketManger } from "./WebsocketManager";
+import { WebSocketError, WebsocketManager, ErrorKind } from "./WebsocketManager";
 import { Request_Kind, Response_TrackConfig_Line } from "~/proto/mmc/core_pb";
 import { Response_Line } from "~/proto/mmc/info_pb";
 
@@ -9,9 +9,6 @@ export class MonitoringWebsocket {
   private readonly protobuf = new ProtobufManager();
 
   async getLineConfig(): Promise<Response_TrackConfig_Line[]> {
-    if (!this._isSocketOpen()) {
-      throw WebSocketError.NOT_CONNECTED_TO_SERVER;
-    }
     const payload: Request = {
       body: {
         case: "core",
@@ -22,27 +19,23 @@ export class MonitoringWebsocket {
       },
       $typeName: "mmc.Request",
     };
-    try {
-      const encodePayload = this.protobuf.encode(payload);
-      const response = await this.socket.send(encodePayload, 1000);
-      const decodeResponse = this.protobuf.decode(response);
-      if (decodeResponse.body.case === "core") {
-        const core = decodeResponse.body.value;
-        if (core.body.case === "trackConfig") {
-          const trackConfig = core.body.value;
-          return trackConfig.lines;
-        }
+    const encodePayload = this.protobuf.encode(payload);
+    const response = await this.socket.send(encodePayload, 1000);
+    const decodeResponse = this.protobuf.decode(response);
+    if (decodeResponse.body.case === "core") {
+      const core = decodeResponse.body.value;
+      if (core.body.case === "trackConfig") {
+        const trackConfig = core.body.value;
+        return trackConfig.lines;
+      } else {
+        throw new WebSocketError.ResponseError(ErrorKind.InvalidResponse);
       }
-    } catch (err) {
-      throw new Error(err as string);
+    } else {
+      throw new WebSocketError.ResponseError(ErrorKind.InvalidResponse);
     }
-    throw WebSocketError.RESPONSE_ERROR;
   }
 
   async getServerName(): Promise<string> {
-    if (!this._isSocketOpen()) {
-      throw WebSocketError.NOT_CONNECTED_TO_SERVER;
-    }
     const payload: Request = {
       body: {
         case: "core",
@@ -53,28 +46,24 @@ export class MonitoringWebsocket {
       },
       $typeName: "mmc.Request",
     };
-    try {
-      const encodePayload = this.protobuf.encode(payload);
-      const response = await this.socket.send(encodePayload, 1000);
-      const decodeResponse = this.protobuf.decode(response);
-      if (decodeResponse.body.case === "core") {
-        const core = decodeResponse.body.value;
-        if (core.body.case === "server") {
-          const serverInfo = core.body.value;
-          return serverInfo.name;
-        }
+    const encodePayload = this.protobuf.encode(payload);
+    const response = await this.socket.send(encodePayload, 1000);
+    const decodeResponse = this.protobuf.decode(response);
+    if (decodeResponse.body.case === "core") {
+      const core = decodeResponse.body.value;
+      if (core.body.case === "server") {
+        const serverInfo = core.body.value;
+        return serverInfo.name;
+      } else {
+        throw new WebSocketError.ResponseError(ErrorKind.InvalidResponse);
       }
-    } catch (err) {
-      throw new Error(err as string);
+    } else {
+      throw new WebSocketError.ResponseError(ErrorKind.InvalidResponse);
     }
-    throw WebSocketError.RESPONSE_ERROR;
   }
 
   async getSystemInfo(lines: number[]): Promise<Response_Line[]> {
-    if (!this._isSocketOpen()) {
-      throw WebSocketError.NOT_CONNECTED_TO_SERVER;
-    }
-    const payload: Request = {
+     const payload: Request = {
       body: {
         case: "info",
         value: {
@@ -103,20 +92,19 @@ export class MonitoringWebsocket {
       },
       $typeName: "mmc.Request",
     };
-    try {
-      const encodePayload = this.protobuf.encode(payload);
-      const response = await this.socket.send(encodePayload, 1000);
-      const decodeResponse = this.protobuf.decode(response);
-      if (decodeResponse.body.case === "info") {
-        const info = decodeResponse.body.value;
-        if (info.body.case === "track") {
-          const track = info.body.value;
-          return track.lines;
-        }
+    const encodePayload = this.protobuf.encode(payload);
+    const response = await this.socket.send(encodePayload, 1000);
+    const decodeResponse = this.protobuf.decode(response);
+    if (decodeResponse.body.case === "info") {
+      const info = decodeResponse.body.value;
+      if (info.body.case === "track") {
+        const track = info.body.value;
+        return track.lines;
+      } else {
+        throw new WebSocketError.ResponseError(ErrorKind.InvalidResponse);
       }
-    } catch (err) {
-      throw new Error(err as string);
+    } else {
+      throw new WebSocketError.ResponseError(ErrorKind.InvalidResponse);
     }
-    throw WebSocketError.RESPONSE_ERROR;
   }
 }
