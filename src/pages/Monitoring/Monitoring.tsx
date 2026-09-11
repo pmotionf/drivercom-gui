@@ -74,7 +74,7 @@ function Monitoring() {
                   await Promise.allSettled([
                     monitoringServerHandler.socket.disconnect(),
                     clearErrorSocket.disconnect(),
-                    commandServerHandler.disconnect()
+                    commandServerHandler.disconnect(),
                   ]);
                 } catch (e) {
                   console.log(e);
@@ -538,7 +538,7 @@ function Monitoring() {
                       await Promise.all([
                         monitoringServerHandler.socket.connect(ip, port),
                         clearErrorSocket.connect(ip, port),
-                        commandServerHandler.connect(ip, port)
+                        commandServerHandler.connect(ip, port),
                       ]);
                       setIsConnect(true);
                       const serverResponse: LineConfig[] = (
@@ -562,7 +562,7 @@ function Monitoring() {
                       await Promise.allSettled([
                         monitoringServerHandler.socket.disconnect(),
                         clearErrorSocket.disconnect(),
-                        commandServerHandler.disconnect()
+                        commandServerHandler.disconnect(),
                       ]);
                       if (error instanceof WebSocketError.RequestError) {
                         setIsConnect(false);
@@ -572,7 +572,7 @@ function Monitoring() {
                         toaster.create({
                           title: error.name,
                           description: error.message,
-                          type: "error"
+                          type: "error",
                         });
                         console.log(error);
                       }
@@ -587,8 +587,8 @@ function Monitoring() {
                       await Promise.allSettled([
                         monitoringServerHandler.socket.disconnect(),
                         clearErrorSocket.disconnect(),
-                        commandServerHandler.disconnect()
-                      ])
+                        commandServerHandler.disconnect(),
+                      ]);
                     } catch (e) {
                       // Error on disconnect will be shown into log only.
                       console.log(e);

@@ -41,7 +41,7 @@ export const WebSocketError = {
   ConnectError,
   DisconnectError,
   RequestError,
-  ResponseError
+  ResponseError,
 };
 
 export enum ErrorKind {
@@ -53,7 +53,7 @@ export enum ErrorKind {
   CommandConflicted = "Already sending command",
   InvalidEndpoint = "Invalid endpoint address",
   Unexpected = "Unexpected error occured",
-  InvalidResponse = "Invalid response from server"
+  InvalidResponse = "Invalid response from server",
 }
 
 export class WebsocketManager implements IWebsocketManager {
@@ -158,7 +158,9 @@ export class WebsocketManager implements IWebsocketManager {
         } else {
           // TODO: Find out if we need to handle specific closing reason to retry
           // the disconnect.
-          reject(new ConnectError(`${ErrorKind.Disconnected} (code: ${event.code})` ));
+          reject(
+            new ConnectError(`${ErrorKind.Disconnected} (code: ${event.code})`),
+          );
         }
       };
       this._socket.close();
@@ -166,7 +168,8 @@ export class WebsocketManager implements IWebsocketManager {
   }
 
   async send(buffer: Uint8Array, timeout: number): Promise<ArrayBuffer> {
-    if (this._commandPending) throw new RequestError(ErrorKind.CommandConflicted);
+    if (this._commandPending)
+      throw new RequestError(ErrorKind.CommandConflicted);
     this._startCommand();
 
     return await new Promise((resolve, reject) => {
@@ -188,7 +191,9 @@ export class WebsocketManager implements IWebsocketManager {
       this._socket.onclose = (event) => {
         clearTimeout(timeoutId);
         this._socketCloseHandler();
-        return reject(new RequestError(ErrorKind.Disconnected,{cause: event}))
+        return reject(
+          new RequestError(ErrorKind.Disconnected, { cause: event }),
+        );
       };
 
       try {
@@ -196,7 +201,9 @@ export class WebsocketManager implements IWebsocketManager {
       } catch (err) {
         clearTimeout(timeoutId);
         this._completeCommand();
-        return reject(new RequestError((err as DOMException).message, { cause: err }));
+        return reject(
+          new RequestError((err as DOMException).message, { cause: err }),
+        );
       }
     });
   }

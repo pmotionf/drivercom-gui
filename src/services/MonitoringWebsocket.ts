@@ -1,6 +1,10 @@
 import { Request } from "~/proto/mmc_pb";
 import { ProtobufManager } from "./ProtobufManager";
-import { WebSocketError, WebsocketManager, ErrorKind } from "./WebsocketManager";
+import {
+  WebSocketError,
+  WebsocketManager,
+  ErrorKind,
+} from "./WebsocketManager";
 import { Request_Kind, Response_TrackConfig_Line } from "~/proto/mmc/core_pb";
 import { Response_Line } from "~/proto/mmc/info_pb";
 
@@ -63,7 +67,7 @@ export class MonitoringWebsocket {
   }
 
   async getSystemInfo(lines: number[]): Promise<Response_Line[]> {
-     const payload: Request = {
+    const payload: Request = {
       body: {
         case: "info",
         value: {
