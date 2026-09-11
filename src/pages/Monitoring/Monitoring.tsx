@@ -31,6 +31,7 @@ import { Control } from "~/proto/mmc/control_pb.ts";
 import { MonitoringWebsocket } from "~/services/MonitoringWebsocket.ts";
 import { MmcCommandWebsocket } from "~/services/MmcCommandWebsocket.ts";
 import { Response_TrackConfig_Line } from "~/proto/mmc/core_pb.ts";
+import { WebSocketError } from "~/services/WebsocketManager.ts";
 
 export type LineConfig = Omit<
   Response_TrackConfig_Line,
@@ -49,9 +50,11 @@ function Monitoring() {
 
   onCleanup(async () => {
     if (lines.length > 0) {
-      await monitoringServerHandler.disconnect();
-      await clearErrorSocket.disconnect();
-      await commandServerHandler.disconnect();
+      await Promise.allSettled([
+        monitoringServerHandler.socket.disconnect(),
+        clearErrorSocket.disconnect(),
+        commandServerHandler.disconnect(),
+      ]);
       setSendingCmd(null);
       setIsConnect(false);
     }
@@ -66,13 +69,16 @@ function Monitoring() {
             try {
               await getSystemInfo(lines.map((line) => line.id));
             } catch (e) {
-              if (
-                monitoringServerHandler.getStatus() &&
-                monitoringServerHandler.getStatus() === WebSocket.OPEN
-              ) {
-                await monitoringServerHandler.disconnect();
-                await clearErrorSocket.disconnect();
-                await commandServerHandler.disconnect();
+              if (monitoringServerHandler.socket.isOpen()) {
+                try {
+                  await Promise.allSettled([
+                    monitoringServerHandler.socket.disconnect(),
+                    clearErrorSocket.disconnect(),
+                    commandServerHandler.disconnect(),
+                  ]);
+                } catch (e) {
+                  console.log(e);
+                }
               }
 
               if (lines.length > 0) {
@@ -86,6 +92,7 @@ function Monitoring() {
                   description: e ? e.toString() : "The server is disconnected.",
                   type: "error",
                 });
+                console.log(e);
               }
             }
           }
@@ -96,26 +103,22 @@ function Monitoring() {
   );
 
   const getSystemInfo = async (lineIds: number[]): Promise<void> => {
-    try {
-      const systemInfo = await monitoringServerHandler.getSystemInfo(lineIds);
-      if (systemInfo) {
-        if (isAutoClearMode()) {
-          let lineId = lines[0].id;
-          for await (const system of systemInfo) {
-            if (system.driverErrors && hasError(system.driverErrors)) {
-              if (!system.axisErrors || !hasError(system.axisErrors)) {
-                await clearErrorSocket.clearError(lineId);
-              }
+    const systemInfo = await monitoringServerHandler.getSystemInfo(lineIds);
+    if (systemInfo) {
+      if (isAutoClearMode()) {
+        let lineId = lines[0].id;
+        for await (const system of systemInfo) {
+          if (system.driverErrors && hasError(system.driverErrors)) {
+            if (!system.axisErrors || !hasError(system.axisErrors)) {
+              await clearErrorSocket.clearError(lineId);
             }
-            lineId++;
           }
+          lineId++;
         }
       }
-      setSystems(reconcile(systemInfo));
-      return Promise.resolve();
-    } catch (e) {
-      return Promise.reject(e);
     }
+    setSystems(reconcile(systemInfo));
+    return Promise.resolve();
   };
 
   const hasError = (systemErrors: object[]): boolean => {
@@ -530,11 +533,14 @@ function Monitoring() {
                   loading={connectBtnLoading()}
                   onConnectServer={async (ip: string, port: string) => {
                     setConnectBtnLoading(true);
-
                     try {
-                      await monitoringServerHandler.connect(ip, port);
-                      await clearErrorSocket.connect(ip, port);
-                      await commandServerHandler.connect(ip, port);
+                      // Connect all clients to the server
+                      await Promise.all([
+                        monitoringServerHandler.socket.connect(ip, port),
+                        clearErrorSocket.connect(ip, port),
+                        commandServerHandler.connect(ip, port),
+                      ]);
+                      setIsConnect(true);
                       const serverResponse: LineConfig[] = (
                         await monitoringServerHandler.getLineConfig()
                       ).map((line) => {
@@ -552,29 +558,41 @@ function Monitoring() {
                       });
                       await addIpHistory(ip, port);
                       setLines(serverResponse);
-                      setConnectBtnLoading(false);
-                      if (
-                        monitoringServerHandler.getStatus() === WebSocket.OPEN
-                      ) {
-                        setIsConnect(true);
+                    } catch (error) {
+                      await Promise.allSettled([
+                        monitoringServerHandler.socket.disconnect(),
+                        clearErrorSocket.disconnect(),
+                        commandServerHandler.disconnect(),
+                      ]);
+                      if (error instanceof WebSocketError.RequestError) {
+                        setIsConnect(false);
+                        deleteIpHistory(ip, port);
                       }
-                    } catch {
-                      setConnectBtnLoading(false);
-                      deleteIpHistory(ip, port);
-                      await monitoringServerHandler.disconnect();
-                      await clearErrorSocket.disconnect();
-                      await commandServerHandler.disconnect();
-                      setIsConnect(false);
+                      if (error instanceof Error) {
+                        toaster.create({
+                          title: error.name,
+                          description: error.message,
+                          type: "error",
+                        });
+                        console.log(error);
+                      }
                     }
+                    setConnectBtnLoading(false);
                   }}
                   onDisconnectServer={async () => {
                     setConnectBtnLoading(true);
                     setSystems([]);
                     setLines([]);
-
-                    await monitoringServerHandler.disconnect();
-                    await clearErrorSocket.disconnect();
-                    await commandServerHandler.disconnect();
+                    try {
+                      await Promise.allSettled([
+                        monitoringServerHandler.socket.disconnect(),
+                        clearErrorSocket.disconnect(),
+                        commandServerHandler.disconnect(),
+                      ]);
+                    } catch (e) {
+                      // Error on disconnect will be shown into log only.
+                      console.log(e);
+                    }
 
                     setConnectBtnLoading(false);
                     setIsConnect(false);

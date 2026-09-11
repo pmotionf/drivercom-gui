@@ -1,15 +1,18 @@
 import { Request } from "~/proto/mmc_pb";
 import type { Request as CommandRequest } from "~/proto/mmc/command_pb";
 import { ProtobufManager } from "./ProtobufManager";
-import { WebSocketError, WebsocketManger } from "./WebsocketManager";
+import {
+  WebSocketError,
+  WebsocketManager,
+  ErrorKind,
+} from "./WebsocketManager";
 import { Response_Command_Status } from "~/proto/mmc/info_pb";
 import { Request_Direction } from "~/proto/mmc/command_pb";
 import { Control } from "~/proto/mmc/control_pb";
 
 export class MmcCommandWebsocket {
-  private readonly socket = new WebsocketManger();
+  readonly socket = new WebsocketManager();
   private readonly protobuf = new ProtobufManager();
-  private _isSocketOpen = () => this.socket.getStatus() === WebSocket.OPEN;
 
   async connect(ip: string, port: string): Promise<void> {
     return await this.socket.connect(ip, port);
@@ -21,10 +24,6 @@ export class MmcCommandWebsocket {
 
   async send(buffer: Uint8Array, timeout: number): Promise<ArrayBuffer> {
     return await this.socket.send(buffer, timeout);
-  }
-
-  getStatus(): number {
-    return this.socket.getStatus();
   }
 
   private _generateCommandRequest(commandPayload: CommandRequest): Request {
@@ -39,7 +38,6 @@ export class MmcCommandWebsocket {
   }
 
   private async _getCommandInfo(commandId: number) {
-    if (!this._isSocketOpen()) throw WebSocketError.NOT_CONNECTED_TO_SERVER;
     const payload: Request = {
       body: {
         case: "info",
@@ -56,57 +54,54 @@ export class MmcCommandWebsocket {
       },
       $typeName: "mmc.Request",
     };
-    try {
-      const encodedPayload = this.protobuf.encode(payload);
-      const response = await this.socket.send(encodedPayload, 1000);
-      const decodedResponse = this.protobuf.decode(response);
-      if (decodedResponse.body.case === "info") {
-        const info = decodedResponse.body.value;
-        if (info.body.case === "command") {
-          const commandInfo = info.body.value;
-          return commandInfo.items;
-        }
+    const encodedPayload = this.protobuf.encode(payload);
+    const response = await this.socket.send(encodedPayload, 1000);
+    const decodedResponse = this.protobuf.decode(response);
+    if (decodedResponse.body.case === "info") {
+      const info = decodedResponse.body.value;
+      if (info.body.case === "command") {
+        const commandInfo = info.body.value;
+        return commandInfo.items;
+      } else {
+        throw new WebSocketError.ResponseError(ErrorKind.InvalidResponse);
       }
-    } catch (err) {
-      throw new Error(err as string);
+    } else {
+      throw new WebSocketError.ResponseError(ErrorKind.InvalidResponse);
     }
-    throw WebSocketError.RESPONSE_ERROR;
   }
 
   private async _clearCommand(commandId: number) {
-    try {
-      const commandPayload: CommandRequest = {
-        body: {
-          case: "removeCommand",
-          value: {
-            $typeName: "mmc.command.Request.RemoveCommand",
-            command: commandId,
-          },
+    const commandPayload: CommandRequest = {
+      body: {
+        case: "removeCommand",
+        value: {
+          $typeName: "mmc.command.Request.RemoveCommand",
+          command: commandId,
         },
-        $typeName: "mmc.command.Request",
-      };
-      const payload: Request = this._generateCommandRequest(commandPayload);
-      const message = this.protobuf.encode(payload);
-      const response = await this.socket.send(message, 1000);
-      const decodedReponse = this.protobuf.decode(response);
+      },
+      $typeName: "mmc.command.Request",
+    };
+    const payload: Request = this._generateCommandRequest(commandPayload);
+    const message = this.protobuf.encode(payload);
+    const response = await this.socket.send(message, 1000);
+    const decodedReponse = this.protobuf.decode(response);
 
-      if (decodedReponse.body.case === "command") {
-        const command = decodedReponse.body.value;
-        if (command.body.case === "removedId") {
-          const removedId = command.body.value;
-          if (removedId === commandId) {
-            return;
-          }
+    if (decodedReponse.body.case === "command") {
+      const command = decodedReponse.body.value;
+      if (command.body.case === "removedId") {
+        const removedId = command.body.value;
+        if (removedId === commandId) {
+          return;
         }
+      } else {
+        throw new WebSocketError.ResponseError(ErrorKind.InvalidResponse);
       }
-      throw WebSocketError.RESPONSE_ERROR;
-    } catch (err) {
-      throw new Error(err as string);
+    } else {
+      throw new WebSocketError.ResponseError(ErrorKind.InvalidResponse);
     }
   }
 
   private async _waitCommandComplete(commandId: number): Promise<void> {
-    if (!this._isSocketOpen()) throw WebSocketError.NOT_CONNECTED_TO_SERVER;
     const commandInfo = await this._getCommandInfo(commandId);
     const currentCommandStatus = commandInfo[0].status;
 
@@ -120,52 +115,46 @@ export class MmcCommandWebsocket {
     ) {
       return await this._waitCommandComplete(commandId);
     } else {
-      throw WebSocketError.RESPONSE_ERROR;
+      // TODO: Handle every possible error value from the server
+      throw new WebSocketError.ResponseError("Command Error");
     }
   }
 
   private async _runCommand(payload: Request): Promise<void> {
-    if (!this._isSocketOpen()) throw WebSocketError.NOT_CONNECTED_TO_SERVER;
-    try {
-      const message = this.protobuf.encode(payload);
-      const response = await this.socket.send(message, 1000);
-      const decodedReponse = this.protobuf.decode(response);
+    const message = this.protobuf.encode(payload);
+    const response = await this.socket.send(message, 1000);
+    const decodedReponse = this.protobuf.decode(response);
 
-      if (decodedReponse.body.case === "command") {
-        const command = decodedReponse.body.value;
-        if (command.body.case === "id") {
-          const commandId = command.body.value;
-          await this._waitCommandComplete(commandId);
-          await this._clearCommand(commandId);
+    if (decodedReponse.body.case === "command") {
+      const command = decodedReponse.body.value;
+      if (command.body.case === "id") {
+        const commandId = command.body.value;
+        await this._waitCommandComplete(commandId);
+        await this._clearCommand(commandId);
 
-          return;
-        }
+        return;
+      } else {
+        throw new WebSocketError.ResponseError(ErrorKind.InvalidResponse);
       }
-      throw WebSocketError.RESPONSE_ERROR;
-    } catch (err) {
-      throw new Error(err as string);
+    } else {
+      throw new WebSocketError.ResponseError(ErrorKind.InvalidResponse);
     }
   }
 
   async clearError(lineId: number): Promise<void> {
-    try {
-      const commandPayload: CommandRequest = {
-        body: {
-          case: "clearErrors",
-          value: {
-            line: lineId,
-            target: { case: undefined },
-            $typeName: "mmc.command.Request.ClearErrors",
-          },
+    const commandPayload: CommandRequest = {
+      body: {
+        case: "clearErrors",
+        value: {
+          line: lineId,
+          target: { case: undefined },
+          $typeName: "mmc.command.Request.ClearErrors",
         },
-        $typeName: "mmc.command.Request",
-      };
-      const payload = this._generateCommandRequest(commandPayload);
-      await this._runCommand(payload);
-      return;
-    } catch (err) {
-      throw new Error(err as string);
-    }
+      },
+      $typeName: "mmc.command.Request",
+    };
+    const payload = this._generateCommandRequest(commandPayload);
+    return await this._runCommand(payload);
   }
 
   async initialize(
@@ -175,75 +164,60 @@ export class MmcCommandWebsocket {
     direction: Request_Direction,
     linkAxis?: Request_Direction,
   ): Promise<void> {
-    try {
-      const commandPayload: CommandRequest = {
-        body: {
-          case: "initialize",
-          value: {
-            line: line,
-            axis: axis,
-            carrier: carrier,
-            direction: direction,
-            linkAxis: linkAxis,
-            $typeName: "mmc.command.Request.Initialize",
-          },
+    const commandPayload: CommandRequest = {
+      body: {
+        case: "initialize",
+        value: {
+          line: line,
+          axis: axis,
+          carrier: carrier,
+          direction: direction,
+          linkAxis: linkAxis,
+          $typeName: "mmc.command.Request.Initialize",
         },
-        $typeName: "mmc.command.Request",
-      };
-      const payload = this._generateCommandRequest(commandPayload);
-      await this._runCommand(payload);
-      return;
-    } catch (err) {
-      throw new Error(err as string);
-    }
+      },
+      $typeName: "mmc.command.Request",
+    };
+    const payload = this._generateCommandRequest(commandPayload);
+    return await this._runCommand(payload);
   }
 
   async deinitialize(line: number, axisId: number): Promise<void> {
-    try {
-      const commandPayload: CommandRequest = {
-        body: {
-          case: "deinitialize",
-          value: {
-            line: line,
-            target: {
-              case: "axes",
-              value: {
-                start: axisId,
-                end: axisId,
-                $typeName: "root.Range",
-              },
+    const commandPayload: CommandRequest = {
+      body: {
+        case: "deinitialize",
+        value: {
+          line: line,
+          target: {
+            case: "axes",
+            value: {
+              start: axisId,
+              end: axisId,
+              $typeName: "root.Range",
             },
-            $typeName: "mmc.command.Request.Deinitialize",
           },
+          $typeName: "mmc.command.Request.Deinitialize",
         },
-        $typeName: "mmc.command.Request",
-      };
-      const payload = this._generateCommandRequest(commandPayload);
-      await this._runCommand(payload);
-      return;
-    } catch (err) {
-      throw new Error(err as string);
-    }
+      },
+      $typeName: "mmc.command.Request",
+    };
+    const payload = this._generateCommandRequest(commandPayload);
+    return await this._runCommand(payload);
   }
 
   async calibrate(line: number): Promise<void> {
-    try {
-      const commandPayload: CommandRequest = {
-        body: {
-          case: "calibrate",
-          value: {
-            line: line,
-            $typeName: "mmc.command.Request.Calibrate",
-          },
+    const commandPayload: CommandRequest = {
+      body: {
+        case: "calibrate",
+        value: {
+          line: line,
+          $typeName: "mmc.command.Request.Calibrate",
         },
-        $typeName: "mmc.command.Request",
-      };
-      const payload = this._generateCommandRequest(commandPayload);
-      await this._runCommand(payload);
-      return;
-    } catch (err) {
-      throw new Error(err as string);
-    }
+      },
+      $typeName: "mmc.command.Request",
+    };
+    const payload = this._generateCommandRequest(commandPayload);
+    return await this._runCommand(payload);
   }
 
   async pull(
@@ -254,53 +228,43 @@ export class MmcCommandWebsocket {
     speed: number,
     acceleration: number,
   ): Promise<void> {
-    try {
-      const commandPayload: CommandRequest = {
-        $typeName: "mmc.command.Request",
-        body: {
-          case: "pull",
-          value: {
-            $typeName: "mmc.command.Request.Pull",
-            line: line,
-            axis: axisId,
-            carrier: carrier,
-            direction: direction,
-            velocity: speed,
-            acceleration: acceleration,
-          },
+    const commandPayload: CommandRequest = {
+      $typeName: "mmc.command.Request",
+      body: {
+        case: "pull",
+        value: {
+          $typeName: "mmc.command.Request.Pull",
+          line: line,
+          axis: axisId,
+          carrier: carrier,
+          direction: direction,
+          velocity: speed,
+          acceleration: acceleration,
         },
-      };
-      const payload = this._generateCommandRequest(commandPayload);
-      await this._runCommand(payload);
-      return;
-    } catch (err) {
-      throw new Error(err as string);
-    }
+      },
+    };
+    const payload = this._generateCommandRequest(commandPayload);
+    return await this._runCommand(payload);
   }
 
   async stopPull(line: number, axisId: number): Promise<void> {
-    try {
-      const commandPayload: CommandRequest = {
-        $typeName: "mmc.command.Request",
-        body: {
-          case: "stopPull",
-          value: {
-            $typeName: "mmc.command.Request.StopPull",
-            line: line,
-            axes: {
-              $typeName: "root.Range",
-              start: axisId,
-              end: axisId,
-            },
+    const commandPayload: CommandRequest = {
+      $typeName: "mmc.command.Request",
+      body: {
+        case: "stopPull",
+        value: {
+          $typeName: "mmc.command.Request.StopPull",
+          line: line,
+          axes: {
+            $typeName: "root.Range",
+            start: axisId,
+            end: axisId,
           },
         },
-      };
-      const payload = this._generateCommandRequest(commandPayload);
-      await this._runCommand(payload);
-      return;
-    } catch (err) {
-      throw new Error(err as string);
-    }
+      },
+    };
+    const payload = this._generateCommandRequest(commandPayload);
+    return await this._runCommand(payload);
   }
 
   async push(
@@ -310,27 +274,22 @@ export class MmcCommandWebsocket {
     speed: number,
     acceleration: number,
   ): Promise<void> {
-    try {
-      const commandPayload: CommandRequest = {
-        $typeName: "mmc.command.Request",
-        body: {
-          case: "push",
-          value: {
-            $typeName: "mmc.command.Request.Push",
-            line: line,
-            axis: axisId,
-            direction: direction,
-            velocity: speed,
-            acceleration: acceleration,
-          },
+    const commandPayload: CommandRequest = {
+      $typeName: "mmc.command.Request",
+      body: {
+        case: "push",
+        value: {
+          $typeName: "mmc.command.Request.Push",
+          line: line,
+          axis: axisId,
+          direction: direction,
+          velocity: speed,
+          acceleration: acceleration,
         },
-      };
-      const payload = this._generateCommandRequest(commandPayload);
-      await this._runCommand(payload);
-      return;
-    } catch (err) {
-      throw new Error(err as string);
-    }
+      },
+    };
+    const payload = this._generateCommandRequest(commandPayload);
+    return await this._runCommand(payload);
   }
 
   async moveCarrier(
@@ -342,30 +301,25 @@ export class MmcCommandWebsocket {
     speed: number,
     acceleration: number,
   ): Promise<void> {
-    try {
-      const commandPayload: CommandRequest = {
-        $typeName: "mmc.command.Request",
-        body: {
-          case: "move",
-          value: {
-            $typeName: "mmc.command.Request.Move",
-            line: line,
-            carrier: carrier,
-            target: {
-              case: targetKind,
-              value: targetValue,
-            },
-            control: control,
-            velocity: speed,
-            acceleration: acceleration,
+    const commandPayload: CommandRequest = {
+      $typeName: "mmc.command.Request",
+      body: {
+        case: "move",
+        value: {
+          $typeName: "mmc.command.Request.Move",
+          line: line,
+          carrier: carrier,
+          target: {
+            case: targetKind,
+            value: targetValue,
           },
+          control: control,
+          velocity: speed,
+          acceleration: acceleration,
         },
-      };
-      const payload = this._generateCommandRequest(commandPayload);
-      await this._runCommand(payload);
-      return;
-    } catch (err) {
-      throw new Error(err as string);
-    }
+      },
+    };
+    const payload = this._generateCommandRequest(commandPayload);
+    return await this._runCommand(payload);
   }
 }

@@ -40,9 +40,8 @@ export const ConnectPage = (props: ConnectPageProps) => {
     return props.inputs.get("port")![1](newPort);
   };
 
-  const ipRegex = /^(?!0)(?!.*\.$)((1?\d?\d|25[0-5]|2[0-4]\d)(\.|$)){4}$/;
   const isInvalidIp = (): boolean => {
-    return !ipRegex.test(ip()) || port().length < 1 || isNaN(Number(port()));
+    return URL.canParse(`ws://${ip()}:${port()}`) === false;
   };
 
   const toaster = props.toaster;
@@ -60,8 +59,8 @@ export const ConnectPage = (props: ConnectPageProps) => {
     const handler = new MonitoringWebsocket();
 
     try {
-      await handler.connect(ipAddr, port);
-      if (handler.getStatus() && handler.getStatus() === WebSocket.OPEN) {
+      await handler.socket.connect(ipAddr, port);
+      if (handler.socket.isOpen()) {
         const serverName = await handler.getServerName();
         const result = {
           ip: ipAddr,
@@ -73,8 +72,8 @@ export const ConnectPage = (props: ConnectPageProps) => {
     } catch {
       return Promise.resolve();
     } finally {
-      if (handler.getStatus() && handler.getStatus() === WebSocket.OPEN) {
-        await handler.disconnect();
+      if (handler.socket.isOpen()) {
+        await handler.socket.disconnect();
       }
       return Promise.resolve();
     }
