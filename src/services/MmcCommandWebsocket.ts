@@ -11,8 +11,24 @@ import { Request_Direction } from "~/proto/mmc/command_pb";
 import { Control } from "~/proto/mmc/control_pb";
 
 export class MmcCommandWebsocket {
-  readonly socket = new WebsocketManager();
+  private readonly socket = new WebsocketManager();
   private readonly protobuf = new ProtobufManager();
+
+  async connect(ip: string, port: string): Promise<void> {
+    return await this.socket.connect(ip, port);
+  }
+
+  async disconnect(): Promise<void> {
+    return await this.socket.disconnect();
+  }
+
+  async send(buffer: Uint8Array, timeout: number): Promise<ArrayBuffer> {
+    return await this.socket.send(buffer, timeout);
+  }
+
+  isOpen(): boolean {
+    return this.socket.isOpen();
+  }
 
   private _generateCommandRequest(commandPayload: CommandRequest): Request {
     const payload: Request = {
