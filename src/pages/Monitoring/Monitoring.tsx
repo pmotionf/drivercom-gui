@@ -76,8 +76,8 @@ function Monitoring() {
                     clearErrorSocket.disconnect(),
                     commandServerHandler.disconnect(),
                   ]);
-                } catch (e) {
-                  console.log(e);
+                } catch (err) {
+                  console.error(err);
                 }
               }
 
@@ -92,8 +92,8 @@ function Monitoring() {
                   description: e ? e.toString() : "The server is disconnected.",
                   type: "error",
                 });
-                console.log(e);
               }
+              console.error(e);
             }
           }
         }
@@ -574,7 +574,7 @@ function Monitoring() {
                           description: error.message,
                           type: "error",
                         });
-                        console.log(error);
+                        console.error(error);
                       }
                     }
                     setConnectBtnLoading(false);
@@ -591,7 +591,7 @@ function Monitoring() {
                       ]);
                     } catch (e) {
                       // Error on disconnect will be shown into log only.
-                      console.log(e);
+                      console.error(e);
                     }
 
                     setConnectBtnLoading(false);
