@@ -40,10 +40,6 @@ export const ConnectPage = (props: ConnectPageProps) => {
     return props.inputs.get("port")![1](newPort);
   };
 
-  const isInvalidIp = (): boolean => {
-    return URL.canParse(`ws://${ip()}:${port()}`) === false;
-  };
-
   const toaster = props.toaster;
 
   const [isDetecting, setIsDetecting] = createSignal<boolean>(false);
@@ -178,14 +174,6 @@ export const ConnectPage = (props: ConnectPageProps) => {
               if (props.isConnect) {
                 props.onDisconnectServer?.();
               } else {
-                if (isInvalidIp()) {
-                  props.toaster.create({
-                    title: "Invalid IP Address",
-                    description: "The IP address is invalid.",
-                    type: "error",
-                  });
-                  return;
-                }
                 props.onConnectServer?.(ip(), port());
               }
             }}
