@@ -51,9 +51,9 @@ function Monitoring() {
   onCleanup(async () => {
     if (lines.length > 0) {
       await Promise.allSettled([
-        monitoringServerHandler.socket.disconnect(),
-        clearErrorSocket.socket.disconnect(),
-        commandServerHandler.socket.disconnect(),
+        monitoringServerHandler.disconnect(),
+        clearErrorSocket.disconnect(),
+        commandServerHandler.disconnect(),
       ]);
       setSendingCmd(null);
       setIsConnect(false);
@@ -69,12 +69,12 @@ function Monitoring() {
             try {
               await getSystemInfo(lines.map((line) => line.id));
             } catch (e) {
-              if (monitoringServerHandler.socket.isOpen()) {
+              if (monitoringServerHandler.isOpen()) {
                 try {
                   await Promise.allSettled([
-                    monitoringServerHandler.socket.disconnect(),
-                    clearErrorSocket.socket.disconnect(),
-                    commandServerHandler.socket.disconnect(),
+                    monitoringServerHandler.disconnect(),
+                    clearErrorSocket.disconnect(),
+                    commandServerHandler.disconnect(),
                   ]);
                 } catch (e) {
                   console.log(e);
@@ -536,9 +536,9 @@ function Monitoring() {
                     try {
                       // Connect all clients to the server
                       await Promise.all([
-                        monitoringServerHandler.socket.connect(ip, port),
-                        clearErrorSocket.socket.connect(ip, port),
-                        commandServerHandler.socket.connect(ip, port),
+                        monitoringServerHandler.connect(ip, port),
+                        clearErrorSocket.connect(ip, port),
+                        commandServerHandler.connect(ip, port),
                       ]);
                       setIsConnect(true);
                       const serverResponse: LineConfig[] = (
@@ -560,9 +560,9 @@ function Monitoring() {
                       setLines(serverResponse);
                     } catch (error) {
                       await Promise.allSettled([
-                        monitoringServerHandler.socket.disconnect(),
-                        clearErrorSocket.socket.disconnect(),
-                        commandServerHandler.socket.disconnect(),
+                        monitoringServerHandler.disconnect(),
+                        clearErrorSocket.disconnect(),
+                        commandServerHandler.disconnect(),
                       ]);
                       if (error instanceof WebSocketError.RequestError) {
                         setIsConnect(false);
@@ -585,9 +585,9 @@ function Monitoring() {
                     setLines([]);
                     try {
                       await Promise.allSettled([
-                        monitoringServerHandler.socket.disconnect(),
-                        clearErrorSocket.socket.disconnect(),
-                        commandServerHandler.socket.disconnect(),
+                        monitoringServerHandler.disconnect(),
+                        clearErrorSocket.disconnect(),
+                        commandServerHandler.disconnect(),
                       ]);
                     } catch (e) {
                       // Error on disconnect will be shown into log only.

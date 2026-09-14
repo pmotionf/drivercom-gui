@@ -55,8 +55,8 @@ export const ConnectPage = (props: ConnectPageProps) => {
     const handler = new MonitoringWebsocket();
 
     try {
-      await handler.socket.connect(ipAddr, port);
-      if (handler.socket.isOpen()) {
+      await handler.connect(ipAddr, port);
+      if (handler.isOpen()) {
         const serverName = await handler.getServerName();
         const result = {
           ip: ipAddr,
@@ -68,8 +68,8 @@ export const ConnectPage = (props: ConnectPageProps) => {
     } catch {
       return Promise.resolve();
     } finally {
-      if (handler.socket.isOpen()) {
-        await handler.socket.disconnect();
+      if (handler.isOpen()) {
+        await handler.disconnect();
       }
       return Promise.resolve();
     }
