@@ -13,11 +13,14 @@ import { css } from "styled-system/css";
 import { createSignal } from "solid-js";
 import { invoke } from "@tauri-apps/api/core";
 import { MonitoringWebsocket } from "~/services/MonitoringWebsocket";
+import { CloseButton } from "~/components/ui/close-button";
 
 export type ConnectPageProps = {
   connectState: ConnectState;
+  connectingTimeout: boolean;
   onDisconnectServer?: (ip?: string, port?: string) => void;
   onConnectServer?: (ip: string, port: string) => void;
+  onCancelConnect: () => void;
   ipHistory: IpAddress[];
   changeIpHistory: Setter<IpAddress[]>;
   toaster: CreateToasterReturn;
@@ -194,7 +197,6 @@ export const ConnectPage = (props: ConnectPageProps) => {
                   : false
             }
             onClick={async () => {
-              console.log(ConnectState[props.connectState]);
               switch (props.connectState as ConnectState) {
                 case ConnectState.Connected:
                 case ConnectState.Connecting:
@@ -212,6 +214,28 @@ export const ConnectPage = (props: ConnectPageProps) => {
                 ? "Disconnect"
                 : ""}
           </Button>
+          <Show
+            when={
+              props.connectState === ConnectState.Connecting &&
+              props.connectingTimeout
+            }
+          >
+            <div
+              style={{
+                display: "flex",
+                "flex-direction": "row-reverse",
+              }}
+            >
+              <Button
+                variant="plain"
+                padding={"0"}
+                fontSize="xs"
+                onClick={props.onCancelConnect}
+              >
+                Too long? Click to cancel <CloseButton />
+              </Button>
+            </div>
+          </Show>
         </form>
       </div>
 

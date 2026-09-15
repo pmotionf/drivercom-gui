@@ -47,6 +47,9 @@ function Monitoring() {
   const [connectState, setConnectState] = createSignal<ConnectState>(
     ConnectState.Disconnected,
   );
+
+  const [connectingTimeout, setConnectingTimeout] =
+    createSignal<boolean>(false);
   const commandServerHandler = new MmcCommandWebsocket();
   const clearErrorSocket = new MmcCommandWebsocket();
   const monitoringServerHandler = new MonitoringWebsocket();
@@ -529,8 +532,12 @@ function Monitoring() {
                   ipHistory={ipHistory()}
                   changeIpHistory={setIpHistory}
                   connectState={connectState()}
+                  connectingTimeout={connectingTimeout()}
                   onConnectServer={async (ip: string, port: string) => {
                     setConnectState(ConnectState.Connecting);
+                    const timeoutId = setTimeout(() => {
+                      setConnectingTimeout(true);
+                    }, 3000);
                     try {
                       // Connect all clients to the server
                       await Promise.all([
@@ -574,6 +581,14 @@ function Monitoring() {
                         setConnectState(ConnectState.Disconnected);
                       }
                     }
+                    clearTimeout(timeoutId);
+                    setConnectingTimeout(false);
+                    console.log("Connecting ended", connectingTimeout());
+                  }}
+                  onCancelConnect={() => {
+                    monitoringServerHandler.cancelConnect();
+                    clearErrorSocket.cancelConnect();
+                    commandServerHandler.cancelConnect();
                   }}
                   onDisconnectServer={async () => {
                     setSystems([]);
