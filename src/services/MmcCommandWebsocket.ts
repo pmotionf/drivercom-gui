@@ -18,6 +18,10 @@ export class MmcCommandWebsocket {
     return await this.socket.connect(ip, port);
   }
 
+  cancelConnect(): void {
+    return this.socket.cancelConnect();
+  }
+
   async disconnect(): Promise<void> {
     return await this.socket.disconnect();
   }
