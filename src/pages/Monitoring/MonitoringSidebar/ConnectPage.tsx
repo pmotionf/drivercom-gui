@@ -25,6 +25,13 @@ export type ConnectPageProps = {
   inputs: MonitoringInputs;
 };
 
+export enum ConnectState {
+  Connecting,
+  Connected,
+  Disconnecting,
+  Disconnected,
+}
+
 export const ConnectPage = (props: ConnectPageProps) => {
   const ip = () => {
     return props.inputs.get("IP")![0]();
