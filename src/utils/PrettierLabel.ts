@@ -3,7 +3,7 @@ export const prettierLabel = (label: string) => {
     .map((char, i) => {
       if (i === 0) return char.toUpperCase();
       else if (label[i - 1] === "_") return char.toUpperCase();
-      else return char;
+      else return char.toLowerCase();
     })
     .join("");
   const replaceUnderScore = changeUpperCase.replaceAll("_", " ");
