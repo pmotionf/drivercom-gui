@@ -1,13 +1,8 @@
 import {
-  createEffect,
-  createMemo,
   createSignal,
   For,
-  JSX,
-  on,
   Show,
 } from "solid-js";
-import * as Tabs from "~/components/ui/tabs.tsx";
 import { Text } from "~/components/ui/text";
 import { createDraggable } from "@neodrag/solid";
 import { createStore } from "solid-js/store";
@@ -16,14 +11,15 @@ import {
   type Request as CommandRequest,
 } from "~/proto/mmc/command_pb";
 import { Input } from "~/components/ui/input";
-import { IconButton } from "~/components/ui/icon-button";
-import { IconX } from "@tabler/icons-solidjs";
 import { css } from "styled-system/css";
 import { Button } from "~/components/ui/button";
 import { MmcCommandWebsocket } from "~/services/MmcCommandWebsocket";
 import { Response_Line_Carrier_State_State } from "~/proto/mmc/info_pb";
 import { Control } from "~/proto/mmc/control_pb";
 import { CarrierState } from "./CarrierPage";
+import { LineConfig } from "../Monitoring";
+import { ScenarioScriptBlock } from "./ScenarioPage/ScnarioScriptBlock";
+import { prettierLabel } from "~/utils/PrettierLabel";
 
 const mmcCommandField = [
   "initialize",
@@ -38,7 +34,7 @@ const waitCommands = [
   Response_Line_Carrier_State_State.CARRIER_STATE_INITIALIZE_COMPLETED,
   Response_Line_Carrier_State_State.CARRIER_STATE_MOVE_COMPLETED,
 ];
-type WaitCommand = {
+export type WaitCommand = {
   case: "wait";
   value: {
     carrierState: Response_Line_Carrier_State_State;
@@ -48,19 +44,20 @@ type WaitCommand = {
   };
 };
 type MmcCommand = { case: "mmcCommand"; value: { command: CommandRequest } };
-type ScenarioCommand = MmcCommand | WaitCommand;
+export type ScenarioCommand = MmcCommand | WaitCommand;
 
 export function ScenarioPage(props: {
   commandWebsocket: MmcCommandWebsocket;
+  lineConfig: LineConfig[];
   carrierStates: CarrierState[];
 }) {
   const scenarioDropDivId = "scenario_drop_space";
   const [scenarioCommands, setScenarioCommands] = createStore<
     ScenarioCommand[]
   >([]);
-  const [scenarioVeloctiy, setScenarioVelocity] = createSignal<number>(1200);
+  const [scenarioVeloctiy, setScenarioVelocity] = createSignal<number>(40);
   const [scenarioAcceleration, setScenarioAcceleration] =
-    createSignal<number>(7800);
+    createSignal<number>(40);
 
   const commandRequestValue = (
     field: MmcCommandField,
@@ -72,8 +69,8 @@ export function ScenarioPage(props: {
           case: "initialize",
           value: {
             $typeName: "mmc.command.Request.Initialize",
-            line: 0,
-            axis: 0,
+            line: 1,
+            axis: 1,
             carrier: 0,
             direction: Request_Direction.UNSPECIFIED,
           },
@@ -89,7 +86,7 @@ export function ScenarioPage(props: {
           case: "deinitialize",
           value: {
             $typeName: "mmc.command.Request.Deinitialize",
-            line: 0,
+            line: 1,
             target: {
               case: "axes",
               value: {
@@ -111,8 +108,8 @@ export function ScenarioPage(props: {
           case: "pull",
           value: {
             $typeName: "mmc.command.Request.Pull",
-            line: 0,
-            axis: 0,
+            line: 1,
+            axis: 1,
             carrier: 0,
             direction: Request_Direction.FORWARD,
             acceleration: scenarioAcceleration(),
@@ -130,9 +127,8 @@ export function ScenarioPage(props: {
           case: "push",
           value: {
             $typeName: "mmc.command.Request.Push",
-            line: 0,
-            axis: 0,
-            carrier: 0,
+            line: 1,
+            axis: 1,
             direction: Request_Direction.FORWARD,
             acceleration: scenarioAcceleration(),
             velocity: scenarioVeloctiy(),
@@ -148,7 +144,7 @@ export function ScenarioPage(props: {
           case: "move",
           value: {
             $typeName: "mmc.command.Request.Move",
-            line: 0,
+            line: 1,
             carrier: 0,
             acceleration: scenarioAcceleration(),
             velocity: scenarioVeloctiy(),
@@ -157,7 +153,6 @@ export function ScenarioPage(props: {
               value: 1,
             },
             control: Control.POSITION,
-            disableCas: false,
           },
         },
       };
@@ -209,7 +204,6 @@ export function ScenarioPage(props: {
       setTabRender(true);
     });
   };
-  const tabList = ["Move", "Wait"];
 
   const getCarrierInfo = (lineId: number, carrierId: number) => {
     if (lineId > props.carrierStates.length) return null;
@@ -248,35 +242,25 @@ export function ScenarioPage(props: {
 
   const [currentRunningCommand, setCurrentRunningCommand] = createSignal<
     number | null
-  >(null);
+    >(null);
+
+  const sideBarWidth = "13rem"
 
   return (
-    <div style={{ width: "100%", height: "100%", display: "flex" }}>
-      <Tabs.Root
-        orientation="vertical"
-        variant={"subtle"}
-        style={{ height: "100%", width: "30%" }}
-      >
-        <Tabs.List>
-          <For each={tabList}>
-            {(trigger) => {
-              return <Tabs.Trigger value={trigger}> {trigger}</Tabs.Trigger>;
-            }}
-          </For>
-        </Tabs.List>
-
+    <div style={{ width: "100%", height: `calc(100% - 2rem)`, display: "flex" }}>
+      <div style = {{display:"absolute" , width : sideBarWidth, "max-width" : sideBarWidth, height : "100%", "border-right-width" : "1px", /*"overflow-y" : "auto", "overflow-x" :"hidden"*/}}>
         <Show when={tabRender()} fallback={<></>}>
-          <Tabs.Content value={tabList[0]} userSelect="none">
             <For each={mmcCommandField}>
               {(field) => {
                 return (
                   <div
                     class={css({
                       padding: "0.5rem",
-                      borderWidth: "1px",
+                      borderBottomWidth: "1px",
                       zIndex: 100,
-                      position: "relative",
+                      position: "sticky",
                       background: "gray.1",
+                      userSelect : "none"
                     })}
                     use:dragOptions={{
                       onDragStart: () => {
@@ -334,13 +318,11 @@ export function ScenarioPage(props: {
                       },
                     }}
                   >
-                    <Text style={{ "user-select": "none" }}>{field}</Text>
+                    <Text style={{ "user-select": "none", "font-weight" : "bold" }}>{prettierLabel(field)}</Text>
                   </div>
                 );
               }}
             </For>
-          </Tabs.Content>
-          <Tabs.Content value={tabList[1]}>
             <div>
               <For each={waitCommands}>
                 {(wait) => {
@@ -348,10 +330,11 @@ export function ScenarioPage(props: {
                     <div
                       class={css({
                         padding: "0.5rem",
-                        borderWidth: "1px",
+                        borderBottomWidth: "1px",
                         zIndex: 100,
                         position: "relative",
                         background: "gray.1",
+                        userSelect :"none"
                       })}
                       use:dragOptions={{
                         onDragStart: () => {
@@ -411,10 +394,10 @@ export function ScenarioPage(props: {
                         },
                       }}
                     >
-                      <Text style={{ "user-select": "none" }}>
-                        {Response_Line_Carrier_State_State[wait].replace(
+                      <Text style={{ "user-select": "none", "font-weight" : "bold"}}>
+                        {prettierLabel(Response_Line_Carrier_State_State[wait].replace(
                           "CARRIER_STATE",
-                          "WAIT",
+                          "WAIT"),
                         )}
                       </Text>
                     </div>
@@ -422,17 +405,14 @@ export function ScenarioPage(props: {
                 }}
               </For>
             </div>
-          </Tabs.Content>
         </Show>
-      </Tabs.Root>
+      </div>
       <div
         id={scenarioDropDivId}
         style={{
-          "border-width": "1px",
-          width: "70%",
+          width: `calc(100% - ${sideBarWidth})`,
           height: "100%",
           display: "flex",
-          "align-items": "center",
           "flex-direction": "column",
           "overflow-y": "scroll",
         }}
@@ -441,8 +421,9 @@ export function ScenarioPage(props: {
           {(scenarioCommand, index) => {
             return (
               <Show when={commandRender()}>
-                <ScenarioCommand
+                <ScenarioScriptBlock
                   command={scenarioCommand}
+                  lineConfig={props.lineConfig}
                   isRunning={
                     currentRunningCommand() &&
                     index() === currentRunningCommand()
@@ -547,266 +528,4 @@ export function ScenarioPage(props: {
       </div>
     </div>
   );
-}
-
-function ScenarioCommand(
-  props: JSX.HTMLAttributes<HTMLDivElement> & {
-    command: ScenarioCommand;
-    isRunning: boolean;
-    onCommandDelete?: () => void;
-    onDragStart?: () => void;
-    onCommandDrag?: (clientX: number | null, clientY: number | null) => void;
-    onDragEnd?: () => void;
-    isCommandDragging?: boolean;
-    dragPosition?: { clientX: number; clientY: number };
-    onDragEnter?: () => void;
-    onDragLeave?: () => void;
-  },
-) {
-  //@ts-ignore This draggable is needed to use neo-drag.
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const { draggable: dragOptions } = createDraggable();
-  const itemPadding = "1rem";
-  const [showOverlay, setShowOverlay] = createSignal<boolean>(false);
-  const [dragStarted, setDragStarted] = createSignal<boolean>(false);
-  let commandRef: HTMLDivElement | undefined;
-  const [obj, setObj] = createStore<ScenarioCommand>(props.command);
-
-  createEffect(
-    on(
-      () => props.dragPosition,
-      () => {
-        if (dragStarted()) return;
-        if (!props.dragPosition) {
-          setShowOverlay(false);
-          return;
-        }
-        if (!commandRef) return;
-
-        const clientX = props.dragPosition.clientX;
-        const clientY = props.dragPosition.clientY;
-
-        const clientRect = commandRef.getBoundingClientRect();
-        const top = clientRect.top;
-        const bottom = clientRect.bottom;
-        const left = clientRect.left;
-        const right = clientRect.right;
-
-        if (left < clientX && clientX < right) {
-          if (top < clientY && clientY < bottom) {
-            setShowOverlay(true);
-            return;
-          }
-        }
-        setShowOverlay(false);
-      },
-    ),
-  );
-
-  createMemo(() => {
-    const dragEnter = showOverlay();
-    if (dragEnter) {
-      props.onDragEnter?.();
-    } else {
-      props.onDragLeave?.();
-    }
-  });
-
-  return (
-    <div
-      ref={commandRef}
-      class={css({
-        display: "flex",
-        width: "30rem",
-        borderWidth: "1px",
-        padding: `${itemPadding}`,
-        alignItems: "center",
-        background: props.isRunning ? "gray.3" : "gray.1",
-        zIndex: dragStarted() ? 10 : 1,
-      })}
-      use:dragOptions={{
-        onDragStart: () => {
-          setDragStarted(true);
-          props.onDragStart?.();
-        },
-        onDrag: (e) => {
-          props.onCommandDrag?.(e.event.clientX, e.event.clientY);
-        },
-        onDragEnd: () => {
-          props.onDragEnd?.();
-          setDragStarted(false);
-          props.onCommandDrag?.(null, null);
-        },
-      }}
-    >
-      {obj.case === "mmcCommand" ? (
-        <MmcCommandBlock command={obj.value.command}/>
-      ) : (
-        <>
-          <Text>
-            {Response_Line_Carrier_State_State[obj.value.carrierState].replace(
-              "CARRIER_STATE",
-              "WAIT",
-            )}
-          </Text>
-          <Text>{"Line"}</Text>
-          <Input
-            width="2rem"
-            value={obj.value.lineId ?? ""}
-            onChange={(e) => {
-              setObj(
-                "value",
-                //@ts-ignore
-                "lineId",
-                isNaN(Number(e.target.value)) ? null : Number(e.target.value),
-              );
-            }}
-          />
-          <Text>{"Carrier"}</Text>
-          <Input
-            width="2rem"
-            value={obj.value.carrierId ?? ""}
-            onChange={(e) => {
-              setObj(
-                "value",
-                //@ts-ignore
-                "carrierId",
-                isNaN(Number(e.target.value)) ? null : Number(e.target.value),
-              );
-            }}
-          />
-          <Text opacity={obj.value.timeout ? "1" : "0.5"}>{"Time-out"}</Text>
-          <Input
-            opacity={obj.value.timeout ? "1" : "0.5"}
-            width="2rem"
-            value={obj.value.timeout ?? ""}
-            onChange={(e) => {
-              setObj(
-                "value",
-                //@ts-ignore
-                "timeout",
-                isNaN(Number(e.target.value)) ? null : Number(e.target.value),
-              );
-            }}
-          />
-        </>
-      )}
-      <IconButton
-        position="absolute"
-        right={itemPadding}
-        onClick={() => props.onCommandDelete?.()}
-      >
-        <IconX />
-      </IconButton>
-      <div
-        id={"overlay"}
-        class={css({
-          position: "absolute",
-          top: "0",
-          left: "0",
-          width: "100%",
-          height: "100%",
-          background: "gray.9",
-          opacity: showOverlay() ? 0.5 : 0,
-          pointerEvents: "none",
-          transition: "opacity ease-in-out 0.2s",
-        })}
-      />
-    </div>
-  );
-}
-
-function MmcCommandBlock(props: { command: CommandRequest }) {
-  const [obj, setObj] = createStore<CommandRequest>(props.command)
-  if (obj.body.value === undefined) return;
-
-  return (
-    <>
-      <Text fontWeight="bold" marginRight={"0.5rem"}>
-        {obj.body.case}
-      </Text>
-      {"target" in obj.body.value &&
-        <>
-          <Text> Target Axis </Text>
-          <Input width={"2rem"}  />
-        </>
-      }
-      <For
-        each={Object.keys(obj.body.value).filter(
-          (key) => key !== "$typeName",
-        )}
-      >
-        {(key) => {
-          if(key !== "target" && key !== "acceleration" && key !== "velocity")
-          return (
-            <MmcCommandValue
-              key={key}
-              value={
-                obj.body.value![
-                  key as keyof typeof obj.body.value
-                ]!
-              }
-              onValueChange={(value) => {
-                setObj(
-                  "body",
-                  "value",
-                  //@ts-ignore
-                  key as keyof typeof obj.body.value,
-                  value
-                )
-              }}
-            />
-          );
-        }}
-      </For>
-    </>
-  )
-}
-
-function MmcCommandValue(props: {
-  key: string;
-  value: string | number | object;
-  onValueChange?: (value: string | number | object) => void;
-}) {
-  const key = props.key;
-  const value = props.value;
-  if (typeof value === "string" || typeof value === "number") {
-    return (
-      <div style={{ display: "flex", "align-items": "center" }}>
-        <Text>{key}</Text>
-        <Input
-          width="2rem"
-          value={value}
-          onChange={(e) => {
-            const newValue =
-              typeof value === "string"
-                ? e.target.value
-                : Number(e.target.value);
-            props.onValueChange?.(newValue);
-          }}
-        />
-      </div>
-    );
-  } else {
-    const [obj, setObj] = createStore(value);
-    return (
-      <For each={Object.keys(obj).filter((key) => key !== "$typeName")}>
-        {(key) => {
-          return (
-            <MmcCommandValue
-              key={key}
-              value={obj[key as keyof typeof obj]}
-              onValueChange={(value) => {
-                setObj(
-                  key as keyof typeof obj,
-                  //@ts-ignore
-                  value,
-                );
-              }}
-            />
-          );
-        }}
-      </For>
-    );
-  }
 }

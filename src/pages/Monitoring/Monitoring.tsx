@@ -695,6 +695,7 @@ function Monitoring() {
               style={{ width: "100%", height: "100%" }}
             >
               <ScenarioPage
+                lineConfig={lines}
                 commandWebsocket={commandServerHandler}
                 carrierStates={carrierStates()}
               />
