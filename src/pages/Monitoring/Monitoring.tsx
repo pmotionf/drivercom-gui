@@ -14,7 +14,7 @@ import { createStore } from "solid-js/store";
 import { IpAddress } from "~/pages/Monitoring/System/IpHistory.tsx";
 import * as Tabs from "~/components/ui/tabs.tsx";
 import { ControlPage } from "./MonitoringSidebar/ControlPage.tsx";
-import { ConnectPage } from "./MonitoringSidebar/ConnectPage.tsx";
+import { ConnectState, ConnectPage } from "./MonitoringSidebar/ConnectPage.tsx";
 import { SendingCommand, System } from "./System/System.tsx";
 import {
   Response_Line,
@@ -44,6 +44,12 @@ function Monitoring() {
   const [systems, setSystems] = createStore<Line[]>([]);
 
   const [isAutoClearMode, setIsAutoClearMode] = createSignal<boolean>(false);
+  const [connectState, setConnectState] = createSignal<ConnectState>(
+    ConnectState.Disconnected,
+  );
+
+  const [connectingTimeout, setConnectingTimeout] =
+    createSignal<boolean>(false);
   const commandServerHandler = new MmcCommandWebsocket();
   const clearErrorSocket = new MmcCommandWebsocket();
   const monitoringServerHandler = new MonitoringWebsocket();
@@ -56,7 +62,7 @@ function Monitoring() {
         commandServerHandler.disconnect(),
       ]);
       setSendingCmd(null);
-      setIsConnect(false);
+      setConnectState(ConnectState.Disconnected);
     }
   });
 
@@ -84,7 +90,7 @@ function Monitoring() {
               if (lines.length > 0) {
                 setLines([]);
                 setSystems([]);
-                setIsConnect(false);
+                setConnectState(ConnectState.Disconnected);
                 setSendingCmd(null);
 
                 toaster.create({
@@ -189,8 +195,6 @@ function Monitoring() {
   // Signals only for UI
   const [showSideBar, setShowSideBar] = createSignal<boolean>(true);
   const [panelSize, setPanelSize] = createSignal<number>(100);
-  const [connectBtnLoading, setConnectBtnLoading] =
-    createSignal<boolean>(false);
 
   // Data for Status Page
   const systemErrors = (): {
@@ -216,8 +220,6 @@ function Monitoring() {
       };
     });
   };
-
-  const [isConnect, setIsConnect] = createSignal<boolean>(false);
 
   const [sendingCmd, setSendingCmd] = createSignal<SendingCommand | null>(null);
 
@@ -529,10 +531,13 @@ function Monitoring() {
                   inputs={monitoringInputs}
                   ipHistory={ipHistory()}
                   changeIpHistory={setIpHistory}
-                  isConnect={isConnect()}
-                  loading={connectBtnLoading()}
+                  connectState={connectState()}
+                  connectingTimeout={connectingTimeout()}
                   onConnectServer={async (ip: string, port: string) => {
-                    setConnectBtnLoading(true);
+                    setConnectState(ConnectState.Connecting);
+                    const timeoutId = setTimeout(() => {
+                      setConnectingTimeout(true);
+                    }, 3000);
                     try {
                       // Connect all clients to the server
                       await Promise.all([
@@ -540,7 +545,6 @@ function Monitoring() {
                         clearErrorSocket.connect(ip, port),
                         commandServerHandler.connect(ip, port),
                       ]);
-                      setIsConnect(true);
                       const serverResponse: LineConfig[] = (
                         await monitoringServerHandler.getLineConfig()
                       ).map((line) => {
@@ -558,14 +562,14 @@ function Monitoring() {
                       });
                       await addIpHistory(ip, port);
                       setLines(serverResponse);
+                      setConnectState(ConnectState.Connected);
                     } catch (error) {
                       await Promise.allSettled([
                         monitoringServerHandler.disconnect(),
                         clearErrorSocket.disconnect(),
                         commandServerHandler.disconnect(),
                       ]);
-                      if (error instanceof WebSocketError.RequestError) {
-                        setIsConnect(false);
+                      if (error instanceof WebSocketError.ConnectError) {
                         deleteIpHistory(ip, port);
                       }
                       if (error instanceof Error) {
@@ -574,13 +578,19 @@ function Monitoring() {
                           description: error.message,
                           type: "error",
                         });
-                        console.error(error);
+                        setConnectState(ConnectState.Disconnected);
                       }
                     }
-                    setConnectBtnLoading(false);
+                    clearTimeout(timeoutId);
+                    setConnectingTimeout(false);
+                    console.log("Connecting ended", connectingTimeout());
+                  }}
+                  onCancelConnect={() => {
+                    monitoringServerHandler.cancelConnect();
+                    clearErrorSocket.cancelConnect();
+                    commandServerHandler.cancelConnect();
                   }}
                   onDisconnectServer={async () => {
-                    setConnectBtnLoading(true);
                     setSystems([]);
                     setLines([]);
                     try {
@@ -593,9 +603,7 @@ function Monitoring() {
                       // Error on disconnect will be shown into log only.
                       console.error(e);
                     }
-
-                    setConnectBtnLoading(false);
-                    setIsConnect(false);
+                    setConnectState(ConnectState.Disconnected);
                   }}
                 />
               </Show>

@@ -13,17 +13,26 @@ import { css } from "styled-system/css";
 import { createSignal } from "solid-js";
 import { invoke } from "@tauri-apps/api/core";
 import { MonitoringWebsocket } from "~/services/MonitoringWebsocket";
+import { CloseButton } from "~/components/ui/close-button";
 
 export type ConnectPageProps = {
-  isConnect: boolean;
-  loading: boolean;
+  connectState: ConnectState;
+  connectingTimeout: boolean;
   onDisconnectServer?: (ip?: string, port?: string) => void;
   onConnectServer?: (ip: string, port: string) => void;
+  onCancelConnect: () => void;
   ipHistory: IpAddress[];
   changeIpHistory: Setter<IpAddress[]>;
   toaster: CreateToasterReturn;
   inputs: MonitoringInputs;
 };
+
+export enum ConnectState {
+  Connecting,
+  Connected,
+  Disconnecting,
+  Disconnected,
+}
 
 export const ConnectPage = (props: ConnectPageProps) => {
   const ip = () => {
@@ -168,19 +177,65 @@ export const ConnectPage = (props: ConnectPageProps) => {
           </div>
           <Button
             marginTop="1.5em"
-            variant={!props.isConnect ? "solid" : "outline"}
-            loading={props.loading}
+            variant={
+              props.connectState === ConnectState.Connecting
+                ? "outline"
+                : "solid"
+            }
+            loading={
+              props.connectState === ConnectState.Disconnecting
+                ? true
+                : props.connectState === ConnectState.Connecting
+                  ? true
+                  : false
+            }
+            loadingText={
+              props.connectState === ConnectState.Disconnecting
+                ? "Disconnecting"
+                : props.connectState === ConnectState.Connecting
+                  ? "Connecting"
+                  : false
+            }
             onClick={async () => {
-              if (props.isConnect) {
-                props.onDisconnectServer?.();
-              } else {
-                props.onConnectServer?.(ip(), port());
+              switch (props.connectState as ConnectState) {
+                case ConnectState.Connected:
+                case ConnectState.Connecting:
+                  props.onDisconnectServer?.();
+                  break;
+                case ConnectState.Disconnected:
+                  props.onConnectServer?.(ip(), port());
               }
             }}
             style={{ width: "100% " }}
           >
-            {!props.isConnect ? "Connect" : "Disconnect"}
+            {props.connectState === ConnectState.Disconnected
+              ? "Connect"
+              : props.connectState === ConnectState.Connected
+                ? "Disconnect"
+                : ""}
           </Button>
+          <Show
+            when={
+              props.connectState === ConnectState.Connecting &&
+              props.connectingTimeout
+            }
+          >
+            <div
+              style={{
+                display: "flex",
+                "flex-direction": "row-reverse",
+              }}
+            >
+              <Button
+                variant="plain"
+                padding={"0"}
+                fontSize="xs"
+                onClick={props.onCancelConnect}
+              >
+                Too long? Click to cancel <CloseButton />
+              </Button>
+            </div>
+          </Show>
         </form>
       </div>
 
@@ -243,7 +298,7 @@ export const ConnectPage = (props: ConnectPageProps) => {
               onConnectServer={async (index: number) => {
                 const newIp = detectedServer()[index].ip;
                 const newPort = detectedServer()[index].port;
-                if (props.loading) {
+                if (props.connectState === ConnectState.Connecting) {
                   toaster.create({
                     title: "Already Connecting",
                     description:
@@ -254,7 +309,7 @@ export const ConnectPage = (props: ConnectPageProps) => {
                   });
                   return;
                 }
-                if (props.isConnect) {
+                if (props.connectState === ConnectState.Connected) {
                   if (newIp === ip() && newPort === port()) {
                     toaster.create({
                       title: "Connected Server",
@@ -265,7 +320,7 @@ export const ConnectPage = (props: ConnectPageProps) => {
                   }
 
                   props.onDisconnectServer?.();
-                  while (props.isConnect) {
+                  while (props.connectState === ConnectState.Connected) {
                     await delay(1);
                   }
                 }
@@ -307,7 +362,7 @@ export const ConnectPage = (props: ConnectPageProps) => {
               onConnectServer={async (index: number) => {
                 const newIp = props.ipHistory[index].ip;
                 const newPort = props.ipHistory[index].port;
-                if (props.loading) {
+                if (props.connectState === ConnectState.Connecting) {
                   toaster.create({
                     title: "Already Connecting",
                     description:
@@ -319,7 +374,7 @@ export const ConnectPage = (props: ConnectPageProps) => {
                   return;
                 }
 
-                if (props.isConnect) {
+                if (props.connectState === ConnectState.Connected) {
                   if (newIp === ip() && newPort === port()) {
                     toaster.create({
                       title: "Connected Server",
@@ -330,7 +385,7 @@ export const ConnectPage = (props: ConnectPageProps) => {
                   }
 
                   props.onDisconnectServer?.();
-                  while (props.isConnect) {
+                  while (props.connectState === ConnectState.Connected) {
                     await delay(1);
                   }
                 }
