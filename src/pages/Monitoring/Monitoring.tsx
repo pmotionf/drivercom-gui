@@ -578,7 +578,6 @@ function Monitoring() {
                     }
                     clearTimeout(timeoutId);
                     setConnectingTimeout(false);
-                    console.log("Connecting ended", connectingTimeout());
                   }}
                   onCancelConnect={() => {
                     monitoringServerHandler.cancelConnect();
