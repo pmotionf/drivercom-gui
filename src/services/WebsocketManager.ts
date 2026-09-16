@@ -93,15 +93,11 @@ export class WebsocketManager implements IWebsocketManager {
     this._socket = socket;
   };
 
-  // private _socketCleanUp = (socket: WebSocket | null) => {
-  //   if (!socket) return;
-  //   socket.onclose = null;
-  //   socket.onerror = null;
-  //   socket.onopen = null;
-  //   socket.onmessage = null;
-  // };
-
-  private _socketCloseHandler = () => {
+  private _socketCloseHandler = (socket: WebSocket) => {
+    socket.onclose = null;
+    socket.onerror = null;
+    socket.onopen = null;
+    socket.onmessage = null;
     if (this._commandPending) {
       this._completeCommand();
     }
@@ -172,7 +168,8 @@ export class WebsocketManager implements IWebsocketManager {
         // No useful information from WebSocket error event
       };
       this._socket.onclose = (event) => {
-        this._socketCloseHandler();
+        // It is impossible for socket to be null
+        this._socketCloseHandler(this._socket!);
         if (event.wasClean) {
           resolve();
         } else {
@@ -210,7 +207,7 @@ export class WebsocketManager implements IWebsocketManager {
       };
       this._socket.onclose = (event) => {
         clearTimeout(timeoutId);
-        this._socketCloseHandler();
+        this._socketCloseHandler(this._socket!);
         return reject(
           new RequestError(ErrorKind.Disconnected, { cause: event }),
         );
