@@ -223,17 +223,19 @@ export const ConnectPage = (props: ConnectPageProps) => {
             <div
               style={{
                 display: "flex",
-                "flex-direction": "row-reverse",
+                "justify-content": "right",
+                "align-items": "center",
               }}
             >
-              <Button
+              <Text fontSize="xs" padding={"0"} color="red.a10">
+                Too long? Click to cancel
+              </Text>
+              <CloseButton
                 variant="plain"
-                padding={"0"}
-                fontSize="xs"
+                padding="0"
+                size="2xs"
                 onClick={props.onCancelConnect}
-              >
-                Too long? Click to cancel <CloseButton />
-              </Button>
+              ></CloseButton>
             </div>
           </Show>
         </form>
