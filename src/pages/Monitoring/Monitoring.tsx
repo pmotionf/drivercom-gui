@@ -564,11 +564,6 @@ function Monitoring() {
                       setLines(serverResponse);
                       setConnectState(ConnectState.Connected);
                     } catch (error) {
-                      await Promise.allSettled([
-                        monitoringServerHandler.disconnect(),
-                        clearErrorSocket.disconnect(),
-                        commandServerHandler.disconnect(),
-                      ]);
                       if (error instanceof WebSocketError.ConnectError) {
                         deleteIpHistory(ip, port);
                       }
