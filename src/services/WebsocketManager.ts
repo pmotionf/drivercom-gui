@@ -1,5 +1,6 @@
 export interface IWebsocketManager {
   connect(ip: string, port: string): Promise<void>;
+  cancelConnect(): void;
   disconnect(): Promise<void>;
   send(buffer: Uint8Array, timeout: number): Promise<ArrayBuffer>;
 }
@@ -59,9 +60,14 @@ export enum ErrorKind {
 export class WebsocketManager implements IWebsocketManager {
   // Store IP address
   private _ipAdress: IpAddress = { ip: null, port: null };
-
   private _socket: WebSocket | null = null;
+  private _attemptedSocket: WebSocket | null = null;
 
+  /**
+   * Checks whether the WebSocket is in `OPEN` state. Caller must ensure the
+   * socket is already initialized.
+   * @returns `true` if socket is in `OPEN` state, otherwise `false`
+   */
   /// Checks whether the socket is in OPEN state
   isOpen(): boolean {
     return this._socket?.readyState === WebSocket.OPEN;
@@ -87,48 +93,47 @@ export class WebsocketManager implements IWebsocketManager {
     this._socket = socket;
   };
 
-  private _socketCleanUp = (socket: WebSocket | null) => {
-    if (!socket) return;
+  private _socketCloseHandler = (socket: WebSocket) => {
     socket.onclose = null;
     socket.onerror = null;
     socket.onopen = null;
     socket.onmessage = null;
-  };
-
-  private _socketCloseHandler = () => {
-    this._socketCleanUp(this._socket);
-
-    if (this._socket) {
-      this._socket = null;
-    }
-
     if (this._commandPending) {
       this._completeCommand();
     }
   };
 
+  /**
+   * Attempt to connect to a websocket endpoint. Connection attempt is stored
+   * in `_attemptedSocket`. Once the attempt is succeeded, move the connected
+   * socket to `_socket`.
+   * @param ip endpoint's ip address or hostname
+   * @param port endpoint's port
+   * @returns `Promise<void>`
+   */
   async connect(ip: string, port: string): Promise<void> {
-    if (this._socket !== null && this.isOpen()) {
-      throw new ConnectError(ErrorKind.Connected);
-    }
-    // TODO: Connect requires timeout when attempting to connect to
-    // wrong endpoint
-    let socket = undefined;
-    try {
-      socket = new WebSocket(`ws://${ip}:${port}`);
-      socket.binaryType = "arraybuffer";
-    } catch (err) {
-      throw new ConnectError(ErrorKind.InvalidEndpoint, { cause: err });
-    }
+    return await new Promise<void>((resolve, reject) => {
+      if (this._attemptedSocket) {
+        throw new ConnectError(ErrorKind.Connecting);
+      }
 
-    return await new Promise((resolve, reject) => {
-      socket.onerror = () => {
+      if (this._socket && this.isOpen()) {
+        throw new ConnectError(ErrorKind.Connected);
+      }
+      // Connect attempt to websocket endpoint is stored into `_attemptedSocket`,
+      // if succeed, stored into `_socket`. This mechanism allows to cancel
+      // connect attempt.
+      try {
+        this._attemptedSocket = new WebSocket(`ws://${ip}:${port}`);
+      } catch (err) {
+        throw new ConnectError(ErrorKind.InvalidEndpoint, { cause: err });
+      }
+      this._attemptedSocket.binaryType = "arraybuffer";
+      this._attemptedSocket.onerror = () => {
         // No useful information from WebSocket error event
       };
-      socket.onclose = (event) => {
-        this._socketCloseHandler();
+      this._attemptedSocket.onclose = (event) => {
         if (event.wasClean === false) {
-          // reject(new ConnectError(event.reason));
           reject(new ConnectError(`Unable to connect to ${ip}:${port}`));
         } else {
           // Unlikely branch, but resolving here is definitely misleading
@@ -136,11 +141,22 @@ export class WebsocketManager implements IWebsocketManager {
           reject(new ConnectError(ErrorKind.Unexpected));
         }
       };
-      socket.onopen = () => {
-        this._socketOpenHandler(ip, port, socket);
+      this._attemptedSocket.onopen = () => {
+        // _attemptedSocket is impossible to be null
+        this._socketOpenHandler(ip, port, this._attemptedSocket!);
         resolve();
       };
+    }).finally(() => {
+      this._attemptedSocket = null;
     });
+  }
+
+  cancelConnect(): void {
+    if (!this._attemptedSocket) {
+      console.error("Attempted socket is not initialized");
+    }
+    this._attemptedSocket?.close();
+    return;
   }
 
   async disconnect(): Promise<void> {
@@ -152,7 +168,8 @@ export class WebsocketManager implements IWebsocketManager {
         // No useful information from WebSocket error event
       };
       this._socket.onclose = (event) => {
-        this._socketCloseHandler();
+        // It is impossible for socket to be null
+        this._socketCloseHandler(this._socket!);
         if (event.wasClean) {
           resolve();
         } else {
@@ -190,7 +207,7 @@ export class WebsocketManager implements IWebsocketManager {
       };
       this._socket.onclose = (event) => {
         clearTimeout(timeoutId);
-        this._socketCloseHandler();
+        this._socketCloseHandler(this._socket!);
         return reject(
           new RequestError(ErrorKind.Disconnected, { cause: event }),
         );
