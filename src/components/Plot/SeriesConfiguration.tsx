@@ -21,12 +21,7 @@ export type SeriesConfigurationProps = Omit<ColorPicker.RootProps, "stroke"> & {
   palette?: string[];
   color?: string;
   stroke?: LegendStroke;
-  dataFilter?: number;
-  onSave?: (
-    new_color: string,
-    new_style: LegendStroke,
-    new_filter?: number,
-  ) => void;
+  onSave?: (new_color: string, new_style: LegendStroke) => void;
   onCancel?: () => void;
 };
 
@@ -45,10 +40,6 @@ export function SeriesConfiguration(props: SeriesConfigurationProps) {
   );
 
   const [stroke, setStroke] = createSignal(props.stroke ?? LegendStroke.Line);
-
-  const [dataFilter, setDataFilter] = createSignal<number>(
-    props.dataFilter ?? 0,
-  );
 
   return (
     <Card.Root style={{ padding: "0" }}>
@@ -219,35 +210,12 @@ export function SeriesConfiguration(props: SeriesConfigurationProps) {
               <IconPoint />
             </ToggleGroup.Item>
           </ToggleGroup.Root>
-          <Heading
-            as="h6"
-            textStyle="xs"
-            style={{
-              "margin-top": "0.6rem",
-              "white-space": "nowrap",
-              "grid-row": 1,
-              "grid-column": 2,
-            }}
-          >
-            Smoothing Filter
-          </Heading>
-          <Input
-            value={dataFilter().toString()}
-            onChange={(e) => {
-              setDataFilter(Number(e.target.value));
-            }}
-            style={{ "grid-row": 2, "grid-column": 2, "margin-top": "0.4rem" }}
-          />
         </div>
       </Card.Body>
       <Card.Footer>
         <Button
           onClick={() => {
-            props.onSave?.(
-              selectedColor().toString("rgba"),
-              stroke(),
-              !isNaN(dataFilter()) ? dataFilter() : undefined,
-            );
+            props.onSave?.(selectedColor().toString("rgba"), stroke());
           }}
         >
           Save
