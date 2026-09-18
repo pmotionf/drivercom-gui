@@ -67,8 +67,11 @@ import { IpAddress } from "./pages/Monitoring/System/IpHistory.tsx";
 import { ConfigTuneType } from "src-tauri/generated/config/ConfigTune.tsx";
 import { ConfigCalibrationType } from "src-tauri/generated/config/ConfigCalibration.tsx";
 import { ConfigSystemType } from "src-tauri/generated/config/ConfigSystem.tsx";
-import { LogConfigType } from "src-tauri/generated/config/LogConfigType.tsx";
-import { ConfigType } from "src-tauri/generated/config/ConfigType.tsx";
+import { logConfigDefaultValues } from "src-tauri/generated/config/LogConfigType.tsx";
+import {
+  configDefaultValues,
+  ConfigType,
+} from "src-tauri/generated/config/ConfigType.tsx";
 import { getCurrentWebview } from "@tauri-apps/api/webview";
 import {
   AccordionStates,
@@ -112,16 +115,20 @@ function App(props: RouteSectionProps) {
     setGlobalState("theme", theme_str);
 
     detectApiVersion();
-    await detectCliVersion();
-    await buildEmptyLogConfiguration();
-    await buildEmptyDriverConfiguration();
-    await getLogStartCombinator();
-    await getLogStartCondition();
-    await getConfigDescription();
-    await getLogConfigDescription();
-    await prepareConfigTabFormat();
-    await getStoreValues();
-    await enableDropEvent();
+    buildEmptyLogConfiguration();
+    buildEmptyDriverConfiguration();
+
+    const prebuildFunctions = [
+      detectCliVersion(),
+      getLogStartCombinator(),
+      getLogStartCondition(),
+      getLogConfigDescription(),
+      prepareConfigTabFormat(),
+      getStoreValues(),
+      enableDropEvent(),
+      getConfigDescription(),
+    ];
+    await Promise.allSettled(prebuildFunctions);
     setPage(Pages.Configuration);
   });
 
@@ -135,6 +142,14 @@ function App(props: RouteSectionProps) {
 
     setCliVersion(cliVersion);
     setDriverComVersion(drivercomVersion);
+  }
+
+  function buildEmptyLogConfiguration() {
+    setLogFormFileFormat(logConfigDefaultValues);
+  }
+
+  function buildEmptyDriverConfiguration() {
+    setConfigFormFileFormat(configDefaultValues);
   }
 
   function detectApiVersion() {
@@ -153,22 +168,7 @@ function App(props: RouteSectionProps) {
     }
   }
 
-  async function buildEmptyLogConfiguration() {
-    const logConfig = Command.sidecar("binaries/drivercom", [
-      "log.config.empty",
-    ]);
-    const output = await logConfig.execute();
-    const logFormatToJson: LogConfigType = JSON5.parse(output.stdout);
-    setLogFormFileFormat(logFormatToJson);
-  }
-
-  async function buildEmptyDriverConfiguration() {
-    const configEmpty = Command.sidecar("binaries/drivercom", ["config.empty"]);
-    const output = await configEmpty.execute();
-    const configFormatToJson: ConfigType = JSON5.parse(output.stdout);
-    setConfigFormFileFormat(configFormatToJson);
-  }
-
+  // Get log start options from the drivercom-CLI Command
   async function getLogStartCondition() {
     const logStartCondition = Command.sidecar("binaries/drivercom", [
       `log.config.start.condition.list`,
@@ -184,6 +184,7 @@ function App(props: RouteSectionProps) {
     setLogStartConditionList(startConditionList);
   }
 
+  // Get log start combinator options from the drivercom-CLI Command
   async function getLogStartCombinator() {
     const logStartCombinator = Command.sidecar("binaries/drivercom", [
       `log.config.start.combinator.list`,
@@ -252,6 +253,7 @@ function App(props: RouteSectionProps) {
     setConfigTabForm(config);
   }
 
+  // Get local storage values using the Tauri store API.
   async function getStoreValues() {
     const store = await load("store.json", {
       defaults: {
