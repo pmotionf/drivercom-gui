@@ -44,7 +44,7 @@ import type { UplotPluginFactory } from "@dschz/solid-uplot";
 
 import { cursor, tooltip } from "@dschz/solid-uplot/plugins";
 import { PlotToolTip } from "./Plot/PlotTooltip";
-import { clamp, movingAvg } from "~/utils/PlotCalculation";
+import { clamp } from "~/utils/PlotCalculation";
 import { getComputedCSSVariableValue } from "~/utils/GetComputedCssVariableValue";
 import { fuzzySearch } from "~/utils/FuzzySearch";
 
@@ -74,7 +74,6 @@ export type PlotContext = {
   palette: string[];
   style: LegendStroke[];
   selected: boolean[];
-  filter: number[];
 };
 
 enum CursorMode {
@@ -162,17 +161,6 @@ export function Plot(props: PlotProps) {
       setContext()(
         "visible",
         props.header.map(() => true),
-      );
-    }
-
-    if (
-      !getContext().filter ||
-      getContext().filter.length == 0 ||
-      getContext().filter.length !== props.header.length
-    ) {
-      setContext()(
-        "filter",
-        props.header.map(() => 0),
       );
     }
 
@@ -1016,11 +1004,7 @@ export function Plot(props: PlotProps) {
               ]}
               data={[
                 Array.from({ length: props.series[0].length }, (_, i) => i), // x values
-                ...props.series.map((data, i) =>
-                  getContext().filter[i] && getContext().filter[i] > 0
-                    ? movingAvg(data, getContext().filter[i])
-                    : data,
-                ),
+                ...props.series,
               ]}
               scales={{
                 x: {
@@ -1511,10 +1495,6 @@ export function Plot(props: PlotProps) {
                             setTimeout(() => {
                               plot.redraw();
                             }, 200);
-                          }}
-                          filter={getContext().filter[item]}
-                          onFilterChange={(newFilter) => {
-                            setContext()("filter", item, newFilter);
                           }}
                         />
                       </div>
