@@ -34,7 +34,6 @@ import { Button } from "~/components/ui/button.tsx";
 import { FileHandler } from "../../services/FileHandler.ts";
 import { DownloadStates, DownloadStatus } from "~/components/DownloadList.tsx";
 import JSON5 from "json5";
-import { load } from "@tauri-apps/plugin-store";
 import { toaster } from "~/components/ui/toast.tsx";
 import { TabPageContext } from "~/components/Tab/TabList.tsx";
 import * as Menu from "~/components/ui/menu.tsx";
@@ -571,24 +570,6 @@ export function LoggingTabContent() {
   };
 
   const [disableBtn, setDisableBtn] = createSignal<LogButton>(LogButton.None);
-
-  createEffect(
-    on(
-      () => recentLogFilePaths(),
-      async () => {
-        const store = await load("store.json", {
-          defaults: {
-            configFilePath: undefined,
-            logFilePath: undefined,
-            ipHistory: undefined,
-          },
-          autoSave: false,
-        });
-        store.set("logFilePath", recentLogFilePaths());
-      },
-      { defer: true },
-    ),
-  );
 
   const saveToPort = async (portId: string) => {
     if (
