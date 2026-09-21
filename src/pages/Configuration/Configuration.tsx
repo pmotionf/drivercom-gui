@@ -32,6 +32,7 @@ function Configuration() {
   const [render, setRender] = createSignal<boolean>(false);
 
   onMount(() => {
+    // Add a configuration tab first if no tabs exist.
     if (!pageKeys.has(Pages.Configuration)) {
       const newPanelKey = crypto.randomUUID();
       pageKeys.set(Pages.Configuration, newPanelKey);
@@ -92,6 +93,12 @@ function Configuration() {
     setRender(true);
   };
 
+  // This effect runs  whenever recent config file path list is updated,
+  // and save it directly to disk via the Tauri Store API().
+  // We can't rely onCleanup for this, since cleanup callbacks aren't
+  // guaranteed to run if the window is closed abruptly.
+  // That's why we save on every update inside the effect body itself,
+  // instead of deferring it to cleanup.
   createEffect(
     on(
       () => recentConfigFilePaths(),
