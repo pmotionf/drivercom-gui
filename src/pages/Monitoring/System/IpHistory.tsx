@@ -51,7 +51,6 @@ export function IpHistory(props: IpHistoryProps) {
           "border-top-width": "1px",
           "border-bottom-width": "1px",
           "overflow-y": "auto",
-          //"margin-bottom": "1rem",
           "min-height": "2rem",
         }}
       >

@@ -11,6 +11,7 @@ export type PortMenuProps = ButtonProps & {
   onSaveToPort?: () => void;
 };
 
+// A Menu button that lets the user choose to connect or disconnect a port.
 export function PortMenu(props: PortMenuProps) {
   const [openMenu, setOpenMenu] = createSignal<boolean>(false);
   const { onGetFromPort, onSaveToPort, ...buttonProps } = props;

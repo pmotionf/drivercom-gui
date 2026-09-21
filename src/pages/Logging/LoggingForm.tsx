@@ -15,6 +15,7 @@ export type LoggingFormProps = JSX.HTMLAttributes<HTMLDivElement> & {
   description?: object;
 };
 
+// A custom form component adpated to Logging configuration format.
 export function LoggingForm(props: LoggingFormProps) {
   const logForm = props.formData;
 

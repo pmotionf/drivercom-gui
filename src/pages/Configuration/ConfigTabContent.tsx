@@ -62,6 +62,7 @@ export type ConfigTabPage = {
   changeUnit?: boolean;
 };
 
+// A custom tab page component for the configuration page.
 export function ConfigTabContent() {
   const configTabProps = useContext(TabPageContext);
   if (!configTabProps) return;

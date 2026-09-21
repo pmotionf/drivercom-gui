@@ -34,6 +34,7 @@ export type FormProps = JSX.HTMLAttributes<HTMLDivElement> & {
   logStartCombinators?: ListCollection;
 };
 
+// A generic form component that can adapt to any object shape.
 export function Form(props: FormProps) {
   const [object, setObject] = createStore(props.value);
 

@@ -56,6 +56,7 @@ export type ConfigFormProps = JSX.HTMLAttributes<HTMLFormElement> & {
   formOverflowY: Map<string, number>;
 };
 
+// A custom form component adpated to configuration format.
 export function ConfigForm(props: ConfigFormProps) {
   const [config, setConfig] = createStore<ConfigType>(props.config);
 

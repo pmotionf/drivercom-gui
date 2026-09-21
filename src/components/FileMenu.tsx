@@ -17,6 +17,7 @@ export type FileMenuProps = JSX.HTMLAttributes<HTMLDivElement> & {
   onSaveFile?: () => void;
 };
 
+// A Menu button that lets the user choose to open or save a file.
 export function FileMenu(props: FileMenuProps) {
   return (
     <Menu.Root positioning={{ placement: "bottom-start" }}>
