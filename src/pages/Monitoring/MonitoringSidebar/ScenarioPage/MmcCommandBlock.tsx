@@ -10,6 +10,7 @@ import { createListCollection } from "@ark-ui/solid";
 import { Select } from "~/components/Customize/Select";
 import { prettierLabel } from "~/utils/PrettierLabel";
 
+// Adaptive code block component for MMC Command in scenario page
 export function MmcCommandBlock(props: {
   command: CommandRequest;
   lineConfig: LineConfig[];
@@ -97,42 +98,43 @@ export function MmcCommandBlock(props: {
           />
         </>
       )}
-      {obj.body.value && "carrier" in obj.body.value &&
+      {obj.body.value && "carrier" in obj.body.value && (
         <>
           <Text>{"Carrier"}</Text>
-            <Input
-              width={"5rem"}
-              value={obj.body.value.carrier.toString()}
-              onChange={(e) => {
-                setObj(
-                  "body",
-                  "value",
-                  //@ts-ignore The type is already checked in above
-                  "carrier",
-                  Number(e.target.value),
-                );
-              }}
-            />
-          </>
-      }
-
-      {obj.body.value && "target" in obj.body.value &&
-        typeof obj.body.value.target.value === "number" && (
-        <>
-          <Text>{"Target"}</Text>
-          <Select
-            style = {{width : "8rem"}}
-            value={obj.body.value.target.case}
-            onValueChange={(value) => {
+          <Input
+            width={"5rem"}
+            value={obj.body.value.carrier.toString()}
+            onChange={(e) => {
               setObj(
                 "body",
                 "value",
-                //@ts-ignore,
-                "target",
-                //@ts-ignore,
-                {case : value, value : obj.body.value.target.value}
-              )
+                //@ts-ignore The type is already checked in above
+                "carrier",
+                Number(e.target.value),
+              );
             }}
+          />
+        </>
+      )}
+
+      {obj.body.value &&
+        "target" in obj.body.value &&
+        typeof obj.body.value.target.value === "number" && (
+          <>
+            <Text>{"Target"}</Text>
+            <Select
+              style={{ width: "8rem" }}
+              value={obj.body.value.target.case}
+              onValueChange={(value) => {
+                setObj(
+                  "body",
+                  "value",
+                  //@ts-ignore,
+                  "target",
+                  //@ts-ignore,
+                  { case: value, value: obj.body.value.target.value },
+                );
+              }}
               listCollection={createListCollection({
                 items: [
                   { label: "axis", value: "axis" },
@@ -140,8 +142,8 @@ export function MmcCommandBlock(props: {
                   { label: "distance", value: "distance" },
                 ],
               })}
-          />
-          <Text>{"Value"}</Text>
+            />
+            <Text>{"Value"}</Text>
             <Input
               width={"5rem"}
               value={obj.body.value.target.value.toString()}
