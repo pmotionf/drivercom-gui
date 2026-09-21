@@ -4,8 +4,9 @@ import {
   pageKeys,
   panelStore,
   tabStore,
+  recentLogFilePaths,
 } from "~/store/GlobalState.ts";
-import { createSignal, Show } from "solid-js";
+import { createEffect, createSignal, on, Show } from "solid-js";
 import { onMount } from "solid-js";
 import { LoggingAccordionStates } from "~/components/Form.tsx";
 
@@ -22,6 +23,7 @@ import {
 import { Panel } from "~/components/Panel/Panel.tsx";
 import { LoggingTabContent } from "./LoggingTabContent.tsx";
 import JSON5 from "json5";
+import { load } from "@tauri-apps/plugin-store";
 
 export type LoggingFormType = {
   title: string;
@@ -37,6 +39,7 @@ export type LoggingPageTabContentType = LoggingFormType;
 export function Logging() {
   const [render, setRender] = createSignal<boolean>(false);
 
+  // Add a logging tab first if no tabs exist.
   onMount(async () => {
     if (!pageKeys.has(Pages.Logging)) {
       const panelKey = crypto.randomUUID();
@@ -87,6 +90,30 @@ export function Logging() {
     }
     setRender(true);
   };
+
+  // This effect runs  whenever recent config file path list is updated,
+  // and save it directly to disk via the Tauri Store API().
+  // We can't rely onCleanup for this, since cleanup callbacks aren't
+  // guaranteed to run if the window is closed abruptly.
+  // That's why we save on every update inside the effect body itself,
+  // instead of deferring it to cleanup.
+  createEffect(
+    on(
+      () => recentLogFilePaths(),
+      async () => {
+        const store = await load("store.json", {
+          defaults: {
+            configFilePath: undefined,
+            logFilePath: undefined,
+            ipHistory: undefined,
+          },
+          autoSave: false,
+        });
+        store.set("logFilePath", recentLogFilePaths());
+      },
+      { defer: true },
+    ),
+  );
 
   return (
     <Show when={render()}>
