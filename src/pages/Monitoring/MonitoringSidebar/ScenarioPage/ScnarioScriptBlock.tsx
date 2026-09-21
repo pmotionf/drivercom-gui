@@ -1,10 +1,4 @@
-import {
-  createEffect,
-  createMemo,
-  createSignal,
-  JSX,
-  on,
-} from "solid-js";
+import { createEffect, createMemo, createSignal, JSX, on } from "solid-js";
 import { createDraggable } from "@neodrag/solid";
 import { createStore } from "solid-js/store";
 import { IconButton } from "~/components/ui/icon-button";
@@ -16,6 +10,7 @@ import { ScenarioCommand } from "../ScenarioPage";
 import { MmcCommandBlock } from "./MmcCommandBlock";
 import { WaitCommandBlock } from "./WaitCommandBlock";
 
+// Scenario page code block component
 export function ScenarioScriptBlock(
   props: JSX.HTMLAttributes<HTMLDivElement> & {
     lineConfig: LineConfig[];
@@ -86,13 +81,13 @@ export function ScenarioScriptBlock(
       class={css({
         display: "flex",
         width: "70rem",
-        borderWidth : "0px 1px 1px 0px",
+        borderWidth: "0px 1px 1px 0px",
         padding: `${itemPadding}`,
         alignItems: "center",
         background: props.isRunning ? "gray.3" : "gray.1",
         zIndex: dragStarted() ? 10 : 1,
         gap: "0.5rem",
-        userSelect: "none"
+        userSelect: "none",
       })}
       use:dragOptions={{
         onDragStart: () => {
@@ -116,7 +111,7 @@ export function ScenarioScriptBlock(
         />
       ) : (
         <>
-          <WaitCommandBlock waitCommand = {obj}/>
+          <WaitCommandBlock waitCommand={obj} />
         </>
       )}
       <IconButton
