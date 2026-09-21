@@ -56,6 +56,7 @@ export type LogViewerTabPage = {
   legendShrink?: boolean;
 };
 
+// A custom tab page component for the Log viewer page.
 export function LogViewerTabPageContent() {
   const tabPageProps = useContext(TabPageContext);
   if (!tabPageProps) return;

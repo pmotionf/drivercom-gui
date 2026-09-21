@@ -50,6 +50,7 @@ export type DownloadStates = {
   downloadProgress: number;
 };
 
+// Component for managing active downloads.
 export const DownloadList = (props: JSX.HTMLAttributes<HTMLDivElement>) => {
   const [openPopover, setOpenPopover] = createSignal<boolean>(false);
 

@@ -170,6 +170,7 @@ export function Plot(props: PlotProps) {
     );
   });
 
+  // This effect redraws the plot whenever the dot filter updates.
   createEffect(
     on(
       () => dotFilter(),
@@ -267,6 +268,9 @@ export function Plot(props: PlotProps) {
   const checkDotFilter = () => dotFilter();
   const [xRange, setXRange] = createSignal<number>(0);
 
+  // This effect update the dot filter whenever the plot's x range changes.
+  // The dot filter prevents dot-styled storkes for being crammed together.
+  // It uses an Nth-point decimation / stride sampling algorithm to compute the filter.
   createEffect(
     on(
       () => xRange(),
@@ -316,6 +320,7 @@ export function Plot(props: PlotProps) {
     getComputedCSSVariableValue("--colors-gray-3"),
   );
 
+  // This effect updates the CSS whenever the theme in global state changes.
   createEffect(() => {
     if (globalState.theme !== theme) {
       theme = globalState.theme;

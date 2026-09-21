@@ -49,6 +49,7 @@ enum LogButton {
   None,
 }
 
+// A custom tab page component for the Logging page.
 export function LoggingTabContent() {
   const loggingTabProps = useContext(TabPageContext);
   if (!loggingTabProps) return;
