@@ -534,18 +534,20 @@ export function Plot(props: PlotProps) {
     const prevSelect = getContext().selected;
 
     if (isAllSame) {
-      const updateVisible = visible.map((visible, i) => {
-        if (indexList.includes(i)) {
-          plot.setSeries(i + 1, {
-            show: !shiftVisibleState[0],
-          });
-          return !shiftVisibleState[0];
-        } else {
-          return visible;
-        }
-      });
-      setContext()("visible", updateVisible);
-      setContext()("selected", prevSelect);
+      plot.batch(() => {
+        const updateVisible = visible.map((visible, i) => {
+          if (indexList.includes(i)) {
+            plot.setSeries(i + 1, {
+              show: !shiftVisibleState[0],
+            });
+            return !shiftVisibleState[0];
+          } else {
+            return visible;
+          }
+        });
+        setContext()("visible", updateVisible);
+        setContext()("selected", prevSelect);
+      })
       return;
     }
   };
@@ -1454,13 +1456,15 @@ export function Plot(props: PlotProps) {
                             } else {
                               setContext()("visible", item, new_visible);
                               // Index must add 1 to account for X-axis "Cycle" series
-                              plot.setSeries(item + 1, {
-                                show: new_visible,
-                              });
-                              plot.setScale("y", {
-                                min: plot.scales.y.min!,
-                                max: plot.scales.y.max!,
-                              });
+                              plot.batch(() => {
+                                plot.setSeries(item + 1, {
+                                  show: new_visible,
+                                });
+                                plot.setScale("y", {
+                                  min: plot.scales.y.min!,
+                                  max: plot.scales.y.max!,
+                                });
+                              })
                               props.onContextChange?.(getContext());
                               setPrevVisible(index());
                             }
