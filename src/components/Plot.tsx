@@ -414,9 +414,8 @@ export function Plot(props: PlotProps) {
       return {
         hooks: {
           ready: (u) => {
-            xMin = 0;
-            xMax = u.data[0].length - 1!;
-
+            xMin = u.scales.x.min!;
+            xMax = u.scales.x.max!;
             xRange = xMax - xMin;
 
             yMin = u.scales.y.min!;
@@ -608,8 +607,8 @@ export function Plot(props: PlotProps) {
             }}
           >
             <SolidUplot
-              onCreate={(e) => {
-                plot = e as uPlot;
+              onCreate={(newPlot) => {
+                plot = newPlot;
                 setRender(true);
                 onMount(() => {
                   if (props.yScale && props.yScale.max - props.yScale.min > 0) {
@@ -618,7 +617,7 @@ export function Plot(props: PlotProps) {
                         min: plot.scales.y.min!,
                         max: plot.scales.y.max!,
                       });
-                      plot.setScale("y", props.yScale!);
+                      newPlot.setScale("y", props.yScale!);
                     }, 10);
                   }
 
@@ -738,8 +737,8 @@ export function Plot(props: PlotProps) {
                           const xUnitsPerPx =
                             u.posToVal(1, "x") - u.posToVal(0, "x");
 
-                          const yMin = u.scales.y.min!;
-                          const yMax = u.scales.y.max!;
+                          const yMin = yScale().min;
+                          const yMax = yScale().max;
 
                           const top0 = e.clientY;
 
