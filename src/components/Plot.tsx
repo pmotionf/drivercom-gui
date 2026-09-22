@@ -255,30 +255,30 @@ export function Plot(props: PlotProps) {
         }
       }
 
-      setXRange(plot.scales.x.max! - plot.scales.x.min!);
-      props.onXScaleChange?.([plot.scales.x.min!, plot.scales.x.max!]);
-      props.onYScaleChange?.({
-        min: plot.scales.y.min!,
-        max: plot.scales.y.max!,
-      });
+      setXScale({ xMin: plot.scales.x.min!, xMax: plot.scales.x.max! });
     }, 10);
   };
 
   const [dotFilter, setDotFilter] = createSignal<number[]>([]);
   const checkDotFilter = () => dotFilter();
-  const [xRange, setXRange] = createSignal<number>(0);
+  const [xScale, setXScale] = createSignal<{ xMin: number; xMax: number }>(
+    props.xScale
+      ? { xMin: props.xScale[0], xMax: props.xScale[1] }
+      : { xMin: 0, xMax: props.series[0].length },
+  );
 
   // This effect update the dot filter whenever the plot's x range changes.
   // The dot filter prevents dot-styled storkes for being crammed together.
   // It uses an Nth-point decimation / stride sampling algorithm to compute the filter.
   createEffect(
     on(
-      () => xRange(),
+      () => xScale().xMax,
       () => {
         const domainWidth: number = document.getElementById(
           props.id,
         )!.offsetWidth;
-        const scale: number = xRange() / domainWidth;
+        const xRange = xScale().xMax - xScale().xMin;
+        const scale: number = xRange / domainWidth;
         const array: number[] = [];
 
         let i: number = 0;
@@ -547,7 +547,7 @@ export function Plot(props: PlotProps) {
         });
         setContext()("visible", updateVisible);
         setContext()("selected", prevSelect);
-      })
+      });
       return;
     }
   };
@@ -626,6 +626,11 @@ export function Plot(props: PlotProps) {
               if (cursorMode() !== CursorMode.Lock) {
                 setCursorIdx(null);
               }
+              props.onXScaleChange?.([xScale().xMin, xScale().xMax]);
+              props.onYScaleChange?.({
+                min: plot.scales.y.min!,
+                max: plot.scales.y.max!,
+              });
             }}
           >
             <SolidUplot
@@ -666,7 +671,6 @@ export function Plot(props: PlotProps) {
                 sync: {
                   key: group(),
                 },
-
                 bind: {
                   mousedown: (u) => {
                     return (e) => {
@@ -1139,7 +1143,7 @@ export function Plot(props: PlotProps) {
                           min: yScales.yMin,
                           max: yScales.yMax,
                         });
-                        setXRange(xMax);
+                        setXScale({ xMin: 0, xMax: xMax });
                         props.onXScaleChange?.([0, xMax]);
                       });
                     }}
@@ -1464,7 +1468,7 @@ export function Plot(props: PlotProps) {
                                   min: plot.scales.y.min!,
                                   max: plot.scales.y.max!,
                                 });
-                              })
+                              });
                               props.onContextChange?.(getContext());
                               setPrevVisible(index());
                             }
