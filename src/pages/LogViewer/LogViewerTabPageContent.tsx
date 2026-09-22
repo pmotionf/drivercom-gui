@@ -7,7 +7,7 @@ import {
   Show,
   useContext,
 } from "solid-js";
-import { createStore } from "solid-js/store";
+import { createStore, reconcile } from "solid-js/store";
 import { Plot, PlotContext } from "~/components/Plot";
 import { IconButton } from "~/components/ui/icon-button";
 import {
@@ -155,7 +155,7 @@ export function LogViewerTabPageContent() {
       "tabPage",
       "logViewerTabPage",
       "plotXScale",
-      newXRange,
+      reconcile(newXRange),
     );
   };
 
@@ -184,31 +184,7 @@ export function LogViewerTabPageContent() {
   };
 
   const [plots, setPlots] = createStore<PlotContext[]>(
-    getTabContext(tabPageProps.tabId).tabCtx.plotContext
-      ? getTabContext(tabPageProps.tabId).tabCtx.plotContext!
-      : [{} as PlotContext],
-  );
-
-  const [plotZoomState, setPlotZoomState] = createSignal<[number, number]>([
-    0, 0,
-  ]);
-  if (getTabContext(tabPageProps.tabId).tabCtx.plotXScale) {
-    setPlotZoomState(getTabContext(tabPageProps.tabId).tabCtx.plotXScale!);
-  }
-
-  createEffect(
-    on(
-      () => plotZoomState(),
-      () => {
-        setTimeout(() => {
-          setXRange(
-            getTabContext(tabPageProps.tabId).currentIndex,
-            plotZoomState(),
-          );
-        }, 20);
-      },
-      { defer: true },
-    ),
+    getTabContext(tabPageProps.tabId).tabCtx.plotContext ?? [{} as PlotContext],
   );
 
   const [splitIndex, setSplitIndex] = createSignal([] as number[][]);
@@ -345,9 +321,6 @@ export function LogViewerTabPageContent() {
       setHeader(csvFile.header);
       if (csvFile.enumSeriesMap) {
         setEnumMappings(csvFile.enumSeriesMap);
-      }
-      if (plotZoomState()[1] === 0) {
-        setPlotZoomState([0, csvFile.series[0].length]);
       }
     } catch (e) {
       tabPageProps.toaster.create({
@@ -975,8 +948,12 @@ export function LogViewerTabPageContent() {
                               (_, i) => visible[i],
                             );
 
-                            const xMin = Math.floor(plotZoomState()[0]);
-                            const xMax = Math.floor(plotZoomState()[1]);
+                            const currentXScale = getTabContext(
+                              tabPageProps.tabId,
+                            ).tabCtx.plotXScale;
+                            if (!currentXScale) return;
+                            const xMin = Math.floor(currentXScale[0]);
+                            const xMax = Math.floor(currentXScale[1]);
                             if (xMax - xMin < 1) {
                               tabPageProps!.toaster.create({
                                 title: "Invalid Range",
@@ -1057,14 +1034,14 @@ export function LogViewerTabPageContent() {
                           setPlots(index(), ctx);
                         }
                       }}
-                      xScale={plotZoomState()}
+                      xScale={
+                        getTabContext(tabPageProps.tabId).tabCtx.plotXScale
+                      }
                       onXScaleChange={(xRange) => {
-                        if (
-                          plotZoomState()[0] !== xRange[0] &&
-                          plotZoomState()[1] !== xRange[1]
-                        ) {
-                          setPlotZoomState(xRange);
-                        }
+                        setXRange(
+                          getTabContext(tabPageProps.tabId).currentIndex,
+                          xRange,
+                        );
                       }}
                       yScale={
                         plotYScales() && plotYScales()[index()]
