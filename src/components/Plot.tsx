@@ -425,6 +425,24 @@ export function Plot(props: PlotProps) {
             const over = u.over;
             const rect = over.getBoundingClientRect();
 
+            setYScale({
+              min: plot.scales.y.min!,
+              max: plot.scales.y.max!,
+            });
+
+            if (props.yScale && props.yScale.max - props.yScale.min > 0) {
+              u.setScale("y", props.yScale!);
+            }
+
+            if (props.xScale) {
+              uPlot.sync(group()).plots.forEach((up) => {
+                up.setScale("x", {
+                  min: props.xScale![0],
+                  max: props.xScale![1],
+                });
+              });
+            }
+
             // wheel scroll zoom
             over.addEventListener("wheel", (e) => {
               e.preventDefault();
@@ -610,28 +628,6 @@ export function Plot(props: PlotProps) {
               onCreate={(newPlot) => {
                 plot = newPlot;
                 setRender(true);
-                onMount(() => {
-                  if (props.yScale && props.yScale.max - props.yScale.min > 0) {
-                    setTimeout(() => {
-                      setYScale({
-                        min: plot.scales.y.min!,
-                        max: plot.scales.y.max!,
-                      });
-                      newPlot.setScale("y", props.yScale!);
-                    }, 10);
-                  }
-
-                  if (props.xScale) {
-                    setTimeout(() => {
-                      uPlot.sync(group()).plots.forEach((up) => {
-                        up.setScale("x", {
-                          min: props.xScale![0],
-                          max: props.xScale![1],
-                        });
-                      });
-                    }, 0);
-                  }
-                });
               }}
               onCursorMove={(e) => {
                 setCursorIdx(e.cursor.xValue);
