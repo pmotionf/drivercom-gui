@@ -245,40 +245,40 @@ export function Plot(props: PlotProps) {
 
       if (zoomReset()) {
         if (plot) {
-          const yScales = getPlotYScale(plot);
+          const yScales = yScale();
           if (
-            (plot.scales.y.max && yScales.yMax > plot.scales.y.max) ||
-            (plot.scales.y.min && yScales.yMin < plot.scales.y.min)
+            (plot.scales.y.max && yScales.max > plot.scales.y.max) ||
+            (plot.scales.y.min && yScales.min < plot.scales.y.min)
           ) {
             setZoomReset(false);
           }
         }
       }
 
-      setXRange(plot.scales.x.max! - plot.scales.x.min!);
-      props.onXScaleChange?.([plot.scales.x.min!, plot.scales.x.max!]);
-      props.onYScaleChange?.({
-        min: plot.scales.y.min!,
-        max: plot.scales.y.max!,
-      });
+      setXScale({ xMin: plot.scales.x.min!, xMax: plot.scales.x.max! });
     }, 10);
   };
 
   const [dotFilter, setDotFilter] = createSignal<number[]>([]);
   const checkDotFilter = () => dotFilter();
-  const [xRange, setXRange] = createSignal<number>(0);
+  const [xScale, setXScale] = createSignal<{ xMin: number; xMax: number }>(
+    props.xScale
+      ? { xMin: props.xScale[0], xMax: props.xScale[1] }
+      : { xMin: 0, xMax: props.series[0].length },
+  );
 
   // This effect update the dot filter whenever the plot's x range changes.
   // The dot filter prevents dot-styled storkes for being crammed together.
   // It uses an Nth-point decimation / stride sampling algorithm to compute the filter.
   createEffect(
     on(
-      () => xRange(),
+      () => xScale().xMax,
       () => {
         const domainWidth: number = document.getElementById(
           props.id,
         )!.offsetWidth;
-        const scale: number = xRange() / domainWidth;
+        const xRange = xScale().xMax - xScale().xMin;
+        const scale: number = xRange / domainWidth;
         const array: number[] = [];
 
         let i: number = 0;
@@ -397,36 +397,6 @@ export function Plot(props: PlotProps) {
     }
   };
 
-  const getPlotYScale = (u: uPlot): { yMin: number; yMax: number } => {
-    const parseData = u.data.filter(
-      (_, i) => u.series[i].show === true && u.series[i].scale === "y",
-    );
-
-    const changeToMax = parseData.map((data) =>
-      Math.max(...data.map((i) => Number(i))),
-    );
-    const yMax = Math.max(...changeToMax);
-
-    const changeToMin = parseData.map((data) =>
-      Math.min(...data.map((i) => Number(i))),
-    );
-    const yMin = Math.min(...changeToMin);
-
-    const one_rem = parseFloat(
-      getComputedStyle(document.documentElement).fontSize,
-    );
-
-    const yRange = yMax - yMin;
-    const plotHeight = u.over.offsetHeight;
-    const percent = one_rem / plotHeight;
-    const paddingToYVal = yRange * percent;
-
-    return {
-      yMin: yMin > 0 ? yMin : yMin - paddingToYVal,
-      yMax: yMax + paddingToYVal,
-    };
-  };
-
   const wheelZoomPlugin = (opts: {
     factor: number;
     group: string;
@@ -444,19 +414,34 @@ export function Plot(props: PlotProps) {
       return {
         hooks: {
           ready: (u) => {
-            xMin = 0;
-            xMax = u.data[0].length - 1!;
-
+            xMin = u.scales.x.min!;
+            xMax = u.scales.x.max!;
             xRange = xMax - xMin;
 
-            const yScales = getPlotYScale(u);
-            yMin = yScales.yMin;
-            yMax = yScales.yMax;
-
+            yMin = u.scales.y.min!;
+            yMax = u.scales.y.max!;
             yRange = yMax - yMin;
 
             const over = u.over;
             const rect = over.getBoundingClientRect();
+
+            setYScale({
+              min: plot.scales.y.min!,
+              max: plot.scales.y.max!,
+            });
+
+            if (props.yScale && props.yScale.max - props.yScale.min > 0) {
+              u.setScale("y", props.yScale!);
+            }
+
+            if (props.xScale) {
+              uPlot.sync(group()).plots.forEach((up) => {
+                up.setScale("x", {
+                  min: props.xScale![0],
+                  max: props.xScale![1],
+                });
+              });
+            }
 
             // wheel scroll zoom
             over.addEventListener("wheel", (e) => {
@@ -534,18 +519,20 @@ export function Plot(props: PlotProps) {
     const prevSelect = getContext().selected;
 
     if (isAllSame) {
-      const updateVisible = visible.map((visible, i) => {
-        if (indexList.includes(i)) {
-          plot.setSeries(i + 1, {
-            show: !shiftVisibleState[0],
-          });
-          return !shiftVisibleState[0];
-        } else {
-          return visible;
-        }
+      plot.batch(() => {
+        const updateVisible = visible.map((visible, i) => {
+          if (indexList.includes(i)) {
+            plot.setSeries(i + 1, {
+              show: !shiftVisibleState[0],
+            });
+            return !shiftVisibleState[0];
+          } else {
+            return visible;
+          }
+        });
+        setContext()("visible", updateVisible);
+        setContext()("selected", prevSelect);
       });
-      setContext()("visible", updateVisible);
-      setContext()("selected", prevSelect);
       return;
     }
   };
@@ -568,6 +555,12 @@ export function Plot(props: PlotProps) {
   const convertPercentToPixel = (percent: number, rootWidth: number) => {
     return rootWidth * percent * 0.01;
   };
+
+  // Store the y scale min and max for reset the zoom
+  const [yScale, setYScale] = createSignal<{ min: number; max: number }>({
+    min: 0,
+    max: 0,
+  });
 
   return (
     <>
@@ -624,38 +617,17 @@ export function Plot(props: PlotProps) {
               if (cursorMode() !== CursorMode.Lock) {
                 setCursorIdx(null);
               }
+              props.onXScaleChange?.([xScale().xMin, xScale().xMax]);
+              props.onYScaleChange?.({
+                min: plot.scales.y.min!,
+                max: plot.scales.y.max!,
+              });
             }}
           >
             <SolidUplot
-              onCreate={(e) => {
-                plot = e as uPlot;
+              onCreate={(newPlot) => {
+                plot = newPlot;
                 setRender(true);
-                onMount(() => {
-                  if (props.yScale && props.yScale.max - props.yScale.min > 0) {
-                    setTimeout(() => {
-                      plot.setScale("y", props.yScale!);
-                    }, 10);
-                  } else {
-                    setTimeout(() => {
-                      const yScales = getPlotYScale(plot);
-                      plot.setScale("y", {
-                        min: yScales.yMin,
-                        max: yScales.yMax,
-                      });
-                    }, 10);
-                  }
-
-                  if (props.xScale) {
-                    setTimeout(() => {
-                      uPlot.sync(group()).plots.forEach((up) => {
-                        up.setScale("x", {
-                          min: props.xScale![0],
-                          max: props.xScale![1],
-                        });
-                      });
-                    }, 0);
-                  }
-                });
               }}
               onCursorMove={(e) => {
                 setCursorIdx(e.cursor.xValue);
@@ -664,7 +636,6 @@ export function Plot(props: PlotProps) {
                 sync: {
                   key: group(),
                 },
-
                 bind: {
                   mousedown: (u) => {
                     return (e) => {
@@ -762,9 +733,8 @@ export function Plot(props: PlotProps) {
                           const xUnitsPerPx =
                             u.posToVal(1, "x") - u.posToVal(0, "x");
 
-                          const yScales = getPlotYScale(u);
-                          const yMin = yScales.yMin;
-                          const yMax = yScales.yMax;
+                          const yMin = yScale().min;
+                          const yMax = yScale().max;
 
                           const top0 = e.clientY;
 
@@ -929,10 +899,9 @@ export function Plot(props: PlotProps) {
                         });
                       } else if (cursorMode() === CursorMode.Vertical) {
                         uPlot.sync(group()).plots.forEach((up) => {
-                          const yScales = getPlotYScale(up);
                           up.setScale("y", {
-                            min: yScales.yMin,
-                            max: yScales.yMax,
+                            min: yScale().min,
+                            max: yScale().max,
                           });
                           up.setScale("x", {
                             min: up.scales.x.min!,
@@ -941,10 +910,9 @@ export function Plot(props: PlotProps) {
                         });
                       } else {
                         uPlot.sync(group()).plots.forEach((up) => {
-                          const yScales = getPlotYScale(up);
                           up.setScale("y", {
-                            min: yScales.yMin,
-                            max: yScales.yMax,
+                            min: up.scales.y.min!,
+                            max: up.scales.y.max!,
                           });
                           up.setScale("x", {
                             min: 0,
@@ -1131,13 +1099,11 @@ export function Plot(props: PlotProps) {
                       uPlot.sync(group()).plots.forEach((up: uPlot) => {
                         const xMax = Number(up.data[0].length - 1);
                         up.setScale("x", { min: 0, max: xMax });
-
-                        const yScales = getPlotYScale(up);
                         up.setScale("y", {
-                          min: yScales.yMin,
-                          max: yScales.yMax,
+                          min: up.scales.y.min!,
+                          max: up.scales.y.max!,
                         });
-                        setXRange(xMax);
+                        setXScale({ xMin: 0, xMax: xMax });
                         props.onXScaleChange?.([0, xMax]);
                       });
                     }}
@@ -1454,12 +1420,14 @@ export function Plot(props: PlotProps) {
                             } else {
                               setContext()("visible", item, new_visible);
                               // Index must add 1 to account for X-axis "Cycle" series
-                              plot.setSeries(item + 1, {
-                                show: new_visible,
-                              });
-                              plot.setScale("y", {
-                                min: plot.scales.y.min!,
-                                max: plot.scales.y.max!,
+                              plot.batch(() => {
+                                plot.setSeries(item + 1, {
+                                  show: new_visible,
+                                });
+                                plot.setScale("y", {
+                                  min: plot.scales.y.min!,
+                                  max: plot.scales.y.max!,
+                                });
                               });
                               props.onContextChange?.(getContext());
                               setPrevVisible(index());
