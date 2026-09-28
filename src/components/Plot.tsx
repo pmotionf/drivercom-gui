@@ -562,6 +562,8 @@ export function Plot(props: PlotProps) {
     max: 0,
   });
 
+  onCleanup(() => plot.destroy());
+
   return (
     <>
       <Splitter.Root
