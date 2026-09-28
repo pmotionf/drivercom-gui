@@ -200,7 +200,32 @@ export function Plot(props: PlotProps) {
   );
 
   // Store whether zoom reset button should be disabled.
-  const [zoomReset, setZoomReset] = createSignal(true);
+  const [zoomReset, setZoomReset] = createSignal<boolean>(true);
+  const checkZoomLevel = (): UplotPluginFactory<CursorPluginMessageBus> => {
+    return () => {
+      return {
+        hooks: {
+          setScale: (plot) => {
+            if (
+              (plot.scales.x.min && plot.scales.x.min > 0) ||
+              (plot.scales.x.max && plot.scales.x.max < plot.data[0].length - 1)
+            ) {
+              setZoomReset(false);
+            } else {
+              if (
+                (plot.scales.y.min && plot.scales.y.min > yScale().min) ||
+                (plot.scales.y.max && plot.scales.y.max < yScale().max)
+              ) {
+                setZoomReset(false);
+              } else {
+                setZoomReset(true);
+              }
+            }
+          },
+        },
+      };
+    };
+  };
 
   // Current cursor mode; changes dynamically with keypresses.
   const [cursorMode, setCursorMode] = createSignal(CursorMode.Pan);
@@ -230,33 +255,6 @@ export function Plot(props: PlotProps) {
     } else if (event.key === "Alt" && cursorMode() === CursorMode.Lock) {
       setCursorMode(lastCursorMode());
     }
-  };
-
-  const checkZoomLevel = () => {
-    setTimeout(() => {
-      setZoomReset(
-        !plot ||
-          !plot.scales.x.min ||
-          !plot.scales.x.max ||
-          !(
-            plot.scales.x.min > 0 || plot.scales.x.max < plot.data[0].length - 1
-          ),
-      );
-
-      if (zoomReset()) {
-        if (plot) {
-          const yScales = yScale();
-          if (
-            (plot.scales.y.max && yScales.max > plot.scales.y.max) ||
-            (plot.scales.y.min && yScales.min < plot.scales.y.min)
-          ) {
-            setZoomReset(false);
-          }
-        }
-      }
-
-      setXScale({ xMin: plot.scales.x.min!, xMax: plot.scales.x.max! });
-    }, 10);
   };
 
   const [dotFilter, setDotFilter] = createSignal<number[]>([]);
@@ -302,15 +300,12 @@ export function Plot(props: PlotProps) {
   onMount(() => {
     document.addEventListener("keydown", cursorModeActivate);
     document.addEventListener("keyup", cursorModeRelease);
-    document.addEventListener("mouseup", checkZoomLevel);
-    document.addEventListener("wheel", checkZoomLevel);
   });
 
   onCleanup(() => {
     document.removeEventListener("keydown", cursorModeActivate);
     document.removeEventListener("keyup", cursorModeRelease);
-    document.removeEventListener("mouseup", checkZoomLevel);
-    document.removeEventListener("wheel", checkZoomLevel);
+    plot.destroy();
   });
 
   const [fgDefault, setFgDefault] = createSignal<string>(
@@ -561,8 +556,6 @@ export function Plot(props: PlotProps) {
     min: 0,
     max: 0,
   });
-
-  onCleanup(() => plot.destroy());
 
   return (
     <>
@@ -1021,6 +1014,7 @@ export function Plot(props: PlotProps) {
               plugins={[
                 cursor(),
                 wheelZoomPlugin({ factor: 0.75, group: group() }),
+                checkZoomLevel(),
                 tooltip((tooltipProps) =>
                   PlotToolTip({
                     ...tooltipProps,
