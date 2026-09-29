@@ -205,7 +205,7 @@ export function Plot(props: PlotProps) {
     return () => {
       return {
         hooks: {
-          setScale: (plot) => {
+          setScale: (plot, scaleKey) => {
             if (
               (plot.scales.x.min && plot.scales.x.min > 0) ||
               (plot.scales.x.max && plot.scales.x.max < plot.data[0].length - 1)
@@ -219,6 +219,28 @@ export function Plot(props: PlotProps) {
                 setZoomReset(false);
               } else {
                 setZoomReset(true);
+              }
+            }
+
+            if (scaleKey === "x") {
+              if (
+                typeof plot.scales.x.min === "number" &&
+                typeof plot.scales.x.max === "number"
+              ) {
+                props.onXScaleChange?.([plot.scales.x.min, plot.scales.x.max]);
+                setXScale({ xMin: plot.scales.x.min, xMax: plot.scales.x.max });
+              }
+            }
+
+            if (scaleKey === "y") {
+              if (
+                typeof plot.scales.y.min === "number" &&
+                typeof plot.scales.y.max === "number"
+              ) {
+                props.onYScaleChange?.({
+                  min: plot.scales.y.min,
+                  max: plot.scales.y.max,
+                });
               }
             }
           },
@@ -612,11 +634,6 @@ export function Plot(props: PlotProps) {
               if (cursorMode() !== CursorMode.Lock) {
                 setCursorIdx(null);
               }
-              props.onXScaleChange?.([xScale().xMin, xScale().xMax]);
-              props.onYScaleChange?.({
-                min: plot.scales.y.min!,
-                max: plot.scales.y.max!,
-              });
             }}
           >
             <SolidUplot
@@ -1099,8 +1116,6 @@ export function Plot(props: PlotProps) {
                           min: up.scales.y.min!,
                           max: up.scales.y.max!,
                         });
-                        setXScale({ xMin: 0, xMax: xMax });
-                        props.onXScaleChange?.([0, xMax]);
                       });
                     }}
                   >
