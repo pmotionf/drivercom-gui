@@ -151,11 +151,17 @@ export class WebsocketManager implements IWebsocketManager {
       this._socket.onerror = () => {
         // No useful information from WebSocket error event
       };
-      this._socket.onclose = () => {
+      this._socket.onclose = (event) => {
         this._socketCloseHandler();
-        // It is assume that closing websocket will never trigger any error.
-        // Was clean event always return false, even we are the one who close the web socket.
-        resolve();
+        if (event.wasClean) {
+          resolve();
+        } else {
+          // TODO: Find out if we need to handle specific closing reason to retry
+          // the disconnect.
+          reject(
+            new ConnectError(`${ErrorKind.Disconnected} (code: ${event.code})`),
+          );
+        }
       };
       this._socket.close();
     });
