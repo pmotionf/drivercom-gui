@@ -1,4 +1,4 @@
-import { createSignal, For, Show } from "solid-js";
+import { createMemo, createSignal, For, Show } from "solid-js";
 import { Text } from "~/components/ui/text";
 import { createDraggable } from "@neodrag/solid";
 import { createStore } from "solid-js/store";
@@ -207,11 +207,11 @@ export function ScenarioPage(props: {
 
   const getCarrierInfo = (lineId: number, carrierId: number) => {
     if (lineId > props.carrierStates.length) return null;
-    const findLine = props.carrierStates[lineId - 1];
-    const findCarrier = findLine.carrierStates.find(
+    const findLine = props.carrierStates[lineId - 1]
+    const findCarrier = findLine.carrierStates.filter(
       (status) => status.id === carrierId,
     );
-    return findCarrier ?? null;
+    return findCarrier[0] ?? null;
   };
 
   const waitForCarrierState = async (
@@ -219,15 +219,15 @@ export function ScenarioPage(props: {
   ): Promise<boolean> => {
     const { lineId, carrierId, carrierState, timeout } = commandValue.value;
     const startTime = Date.now();
-    let isSuccess = false;
+    let isSuccess : boolean = false;
 
     while (!isSuccess) {
-      await new Promise((resolve) => setTimeout(resolve, 100));
+      await new Promise((resolve) => setTimeout(resolve, 1));
       const carrierInfo = getCarrierInfo(lineId, carrierId);
       if (!carrierInfo) {
         break;
       }
-      if (timeout && timeout > 0 && Date.now() - startTime >= timeout) {
+      if (timeout && Date.now() - startTime >= timeout) {
         break;
       }
       if (carrierInfo.state === carrierState) {
@@ -240,6 +240,55 @@ export function ScenarioPage(props: {
     return isSuccess;
   };
 
+  const [startScenario, setStartScenario] = createSignal<boolean>(false)
+
+  createMemo(() => {
+    if (startScenario()) {
+      runScenarioCommand(scenarioCommands)
+    }
+  })
+
+  const runScenarioCommand = async(scenarioCommands : ScenarioCommand[]) => {
+    if (scenarioCommands.length < 1) return;
+    for await (const [
+      commandIndex,
+      command,
+    ] of scenarioCommands.entries()) {
+      setCurrentRunningCommand(commandIndex);
+      console.log(commandIndex)
+      if (command.case === "mmcCommand") {
+        try {
+          await props.commandWebsocket.runCommand(
+            {"$typeName" : "mmc.Request" ,  body : {case :"command", value :command.value.command}}
+          );
+        } catch {
+          setCurrentRunningCommand(null);
+          break;
+        }
+      } else if (command.case === "wait") {
+        try {
+          const result = await waitForCarrierState(command);
+          if (!result) {
+            setCurrentRunningCommand(null);
+            break;
+          }
+        } catch (e) {
+          console.log(e)
+          setCurrentRunningCommand(null);
+          break;
+        }
+      }
+      setCurrentRunningCommand(null);
+      if (!startScenario()) {
+        break;
+      }
+    }
+    if (startScenario()) {
+      return await runScenarioCommand(scenarioCommands)
+    }
+    return
+  }
+
   const [currentRunningCommand, setCurrentRunningCommand] = createSignal<
     number | null
   >(null);
@@ -248,16 +297,47 @@ export function ScenarioPage(props: {
 
   return (
     <div
-      style={{ width: "100%", height: `calc(100% - 2rem)`, display: "flex" }}
+      style={{ width: "100%", height: `100%`, display: "grid", "grid-template-columns" : `${sideBarWidth} minmax(0, 1fr)`, "grid-template-rows" : `3rem minmax(0, 1fr)` }}
     >
+      <div style={{
+        "grid-row": "1",
+        "grid-column": "1 / span 2",
+        "border-width": "1px",
+        "display": "flex",
+        "align-items": "center",
+        gap : "1rem"
+      }}>
+        <Text>{"Velocity"}</Text>
+        <Input
+          width = "6rem"
+          value={scenarioVeloctiy()}
+          onChange={(e) => setScenarioVelocity(Number(e.target.value))}
+        />
+        <Text>{"Acceleration"}</Text>
+        <Input
+          width = "6rem"
+          value={scenarioAcceleration()}
+          onChange={(e) => setScenarioAcceleration(Number(e.target.value))}
+        />
+        <Button
+          onClick={async () => {
+           // await runScenarioCommand(scenarioCommands)
+            setStartScenario((prev) => !prev)
+          }}
+        >
+          {startScenario() ? "stop" : "start"}
+        </Button>
+      </div>
       <div
         style={{
           display: "absolute",
           width: sideBarWidth,
           "max-width": sideBarWidth,
           height: "100%",
-          "border-right-width":
+          "border-width":
             "1px" /*"overflow-y" : "auto", "overflow-x" :"hidden"*/,
+          "grid-row": "2",
+          "grid-column" : "1"
         }}
       >
         <Show when={tabRender()} fallback={<></>}>
@@ -340,7 +420,7 @@ export function ScenarioPage(props: {
               );
             }}
           </For>
-          <div>
+          <div >
             {/* Code block on the left side only for wait commands */}
             <For each={waitCommands}>
               {(wait) => {
@@ -433,12 +513,16 @@ export function ScenarioPage(props: {
       <div
         id={scenarioDropDivId}
         style={{
-          width: `calc(100% - ${sideBarWidth})`,
+          //width: `calc(100% - ${sideBarWidth})`,
           height: "100%",
           display: "flex",
           "flex-direction": "column",
           "overflow-y": "scroll",
+          "grid-row": "2",
+          "grid-column": "2",
+          "width": '100%',
         }}
+
       >
         <For each={scenarioCommands}>
           {(scenarioCommand, index) => {
@@ -489,65 +573,6 @@ export function ScenarioPage(props: {
             );
           }}
         </For>
-        <div
-          style={{
-            position: "absolute",
-            display: "flex",
-            top: "0",
-            right: "0",
-            "align-items": "center",
-          }}
-        >
-          <Text>{"Velocity"}</Text>
-          <Input
-            value={scenarioVeloctiy()}
-            onChange={(e) => setScenarioVelocity(Number(e.target.value))}
-          />
-          <Text>{"Acceleration"}</Text>
-          <Input
-            value={scenarioAcceleration()}
-            onChange={(e) => setScenarioAcceleration(Number(e.target.value))}
-          />
-          <Button
-            position="absolute"
-            top="0"
-            right="0"
-            onClick={async () => {
-              if (scenarioCommands.length < 1) return;
-              for await (const [
-                commandIndex,
-                command,
-              ] of scenarioCommands.entries()) {
-                setCurrentRunningCommand(commandIndex);
-                if (command.case === "mmcCommand") {
-                  try {
-                    await props.commandWebsocket.runCommand(
-                      command.value.command,
-                    );
-                  } catch (err) {
-                    console.error(err);
-                    setCurrentRunningCommand(null);
-                    break;
-                  }
-                } else if (command.case === "wait") {
-                  try {
-                    const result = await waitForCarrierState(command);
-                    if (!result) {
-                      setCurrentRunningCommand(null);
-                      break;
-                    }
-                  } catch {
-                    setCurrentRunningCommand(null);
-                    break;
-                  }
-                }
-                setCurrentRunningCommand(null);
-              }
-            }}
-          >
-            {"start"}
-          </Button>
-        </div>
       </div>
     </div>
   );
