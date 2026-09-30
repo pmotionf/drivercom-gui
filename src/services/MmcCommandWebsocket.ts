@@ -124,7 +124,7 @@ export class MmcCommandWebsocket {
     }
   }
 
-  private async runCommand(payload: Request): Promise<void> {
+  async runCommand(payload: Request): Promise<void> {
     const message = this.protobuf.encode(payload);
     const response = await this.socket.send(message, 1000);
     const decodedReponse = this.protobuf.decode(response);
