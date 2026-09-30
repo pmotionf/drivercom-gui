@@ -25,8 +25,9 @@ export function WaitCommandBlock(props: { waitCommand: WaitCommand }) {
         value={obj.value.lineId ?? ""}
         onChange={(e) => {
           const parseValue = Number(e.target.value);
-          if (isNaN(parseValue)) {
+          if (!isNaN(parseValue)) {
             setObj("value", "lineId", parseValue);
+            console.log(obj)
           }
         }}
       />
@@ -36,7 +37,7 @@ export function WaitCommandBlock(props: { waitCommand: WaitCommand }) {
         value={obj.value.carrierId ?? ""}
         onChange={(e) => {
           const parseValue = Number(e.target.value);
-          if (isNaN(parseValue)) {
+          if (!isNaN(parseValue)) {
             setObj("value", "carrierId", parseValue);
           }
         }}
