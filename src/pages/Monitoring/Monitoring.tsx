@@ -187,7 +187,7 @@ function Monitoring() {
   };
 
   // Signals only for UI
-  const [showSideBar, setShowSideBar] = createSignal<boolean>(true);
+  const [showBottomBar, setShowBottomBar] = createSignal<boolean>(true);
   const [panelSize, setPanelSize] = createSignal<number>(100);
   const [connectBtnLoading, setConnectBtnLoading] =
     createSignal<boolean>(false);
@@ -247,10 +247,10 @@ function Monitoring() {
           { id: `panel` },
           {
             id: `sidebar`,
-            minSize: 35,
+            minSize: !showBottomBar() ? "2.5rem" : 35,
           },
         ]}
-        size={!showSideBar() ? [95, 5] : [panelSize(), 100 - panelSize()]}
+        size={!showBottomBar() ? [100, 0] : [panelSize(), 100 - panelSize()]}
         onResize={(details) => {
           const size = details.size;
           setPanelSize(size[0]);
@@ -430,7 +430,7 @@ function Monitoring() {
           </Show>
         </Splitter.Panel>
 
-        <Show when={showSideBar()}>
+        <Show when={showBottomBar()}>
           <Splitter.ResizeTrigger
             id={`panel:sidebar`}
             class={css({
@@ -503,12 +503,12 @@ function Monitoring() {
               <IconButton
                 size="sm"
                 variant="plain"
-                onClick={() => setShowSideBar(!showSideBar())}
+                onClick={() => setShowBottomBar(!showBottomBar())}
                 position="absolute"
                 top="0.1rem"
                 right="0"
               >
-                <Show when={!showSideBar()} fallback={<IconChevronDown />}>
+                <Show when={!showBottomBar()} fallback={<IconChevronDown />}>
                   <IconChevronUp />
                 </Show>
               </IconButton>
