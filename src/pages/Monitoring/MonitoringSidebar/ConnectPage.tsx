@@ -5,7 +5,7 @@ import {
   setDetectedServer,
 } from "~/store/GlobalState";
 import { IpAddress, IpHistory } from "../System/IpHistory";
-import { Setter } from "solid-js";
+import { createEffect, onCleanup, Setter } from "solid-js";
 import { Button } from "~/components/ui/button";
 import { Show } from "solid-js";
 import { CreateToasterReturn } from "@ark-ui/solid";
@@ -17,7 +17,6 @@ import { CloseButton } from "~/components/ui/close-button";
 
 export type ConnectPageProps = {
   connectState: ConnectState;
-  connectingTimeout: boolean;
   onDisconnectServer?: (ip?: string, port?: string) => void;
   onConnectServer?: (ip: string, port: string) => void;
   onCancelConnect: () => void;
@@ -48,6 +47,18 @@ export const ConnectPage = (props: ConnectPageProps) => {
   const setPort = (newPort: string) => {
     return props.inputs.get("port")![1](newPort);
   };
+
+  const [connectingTimeout, setConnectingTimeout] =
+    createSignal<boolean>(false);
+
+  createEffect(() => {
+    if (props.connectState !== ConnectState.Connecting) {
+      setConnectingTimeout(false);
+      return;
+    }
+    const id = setTimeout(() => setConnectingTimeout(true), 3000);
+    onCleanup(() => clearTimeout(id));
+  });
 
   const toaster = props.toaster;
 
@@ -217,7 +228,7 @@ export const ConnectPage = (props: ConnectPageProps) => {
           <Show
             when={
               props.connectState === ConnectState.Connecting &&
-              props.connectingTimeout
+              connectingTimeout()
             }
           >
             <div
