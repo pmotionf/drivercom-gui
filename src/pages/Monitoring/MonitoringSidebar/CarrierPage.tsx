@@ -5,7 +5,7 @@ import { IconChevronDown } from "@tabler/icons-solidjs";
 import { Text } from "~/components/ui/text";
 import { Input } from "~/components/ui/input";
 import * as ToggleGroup from "~/components/ui/toggle-group";
-import { Button } from "~/components/ui/button";
+import { Button, ButtonGroup } from "~/components/ui/button";
 import * as Select from "~/components/ui/select";
 import { createListCollection, ListCollection } from "@ark-ui/solid";
 import { SendingCommand } from "../System/System";
@@ -235,7 +235,11 @@ export function CarrierPage(props: CarrierPageProps) {
                               {"Control Mode"}
                             </Text>
                             <ToggleGroup.Root
-                              style={{ "grid-row": 3, "grid-column": 2 }}
+                              style={{
+                                "grid-row": 3,
+                                "grid-column": 2,
+                                gap: "0",
+                              }}
                               value={[controlMode()]}
                               onValueChange={(details) =>
                                 setControlMode(
@@ -244,20 +248,31 @@ export function CarrierPage(props: CarrierPageProps) {
                                   ],
                                 )
                               }
-                            >
-                              <ToggleGroup.Item
-                                value={ControlMode.Position}
-                                width={"50%"}
-                              >
-                                {"Position"}
-                              </ToggleGroup.Item>
-                              <ToggleGroup.Item
-                                value={ControlMode.Velocity}
-                                width={"50%"}
-                              >
-                                {"Velocity"}
-                              </ToggleGroup.Item>
-                            </ToggleGroup.Root>
+                              asChild={(childProps) => (
+                                <ButtonGroup
+                                  variant="outline"
+                                  attached
+                                  {...childProps()}
+                                >
+                                  <ToggleGroup.Item
+                                    value={ControlMode.Position}
+                                    asChild={(itemProps) => (
+                                      <Button {...itemProps()}>
+                                        {"Postion"}
+                                      </Button>
+                                    )}
+                                  />
+                                  <ToggleGroup.Item
+                                    value={ControlMode.Velocity}
+                                    asChild={(itemProps) => (
+                                      <Button {...itemProps()}>
+                                        {"Velocity"}
+                                      </Button>
+                                    )}
+                                  />
+                                </ButtonGroup>
+                              )}
+                            ></ToggleGroup.Root>
                             <Button
                               style={{ "grid-row": 3, "grid-column": 4 }}
                               disabled={
