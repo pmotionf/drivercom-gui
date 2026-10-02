@@ -27,7 +27,6 @@ export function WaitCommandBlock(props: { waitCommand: WaitCommand }) {
           const parseValue = Number(e.target.value);
           if (!isNaN(parseValue)) {
             setObj("value", "lineId", parseValue);
-            console.log(obj)
           }
         }}
       />
