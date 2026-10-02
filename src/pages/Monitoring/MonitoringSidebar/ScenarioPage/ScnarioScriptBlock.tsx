@@ -1,4 +1,11 @@
-import { createEffect, createMemo, createSignal, JSX, on } from "solid-js";
+import {
+  createEffect,
+  createMemo,
+  createSignal,
+  JSX,
+  on,
+  splitProps,
+} from "solid-js";
 import { createDraggable } from "@neodrag/solid";
 import { createStore } from "solid-js/store";
 import { IconButton } from "~/components/ui/icon-button";
@@ -26,6 +33,19 @@ export function ScenarioScriptBlock(
     onDragLeave?: () => void;
   },
 ) {
+  const [, rest] = splitProps(props, [
+    "lineConfig",
+    "command",
+    "isRunning",
+    "onCommandDelete",
+    "onDragStart",
+    "onCommandDrag",
+    "onDragEnd",
+    "isCommandDragging",
+    "dragPosition",
+    "onDragEnter",
+    "onDragLeave",
+  ]);
   //@ts-ignore This draggable is needed to use neo-drag.
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { draggable: dragOptions } = createDraggable();
@@ -77,6 +97,7 @@ export function ScenarioScriptBlock(
 
   return (
     <div
+      {...rest}
       ref={commandRef}
       class={css({
         display: "flex",
@@ -87,7 +108,6 @@ export function ScenarioScriptBlock(
         background: props.isRunning ? "gray.3" : "gray.1",
         zIndex: dragStarted() ? 10 : 1,
         gap: "0.5rem",
-        userSelect: "none",
       })}
       use:dragOptions={{
         onDragStart: () => {
