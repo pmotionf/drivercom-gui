@@ -128,7 +128,7 @@ export class MmcCommandWebsocket {
     }
   }
 
-  private async _runCommand(payload: Request): Promise<void> {
+  async runCommand(payload: Request): Promise<void> {
     const message = this.protobuf.encode(payload);
     const response = await this.socket.send(message, 1000);
     const decodedReponse = this.protobuf.decode(response);
@@ -162,7 +162,7 @@ export class MmcCommandWebsocket {
       $typeName: "mmc.command.Request",
     };
     const payload = this._generateCommandRequest(commandPayload);
-    return await this._runCommand(payload);
+    return await this.runCommand(payload);
   }
 
   async initialize(
@@ -187,7 +187,7 @@ export class MmcCommandWebsocket {
       $typeName: "mmc.command.Request",
     };
     const payload = this._generateCommandRequest(commandPayload);
-    return await this._runCommand(payload);
+    return await this.runCommand(payload);
   }
 
   async deinitialize(line: number, axisId: number): Promise<void> {
@@ -210,7 +210,7 @@ export class MmcCommandWebsocket {
       $typeName: "mmc.command.Request",
     };
     const payload = this._generateCommandRequest(commandPayload);
-    return await this._runCommand(payload);
+    return await this.runCommand(payload);
   }
 
   async calibrate(line: number): Promise<void> {
@@ -225,7 +225,7 @@ export class MmcCommandWebsocket {
       $typeName: "mmc.command.Request",
     };
     const payload = this._generateCommandRequest(commandPayload);
-    return await this._runCommand(payload);
+    return await this.runCommand(payload);
   }
 
   async pull(
@@ -252,7 +252,7 @@ export class MmcCommandWebsocket {
       },
     };
     const payload = this._generateCommandRequest(commandPayload);
-    return await this._runCommand(payload);
+    return await this.runCommand(payload);
   }
 
   async stopPull(line: number, axisId: number): Promise<void> {
@@ -272,7 +272,8 @@ export class MmcCommandWebsocket {
       },
     };
     const payload = this._generateCommandRequest(commandPayload);
-    return await this._runCommand(payload);
+    return await this.runCommand(payload);
+
   }
 
   async push(
@@ -297,7 +298,7 @@ export class MmcCommandWebsocket {
       },
     };
     const payload = this._generateCommandRequest(commandPayload);
-    return await this._runCommand(payload);
+    return await this.runCommand(payload);
   }
 
   async moveCarrier(
@@ -328,6 +329,7 @@ export class MmcCommandWebsocket {
       },
     };
     const payload = this._generateCommandRequest(commandPayload);
-    return await this._runCommand(payload);
+    return await this.runCommand(payload);
+
   }
 }

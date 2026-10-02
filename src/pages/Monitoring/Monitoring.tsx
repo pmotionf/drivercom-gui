@@ -32,6 +32,7 @@ import { MonitoringWebsocket } from "~/services/MonitoringWebsocket.ts";
 import { MmcCommandWebsocket } from "~/services/MmcCommandWebsocket.ts";
 import { Response_TrackConfig_Line } from "~/proto/mmc/core_pb.ts";
 import { WebSocketError } from "~/services/WebsocketManager.ts";
+import { ScenarioPage } from "./MonitoringSidebar/ScenarioPage.tsx";
 
 export type LineConfig = Omit<
   Response_TrackConfig_Line,
@@ -449,6 +450,8 @@ function Monitoring() {
           borderColor={"bg.disabled"}
           padding="0"
           borderRadius="0rem"
+          width="100%"
+          height="100%"
         >
           <Tabs.Root
             defaultValue="Connect"
@@ -457,8 +460,10 @@ function Monitoring() {
             gap="0"
           >
             <Tabs.List
+              width="100%"
+              height="2.5rem"
               gap="0"
-              background={"bg.muted"}
+              background={"gray.2"}
               borderColor={"bg.disabled"}
             >
               <Tabs.Trigger
@@ -466,7 +471,6 @@ function Monitoring() {
                 value="Connect"
                 borderRadius={"0"}
                 borderTopWidth={"0"}
-                borderBottomWidth={"1px"}
               >
                 {"Connect"}
               </Tabs.Trigger>
@@ -485,6 +489,15 @@ function Monitoring() {
                 borderTopWidth={"0"}
               >
                 {"Control"}
+              </Tabs.Trigger>
+              <Tabs.Trigger
+                value="Scenario"
+                padding="0.5em"
+                borderRadius={"0"}
+                borderTopWidth={"0"}
+                disabled={lines.length === 0}
+              >
+                {"Scenario"}
               </Tabs.Trigger>
               <Tabs.Trigger
                 value="Carriers"
@@ -512,7 +525,6 @@ function Monitoring() {
                   <IconChevronUp />
                 </Show>
               </IconButton>
-              <Tabs.Indicator />
             </Tabs.List>
             <Tabs.Content
               value="Connect"
@@ -672,6 +684,16 @@ function Monitoring() {
                   }
                   setSendingCmd(null);
                 }}
+              />
+            </Tabs.Content>
+            <Tabs.Content
+              value={"Scenario"}
+              style={{ width: "100%", height: `calc(100% - 2.5rem)` }}
+            >
+              <ScenarioPage
+                lineConfig={lines}
+                commandWebsocket={commandServerHandler}
+                carrierStates={carrierStates()}
               />
             </Tabs.Content>
           </Tabs.Root>
