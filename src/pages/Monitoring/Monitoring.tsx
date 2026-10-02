@@ -450,6 +450,8 @@ function Monitoring() {
           borderColor={"bg.disabled"}
           padding="0"
           borderRadius="0rem"
+          width="100%"
+          height="100%"
         >
           <Tabs.Root
             defaultValue="Connect"
@@ -458,8 +460,10 @@ function Monitoring() {
             gap="0"
           >
             <Tabs.List
+              width="100%"
+              height="2.5rem"
               gap="0"
-              background={"bg.muted"}
+              background={"gray.2"}
               borderColor={"bg.disabled"}
             >
               <Tabs.Trigger
@@ -467,7 +471,6 @@ function Monitoring() {
                 value="Connect"
                 borderRadius={"0"}
                 borderTopWidth={"0"}
-                borderBottomWidth={"1px"}
               >
                 {"Connect"}
               </Tabs.Trigger>
@@ -522,7 +525,6 @@ function Monitoring() {
                   <IconChevronUp />
                 </Show>
               </IconButton>
-              <Tabs.Indicator />
             </Tabs.List>
             <Tabs.Content
               value="Connect"
@@ -692,7 +694,7 @@ function Monitoring() {
             </Tabs.Content>
             <Tabs.Content
               value={"Scenario"}
-              style={{ width: "100%", height: "100%" }}
+              style={{ width: "100%", height: `calc(100% - 2.5rem)` }}
             >
               <ScenarioPage
                 lineConfig={lines}
