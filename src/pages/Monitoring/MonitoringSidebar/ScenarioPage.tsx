@@ -6,7 +6,7 @@ import {
   Request_Direction,
   type Request as CommandRequest,
 } from "~/proto/mmc/command_pb";
-import { Input } from "~/components/ui/input";
+import { toaster } from "~/components/ui/toast.tsx";
 import { css } from "styled-system/css";
 import { Button } from "~/components/ui/button";
 import { MmcCommandWebsocket } from "~/services/MmcCommandWebsocket";
@@ -15,7 +15,7 @@ import { Control } from "~/proto/mmc/control_pb";
 import { CarrierState } from "./CarrierPage";
 import { LineConfig } from "../Monitoring";
 import { ScenarioScriptBlock } from "./ScenarioPage/ScnarioScriptBlock";
-import { prettierLabel } from "~/utils/PrettierLabel";
+import { ScriptList } from "./ScenarioPage/ScriptList";
 
 const mmcCommandField = [
   "initialize",
@@ -197,17 +197,10 @@ export function ScenarioPage(props: {
   //@ts-ignore This draggable is needed to use neo-drag.
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { draggable: dragOptions } = createDraggable();
-  const [tabRender, setTabRender] = createSignal<boolean>(true);
-  const tabRefresh = () => {
-    setTabRender(false);
-    setTimeout(() => {
-      setTabRender(true);
-    });
-  };
 
   const getCarrierInfo = (lineId: number, carrierId: number) => {
     if (lineId > props.carrierStates.length) return null;
-    const findLine = props.carrierStates[lineId - 1]
+    const findLine = props.carrierStates[lineId - 1];
     const findCarrier = findLine.carrierStates.filter(
       (status) => status.id === carrierId,
     );
@@ -219,7 +212,7 @@ export function ScenarioPage(props: {
   ): Promise<boolean> => {
     const { lineId, carrierId, carrierState, timeout } = commandValue.value;
     const startTime = Date.now();
-    let isSuccess : boolean = false;
+    let isSuccess: boolean = false;
 
     while (!isSuccess) {
       await new Promise((resolve) => setTimeout(resolve, 1));
@@ -240,27 +233,25 @@ export function ScenarioPage(props: {
     return isSuccess;
   };
 
-  const [startScenario, setStartScenario] = createSignal<boolean>(false)
+  const [startScenario, setStartScenario] = createSignal<boolean>(false);
 
   createMemo(() => {
     if (startScenario()) {
-      runScenarioCommand(scenarioCommands)
+      runScenarioCommand(scenarioCommands);
     }
-  })
+  });
 
-  const runScenarioCommand = async(scenarioCommands : ScenarioCommand[]) => {
+  const runScenarioCommand = async (scenarioCommands: ScenarioCommand[]) => {
     if (scenarioCommands.length < 1) return;
-    for await (const [
-      commandIndex,
-      command,
-    ] of scenarioCommands.entries()) {
+    for await (const [commandIndex, command] of scenarioCommands.entries()) {
       setCurrentRunningCommand(commandIndex);
-      console.log(commandIndex)
+      console.log(commandIndex);
       if (command.case === "mmcCommand") {
         try {
-          await props.commandWebsocket.runCommand(
-            {"$typeName" : "mmc.Request" ,  body : {case :"command", value :command.value.command}}
-          );
+          await props.commandWebsocket.runCommand({
+            $typeName: "mmc.Request",
+            body: { case: "command", value: command.value.command },
+          });
         } catch {
           setCurrentRunningCommand(null);
           break;
@@ -273,7 +264,7 @@ export function ScenarioPage(props: {
             break;
           }
         } catch (e) {
-          console.log(e)
+          console.error(e);
           setCurrentRunningCommand(null);
           break;
         }
@@ -284,245 +275,143 @@ export function ScenarioPage(props: {
       }
     }
     if (startScenario()) {
-      return await runScenarioCommand(scenarioCommands)
+      return await runScenarioCommand(scenarioCommands);
     }
-    return
-  }
+    return;
+  };
 
   const [currentRunningCommand, setCurrentRunningCommand] = createSignal<
     number | null
   >(null);
 
   const sideBarWidth = "13rem";
+  const [currentCommandDetails, setCurrentCommandDetails] = createSignal<
+    number | null
+  >(null);
 
   return (
     <div
-      style={{ width: "100%", height: `100%`, display: "grid", "grid-template-columns" : `${sideBarWidth} minmax(0, 1fr)`, "grid-template-rows" : `3rem minmax(0, 1fr)` }}
+      style={{
+        width: "100%",
+        height: `100%`,
+        display: "grid",
+        "grid-template-columns": `${sideBarWidth} minmax(0, 1fr) 20rem`,
+        "grid-template-rows": `3rem minmax(0, 1fr)`,
+      }}
     >
-      <div style={{
-        "grid-row": "1",
-        "grid-column": "1 / span 2",
-        "border-width": "1px",
-        "display": "flex",
-        "align-items": "center",
-        gap : "1rem"
-      }}>
-        <Text>{"Velocity"}</Text>
-        <Input
-          width = "6rem"
-          value={scenarioVeloctiy()}
-          onChange={(e) => setScenarioVelocity(Number(e.target.value))}
-        />
-        <Text>{"Acceleration"}</Text>
-        <Input
-          width = "6rem"
-          value={scenarioAcceleration()}
-          onChange={(e) => setScenarioAcceleration(Number(e.target.value))}
-        />
-        <Button
-          onClick={async () => {
-           // await runScenarioCommand(scenarioCommands)
-            setStartScenario((prev) => !prev)
-          }}
-        >
-          {startScenario() ? "stop" : "start"}
-        </Button>
-      </div>
       <div
         style={{
-          display: "absolute",
-          width: sideBarWidth,
-          "max-width": sideBarWidth,
-          height: "100%",
-          "border-width":
-            "1px" /*"overflow-y" : "auto", "overflow-x" :"hidden"*/,
           "grid-row": "2",
-          "grid-column" : "1"
+          "grid-column": "3",
+          "border-width": "1px",
+          padding: "0.2rem",
         }}
       >
-        <Show when={tabRender()} fallback={<></>}>
-          {/* Code block on the left side only for mmc commands */}
-          <For each={mmcCommandField}>
-            {(field) => {
-              return (
-                <div
-                  class={css({
-                    padding: "0.5rem",
-                    borderBottomWidth: "1px",
-                    zIndex: 100,
-                    position: "sticky",
-                    background: "gray.1",
-                    userSelect: "none",
-                  })}
-                  use:dragOptions={{
-                    onDragStart: () => {
-                      setIsDragging(scenarioCommands.length);
-                    },
-                    onDrag: (data) => {
-                      // Update drag event whenver change for UI event.
-                      const clientX = data.event.clientX;
-                      const clientY = data.event.clientY;
-                      setDragPosition({
-                        clientX: clientX,
-                        clientY: clientY,
-                      });
-                    },
-                    onDragEnd: (data) => {
-                      const clientX = data.event.clientX;
-                      const clientY = data.event.clientY;
-
-                      const dropDiv =
-                        document.getElementById(scenarioDropDivId);
-                      if (dropDiv) {
-                        const getBound = dropDiv.getBoundingClientRect();
-                        const divLeft = getBound.left;
-                        const divTop = getBound.top;
-
-                        if (clientX > divLeft && clientY > divTop) {
-                          const newRequest = commandRequestValue(field);
-                          if (newRequest !== null) {
-                            if (typeof isDragOver() === "number") {
-                              setScenarioCommands((prev) => {
-                                const reorderIndex = isDragOver()!;
-                                const parseCommand: MmcCommand = {
-                                  case: "mmcCommand",
-                                  value: { command: newRequest },
-                                };
-                                const newCommands = [
-                                  ...prev.slice(0, reorderIndex),
-                                  parseCommand,
-                                  ...prev.slice(reorderIndex, prev.length),
-                                ];
-                                return newCommands;
-                              });
-                            } else {
-                              setScenarioCommands(scenarioCommands.length, {
-                                case: "mmcCommand",
-                                value: { command: newRequest },
-                              });
-                            }
-                          }
-                        }
-                      }
-                      setDragPosition(null);
-                      setIsDragging(null);
-                      setIsDragOver(null);
-                      tabRefresh();
-                    },
-                  }}
-                >
-                  <Text
-                    style={{ "user-select": "none", "font-weight": "bold" }}
-                  >
-                    {prettierLabel(field)}
-                  </Text>
-                </div>
-              );
-            }}
-          </For>
-          <div >
-            {/* Code block on the left side only for wait commands */}
-            <For each={waitCommands}>
-              {(wait) => {
-                return (
-                  <div
-                    class={css({
-                      padding: "0.5rem",
-                      borderBottomWidth: "1px",
-                      zIndex: 100,
-                      position: "relative",
-                      background: "gray.1",
-                      userSelect: "none",
-                    })}
-                    use:dragOptions={{
-                      onDragStart: () => {
-                        setIsDragging(scenarioCommands.length);
-                      },
-                      onDrag: (data) => {
-                        const clientX = data.event.clientX;
-                        const clientY = data.event.clientY;
-                        setDragPosition({
-                          clientX: clientX,
-                          clientY: clientY,
-                        });
-                      },
-                      onDragEnd: (data) => {
-                        const clientX = data.event.clientX;
-                        const clientY = data.event.clientY;
-
-                        const dropDiv =
-                          document.getElementById(scenarioDropDivId);
-                        if (dropDiv) {
-                          const getBound = dropDiv.getBoundingClientRect();
-                          const divLeft = getBound.left;
-                          const divTop = getBound.top;
-
-                          if (clientX > divLeft && clientY > divTop) {
-                            const parseCommand: WaitCommand = {
-                              case: "wait",
-                              value: {
-                                carrierState: wait,
-                                carrierId: 0,
-                                lineId: 0,
-                              },
-                            };
-                            if (typeof isDragOver() === "number") {
-                              setScenarioCommands((prev) => {
-                                const reorderIndex = isDragOver()!;
-
-                                const newCommands = [
-                                  ...prev.slice(0, reorderIndex),
-                                  parseCommand,
-                                  ...prev.slice(reorderIndex, prev.length),
-                                ];
-                                return newCommands;
-                              });
-                            } else {
-                              setScenarioCommands(
-                                scenarioCommands.length,
-                                parseCommand,
-                              );
-                            }
-                          }
-                        }
-                        setDragPosition(null);
-                        setIsDragging(null);
-                        setIsDragOver(null);
-                        tabRefresh();
-                      },
-                    }}
-                  >
-                    <Text
-                      style={{ "user-select": "none", "font-weight": "bold" }}
-                    >
-                      {prettierLabel(
-                        Response_Line_Carrier_State_State[wait].replace(
-                          "CARRIER_STATE",
-                          "WAIT",
-                        ),
-                      )}
-                    </Text>
-                  </div>
-                );
-              }}
-            </For>
-          </div>
+        <Text>{"Details"}</Text>
+        <Show when={typeof currentCommandDetails() === "number"}>
+          {`${JSON.stringify(scenarioCommands[currentCommandDetails() ?? 0])}`}
         </Show>
       </div>
-      {/* Draggable Scenario code block on the right side. */}
+      <div
+        class={css({
+          background: "gray.1",
+        })}
+        style={{
+          "grid-row": "1",
+          "grid-column": "1 / span 3",
+          "border-bottom-width": "1px",
+          display: "flex",
+          "align-items": "center",
+          gap: "0.5rem",
+          padding: "0.5rem",
+        }}
+      >
+        <Text>{"Velocity"}</Text>
+        <div
+          class={css({
+            height: "2rem",
+            width: "4rem",
+            padding: "0.2rem 0.5rem 0.2rem 0.5rem",
+            background: "gray.2",
+            outline: "none",
+            borderRadius: "0.2rem",
+            borderWidth: "1px",
+            display: "flex",
+            gap: "0",
+          })}
+        >
+          <input
+            maxlength={"3"}
+            style={{ width: "2rem", height: "100%", outline: "none" }}
+            value={scenarioVeloctiy()}
+            onChange={(e) => setScenarioVelocity(Number(e.target.value))}
+          />
+          <Text color={"gray.10"}>{"%"}</Text>
+        </div>
+
+        <Text>{"Acceleration"}</Text>
+        <div
+          class={css({
+            height: "2rem",
+            width: "4rem",
+            padding: "0.2rem 0.5rem 0.2rem 0.5rem",
+            background: "gray.2",
+            outline: "none",
+            borderRadius: "0.2rem",
+            borderWidth: "1px",
+            display: "flex",
+            gap: "0",
+          })}
+        >
+          <input
+            maxlength={"3"}
+            style={{ width: "2rem", height: "100%", outline: "none" }}
+            value={scenarioVeloctiy()}
+            onChange={(e) => setScenarioAcceleration(Number(e.target.value))}
+          />
+          <Text color={"gray.10"}>{"%"}</Text>
+        </div>
+        <div style={{ "border-right-width": "1px", height: "2rem" }} />
+        <Button
+          size="xs"
+          disabled={startScenario()}
+          onClick={() => {
+            if (scenarioCommands.length <= 0) {
+              toaster.create({
+                title: "No Scenario Commands",
+                description: "The Scenario command is empty.",
+              });
+              return;
+            }
+            setStartScenario((prev) => !prev);
+          }}
+        >
+          {"Start"}
+        </Button>
+        <Button
+          size="xs"
+          variant="outline"
+          disabled={!startScenario()}
+          onClick={() => {
+            setStartScenario((prev) => !prev);
+          }}
+        >
+          {"Stop"}
+        </Button>
+      </div>
+
+      {/* Draggable Scenario code blocks */}
       <div
         id={scenarioDropDivId}
         style={{
-          //width: `calc(100% - ${sideBarWidth})`,
           height: "100%",
           display: "flex",
           "flex-direction": "column",
           "overflow-y": "scroll",
           "grid-row": "2",
           "grid-column": "2",
-          "width": '100%',
+          width: "100%",
         }}
-
       >
         <For each={scenarioCommands}>
           {(scenarioCommand, index) => {
@@ -531,6 +420,9 @@ export function ScenarioPage(props: {
                 <ScenarioScriptBlock
                   command={scenarioCommand}
                   lineConfig={props.lineConfig}
+                  onClick={() => {
+                    setCurrentCommandDetails(index());
+                  }}
                   isRunning={
                     currentRunningCommand() &&
                     index() === currentRunningCommand()
@@ -550,6 +442,7 @@ export function ScenarioPage(props: {
                     deleteScenarioCommand(index());
                   }}
                   onDragStart={() => {
+                    console.log("click");
                     setIsDragging(index());
                   }}
                   onDragEnd={() => {
@@ -573,6 +466,131 @@ export function ScenarioPage(props: {
             );
           }}
         </For>
+      </div>
+
+      <div
+        class={css({ background: "gray.1" })}
+        style={{
+          display: "absolute",
+          width: sideBarWidth,
+          "max-width": sideBarWidth,
+          height: "100%",
+          "border-right-width": "1px",
+          "grid-row": "2",
+          "grid-column": "1",
+          overflow: "auto",
+          gap: "0",
+        }}
+      >
+        <Text
+          fontSize="xs"
+          padding={"0.5rem 0.5rem 0.2rem 0.5rem"}
+          fontWeight="bold"
+          color="fg.muted"
+        >
+          {"Scripts"}
+        </Text>
+        <ScriptList
+          commandsList={[...mmcCommandField]}
+          onDragStart={() => setIsDragging(scenarioCommands.length)}
+          onDrag={(clientX, clientY) =>
+            setDragPosition({
+              clientX: clientX,
+              clientY: clientY,
+            })
+          }
+          onDragEnd={(clientX, clientY, field) => {
+            const dropDiv = document.getElementById(scenarioDropDivId);
+            if (dropDiv) {
+              const getBound = dropDiv.getBoundingClientRect();
+              const divLeft = getBound.left;
+              const divTop = getBound.top;
+
+              if (clientX > divLeft && clientY > divTop) {
+                const newField = field as MmcCommandField;
+                const newRequest = commandRequestValue(newField);
+                if (newRequest !== null) {
+                  if (typeof isDragOver() === "number") {
+                    setScenarioCommands((prev) => {
+                      const reorderIndex = isDragOver()!;
+                      const parseCommand: MmcCommand = {
+                        case: "mmcCommand",
+                        value: { command: newRequest },
+                      };
+                      const newCommands = [
+                        ...prev.slice(0, reorderIndex),
+                        parseCommand,
+                        ...prev.slice(reorderIndex, prev.length),
+                      ];
+                      return newCommands;
+                    });
+                  } else {
+                    setScenarioCommands(scenarioCommands.length, {
+                      case: "mmcCommand",
+                      value: { command: newRequest },
+                    });
+                  }
+                }
+              }
+              setDragPosition(null);
+              setIsDragging(null);
+              setIsDragOver(null);
+            }
+          }}
+        />
+        <ScriptList
+          commandsList={[
+            ...waitCommands.map(
+              (cmd) => Response_Line_Carrier_State_State[cmd],
+            ),
+          ]}
+          onDragStart={() => setIsDragging(scenarioCommands.length)}
+          onDrag={(clientX, clientY) =>
+            setDragPosition({
+              clientX: clientX,
+              clientY: clientY,
+            })
+          }
+          onDragEnd={(clientX, clientY, field) => {
+            const dropDiv = document.getElementById(scenarioDropDivId);
+            if (dropDiv) {
+              const getBound = dropDiv.getBoundingClientRect();
+              const divLeft = getBound.left;
+              const divTop = getBound.top;
+
+              if (clientX > divLeft && clientY > divTop) {
+                const parseCommand: WaitCommand = {
+                  case: "wait",
+                  value: {
+                    carrierState:
+                      Response_Line_Carrier_State_State[
+                        field as keyof typeof Response_Line_Carrier_State_State
+                      ],
+                    carrierId: 0,
+                    lineId: 0,
+                  },
+                };
+                if (typeof isDragOver() === "number") {
+                  setScenarioCommands((prev) => {
+                    const reorderIndex = isDragOver()!;
+
+                    const newCommands = [
+                      ...prev.slice(0, reorderIndex),
+                      parseCommand,
+                      ...prev.slice(reorderIndex, prev.length),
+                    ];
+                    return newCommands;
+                  });
+                } else {
+                  setScenarioCommands(scenarioCommands.length, parseCommand);
+                }
+              }
+              setDragPosition(null);
+              setIsDragging(null);
+              setIsDragOver(null);
+            }
+          }}
+        />
       </div>
     </div>
   );
