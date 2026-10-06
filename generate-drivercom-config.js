@@ -137,7 +137,7 @@ function generateZodSchema(obj, parentKey) {
       else if (type === "boolean")
         mainSchemaStr += `  ${key}: z.boolean().default(${value}),\n`;
       else if (type === "string")
-        mainSchemaStr += `  ${key}: z.string().default("${value}"),\n`;
+        mainSchemaStr += `  ${key}: z.string().default(${JSON.stringify(value)}),\n`;
       else if (type === "object") {
         const childSchema = generateZodSchema(
           value,
