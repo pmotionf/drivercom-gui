@@ -98,6 +98,11 @@ function generateZodSchema(obj, parentKey) {
   for (const entry of Object.entries(obj)) {
     const key = entry[0];
     const value = entry[1];
+    if (value === null) {
+      mainSchemaStr += `  ${key}: z.any().nullable().default(null),\n`;
+      continue;
+    }
+
     const type = typeof value;
 
     if (Array.isArray(value)) {
@@ -144,10 +149,8 @@ function generateZodSchema(obj, parentKey) {
         subSchemaStr += `export const ${schemaName} = ${childSchema.main}\n`;
         subSchemaStr += `export type ${typeName} = z.infer<typeof ${schemaName}>\n\n`;
         mainSchemaStr += `  ${key}: ${schemaName}.default(${schemaName}.parse({})),\n`;
-      } else if (type === null) {
-        mainSchemaStr += `  ${key}: z.any().nullable(),\n`;
+        }
       }
-    }
   }
   mainSchemaStr += "})";
   return {
