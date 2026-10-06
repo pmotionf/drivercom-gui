@@ -7,14 +7,15 @@ import { fileURLToPath } from "url";
 import { dirname } from "path";
 
 const rustInfo = execSync("rustc -vV");
-const targetTriple = /host: (\S+)/g.exec(rustInfo)[1];
-const extension = process.platform === "win32" ? ".exe" : "";
-
-if (!targetTriple) {
+const match = /host: (\S+)/g.exec(rustInfo);
+if (!match) {
   console.error("Failed to determine platform target triple");
   process.exitCode = 1;
   process.exit();
 }
+
+const targetTriple = match[1];
+const extension = process.platform === "win32" ? ".exe" : "";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -76,6 +77,8 @@ try {
   );
 } catch (e) {
   console.error(e);
+  process.exitCode = 1;
+  process.exit();
 }
 
 function generateFileContent(schema, typeName) {
