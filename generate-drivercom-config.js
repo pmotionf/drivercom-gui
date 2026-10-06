@@ -28,7 +28,7 @@ const binaryName = path.resolve(
 );
 
 try {
-  const logConfigInfo = execSync(`${binaryName} log.config.empty`);
+  const logConfigInfo = execSync(`"${binaryName}" log.config.empty`);
   const logConfigSchema = generateZodSchema(JSON5.parse(logConfigInfo), "");
   const logConfigFile = generateFileContent(logConfigSchema, "logConfig");
   writeFileSync(
@@ -36,17 +36,17 @@ try {
     logConfigFile,
   );
 
-  const configInfo = execSync(`${binaryName} config.empty`);
+  const configInfo = execSync(`"${binaryName}" config.empty`);
   const configSchema = generateZodSchema(JSON5.parse(configInfo), "");
   const configFile = generateFileContent(configSchema, "config");
   writeFileSync("./src-tauri/generated/config/ConfigType.tsx", configFile);
 
-  const configTuneInfo = execSync(`${binaryName} config.empty.tune`);
+  const configTuneInfo = execSync(`"${binaryName}" config.empty.tune`);
   const configTuneSchema = generateZodSchema(JSON5.parse(configTuneInfo), "");
   const configTuneFile = generateFileContent(configTuneSchema, "configTune");
   writeFileSync("./src-tauri/generated/config/ConfigTune.tsx", configTuneFile);
 
-  const configSystemInfo = execSync(`${binaryName} config.empty.system`);
+  const configSystemInfo = execSync(`"${binaryName}" config.empty.system`);
   const configSystemSchema = generateZodSchema(
     JSON5.parse(configSystemInfo),
     "",
@@ -61,7 +61,7 @@ try {
   );
 
   const configCalibrationInfo = execSync(
-    `${binaryName} config.empty.calibration`,
+    `"${binaryName}" config.empty.calibration`,
   );
   const configCalibrationSchema = generateZodSchema(
     JSON5.parse(configCalibrationInfo),
