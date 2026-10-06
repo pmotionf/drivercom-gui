@@ -3,8 +3,8 @@ import JSON5 from "json5";
 import { writeFileSync } from "fs";
 import process from "node:process";
 import path from "node:path";
-import { fileURLToPath } from 'url';
-import { dirname } from 'path';
+import { fileURLToPath } from "url";
+import { dirname } from "path";
 
 const rustInfo = execSync("rustc -vV");
 const targetTriple = /host: (\S+)/g.exec(rustInfo)[1];
@@ -122,9 +122,10 @@ function generateZodSchema(obj, parentKey) {
 
           const schemaName = `${parentKey.length > 0 ? prettierLabel(parentKey) + "_" : ""}${prettierLabel(key)}_Schema`;
           const typeName = `${parentKey.length > 0 ? prettierLabel(parentKey) : ""}${prettierLabel(key)}Type`;
+          const defaultLength = value.length;
           subSchemaStr += `export const ${schemaName} = ${schemaType.main}\n`;
           subSchemaStr += `export type ${typeName} = z.infer<typeof ${schemaName}>\n\n`;
-          mainSchemaStr += `  ${key}: z.array(${schemaName}).default([]),\n`;
+          mainSchemaStr += `  ${key}: z.array(${schemaName}).length(${defaultLength}).default(() => Array.from({length: ${defaultLength}}, () => ${schemaName}.parse({}))),\n`;
         }
       }
     } else {
@@ -148,9 +149,9 @@ function generateZodSchema(obj, parentKey) {
         const typeName = `${parentKey.length > 0 ? prettierLabel(parentKey) : ""}${prettierLabel(key)}Type`;
         subSchemaStr += `export const ${schemaName} = ${childSchema.main}\n`;
         subSchemaStr += `export type ${typeName} = z.infer<typeof ${schemaName}>\n\n`;
-        mainSchemaStr += `  ${key}: ${schemaName}.default(${schemaName}.parse({})),\n`;
-        }
+        mainSchemaStr += `  ${key}: ${schemaName}.default(() => ${schemaName}.parse({})),\n`;
       }
+    }
   }
   mainSchemaStr += "})";
   return {
