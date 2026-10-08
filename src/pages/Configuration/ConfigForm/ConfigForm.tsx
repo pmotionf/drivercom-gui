@@ -1,12 +1,4 @@
-import {
-  Accessor,
-  createEffect,
-  createSignal,
-  JSX,
-  on,
-  Setter,
-  Show,
-} from "solid-js";
+import { Accessor, createEffect, JSX, on, Setter, Show } from "solid-js";
 import { ConfigTuneType } from "src-tauri/generated/config/ConfigTune";
 import { ConfigSystemType } from "src-tauri/generated/config/ConfigSystem";
 import { ConfigCalibrationType } from "src-tauri/generated/config/ConfigCalibration";
@@ -23,8 +15,6 @@ import {
   calcWcc,
   calcWsc,
 } from "../../../utils/GainCalculation";
-import JSON5 from "json5";
-import { trackStore } from "@solid-primitives/deep";
 import { ConfigFormTabPage } from "./ConfigFormTabPage";
 
 export type AccordionStates = Map<string, string[]>;
@@ -60,33 +50,22 @@ export type ConfigFormProps = JSX.HTMLAttributes<HTMLFormElement> & {
 export function ConfigForm(props: ConfigFormProps) {
   const [config, setConfig] = createStore<ConfigType>(props.config);
 
-  const dynamic: ("center" | "between")[] = ["center", "between"];
+  const dynamic = Array.from({ length: config.axes.length }, (_, i) => i);
   // Calculate gain automatically.
   dynamic.forEach((dynPos) => {
     // Current P
     createEffect(
       on(
         [
-          () => config.axis[dynPos].gain.current.denominator,
-          () => config.coil.ls,
+          () => config.axes[dynPos].gain.current.denominator,
+          () => config.axes[dynPos].ls,
         ],
         () => {
-          if (
-            props.linkedStatuses.get("gain")![0]()[0] &&
-            props.linkedStatuses.get("gain")![0]()[1] !== dynPos
-          )
-            return;
-          if (
-            props.gainLockStatuses.get(
-              `${props.id}.tune.axis.${dynPos}.gain.current.p`,
-            )![0]()
-          )
-            return;
           const p = calcCurrentP(
-            config.axis[dynPos].gain.current.denominator,
-            config.coil.ls,
+            config.axes[dynPos].gain.current.denominator,
+            config.axes[dynPos].ls,
           );
-          setConfig("axis", dynPos, "gain", "current", "p", p);
+          setConfig("axes", dynPos, "gain", "current", "p", p);
         },
         { defer: true },
       ),
@@ -96,27 +75,15 @@ export function ConfigForm(props: ConfigFormProps) {
     createEffect(
       on(
         [
-          () => config.axis[dynPos].gain.current.denominator,
-          () => config.coil.rs,
+          () => config.axes[dynPos].gain.current.denominator,
+          () => config.axes[dynPos].rs,
         ],
         () => {
-          if (
-            props.linkedStatuses.get("gain")![0]()[0] &&
-            props.linkedStatuses.get("gain")![0]()[1] !== dynPos
-          )
-            return;
-          if (
-            props.gainLockStatuses.get(
-              `${props.id}.tune.axis.${dynPos}.gain.current.i`,
-            )![0]()
-          )
-            return;
-
           const i = calcCurrentI(
-            config.axis[dynPos].gain.current.denominator,
-            config.coil.rs,
+            config.axes[dynPos].gain.current.denominator,
+            config.axes[dynPos].rs,
           );
-          setConfig("axis", dynPos, "gain", "current", "i", i);
+          setConfig("axes", dynPos, "gain", "current", "i", i);
         },
         { defer: true },
       ),
@@ -126,37 +93,25 @@ export function ConfigForm(props: ConfigFormProps) {
     createEffect(
       on(
         [
-          () => config.axis[dynPos].gain.velocity.denominator,
-          () => config.axis[dynPos].gain.current.p,
-          () => config.coil[dynPos].kf,
-          () => config.carrier.mass,
-          () => config.magnet.pitch,
+          () => config.axes[dynPos].gain.speed.denominator,
+          () => config.axes[dynPos].gain.current.p,
+          () => config.axes[dynPos].kf,
+          () => config.line.slider.mass,
+          () => config.line.magnet_pitch,
         ],
         () => {
-          if (
-            props.linkedStatuses.get("gain")![0]()[0] &&
-            props.linkedStatuses.get("gain")![0]()[1] !== dynPos
-          )
-            return;
-          if (
-            props.gainLockStatuses.get(
-              `${props.id}.tune.axis.${dynPos}.gain.velocity.p`,
-            )![0]()
-          )
-            return;
-
           const wcc = calcWcc(
-            config.axis[dynPos].gain.current.p,
-            config.coil.ls,
+            config.axes[dynPos].gain.current.p,
+            config.axes[dynPos].ls,
           );
           const p = calcVelocityP(
-            config.axis[dynPos].gain.velocity.denominator,
+            config.axes[dynPos].gain.speed.denominator,
             wcc,
-            config.magnet.pitch,
-            config.carrier.mass,
-            config.coil[dynPos].kf,
+            config.line.magnet_pitch,
+            config.line.slider.mass,
+            config.axes[dynPos].kf,
           );
-          setConfig("axis", dynPos, "gain", "velocity", "p", p);
+          setConfig("axes", dynPos, "gain", "speed", "p", p);
         },
         { defer: true },
       ),
@@ -166,30 +121,19 @@ export function ConfigForm(props: ConfigFormProps) {
     createEffect(
       on(
         [
-          () => config.axis[dynPos].gain.velocity.denominator,
-          () => config.axis[dynPos].gain.velocity.denominator_pi,
-          () => config.axis[dynPos].gain.current.denominator,
-          () => config.axis[dynPos].gain.velocity.p,
+          () => config.axes[dynPos].gain.speed.denominator,
+          () => config.axes[dynPos].gain.speed.denominator_pi,
+          () => config.axes[dynPos].gain.current.denominator,
+          () => config.axes[dynPos].gain.speed.p,
         ],
         () => {
-          if (
-            props.linkedStatuses.get("gain")![0]()[0] &&
-            props.linkedStatuses.get("gain")![0]()[1] !== dynPos
-          )
-            return;
-          if (
-            props.gainLockStatuses.get(
-              `${props.id}.tune.axis.${dynPos}.gain.velocity.i`,
-            )![0]()
-          )
-            return;
           const i = calcVelocityI(
-            config.axis[dynPos].gain.velocity.denominator,
-            config.axis[dynPos].gain.velocity.denominator_pi,
-            config.axis[dynPos].gain.current.denominator,
-            config.axis[dynPos].gain.velocity.p,
+            config.axes[dynPos].gain.speed.denominator,
+            config.axes[dynPos].gain.speed.denominator_pi,
+            config.axes[dynPos].gain.current.denominator,
+            config.axes[dynPos].gain.speed.p,
           );
-          setConfig("axis", dynPos, "gain", "velocity", "i", i);
+          setConfig("axes", dynPos, "gain", "speed", "i", i);
         },
         { defer: true },
       ),
@@ -199,163 +143,64 @@ export function ConfigForm(props: ConfigFormProps) {
     createEffect(
       on(
         [
-          () => config.axis[dynPos].gain.position.denominator,
-          () => config.axis[dynPos].gain.velocity.p,
+          () => config.axes[dynPos].gain.position.denominator,
+          () => config.axes[dynPos].gain.speed.p,
         ],
         () => {
-          if (
-            props.linkedStatuses.get("gain")![0]()[0] &&
-            props.linkedStatuses.get("gain")![0]()[1] !== dynPos
-          )
-            return;
-          if (
-            props.gainLockStatuses.get(
-              `${props.id}.tune.axis.${dynPos}.gain.position.p`,
-            )![0]()
-          )
-            return;
-
           const wsc = calcWsc(
-            config.axis[dynPos].gain.velocity.p,
-            config.magnet.pitch,
-            config.carrier.mass,
-            config.coil[dynPos].kf,
+            config.axes[dynPos].gain.speed.p,
+            config.line.magnet_pitch,
+            config.line.slider.mass,
+            config.axes[dynPos].kf,
           );
           const p = calcPositionP(
             wsc,
-            config.axis[dynPos].gain.position.denominator,
+            config.axes[dynPos].gain.position.denominator,
           );
-          setConfig("axis", dynPos, "gain", "position", "p", p);
-        },
-        { defer: true },
-      ),
-    );
-
-    // Link Coil
-    createEffect(
-      on(
-        [() => config.coil[dynPos].kf],
-        () => {
-          const linkKey = Object.keys(config.coil[dynPos]).join(",");
-          if (
-            !props.linkedStatuses.get(linkKey)![0]()[0] ||
-            props.linkedStatuses.get(linkKey)![0]()[1] !== dynPos
-          )
-            return;
-          const oppositeDynPos = dynPos === "center" ? "between" : "center";
-          setConfig("coil", oppositeDynPos, "kf", config.coil[dynPos].kf);
-        },
-        { defer: true },
-      ),
-    );
-
-    // Link Gain
-    createEffect(
-      on(
-        [() => trackStore(config.axis[dynPos])],
-        () => {
-          const linkKey = Object.keys(config.axis[dynPos]).join(",");
-          if (
-            !props.linkedStatuses.get(linkKey)![0]()[0] ||
-            props.linkedStatuses.get(linkKey)![0]()[1] !== dynPos
-          )
-            return;
-          const oppositeDynPos = dynPos === "center" ? "between" : "center";
-          const copyObject = JSON5.parse(JSON5.stringify(config.axis[dynPos]));
-          setConfig("axis", oppositeDynPos, copyObject);
-          setRender(false);
-          setTimeout(() => {
-            setRender(true);
-          }, 0);
+          setConfig("axes", dynPos, "gain", "position", "p", p);
         },
         { defer: true },
       ),
     );
   });
 
-  const hallSensorIds = Array.from(
-    { length: props.config.hall_sensors.length },
-    (_, i) => i,
-  );
-  hallSensorIds.forEach((hallSensorId) => {
-    createEffect(
-      on(
-        () => trackStore(config.hall_sensors[hallSensorId]),
-        () => {
-          const linkKey = Object.keys(config.hall_sensors[hallSensorId]).join(
-            ",",
-          );
-          if (!props.linkedStatuses.has(linkKey)) return;
-          if (
-            !props.linkedStatuses.get(linkKey)![0]()[0] ||
-            props.linkedStatuses.get(linkKey)![0]()[1] !==
-              hallSensorId.toString()
-          )
-            return;
-
-          const parseHallSensorIds = hallSensorIds.filter(
-            (id) => id !== hallSensorId,
-          );
-          const copyObject = JSON5.parse(
-            JSON5.stringify(config.hall_sensors[hallSensorId]),
-          );
-          parseHallSensorIds.forEach((hall_id) =>
-            setConfig("hall_sensors", hall_id, copyObject),
-          );
-          setRender(false);
-          setTimeout(() => {
-            setRender(true);
-          }, 0);
-        },
-        { defer: true },
-      ),
-    );
-  });
-
-  const [render, setRender] = createSignal<boolean>(true);
   return (
     <div style={{ width: "100%", height: `100%` }}>
-      <Show when={render()}>
-        <Show when={props.focusedTab === `${props.id}.tune`}>
-          <ConfigFormTabPage
-            id={`${props.id}.tune`}
-            format={configTabForm().tune}
-            config={config}
-            originalFile={props.originalFile}
-            description={props.description}
-            unitChange={props.changeUnits}
-            accordionStatuses={props.accordionStatuses}
-            gainLockStatuses={props.gainLockStatuses}
-            linkedStatuses={props.linkedStatuses}
-            formOverflowY={props.formOverflowY}
-          />
-        </Show>
-        <Show when={props.focusedTab === `${props.id}.calibration`}>
-          <ConfigFormTabPage
-            id={`${props.id}.calibration`}
-            format={configTabForm().calibration}
-            config={config}
-            originalFile={props.originalFile}
-            description={props.description}
-            unitChange={props.changeUnits}
-            accordionStatuses={props.accordionStatuses}
-            linkedStatuses={props.linkedStatuses}
-            formOverflowY={props.formOverflowY}
-          />
-        </Show>
-        <Show when={props.focusedTab === `${props.id}.system`}>
-          <ConfigFormTabPage
-            id={`${props.id}.system`}
-            format={configTabForm().system}
-            config={config}
-            originalFile={props.originalFile}
-            description={props.description}
-            unitChange={props.changeUnits}
-            accordionStatuses={props.accordionStatuses}
-            linkedStatuses={props.linkedStatuses}
-            formOverflowY={props.formOverflowY}
-          />
-        </Show>
+      <Show when={props.focusedTab === `${props.id}.tune`}>
+        <ConfigFormTabPage
+          id={`${props.id}.tune`}
+          format={configTabForm().tune}
+          config={config}
+          originalFile={props.originalFile}
+          description={props.description}
+          unitChange={props.changeUnits}
+          accordionStatuses={props.accordionStatuses}
+          formOverflowY={props.formOverflowY}
+        />
+      </Show>
+      <Show when={props.focusedTab === `${props.id}.calibration`}>
+        <ConfigFormTabPage
+          id={`${props.id}.calibration`}
+          format={configTabForm().calibration}
+          config={config}
+          originalFile={props.originalFile}
+          description={props.description}
+          unitChange={props.changeUnits}
+          accordionStatuses={props.accordionStatuses}
+          formOverflowY={props.formOverflowY}
+        />
+      </Show>
+      <Show when={props.focusedTab === `${props.id}.system`}>
+        <ConfigFormTabPage
+          id={`${props.id}.system`}
+          format={configTabForm().system}
+          config={config}
+          originalFile={props.originalFile}
+          description={props.description}
+          unitChange={props.changeUnits}
+          accordionStatuses={props.accordionStatuses}
+          formOverflowY={props.formOverflowY}
+        />
       </Show>
     </div>
   );

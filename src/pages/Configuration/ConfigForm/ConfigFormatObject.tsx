@@ -4,18 +4,11 @@ import { GainLockStates } from "./ConfigForm";
 import { createStore } from "solid-js/store";
 import { Show, For, createSignal, onMount } from "solid-js";
 import * as Accordion from "../../../components/ui/accordion";
-import { IconButton } from "../../../components/ui/icon-button";
 import { Text } from "../../../components/ui/text";
 import { FormNumberInput } from "../../../components/Form/FormNumberInput";
 import { FormCheckBox } from "../../../components/Form/FormCheckBox";
 
-import {
-  IconLock,
-  IconLockOff,
-  IconLink,
-  IconLinkOff,
-  IconChevronDown,
-} from "@tabler/icons-solidjs";
+import { IconChevronDown } from "@tabler/icons-solidjs";
 import { prettierLabel } from "~/utils/PrettierLabel";
 import { FlipSensorExample } from "./FlipSensorExample";
 import { SwapSensorExample } from "./SwapSensorExample";
@@ -151,17 +144,6 @@ export const ConfigFormatObject = (props: ConfigFormatObjectProps) => {
                 props.accordionStatuses.set(innerId, [accordionItemValue]);
               }
 
-              if (
-                props.gainLockStatuses &&
-                !props.gainLockStatuses.has(innerId) &&
-                innerId.includes("gain")
-              ) {
-                props.gainLockStatuses.set(
-                  innerId,
-                  createSignal<boolean>(false),
-                );
-              }
-
               return (
                 <Accordion.Root
                   multiple
@@ -176,35 +158,13 @@ export const ConfigFormatObject = (props: ConfigFormatObjectProps) => {
                   <Accordion.Item
                     value={accordionItemValue}
                     borderRadius={"0.2rem"}
-                    padding={
-                      props.linkedStatuses &&
-                      props.linkedStatuses.has(Object.keys(value).join(","))
-                        ? "0.5rem"
-                        : "0"
-                    }
+                    padding="0"
                   >
                     <Accordion.ItemTrigger
-                      fontSize={
-                        props.linkedStatuses &&
-                        props.linkedStatuses.has(Object.keys(value).join(","))
-                          ? "0.9rem"
-                          : "0.8rem"
-                      }
+                      fontSize={"sm"}
                       justifyContent={"left"}
                       alignItems={"center"}
-                      paddingBottom={
-                        props.linkedStatuses &&
-                        props.linkedStatuses.has(Object.keys(value).join(","))
-                          ? "0.5rem"
-                          : "0.5rem"
-                      }
                       borderBottomWidth={"1px"}
-                      paddingTop={
-                        props.linkedStatuses &&
-                        props.linkedStatuses.has(Object.keys(value).join(","))
-                          ? "0.2rem"
-                          : "0.2rem"
-                      }
                     >
                       <div
                         style={{
@@ -216,14 +176,6 @@ export const ConfigFormatObject = (props: ConfigFormatObjectProps) => {
                       >
                         <Text
                           fontWeight={"bold"}
-                          opacity={
-                            props.linkedStatuses &&
-                            props.linkedStatuses.has(
-                              Object.keys(value).join(","),
-                            )
-                              ? "0.7"
-                              : "0.8rem"
-                          }
                         >{`${prettierLabel(label)} ${prettierLabel(innerLabel)}`}</Text>
 
                         <Show when={innderDescText}>
@@ -241,132 +193,6 @@ export const ConfigFormatObject = (props: ConfigFormatObjectProps) => {
                               ]
                             }
                           </Text>
-                        </Show>
-                        <Show
-                          when={
-                            props.gainLockStatuses &&
-                            props.gainLockStatuses.get(innerId)
-                          }
-                        >
-                          <IconButton
-                            size="xs"
-                            variant={"plain"}
-                            opacity={
-                              props.gainLockStatuses!.get(innerId)![0]()
-                                ? "1"
-                                : "0.5"
-                            }
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              const lockEntries = Array.from(
-                                props.gainLockStatuses!.entries(),
-                              );
-
-                              const isLinked =
-                                typeof props.linkedStatuses !== "undefined" &&
-                                typeof mapKey !== "undefined" &&
-                                props.linkedStatuses.get(mapKey)![0]()[0];
-
-                              const dynPos = innerId.includes("center")
-                                ? "center"
-                                : "between";
-
-                              const filterEntries = isLinked
-                                ? lockEntries
-                                : lockEntries.filter((entry) =>
-                                    entry[0].includes(dynPos),
-                                  );
-                              const updateValue = filterEntries
-                                .map((entry) => entry[1][0]())
-                                .includes(false);
-                              filterEntries.forEach((entry) => {
-                                const key = entry[0];
-                                props.gainLockStatuses!.get(key)![1](
-                                  updateValue,
-                                );
-                              });
-                            }}
-                          >
-                            <Show
-                              when={props.gainLockStatuses!.get(innerId)![0]()}
-                              fallback={<IconLockOff />}
-                            >
-                              <IconLock />
-                            </Show>
-                          </IconButton>
-                        </Show>
-                        <Show
-                          when={
-                            props.linkedStatuses &&
-                            props.linkedStatuses.has(
-                              Object.keys(value).join(","),
-                            )
-                          }
-                        >
-                          <IconButton
-                            size="xs"
-                            disabled={
-                              props.gainLockStatuses &&
-                              props.gainLockStatuses.size >= 12
-                                ? Array.from(props.gainLockStatuses.entries())
-                                    .filter((entry) =>
-                                      entry[0].includes("center"),
-                                    )
-                                    .map(
-                                      (entry) =>
-                                        entry[1][0]() !==
-                                        props.gainLockStatuses!.get(
-                                          entry[0].replace("center", "between"),
-                                        )![0](),
-                                    )
-                                    .includes(true)
-                                : false
-                            }
-                            variant={"plain"}
-                            opacity={
-                              props.linkedStatuses!.get(
-                                Object.keys(value).join(","),
-                              )![0]()[0]
-                                ? "1"
-                                : "0.5"
-                            }
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              if (
-                                props.gainLockStatuses &&
-                                props.gainLockStatuses.size >= 12 &&
-                                Array.from(props.gainLockStatuses.entries())
-                                  .filter((entry) =>
-                                    entry[0].includes("center"),
-                                  )
-                                  .map(
-                                    (entry) =>
-                                      entry[1][0]() !==
-                                      props.gainLockStatuses!.get(
-                                        entry[0].replace("center", "between"),
-                                      )![0](),
-                                  )
-                                  .includes(true)
-                              ) {
-                                return;
-                              }
-                              const [link, setLink] = props.linkedStatuses!.get(
-                                Object.keys(value).join(","),
-                              )!;
-                              setLink([!link()[0], link()[1]]);
-                            }}
-                          >
-                            <Show
-                              when={
-                                props.linkedStatuses!.get(
-                                  Object.keys(value).join(","),
-                                )![0]()[0]
-                              }
-                              fallback={<IconLinkOff />}
-                            >
-                              <IconLink />
-                            </Show>
-                          </IconButton>
                         </Show>
                       </div>
                       <Accordion.ItemIndicator marginLeft={`50%`}>
@@ -389,10 +215,7 @@ export const ConfigFormatObject = (props: ConfigFormatObjectProps) => {
                         }
                         description={innerDesc ?? undefined}
                         changeUnit={props.changeUnit}
-                        linkKey={mapKey}
-                        linkedStatuses={props.linkedStatuses}
                         accordionStatuses={props.accordionStatuses}
-                        gainLockStatuses={props.gainLockStatuses}
                       />
                     </Accordion.ItemContent>
                   </Accordion.Item>
@@ -421,35 +244,12 @@ export const ConfigFormatObject = (props: ConfigFormatObjectProps) => {
                   <Accordion.Item
                     value={accordionItemValue}
                     borderRadius={"0.2rem"}
-                    padding={
-                      props.linkedStatuses &&
-                      props.linkedStatuses.has(Object.keys(value).join(","))
-                        ? "0.5rem"
-                        : "0"
-                    }
                   >
                     <Accordion.ItemTrigger
-                      fontSize={
-                        props.linkedStatuses &&
-                        props.linkedStatuses.has(Object.keys(value).join(","))
-                          ? "0.9rem"
-                          : "0.8rem"
-                      }
+                      fontSize={"sm"}
                       justifyContent={"left"}
                       alignItems={"center"}
-                      paddingBottom={
-                        props.linkedStatuses &&
-                        props.linkedStatuses.has(Object.keys(value).join(","))
-                          ? "0.5rem"
-                          : "0.5rem"
-                      }
                       borderBottomWidth={"1px"}
-                      paddingTop={
-                        props.linkedStatuses &&
-                        props.linkedStatuses.has(Object.keys(value).join(","))
-                          ? "0.2rem"
-                          : "0.2rem"
-                      }
                     >
                       <div
                         style={{
@@ -464,17 +264,7 @@ export const ConfigFormatObject = (props: ConfigFormatObjectProps) => {
                             width: descriptionText ? "20rem" : "unset",
                           }}
                         >
-                          <Text
-                            fontWeight={"bold"}
-                            opacity={
-                              props.linkedStatuses &&
-                              props.linkedStatuses.has(
-                                Object.keys(value).join(","),
-                              )
-                                ? "0.7"
-                                : "0.8rem"
-                            }
-                          >
+                          <Text fontWeight={"bold"}>
                             {prettierLabel(label)}
                           </Text>
 
@@ -505,45 +295,6 @@ export const ConfigFormatObject = (props: ConfigFormatObjectProps) => {
                             </Text>
                           </Show>
                         </div>
-
-                        <Show
-                          when={
-                            props.linkedStatuses &&
-                            props.linkedStatuses.has(
-                              Object.keys(value).join(","),
-                            )
-                          }
-                        >
-                          <IconButton
-                            size="xs"
-                            variant={"plain"}
-                            opacity={
-                              props.linkedStatuses!.get(
-                                Object.keys(value).join(","),
-                              )![0]()[0]
-                                ? "1"
-                                : "0.5"
-                            }
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              const [link, setLink] = props.linkedStatuses!.get(
-                                Object.keys(value).join(","),
-                              )!;
-                              setLink([!link()[0], link()[1]]);
-                            }}
-                          >
-                            <Show
-                              when={
-                                props.linkedStatuses!.get(
-                                  Object.keys(value).join(","),
-                                )![0]()[0]
-                              }
-                              fallback={<IconLinkOff />}
-                            >
-                              <IconLink />
-                            </Show>
-                          </IconButton>
-                        </Show>
                       </div>
                       <div
                         style={{
@@ -573,9 +324,6 @@ export const ConfigFormatObject = (props: ConfigFormatObjectProps) => {
                         description={description ?? undefined}
                         changeUnit={props.changeUnit}
                         accordionStatuses={props.accordionStatuses}
-                        gainLockStatuses={props.gainLockStatuses}
-                        linkKey={mapKey}
-                        linkedStatuses={props.linkedStatuses}
                       />
                     </Accordion.ItemContent>
                   </Accordion.Item>
@@ -615,29 +363,8 @@ export const ConfigFormatObject = (props: ConfigFormatObjectProps) => {
                   changeUnits={props.changeUnit}
                   lockStatus={props.gainLockStatuses}
                   lockStatusKey={id}
-                  linkStatus={props.linkedStatuses}
                   inputValue={store[key as keyof typeof store]}
                   onInputChange={(value) => {
-                    if (props.linkKey && props.linkedStatuses) {
-                      const parseLinkKey = props.linkKey.split(",");
-                      if (parseLinkKey.some((field) => id.includes(field))) {
-                        const isGain =
-                          id.includes("gain") ||
-                          id.includes("center") ||
-                          id.includes("between");
-                        const linkString = isGain
-                          ? props.id.includes("center")
-                            ? "center"
-                            : "between"
-                          : id
-                              .split(".")
-                              .filter((key) => !isNaN(Number(key)))[0];
-                        props.linkedStatuses.get(props.linkKey)![1]((prev) => [
-                          prev[0],
-                          linkString,
-                        ]);
-                      }
-                    }
                     setStore(
                       key as keyof typeof store,
                       // @ts-ignore: TSC unable to handle generic object type
