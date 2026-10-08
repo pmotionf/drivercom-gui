@@ -35,7 +35,7 @@ export type WaitCommand = {
   case: "wait";
   value: {
     carrierState: Response_Line_Carrier_State_State;
-    lineId: number;
+    line: number;
     carrierId: number;
     timeout?: number;
   };
@@ -55,13 +55,13 @@ export function ScenarioPage(props: {
   const [scenarioCommands, setScenarioCommands] = createStore<
     ScenarioCommand[]
   >([]);
-  const [scenarioVeloctiy, setScenarioVelocity] = createSignal<number>(40);
-  const [scenarioAcceleration, setScenarioAcceleration] =
-    createSignal<number>(40);
 
   const commandRequestValue = (
     field: MmcCommandField,
   ): CommandRequest | null => {
+    const lineIndex = 0;
+    const lineId = lineIndex + 1;
+
     if (field == "initialize") {
       const newRequest: CommandRequest = {
         $typeName: "mmc.command.Request",
@@ -69,10 +69,10 @@ export function ScenarioPage(props: {
           case: "initialize",
           value: {
             $typeName: "mmc.command.Request.Initialize",
-            line: 1,
+            line: lineId,
             axis: 1,
             carrier: 0,
-            direction: Request_Direction.UNSPECIFIED,
+            direction: Request_Direction.FORWARD,
           },
         },
       };
@@ -86,12 +86,12 @@ export function ScenarioPage(props: {
           case: "deinitialize",
           value: {
             $typeName: "mmc.command.Request.Deinitialize",
-            line: 1,
+            line: lineId,
             target: {
               case: "axes",
               value: {
-                start: 0,
-                end: 0,
+                start: 1,
+                end: 1,
                 $typeName: "root.Range",
               },
             },
@@ -108,12 +108,12 @@ export function ScenarioPage(props: {
           case: "pull",
           value: {
             $typeName: "mmc.command.Request.Pull",
-            line: 1,
+            line: lineId,
             axis: 1,
             carrier: 0,
             direction: Request_Direction.FORWARD,
-            acceleration: scenarioAcceleration(),
-            velocity: scenarioVeloctiy(),
+            acceleration: props.lineConfig[lineIndex].acceleration,
+            velocity: props.lineConfig[lineIndex].speed,
           },
         },
       };
@@ -127,11 +127,11 @@ export function ScenarioPage(props: {
           case: "push",
           value: {
             $typeName: "mmc.command.Request.Push",
-            line: 1,
+            line: lineId,
             axis: 1,
             direction: Request_Direction.FORWARD,
-            acceleration: scenarioAcceleration(),
-            velocity: scenarioVeloctiy(),
+            acceleration: props.lineConfig[lineIndex].acceleration,
+            velocity: props.lineConfig[lineIndex].speed,
           },
         },
       };
@@ -144,10 +144,10 @@ export function ScenarioPage(props: {
           case: "move",
           value: {
             $typeName: "mmc.command.Request.Move",
-            line: 1,
+            line: lineId,
             carrier: 0,
-            acceleration: scenarioAcceleration(),
-            velocity: scenarioVeloctiy(),
+            acceleration: props.lineConfig[lineIndex].acceleration,
+            velocity: props.lineConfig[lineIndex].speed,
             target: {
               case: "axis",
               value: 1,
@@ -210,13 +210,16 @@ export function ScenarioPage(props: {
   const waitForCarrierState = async (
     commandValue: WaitCommand,
   ): Promise<boolean> => {
-    const { lineId, carrierId, carrierState, timeout } = commandValue.value;
+    const { line, carrierId, carrierState, timeout } = commandValue.value;
     const startTime = Date.now();
     let isSuccess: boolean = false;
 
     while (!isSuccess) {
       await new Promise((resolve) => setTimeout(resolve, 1));
-      const carrierInfo = getCarrierInfo(lineId, carrierId);
+      const carrierInfo = getCarrierInfo(line, carrierId);
+      if (!startScenario()) {
+        break;
+      }
       if (!carrierInfo) {
         break;
       }
@@ -245,18 +248,27 @@ export function ScenarioPage(props: {
     if (scenarioCommands.length < 1) return;
     for await (const [commandIndex, command] of scenarioCommands.entries()) {
       setCurrentRunningCommand(commandIndex);
-      console.log(commandIndex);
       if (command.case === "mmcCommand") {
         try {
           await props.commandWebsocket.runCommand({
             $typeName: "mmc.Request",
             body: { case: "command", value: command.value.command },
           });
-        } catch {
+        } catch (e) {
           setCurrentRunningCommand(null);
+          setStartScenario(false);
+          toaster.create({ title: "Scenario Error", description: e as string });
           break;
         }
       } else if (command.case === "wait") {
+        if (command.value.carrierId === 0) {
+          setStartScenario(false);
+          toaster.create({
+            title: "Scenario Error",
+            description: "Carrier ID must be bigger then 0.",
+          });
+          break;
+        }
         try {
           const result = await waitForCarrierState(command);
           if (!result) {
@@ -264,7 +276,8 @@ export function ScenarioPage(props: {
             break;
           }
         } catch (e) {
-          console.error(e);
+          setStartScenario(false);
+          toaster.create({ title: "Scenario Error", description: e as string });
           setCurrentRunningCommand(null);
           break;
         }
@@ -285,9 +298,6 @@ export function ScenarioPage(props: {
   >(null);
 
   const sideBarWidth = "13rem";
-  const [currentCommandDetails, setCurrentCommandDetails] = createSignal<
-    number | null
-  >(null);
 
   return (
     <div
@@ -295,23 +305,10 @@ export function ScenarioPage(props: {
         width: "100%",
         height: `100%`,
         display: "grid",
-        "grid-template-columns": `${sideBarWidth} minmax(0, 1fr) 20rem`,
+        "grid-template-columns": `${sideBarWidth} minmax(0, 1fr)`,
         "grid-template-rows": `3rem minmax(0, 1fr)`,
       }}
     >
-      <div
-        style={{
-          "grid-row": "2",
-          "grid-column": "3",
-          "border-width": "1px",
-          padding: "0.2rem",
-        }}
-      >
-        <Text>{"Details"}</Text>
-        <Show when={typeof currentCommandDetails() === "number"}>
-          {`${JSON.stringify(scenarioCommands[currentCommandDetails() ?? 0])}`}
-        </Show>
-      </div>
       <div
         class={css({
           background: "gray.1",
@@ -326,55 +323,9 @@ export function ScenarioPage(props: {
           padding: "0.5rem",
         }}
       >
-        <Text>{"Velocity"}</Text>
-        <div
-          class={css({
-            height: "2rem",
-            width: "4rem",
-            padding: "0.2rem 0.5rem 0.2rem 0.5rem",
-            background: "gray.2",
-            outline: "none",
-            borderRadius: "0.2rem",
-            borderWidth: "1px",
-            display: "flex",
-            gap: "0",
-          })}
-        >
-          <input
-            maxlength={"3"}
-            style={{ width: "2rem", height: "100%", outline: "none" }}
-            value={scenarioVeloctiy()}
-            onChange={(e) => setScenarioVelocity(Number(e.target.value))}
-          />
-          <Text color={"gray.10"}>{"%"}</Text>
-        </div>
-
-        <Text>{"Acceleration"}</Text>
-        <div
-          class={css({
-            height: "2rem",
-            width: "4rem",
-            padding: "0.2rem 0.5rem 0.2rem 0.5rem",
-            background: "gray.2",
-            outline: "none",
-            borderRadius: "0.2rem",
-            borderWidth: "1px",
-            display: "flex",
-            gap: "0",
-          })}
-        >
-          <input
-            maxlength={"3"}
-            style={{ width: "2rem", height: "100%", outline: "none" }}
-            value={scenarioVeloctiy()}
-            onChange={(e) => setScenarioAcceleration(Number(e.target.value))}
-          />
-          <Text color={"gray.10"}>{"%"}</Text>
-        </div>
-        <div style={{ "border-right-width": "1px", height: "2rem" }} />
         <Button
           size="xs"
-          disabled={startScenario()}
+          variant={!startScenario() ? "solid" : "outline"}
           onClick={() => {
             if (scenarioCommands.length <= 0) {
               toaster.create({
@@ -386,17 +337,7 @@ export function ScenarioPage(props: {
             setStartScenario((prev) => !prev);
           }}
         >
-          {"Start"}
-        </Button>
-        <Button
-          size="xs"
-          variant="outline"
-          disabled={!startScenario()}
-          onClick={() => {
-            setStartScenario((prev) => !prev);
-          }}
-        >
-          {"Stop"}
+          {!startScenario() ? "Start" : "Stop"}
         </Button>
       </div>
 
@@ -410,6 +351,7 @@ export function ScenarioPage(props: {
           "overflow-y": "scroll",
           "grid-row": "2",
           "grid-column": "2",
+          "border-right-width": "1px",
           width: "100%",
         }}
       >
@@ -419,10 +361,9 @@ export function ScenarioPage(props: {
               <Show when={commandRender()}>
                 <ScenarioScriptBlock
                   command={scenarioCommand}
+                  commandIndex={index()}
                   lineConfig={props.lineConfig}
-                  onClick={() => {
-                    setCurrentCommandDetails(index());
-                  }}
+                  dragDisabled={startScenario()}
                   isRunning={
                     currentRunningCommand() &&
                     index() === currentRunningCommand()
@@ -442,7 +383,6 @@ export function ScenarioPage(props: {
                     deleteScenarioCommand(index());
                   }}
                   onDragStart={() => {
-                    console.log("click");
                     setIsDragging(index());
                   }}
                   onDragEnd={() => {
@@ -451,8 +391,8 @@ export function ScenarioPage(props: {
                       typeof isDragOver() === "number"
                     ) {
                       reorderCommand(isDragging()!, isDragOver()!);
-                      commandSpaceRefresh();
                     }
+                    commandSpaceRefresh();
                     setIsDragging(null);
                   }}
                   onDragEnter={() => {
@@ -492,6 +432,7 @@ export function ScenarioPage(props: {
         </Text>
         <ScriptList
           commandsList={[...mmcCommandField]}
+          dragDisabled={startScenario()}
           onDragStart={() => setIsDragging(scenarioCommands.length)}
           onDrag={(clientX, clientY) =>
             setDragPosition({
@@ -544,6 +485,7 @@ export function ScenarioPage(props: {
               (cmd) => Response_Line_Carrier_State_State[cmd],
             ),
           ]}
+          dragDisabled={startScenario()}
           onDragStart={() => setIsDragging(scenarioCommands.length)}
           onDrag={(clientX, clientY) =>
             setDragPosition({
@@ -567,7 +509,7 @@ export function ScenarioPage(props: {
                         field as keyof typeof Response_Line_Carrier_State_State
                       ],
                     carrierId: 0,
-                    lineId: 0,
+                    line: 1,
                   },
                 };
                 if (typeof isDragOver() === "number") {
