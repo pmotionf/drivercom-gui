@@ -24,7 +24,7 @@ export function MmcCommandBlock(props: {
   const lineNamesCollection = createListCollection({ items: lineNames });
   return (
     <>
-      <Text fontWeight="bold" marginRight={"0.5rem"}>
+      <Text fontWeight="bold" style={{ width: "12rem" }}>
         {prettierLabel(obj.body.case)}
       </Text>
       {"line" in obj.body.value && (
@@ -35,13 +35,35 @@ export function MmcCommandBlock(props: {
             listCollection={lineNamesCollection}
             value={obj.body.value.line.toString()}
             onValueChange={(value) => {
+              const newLine = Number(value);
+              if (isNaN(newLine)) return;
               setObj(
                 "body",
                 "value",
-                //@ts-ignore
+                // @ts-ignore: The type is already checked by the preceding condition.
                 "line",
-                Number(value),
+                newLine,
               );
+              if (!obj.body.value) return;
+              const lineIndex = newLine - 1;
+              if ("velocity" in obj.body.value) {
+                setObj(
+                  "body",
+                  "value",
+                  // @ts-ignore: The type is already checked by the preceding condition.
+                  "velocity",
+                  props.lineConfig[lineIndex].speed,
+                );
+              }
+              if ("acceleration" in obj.body.value) {
+                setObj(
+                  "body",
+                  "value",
+                  // @ts-ignore: The type is already checked by the preceding condition.
+                  "acceleration",
+                  props.lineConfig[lineIndex].acceleration,
+                );
+              }
             }}
           />
         </>
@@ -65,7 +87,7 @@ export function MmcCommandBlock(props: {
               setObj(
                 "body",
                 "value",
-                //@ts-ignore
+                // @ts-ignore: The type is already checked by the preceding condition.
                 "axis",
                 Number(value),
               );
@@ -90,7 +112,7 @@ export function MmcCommandBlock(props: {
               setObj(
                 "body",
                 "value",
-                //@ts-ignore Type is already checked
+                // @ts-ignore: The type is already checked by the preceding condition.
                 "direction",
                 Number(value),
               );
@@ -108,7 +130,7 @@ export function MmcCommandBlock(props: {
               setObj(
                 "body",
                 "value",
-                //@ts-ignore The type is already checked in above
+                // @ts-ignore: The type is already checked by the preceding condition.
                 "carrier",
                 Number(e.target.value),
               );
@@ -116,7 +138,6 @@ export function MmcCommandBlock(props: {
           />
         </>
       )}
-
       {obj.body.value &&
         "target" in obj.body.value &&
         typeof obj.body.value.target.value === "number" && (
@@ -129,9 +150,9 @@ export function MmcCommandBlock(props: {
                 setObj(
                   "body",
                   "value",
-                  //@ts-ignore,
+                  // @ts-ignore: The type is already checked by the preceding condition.
                   "target",
-                  //@ts-ignore,
+                  // @ts-ignore: The type is already checked by the preceding condition.
                   { case: value, value: obj.body.value.target.value },
                 );
               }}
@@ -151,7 +172,7 @@ export function MmcCommandBlock(props: {
                 setObj(
                   "body",
                   "value",
-                  //@ts-ignore The type is already checked in above
+                  // @ts-ignore: The type is already checked by the preceding condition.
                   "target",
                   "value",
                   Number(e.target.value),
@@ -163,16 +184,24 @@ export function MmcCommandBlock(props: {
 
       {"target" in obj.body.value && obj.body.value.target.case === "axes" && (
         <>
-          <Text> axis </Text>
-          <Input
-            width={"2rem"}
+          <Text> Axis </Text>
+          <Select
+            style={{ width: "4rem" }}
+            listCollection={createListCollection({
+              items: Array.from(
+                { length: props.lineConfig[obj.body.value.line - 1].axes },
+                (_, i) => {
+                  const axisId = (i + 1).toString();
+                  return { label: axisId, value: axisId };
+                },
+              ),
+            })}
             value={obj.body.value.target.value.start.toString()}
-            onChange={(e) => {
-              const targetAxis = e.target.value;
+            onValueChange={(targetAxis) => {
               setObj(
                 "body",
                 "value",
-                //@ts-ignore The type is already checked in above
+                // @ts-ignore: The type is already checked by the preceding condition.
                 "target",
                 "value",
                 {
@@ -180,38 +209,6 @@ export function MmcCommandBlock(props: {
                   end: targetAxis,
                   $typeName: "root.Range",
                 },
-              );
-            }}
-          />
-        </>
-      )}
-      {"acceleration" in obj.body.value && (
-        <>
-          <Text>{"Acceleration"}</Text>
-          <Input
-            width={"5rem"}
-            value={obj.body.value.acceleration.toString()}
-            onChange={(e) => {
-              setObj(
-                "body",
-                "value",
-                //@ts-ignore Type is already checked in above
-                "acceleration",
-                e.target.value,
-              );
-            }}
-          />
-          <Text>{"Velocity"}</Text>
-          <Input
-            width={"5rem"}
-            value={obj.body.value.velocity.toString()}
-            onChange={(e) => {
-              setObj(
-                "body",
-                "value",
-                //@ts-ignore Type is already checked in above
-                "velocity",
-                e.target.value,
               );
             }}
           />
