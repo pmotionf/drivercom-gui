@@ -1,4 +1,4 @@
-import { createMemo, createSignal, For, Show } from "solid-js";
+import { createEffect, createSignal, For, on, Show } from "solid-js";
 import { Text } from "~/components/ui/text";
 import { createDraggable } from "@neodrag/solid";
 import { createStore } from "solid-js/store";
@@ -238,11 +238,17 @@ export function ScenarioPage(props: {
 
   const [startScenario, setStartScenario] = createSignal<boolean>(false);
 
-  createMemo(() => {
-    if (startScenario()) {
-      runScenarioCommand(scenarioCommands);
-    }
-  });
+  createEffect(
+    on(
+      () => startScenario(),
+      () => {
+        if (startScenario()) {
+          runScenarioCommand(scenarioCommands);
+        }
+      },
+      { defer: true },
+    ),
+  );
 
   const runScenarioCommand = async (scenarioCommands: ScenarioCommand[]) => {
     if (scenarioCommands.length < 1) return;
@@ -365,10 +371,7 @@ export function ScenarioPage(props: {
                   lineConfig={props.lineConfig}
                   dragDisabled={startScenario()}
                   isRunning={
-                    currentRunningCommand() &&
-                    index() === currentRunningCommand()
-                      ? true
-                      : false
+                    startScenario() && index() === currentRunningCommand()
                   }
                   isCommandDragging={isDragging() ? true : false}
                   dragPosition={dragPosition() ?? undefined}

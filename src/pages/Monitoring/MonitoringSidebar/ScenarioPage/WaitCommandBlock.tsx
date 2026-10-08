@@ -65,7 +65,7 @@ export function WaitCommandBlock(props: {
         value={obj.value.timeout ?? ""}
         onChange={(e) => {
           const parseValue = Number(e.target.value);
-          if (isNaN(parseValue)) {
+          if (!isNaN(parseValue)) {
             setObj("value", "timeout", parseValue);
           }
         }}

@@ -111,6 +111,7 @@ export function ScenarioScriptBlock(
       {...rest}
       ref={commandRef}
       class={css({
+        position: "relative",
         display: "flex",
         width: "100%",
         minWidth: "57rem",
@@ -178,13 +179,9 @@ export function ScenarioScriptBlock(
       </div>
 
       <div
-        id={"overlay"}
         class={css({
           position: "absolute",
-          top: "0",
-          left: "0",
-          width: "100%",
-          height: "100%",
+          inset: "0",
           background: "gray.9",
           opacity: showOverlay() ? 0.5 : 0,
           pointerEvents: "none",

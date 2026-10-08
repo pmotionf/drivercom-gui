@@ -197,7 +197,9 @@ export function MmcCommandBlock(props: {
               ),
             })}
             value={obj.body.value.target.value.start.toString()}
-            onValueChange={(targetAxis) => {
+            onValueChange={(value) => {
+              const targetAxis = Number(value);
+              if (isNaN(targetAxis)) return;
               setObj(
                 "body",
                 "value",
