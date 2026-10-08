@@ -9,6 +9,7 @@ import { IconGripVertical } from "@tabler/icons-solidjs";
 
 export type CommandListProps = {
   commandsList: string[];
+  dragDisabled?: boolean;
   onDragStart?: () => void;
   onDrag?: (clientX: number, clientY: number) => void;
   onDragEnd?: (clientX: number, clientY: number, command: string) => void;
@@ -63,6 +64,7 @@ export const ScriptList = (props: CommandListProps) => {
               })}
               use:dragOptions={{
                 bounds: "body",
+                disabled: props.dragDisabled,
                 onDragStart: (data) => {
                   props.onDragStart?.();
                   const clientX = data.event.clientX;
@@ -96,13 +98,15 @@ export const ScriptList = (props: CommandListProps) => {
                 },
               }}
             >
-              <Dynamic
-                class={css({
-                  width: "1rem",
-                  color: "gray.7",
-                })}
-                component={IconGripVertical}
-              />
+              <div style={{ width: "1rem" }}>
+                <Dynamic
+                  class={css({
+                    width: "1rem",
+                    color: "gray.7",
+                  })}
+                  component={!props.dragDisabled ? IconGripVertical : undefined}
+                />
+              </div>
 
               <Text fontSize={"1rem"}>{label}</Text>
             </div>
