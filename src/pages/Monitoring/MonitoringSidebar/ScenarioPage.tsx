@@ -14,7 +14,7 @@ import { Response_Line_Carrier_State_State } from "~/proto/mmc/info_pb";
 import { Control } from "~/proto/mmc/control_pb";
 import { CarrierState } from "./CarrierPage";
 import { LineConfig } from "../Monitoring";
-import { ScenarioScriptBlock } from "./ScenarioPage/ScnarioScriptBlock";
+import { ScenarioScriptBlock } from "./ScenarioPage/ScenarioScriptBlock";
 import { ScriptList } from "./ScenarioPage/ScriptList";
 
 const mmcCommandField = [
