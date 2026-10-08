@@ -273,7 +273,6 @@ export class MmcCommandWebsocket {
     };
     const payload = this._generateCommandRequest(commandPayload);
     return await this.runCommand(payload);
-
   }
 
   async push(
@@ -330,6 +329,5 @@ export class MmcCommandWebsocket {
     };
     const payload = this._generateCommandRequest(commandPayload);
     return await this.runCommand(payload);
-
   }
 }
