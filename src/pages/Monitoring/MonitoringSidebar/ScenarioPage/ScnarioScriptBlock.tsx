@@ -4,6 +4,7 @@ import {
   createSignal,
   JSX,
   on,
+  Show,
   splitProps,
 } from "solid-js";
 import { createDraggable } from "@neodrag/solid";
@@ -16,11 +17,14 @@ import { LineConfig } from "../../Monitoring";
 import { ScenarioCommand } from "../ScenarioPage";
 import { MmcCommandBlock } from "./MmcCommandBlock";
 import { WaitCommandBlock } from "./WaitCommandBlock";
+import { Text } from "~/components/ui/text";
+import { createListCollection } from "@ark-ui/solid";
 
 // Scenario page code block component
 export function ScenarioScriptBlock(
   props: JSX.HTMLAttributes<HTMLDivElement> & {
     lineConfig: LineConfig[];
+    commandIndex: number;
     command: ScenarioCommand;
     isRunning: boolean;
     onCommandDelete?: () => void;
@@ -31,6 +35,7 @@ export function ScenarioScriptBlock(
     dragPosition?: { clientX: number; clientY: number };
     onDragEnter?: () => void;
     onDragLeave?: () => void;
+    dragDisabled?: boolean;
   },
 ) {
   const [, rest] = splitProps(props, [
@@ -49,11 +54,15 @@ export function ScenarioScriptBlock(
   //@ts-ignore This draggable is needed to use neo-drag.
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { draggable: dragOptions } = createDraggable();
-  const itemPadding = "1rem";
   const [showOverlay, setShowOverlay] = createSignal<boolean>(false);
   const [dragStarted, setDragStarted] = createSignal<boolean>(false);
   let commandRef: HTMLDivElement | undefined;
   const [obj] = createStore<ScenarioCommand>(props.command);
+
+  const lineNames = props.lineConfig.map((config, i) => {
+    return { label: config.name, value: (i + 1).toString() };
+  });
+  const lineNamesCollection = createListCollection({ items: lineNames });
 
   createEffect(
     on(
@@ -95,20 +104,35 @@ export function ScenarioScriptBlock(
     }
   });
 
+  const [showDeleteButton, setShowDeleteButton] = createSignal<boolean>(false);
+
   return (
     <div
       {...rest}
       ref={commandRef}
       class={css({
         display: "flex",
-        width: "70rem",
-        borderWidth: "0px 1px 1px 0px",
-        padding: `${itemPadding}`,
+        width: "100%",
+        minWidth: "57rem",
+        borderWidth: props.isRunning ? "1px" : "0px 0px 1px 0px",
+        borderColor: props.isRunning ? "accent.8" : "border",
+        borderRadius: props.isRunning ? "sm" : 0,
+        padding: `0.5rem`,
         alignItems: "center",
-        background: props.isRunning ? "gray.3" : "gray.1",
         zIndex: dragStarted() ? 10 : 1,
         gap: "0.5rem",
+        fontSize: "md",
+        _hover: {
+          background: "gray.1",
+        },
+        boxShadow: props.isRunning ? "md" : "0",
       })}
+      onMouseEnter={() => {
+        setShowDeleteButton(true);
+      }}
+      onMouseLeave={() => {
+        setShowDeleteButton(false);
+      }}
       use:dragOptions={{
         onDragStart: () => {
           setDragStarted(true);
@@ -122,8 +146,10 @@ export function ScenarioScriptBlock(
           setDragStarted(false);
           props.onCommandDrag?.(null, null);
         },
+        disabled: props.dragDisabled,
       }}
     >
+      <Text>{(props.commandIndex + 1).toString()}</Text>
       {obj.case === "mmcCommand" ? (
         <MmcCommandBlock
           command={obj.value.command}
@@ -131,16 +157,26 @@ export function ScenarioScriptBlock(
         />
       ) : (
         <>
-          <WaitCommandBlock waitCommand={obj} />
+          <WaitCommandBlock
+            waitCommand={obj}
+            lineNameCollection={lineNamesCollection}
+          />
         </>
       )}
-      <IconButton
-        position="absolute"
-        right={itemPadding}
-        onClick={() => props.onCommandDelete?.()}
+      <div
+        style={{ flex: 1, display: "flex", "flex-direction": "row-reverse" }}
       >
-        <IconX />
-      </IconButton>
+        <Show when={showDeleteButton()}>
+          <IconButton
+            variant={"plain"}
+            size="sm"
+            onClick={() => props.onCommandDelete?.()}
+          >
+            <IconX />
+          </IconButton>
+        </Show>
+      </div>
+
       <div
         id={"overlay"}
         class={css({
