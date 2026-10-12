@@ -448,16 +448,18 @@ export function ConfigTabContent() {
               }}
             </For>
           </div>
-          <Tooltip content="Change length and weight units">
-            <IconButton
-              variant={"plain"}
-              onClick={() => setChangeUnit(!getChangeUnit())}
-            >
-              <Show when={getChangeUnit()} fallback={<IconRuler2Off />}>
-                <IconRuler2 />
-              </Show>
-            </IconButton>
-          </Tooltip>
+          <Show when={Object.entries(configDescription()).length > 0}>
+            <Tooltip content="Change length and weight units">
+              <IconButton
+                variant={"plain"}
+                onClick={() => setChangeUnit(!getChangeUnit())}
+              >
+                <Show when={getChangeUnit()} fallback={<IconRuler2Off />}>
+                  <IconRuler2 />
+                </Show>
+              </IconButton>
+            </Tooltip>
+          </Show>
           {/*Open file button */}
           <Menu.Root>
             <Menu.Trigger>
