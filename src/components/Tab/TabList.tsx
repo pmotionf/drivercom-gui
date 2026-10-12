@@ -212,6 +212,7 @@ export function TabList(
         width="100%"
         height="100%"
         value={getTabContexts().focusedTab}
+        gap="0"
         onValueChange={(tabDetails) => {
           if (!isTabClicked()) {
             setIsTabClicked(true);
@@ -326,7 +327,7 @@ export function TabList(
                 <div
                   style={{
                     width: "100%",
-                    height: `calc(100% - 3rem)`,
+                    height: `calc(100% - 2rem)`,
                     padding: "0",
                   }}
                 >

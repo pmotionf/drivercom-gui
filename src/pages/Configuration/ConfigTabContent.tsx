@@ -42,11 +42,10 @@ import { IconButton } from "~/components/ui/icon-button";
 import { toaster } from "~/components/ui/toast.tsx";
 import * as Menu from "~/components/ui/menu";
 import { ConfigType } from "src-tauri/generated/config/ConfigType";
-import { Button } from "~/components/ui/button";
 import { css } from "styled-system/css";
 import { detectPort, getConfigFromPort, Port } from "~/services/PortService";
-import { prettierLabel } from "~/utils/PrettierLabel";
 import { Portal } from "solid-js/web";
+import { generateTreeCollection, TreeView } from "~/components/TreeView";
 
 export type ConfigTabPage = {
   filePath?: string;
@@ -387,12 +386,11 @@ export function ConfigTabContent() {
     <div
       style={{
         display: "flex",
-        "justify-content": "center",
-        padding: "0.5rem",
         width: "100%",
         height: "100%",
       }}
     >
+      <TreeView collection={generateTreeCollection(configTabForm(), "")} />
       <div
         id={configTabProps.key}
         style={{
@@ -411,43 +409,6 @@ export function ConfigTabContent() {
           gap="0"
           background={"bg.muted"}
         >
-          <div style={{ width: `calc(100% - 10rem)` }}>
-            <For each={Object.keys(configTabForm())}>
-              {(formatKey) => {
-                return (
-                  <Button
-                    variant={"plain"}
-                    onClick={() =>
-                      setFocusedTab(`${configTabProps.tabId}.${formatKey}`)
-                    }
-                    class={css({
-                      borderRadius: "0",
-                      fontSize: "0.8rem",
-                      transition: "background ease-in-out 0.2s",
-                      opacity:
-                        getFocusedTab() ===
-                        `${configTabProps.tabId}.${formatKey}`
-                          ? "1"
-                          : "0.5",
-                      background:
-                        getFocusedTab() ===
-                        `${configTabProps.tabId}.${formatKey}`
-                          ? "bg.default"
-                          : "bg.muted",
-                      padding: "1rem",
-                      height:
-                        getFocusedTab() ===
-                        `${configTabProps.tabId}.${formatKey}`
-                          ? `calc(100% + 1px)`
-                          : "100%",
-                    })}
-                  >
-                    {prettierLabel(formatKey)}
-                  </Button>
-                );
-              }}
-            </For>
-          </div>
           <Show when={Object.entries(configDescription()).length > 0}>
             <Tooltip content="Change length and weight units">
               <IconButton
