@@ -40,7 +40,7 @@ export default defineConfig({
       tokens: {
         colors: colors,
         durations: durations,
-        zIndex: zIndex
+        zIndex: zIndex,
       },
 
       semanticTokens: {
@@ -100,37 +100,37 @@ export default defineConfig({
             default: {
               value: {
                 _light: "{colors.gray.12}",
-                _dark: "{colors.gray.12}"
-              }
+                _dark: "{colors.gray.12}",
+              },
             },
 
             muted: {
               value: {
                 _light: "{colors.gray.11}",
-                _dark: "{colors.gray.11}"
-              }
+                _dark: "{colors.gray.11}",
+              },
             },
 
             subtle: {
               value: {
                 _light: "{colors.gray.10}",
-                _dark: "{colors.gray.10}"
-              }
-            }
+                _dark: "{colors.gray.10}",
+              },
+            },
           },
 
           border: {
             value: {
               _light: "{colors.gray.4}",
-              _dark: "{colors.gray.4}"
-            }
+              _dark: "{colors.gray.4}",
+            },
           },
 
           error: {
             value: {
               _light: "{colors.red.9}",
-              _dark: "{colors.red.9}"
-            }
+              _dark: "{colors.red.9}",
+            },
           },
 
           indigo: indigo,
@@ -141,49 +141,54 @@ export default defineConfig({
             solid: {
               bg: {
                 DEFAULT: {
-                  value: { _light: "{colors.accent.9}", _dark: "{colors.accent.9}" },
+                  value: {
+                    _light: "{colors.accent.9}",
+                    _dark: "{colors.accent.9}",
+                  },
                 },
                 hover: {
-                  value: {_light: "{colors.accent.8}", _dark: "{colors.accent.8}" }
+                  value: {
+                    _light: "{colors.accent.8}",
+                    _dark: "{colors.accent.8}",
+                  },
                 },
-
               },
               subtle: {
                 bg: {
                   DEFAULT: {
-                    value: { _light: "{colors.accent.9}", _dark: "{colors.accent.9}" },
+                    value: {
+                      _light: "{colors.accent.9}",
+                      _dark: "{colors.accent.9}",
+                    },
                   },
-                }
-              }
+                },
+              },
             },
           },
-
         },
 
         shadows: shadows,
 
         radii: {
           l1: {
-            value: "{radii.xs}"
+            value: "{radii.xs}",
           },
 
           l2: {
-            value: "{radii.sm}"
+            value: "{radii.sm}",
           },
 
           l3: {
-            value: "{radii.md}"
-          }
+            value: "{radii.md}",
+          },
         },
-
-      }
+      },
     },
-
   },
 
   // The output directory for your css system
   outdir: "styled-system",
 
   globalCss: globalCss,
-  conditions: conditions
+  conditions: conditions,
 });
