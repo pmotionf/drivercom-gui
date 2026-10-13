@@ -53,6 +53,7 @@ import {
   tabStore,
   configFormFileFormat,
   logFormFileFormat,
+  setCclinkSpeed,
 } from "./store/GlobalState.ts";
 
 import { Text } from "~/components/ui/text.tsx";
@@ -122,6 +123,7 @@ function App(props: RouteSectionProps) {
       detectCliVersion(),
       getLogStartCombinator(),
       getLogStartCondition(),
+      getCclinkSpeenEnum(),
       getLogConfigDescription(),
       prepareConfigTabFormat(),
       getStoreValues(),
@@ -198,6 +200,21 @@ function App(props: RouteSectionProps) {
       .split(",")
       .filter((value) => value !== "\n");
     setLogStartCombinatorList(startCombinatorList);
+  }
+
+  async function getCclinkSpeenEnum() {
+    const cclinkSpeedList = Command.sidecar("binaries/drivercom", [
+      `config.cc_link_speed.list`,
+    ]);
+    const output = await cclinkSpeedList.execute();
+    const parseOutput = output.stdout
+      .replaceAll("[", "")
+      .replaceAll("]", "")
+      .split(":");
+    const cclinkSpeed = parseOutput[1]
+      .split(",")
+      .filter((value) => value !== "\n");
+    setCclinkSpeed(cclinkSpeed);
   }
 
   async function getConfigDescription() {

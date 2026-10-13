@@ -123,3 +123,5 @@ export const [configTabForm, setConfigTabForm] = createSignal<ConfigFormatType>(
 export const tcpClientIds: string[] = [];
 
 export const [ipHistory, setIpHistory] = createSignal<IpAddress[]>([]);
+
+export const [cclinkSpeed, setCclinkSpeed] = createSignal<string[]>([]);
