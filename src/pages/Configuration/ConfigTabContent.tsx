@@ -271,7 +271,7 @@ export function ConfigTabContent() {
     ),
   );
 
-  const topBarHeight = "2.5rem";
+  const topBarHeight = "2rem";
 
   const saveAsFile = async () => {
     try {
@@ -403,20 +403,22 @@ export function ConfigTabContent() {
         id={configTabProps.key}
         style={{
           height: "100%",
-          width: `40% `,
+          width: `100% `,
           "min-width": "35rem",
-          "border-radius": "0.2rem",
-          "border-width": "1px",
         }}
         class={css({ borderColor: "gray.5" })}
       >
         <Stack
-          direction="row"
           width="100%"
           height={topBarHeight}
           gap="0"
           background={"bg.muted"}
+          display={"grid"}
+          gridTemplateColumns={`minmax(0, 1fr) repeat(4, 2rem)`}
         >
+          <Text fontSize="sm" padding="0.25rem">
+            {getFocusedTab()?.replaceAll("/", " > ")}
+          </Text>
           <Show when={Object.entries(configDescription()).length > 0}>
             <Tooltip content="Change length and weight units">
               <IconButton
@@ -433,7 +435,7 @@ export function ConfigTabContent() {
           <Menu.Root>
             <Menu.Trigger>
               <Tooltip content="Import File">
-                <IconButton variant={"plain"}>
+                <IconButton size="xs" variant={"plain"}>
                   <IconFileImport />
                 </IconButton>
               </Tooltip>
@@ -510,6 +512,7 @@ export function ConfigTabContent() {
           <Tooltip content="Save as file">
             <IconButton
               variant={"plain"}
+              size="xs"
               onClick={async () => await saveAsFile()}
             >
               <IconDeviceFloppy />
@@ -520,6 +523,7 @@ export function ConfigTabContent() {
             <Menu.Trigger width="min-content" height={"min-content"}>
               <Tooltip content="Get from port">
                 <IconButton
+                  size="xs"
                   variant={"plain"}
                   onClick={async () => {
                     const detectedPorts = await detectPort();
@@ -577,6 +581,7 @@ export function ConfigTabContent() {
               <Tooltip content="Save to port">
                 <IconButton
                   variant={"plain"}
+                  size="xs"
                   onClick={async () => {
                     const detectedPorts = await detectPort();
                     setPorts(detectedPorts);
@@ -632,7 +637,6 @@ export function ConfigTabContent() {
                 "justify-content": "center",
                 width: "100%",
                 height: "100%",
-                "border-top-width": render() ? "0px" : "1px",
               }}
             >
               <Spinner
@@ -681,7 +685,6 @@ export function ConfigTabContent() {
               height: `calc(100% - 2.5rem)`,
               "border-top-width": "1px",
             }}
-            class={css({ borderColor: "gray.7" })}
           >
             <ConfigForm
               id={getTabId()}
