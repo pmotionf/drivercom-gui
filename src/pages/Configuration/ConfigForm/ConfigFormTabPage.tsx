@@ -13,6 +13,9 @@ import { Text } from "../../../components/ui/text";
 import { IconChevronDown } from "@tabler/icons-solidjs";
 import { ConfigFormatObject } from "./ConfigFormatObject";
 import { prettierLabel } from "~/utils/PrettierLabel";
+import * as Select from "../../../components/ui/select";
+import { createListCollection } from "@ark-ui/solid";
+import { cclinkSpeed } from "~/store/GlobalState";
 
 export type ConfigFormTabPageProps = {
   id: string;
@@ -192,6 +195,59 @@ export const ConfigFormTabPage = (props: ConfigFormTabPageProps) => {
                         );
                       }}
                     />
+                  </div>
+                );
+              } else if (key === "cc_link_speed") {
+                const collection = createListCollection({
+                  items: cclinkSpeed().map((cclink) => {
+                    return { label: cclink, value: cclink };
+                  }),
+                });
+                return (
+                  <div
+                    style={{
+                      display: "grid",
+                      "grid-template-columns": `15rem minmax(0,1fr)`,
+                      "align-items": "center",
+                    }}
+                  >
+                    <Text>{"cc_link_speed"}</Text>
+                    <Select.Root
+                      collection={collection}
+                      value={[store[key as keyof typeof store].toString()]}
+                      onValueChange={(e) => {
+                        setStore(
+                          key as keyof typeof store,
+                          //@ts-ignore
+                          e.value[0],
+                        );
+                      }}
+                    >
+                      <Select.Control>
+                        <Select.Trigger borderColor={"gray.4"}>
+                          <Select.ValueText
+                            width="100%"
+                            placeholder="Select a framework"
+                            textAlign={"end"}
+                          />
+                          <Select.IndicatorGroup>
+                            <Select.Indicator />
+                          </Select.IndicatorGroup>
+                        </Select.Trigger>
+                      </Select.Control>
+                      <Select.Positioner>
+                        <Select.Content>
+                          <For each={collection.items}>
+                            {(item) => (
+                              <Select.Item item={item.value}>
+                                <Select.ItemText>{item.label}</Select.ItemText>
+                                <Select.ItemIndicator />
+                              </Select.Item>
+                            )}
+                          </For>
+                        </Select.Content>
+                      </Select.Positioner>
+                    </Select.Root>
                   </div>
                 );
               }
