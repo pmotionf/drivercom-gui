@@ -23,7 +23,6 @@ export const FormCheckBox = (props: FormCheckBoxProps) => {
       style={{
         display: "flex",
         width: "100%",
-        "margin-top": "1em",
         "align-items": "center",
         height: "max-content",
       }}
@@ -45,7 +44,7 @@ export const FormCheckBox = (props: FormCheckBoxProps) => {
         alignItems={"center"}
       >
         <Checkbox.HiddenInput />
-        <Checkbox.Control>
+        <Checkbox.Control borderColor={"gray.7"}>
           <Checkbox.Indicator />
         </Checkbox.Control>
         <div>
@@ -69,7 +68,7 @@ export const FormCheckBox = (props: FormCheckBoxProps) => {
                 "string"
             }
           >
-            <Text textStyle="xs" fontWeight="light" color="fg.muted">
+            <Text textStyle="xs" fontWeight="light" color="fg.default">
               {props.desc!["description" as keyof typeof props.desc]}
             </Text>
           </Show>

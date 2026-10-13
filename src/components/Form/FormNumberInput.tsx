@@ -1,10 +1,10 @@
-import { Stack } from "styled-system/jsx";
+import { Stack, StackProps } from "styled-system/jsx";
 import { Text } from "../ui/text";
 import {
   GainLockStates,
   LinkStates,
 } from "../../pages/Configuration/ConfigForm/ConfigForm";
-import { Show } from "solid-js";
+import { Show, splitProps } from "solid-js";
 import {
   IconExclamationCircle,
   IconLock,
@@ -25,12 +25,25 @@ export type FormNumberInputProps = {
   linkStatus?: LinkStates;
   inputValue: number;
   onInputChange?: (input: number) => void;
-};
+} & StackProps;
 
 export const FormNumberInput = (props: FormNumberInputProps) => {
   if (props.desc && props.desc["hidden" as keyof typeof props.desc] === true)
     return;
   let divRef: HTMLDivElement | undefined;
+
+  const [, res] = splitProps(props, [
+    "id",
+    "label",
+    "desc",
+    "changeUnits",
+    "originalValue",
+    "onInputChange",
+    "lockStatus",
+    "lockStatusKey",
+    "linkStatus",
+    "inputValue",
+  ]);
   const lockStatus = props.lockStatus;
   const lockStatusKey = props.lockStatusKey;
 
@@ -163,16 +176,22 @@ export const FormNumberInput = (props: FormNumberInputProps) => {
   return (
     <div
       style={{
-        "margin-top": "1rem",
-        "margin-bottom": "0.5rem",
         width: "100%",
       }}
     >
-      <Stack direction="row" alignItems="center">
-        <div style={{ width: "15rem", display: "flex" }}>
+      <Stack
+        direction="row"
+        alignItems="center"
+        style={{
+          width: "100%",
+          display: "grid",
+          "grid-template-columns": `minmax(0,1fr) 15rem`,
+          "align-items": "center",
+        }}
+      >
+        <div style={{ width: "100%", display: "flex" }}>
           <div style={{ width: `calc(100% - 0.5rem)` }}>
             <Text
-              marginTop="0.4em"
               fontWeight="medium"
               borderColor="accent.7"
               height="1.5em"
@@ -191,7 +210,7 @@ export const FormNumberInput = (props: FormNumberInputProps) => {
                   "string"
               }
             >
-              <Text textStyle="xs" fontWeight="light" color="fg.muted">
+              <Text textStyle="xs" fontWeight="light" color="fg.default">
                 {props.desc!["description" as keyof typeof props.desc]}
               </Text>
             </Show>
@@ -275,9 +294,7 @@ export const FormNumberInput = (props: FormNumberInputProps) => {
         </div>
         <div
           style={{
-            width: `calc(100% - 15rem)`,
-            display: "flex",
-            "flex-direction": "row-reverse",
+            width: `100%`,
           }}
         >
           <Stack
@@ -290,9 +307,11 @@ export const FormNumberInput = (props: FormNumberInputProps) => {
               gap: "0",
             }}
             borderColor={
-              Number.isFinite(Number(inputValue())) ? "bg.disabled" : "red"
+              Number.isFinite(Number(inputValue())) ? "gray.5" : "red"
             }
             direction="row"
+            alignItems="center"
+            {...res}
           >
             <input
               style={{
@@ -311,7 +330,7 @@ export const FormNumberInput = (props: FormNumberInputProps) => {
                 "text-overflow": "ellipsis",
                 display: "block",
                 overflow: "hidden",
-                "text-align": "right",
+                "text-align": "end",
               }}
               disabled={
                 lockStatus && lockStatusKey && lockStatus.has(lockStatusKey)
@@ -320,9 +339,8 @@ export const FormNumberInput = (props: FormNumberInputProps) => {
               }
               onFocusIn={() => {
                 divRef!.style.borderWidth = "2px";
-                divRef!.style.borderColor = getComputedCSSVariableValue(
-                  "--colors-accent-default",
-                );
+                divRef!.style.borderColor =
+                  getComputedCSSVariableValue("--colors-accent-7");
               }}
               onFocusOut={(e) => {
                 divRef!.style.borderWidth = "1px";
@@ -389,18 +407,25 @@ export const FormNumberInput = (props: FormNumberInputProps) => {
             </Show>
             <Show when={!Number.isFinite(props.inputValue)}>
               <IconExclamationCircle
+                size="1rem"
                 color="red"
                 data-name="config_field_error"
               />
             </Show>
           </Stack>
+          <Show when={!Number.isFinite(props.inputValue)}>
+            <Text
+              textStyle="sm"
+              color="red"
+              width="100%"
+              textAlign="right"
+              marginRight={`calc(100% - 15rem)`}
+            >
+              {`Invalid ${typeof props.inputValue}.`}
+            </Text>
+          </Show>
         </div>
       </Stack>
-      <Show when={!Number.isFinite(props.inputValue)}>
-        <Text textStyle="sm" color="red" marginLeft={"50%"} paddingLeft="0.5em">
-          {`Invalid ${typeof props.inputValue}.`}
-        </Text>
-      </Show>
     </div>
   );
 };

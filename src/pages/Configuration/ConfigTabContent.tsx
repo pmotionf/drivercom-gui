@@ -414,7 +414,7 @@ export function ConfigTabContent() {
           gap="0"
           background={"bg.muted"}
           display={"grid"}
-          gridTemplateColumns={`minmax(0, 1fr) repeat(4, 2rem)`}
+          gridTemplateColumns={`minmax(0, 1fr) repeat(5, 2rem)`}
         >
           <Text fontSize="sm" padding="0.25rem">
             {getFocusedTab()?.replaceAll("/", " > ")}
@@ -422,6 +422,7 @@ export function ConfigTabContent() {
           <Show when={Object.entries(configDescription()).length > 0}>
             <Tooltip content="Change length and weight units">
               <IconButton
+                size={"xs"}
                 variant={"plain"}
                 onClick={() => setChangeUnit(!getChangeUnit())}
               >

@@ -78,14 +78,24 @@ export const ConfigFormTabPage = (props: ConfigFormTabPageProps) => {
         "overflow-y": "auto",
         "overflow-x": "hidden",
         "border-width": "0",
-        padding: "0rem 1rem 0rem 1rem",
+        padding: "1rem",
         display: "flex",
+        "justify-content": "space-between",
       }}
       onScroll={(e) => {
         props.formOverflowY.set(props.id, e.target.scrollTop);
       }}
     >
-      <div style={{ width: "100%", height: "100%", "min-width": "32rem" }}>
+      <div
+        style={{
+          width: "100%",
+          height: "100%",
+          display: "flex",
+          "flex-direction": "column",
+          gap: "0.5rem",
+          "max-width": "70rem",
+        }}
+      >
         <For each={Object.entries(props.format)}>
           {(entry, index) => {
             const key = entry[0];
@@ -129,7 +139,11 @@ export const ConfigFormTabPage = (props: ConfigFormTabPageProps) => {
                 return (
                   <Accordion.Root
                     multiple
-                    style={{ "border-width": "0" }}
+                    style={{
+                      "border-width": "1px",
+                      padding: "0.5rem",
+                      "border-radius": "0.5rem",
+                    }}
                     defaultValue={getAccordionValue()}
                     onValueChange={(details) => {
                       if (props.accordionStatuses) {
@@ -137,25 +151,18 @@ export const ConfigFormTabPage = (props: ConfigFormTabPageProps) => {
                       }
                     }}
                   >
-                    <Accordion.Item
-                      value={accordionItemValue}
-                      borderRadius={"0.2rem"}
-                    >
+                    <Accordion.Item borderWidth="0" value={accordionItemValue}>
                       <Accordion.ItemTrigger
+                        padding="0"
                         fontSize={"1rem"}
                         fontWeight={"bold"}
-                        borderBottomWidth={"1px"}
                       >
                         <Text>{prettierLabel(key)}</Text>
                         <Accordion.ItemIndicator>
                           <IconChevronDown />
                         </Accordion.ItemIndicator>
                       </Accordion.ItemTrigger>
-                      <Accordion.ItemContent
-                        padding={"0rem 0.5rem 0.5rem 0.5rem"}
-                        borderWidth={"0px 1px 1px 1px"}
-                        borderRadius={"0.2rem"}
-                      >
+                      <Accordion.ItemContent padding={"0.5rem"}>
                         <ConfigFormatObject
                           id={props.id + "." + key}
                           format={value}
@@ -186,9 +193,11 @@ export const ConfigFormTabPage = (props: ConfigFormTabPageProps) => {
                   <div
                     style={{
                       "border-top-width": index() === 0 ? "0px" : "1px",
+                      "padding-top": index() === 0 ? "0px" : "0.5rem",
                     }}
                   >
                     <FormNumberInput
+                      background={"gray.2"}
                       id={`${props.id}.${key}`}
                       label={label}
                       originalValue={
@@ -208,7 +217,7 @@ export const ConfigFormTabPage = (props: ConfigFormTabPageProps) => {
                           : undefined
                       }
                       changeUnits={props.unitChange}
-                      inputValue={Number(store[key as keyof typeof store])}
+                      inputValue={store[key as keyof typeof store]}
                       onInputChange={(value) => {
                         setStore(
                           key as keyof typeof store,
@@ -230,8 +239,10 @@ export const ConfigFormTabPage = (props: ConfigFormTabPageProps) => {
                   <div
                     style={{
                       display: "grid",
-                      "grid-template-columns": `15rem minmax(0,1fr)`,
+                      "grid-template-columns": `minmax(0,1fr) 15rem`,
                       "align-items": "center",
+                      "border-top-width": index() === 0 ? "0px" : "1px",
+                      "padding-top": index() === 0 ? "0px" : "0.5rem",
                     }}
                   >
                     <Text>{"cc_link_speed"}</Text>
@@ -247,7 +258,7 @@ export const ConfigFormTabPage = (props: ConfigFormTabPageProps) => {
                       }}
                     >
                       <Select.Control>
-                        <Select.Trigger borderColor={"gray.4"}>
+                        <Select.Trigger borderColor={"gray.5"}>
                           <Select.ValueText
                             width="100%"
                             placeholder="Select a framework"
