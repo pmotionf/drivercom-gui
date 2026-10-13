@@ -26,6 +26,7 @@ export const TreeView = (props: ArkTreeView.RootProps<Node>) => {
         overflowY: "auto",
         borderRightWidth: "1px",
       })}
+      {...props}
       collection={props.collection}
     >
       <ArkTreeView.Tree class={css({ gap: "1rem" })}>
