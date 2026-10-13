@@ -1,4 +1,4 @@
-import { Accessor, createEffect, JSX, on, Setter, Show } from "solid-js";
+import { Accessor, createEffect, createMemo, JSX, on, Setter } from "solid-js";
 import { ConfigTuneType } from "src-tauri/generated/config/ConfigTune";
 import { ConfigSystemType } from "src-tauri/generated/config/ConfigSystem";
 import { ConfigCalibrationType } from "src-tauri/generated/config/ConfigCalibration";
@@ -38,8 +38,7 @@ export type ConfigFormProps = JSX.HTMLAttributes<HTMLFormElement> & {
   originalFile?: ConfigType;
   description?: object;
   changeUnits?: boolean;
-  focusedTab?: string;
-  onFocustTabChange?: (tabId: string) => void;
+  focusedObjectKey?: string;
   accordionStatuses: AccordionStates;
   linkedStatuses: LinkStates;
   gainLockStatuses: GainLockStates;
@@ -164,44 +163,60 @@ export function ConfigForm(props: ConfigFormProps) {
     );
   });
 
-  return (
-    <div style={{ width: "100%", height: `100%` }}>
-      <Show when={props.focusedTab === `${props.id}.tune`}>
+  const findFormat = (focusId: string, format: object) => {
+    if (!focusId.includes("/")) {
+      if (Object.hasOwn(format, focusId))
+        return format[focusId as keyof typeof format];
+      else return format;
+    } else {
+      const splitId = focusId.split("/");
+      if (splitId.length > 1) {
+        let obj: object = format;
+        for (let i = 0; i < splitId.length; i++) {
+          const currentId = splitId[i];
+          if (!Object.hasOwn(obj, currentId)) {
+            continue;
+          }
+          const value = obj[currentId as keyof typeof obj];
+          if (typeof value !== "object") {
+            break;
+          } else {
+            obj = value;
+          }
+        }
+        return obj;
+      } else {
+        return format;
+      }
+    }
+  };
+
+  // Refresh every time when focused part is different.
+  const showConfigurationForm = createMemo(
+    on(
+      () => props.focusedObjectKey,
+      () => (
         <ConfigFormTabPage
           id={`${props.id}.tune`}
-          format={configTabForm().tune}
-          config={config}
-          originalFile={props.originalFile}
+          format={findFormat(props.focusedObjectKey!, configTabForm())}
+          config={findFormat(props.focusedObjectKey!, config)}
+          originalFile={
+            typeof props.originalFile === "object"
+              ? findFormat(props.focusedObjectKey!, props.originalFile)
+              : props.originalFile
+          }
           description={props.description}
           unitChange={props.changeUnits}
           accordionStatuses={props.accordionStatuses}
           formOverflowY={props.formOverflowY}
         />
-      </Show>
-      <Show when={props.focusedTab === `${props.id}.calibration`}>
-        <ConfigFormTabPage
-          id={`${props.id}.calibration`}
-          format={configTabForm().calibration}
-          config={config}
-          originalFile={props.originalFile}
-          description={props.description}
-          unitChange={props.changeUnits}
-          accordionStatuses={props.accordionStatuses}
-          formOverflowY={props.formOverflowY}
-        />
-      </Show>
-      <Show when={props.focusedTab === `${props.id}.system`}>
-        <ConfigFormTabPage
-          id={`${props.id}.system`}
-          format={configTabForm().system}
-          config={config}
-          originalFile={props.originalFile}
-          description={props.description}
-          unitChange={props.changeUnits}
-          accordionStatuses={props.accordionStatuses}
-          formOverflowY={props.formOverflowY}
-        />
-      </Show>
+      ),
+    ),
+  );
+
+  return (
+    <div style={{ width: "100%", height: `100%` }}>
+      {showConfigurationForm()}
     </div>
   );
 }

@@ -390,7 +390,14 @@ export function ConfigTabContent() {
         height: "100%",
       }}
     >
-      <TreeView collection={generateTreeCollection(configTabForm(), "")} />
+      <TreeView
+        onFocusChange={(e) => {
+          if (e.focusedValue) {
+            setFocusedTab(e.focusedValue);
+          }
+        }}
+        collection={generateTreeCollection(configTabForm(), "")}
+      />
       <div
         id={configTabProps.key}
         style={{
@@ -680,8 +687,7 @@ export function ConfigTabContent() {
               description={configDescription()}
               originalFile={getOriginalFile()}
               changeUnits={getChangeUnit() ? getChangeUnit() : undefined}
-              focusedTab={getFocusedTab()}
-              onFocustTabChange={(tabId) => setFocusedTab(tabId)}
+              focusedObjectKey={getFocusedTab()}
               config={getConfigForm()!}
               linkedStatuses={getLinkedStatuses()!}
               accordionStatuses={getAccordionStatuses()!}

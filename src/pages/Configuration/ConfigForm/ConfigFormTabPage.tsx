@@ -1,11 +1,7 @@
-import { ConfigTuneType } from "src-tauri/generated/config/ConfigTune";
-import { ConfigCalibrationType } from "src-tauri/generated/config/ConfigCalibration";
-import { ConfigSystemType } from "src-tauri/generated/config/ConfigSystem";
-import { ConfigType } from "src-tauri/generated/config/ConfigType";
 import { AccordionStates } from "./ConfigForm";
 import { LinkStates } from "./ConfigForm";
 import { GainLockStates } from "./ConfigForm";
-import { JSX, onMount, For } from "solid-js";
+import { JSX, onMount, For, createSignal } from "solid-js";
 import { createStore } from "solid-js/store";
 import * as Accordion from "../../../components/ui/accordion";
 import { FormNumberInput } from "../../../components/Form/FormNumberInput";
@@ -16,12 +12,13 @@ import { prettierLabel } from "~/utils/PrettierLabel";
 import * as Select from "../../../components/ui/select";
 import { createListCollection } from "@ark-ui/solid";
 import { cclinkSpeed } from "~/store/GlobalState";
+import { FormCheckBox } from "~/components/Form/FormCheckBox";
 
 export type ConfigFormTabPageProps = {
   id: string;
-  format: ConfigTuneType | ConfigCalibrationType | ConfigSystemType;
-  config: ConfigType;
-  originalFile?: ConfigType;
+  format: object;
+  config: object;
+  originalFile?: object;
   description?: object;
   unitChange?: boolean;
   accordionStatuses?: AccordionStates;
@@ -44,6 +41,32 @@ export const ConfigFormTabPage = (props: ConfigFormTabPageProps) => {
       }
     }
   });
+
+  const [prevCheckBoxIndex, setPrevCheckBoxIndex] = createSignal<number | null>(
+    null,
+  );
+
+  const checkBoxShiftClick = (
+    prevIndex: number,
+    nextIndex: number,
+    form: object,
+  ) => {
+    const startNumber = prevIndex > nextIndex ? nextIndex : prevIndex + 1;
+    const endNumber = prevIndex < nextIndex ? nextIndex + 1 : prevIndex;
+    const values = Object.values(form);
+    const parseValues = values.slice(startNumber, endNumber);
+    if (parseValues.includes(values[prevIndex])) return;
+
+    const keys = Object.keys(form).slice(startNumber, endNumber);
+    keys.forEach((key) => {
+      setStore(
+        key as keyof typeof store,
+        // @ts-ignore : TSC unable to handle generic object type
+        // in store
+        values[prevIndex],
+      );
+    });
+  };
 
   return (
     <div
@@ -214,7 +237,7 @@ export const ConfigFormTabPage = (props: ConfigFormTabPageProps) => {
                     <Text>{"cc_link_speed"}</Text>
                     <Select.Root
                       collection={collection}
-                      value={[store[key as keyof typeof store].toString()]}
+                      value={[store[key as keyof typeof store] as string]}
                       onValueChange={(e) => {
                         setStore(
                           key as keyof typeof store,
@@ -248,6 +271,56 @@ export const ConfigFormTabPage = (props: ConfigFormTabPageProps) => {
                         </Select.Content>
                       </Select.Positioner>
                     </Select.Root>
+                  </div>
+                );
+              } else if (
+                typeof store[key as keyof typeof store] === "boolean"
+              ) {
+                const label = !isNaN(Number(key))
+                  ? `${props.id.split(".").pop()} ${Number(key) + 1}`
+                  : key;
+                return (
+                  <div style={{ "margin-bottom": "0.5em" }}>
+                    <FormCheckBox
+                      id={props.id + "." + key}
+                      label={label}
+                      originalValue={
+                        props.originalFile
+                          ? props.originalFile[
+                              key as keyof typeof props.originalFile
+                            ]
+                          : undefined
+                      }
+                      desc={
+                        props.description && `__${key}` in props.description
+                          ? props.description[
+                              `__${key}` as keyof typeof props.description
+                            ]
+                          : undefined
+                      }
+                      checked={store[key as keyof typeof store]}
+                      onCheckedChange={(checked) =>
+                        setStore(
+                          key as keyof typeof store,
+                          // @ts-ignore: TSC unable to handle generic object type
+                          // in store
+                          checked,
+                        )
+                      }
+                      onClick={() => {
+                        setPrevCheckBoxIndex(index());
+                      }}
+                      onShiftClick={() => {
+                        if (typeof prevCheckBoxIndex() === "number") {
+                          checkBoxShiftClick(
+                            prevCheckBoxIndex()!,
+                            index(),
+                            store,
+                          );
+                          setPrevCheckBoxIndex(null);
+                        }
+                      }}
+                    />
                   </div>
                 );
               }
