@@ -80,7 +80,7 @@ function Configuration() {
           configGainLockStatuses: gainLockStatuses,
           originalFile: JSON.parse(JSON.stringify(form)),
           formOverflowY: formOverflowY,
-          focusedTab: `${id}.system`,
+          focusedTab: `system`,
         },
       },
     } as TabContext;
