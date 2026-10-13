@@ -62,7 +62,10 @@ const TreeNode = (props: ArkTreeView.NodeProviderProps<Node>) => {
                   _hover: {
                     background: "gray.3",
                   },
-                  _selected: {
+                  _focus: {
+                    _hover: {
+                      background: "gray.5",
+                    },
                     background: "gray.5",
                     color: "fg.default",
                   },
@@ -154,7 +157,10 @@ const TreeNode = (props: ArkTreeView.NodeProviderProps<Node>) => {
                 _hover: {
                   background: "gray.3",
                 },
-                _selected: {
+                _focus: {
+                  _hover: {
+                    background: "gray.5",
+                  },
                   background: "gray.5",
                   color: "fg.default",
                 },

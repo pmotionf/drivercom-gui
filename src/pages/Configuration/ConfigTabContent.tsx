@@ -391,6 +391,7 @@ export function ConfigTabContent() {
       }}
     >
       <TreeView
+        focusedValue={getFocusedTab()}
         onFocusChange={(e) => {
           if (e.focusedValue) {
             setFocusedTab(e.focusedValue);
