@@ -7,7 +7,7 @@
     "build": "vite build",
     "serve": "vite preview",
     "drivercom-prepare": "pnpm shx mkdir -p src-tauri/binaries",
-    "drivercom-fetch": "cd src-tauri/binaries && gh release download -R pmotionf/drivercom-cli -p *-drivercom-cli-*.zip --clobber",
+    "drivercom-fetch": "cd src-tauri/binaries && gh release download -R pmotionf/drivercom-cli -p '*-drivercom-cli-*.zip' --clobber",
     "drivercom-unpack": "pnpm node unpack-drivercom.js",
     "generate-config-types": "pnpm shx mkdir -p src-tauri/generated/config && pnpm node generate-drivercom-config.js",
     "drivercom": "pnpm run drivercom-prepare && pnpm run drivercom-fetch && pnpm run drivercom-unpack && pnpm run generate-config-types",
