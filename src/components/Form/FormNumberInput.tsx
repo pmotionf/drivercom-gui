@@ -26,6 +26,7 @@ export type FormNumberInputProps = {
   linkStatus?: LinkStates;
   inputValue: number;
   onInputChange?: (input: number) => void;
+  isFocus?: boolean;
 } & StackProps;
 
 export const FormNumberInput = (props: FormNumberInputProps) => {
@@ -221,7 +222,15 @@ export const FormNumberInput = (props: FormNumberInputProps) => {
                   })}
                 />
               </Show>
-              {props.label.replaceAll(" ", "_")}
+              <div
+                class={css({
+                  background: props.isFocus ? "accent.7" : "transparent",
+                  width: `max-content`,
+                  minWidth: "1rem",
+                })}
+              >
+                {props.label.replaceAll(" ", "_")}
+              </div>
             </Text>
             <Show
               when={

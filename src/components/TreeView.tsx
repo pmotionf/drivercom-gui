@@ -206,7 +206,8 @@ const generateBranch = (format: object, parent: string) => {
     name: !parent.includes(`/`) ? parent : parent.split(`/`).at(-1)!,
     children: [
       ...entries.map(([key, value]) => {
-        const id = `${parent.length > 0 ? parent + "/" : ""}${key}`;
+        const puncatation = typeof value === "object" ? "/" : "$";
+        const id = `${parent.length > 0 ? parent + puncatation : ""}${key}`;
         if (typeof value !== "object") {
           return {
             id: id,

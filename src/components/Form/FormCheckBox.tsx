@@ -6,6 +6,7 @@ import { Show } from "solid-js";
 export type FormCheckBoxProps = {
   id: string;
   label: string;
+  isFocus?: boolean;
   desc?: object;
   originalValue?: boolean;
   checked: boolean;
@@ -69,7 +70,13 @@ export const FormCheckBox = (props: FormCheckBoxProps) => {
                 })}
               />
             </Show>
-            {key.replaceAll(" ", "_")}
+            <div
+              class={css({
+                background: props.isFocus ? "accent.7" : "transparent",
+              })}
+            >
+              {key.replaceAll(" ", "_")}
+            </div>
           </Text>
           <Show
             when={

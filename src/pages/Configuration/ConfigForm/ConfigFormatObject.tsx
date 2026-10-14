@@ -25,6 +25,7 @@ export type ConfigFormatObjectProps = {
   linkKey?: string;
   linkedStatuses?: LinkStates;
   gainLockStatuses?: GainLockStates;
+  focusFieldKey?: string;
 };
 
 export const ConfigFormatObject = (props: ConfigFormatObjectProps) => {
@@ -216,6 +217,7 @@ export const ConfigFormatObject = (props: ConfigFormatObjectProps) => {
                           description={innerDesc ?? undefined}
                           changeUnit={props.changeUnit}
                           accordionStatuses={props.accordionStatuses}
+                          focusFieldKey={props.focusFieldKey}
                         />
                       </Accordion.ItemContent>
                     </Accordion.Item>
@@ -330,6 +332,7 @@ export const ConfigFormatObject = (props: ConfigFormatObjectProps) => {
                           description={description ?? undefined}
                           changeUnit={props.changeUnit}
                           accordionStatuses={props.accordionStatuses}
+                          focusFieldKey={props.focusFieldKey}
                         />
                       </Accordion.ItemContent>
                     </Accordion.Item>
@@ -383,6 +386,7 @@ export const ConfigFormatObject = (props: ConfigFormatObjectProps) => {
                         value,
                       );
                     }}
+                    isFocus={props.focusFieldKey === key}
                   />
                 </div>
               );
@@ -431,6 +435,7 @@ export const ConfigFormatObject = (props: ConfigFormatObjectProps) => {
                         setPrevCheckBoxIndex(null);
                       }
                     }}
+                    isFocus={props.focusFieldKey === key}
                   />
                 </div>
               );

@@ -165,15 +165,21 @@ export function ConfigForm(props: ConfigFormProps) {
 
   const findFormat = (focusId: string, format: object) => {
     if (!focusId.includes("/")) {
-      if (Object.hasOwn(format, focusId))
-        return format[focusId as keyof typeof format];
+      const objectFieldFocusId = focusId.includes("$")
+        ? focusId.split("$")[0]
+        : focusId;
+      if (Object.hasOwn(format, objectFieldFocusId))
+        return format[objectFieldFocusId as keyof typeof format];
       else return format;
     } else {
-      const splitId = focusId.split("/");
-      if (splitId.length > 1) {
+      const filterNoneObjectKey = focusId.includes("$")
+        ? focusId.split("$")[0]
+        : focusId;
+      const objectKeys = filterNoneObjectKey.split("/");
+      if (objectKeys.length > 1) {
         let obj: object = format;
-        for (let i = 0; i < splitId.length; i++) {
-          const currentId = splitId[i];
+        for (let i = 0; i < objectKeys.length; i++) {
+          const currentId = objectKeys[i];
           if (!Object.hasOwn(obj, currentId)) {
             continue;
           }
@@ -197,7 +203,12 @@ export function ConfigForm(props: ConfigFormProps) {
       () => props.focusedObjectKey,
       () => (
         <ConfigFormTabPage
-          id={`${props.id}.tune`}
+          id={`${props.id}`}
+          focusFieldKey={
+            props.focusedObjectKey && props.focusedObjectKey.includes("$")
+              ? props.focusedObjectKey.split("$")[1]
+              : undefined
+          }
           format={findFormat(props.focusedObjectKey!, configTabForm())}
           config={findFormat(props.focusedObjectKey!, config)}
           originalFile={

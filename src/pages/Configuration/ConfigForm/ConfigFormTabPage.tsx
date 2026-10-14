@@ -19,6 +19,7 @@ export type ConfigFormTabPageProps = {
   id: string;
   format: object;
   config: object;
+  focusFieldKey?: string;
   originalFile?: object;
   description?: object;
   unitChange?: boolean;
@@ -179,6 +180,7 @@ export const ConfigFormTabPage = (props: ConfigFormTabPageProps) => {
                           linkKey={props.linkKey}
                           linkedStatuses={props.linkedStatuses}
                           gainLockStatuses={props.gainLockStatuses}
+                          focusFieldKey={props.focusFieldKey}
                         />
                       </Accordion.ItemContent>
                     </Accordion.Item>
@@ -227,6 +229,7 @@ export const ConfigFormTabPage = (props: ConfigFormTabPageProps) => {
                           value,
                         );
                       }}
+                      isFocus={props.focusFieldKey === key}
                     />
                   </div>
                 );
@@ -347,6 +350,7 @@ export const ConfigFormTabPage = (props: ConfigFormTabPageProps) => {
                           setPrevCheckBoxIndex(null);
                         }
                       }}
+                      isFocus={props.focusFieldKey === key}
                     />
                   </div>
                 );
