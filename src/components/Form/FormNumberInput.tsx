@@ -181,6 +181,7 @@ export const FormNumberInput = (props: FormNumberInputProps) => {
 
   return (
     <div
+      id={props.id}
       style={{
         width: "100%",
       }}

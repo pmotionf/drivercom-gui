@@ -130,9 +130,6 @@ export const ConfigFormatObject = (props: ConfigFormatObjectProps) => {
                 const innerOriginalFile = originalFile
                   ? originalFile[innerKey as keyof typeof originalFile]
                   : null;
-                const innerLabel = !isNaN(Number(key))
-                  ? `${props.id.split(".").pop()} ${Number(innerKey) + 1}`
-                  : innerKey;
                 const accordionItemValue = label + "." + key + "." + innerKey;
                 const innerDesc = description
                   ? description[innerKey as keyof typeof description]
@@ -152,7 +149,6 @@ export const ConfigFormatObject = (props: ConfigFormatObjectProps) => {
                   <Accordion.Root
                     multiple
                     style={{ "border-width": "1px", "border-radius": "0.5rem" }}
-                    background="gray.2"
                     defaultValue={props.accordionStatuses!.get(innerId)!}
                     onValueChange={(details) => {
                       if (props.accordionStatuses) {
@@ -178,9 +174,11 @@ export const ConfigFormatObject = (props: ConfigFormatObjectProps) => {
                             "align-items": "center",
                           }}
                         >
-                          <Text
-                            fontWeight={"bold"}
-                          >{`${prettierLabel(label)} ${prettierLabel(innerLabel)}`}</Text>
+                          <Text fontWeight={"bold"}>
+                            {isNaN(Number(key))
+                              ? prettierLabel(label)
+                              : `Axis ${Number(key) + 1}`}
+                          </Text>
 
                           <Show when={innderDescText}>
                             <Text
@@ -234,7 +232,7 @@ export const ConfigFormatObject = (props: ConfigFormatObjectProps) => {
                 return (
                   <Accordion.Root
                     multiple
-                    background="gray.2"
+                    boxShadow={"md"}
                     style={{
                       padding: "0.5rem",
                       "border-width": "1px",
@@ -276,7 +274,9 @@ export const ConfigFormatObject = (props: ConfigFormatObjectProps) => {
                             }}
                           >
                             <Text fontWeight={"bold"}>
-                              {prettierLabel(label)}
+                              {isNaN(Number(key))
+                                ? prettierLabel(label)
+                                : `Axis ${Number(key) + 1}`}
                             </Text>
 
                             <Show when={descriptionText}>
@@ -357,8 +357,8 @@ export const ConfigFormatObject = (props: ConfigFormatObjectProps) => {
                   class={css({ borderColor: "gray.4" })}
                 >
                   <FormNumberInput
-                    background={"gray.3"}
-                    id={id}
+                    background={"gray.2"}
+                    id={id + "." + key}
                     label={label}
                     originalValue={
                       props.originalFile

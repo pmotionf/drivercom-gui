@@ -32,7 +32,7 @@ export type ConfigFormatType = {
   calibration: ConfigCalibrationType;
 };
 
-export type ConfigFormProps = JSX.HTMLAttributes<HTMLFormElement> & {
+export type ConfigFormProps = {
   id: string;
   config: ConfigType;
   originalFile?: ConfigType;
@@ -43,7 +43,7 @@ export type ConfigFormProps = JSX.HTMLAttributes<HTMLFormElement> & {
   linkedStatuses: LinkStates;
   gainLockStatuses: GainLockStates;
   formOverflowY: Map<string, number>;
-};
+} & JSX.HTMLAttributes<HTMLFormElement>;
 
 // A custom form component adpated to configuration format.
 export function ConfigForm(props: ConfigFormProps) {
@@ -201,27 +201,33 @@ export function ConfigForm(props: ConfigFormProps) {
   const showConfigurationForm = createMemo(
     on(
       () => props.focusedObjectKey,
-      () => (
-        <ConfigFormTabPage
-          id={`${props.id}`}
-          focusFieldKey={
-            props.focusedObjectKey && props.focusedObjectKey.includes("$")
-              ? props.focusedObjectKey.split("$")[1]
-              : undefined
-          }
-          format={findFormat(props.focusedObjectKey!, configTabForm())}
-          config={findFormat(props.focusedObjectKey!, config)}
-          originalFile={
-            typeof props.originalFile === "object"
-              ? findFormat(props.focusedObjectKey!, props.originalFile)
-              : props.originalFile
-          }
-          description={props.description}
-          unitChange={props.changeUnits}
-          accordionStatuses={props.accordionStatuses}
-          formOverflowY={props.formOverflowY}
-        />
-      ),
+      () => {
+        return (
+          <ConfigFormTabPage
+            id={`${props.id}${props.focusedObjectKey!.includes("$") ? props.focusedObjectKey!.split("$")[0] : props.focusedObjectKey}`}
+            focusFieldKey={
+              props.focusedObjectKey && props.focusedObjectKey.includes("$")
+                ? props.focusedObjectKey.split("$")[1]
+                : undefined
+            }
+            format={findFormat(props.focusedObjectKey!, configTabForm())}
+            config={findFormat(props.focusedObjectKey!, config)}
+            originalFile={
+              typeof props.originalFile === "object"
+                ? findFormat(props.focusedObjectKey!, props.originalFile)
+                : props.originalFile
+            }
+            description={
+              props.description
+                ? findFormat(props.focusedObjectKey!, props.description)
+                : props.description
+            }
+            unitChange={props.changeUnits}
+            accordionStatuses={props.accordionStatuses}
+            formOverflowY={props.formOverflowY}
+          />
+        );
+      },
     ),
   );
 

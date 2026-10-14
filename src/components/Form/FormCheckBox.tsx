@@ -22,6 +22,7 @@ export const FormCheckBox = (props: FormCheckBoxProps) => {
 
   return (
     <div
+      id={props.id}
       style={{
         display: "flex",
         width: "100%",
@@ -30,7 +31,6 @@ export const FormCheckBox = (props: FormCheckBoxProps) => {
       }}
     >
       <Checkbox.Root
-        id={props.id}
         checked={props.checked}
         onCheckedChange={(e) => {
           props.onCheckedChange?.(e.checked === true ? true : false);

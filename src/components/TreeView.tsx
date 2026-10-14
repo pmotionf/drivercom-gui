@@ -21,7 +21,7 @@ export const TreeView = (props: ArkTreeView.RootProps<Node>) => {
         flexDirection: "column",
         gap: "0.5rem",
         width: "100%",
-        maxWidth: "20rem",
+        height: "100%",
         background: "gray.1",
         overflowY: "auto",
         borderRightWidth: "1px",
@@ -200,10 +200,11 @@ interface Node {
 
 const generateBranch = (format: object, parent: string) => {
   const entries = Object.entries(format);
+  const name = !parent.includes(`/`) ? parent : parent.split(`/`).at(-1)!;
 
   const node: Node = {
     id: parent,
-    name: !parent.includes(`/`) ? parent : parent.split(`/`).at(-1)!,
+    name: isNaN(Number(name)) ? name : `axis ${Number(name) + 1}`,
     children: [
       ...entries.map(([key, value]) => {
         const puncatation = typeof value === "object" ? "/" : "$";
@@ -211,7 +212,7 @@ const generateBranch = (format: object, parent: string) => {
         if (typeof value !== "object") {
           return {
             id: id,
-            name: key,
+            name: isNaN(Number(key)) ? key : `axis ${Number(key) + 1}`,
           };
         } else {
           return generateBranch(value, id);

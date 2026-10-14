@@ -1,7 +1,15 @@
 import { AccordionStates } from "./ConfigForm";
 import { LinkStates } from "./ConfigForm";
 import { GainLockStates } from "./ConfigForm";
-import { JSX, onMount, For, createSignal, Show } from "solid-js";
+import {
+  JSX,
+  onMount,
+  For,
+  createSignal,
+  Show,
+  createEffect,
+  on,
+} from "solid-js";
 import { createStore } from "solid-js/store";
 import * as Accordion from "../../../components/ui/accordion";
 import { FormNumberInput } from "../../../components/Form/FormNumberInput";
@@ -33,16 +41,37 @@ export type ConfigFormTabPageProps = {
 export const ConfigFormTabPage = (props: ConfigFormTabPageProps) => {
   const [store, setStore] = createStore(props.config);
   let ref: HTMLDivElement | undefined;
+
   onMount(() => {
     if (ref) {
       const getScrollTop = props.formOverflowY.get(props.id);
       if (getScrollTop) {
         setTimeout(() => {
           ref.scrollTo(0, getScrollTop);
-        }, 0);
+        });
       }
     }
   });
+
+  createEffect(
+    on(
+      () => props.focusFieldKey,
+      () => {
+        if (ref) {
+          if (props.focusFieldKey) {
+            const element = document.getElementById(
+              props.id + "." + props.focusFieldKey,
+            );
+            if (element) {
+              setTimeout(() => {
+                element.scrollIntoView();
+              });
+            }
+          }
+        }
+      },
+    ),
+  );
 
   const [prevCheckBoxIndex, setPrevCheckBoxIndex] = createSignal<number | null>(
     null,
@@ -122,6 +151,9 @@ export const ConfigFormTabPage = (props: ConfigFormTabPageProps) => {
                   : undefined;
 
               if (typeof store[key as keyof typeof store] === "object") {
+                const label = prettierLabel(
+                  isNaN(Number(key)) ? key : `axis ${Number(key) + 1}`,
+                );
                 if (description) {
                   const innerKeys = Object.keys(value);
                   const findHidden = innerKeys.map((key) => {
@@ -140,6 +172,7 @@ export const ConfigFormTabPage = (props: ConfigFormTabPageProps) => {
                 }
                 return (
                   <Accordion.Root
+                    id={id}
                     multiple
                     style={{
                       "border-width": "1px",
@@ -159,7 +192,7 @@ export const ConfigFormTabPage = (props: ConfigFormTabPageProps) => {
                         fontSize={"1rem"}
                         fontWeight={"bold"}
                       >
-                        <Text>{prettierLabel(key)}</Text>
+                        <Text>{label}</Text>
                         <Accordion.ItemIndicator>
                           <IconChevronDown />
                         </Accordion.ItemIndicator>
@@ -263,7 +296,16 @@ export const ConfigFormTabPage = (props: ConfigFormTabPageProps) => {
                           })}
                         />
                       </Show>
-                      {"cc_link_speed"}
+                      <div
+                        class={css({
+                          background:
+                            props.focusFieldKey === key
+                              ? "accent.7"
+                              : "transparent",
+                        })}
+                      >
+                        {"cc_link_speed"}
+                      </div>
                     </Text>
                     <Select.Root
                       collection={collection}
@@ -279,6 +321,7 @@ export const ConfigFormTabPage = (props: ConfigFormTabPageProps) => {
                       <Select.Control>
                         <Select.Trigger borderColor={"gray.5"}>
                           <Select.ValueText
+                            id={id}
                             width="100%"
                             placeholder="Select a framework"
                             textAlign={"end"}
