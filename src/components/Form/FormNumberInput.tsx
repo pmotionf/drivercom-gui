@@ -4,7 +4,7 @@ import {
   GainLockStates,
   LinkStates,
 } from "../../pages/Configuration/ConfigForm/ConfigForm";
-import { Show, splitProps } from "solid-js";
+import { createSignal, Show, splitProps } from "solid-js";
 import {
   IconExclamationCircle,
   IconLock,
@@ -13,6 +13,7 @@ import {
 import { IconButton } from "../ui/icon-button";
 import { Tooltip } from "../ui/tooltip";
 import { getComputedCSSVariableValue } from "~/utils/GetComputedCssVariableValue";
+import { css } from "styled-system/css";
 
 export type FormNumberInputProps = {
   id: string;
@@ -173,6 +174,10 @@ export const FormNumberInput = (props: FormNumberInputProps) => {
 
   const inputValue = () => props.inputValue;
 
+  const [errorInputValue, setErrorInputValue] = createSignal<string | null>(
+    null,
+  );
+
   return (
     <div
       style={{
@@ -193,13 +198,29 @@ export const FormNumberInput = (props: FormNumberInputProps) => {
           <div style={{ width: `calc(100% - 0.5rem)` }}>
             <Text
               fontWeight="medium"
-              borderColor="accent.7"
               height="1.5em"
-              borderBottomWidth={
-                props.originalValue !== inputValue() ? "2px" : "0px"
-              }
               width="min-content"
+              display="flex"
+              alignItems="center"
+              gap="0.4rem"
             >
+              <Show
+                when={errorInputValue() || props.originalValue !== inputValue()}
+              >
+                <div
+                  class={css({
+                    background:
+                      errorInputValue() ||
+                      !Number.isFinite(Number(inputValue()))
+                        ? "red"
+                        : "accent.9",
+                    width: "0.5rem",
+                    height: "0.5rem",
+                    borderRadius: "1rem",
+                    marginTop: "0.1rem",
+                  })}
+                />
+              </Show>
               {props.label.replaceAll(" ", "_")}
             </Text>
             <Show
@@ -210,7 +231,7 @@ export const FormNumberInput = (props: FormNumberInputProps) => {
                   "string"
               }
             >
-              <Text textStyle="xs" fontWeight="light" color="fg.default">
+              <Text textStyle="sm" fontWeight="light" color="fg.default">
                 {props.desc!["description" as keyof typeof props.desc]}
               </Text>
             </Show>
@@ -307,7 +328,10 @@ export const FormNumberInput = (props: FormNumberInputProps) => {
               gap: "0",
             }}
             borderColor={
-              Number.isFinite(Number(inputValue())) ? "gray.5" : "red"
+              typeof errorInputValue() === "string" ||
+              Number.isFinite(Number(inputValue()))
+                ? "gray.5"
+                : "red"
             }
             direction="row"
             alignItems="center"
@@ -340,7 +364,10 @@ export const FormNumberInput = (props: FormNumberInputProps) => {
               onFocusIn={() => {
                 divRef!.style.borderWidth = "2px";
                 divRef!.style.borderColor =
-                  getComputedCSSVariableValue("--colors-accent-7");
+                  typeof errorInputValue() === "string" ||
+                  !Number.isFinite(Number(inputValue()))
+                    ? "red"
+                    : getComputedCSSVariableValue("--colors-accent-7");
               }}
               onFocusOut={(e) => {
                 divRef!.style.borderWidth = "1px";
@@ -352,19 +379,29 @@ export const FormNumberInput = (props: FormNumberInputProps) => {
               }}
               placeholder={props.label}
               value={
-                props.desc &&
-                props.desc["unit_short" as keyof typeof props.desc]
-                  ? changeValue(
-                      props.desc[
-                        "unit_short" as keyof typeof props.desc
-                      ] as string,
-                      inputValue(),
-                      props.changeUnits ?? false,
-                    )
-                  : inputValue()
+                typeof errorInputValue() === "string"
+                  ? (errorInputValue() as string)
+                  : props.desc &&
+                      props.desc["unit_short" as keyof typeof props.desc]
+                    ? changeValue(
+                        props.desc[
+                          "unit_short" as keyof typeof props.desc
+                        ] as string,
+                        inputValue(),
+                        props.changeUnits ?? false,
+                      )
+                    : inputValue()
               }
               onChange={(e) => {
                 let inputValue = Number(e.target.value);
+                if (isNaN(inputValue)) {
+                  setErrorInputValue(e.target.value);
+                  return;
+                } else {
+                  if (errorInputValue() !== null) {
+                    setErrorInputValue(null);
+                  }
+                }
                 if (
                   props.desc &&
                   "unit_short" in props.desc &&
@@ -405,7 +442,12 @@ export const FormNumberInput = (props: FormNumberInputProps) => {
                 </Text>
               </Tooltip>
             </Show>
-            <Show when={!Number.isFinite(props.inputValue)}>
+            <Show
+              when={
+                typeof errorInputValue() === "string" ||
+                !Number.isFinite(props.inputValue)
+              }
+            >
               <IconExclamationCircle
                 size="1rem"
                 color="red"
@@ -413,7 +455,12 @@ export const FormNumberInput = (props: FormNumberInputProps) => {
               />
             </Show>
           </Stack>
-          <Show when={!Number.isFinite(props.inputValue)}>
+          <Show
+            when={
+              typeof errorInputValue() === "string" ||
+              !Number.isFinite(props.inputValue)
+            }
+          >
             <Text
               textStyle="sm"
               color="red"

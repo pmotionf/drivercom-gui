@@ -183,7 +183,7 @@ export const ConfigFormatObject = (props: ConfigFormatObjectProps) => {
 
                           <Show when={innderDescText}>
                             <Text
-                              textStyle="xs"
+                              textStyle="sm"
                               fontWeight="light"
                               style={{
                                 width: "100%",
@@ -279,7 +279,7 @@ export const ConfigFormatObject = (props: ConfigFormatObjectProps) => {
 
                             <Show when={descriptionText}>
                               <Text
-                                textStyle="xs"
+                                textStyle="sm"
                                 fontWeight="light"
                                 style={{
                                   width: "100%",

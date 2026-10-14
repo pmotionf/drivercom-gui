@@ -1,3 +1,4 @@
+import { css } from "styled-system/css";
 import * as Checkbox from "../ui/checkbox";
 import { Text } from "../ui/text";
 import { Show } from "solid-js";
@@ -51,14 +52,23 @@ export const FormCheckBox = (props: FormCheckBoxProps) => {
           <Text
             fontWeight="medium"
             userSelect="none"
-            paddingLeft="0.1em"
-            paddingRight="0.1em"
-            borderColor="accent.7"
-            borderBottomWidth={
-              props.originalValue !== props.checked ? "2px" : "0px"
-            }
             width="min-content"
+            display="flex"
+            flexDirection="row"
+            alignItems="center"
+            gap="0.4rem"
           >
+            <Show when={props.originalValue !== props.checked}>
+              <div
+                class={css({
+                  background: "accent.9",
+                  width: "0.5rem",
+                  height: "0.5rem",
+                  borderRadius: "1rem",
+                  marginTop: "0.1rem",
+                })}
+              />
+            </Show>
             {key.replaceAll(" ", "_")}
           </Text>
           <Show
@@ -68,7 +78,7 @@ export const FormCheckBox = (props: FormCheckBoxProps) => {
                 "string"
             }
           >
-            <Text textStyle="xs" fontWeight="light" color="fg.default">
+            <Text textStyle="sm" fontWeight="light" color="fg.default">
               {props.desc!["description" as keyof typeof props.desc]}
             </Text>
           </Show>

@@ -1,7 +1,7 @@
 import { AccordionStates } from "./ConfigForm";
 import { LinkStates } from "./ConfigForm";
 import { GainLockStates } from "./ConfigForm";
-import { JSX, onMount, For, createSignal } from "solid-js";
+import { JSX, onMount, For, createSignal, Show } from "solid-js";
 import { createStore } from "solid-js/store";
 import * as Accordion from "../../../components/ui/accordion";
 import { FormNumberInput } from "../../../components/Form/FormNumberInput";
@@ -13,6 +13,7 @@ import * as Select from "../../../components/ui/select";
 import { createListCollection } from "@ark-ui/solid";
 import { cclinkSpeed } from "~/store/GlobalState";
 import { FormCheckBox } from "~/components/Form/FormCheckBox";
+import { css } from "styled-system/css";
 
 export type ConfigFormTabPageProps = {
   id: string;
@@ -245,7 +246,22 @@ export const ConfigFormTabPage = (props: ConfigFormTabPageProps) => {
                       "padding-top": index() === 0 ? "0px" : "0.5rem",
                     }}
                   >
-                    <Text>{"cc_link_speed"}</Text>
+                    <Text display="flex" alignItems="center" gap="0.4rem">
+                      <Show
+                        when={originalFile !== store[key as keyof typeof store]}
+                      >
+                        <div
+                          class={css({
+                            background: "accent.9",
+                            width: "0.5rem",
+                            height: "0.5rem",
+                            borderRadius: "1rem",
+                            marginTop: "0.3rem",
+                          })}
+                        />
+                      </Show>
+                      {"cc_link_speed"}
+                    </Text>
                     <Select.Root
                       collection={collection}
                       value={[store[key as keyof typeof store] as string]}
