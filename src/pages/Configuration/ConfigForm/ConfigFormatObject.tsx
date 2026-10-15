@@ -10,8 +10,6 @@ import { FormCheckBox } from "../../../components/Form/FormCheckBox";
 
 import { IconChevronDown } from "@tabler/icons-solidjs";
 import { prettierLabel } from "~/utils/PrettierLabel";
-import { FlipSensorExample } from "./FlipSensorExample";
-import { SwapSensorExample } from "./SwapSensorExample";
 import { css } from "styled-system/css";
 
 export type ConfigFormatObjectProps = {
@@ -293,16 +291,6 @@ export const ConfigFormatObject = (props: ConfigFormatObjectProps) => {
                                     "description" as keyof typeof descriptionText
                                   ]
                                 }
-                                <Show
-                                  when={label.toLowerCase() === "flip_sensors"}
-                                >
-                                  <FlipSensorExample />
-                                </Show>
-                                <Show
-                                  when={label.toLowerCase() === "swap_sensors"}
-                                >
-                                  <SwapSensorExample />
-                                </Show>
                               </Text>
                             </Show>
                           </div>

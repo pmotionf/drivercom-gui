@@ -2,6 +2,8 @@ import { css } from "styled-system/css";
 import * as Checkbox from "../ui/checkbox";
 import { Text } from "../ui/text";
 import { Show } from "solid-js";
+import { FlipSensorExample } from "~/pages/Configuration/ConfigForm/FlipSensorExample";
+import { SwapSensorExample } from "~/pages/Configuration/ConfigForm/SwapSensorExample";
 
 export type FormCheckBoxProps = {
   id: string;
@@ -85,8 +87,19 @@ export const FormCheckBox = (props: FormCheckBoxProps) => {
                 "string"
             }
           >
-            <Text textStyle="sm" fontWeight="light" color="fg.default">
+            <Text
+              textStyle="sm"
+              fontWeight="light"
+              color="fg.default"
+              alignItems="center"
+            >
               {props.desc!["description" as keyof typeof props.desc]}
+              <Show when={key.toLowerCase() === "flip"}>
+                <FlipSensorExample />
+              </Show>
+              <Show when={key.toLowerCase() === "swap"}>
+                <SwapSensorExample />
+              </Show>
             </Text>
           </Show>
         </div>

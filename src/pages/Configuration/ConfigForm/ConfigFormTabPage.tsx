@@ -124,7 +124,7 @@ export const ConfigFormTabPage = (props: ConfigFormTabPageProps) => {
           display: "flex",
           "flex-direction": "column",
           gap: "0.5rem",
-          "max-width": "70rem",
+          "max-width": "60rem",
         }}
       >
         <For each={Object.entries(props.format)}>
