@@ -1,11 +1,10 @@
 import {
   IconChevronRight,
   IconDeviceFloppy,
-  IconFileDownload,
   IconFileImport,
+  IconListDetailsFilled,
   IconRuler2,
   IconRuler2Off,
-  IconSettingsShare,
 } from "@tabler/icons-solidjs";
 import { Command } from "@tauri-apps/plugin-shell";
 import {
@@ -43,9 +42,12 @@ import { toaster } from "~/components/ui/toast.tsx";
 import * as Menu from "~/components/ui/menu";
 import { ConfigType } from "src-tauri/generated/config/ConfigType";
 import { css } from "styled-system/css";
-import { detectPort, getConfigFromPort, Port } from "~/services/PortService";
+import { getConfigFromPort } from "~/services/PortService";
 import { Portal } from "solid-js/web";
 import { generateTreeCollection, TreeView } from "~/components/TreeView";
+import { GetFromPortButton } from "./ConfigForm/GetFromPortButton";
+import { SaveToPort } from "./ConfigForm/SaveToPort";
+import { DriverStatus } from "./ConfigForm/DriverStatus";
 
 export type ConfigTabPage = {
   filePath?: string;
@@ -59,6 +61,8 @@ export type ConfigTabPage = {
   formOverflowY?: Map<string, number>;
   originalFile?: ConfigType;
   changeUnit?: boolean;
+  showTreeView?: boolean;
+  treeViewExpandedValue?: string[];
 };
 
 // A custom tab page component for the configuration page.
@@ -206,6 +210,38 @@ export function ConfigTabContent() {
     );
   };
 
+  const getShowTreeView = () => {
+    return tabStore.get(configTabProps.key)![0].tabContext[getTabIndex()]
+      .tabPage!.configTabPage!.showTreeView;
+  };
+
+  const setShowTreeView = (showTreeView: boolean) => {
+    return tabStore.get(configTabProps.key)![1](
+      "tabContext",
+      getTabIndex(),
+      "tabPage",
+      "configTabPage",
+      "showTreeView",
+      showTreeView,
+    );
+  };
+
+  const getTreeViewExpendedValue = () => {
+    return tabStore.get(configTabProps.key)![0].tabContext[getTabIndex()]
+      .tabPage!.configTabPage!.treeViewExpandedValue;
+  };
+
+  const setTreeViewExpendedValue = (treeViewExpandedValue: string[]) => {
+    return tabStore.get(configTabProps.key)![1](
+      "tabContext",
+      getTabIndex(),
+      "tabPage",
+      "configTabPage",
+      "treeViewExpandedValue",
+      treeViewExpandedValue,
+    );
+  };
+
   const [render, setRender] = createSignal<boolean>(true);
 
   const fileHandler = new FileHandler();
@@ -271,7 +307,7 @@ export function ConfigTabContent() {
     ),
   );
 
-  const topBarHeight = "2.5rem";
+  const topBarHeight = "2rem";
 
   const saveAsFile = async () => {
     try {
@@ -332,8 +368,6 @@ export function ConfigTabContent() {
     });
   };
 
-  const [ports, setPorts] = createSignal<Port[]>([]);
-
   const getConfigFromFile = async (path: string) => {
     try {
       setRender(false);
@@ -385,33 +419,75 @@ export function ConfigTabContent() {
   return (
     <div
       style={{
-        display: "flex",
+        display: "grid",
         width: "100%",
         height: "100%",
+        "grid-template-columns": "16rem minmax(0,1fr) 30rem",
+        "grid-template-rows": `minmax(0,1fr)`,
       }}
     >
-      <TreeView collection={generateTreeCollection(configTabForm(), "")} />
+      <Show when={getShowTreeView()}>
+        <div style={{ width: "100%", height: "100%" }}>
+          <TreeView
+            expandedValue={getTreeViewExpendedValue()}
+            onExpandedChange={(e) => {
+              setTreeViewExpendedValue(e.expandedValue);
+            }}
+            focusedValue={getFocusedTab()}
+            onFocusChange={(e) => {
+              if (e.focusedValue) {
+                setFocusedTab(e.focusedValue);
+              }
+            }}
+            collection={generateTreeCollection(configTabForm(), "")}
+          />
+        </div>
+      </Show>
       <div
         id={configTabProps.key}
         style={{
           height: "100%",
-          width: `40% `,
+          width: `100%`,
           "min-width": "35rem",
-          "border-radius": "0.2rem",
-          "border-width": "1px",
         }}
         class={css({ borderColor: "gray.5" })}
       >
         <Stack
-          direction="row"
           width="100%"
           height={topBarHeight}
           gap="0"
           background={"bg.muted"}
+          display={"grid"}
+          gridTemplateColumns={`minmax(0, 1fr) repeat(5, 2rem)`}
         >
+          <Text
+            fontSize="sm"
+            display="flex"
+            gap="0.2rem"
+            alignItems="center"
+            margin="0"
+            textAlign="center"
+          >
+            <IconButton
+              size="xs"
+              variant={"plain"}
+              color={getShowTreeView() ? "accent.9" : "fg.subtle"}
+              onClick={() => setShowTreeView(!getShowTreeView())}
+            >
+              <IconListDetailsFilled />
+            </IconButton>
+            {getFocusedTab()
+              ?.replaceAll("/", " > ")
+              .replaceAll(`$`, " > ")
+              .replace(/\d+/g, (match) => {
+                return `axis ${Number(match) + 1}`;
+              })}
+          </Text>
+
           <Show when={Object.entries(configDescription()).length > 0}>
             <Tooltip content="Change length and weight units">
               <IconButton
+                size={"xs"}
                 variant={"plain"}
                 onClick={() => setChangeUnit(!getChangeUnit())}
               >
@@ -425,7 +501,7 @@ export function ConfigTabContent() {
           <Menu.Root>
             <Menu.Trigger>
               <Tooltip content="Import File">
-                <IconButton variant={"plain"}>
+                <IconButton size="xs" variant={"plain"}>
                   <IconFileImport />
                 </IconButton>
               </Tooltip>
@@ -502,116 +578,20 @@ export function ConfigTabContent() {
           <Tooltip content="Save as file">
             <IconButton
               variant={"plain"}
+              size="xs"
               onClick={async () => await saveAsFile()}
             >
               <IconDeviceFloppy />
             </IconButton>
           </Tooltip>
           {/*Get from port */}
-          <Menu.Root>
-            <Menu.Trigger width="min-content" height={"min-content"}>
-              <Tooltip content="Get from port">
-                <IconButton
-                  variant={"plain"}
-                  onClick={async () => {
-                    const detectedPorts = await detectPort();
-                    setPorts(detectedPorts);
-                    if (ports().length === 1) {
-                      await getFromPort(ports()[0].id);
-                    } else if (ports().length === 0) {
-                      toaster.create({
-                        title: "Invalid Port",
-                        description: "No port detected",
-                        type: "error",
-                      });
-                    }
-                  }}
-                >
-                  <IconFileDownload />
-                </IconButton>
-              </Tooltip>
-            </Menu.Trigger>
-            <Show when={ports().length > 1}>
-              <Portal>
-                <Menu.Positioner>
-                  <Menu.Content>
-                    <For each={ports()}>
-                      {(port) => {
-                        return (
-                          <Menu.Item
-                            onClick={async () => await getFromPort(port.id)}
-                            value={port.id}
-                            display={"flex"}
-                            flexDir={"column"}
-                            textAlign={"left"}
-                          >
-                            <Text width="100%">{port.id}</Text>
-                            <Text
-                              width="100%"
-                              fontWeight="light"
-                              textStyle="xs"
-                            >
-                              {port.version}
-                            </Text>
-                          </Menu.Item>
-                        );
-                      }}
-                    </For>
-                  </Menu.Content>
-                </Menu.Positioner>
-              </Portal>
-            </Show>
-          </Menu.Root>
-
+          <GetFromPortButton
+            onGetFromPort={async (portId) => await getFromPort(portId)}
+          />
           {/* Save to port */}
-          <Menu.Root>
-            <Menu.Trigger width="min-content" height={"min-content"}>
-              <Tooltip content="Save to port">
-                <IconButton
-                  variant={"plain"}
-                  onClick={async () => {
-                    const detectedPorts = await detectPort();
-                    setPorts(detectedPorts);
-                    if (ports().length === 1) {
-                      await saveToPort(ports()[0].id);
-                    } else if (ports().length === 0) {
-                      toaster.create({
-                        title: "Invalid Port",
-                        description: "No port detected",
-                        type: "error",
-                      });
-                    }
-                  }}
-                >
-                  <IconSettingsShare />
-                </IconButton>
-              </Tooltip>
-            </Menu.Trigger>
-            <Show when={ports().length > 1}>
-              <Menu.Positioner>
-                <Menu.Content>
-                  <For each={ports()}>
-                    {(port) => {
-                      return (
-                        <Menu.Item
-                          onClick={async () => await saveToPort(port.id)}
-                          value={port.id}
-                          display={"flex"}
-                          flexDir={"column"}
-                          textAlign={"left"}
-                        >
-                          <Text width="100%">{port.id}</Text>
-                          <Text width="100%" fontWeight="light" textStyle="xs">
-                            {port.version}
-                          </Text>
-                        </Menu.Item>
-                      );
-                    }}
-                  </For>
-                </Menu.Content>
-              </Menu.Positioner>
-            </Show>
-          </Menu.Root>
+          <SaveToPort
+            onSaveToPort={async (portId) => await saveToPort(portId)}
+          />
         </Stack>
         <Show
           when={render()}
@@ -624,7 +604,6 @@ export function ConfigTabContent() {
                 "justify-content": "center",
                 width: "100%",
                 height: "100%",
-                "border-top-width": render() ? "0px" : "1px",
               }}
             >
               <Spinner
@@ -673,15 +652,13 @@ export function ConfigTabContent() {
               height: `calc(100% - 2.5rem)`,
               "border-top-width": "1px",
             }}
-            class={css({ borderColor: "gray.7" })}
           >
             <ConfigForm
               id={getTabId()}
               description={configDescription()}
               originalFile={getOriginalFile()}
               changeUnits={getChangeUnit() ? getChangeUnit() : undefined}
-              focusedTab={getFocusedTab()}
-              onFocustTabChange={(tabId) => setFocusedTab(tabId)}
+              focusedObjectKey={getFocusedTab()}
               config={getConfigForm()!}
               linkedStatuses={getLinkedStatuses()!}
               accordionStatuses={getAccordionStatuses()!}
@@ -691,6 +668,7 @@ export function ConfigTabContent() {
           </div>
         </Show>
       </div>
+      <DriverStatus driverStatus={getConfigForm()!.state} />
     </div>
   );
 }

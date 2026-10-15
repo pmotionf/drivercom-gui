@@ -1,11 +1,15 @@
-import { ConfigTuneType } from "src-tauri/generated/config/ConfigTune";
-import { ConfigCalibrationType } from "src-tauri/generated/config/ConfigCalibration";
-import { ConfigSystemType } from "src-tauri/generated/config/ConfigSystem";
-import { ConfigType } from "src-tauri/generated/config/ConfigType";
 import { AccordionStates } from "./ConfigForm";
 import { LinkStates } from "./ConfigForm";
 import { GainLockStates } from "./ConfigForm";
-import { JSX, onMount, For } from "solid-js";
+import {
+  JSX,
+  onMount,
+  For,
+  createSignal,
+  Show,
+  createEffect,
+  on,
+} from "solid-js";
 import { createStore } from "solid-js/store";
 import * as Accordion from "../../../components/ui/accordion";
 import { FormNumberInput } from "../../../components/Form/FormNumberInput";
@@ -16,12 +20,15 @@ import { prettierLabel } from "~/utils/PrettierLabel";
 import * as Select from "../../../components/ui/select";
 import { createListCollection } from "@ark-ui/solid";
 import { cclinkSpeed } from "~/store/GlobalState";
+import { FormCheckBox } from "~/components/Form/FormCheckBox";
+import { css } from "styled-system/css";
 
 export type ConfigFormTabPageProps = {
   id: string;
-  format: ConfigTuneType | ConfigCalibrationType | ConfigSystemType;
-  config: ConfigType;
-  originalFile?: ConfigType;
+  format: object;
+  config: object;
+  focusFieldKey?: string;
+  originalFile?: object;
   description?: object;
   unitChange?: boolean;
   accordionStatuses?: AccordionStates;
@@ -34,16 +41,63 @@ export type ConfigFormTabPageProps = {
 export const ConfigFormTabPage = (props: ConfigFormTabPageProps) => {
   const [store, setStore] = createStore(props.config);
   let ref: HTMLDivElement | undefined;
+
   onMount(() => {
     if (ref) {
       const getScrollTop = props.formOverflowY.get(props.id);
       if (getScrollTop) {
         setTimeout(() => {
           ref.scrollTo(0, getScrollTop);
-        }, 0);
+        });
       }
     }
   });
+
+  createEffect(
+    on(
+      () => props.focusFieldKey,
+      () => {
+        if (ref) {
+          if (props.focusFieldKey) {
+            const element = document.getElementById(
+              props.id + "." + props.focusFieldKey,
+            );
+            if (element) {
+              setTimeout(() => {
+                element.scrollIntoView();
+              });
+            }
+          }
+        }
+      },
+    ),
+  );
+
+  const [prevCheckBoxIndex, setPrevCheckBoxIndex] = createSignal<number | null>(
+    null,
+  );
+
+  const checkBoxShiftClick = (
+    prevIndex: number,
+    nextIndex: number,
+    form: object,
+  ) => {
+    const startNumber = prevIndex > nextIndex ? nextIndex : prevIndex + 1;
+    const endNumber = prevIndex < nextIndex ? nextIndex + 1 : prevIndex;
+    const values = Object.values(form);
+    const parseValues = values.slice(startNumber, endNumber);
+    if (parseValues.includes(values[prevIndex])) return;
+
+    const keys = Object.keys(form).slice(startNumber, endNumber);
+    keys.forEach((key) => {
+      setStore(
+        key as keyof typeof store,
+        // @ts-ignore : TSC unable to handle generic object type
+        // in store
+        values[prevIndex],
+      );
+    });
+  };
 
   return (
     <div
@@ -55,14 +109,24 @@ export const ConfigFormTabPage = (props: ConfigFormTabPageProps) => {
         "overflow-y": "auto",
         "overflow-x": "hidden",
         "border-width": "0",
-        padding: "0rem 1rem 0rem 1rem",
+        padding: "1rem",
         display: "flex",
+        "justify-content": "space-between",
       }}
       onScroll={(e) => {
         props.formOverflowY.set(props.id, e.target.scrollTop);
       }}
     >
-      <div style={{ width: "100%", height: "100%", "min-width": "32rem" }}>
+      <div
+        style={{
+          width: "100%",
+          height: "100%",
+          display: "flex",
+          "flex-direction": "column",
+          gap: "0.5rem",
+          "max-width": "60rem",
+        }}
+      >
         <For each={Object.entries(props.format)}>
           {(entry, index) => {
             const key = entry[0];
@@ -87,6 +151,9 @@ export const ConfigFormTabPage = (props: ConfigFormTabPageProps) => {
                   : undefined;
 
               if (typeof store[key as keyof typeof store] === "object") {
+                const label = prettierLabel(
+                  isNaN(Number(key)) ? key : `axis ${Number(key) + 1}`,
+                );
                 if (description) {
                   const innerKeys = Object.keys(value);
                   const findHidden = innerKeys.map((key) => {
@@ -105,8 +172,13 @@ export const ConfigFormTabPage = (props: ConfigFormTabPageProps) => {
                 }
                 return (
                   <Accordion.Root
+                    id={id}
                     multiple
-                    style={{ "border-width": "0" }}
+                    style={{
+                      "border-width": "1px",
+                      padding: "0.5rem",
+                      "border-radius": "0.5rem",
+                    }}
                     defaultValue={getAccordionValue()}
                     onValueChange={(details) => {
                       if (props.accordionStatuses) {
@@ -114,25 +186,18 @@ export const ConfigFormTabPage = (props: ConfigFormTabPageProps) => {
                       }
                     }}
                   >
-                    <Accordion.Item
-                      value={accordionItemValue}
-                      borderRadius={"0.2rem"}
-                    >
+                    <Accordion.Item borderWidth="0" value={accordionItemValue}>
                       <Accordion.ItemTrigger
+                        padding="0"
                         fontSize={"1rem"}
                         fontWeight={"bold"}
-                        borderBottomWidth={"1px"}
                       >
-                        <Text>{prettierLabel(key)}</Text>
+                        <Text>{label}</Text>
                         <Accordion.ItemIndicator>
                           <IconChevronDown />
                         </Accordion.ItemIndicator>
                       </Accordion.ItemTrigger>
-                      <Accordion.ItemContent
-                        padding={"0rem 0.5rem 0.5rem 0.5rem"}
-                        borderWidth={"0px 1px 1px 1px"}
-                        borderRadius={"0.2rem"}
-                      >
+                      <Accordion.ItemContent padding={"0.5rem"}>
                         <ConfigFormatObject
                           id={props.id + "." + key}
                           format={value}
@@ -148,6 +213,7 @@ export const ConfigFormTabPage = (props: ConfigFormTabPageProps) => {
                           linkKey={props.linkKey}
                           linkedStatuses={props.linkedStatuses}
                           gainLockStatuses={props.gainLockStatuses}
+                          focusFieldKey={props.focusFieldKey}
                         />
                       </Accordion.ItemContent>
                     </Accordion.Item>
@@ -163,9 +229,11 @@ export const ConfigFormTabPage = (props: ConfigFormTabPageProps) => {
                   <div
                     style={{
                       "border-top-width": index() === 0 ? "0px" : "1px",
+                      "padding-top": index() === 0 ? "0px" : "0.5rem",
                     }}
                   >
                     <FormNumberInput
+                      background={"gray.2"}
                       id={`${props.id}.${key}`}
                       label={label}
                       originalValue={
@@ -185,7 +253,7 @@ export const ConfigFormTabPage = (props: ConfigFormTabPageProps) => {
                           : undefined
                       }
                       changeUnits={props.unitChange}
-                      inputValue={Number(store[key as keyof typeof store])}
+                      inputValue={store[key as keyof typeof store]}
                       onInputChange={(value) => {
                         setStore(
                           key as keyof typeof store,
@@ -194,6 +262,7 @@ export const ConfigFormTabPage = (props: ConfigFormTabPageProps) => {
                           value,
                         );
                       }}
+                      isFocus={props.focusFieldKey === key}
                     />
                   </div>
                 );
@@ -207,14 +276,40 @@ export const ConfigFormTabPage = (props: ConfigFormTabPageProps) => {
                   <div
                     style={{
                       display: "grid",
-                      "grid-template-columns": `15rem minmax(0,1fr)`,
+                      "grid-template-columns": `minmax(0,1fr) 15rem`,
                       "align-items": "center",
+                      "border-top-width": index() === 0 ? "0px" : "1px",
+                      "padding-top": index() === 0 ? "0px" : "0.5rem",
                     }}
                   >
-                    <Text>{"cc_link_speed"}</Text>
+                    <Text display="flex" alignItems="center" gap="0.4rem">
+                      <Show
+                        when={originalFile !== store[key as keyof typeof store]}
+                      >
+                        <div
+                          class={css({
+                            background: "accent.9",
+                            width: "0.5rem",
+                            height: "0.5rem",
+                            borderRadius: "1rem",
+                            marginTop: "0.3rem",
+                          })}
+                        />
+                      </Show>
+                      <div
+                        class={css({
+                          background:
+                            props.focusFieldKey === key
+                              ? "accent.7"
+                              : "transparent",
+                        })}
+                      >
+                        {"cc_link_speed"}
+                      </div>
+                    </Text>
                     <Select.Root
                       collection={collection}
-                      value={[store[key as keyof typeof store].toString()]}
+                      value={[store[key as keyof typeof store] as string]}
                       onValueChange={(e) => {
                         setStore(
                           key as keyof typeof store,
@@ -224,8 +319,9 @@ export const ConfigFormTabPage = (props: ConfigFormTabPageProps) => {
                       }}
                     >
                       <Select.Control>
-                        <Select.Trigger borderColor={"gray.4"}>
+                        <Select.Trigger borderColor={"gray.5"}>
                           <Select.ValueText
+                            id={id}
                             width="100%"
                             placeholder="Select a framework"
                             textAlign={"end"}
@@ -248,6 +344,57 @@ export const ConfigFormTabPage = (props: ConfigFormTabPageProps) => {
                         </Select.Content>
                       </Select.Positioner>
                     </Select.Root>
+                  </div>
+                );
+              } else if (
+                typeof store[key as keyof typeof store] === "boolean"
+              ) {
+                const label = !isNaN(Number(key))
+                  ? `${props.id.split(".").pop()} ${Number(key) + 1}`
+                  : key;
+                return (
+                  <div style={{ "margin-bottom": "0.5em" }}>
+                    <FormCheckBox
+                      id={props.id + "." + key}
+                      label={label}
+                      originalValue={
+                        props.originalFile
+                          ? props.originalFile[
+                              key as keyof typeof props.originalFile
+                            ]
+                          : undefined
+                      }
+                      desc={
+                        props.description && `__${key}` in props.description
+                          ? props.description[
+                              `__${key}` as keyof typeof props.description
+                            ]
+                          : undefined
+                      }
+                      checked={store[key as keyof typeof store]}
+                      onCheckedChange={(checked) =>
+                        setStore(
+                          key as keyof typeof store,
+                          // @ts-ignore: TSC unable to handle generic object type
+                          // in store
+                          checked,
+                        )
+                      }
+                      onClick={() => {
+                        setPrevCheckBoxIndex(index());
+                      }}
+                      onShiftClick={() => {
+                        if (typeof prevCheckBoxIndex() === "number") {
+                          checkBoxShiftClick(
+                            prevCheckBoxIndex()!,
+                            index(),
+                            store,
+                          );
+                          setPrevCheckBoxIndex(null);
+                        }
+                      }}
+                      isFocus={props.focusFieldKey === key}
+                    />
                   </div>
                 );
               }

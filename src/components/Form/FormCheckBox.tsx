@@ -1,10 +1,14 @@
+import { css } from "styled-system/css";
 import * as Checkbox from "../ui/checkbox";
 import { Text } from "../ui/text";
 import { Show } from "solid-js";
+import { FlipSensorExample } from "~/pages/Configuration/ConfigForm/FlipSensorExample";
+import { SwapSensorExample } from "~/pages/Configuration/ConfigForm/SwapSensorExample";
 
 export type FormCheckBoxProps = {
   id: string;
   label: string;
+  isFocus?: boolean;
   desc?: object;
   originalValue?: boolean;
   checked: boolean;
@@ -20,16 +24,15 @@ export const FormCheckBox = (props: FormCheckBoxProps) => {
 
   return (
     <div
+      id={props.id}
       style={{
         display: "flex",
         width: "100%",
-        "margin-top": "1em",
         "align-items": "center",
         height: "max-content",
       }}
     >
       <Checkbox.Root
-        id={props.id}
         checked={props.checked}
         onCheckedChange={(e) => {
           props.onCheckedChange?.(e.checked === true ? true : false);
@@ -45,22 +48,37 @@ export const FormCheckBox = (props: FormCheckBoxProps) => {
         alignItems={"center"}
       >
         <Checkbox.HiddenInput />
-        <Checkbox.Control>
+        <Checkbox.Control borderColor={"gray.7"}>
           <Checkbox.Indicator />
         </Checkbox.Control>
         <div>
           <Text
             fontWeight="medium"
             userSelect="none"
-            paddingLeft="0.1em"
-            paddingRight="0.1em"
-            borderColor="accent.7"
-            borderBottomWidth={
-              props.originalValue !== props.checked ? "2px" : "0px"
-            }
             width="min-content"
+            display="flex"
+            flexDirection="row"
+            alignItems="center"
+            gap="0.4rem"
           >
-            {key.replaceAll(" ", "_")}
+            <Show when={props.originalValue !== props.checked}>
+              <div
+                class={css({
+                  background: "accent.9",
+                  width: "0.5rem",
+                  height: "0.5rem",
+                  borderRadius: "1rem",
+                  marginTop: "0.1rem",
+                })}
+              />
+            </Show>
+            <div
+              class={css({
+                background: props.isFocus ? "accent.7" : "transparent",
+              })}
+            >
+              {key.replaceAll(" ", "_")}
+            </div>
           </Text>
           <Show
             when={
@@ -69,8 +87,19 @@ export const FormCheckBox = (props: FormCheckBoxProps) => {
                 "string"
             }
           >
-            <Text textStyle="xs" fontWeight="light" color="fg.muted">
+            <Text
+              textStyle="sm"
+              fontWeight="light"
+              color="fg.default"
+              alignItems="center"
+            >
               {props.desc!["description" as keyof typeof props.desc]}
+              <Show when={key.toLowerCase() === "flip"}>
+                <FlipSensorExample />
+              </Show>
+              <Show when={key.toLowerCase() === "swap"}>
+                <SwapSensorExample />
+              </Show>
             </Text>
           </Show>
         </div>

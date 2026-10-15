@@ -1,10 +1,10 @@
-import { Stack } from "styled-system/jsx";
+import { Stack, StackProps } from "styled-system/jsx";
 import { Text } from "../ui/text";
 import {
   GainLockStates,
   LinkStates,
 } from "../../pages/Configuration/ConfigForm/ConfigForm";
-import { Show } from "solid-js";
+import { createSignal, Show, splitProps } from "solid-js";
 import {
   IconExclamationCircle,
   IconLock,
@@ -13,6 +13,7 @@ import {
 import { IconButton } from "../ui/icon-button";
 import { Tooltip } from "../ui/tooltip";
 import { getComputedCSSVariableValue } from "~/utils/GetComputedCssVariableValue";
+import { css } from "styled-system/css";
 
 export type FormNumberInputProps = {
   id: string;
@@ -25,12 +26,26 @@ export type FormNumberInputProps = {
   linkStatus?: LinkStates;
   inputValue: number;
   onInputChange?: (input: number) => void;
-};
+  isFocus?: boolean;
+} & StackProps;
 
 export const FormNumberInput = (props: FormNumberInputProps) => {
   if (props.desc && props.desc["hidden" as keyof typeof props.desc] === true)
     return;
   let divRef: HTMLDivElement | undefined;
+
+  const [, res] = splitProps(props, [
+    "id",
+    "label",
+    "desc",
+    "changeUnits",
+    "originalValue",
+    "onInputChange",
+    "lockStatus",
+    "lockStatusKey",
+    "linkStatus",
+    "inputValue",
+  ]);
   const lockStatus = props.lockStatus;
   const lockStatusKey = props.lockStatusKey;
 
@@ -160,28 +175,63 @@ export const FormNumberInput = (props: FormNumberInputProps) => {
 
   const inputValue = () => props.inputValue;
 
+  const [errorInputValue, setErrorInputValue] = createSignal<string | null>(
+    null,
+  );
+
   return (
     <div
+      id={props.id}
       style={{
-        "margin-top": "1rem",
-        "margin-bottom": "0.5rem",
         width: "100%",
       }}
     >
-      <Stack direction="row" alignItems="center">
-        <div style={{ width: "15rem", display: "flex" }}>
+      <Stack
+        direction="row"
+        alignItems="center"
+        style={{
+          width: "100%",
+          display: "grid",
+          "grid-template-columns": `minmax(0,1fr) 15rem`,
+          "align-items": "center",
+        }}
+      >
+        <div style={{ width: "100%", display: "flex" }}>
           <div style={{ width: `calc(100% - 0.5rem)` }}>
             <Text
-              marginTop="0.4em"
               fontWeight="medium"
-              borderColor="accent.7"
               height="1.5em"
-              borderBottomWidth={
-                props.originalValue !== inputValue() ? "2px" : "0px"
-              }
               width="min-content"
+              display="flex"
+              alignItems="center"
+              gap="0.4rem"
             >
-              {props.label.replaceAll(" ", "_")}
+              <Show
+                when={errorInputValue() || props.originalValue !== inputValue()}
+              >
+                <div
+                  class={css({
+                    background:
+                      errorInputValue() ||
+                      !Number.isFinite(Number(inputValue()))
+                        ? "red"
+                        : "accent.9",
+                    width: "0.5rem",
+                    height: "0.5rem",
+                    borderRadius: "1rem",
+                    marginTop: "0.1rem",
+                  })}
+                />
+              </Show>
+              <div
+                class={css({
+                  background: props.isFocus ? "accent.7" : "transparent",
+                  width: `max-content`,
+                  minWidth: "1rem",
+                })}
+              >
+                {props.label.replaceAll(" ", "_")}
+              </div>
             </Text>
             <Show
               when={
@@ -191,7 +241,7 @@ export const FormNumberInput = (props: FormNumberInputProps) => {
                   "string"
               }
             >
-              <Text textStyle="xs" fontWeight="light" color="fg.muted">
+              <Text textStyle="sm" fontWeight="light" color="fg.default">
                 {props.desc!["description" as keyof typeof props.desc]}
               </Text>
             </Show>
@@ -275,9 +325,7 @@ export const FormNumberInput = (props: FormNumberInputProps) => {
         </div>
         <div
           style={{
-            width: `calc(100% - 15rem)`,
-            display: "flex",
-            "flex-direction": "row-reverse",
+            width: `100%`,
           }}
         >
           <Stack
@@ -290,9 +338,14 @@ export const FormNumberInput = (props: FormNumberInputProps) => {
               gap: "0",
             }}
             borderColor={
-              Number.isFinite(Number(inputValue())) ? "bg.disabled" : "red"
+              typeof errorInputValue() === "string" ||
+              Number.isFinite(Number(inputValue()))
+                ? "gray.5"
+                : "red"
             }
             direction="row"
+            alignItems="center"
+            {...res}
           >
             <input
               style={{
@@ -311,7 +364,7 @@ export const FormNumberInput = (props: FormNumberInputProps) => {
                 "text-overflow": "ellipsis",
                 display: "block",
                 overflow: "hidden",
-                "text-align": "right",
+                "text-align": "end",
               }}
               disabled={
                 lockStatus && lockStatusKey && lockStatus.has(lockStatusKey)
@@ -320,9 +373,11 @@ export const FormNumberInput = (props: FormNumberInputProps) => {
               }
               onFocusIn={() => {
                 divRef!.style.borderWidth = "2px";
-                divRef!.style.borderColor = getComputedCSSVariableValue(
-                  "--colors-accent-default",
-                );
+                divRef!.style.borderColor =
+                  typeof errorInputValue() === "string" ||
+                  !Number.isFinite(Number(inputValue()))
+                    ? "red"
+                    : getComputedCSSVariableValue("--colors-accent-7");
               }}
               onFocusOut={(e) => {
                 divRef!.style.borderWidth = "1px";
@@ -334,19 +389,29 @@ export const FormNumberInput = (props: FormNumberInputProps) => {
               }}
               placeholder={props.label}
               value={
-                props.desc &&
-                props.desc["unit_short" as keyof typeof props.desc]
-                  ? changeValue(
-                      props.desc[
-                        "unit_short" as keyof typeof props.desc
-                      ] as string,
-                      inputValue(),
-                      props.changeUnits ?? false,
-                    )
-                  : inputValue()
+                typeof errorInputValue() === "string"
+                  ? (errorInputValue() as string)
+                  : props.desc &&
+                      props.desc["unit_short" as keyof typeof props.desc]
+                    ? changeValue(
+                        props.desc[
+                          "unit_short" as keyof typeof props.desc
+                        ] as string,
+                        inputValue(),
+                        props.changeUnits ?? false,
+                      )
+                    : inputValue()
               }
               onChange={(e) => {
                 let inputValue = Number(e.target.value);
+                if (isNaN(inputValue)) {
+                  setErrorInputValue(e.target.value);
+                  return;
+                } else {
+                  if (errorInputValue() !== null) {
+                    setErrorInputValue(null);
+                  }
+                }
                 if (
                   props.desc &&
                   "unit_short" in props.desc &&
@@ -387,20 +452,37 @@ export const FormNumberInput = (props: FormNumberInputProps) => {
                 </Text>
               </Tooltip>
             </Show>
-            <Show when={!Number.isFinite(props.inputValue)}>
+            <Show
+              when={
+                typeof errorInputValue() === "string" ||
+                !Number.isFinite(props.inputValue)
+              }
+            >
               <IconExclamationCircle
+                size="1rem"
                 color="red"
                 data-name="config_field_error"
               />
             </Show>
           </Stack>
+          <Show
+            when={
+              typeof errorInputValue() === "string" ||
+              !Number.isFinite(props.inputValue)
+            }
+          >
+            <Text
+              textStyle="sm"
+              color="red"
+              width="100%"
+              textAlign="right"
+              marginRight={`calc(100% - 15rem)`}
+            >
+              {`Invalid ${typeof props.inputValue}.`}
+            </Text>
+          </Show>
         </div>
       </Stack>
-      <Show when={!Number.isFinite(props.inputValue)}>
-        <Text textStyle="sm" color="red" marginLeft={"50%"} paddingLeft="0.5em">
-          {`Invalid ${typeof props.inputValue}.`}
-        </Text>
-      </Show>
     </div>
   );
 };
