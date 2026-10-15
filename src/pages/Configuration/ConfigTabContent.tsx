@@ -3,6 +3,7 @@ import {
   IconDeviceFloppy,
   IconFileDownload,
   IconFileImport,
+  IconListDetailsFilled,
   IconRuler2,
   IconRuler2Off,
   IconSettingsShare,
@@ -59,6 +60,7 @@ export type ConfigTabPage = {
   formOverflowY?: Map<string, number>;
   originalFile?: ConfigType;
   changeUnit?: boolean;
+  showTreeView?: boolean;
 };
 
 // A custom tab page component for the configuration page.
@@ -203,6 +205,22 @@ export function ConfigTabContent() {
       "configTabPage",
       "changeUnit",
       isChangeUnit,
+    );
+  };
+
+  const getShowTreeView = () => {
+    return tabStore.get(configTabProps.key)![0].tabContext[getTabIndex()]
+      .tabPage!.configTabPage!.showTreeView;
+  };
+
+  const setShowTreeView = (showTreeView: boolean) => {
+    return tabStore.get(configTabProps.key)![1](
+      "tabContext",
+      getTabIndex(),
+      "tabPage",
+      "configTabPage",
+      "showTreeView",
+      showTreeView,
     );
   };
 
@@ -390,20 +408,24 @@ export function ConfigTabContent() {
         height: "100%",
       }}
     >
-      <TreeView
-        focusedValue={getFocusedTab()}
-        onFocusChange={(e) => {
-          if (e.focusedValue) {
-            setFocusedTab(e.focusedValue);
-          }
-        }}
-        collection={generateTreeCollection(configTabForm(), "")}
-      />
+      <Show when={getShowTreeView()}>
+        <div style={{ width: "20rem", height: "100%" }}>
+          <TreeView
+            focusedValue={getFocusedTab()}
+            onFocusChange={(e) => {
+              if (e.focusedValue) {
+                setFocusedTab(e.focusedValue);
+              }
+            }}
+            collection={generateTreeCollection(configTabForm(), "")}
+          />
+        </div>
+      </Show>
       <div
         id={configTabProps.key}
         style={{
           height: "100%",
-          width: `100% `,
+          width: getShowTreeView() ? `calc(100% - 20rem)` : `100%`,
           "min-width": "35rem",
         }}
         class={css({ borderColor: "gray.5" })}
@@ -416,9 +438,36 @@ export function ConfigTabContent() {
           display={"grid"}
           gridTemplateColumns={`minmax(0, 1fr) repeat(5, 2rem)`}
         >
-          <Text fontSize="sm" padding="0.25rem">
-            {getFocusedTab()?.replaceAll("/", " > ")}
+          <Text
+            fontSize="sm"
+            display="flex"
+            gap="0.2rem"
+            alignItems="center"
+            margin="0"
+            textAlign="center"
+          >
+            <IconButton
+              size="xs"
+              variant={"plain"}
+              color={getShowTreeView() ? "accent.9" : "fg.subtle"}
+              onClick={() => setShowTreeView(!getShowTreeView())}
+            >
+              <IconListDetailsFilled />
+            </IconButton>
+            {getFocusedTab()
+              ?.replaceAll("/", " > ")
+              .split("$")[0]
+              .replace(/\d+/g, (match) => {
+                return `axis ${Number(match) + 1}`;
+              })}
+            <Show
+              when={getFocusedTab() && getFocusedTab()!.split("$").length > 1}
+            >
+              {" >"}
+              <Text color="accent.9">{getFocusedTab()!.split("$")[1]}</Text>
+            </Show>
           </Text>
+
           <Show when={Object.entries(configDescription()).length > 0}>
             <Tooltip content="Change length and weight units">
               <IconButton

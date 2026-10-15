@@ -81,6 +81,7 @@ function Configuration() {
           originalFile: JSON.parse(JSON.stringify(form)),
           formOverflowY: formOverflowY,
           focusedTab: `system`,
+          showTreeView: true,
         },
       },
     } as TabContext;
