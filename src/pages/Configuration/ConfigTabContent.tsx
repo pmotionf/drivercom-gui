@@ -47,6 +47,7 @@ import { Portal } from "solid-js/web";
 import { generateTreeCollection, TreeView } from "~/components/TreeView";
 import { GetFromPortButton } from "./ConfigForm/GetFromPortButton";
 import { SaveToPort } from "./ConfigForm/SaveToPort";
+import { DriverStatus } from "./ConfigForm/DriverStatus";
 
 export type ConfigTabPage = {
   filePath?: string;
@@ -418,13 +419,15 @@ export function ConfigTabContent() {
   return (
     <div
       style={{
-        display: "flex",
+        display: "grid",
         width: "100%",
         height: "100%",
+        "grid-template-columns": "16rem minmax(0,1fr) 30rem",
+        "grid-template-rows": `minmax(0,1fr)`,
       }}
     >
       <Show when={getShowTreeView()}>
-        <div style={{ width: "16rem", height: "100%" }}>
+        <div style={{ width: "100%", height: "100%" }}>
           <TreeView
             expandedValue={getTreeViewExpendedValue()}
             onExpandedChange={(e) => {
@@ -444,7 +447,7 @@ export function ConfigTabContent() {
         id={configTabProps.key}
         style={{
           height: "100%",
-          width: getShowTreeView() ? `calc(100% - 16rem)` : `100%`,
+          width: `100%`,
           "min-width": "35rem",
         }}
         class={css({ borderColor: "gray.5" })}
@@ -665,6 +668,7 @@ export function ConfigTabContent() {
           </div>
         </Show>
       </div>
+      <DriverStatus driverStatus={getConfigForm()!.state} />
     </div>
   );
 }
