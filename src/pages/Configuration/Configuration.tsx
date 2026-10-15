@@ -82,6 +82,7 @@ function Configuration() {
           formOverflowY: formOverflowY,
           focusedTab: `system`,
           showTreeView: true,
+          treeViewExpandedValue: [] as string[],
         },
       },
     } as TabContext;

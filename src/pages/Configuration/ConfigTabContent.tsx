@@ -61,6 +61,7 @@ export type ConfigTabPage = {
   originalFile?: ConfigType;
   changeUnit?: boolean;
   showTreeView?: boolean;
+  treeViewExpandedValue?: string[];
 };
 
 // A custom tab page component for the configuration page.
@@ -221,6 +222,22 @@ export function ConfigTabContent() {
       "configTabPage",
       "showTreeView",
       showTreeView,
+    );
+  };
+
+  const getTreeViewExpendedValue = () => {
+    return tabStore.get(configTabProps.key)![0].tabContext[getTabIndex()]
+      .tabPage!.configTabPage!.treeViewExpandedValue;
+  };
+
+  const setTreeViewExpendedValue = (treeViewExpandedValue: string[]) => {
+    return tabStore.get(configTabProps.key)![1](
+      "tabContext",
+      getTabIndex(),
+      "tabPage",
+      "configTabPage",
+      "treeViewExpandedValue",
+      treeViewExpandedValue,
     );
   };
 
@@ -411,6 +428,10 @@ export function ConfigTabContent() {
       <Show when={getShowTreeView()}>
         <div style={{ width: "20rem", height: "100%" }}>
           <TreeView
+            expandedValue={getTreeViewExpendedValue()}
+            onExpandedChange={(e) => {
+              setTreeViewExpendedValue(e.expandedValue);
+            }}
             focusedValue={getFocusedTab()}
             onFocusChange={(e) => {
               if (e.focusedValue) {
