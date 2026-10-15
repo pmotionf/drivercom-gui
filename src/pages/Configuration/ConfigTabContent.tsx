@@ -1,12 +1,10 @@
 import {
   IconChevronRight,
   IconDeviceFloppy,
-  IconFileDownload,
   IconFileImport,
   IconListDetailsFilled,
   IconRuler2,
   IconRuler2Off,
-  IconSettingsShare,
 } from "@tabler/icons-solidjs";
 import { Command } from "@tauri-apps/plugin-shell";
 import {
@@ -44,9 +42,11 @@ import { toaster } from "~/components/ui/toast.tsx";
 import * as Menu from "~/components/ui/menu";
 import { ConfigType } from "src-tauri/generated/config/ConfigType";
 import { css } from "styled-system/css";
-import { detectPort, getConfigFromPort, Port } from "~/services/PortService";
+import { getConfigFromPort } from "~/services/PortService";
 import { Portal } from "solid-js/web";
 import { generateTreeCollection, TreeView } from "~/components/TreeView";
+import { GetFromPortButton } from "./ConfigForm/GetFromPortButton";
+import { SaveToPort } from "./ConfigForm/SaveToPort";
 
 export type ConfigTabPage = {
   filePath?: string;
@@ -367,8 +367,6 @@ export function ConfigTabContent() {
     });
   };
 
-  const [ports, setPorts] = createSignal<Port[]>([]);
-
   const getConfigFromFile = async (path: string) => {
     try {
       setRender(false);
@@ -426,7 +424,7 @@ export function ConfigTabContent() {
       }}
     >
       <Show when={getShowTreeView()}>
-        <div style={{ width: "20rem", height: "100%" }}>
+        <div style={{ width: "16rem", height: "100%" }}>
           <TreeView
             expandedValue={getTreeViewExpendedValue()}
             onExpandedChange={(e) => {
@@ -446,7 +444,7 @@ export function ConfigTabContent() {
         id={configTabProps.key}
         style={{
           height: "100%",
-          width: getShowTreeView() ? `calc(100% - 20rem)` : `100%`,
+          width: getShowTreeView() ? `calc(100% - 16rem)` : `100%`,
           "min-width": "35rem",
         }}
         class={css({ borderColor: "gray.5" })}
@@ -477,16 +475,10 @@ export function ConfigTabContent() {
             </IconButton>
             {getFocusedTab()
               ?.replaceAll("/", " > ")
-              .split("$")[0]
+              .replaceAll(`$`, " > ")
               .replace(/\d+/g, (match) => {
                 return `axis ${Number(match) + 1}`;
               })}
-            <Show
-              when={getFocusedTab() && getFocusedTab()!.split("$").length > 1}
-            >
-              {" >"}
-              <Text color="accent.9">{getFocusedTab()!.split("$")[1]}</Text>
-            </Show>
           </Text>
 
           <Show when={Object.entries(configDescription()).length > 0}>
@@ -590,112 +582,13 @@ export function ConfigTabContent() {
             </IconButton>
           </Tooltip>
           {/*Get from port */}
-          <Menu.Root>
-            <Menu.Trigger width="min-content" height={"min-content"}>
-              <Tooltip content="Get from port">
-                <IconButton
-                  size="xs"
-                  variant={"plain"}
-                  onClick={async () => {
-                    const detectedPorts = await detectPort();
-                    setPorts(detectedPorts);
-                    if (ports().length === 1) {
-                      await getFromPort(ports()[0].id);
-                    } else if (ports().length === 0) {
-                      toaster.create({
-                        title: "Invalid Port",
-                        description: "No port detected",
-                        type: "error",
-                      });
-                    }
-                  }}
-                >
-                  <IconFileDownload />
-                </IconButton>
-              </Tooltip>
-            </Menu.Trigger>
-            <Show when={ports().length > 1}>
-              <Portal>
-                <Menu.Positioner>
-                  <Menu.Content>
-                    <For each={ports()}>
-                      {(port) => {
-                        return (
-                          <Menu.Item
-                            onClick={async () => await getFromPort(port.id)}
-                            value={port.id}
-                            display={"flex"}
-                            flexDir={"column"}
-                            textAlign={"left"}
-                          >
-                            <Text width="100%">{port.id}</Text>
-                            <Text
-                              width="100%"
-                              fontWeight="light"
-                              textStyle="xs"
-                            >
-                              {port.version}
-                            </Text>
-                          </Menu.Item>
-                        );
-                      }}
-                    </For>
-                  </Menu.Content>
-                </Menu.Positioner>
-              </Portal>
-            </Show>
-          </Menu.Root>
-
+          <GetFromPortButton
+            onGetFromPort={async (portId) => await getFromPort(portId)}
+          />
           {/* Save to port */}
-          <Menu.Root>
-            <Menu.Trigger width="min-content" height={"min-content"}>
-              <Tooltip content="Save to port">
-                <IconButton
-                  variant={"plain"}
-                  size="xs"
-                  onClick={async () => {
-                    const detectedPorts = await detectPort();
-                    setPorts(detectedPorts);
-                    if (ports().length === 1) {
-                      await saveToPort(ports()[0].id);
-                    } else if (ports().length === 0) {
-                      toaster.create({
-                        title: "Invalid Port",
-                        description: "No port detected",
-                        type: "error",
-                      });
-                    }
-                  }}
-                >
-                  <IconSettingsShare />
-                </IconButton>
-              </Tooltip>
-            </Menu.Trigger>
-            <Show when={ports().length > 1}>
-              <Menu.Positioner>
-                <Menu.Content>
-                  <For each={ports()}>
-                    {(port) => {
-                      return (
-                        <Menu.Item
-                          onClick={async () => await saveToPort(port.id)}
-                          value={port.id}
-                          display={"flex"}
-                          flexDir={"column"}
-                          textAlign={"left"}
-                        >
-                          <Text width="100%">{port.id}</Text>
-                          <Text width="100%" fontWeight="light" textStyle="xs">
-                            {port.version}
-                          </Text>
-                        </Menu.Item>
-                      );
-                    }}
-                  </For>
-                </Menu.Content>
-              </Menu.Positioner>
-            </Show>
-          </Menu.Root>
+          <SaveToPort
+            onSaveToPort={async (portId) => await saveToPort(portId)}
+          />
         </Stack>
         <Show
           when={render()}
