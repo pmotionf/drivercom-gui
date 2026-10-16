@@ -129,8 +129,6 @@ export const FormNumberInput = (props: FormNumberInputProps) => {
     if (isMillimeter) {
       if (parseUnit === "m") {
         return value * 1000;
-      } else if (parseUnit === "dag") {
-        return value * 0.01;
       } else if (parseUnit === "m/s") {
         return value * 1000;
       } else if (parseUnit === "m/s²") {
@@ -156,8 +154,6 @@ export const FormNumberInput = (props: FormNumberInputProps) => {
     if (isMillimeter) {
       if (parseUnit === "m") {
         return value * 0.001;
-      } else if (parseUnit === "dag") {
-        return value * 100;
       } else if (parseUnit === "m/s") {
         return value * 0.001;
       } else if (parseUnit === "m/s²") {
@@ -228,16 +224,17 @@ export const FormNumberInput = (props: FormNumberInputProps) => {
                   background: props.isFocus ? "accent.7" : "transparent",
                   width: `max-content`,
                   minWidth: "1rem",
-                  fontSize : "sm"
+                  fontSize: "sm",
                 })}
               >
-                {props.label.replaceAll(" ", "_")}
+                {props.label.replaceAll("_", " ")}
                 <Show
                   when={
                     props.desc &&
                     "description" in props.desc &&
-                    typeof props.desc["description" as keyof typeof props.desc] ===
-                      "string"
+                    typeof props.desc[
+                      "description" as keyof typeof props.desc
+                    ] === "string"
                   }
                 >
                   <Tooltip
@@ -245,15 +242,13 @@ export const FormNumberInput = (props: FormNumberInputProps) => {
                       props.desc!["description" as keyof typeof props.desc]
                     }
                   >
-                    <IconButton size = "2xs" variant = "plain" color = "fg.subtle">
-                      <IconHelp/>
+                    <IconButton size="2xs" variant="plain" color="fg.subtle">
+                      <IconHelp />
                     </IconButton>
                   </Tooltip>
                 </Show>
               </div>
-
             </Text>
-
           </div>
 
           <Show
@@ -373,6 +368,7 @@ export const FormNumberInput = (props: FormNumberInputProps) => {
                 display: "block",
                 overflow: "hidden",
                 "text-align": "end",
+                "font-size": "14px",
               }}
               disabled={
                 lockStatus && lockStatusKey && lockStatus.has(lockStatusKey)
@@ -448,7 +444,7 @@ export const FormNumberInput = (props: FormNumberInputProps) => {
                   props.changeUnits ?? false,
                 )}
               >
-                <Text opacity="0.5" marginLeft="0.2em" fontSize = "xs">
+                <Text opacity="0.5" marginLeft="0.2em" fontSize="xs">
                   {parseUnit(
                     changeUnitShort(
                       props.desc![

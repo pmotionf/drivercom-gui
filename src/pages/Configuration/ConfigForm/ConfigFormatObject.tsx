@@ -148,8 +148,11 @@ export const ConfigFormatObject = (props: ConfigFormatObjectProps) => {
                 return (
                   <Accordion.Root
                     multiple
-
-                    style={{ "border-width": "1px", "border-radius": "0.2rem", padding : "0.2rem" }}
+                    style={{
+                      "border-width": "1px",
+                      "border-radius": "0.2rem",
+                      padding: "0.2rem",
+                    }}
                     defaultValue={props.accordionStatuses!.get(innerId)!}
                     onValueChange={(details) => {
                       if (props.accordionStatuses) {
@@ -166,7 +169,7 @@ export const ConfigFormatObject = (props: ConfigFormatObjectProps) => {
                         fontSize={"xs"}
                         justifyContent={"left"}
                         alignItems={"center"}
-                        padding = "0"
+                        padding="0"
                       >
                         <div
                           style={{
@@ -181,7 +184,6 @@ export const ConfigFormatObject = (props: ConfigFormatObjectProps) => {
                               : `Axis ${Number(key) + 1}`}
 
                             <Show when={innderDescText}>
-
                               <Tooltip
                                 content={
                                   innderDescText![
@@ -189,21 +191,22 @@ export const ConfigFormatObject = (props: ConfigFormatObjectProps) => {
                                   ]
                                 }
                               >
-                                <IconButton variant = "plain" size = "2xs" color = {"fg.subtle"}>
-                                  <IconHelp/>
+                                <IconButton
+                                  variant="plain"
+                                  size="2xs"
+                                  color={"fg.subtle"}
+                                >
+                                  <IconHelp />
                                 </IconButton>
                               </Tooltip>
                             </Show>
-
                           </Text>
-
-
                         </div>
                         <Accordion.ItemIndicator marginLeft={`50%`}>
                           <IconChevronDown />
                         </Accordion.ItemIndicator>
                       </Accordion.ItemTrigger>
-                      <Accordion.ItemContent borderWidth="0"  gap = "0">
+                      <Accordion.ItemContent borderWidth="0" gap="0">
                         <ConfigFormatObject
                           id={innerId}
                           format={innerValues[0]}
@@ -273,7 +276,7 @@ export const ConfigFormatObject = (props: ConfigFormatObjectProps) => {
                               width: descriptionText ? "20rem" : "unset",
                             }}
                           >
-                            <Text fontWeight={"bold"} display = "flex">
+                            <Text fontWeight={"bold"} display="flex">
                               {isNaN(Number(key))
                                 ? prettierLabel(label)
                                 : `Axis ${Number(key) + 1}`}
@@ -285,8 +288,12 @@ export const ConfigFormatObject = (props: ConfigFormatObjectProps) => {
                                     ]
                                   }
                                 >
-                                  <IconButton variant = "plain" size = "2xs" color = {"fg.subtle"}>
-                                    <IconHelp/>
+                                  <IconButton
+                                    variant="plain"
+                                    size="2xs"
+                                    color={"fg.subtle"}
+                                  >
+                                    <IconHelp />
                                   </IconButton>
                                 </Tooltip>
                               </Show>
@@ -381,9 +388,7 @@ export const ConfigFormatObject = (props: ConfigFormatObjectProps) => {
                 ? `${props.id.split(".").pop()} ${Number(key) + 1}`
                 : key;
               return (
-                <div style={{
-
-                }}>
+                <div style={{}}>
                   <FormCheckBox
                     id={props.id + "." + key}
                     label={label}

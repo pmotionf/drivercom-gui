@@ -124,7 +124,7 @@ export const ConfigFormTabPage = (props: ConfigFormTabPageProps) => {
           display: "flex",
           "flex-direction": "column",
           "max-width": "40rem",
-          gap : "0.2rem"
+          gap: "0.2rem",
         }}
       >
         <For each={Object.entries(props.format)}>
@@ -197,7 +197,7 @@ export const ConfigFormTabPage = (props: ConfigFormTabPageProps) => {
                           <IconChevronDown />
                         </Accordion.ItemIndicator>
                       </Accordion.ItemTrigger>
-                      <Accordion.ItemContent padding={"0"} gap = "0">
+                      <Accordion.ItemContent padding={"0"} gap="0">
                         <ConfigFormatObject
                           id={props.id + "." + key}
                           format={value}
@@ -282,7 +282,12 @@ export const ConfigFormTabPage = (props: ConfigFormTabPageProps) => {
                       "padding-top": index() === 0 ? "0px" : "0.2rem",
                     }}
                   >
-                    <Text display="flex" alignItems="center" gap="0.4rem" fontSize = "sm">
+                    <Text
+                      display="flex"
+                      alignItems="center"
+                      gap="0.4rem"
+                      fontSize="sm"
+                    >
                       <Show
                         when={originalFile !== store[key as keyof typeof store]}
                       >
@@ -304,11 +309,11 @@ export const ConfigFormTabPage = (props: ConfigFormTabPageProps) => {
                               : "transparent",
                         })}
                       >
-                        {"cc_link_speed"}
+                        {"cc link speed"}
                       </div>
                     </Text>
                     <Select.Root
-                      size = "sm"
+                      size="sm"
                       collection={collection}
                       value={[store[key as keyof typeof store] as string]}
                       onValueChange={(e) => {
@@ -319,8 +324,12 @@ export const ConfigFormTabPage = (props: ConfigFormTabPageProps) => {
                         );
                       }}
                     >
-                      <Select.Control >
-                        <Select.Trigger borderColor={"gray.5"} padding = {"0"} height = {"2rem"}>
+                      <Select.Control>
+                        <Select.Trigger
+                          borderColor={"gray.5"}
+                          padding={"0"}
+                          height={"2rem"}
+                        >
                           <Select.ValueText
                             id={id}
                             width="100%"
@@ -354,7 +363,7 @@ export const ConfigFormTabPage = (props: ConfigFormTabPageProps) => {
                   ? `${props.id.split(".").pop()} ${Number(key) + 1}`
                   : key;
                 return (
-                  <div style={{  }}>
+                  <div style={{}}>
                     <FormCheckBox
                       id={props.id + "." + key}
                       label={label}
