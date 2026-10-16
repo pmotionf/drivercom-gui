@@ -4,6 +4,9 @@ import { Text } from "../ui/text";
 import { Show } from "solid-js";
 import { FlipSensorExample } from "~/pages/Configuration/ConfigForm/FlipSensorExample";
 import { SwapSensorExample } from "~/pages/Configuration/ConfigForm/SwapSensorExample";
+import { Tooltip } from "../ui/tooltip";
+import { IconButton } from "../ui/icon-button";
+import { IconExclamationCircle, IconHelp } from "@tabler/icons-solidjs";
 
 export type FormCheckBoxProps = {
   id: string;
@@ -46,6 +49,7 @@ export const FormCheckBox = (props: FormCheckBoxProps) => {
         }}
         marginRight="0.5em"
         alignItems={"center"}
+        size = "sm"
       >
         <Checkbox.HiddenInput />
         <Checkbox.Control borderColor={"gray.7"}>
@@ -53,6 +57,7 @@ export const FormCheckBox = (props: FormCheckBoxProps) => {
         </Checkbox.Control>
         <div>
           <Text
+            fontSize = "sm"
             fontWeight="medium"
             userSelect="none"
             width="min-content"
@@ -75,33 +80,47 @@ export const FormCheckBox = (props: FormCheckBoxProps) => {
             <div
               class={css({
                 background: props.isFocus ? "accent.7" : "transparent",
+                display : 'flex'
               })}
             >
               {key.replaceAll(" ", "_")}
+              <Show
+                when={
+                  props.desc &&
+                  typeof props.desc["description" as keyof typeof props.desc] ===
+                    "string"
+                }
+              >
+
+                <Show when={key.toLowerCase() === "flip" || key.toLowerCase() === "swap"}
+                  fallback={
+                    <Tooltip
+                      content={
+                        <>
+                          {props.desc!["description" as keyof typeof props.desc]}
+
+                        </>
+                      }
+                    >
+                      <IconButton variant = "plain" size = "2xs" color = {"fg.subtle"}>
+                        <IconHelp/>
+                      </IconButton>
+                    </Tooltip>
+                  }
+                >
+                  <Show when={key.toLowerCase() === "swap"} fallback={
+                    <FlipSensorExample />
+
+                  }>
+                    <SwapSensorExample />
+                  </Show>
+                  </Show>
+
+              </Show>
             </div>
+
           </Text>
-          <Show
-            when={
-              props.desc &&
-              typeof props.desc["description" as keyof typeof props.desc] ===
-                "string"
-            }
-          >
-            <Text
-              textStyle="sm"
-              fontWeight="light"
-              color="fg.default"
-              alignItems="center"
-            >
-              {props.desc!["description" as keyof typeof props.desc]}
-              <Show when={key.toLowerCase() === "flip"}>
-                <FlipSensorExample />
-              </Show>
-              <Show when={key.toLowerCase() === "swap"}>
-                <SwapSensorExample />
-              </Show>
-            </Text>
-          </Show>
+
         </div>
       </Checkbox.Root>
     </div>

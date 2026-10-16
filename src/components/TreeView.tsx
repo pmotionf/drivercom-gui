@@ -25,6 +25,7 @@ export const TreeView = (props: ArkTreeView.RootProps<Node>) => {
         background: "gray.1",
         overflowY: "auto",
         borderRightWidth: "1px",
+        fontSize :"xs"
       })}
       {...props}
       collection={props.collection}
@@ -91,10 +92,12 @@ const TreeNode = (props: ArkTreeView.NodeProviderProps<Node>) => {
                 </ArkTreeView.BranchIndicator>
                 <ArkTreeView.BranchText
                   onClick={(e) => e.stopPropagation()}
+
                   class={css({
                     display: "flex",
                     alignItems: "center",
                     gap: "0.5rem",
+
                   })}
                 >
                   <Dynamic
@@ -166,11 +169,13 @@ const TreeNode = (props: ArkTreeView.NodeProviderProps<Node>) => {
                 },
               })}
             >
-              <ArkTreeView.ItemText
+                <ArkTreeView.ItemText
+
                 class={css({
                   display: "flex",
                   alignItems: "center",
                   gap: "0.5rem",
+
                 })}
               >
                 <Dynamic

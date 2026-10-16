@@ -454,7 +454,7 @@ export const FlipSensorExample = () => {
       }
     >
       <IconButton
-        size={"xs"}
+        size={"2xs"}
         padding="0"
         variant={"plain"}
         onClick={(e) => {

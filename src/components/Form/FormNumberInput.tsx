@@ -7,6 +7,7 @@ import {
 import { createSignal, Show, splitProps } from "solid-js";
 import {
   IconExclamationCircle,
+  IconHelp,
   IconLock,
   IconLockOff,
 } from "@tabler/icons-solidjs";
@@ -199,7 +200,6 @@ export const FormNumberInput = (props: FormNumberInputProps) => {
         <div style={{ width: "100%", display: "flex" }}>
           <div style={{ width: `calc(100% - 0.5rem)` }}>
             <Text
-              fontWeight="medium"
               height="1.5em"
               width="min-content"
               display="flex"
@@ -228,23 +228,32 @@ export const FormNumberInput = (props: FormNumberInputProps) => {
                   background: props.isFocus ? "accent.7" : "transparent",
                   width: `max-content`,
                   minWidth: "1rem",
+                  fontSize : "sm"
                 })}
               >
                 {props.label.replaceAll(" ", "_")}
+                <Show
+                  when={
+                    props.desc &&
+                    "description" in props.desc &&
+                    typeof props.desc["description" as keyof typeof props.desc] ===
+                      "string"
+                  }
+                >
+                  <Tooltip
+                    content={
+                      props.desc!["description" as keyof typeof props.desc]
+                    }
+                  >
+                    <IconButton size = "2xs" variant = "plain" color = "fg.subtle">
+                      <IconHelp/>
+                    </IconButton>
+                  </Tooltip>
+                </Show>
               </div>
+
             </Text>
-            <Show
-              when={
-                props.desc &&
-                "description" in props.desc &&
-                typeof props.desc["description" as keyof typeof props.desc] ===
-                  "string"
-              }
-            >
-              <Text textStyle="sm" fontWeight="light" color="fg.default">
-                {props.desc!["description" as keyof typeof props.desc]}
-              </Text>
-            </Show>
+
           </div>
 
           <Show
@@ -332,7 +341,6 @@ export const FormNumberInput = (props: FormNumberInputProps) => {
             ref={divRef}
             style={{
               width: "100%",
-              padding: "0.4rem",
               "border-radius": "0.2rem",
               "border-width": "1px",
               gap: "0",
@@ -440,7 +448,7 @@ export const FormNumberInput = (props: FormNumberInputProps) => {
                   props.changeUnits ?? false,
                 )}
               >
-                <Text opacity="0.5" marginLeft="0.2em">
+                <Text opacity="0.5" marginLeft="0.2em" fontSize = "xs">
                   {parseUnit(
                     changeUnitShort(
                       props.desc![
@@ -472,7 +480,7 @@ export const FormNumberInput = (props: FormNumberInputProps) => {
             }
           >
             <Text
-              textStyle="sm"
+              fontSize="xs"
               color="red"
               width="100%"
               textAlign="right"

@@ -8,9 +8,11 @@ import { Text } from "../../../components/ui/text";
 import { FormNumberInput } from "../../../components/Form/FormNumberInput";
 import { FormCheckBox } from "../../../components/Form/FormCheckBox";
 
-import { IconChevronDown } from "@tabler/icons-solidjs";
+import { IconChevronDown, IconHelp } from "@tabler/icons-solidjs";
 import { prettierLabel } from "~/utils/PrettierLabel";
 import { css } from "styled-system/css";
+import { Tooltip } from "~/components/ui/tooltip";
+import { IconButton } from "~/components/ui/icon-button";
 
 export type ConfigFormatObjectProps = {
   id: string;
@@ -93,7 +95,7 @@ export const ConfigFormatObject = (props: ConfigFormatObjectProps) => {
   };
 
   return (
-    <div style={{ display: "flex", "flex-direction": "column", gap: "0.5rem" }}>
+    <div style={{ display: "flex", "flex-direction": "column", gap: "0.2rem" }}>
       <Show when={render()}>
         <For each={entries}>
           {(entry, index) => {
@@ -146,7 +148,8 @@ export const ConfigFormatObject = (props: ConfigFormatObjectProps) => {
                 return (
                   <Accordion.Root
                     multiple
-                    style={{ "border-width": "1px", "border-radius": "0.5rem" }}
+
+                    style={{ "border-width": "1px", "border-radius": "0.2rem", padding : "0.2rem" }}
                     defaultValue={props.accordionStatuses!.get(innerId)!}
                     onValueChange={(details) => {
                       if (props.accordionStatuses) {
@@ -160,15 +163,15 @@ export const ConfigFormatObject = (props: ConfigFormatObjectProps) => {
                       padding="0"
                     >
                       <Accordion.ItemTrigger
-                        fontSize={"sm"}
+                        fontSize={"xs"}
                         justifyContent={"left"}
                         alignItems={"center"}
+                        padding = "0"
                       >
                         <div
                           style={{
                             width: "50%",
                             display: "flex",
-                            gap: "0.5rem",
                             "align-items": "center",
                           }}
                         >
@@ -176,30 +179,31 @@ export const ConfigFormatObject = (props: ConfigFormatObjectProps) => {
                             {isNaN(Number(key))
                               ? prettierLabel(label)
                               : `Axis ${Number(key) + 1}`}
+
+                            <Show when={innderDescText}>
+
+                              <Tooltip
+                                content={
+                                  innderDescText![
+                                    "description" as keyof typeof innderDescText
+                                  ]
+                                }
+                              >
+                                <IconButton variant = "plain" size = "2xs" color = {"fg.subtle"}>
+                                  <IconHelp/>
+                                </IconButton>
+                              </Tooltip>
+                            </Show>
+
                           </Text>
 
-                          <Show when={innderDescText}>
-                            <Text
-                              textStyle="sm"
-                              fontWeight="light"
-                              style={{
-                                width: "100%",
-                              }}
-                              color="fg.default"
-                            >
-                              {
-                                innderDescText![
-                                  "description" as keyof typeof innderDescText
-                                ]
-                              }
-                            </Text>
-                          </Show>
+
                         </div>
                         <Accordion.ItemIndicator marginLeft={`50%`}>
                           <IconChevronDown />
                         </Accordion.ItemIndicator>
                       </Accordion.ItemTrigger>
-                      <Accordion.ItemContent borderWidth="0" padding="0.5rem">
+                      <Accordion.ItemContent borderWidth="0"  gap = "0">
                         <ConfigFormatObject
                           id={innerId}
                           format={innerValues[0]}
@@ -230,11 +234,10 @@ export const ConfigFormatObject = (props: ConfigFormatObjectProps) => {
                 return (
                   <Accordion.Root
                     multiple
-                    boxShadow={"md"}
                     style={{
-                      padding: "0.5rem",
+                      padding: "0.2rem",
                       "border-width": "1px",
-                      "border-radius": "0.5rem",
+                      "border-radius": "0.2rem",
                     }}
                     defaultValue={
                       props.accordionStatuses
@@ -253,7 +256,7 @@ export const ConfigFormatObject = (props: ConfigFormatObjectProps) => {
                       borderWidth="0"
                     >
                       <Accordion.ItemTrigger
-                        fontSize={"sm"}
+                        fontSize={"xs"}
                         justifyContent={"left"}
                         alignItems={"center"}
                         padding="0"
@@ -262,7 +265,6 @@ export const ConfigFormatObject = (props: ConfigFormatObjectProps) => {
                           style={{
                             width: "50%",
                             display: "flex",
-                            gap: "0.5rem",
                             "align-items": "center",
                           }}
                         >
@@ -271,28 +273,24 @@ export const ConfigFormatObject = (props: ConfigFormatObjectProps) => {
                               width: descriptionText ? "20rem" : "unset",
                             }}
                           >
-                            <Text fontWeight={"bold"}>
+                            <Text fontWeight={"bold"} display = "flex">
                               {isNaN(Number(key))
                                 ? prettierLabel(label)
                                 : `Axis ${Number(key) + 1}`}
+                              <Show when={descriptionText}>
+                                <Tooltip
+                                  content={
+                                    descriptionText![
+                                      "description" as keyof typeof descriptionText
+                                    ]
+                                  }
+                                >
+                                  <IconButton variant = "plain" size = "2xs" color = {"fg.subtle"}>
+                                    <IconHelp/>
+                                  </IconButton>
+                                </Tooltip>
+                              </Show>
                             </Text>
-
-                            <Show when={descriptionText}>
-                              <Text
-                                textStyle="sm"
-                                fontWeight="light"
-                                style={{
-                                  width: "100%",
-                                }}
-                                color="fg.default"
-                              >
-                                {
-                                  descriptionText![
-                                    "description" as keyof typeof descriptionText
-                                  ]
-                                }
-                              </Text>
-                            </Show>
                           </div>
                         </div>
                         <div
@@ -307,7 +305,7 @@ export const ConfigFormatObject = (props: ConfigFormatObjectProps) => {
                           </Accordion.ItemIndicator>
                         </div>
                       </Accordion.ItemTrigger>
-                      <Accordion.ItemContent padding="0.5rem">
+                      <Accordion.ItemContent padding="0">
                         <ConfigFormatObject
                           id={id}
                           format={value}
@@ -340,7 +338,7 @@ export const ConfigFormatObject = (props: ConfigFormatObjectProps) => {
                 <div
                   style={{
                     "border-top-width": index() === 0 ? "0px" : "1px",
-                    "padding-top": index() === 0 ? "0px" : "0.5rem",
+                    "padding-top": index() === 0 ? "0px" : "0.2rem",
                   }}
                   class={css({ borderColor: "gray.4" })}
                 >
@@ -383,7 +381,9 @@ export const ConfigFormatObject = (props: ConfigFormatObjectProps) => {
                 ? `${props.id.split(".").pop()} ${Number(key) + 1}`
                 : key;
               return (
-                <div style={{ "margin-bottom": "0.5em" }}>
+                <div style={{
+
+                }}>
                   <FormCheckBox
                     id={props.id + "." + key}
                     label={label}
