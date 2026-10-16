@@ -450,10 +450,8 @@ export const SwapSensorExample = () => {
       }
     >
       <IconButton
-        size={"xs"}
-        width="0.5rem"
+        size={"2xs"}
         padding="0"
-        height="1rem"
         variant={"plain"}
         onClick={(e) => {
           e.stopPropagation();
